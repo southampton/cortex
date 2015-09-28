@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
+		<meta charset="utf-8">
+		<title>{{ config['APP_DISPLAY_NAME'] }}</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link href="//netdna.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+		<link href="{{ url_for('static', filename='css/login.css') }}" type="text/css" rel="stylesheet">
+
+		<!--[if lt IE 9]>
+		<style type="text/css">
+		.form-control
+		{
+			width: 95% !important;
+		}
+		body
+		{
+			background-color: none;
+			background-image: url('/static/images/login/bgimage{{getrandnum()}}.jpg');
+			background-size: cover;	
+		}
+		</style>
+		<![endif]-->
+
+		<style type="text/css">
+		@media (min-width: 768px)
+		{
+			body
+			{
+				background-color: none;
+				background-image: url('/static/images/login/bgimage{{getrandnum()}}.jpg');
+				background-size: cover;	
+			}
+		}
+
+		</style>
+
+		<noscript>
+			<meta http-equiv="refresh" content="0; url={{ url_for('nojs')}}" />
+		</noscript>
+		{% include 'javascript.html' %}
+		<script type="text/javascript" src="{{ url_for('static', filename='js/login.js') }}"></script>
+	</head>
+	<body>
+		<div class="hidden-xs uoslogo">
+			<img src="{{ url_for('static', filename='images/uoslogowhite.png') }}"></img>
+		</div>
+
+		<div class="container">
+			<div class="visible-xs mobilelogo">
+				<img src="{{ url_for('static', filename='images/uoslogowhite.png') }}"></img>
+			</div>
+			<div class="loginbox">
+				<h1>{{ config['APP_DISPLAY_NAME'] }}</h1>
+				{% for category, message in get_flashed_messages(with_categories=true) %}
+				<div class="alert {{ category }} fade in">
+					<a data-dismiss="alert" class="close" href="#">×</a>
+					{{ message|safe }}
+				</div>
+				{% endfor %}
+
+				<form role="form" method="POST">
+					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+					{% if next %}
+					<input name="next" type="hidden" value="{{next}}"/>
+					{% endif %}
+
+					<p>					
+					<strong>Your account is protected by Two Step</strong>
+					</p>
+					<p>Please enter the number from the authenticator app on your smartphone to continue:</p>
+
+				  <div class="form-group">
+						<input name="totp_token" type="text" class="form-control" placeholder="Number">
+				  </div>
+
+					<div class="form-group text-center">
+						<button class="btn btn-default btn-lg" type="submit">Continue</button>
+					</div>
+
+				</form>
+
+				<p class="text-center">
+					<a href="https://www.southampton.ac.uk/about/conditions-policies.page">Terms and Conditions</a> - <a href="{{ url_for('about') }}">About</a>
+				</p>
+			</div>
+		</div>
+    </body>
+</html>

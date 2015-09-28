@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<style type="text/css">
+body
+{
+	padding-top: 0px;
+}
+</style>
+
+</div>
+<div class="error-block">
+	<div class="error-img error-text">
+		<i class="fa fa-fw fa-exclamation-triangle"></i>
+	</div>
+	<div class="error-header error-text">
+		{{title}}
+	</div>
+	<div class="error-body error-text">
+		{{ message }}
+	</div>
+	{% if debug %}
+	<div class="error-debug">
+		<pre>{{ debug }}</pre>
+	</div>
+	{% endif %}
+</div>
+
+{% endblock %}

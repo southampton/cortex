@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Cortex</title>
+		<link rel="icon" href="../../favicon.ico">
+		{% include 'header-links.html' %}
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}">
+		{% include 'javascript.html' %}
+		<script type="text/javascript" src="{{ url_for('static', filename='js/cortex.js') }}"></script>
+	</head>
+	<body>
+		<div class="navbar navbar-fixed-top navbar-inverse" role="navigation">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a href="{{ url_for('dashboard') }}" class="navbar-brand">cortex</a>
+				</div>
+			
+				{%- if session.logged_in %}
+				<div class="navbar-collapse collapse" id="navbar-collapse-1">	
+					<ul class="nav navbar-nav">
+						<li class="dropdown{%if active == 'systems'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Systems <b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								<li><a href="{{ url_for('systems') }}"><i class="fa fa-server fa-fw"></i> Systems</a></li>
+								<li><a href="{{ url_for('systems_reserve') }} "><i class="fa fa-edit fa-fw"></i> Reserve Hostname</a></li>
+							</ul>
+						</li>
+						<li class="dropdown{%if active == 'admin'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin <b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								<li><a href="{{ url_for('admin_classes') }}"><i class="fa fa-fw fa-gears"></i> Classes</a></li>
+							</ul>
+						</li>
+					</ul>
+					
+					<ul class="nav navbar-nav navbar-right">
+						<li class="dropdown{%if active == 'user'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-fw fa-user"></i> {{ session.username }} <b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								<li><a href="{{ url_for('logout') }}"><i class="fa fa-sign-out fa-fw"></i> Sign Out</a></li>
+							</ul>
+						</li>
+					</ul>
+					
+				</div>
+				{%- endif %}
+			</div>
+		</div>
+
+		<div class="container">
+			{% for category, message in get_flashed_messages(with_categories=true) %}
+              <div class="alert alert-dismissable {{category}}"><button type="button" class="close" data-dismiss="alert">×</button>{{message}}</div>
+			{% endfor %}
+			{% block body %}{% endblock -%}
+		</div>
+	</body>
+</html>

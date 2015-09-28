@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<form role="form" class="form-inline">
+	<label for="class">Show System Class:</label> <select class="form-control" id="class" name="class">
+		<option>(All)</option>
+	{%- for class in classes %}
+		<option value="{{ class.name }}">{{ class.name }}</option>
+	{%- endfor %}
+	</select>
+<form>
+
+<table class="table table-condensed table-striped" id="systems">
+	<thead>
+		<th><div class="tablesorter-inner">Name</div></th>
+		<th><div class="tablesorter-inner">Comment</div></th>
+		<th><div class="tablesorter-inner">Allocated By</div></th>
+		<th width="150px"><div class="tablesorter-inner">Allocation Date</div></th>
+		<th width="210px"></th>
+	</thead>
+	<tbody>
+{%- for system in systems %}
+		<tr>
+			<td>{{ system.name }}</td>
+			<td>{{ system.allocation_comment }}</td>
+			<td>{{ system.allocation_date.strftime("%Y-%m-%d %H:%M") }}</td>
+			<td>{{ system.allocation_who }}</td>
+			<td><a style="margin-right:0.5em" href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank"><i style="margin-right:0.2em" class="fa fa-fw fa-cloud"></i>CMDB</a><a style="margin-right:0.5em" href="#"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i>Edit</a><a href="#"><i style="margin-right:0.2em" class="fa fa-fw fa-times"></i>Delete</a></td>
+		</tr>
+{%- endfor %}
+	</tbody>
+</table>
+<script type="text/javascript">
+$(function() { $("#systems").tablesorter(); });
+</script>
+{% endblock %}

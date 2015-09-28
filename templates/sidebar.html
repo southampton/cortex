@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Cortex</title>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		{% include 'header-links.html' %}
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bargate.css') }}">
+		{% include 'javascript.html' %}
+		<script type="text/javascript" src="{{ url_for('static', filename='js/bargate.js') }}"></script>
+	</head>
+	<body>
+		<div class="navbar navbar-fixed-top" role="navigation">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					{%- if session.logged_in %}
+					<a href="{{ url_for(config['SHARES_DEFAULT']) }}" class="navbar-brand visible-xs visible-md visible-lg">Cortex</a>
+					<a href="{{ url_for(config['SHARES_DEFAULT']) }}" class="navbar-brand visible-sm">Cortex</a>
+					{%- else %}
+					<a href="{{ url_for('login') }}" class="navbar-brand"><i class="fa fa-arrow-circle-o-left"></i> Back to Login</a>
+					{%- endif %}
+				</div>
+			
+				{%- if session.logged_in %}
+				<div class="navbar-collapse collapse" id="navbar-collapse-1">	
+					<ul class="nav navbar-nav">
+					{%- include 'dropdown-menus.html' %}
+					</ul>
+					
+					<ul class="nav navbar-nav navbar-right">
+						<li class="dropdown{%if active == 'user'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-fw fa-user"></i> {{ session.username }} <b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								<li><a href="{{ url_for('settings') }}"><i class="fa fa-gears fa-fw"></i> Preferences</a></li>
+								{% if config['TOTP_ENABLED'] %}
+								<li><a href="{{ url_for('totp_user_view') }}"><i class="fa fa-lock fa-fw"></i> Two Step Protection</a></li>
+								{% endif %}
+								{%- include 'user-menu.html' %}
+								<li><a href="{{ url_for('logout') }}"><i class="fa fa-sign-out fa-fw"></i> Sign Out</a></li>
+							</ul>
+						</li>
+					</ul>
+					
+					<div class="pull-right action-btns">
+						<a id="upload-button" data-toggle="modal" href="#upload-file" class="btn navbar-btn btn-default btn hidden-xs" rel="tooltip" data-toggle="tooltip" data-placement="bottom" title="Upload a file" {% if not browse_mode %}disabled="disabled"{%endif%}>
+							<i id="upload-button-icon" class="fa fa-fw fa-lg fa-upload"></i>
+						</a>
+						<a data-toggle="modal" href="#create-directory" class="btn navbar-btn btn-default hidden-xs" rel="tooltip" data-toggle="tooltip" data-placement="bottom" title="Create a folder" {% if not browse_mode %}disabled="disabled"{%endif%}>
+							<i class="fa fa-fw fa-lg fa-folder-open"></i>
+						</a>
+					</div>
+				</div>
+				{%- endif %}
+			</div>
+		</div>
+
+		{%- if session.popup_error -%}
+			{%- with poperr = poperr_get() -%}
+			<div class="modal fade" id="popup-error">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal">×</button>
+							<h4 class="modal-title">{{ poperr.0 }}</h4>
+						</div>
+						<div class="modal-body">
+							{{ poperr.1 }}
+						</div>
+						<div class="modal-footer">
+							<a href="#" class="btn btn-default"  data-dismiss="modal">OK</a>
+						</div>
+					</div>
+				</div>
+			</div>
+			{%- endwith -%}
+		{%- endif %}
+
+		<div class="{% if browse_mode %}container container-directory{%else%}container{%endif%}">
+			{% for category, message in get_flashed_messages(with_categories=true) %}
+              <div class="alert alert-dismissable {{category}}"><button type="button" class="close" data-dismiss="alert">×</button>{{message}}</div>
+			{% endfor %}
+			{% block body %}{% endblock -%}
+		</div>
+		
+		{%- if browse_mode %}
+		<div class="navbar navbar-fixed-bottom visible-xs" role="navigation">	
+			<div class="container">
+				<div class="action-btns text-center">
+					<a data-toggle="modal" href="#upload-file" class="btn navbar-btn btn-default">
+						<i class="fa fa-fw fa-upload"></i>
+					</a>
+					<a data-toggle="modal" href="#create-directory" class="btn navbar-btn btn-default">
+						<i class="fa fa-fw fa-folder-open"></i>
+					</a>
+					<a href="#" class="btn navbar-btn btn-default" {% if atroot %}disabled="disabled"{%else%} data-toggle="modal" data-target="#add-bookmark" {%endif%}>
+						<i class="fa fa-fw fa-bookmark"></i>
+					</a>
+				</div>
+			</div>
+		</div>
+		{%- endif %}
+	</body>
+</html>
