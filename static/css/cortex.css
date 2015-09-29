@@ -17,6 +17,12 @@ body
 	padding-bottom: 0px;
 }
 
+/* override bootstrap's valign top in tables*/
+td, th
+{
+	vertical-align: middle !important;	
+}
+
 table#classes td
 {
 	width: 20%;

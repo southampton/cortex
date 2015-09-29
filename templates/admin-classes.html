@@ -7,6 +7,8 @@
 
 	<form role="form" method="POST" class="form-horizontal">
 		<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+		<input name="action" type="hidden" value="edit_class"/>
+		<input name="class_name" type="hidden" value="" id="edit_class_name_hidden"/>
 
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -18,21 +20,21 @@
 		<div class="form-group">
 			<label class="col-sm-3 control-label">Class prefix</label>
 			<div class="col-sm-9">
-			  <p class="form-control-static" id="edit_class_name">prefix goes here</p>
+			  <p class="form-control-static" id="edit_class_name" name="class_name">N/A</p>
 			</div>
 		</div>
 
 		<div class="form-group">
 			<label class="col-sm-3 control-label">Digits</label>
 			<div class="col-sm-9">
-			  <input class="form-control" id="edit_class_digits" type="number" value="5" max="10" min="1"></input>
+			  <input class="form-control" id="edit_class_digits" type="number" value="5" max="10" min="1" name="class_digits"></input>
 			</div>
 		</div>
 
 		<div class="form-group">
 		  <div class="checkbox col-sm-offset-3 col-sm-9">
 			<label>
-			  <input type="checkbox" checked="checked" id="edit_class_active"> Enabled for use
+			  <input type="checkbox" checked="checked" id="edit_class_active" name="class_active"> Enabled for use
 			</label>
 		  </div>
 		</div>
@@ -55,17 +57,71 @@ $('#edit_class').on('show.bs.modal', function (event)
 	var button = $(event.relatedTarget)
 	var active = button.data('active')
 
-	$('#edit_class_active').prop('checked', !button.data('active'));
+	$('#edit_class_active').prop('checked', button.data('active'));
 	$('#edit_class_name').text(button.data('name'));
+	$('#edit_class_name_hidden').attr('value',button.data('name'));
 	$('#edit_class_digits').attr('value',button.data('digits'));
 })
 
 });
 </script>
 
+<div class="modal fade" id="add_class" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+	<form role="form" method="POST" class="form-horizontal">
+		<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+		<input name="action" type="hidden" value="add_class"/>
+
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Add class</h4>
+      </div>
+
+      <div class="modal-body">
+
+		<p>
+			The class prefix should be short, typically three characters, e.g. 'srv' or 'stg'. The digits are the number of digits after
+			the class prefix, typically this is five, .e.g srv00000 or srv99999. If you're not sure its best to use a three character prefix
+			and five digits.
+		</p>
+
+		<div class="form-group">
+			<label class="col-sm-3 control-label">Prefix</label>
+			<div class="col-sm-9">
+			  <input class="form-control" name="class_name"></input>
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-3 control-label">Digits</label>
+			<div class="col-sm-9">
+			  <input class="form-control" type="number" value="5" max="10" min="1" name="class_digits"></input>
+			</div>
+		</div>
+
+		<div class="form-group">
+		  <div class="checkbox col-sm-offset-3 col-sm-9">
+			<label>
+			  <input type="checkbox" checked="checked" name="class_active"> Enabled for use
+			</label>
+		  </div>
+		</div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary">Add class</button>
+      </div>
+		</form>
+    </div>
+  </div>
+</div>
+
 <div class="page-header">
 	<div class="pull-right">
-		<a href="" class="btn btn-info btn-sm"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs">Add new class</span></a>
+		<a data-toggle="modal" data-target="#add_class" class="btn btn-info btn-sm"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs">Add new class</span></a>
 	</div>
 <h3>System Classes</h3>
 </div>
@@ -91,7 +147,7 @@ manually or automatically.</p>
 			<td>{{ class.digits }}</td>
 			<td>{% if class.disabled %}<i style="color:#d00" class="fa fa-fw fa-times"></i>{% else %}<i style="color:#0d0" class="fa fa-fw fa-check"></i>{% endif %}</td>
 			<td>{{ class.lastid }}</td>
-			<td><a data-toggle="modal" data-target="#edit_class" data-active="{{class.disabled}}" data-name="{{class.name}}" data-digits="{{class.digits}}" class="btn btn-default btn-sm"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i><span class="hidden-sm hidden-xs">Edit</span></a> &nbsp;&nbsp;<a class="btn btn-sm btn-default"><i style="margin-right:0.2em" class="fa fa-fw fa-times"></i><span class="hidden-sm hidden-xs">Delete</a></td>
+			<td><a data-toggle="modal" data-target="#edit_class" data-active="{{class.disabled}}" data-name="{{class.name}}" data-digits="{{class.digits}}" class="btn btn-default btn-sm"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i><span class="hidden-sm hidden-xs">Edit</span></a></td>
 		</tr>
 {%- endfor %}
 	</tbody>

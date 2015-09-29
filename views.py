@@ -9,7 +9,6 @@ import time
 import json
 import re
 import werkzeug
-from itsdangerous import base64_decode
 import ldap
 
 ################################################################################
@@ -92,9 +91,4 @@ def systems():
 def systems_reserve():
 	classes = cortex.core.get_classes(True)
 	return render_template('systems-reserve.html', classes=classes)
-
-@app.route('/admin/classes')
-def admin_classes():
-	classes = cortex.core.get_classes(False)
-	return render_template('admin-classes.html', classes=classes)
 

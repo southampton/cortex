@@ -151,6 +151,7 @@ if app.config['DEBUG_TOOLBAR']:
 import cortex.core
 import cortex.errors
 import cortex.views
+import cortex.admin
 
 #if app.config['TOTP_ENABLED']:
 #	if app.config['REDIS_ENABLED']:

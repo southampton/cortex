@@ -94,22 +94,6 @@ def before_request():
 			### so just throw a 400
 			abort(400)
 
-################################################################################
-
-def get_classes(hide_disabled = False):
-	"""Returns the list of system classes in the database"""
-
-	# Build the query
-	query = "SELECT `name`, `digits`, `disabled`, `lastid` FROM `classes`";
-	if hide_disabled:
-		query = query + " WHERE `disabled` = False";
-
-	# Query the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute(query)
-
-	# Return the results
-	return cur.fetchall()
 
 ################################################################################
 
