@@ -7,6 +7,13 @@ from flask import Flask, request, session, redirect, url_for, flash, g, abort, r
 import re
 import MySQLdb as mysql
 
+################################################################################
+
+def get_class(name):
+	"""Tries to return the class data from a given name/prefix"""
+	cur = g.db.cursor(mysql.cursors.DictCursor)
+	cur.execute("SELECT * FROM `classes` WHERE `name` = %s",(name))
+	return cur.fetchone()
 
 ################################################################################
 
@@ -14,9 +21,11 @@ def get_classes(hide_disabled = False):
 	"""Returns the list of system classes in the database"""
 
 	# Build the query
-	query = "SELECT `name`, `digits`, `disabled`, `lastid` FROM `classes`";
+	query = "SELECT `name`, `digits`, `comment`, `disabled`, `lastid` FROM `classes`";
 	if hide_disabled:
 		query = query + " WHERE `disabled` = False";
+
+	query = query + " ORDER BY `lastid` DESC"
 
 	# Query the database
 	cur = g.db.cursor(mysql.cursors.DictCursor)
@@ -51,13 +60,18 @@ def admin_classes():
 
 			if class_digits < 1 or class_digits > 10:
 				flash("The class digits you sent was invalid. It must be between 1 and 10.","alert-danger")
-				return redirect(url_for('admin_classes'))				
+				return redirect(url_for('admin_classes'))
 
 			# is the new class active?
 			if "class_active" in request.form:
 				class_disabled = 0
 			else:
 				class_disabled = 1
+
+			class_comment = request.form['class_comment']
+			if not re.match(r'^.{3,512}$',class_comment):
+				flash("The class comment you sent was invalid. It must be between 3 and 512 characters long.","alert-danger")
+				return redirect(url_for('admin_classes'))
 
 			## check if the class exists
 			cur.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', (class_name))
@@ -72,7 +86,7 @@ def admin_classes():
 					return redirect(url_for('admin_classes'))
 
 				## sql insert
-				cur.execute('''INSERT INTO `classes` (`name`, `digits`, `disabled`) VALUES (%s, %s, %s)''', (class_name, class_digits, class_disabled))
+				cur.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`) VALUES (%s, %s, %s)''', (class_name, class_digits, class_comment, class_disabled))
 				g.db.commit()
 
 				flash("System class created","alert-success")
@@ -84,7 +98,7 @@ def admin_classes():
 					flash('No system class matching that name/prefix could be found', 'alert-danger')
 					return redirect(url_for('admin_classes'))
 
-				cur.execute('''UPDATE `classes` SET `digits` = %s, disabled = %s WHERE `name` = %s''', (class_digits, class_disabled, class_name))
+				cur.execute('''UPDATE `classes` SET `digits` = %s, disabled = %s, comment = %s WHERE `name` = %s''', (class_digits, class_disabled, class_comment, class_name))
 				g.db.commit()
 
 				flash("System class updated","alert-success")

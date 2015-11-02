@@ -1,0 +1,90 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<div class="modal fade" id="allocate" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <form role="form" method="POST" class="form-horizontal">
+      <input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+      <input name="class_name" type="hidden" value="" id="class_name_hidden"/>
+
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Allocate new system name(s)</h4>
+      </div>
+
+      <div class="modal-body">
+		<p>Please select how many new system names you'd like and choose a comment. If more than one name is created then you will be asked to set a per-name comment after creation.</p>
+
+
+		<div class="form-group">
+			<label class="col-sm-3 control-label">Prefix</label>
+			<div class="col-sm-9">
+			  <p class="form-control-static" id="class_name" name="class_name">N/A</p>
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-3 control-label">How many?</label>
+			<div class="col-sm-9">
+			  <input class="form-control" type="number" value="1" max="50" min="1" name="system_number"></input>
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-3 control-label">Comment</label>
+			<div class="col-sm-9">
+			  <input class="form-control" id="system_comment" type="text" name="system_comment"></input>
+			</div>
+		</div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary">Allocate</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+$( document ).ready(function() 
+{
+
+	$('#allocate').on('show.bs.modal', function (event)
+	{
+		var button = $(event.relatedTarget)
+		$('#class_name').text(button.data('name'));
+		$('#class_name_hidden').attr('value',button.data('name'));
+	})
+
+	$('#allocate').on('shown.bs.modal', function (event)
+	{
+		$('#system_comment').focus();
+	})
+
+});
+</script>
+
+
+<div class="page-header">
+<h3>Allocate new system name(s)</h3>
+</div>
+
+<div class="row">
+	<ul style="list-style: none;">
+	{% for class in classes %}
+		<li style="float: left; height: 250px; padding: 10px; text-align: center; background-color: #f9f9f9; border: 5px solid #FFFFFF; width: 33%;">
+			<p style="font-size: 4em; font-weight: bold;">{{ class.name }} </p>
+			<p>{{class.comment}}</p>
+			<br/>
+			<a data-toggle="modal" data-target="#allocate" data-name="{{class.name}}" class="btn btn-default"><i class="fa fa-fw fa-plus fa-3x"></i></a>
+		</li>
+	{% endfor %}
+	</ul>
+</div>
+
+{% endblock %}

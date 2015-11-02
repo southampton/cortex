@@ -11,20 +11,15 @@ import base64                 ## used for crypto of password
 import os                     ## used throughout
 import datetime               ## used in ut_to_string, online functions
 #import redis                  ## used in before_request
-from random import randint    ## used in before_request
 import time                   ## used in before_request
 import random                 ## used in pwgen            
 import string                 ## used in pwgen
 import ldap
 import MySQLdb as mysql	      ## used in before_request
-from random import randint
-
-# For cookie decode
-from base64 import b64decode
-from itsdangerous import base64_decode
-#import zlib
 import json
-#import uuid
+import requests
+import Pyro4
+import inspect
 
 ################################################################################
 
@@ -32,6 +27,8 @@ def session_logout():
 	"""Ends the logged in user's login session. The session remains but it is marked as being not logged in."""
 
 	app.logger.info('User "' + session['username'] + '" logged out from "' + request.remote_addr + '" using ' + request.user_agent.string)
+
+	# Remove the following items from the session
 	session.pop('logged_in', None)
 	session.pop('username', None)
 	session.pop('id', None)
@@ -76,7 +73,7 @@ def before_request():
 	
 	## Connect to database
 	try:
-		g.db = mysql.connect(host=app.config['MYSQL_HOST'], port=app.config['MYSQL_PORT'], user=app.config['MYSQL_USER'], passwd=app.config['MYSQL_PW'], db=app.config['MYSQL_DB'])
+		g.db = mysql.connect(host=app.config['MYSQL_HOST'], port=app.config['MYSQL_PORT'], user=app.config['MYSQL_USER'], passwd=app.config['MYSQL_PASS'], db=app.config['MYSQL_NAME'])
 	except Exception as ex:
 		cortex.errors.fatal('Unable to connect to MySQL', str(ex))
 
@@ -86,37 +83,87 @@ def before_request():
 		token = session.get('_csrf_token')
 		if not token or token != request.form.get('_csrf_token'):
 			if 'username' in session:
-				app.logger.warning('CSRF protection alert: %s failed to present a valid POST token',session['username'])
+				app.logger.warning('CSRF protection alert: %s failed to present a valid POST token', session['username'])
 			else:
-				app.logger.warning('CSRF protection alert: a non-logged in user failed to present a valid POST token')
+	 			app.logger.warning('CSRF protection alert: a non-logged in user failed to present a valid POST token')
 
 			### the user should not have accidentally triggered this
 			### so just throw a 400
 			abort(400)
 
+################################################################################
+
+def get_cmdb_ci_count(search = None):
+	"""Returns the number of CMDB CIs in the database, optionally restricted by a search term"""
+
+	## BUILD THE QUERY
+
+	# Start with no parameters, and a generic SELECT COUNT(*) from the appropriate table
+	params = ()
+	query = 'SELECT COUNT(*) AS `count` FROM `sncache_cmdb_ci` '
+
+	# If a search term is specified...
+	if search is not None:
+		# Build a filter string
+		like_string = '%' + search + '%'
+
+		# Allow the search to match on name or u_number
+		query = query + "WHERE (`name` LIKE %s OR `u_number` LIKE %s)"
+
+		# Add the filter string to the parameters of the query. Add it 
+		# three times as there are three columns to match on.
+		params = (like_string, like_string)
+
+	# Query the database
+	cur = g.db.cursor(mysql.cursors.DictCursor)
+	cur.execute(query, params)
+
+	# Get the results
+	row = cur.fetchone()
+
+	# Return the count
+	return row['count']
 
 ################################################################################
 
-def get_systems(class_name = None, order = None, limit_start = None, limit_length = None):
-	"""Returns the list of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost), and ordered (defaults to "name")"""
+def get_cmdb_cis(limit_start = None, limit_length = None, search = None):
+	"""Returns the list of systems from the ServiceNow CMDB CI cache table."""
 
-	# Build the query
+	## BUILD THE QUERY
+
+	# Start with no parameters, and a generic SELECT from the appropriate table
 	params = ()
-	query = "SELECT `id`, `type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `cmdb_id` FROM `systems` "
-	if class_name is not None:
-		query = query + "WHERE `class` = %s"
-		params = (class_name,)
-	query = query + " ORDER	BY ";
-	if order is None:
-		query = query + "`name`"
-	if order in ["name", "number", "allocation_date", "allocation_who"]:
-		query = query + "`" + order + "`"
+	query = "SELECT `sys_id`, `sys_class_name`, `name`, `operational_status`, `u_number`, `short_description` FROM `sncache_cmdb_ci` "
+
+	# If a search term is specified...
+	if search is not None:
+		# Build a filter string
+		like_string = '%' + search + '%'
+
+		# Allow the search to match on name, or u_number
+		query = query + "WHERE (`name` LIKE %s OR `u_number` LIKE %s)"
+
+		# Add the filter string to the parameters of the query. Add it 
+		# three times as there are three columns to match on.
+		params = (like_string, like_string)
+
+	# If a limit is specified, we need to add that on
 	if limit_start is not None or limit_length is not None:
 		query = query + " LIMIT "
 		if limit_start is not None:
+			# Start is specified (which syntactically means length 
+			# must also be specified)
 			query = query + str(int(limit_start)) + ","
 		if limit_length is not None:
+			# Add on the number of rows to return
 			query = query + str(int(limit_length))
+		else:
+			# We must always specify how many rows to return in SQL.
+			# If we want them all, but have specified a limit_start,
+			# we have to request as many rows as possible.
+			#
+			# Seriously, this is how MySQL recommends to do this :(
+			query = query + "18446744073709551610"
 
 	# Query the database
 	cur = g.db.cursor(mysql.cursors.DictCursor)
@@ -124,6 +171,170 @@ def get_systems(class_name = None, order = None, limit_start = None, limit_lengt
 
 	# Return the results
 	return cur.fetchall()
+
+################################################################################
+
+def get_system_count(class_name = None, search = None, show_decom = True):
+	"""Returns the number of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost)"""
+
+	## BUILD THE QUERY
+
+	# Start with no parameters, and a generic SELECT COUNT(*) from the appropriate table
+	params = ()
+	query = 'SELECT COUNT(*) AS `count` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`'
+
+	# If a class_name is specfied, add on a WHERE clause
+	if class_name is not None:
+		query = query + "WHERE `class` = %s"
+		params = (class_name,)
+
+	# If a search term is specified...
+	if search is not None:
+		# Build a filter string
+		like_string = '%' + search + '%'
+
+		# If a class name was specified already, we need to AND the query,
+		# otherwise we need to start the WHERE clause
+		if class_name is not None:
+			query = query + " AND "
+		else:
+			query = query + "WHERE "
+
+		# Allow the search to match on name, allocation_comment or 
+		# allocation_who
+		query = query + "(`name` LIKE %s OR `allocation_comment` LIKE %s OR `allocation_who` LIKE %s)"
+
+		# Add the filter string to the parameters of the query. Add it 
+		# three times as there are three columns to match on.
+		params = params + (like_string, like_string, like_string)
+
+	# If show_decom is set to false, then exclude systems that are no longer In Service
+	if show_decom == False:
+		if class_name is not None or search is not None:
+			query = query + " AND "
+		else:
+			query = query + "WHERE "
+
+		query = query + ' (`sncache_cmdb_ci`.`operational_status` = "In Service" OR `sncache_cmdb_ci`.`operational_status` IS NULL)'
+
+	# Query the database
+	cur = g.db.cursor(mysql.cursors.DictCursor)
+	cur.execute(query, params)
+
+	# Get the results
+	row = cur.fetchone()
+
+	# Return the count
+	return row['count']
+
+################################################################################
+
+def get_system_by_id(id):
+	# Query the database
+	cur = g.db.cursor(mysql.cursors.DictCursor)
+	cur.execute("SELECT `id`, `type`, `class`, `number`, `systems`.`name` AS `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `cmdb_id`, `sys_class_name` AS `cmdb_sys_class_name`, `sncache_cmdb_ci`.`name` AS `cmdb_name`, `operational_status` AS `cmdb_operational_status`, `u_number` AS `cmdb_u_number`, `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` WHERE `id` = %s", (id,))
+
+	# Return the results
+	return cur.fetchone()
+
+################################################################################
+
+def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, show_decom = True):
+	"""Returns the list of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost), and ordered (defaults to "name")"""
+
+	## BUILD THE QUERY
+
+	# Start with no parameters, and a generic SELECT from the appropriate table
+	params = ()
+	query = "SELECT `systems`.`id` AS `id`, `systems`.`type` AS `type`, `systems`.`class` AS `class`, `systems`.`number` AS `number`, `systems`.`name` AS `name`, `systems`.`allocation_date` AS `allocation_date`, `systems`.`allocation_who` AS `allocation_who`, `systems`.`allocation_comment` AS `allocation_comment`, `systems`.`cmdb_id` AS `cmdb_id`, `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` "
+
+	# If a class_name is specfied, add on a WHERE clause
+	if class_name is not None:
+		query = query + "WHERE `class` = %s"
+		params = (class_name,)
+
+	# If a search term is specified...
+	if search is not None:
+		# Build a filter string
+		like_string = '%' + search + '%'
+
+		# If a class name was specified already, we need to AND the query,
+		# otherwise we need to start the WHERE clause
+		if class_name is not None:
+			query = query + " AND "
+		else:
+			query = query + "WHERE "
+
+		# Allow the search to match on name, allocation_comment or 
+		# allocation_who
+		query = query + "(`name` LIKE %s OR `allocation_comment` LIKE %s OR `allocation_who` LIKE %s)"
+
+		# Add the filter string to the parameters of the query. Add it 
+		# three times as there are three columns to match on.
+		params = params + (like_string, like_string, like_string)
+
+	# If show_decom is set to false, then exclude systems that are no longer In Service
+	if show_decom == False:
+		if class_name is not None or search is not None:
+			query = query + " AND "
+		else:
+			query = query + "WHERE "
+
+		query = query + ' (`sncache_cmdb_ci`.`operational_status` = "In Service" OR `sncache_cmdb_ci`.`operational_status` IS NULL)'
+
+	# Handle the ordering of the rows
+	query = query + " ORDER BY ";
+
+	# By default, if order is not specified, we order by name
+	if order is None:
+		query = query + "`name`"
+
+	# Validate the name of the column to sort by (this prevents errors and
+	# also prevents SQL from accidentally being injected). Add the column
+	# name on to the query
+	if order in ["name", "number", "allocation_comment", "allocation_date", "allocation_who", "cmdb_operational_status"]:
+		query = query + "`" + order + "`"
+
+	# Determine which direction to order in, and add that on
+	if order_asc:
+		query = query + " ASC"
+	else:
+		query = query + " DESC"
+
+	# If a limit is specified, we need to add that on
+	if limit_start is not None or limit_length is not None:
+		query = query + " LIMIT "
+		if limit_start is not None:
+			# Start is specified (which syntactically means length 
+			# must also be specified)
+			query = query + str(int(limit_start)) + ","
+		if limit_length is not None:
+			# Add on the number of rows to return
+			query = query + str(int(limit_length))
+		else:
+			# We must always specify how many rows to return in SQL.
+			# If we want them all, but have specified a limit_start,
+			# we have to request as many rows as possible.
+			#
+			# Seriously, this is how MySQL recommends to do this :(
+			query = query + "18446744073709551610"
+
+	# Query the database
+	cur = g.db.cursor(mysql.cursors.DictCursor)
+	cur.execute(query, params)
+
+	# Return the results
+	return cur.fetchall()
+
+################################################################################
+
+def class_display_name(name):
+	"""Maps a ServiceNow sys_class_name to a user-readable name"""
+
+	if name in app.config['CMDB_CLASS_NAMES']:
+		return app.config['CMDB_CLASS_NAMES'][name]
+	else:
+		return 'Unknown'
 
 ################################################################################
 
@@ -238,3 +449,19 @@ def auth_user(username, password):
 
 	## Catch all return false for LDAP auth
 	return False
+
+################################################################################
+
+def neocortex_connect():
+	proxy = Pyro4.Proxy('PYRO:neocortex@localhost:1888')
+	proxy._pyroHmacKey = app.config['NEOCORTEX_KEY']
+	proxy._pyroTimeout = 5
+	## TODO better error handling
+	proxy.ping()
+	return proxy
+
+################################################################################
+
+@app.context_processor
+def inject_template_data():
+    return dict(workflows=app.workflows)

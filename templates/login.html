@@ -6,6 +6,7 @@
 		<title>Cortex</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link href="//netdna.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+		<link href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.4.0/animate.min.css" rel="stylesheet">
 		<link href="{{ url_for('static', filename='css/login.css') }}" type="text/css" rel="stylesheet">
 
 		<!--[if lt IE 9]>
@@ -41,6 +42,15 @@
 		</noscript>
 		{% include 'javascript.html' %}
 		<script type="text/javascript" src="{{ url_for('static', filename='js/login.js') }}"></script>
+		<script type="text/javascript">
+		$( document ).ready(function() {
+			$( "#loginform" ).submit(function( event )
+			{
+				$('#loginbox').removeClass('zoomIn');
+				$('#loginbox').addClass('zoomOut');
+			});
+		});
+		</script>
 	</head>
 	<body>
 		<div class="hidden-xs uoslogo">
@@ -51,7 +61,7 @@
 			<div class="visible-xs mobilelogo">
 				<img src="{{ url_for('static', filename='images/uoslogowhite.png') }}"></img>
 			</div>
-			<div class="loginbox">
+			<div class="loginbox animated zoomIn" id="loginbox">
 				<h1>cortex</h1>
 				{% for category, message in get_flashed_messages(with_categories=true) %}
 				<div class="alert {{ category }} fade in">
@@ -60,7 +70,7 @@
 				</div>
 				{% endfor %}
 
-				<form role="form" action="{{ url_for('login') }}" method="POST" class="text-left">
+				<form id="loginform" role="form" action="{{ url_for('login') }}" method="POST" class="text-left">
 					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 					{% if next %}
 					<input name="next" type="hidden" value="{{next}}"/>

@@ -5,8 +5,8 @@
 	font-family: 'Orbitron', cursive;
 	font-weight: 600;
 	/*font-size: 30px;*/
-	text-shadow: 0px 0px 30px rgba(150, 150, 150, 1);
-	color: #FFFFFF !important;
+	text-shadow: 0px 0px 10px rgba(150, 150, 150, 1);
+	color: #999999 !important;
 	position: relative;
 	top: 3px;
 }
@@ -17,6 +17,11 @@ body
 	padding-bottom: 0px;
 }
 
+.control-label
+{
+	font-weight: bold;
+}
+
 /* override bootstrap's valign top in tables*/
 td, th
 {
@@ -25,7 +30,7 @@ td, th
 
 table#classes td
 {
-	width: 20%;
+	width: 16.6%;
 }
 
 table#classes td:last-child
@@ -128,6 +133,3 @@ table#classes td:last-child
 	text-align: left;
 	border: 3px #000000 solid;
 }
-	
-
-

@@ -1,15 +1,16 @@
 #!/usr/bin/python
 #
 
-from cortex import app
+from cortex import app, NotFoundError, DisabledError
 import cortex.core
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template
+from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
-import time
-import json
 import re
-import werkzeug
-import ldap
+import MySQLdb as mysql
+
+import time
+from multiprocessing import Process, Value
+import syslog
 
 ################################################################################
 #### HOME PAGE / LOGIN PAGE
@@ -81,14 +82,74 @@ def test():
 def dashboard():
 	return render_template('dashboard.html')
 
-@app.route('/systems')
-def systems():
-	systems = cortex.core.get_systems()
-	classes = cortex.core.get_classes(True)
-	return render_template('systems.html', systems=systems, classes=classes)
+################################################################################
 
-@app.route('/systems/reserve')
-def systems_reserve():
-	classes = cortex.core.get_classes(True)
-	return render_template('systems-reserve.html', classes=classes)
+@app.route('/vm/create/standard', methods=['GET','POST'])
+@cortex.core.login_required
+def vm_create_standard():
+	domain = "soton.ac.uk"
+
+	if request.method == 'GET' or request.method == 'HEAD':
+		return render_template('vm-create.html')
+	elif request.method == 'POST':
+		# Allocate a system and get its information
+		system_info = cortex.core.allocate_name('play', 'Automatic VM', 1)
+
+		# Grab the system name from the returned dictionary
+		system_name = system_info.keys()[0]
+		print system_name
+
+		# Allocate an IPv4 Address and Create a Host
+		ipv4addr = cortex.core.infoblox_create_host(system_name + "." + domain, "192.168.63.0/25")
+		print ipv4addr
+
+		if ipv4addr is None:
+			abort(500)
+
+		## OH MY GOD WE ARE LOOKING FOR NUCLEAR WESSELS
+		#cortex.core.vmware_clone_vm('2012r2template',system_name, cortex.core.OS_TYPE_BY_NAME['Windows'], ipv4addr, "192.168.63.126", "255.255.255.128")
+		cortex.core.vmware_clone_vm('autotest_rhel6template',system_name, cortex.core.OS_TYPE_BY_NAME['Linux'], ipv4addr, "192.168.63.126", "255.255.255.128")
+
+		return jsonify(system_name=system_name, ipv4addr=ipv4addr)
+
+################################################################################
+
+@app.route('/vm/create/sandbox', methods=['GET','POST'])
+@cortex.core.login_required
+def vm_create_sandbox():
+	return "Not Implemented"
+
+################################################################################
+
+@app.route('/task/status/<int:id>', methods=['GET'])
+@cortex.core.login_required
+def task_status(id):
+	# Get a cursor to the database
+	cur = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get the task
+	cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status` FROM `tasks` WHERE id = %s", (id,))
+	task = cur.fetchone()
+
+	# Get the events
+	cur.execute("SELECT `id`, `source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end` FROM `events` WHERE `related_id` = %s AND `source` = 'neocortex.task'", (id,))
+	events = cur.fetchall()
+
+	return render_template("task-status.html", id=id, task=task, events=events)
+
+@app.route('/task/status/<int:id>/log', methods=['GET'])
+@cortex.core.login_required
+def task_status_log(id):
+	# Get a cursor to the database
+	cur = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get the task
+	cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status` FROM `tasks` WHERE id = %s", (id,))
+	task = cur.fetchone()
+
+	# Get the events
+	cur.execute("SELECT `id`, `source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end` FROM `events` WHERE `related_id` = %s AND `source` = 'neocortex.task'", (id,))
+	events = cur.fetchall()
+
+	return render_template("task-status-log.html", id=id, task=task, events=events)
 

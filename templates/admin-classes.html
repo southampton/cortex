@@ -32,12 +32,20 @@
 		</div>
 
 		<div class="form-group">
+			<label class="col-sm-3 control-label">Comment</label>
+			<div class="col-sm-9">
+			  <input class="form-control" id="edit_class_comment" type="text" name="class_comment"></input>
+			</div>
+		</div>
+
+		<div class="form-group">
 		  <div class="checkbox col-sm-offset-3 col-sm-9">
 			<label>
-			  <input type="checkbox" checked="checked" id="edit_class_active" name="class_active"> Enabled for use
+			  <input type="checkbox" checked="checked" id="edit_class_active" name="class_active"> Allow new allocations?
 			</label>
 		  </div>
 		</div>
+
       </div>
 
       <div class="modal-footer">
@@ -50,18 +58,20 @@
 </div>
 
 <script type="text/javascript">
-$( document ).ready(function() {
-
-$('#edit_class').on('show.bs.modal', function (event)
+$( document ).ready(function() 
 {
-	var button = $(event.relatedTarget)
-	var active = button.data('active')
 
-	$('#edit_class_active').prop('checked', button.data('active'));
-	$('#edit_class_name').text(button.data('name'));
-	$('#edit_class_name_hidden').attr('value',button.data('name'));
-	$('#edit_class_digits').attr('value',button.data('digits'));
-})
+	$('#edit_class').on('show.bs.modal', function (event)
+	{
+		var button = $(event.relatedTarget)
+		var active = button.data('active')
+
+		$('#edit_class_active').prop('checked', !button.data('active'));
+		$('#edit_class_name').text(button.data('name'));
+		$('#edit_class_name_hidden').attr('value',button.data('name'));
+		$('#edit_class_digits').attr('value',button.data('digits'));
+		$('#edit_class_comment').attr('value',button.data('comment'));
+	})
 
 });
 </script>
@@ -83,7 +93,7 @@ $('#edit_class').on('show.bs.modal', function (event)
 
 		<p>
 			The class prefix should be short, typically three characters, e.g. 'srv' or 'stg'. The digits are the number of digits after
-			the class prefix, typically this is five, .e.g srv00000 or srv99999. If you're not sure its best to use a three character prefix
+			the class prefix, typically this is five, e.g. srv00000 or srv99999. If you're not sure, it's best to use a three character prefix
 			and five digits.
 		</p>
 
@@ -98,6 +108,13 @@ $('#edit_class').on('show.bs.modal', function (event)
 			<label class="col-sm-3 control-label">Digits</label>
 			<div class="col-sm-9">
 			  <input class="form-control" type="number" value="5" max="10" min="1" name="class_digits"></input>
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-3 control-label">Comment</label>
+			<div class="col-sm-9">
+			  <input class="form-control" type="text" name="class_comment"></input>
 			</div>
 		</div>
 
@@ -134,10 +151,11 @@ manually or automatically.</p>
 
 <table class="table table-striped" id="classes">
 	<thead>
-		<th><div>Name</div></th>
-		<th><div>Digits</div></th>
-		<th><div>Active</div></th>
-		<th><div>Entries</div></th>
+		<th>Name</th>
+		<th>Digits</th>
+		<th>Active</th>
+		<th>Entries</th>
+		<th width="30%">Comment</th>
 		<th></th>
 	</thead>
 	<tbody>
@@ -147,12 +165,10 @@ manually or automatically.</p>
 			<td>{{ class.digits }}</td>
 			<td>{% if class.disabled %}<i style="color:#d00" class="fa fa-fw fa-times"></i>{% else %}<i style="color:#0d0" class="fa fa-fw fa-check"></i>{% endif %}</td>
 			<td>{{ class.lastid }}</td>
-			<td><a data-toggle="modal" data-target="#edit_class" data-active="{{class.disabled}}" data-name="{{class.name}}" data-digits="{{class.digits}}" class="btn btn-default btn-sm"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i><span class="hidden-sm hidden-xs">Edit</span></a></td>
+			<td>{{ class.comment }}</td>
+			<td><a data-toggle="modal" data-target="#edit_class" data-active="{{class.disabled}}" data-comment="{{class.comment}}" data-name="{{class.name}}" data-digits="{{class.digits}}" class="btn btn-default btn-xs"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i><span class="hidden-sm hidden-xs">Edit</span></a></td>
 		</tr>
 {%- endfor %}
 	</tbody>
 </table>
-<script type="text/javascript">
-$(function() { $("#classes").tablesorter(); });
-</script>
 {% endblock %}

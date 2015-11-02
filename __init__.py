@@ -17,7 +17,7 @@ from datetime import timedelta
 DEBUG = False
 
 ## Enable the debug toolbar. DO NOT DO THIS ON A PRODUCTION SYSTEM. EVER. It exposes SECRET_KEY.
-DEBUG_TOOLBAR = True
+DEBUG_TOOLBAR = False
 
 ## Session signing key
 # Key used to sign/encrypt session data stored in cookies.
@@ -52,6 +52,7 @@ MYSQL_PORT=3306
 
 ## CMDB Integration
 CMDB_URL_FORMAT="http://localhost/cmdb/%s"
+CMDB_CLASS_NAMES={'cmdb_ci_esx_server': 'VMware ESXi Server', 'cmdb_ci_linux_server': 'Linux Server', 'cmdb_ci_win_server': 'Windows Server', 'cmdb_ci_solaris_server': 'Solaris Server', 'cmdb_ci_server': 'Generic Server', 'cmdb_ci': 'Unknown'}
 
 ## Cortex internal version number
 VERSION='0.1'
@@ -76,6 +77,22 @@ LOGIN_IMAGE_RANDOM_MAX = 17
 ## TOTP 2-factor auth
 TOTP_ENABLED = False
 TOTP_IDENT   = 'cortex'
+
+## Infoblox server
+INFOBLOX_HOST = "localhost" 
+INFOBLOX_USER = "user"
+INFOBLOX_PASS = "pass"
+
+## VMWare vCenter configuration
+VMWARE_HOST = "localhost"
+VMWARE_PORT = 443
+VMWARE_USER = ""
+VMWARE_PASS = ""
+
+## Neocortex is a daemon 
+NEOCORTEX_KEY="changeme"
+
+WORKFLOWS_DIR="/data/cortex/workflows/"
 
 ################################################################################
 
@@ -150,8 +167,11 @@ if app.config['DEBUG_TOOLBAR']:
 # load core functions
 import cortex.core
 import cortex.errors
-import cortex.views
 import cortex.admin
+
+# load view functions
+import cortex.views
+import cortex.systemviews
 
 #if app.config['TOTP_ENABLED']:
 #	if app.config['REDIS_ENABLED']:
@@ -159,5 +179,9 @@ import cortex.admin
 #	else:
 #		app.logger.error("Cannot enable TOTP 2-factor auth because REDIS is not enabled")
 
-# load anti csrf function reference into template engine
-app.jinja_env.globals['csrf_token']      = core.generate_csrf_token
+# load jinja functions
+app.jinja_env.globals['csrf_token']         = core.generate_csrf_token
+app.jinja_env.filters['class_display_name'] = core.class_display_name
+
+# preload workflows
+app.load_workflows()

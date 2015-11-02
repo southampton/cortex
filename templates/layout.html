@@ -8,11 +8,14 @@
 		<link rel="icon" href="../../favicon.ico">
 		{% include 'header-links.html' %}
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}">
+		<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.9/css/dataTables.bootstrap.min.css">
 		{% include 'javascript.html' %}
 		<script type="text/javascript" src="{{ url_for('static', filename='js/cortex.js') }}"></script>
+		<script type="text/javascript" src="https://cdn.datatables.net/1.10.9/js/jquery.dataTables.min.js"></script>
+		<script type="text/javascript" src="https://cdn.datatables.net/1.10.9/js/dataTables.bootstrap.min.js"></script>
 	</head>
 	<body>
-		<div class="navbar navbar-fixed-top navbar-inverse" role="navigation">
+		<div class="navbar navbar-fixed-top navbar-default" role="navigation">
 			<div class="container">
 				<div class="navbar-header">
 					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
@@ -31,7 +34,22 @@
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Systems <b class="caret"></b></a>
 							<ul class="dropdown-menu">
 								<li><a href="{{ url_for('systems') }}"><i class="fa fa-server fa-fw"></i> Systems</a></li>
-								<li><a href="{{ url_for('systems_reserve') }} "><i class="fa fa-edit fa-fw"></i> Reserve Hostname</a></li>
+								<li><a href="{{ url_for('systems_new') }} "><i class="fa fa-book fa-fw"></i> Allocate new system name</a></li>
+							</ul>
+						</li>
+						<li class="dropdown{%if active == 'create'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Workflows <b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								{% for workflow in workflows %}
+								<li><a href="{{ url_for('test') }} "><i class="fa fa-plus-circle fa-fw"></i> {{ workflow.display }}</a></li>
+								{% endfor %}
+							</ul>
+						</li>
+						<li class="dropdown{%if active == 'create'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Create <b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								<li><a href="{{ url_for('vm_create_standard') }} "><i class="fa fa-plus-circle fa-fw"></i> Create Standard VM</a></li>
+								<li><a href="{{ url_for('systems_new') }} "><i class="fa fa-edit fa-fw"></i> Create Sandbox VM</a></li>
 							</ul>
 						</li>
 						<li class="dropdown{%if active == 'admin'%} active{%endif%}">

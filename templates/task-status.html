@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+{% block body %}
+<style type="text/css">
+p.event
+{
+	margin: 1em 0em 1em 2em;
+	font-size: 16px;
+}
+i.fa-check
+{
+	color:#2c2;
+}
+i.fa-times
+{
+	color:#c22;
+}
+i.fa
+{
+	margin-right: 1em;
+}
+</style>
+
+<div class="page-header">
+<h3>Task Status</h3>
+</div>
+
+<div id="status-log">
+{% include "task-status-log.html" %}
+</div>
+
+<script type="text/javascript">
+window.setInterval(function() {
+	$.ajax({
+		url: '{{ url_for('task_status_log', id=id) }}',
+		success: function(data, textStatus, xhr) {
+			$('#status-log').html(data);
+		},
+		dataType: 'html'
+	});
+}, 10000);
+</script>
+
+{% endblock %}

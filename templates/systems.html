@@ -1,36 +1,76 @@
 {% extends "layout.html" %}
 {% block body %}
 
-<form role="form" class="form-inline">
-	<label for="class">Show System Class:</label> <select class="form-control" id="class" name="class">
-		<option>(All)</option>
-	{%- for class in classes %}
-		<option value="{{ class.name }}">{{ class.name }}</option>
-	{%- endfor %}
-	</select>
-<form>
+<div class="page-header">
+	<div class="pull-right" style="display:none"><button id="showdecom" type="button" class="btn btn-success btn-sm">Show Decommissioned Systems</button></div>
+<h3>Systems</h3>
+</div>
 
+<ul id="class-tabs" class="nav nav-tabs" style="margin-bottom:1em">
+	{%- for class in classes %}
+	<li {% if loop.index0 == 0 %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="{{ class.name }}" role="tab">{{ class.name }}</a></li>
+	{%- endfor %}
+	<li role="presentation"><a style="cursor:pointer" data-class="" role="tab">All</a></li>
+</ul>
+<div id="systemsWrapper">
 <table class="table table-condensed table-striped" id="systems">
 	<thead>
 		<th><div class="tablesorter-inner">Name</div></th>
 		<th><div class="tablesorter-inner">Comment</div></th>
 		<th><div class="tablesorter-inner">Allocated By</div></th>
 		<th width="150px"><div class="tablesorter-inner">Allocation Date</div></th>
-		<th width="210px"></th>
+		<th width="100px"><div class="tablesorter-inner">CI Status</div></th>
+		<th width="130px"></th>
 	</thead>
 	<tbody>
-{%- for system in systems %}
-		<tr>
-			<td>{{ system.name }}</td>
-			<td>{{ system.allocation_comment }}</td>
-			<td>{{ system.allocation_date.strftime("%Y-%m-%d %H:%M") }}</td>
-			<td>{{ system.allocation_who }}</td>
-			<td><a style="margin-right:0.5em" href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank"><i style="margin-right:0.2em" class="fa fa-fw fa-cloud"></i>CMDB</a><a style="margin-right:0.5em" href="#"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i>Edit</a><a href="#"><i style="margin-right:0.2em" class="fa fa-fw fa-times"></i>Delete</a></td>
-		</tr>
-{%- endfor %}
 	</tbody>
 </table>
+</div>
 <script type="text/javascript">
-$(function() { $("#systems").tablesorter(); });
+var CMDB_URL_FORMAT = "{{ config['CMDB_URL_FORMAT'] }}";
+$(function() {
+	var systemsTable = $('#systems').DataTable({
+		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
+		"pageLength": 15,
+		"order": [[0, 'asc']],
+		"columns": [null, null, null, null, null, { "orderable": false, "targets": 0 }],
+		"serverSide": true,
+		"searchDelay": 500,
+		"ajax": {
+			"url": "{{ url_for('systems_json') }}",
+			"data": function (d) {
+				d.filter_group = $('#class-tabs li.active a').attr('data-class');
+				d.show_decom = ($('#showdecom').hasClass('btn-success') ? "1" : "0");
+			}
+		},
+		"searching": true,
+		"rowCallback": function(row, data, index) {
+			{#- data[6] is CMDB URL, data[5] is database ID, data[4] is operational status #}
+			$('td:eq(5)', row).html('<a class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/edit/' + data[6] + '"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i>Edit</a>' + (data[5] != '' ? '<a class="btn btn-xs btn-default" href="' + data[5] + '" target="_blank"><i style="margin-right:0.2em" class="fa fa-fw fa-cloud"></i>CMDB</a>' : ''));
+			if (data[4] == "" || data[4] == undefined)
+			{
+				$('td:eq(4)', row).html("Unknown");
+			}
+		}
+	});
+	$('#class-tabs li').click(function() {
+		$('#class-tabs li').removeClass('active');
+		$(this).addClass('active');
+		$('#systemsWrapper').fadeOut(150, function() {
+			systemsTable.ajax.reload(function() {
+				$('#systemsWrapper').fadeIn(150);
+			});
+		});
+	});
+	$('#showdecom').click(function() {
+		$('#showdecom').toggleClass('btn-success');
+		$('#showdecom').toggleClass('btn-danger');
+		$('#systemsWrapper').fadeOut(150, function() {
+			systemsTable.ajax.reload(function() {
+				$('#systemsWrapper').fadeIn(150);
+			});
+		});
+	});
+});
 </script>
 {% endblock %}
