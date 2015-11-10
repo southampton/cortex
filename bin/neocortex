@@ -8,6 +8,9 @@ import imp
 from multiprocessing import Process, Value
 import MySQLdb as mysql
 import sys
+import requests
+import json
+import time
 
 ## for vmware
 from pyVmomi import vim
@@ -16,10 +19,6 @@ from pyVim.connect import SmartConnect, Disconnect
 CONFIG_FILE = '/data/cortex/cortex.conf'
 Pyro4.config.SERVERTYPE = "multiplex"
 Pyro4.config.SOCK_REUSE = True
-OS_TYPE_BY_ID   = {0: "None", 1: "Linux", 2: "Windows" }
-OS_TYPE_BY_NAME = {"None": 0, "Linux": 1, "Windows": 2}
-SYSTEM_TYPE_BY_ID = {0: "System", 1: "Legacy", 2: "Other"}
-SYSTEM_TYPE_BY_NAME = {"System": 0, "Legacy": 1, "Other": 2}
 
 class NotFoundError(Exception):
 	"""Exception to represent a condition where something asked for is not found"""
@@ -32,6 +31,11 @@ class InfobloxError(Exception):
 
 class NeoCortexLib(object):
 	"""Library functions used in both neocortex itself and the neocortex tasks, hence a seperate object"""
+
+	OS_TYPE_BY_ID   = {0: "None", 1: "Linux", 2: "Windows" }
+	OS_TYPE_BY_NAME = {"None": 0, "Linux": 1, "Windows": 2}
+	SYSTEM_TYPE_BY_ID = {0: "System", 1: "Legacy", 2: "Other"}
+	SYSTEM_TYPE_BY_NAME = {"System": 0, "Legacy": 1, "Other": 2}
 
 	def __init__(self, db, config):
 		self.db = db
@@ -97,7 +101,7 @@ class NeoCortexLib(object):
 				new_name   = self.pad_system_name(class_name, new_number, class_data['digits'])
 
 				cur.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`) VALUES (%s, %s, %s, %s, NOW(), %s, %s)",
-					(SYSTEM_TYPE_BY_NAME['System'], class_name, new_number, new_name, username, comment))
+					(self.SYSTEM_TYPE_BY_NAME['System'], class_name, new_number, new_name, username, comment))
 
 				# store a record of the new system so we can give this back to the browser in a minute
 				new_systems[new_name] = cur.lastrowid
@@ -164,21 +168,37 @@ class NeoCortexLib(object):
 
 		return obj
 
+	def vmware_task_wait(self, task):
+		""" wait for vcenter task to finish """
+
+		task_done = False
+
+		while not task_done:
+			if task.info.state == 'success':
+				return True
+
+			elif task.info.state == 'error':
+				return False
+
+			## lets not busy wait CPU 100%...
+			time.sleep(1)
+
 	################################################################################
 
 	def vmware_clone_vm(self, template_name, vm_name, os_type, ipaddress, gateway, netmask):
-		si = SmartConnect(host=self.configmy['VMWARE_HOST'], user=self.config['VMWARE_USER'], pwd=self.config['VMWARE_PASS'], port=self.config['VMWARE_PORT'])
+		si = SmartConnect(host=self.config['VMWARE_HOST'], user=self.config['VMWARE_USER'], pwd=self.config['VMWARE_PASS'], port=self.config['VMWARE_PORT'])
 		content = si.RetrieveContent()
-		template = vmware_get_obj(content, [vim.VirtualMachine], template_name)
+		template = self.vmware_get_obj(content, [vim.VirtualMachine], template_name)
 
-		datacenter = vmware_get_obj(content, [vim.Datacenter], None)
-		datastore  = vmware_get_obj(content, [vim.Datastore], None)
-		cluster    = vmware_get_obj(content, [vim.ClusterComputeResource], None)
+		datacenter = self.vmware_get_obj(content, [vim.Datacenter], None)
+		datastore  = self.vmware_get_obj(content, [vim.Datastore], None)
+		cluster    = self.vmware_get_obj(content, [vim.ClusterComputeResource], None)
 
-		rpool      = vmware_get_obj(content, [vim.ResourcePool], 'Root Resource Pool')
+		rpool      = self.vmware_get_obj(content, [vim.ResourcePool], 'Root Resource Pool')
+		destfolder = datacenter.vmFolder
 
 		if rpool == None:
-			vmware_get_obj(content, [vim.ResourcePool], None)
+			rpool = cluster.resourcePool
 	
 		relospec = vim.vm.RelocateSpec()
 		relospec.datastore = datastore
@@ -208,7 +228,7 @@ class NeoCortexLib(object):
 		custspec.globalIPSettings = globalIPsettings
 		custspec.nicSettingMap = [adapterMapping]
 
-		if os_type == OS_TYPE_BY_NAME['Linux']:
+		if os_type == self.OS_TYPE_BY_NAME['Linux']:
 			linuxprep = vim.vm.customization.LinuxPrep()
 			linuxprep.domain = "soton.ac.uk"
 			linuxprep.hostName = vim.vm.customization.VirtualMachineNameGenerator()
@@ -218,7 +238,7 @@ class NeoCortexLib(object):
 			## finally load in the sysprep into the customisation spec
 			custspec.identity = linuxprep
 		
-		if os_type == OS_TYPE_BY_NAME['Windows']:
+		if os_type == self.OS_TYPE_BY_NAME['Windows']:
 
 			## the windows sysprep /CRI
 			guiUnattended = vim.vm.customization.GuiUnattended()
@@ -254,10 +274,7 @@ class NeoCortexLib(object):
 		clonespec.customization = custspec
 		clonespec.powerOn = False
 
-		print "Asking vmware to clone the VM..."
-		task = template.Clone(folder=destfolder, name=vm_name, spec=clonespec)
-
-		## block waiting for VM to be created.
+		return template.Clone(folder=destfolder, name=vm_name, spec=clonespec)
 
 		## reconfig to cpu/ram/disk.
 		
@@ -314,10 +331,23 @@ class TaskHelper(object):
 		self.curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `start`) VALUES (%s, %s, %s, %s, %s, NOW())", ('neocortex.task', self.task_id, name, self.username, description))
 		self.db.commit()
 		self.event_id = self.curd.lastrowid
-		
-	def end_event(self, success=True):
+		return True
+
+	def update_event(self, description):
 		if self.event_id == -1:
 			return False
+
+		self.curd.execute("UPDATE `events` SET `desc` = %s WHERE `id` = %s", (description, self.event_id))
+		self.db.commit()
+
+		return True
+
+	def end_event(self, success=True, description=None):
+		if self.event_id == -1:
+			return False
+
+		if not description == None:
+			self.update_event(description)
 
 		if success:
 			status = 1
@@ -327,6 +357,8 @@ class TaskHelper(object):
 		self.curd.execute("UPDATE `events` SET `status` = %s WHERE `id` = %s", (status, self.event_id))
 		self.db.commit()
 		self.event_id = -1
+
+		return True
 
 	def _end_task(self, success=True):
 		# Handle closing an existing event if there is still one
@@ -466,9 +498,12 @@ class NeoCortex(object):
 
 		return task_id
 
+	## This function allows the Flask web app to allocate names (as well as tasks)
 	def allocate_name(self, class_name, system_comment, username, num):
 		lib = NeoCortexLib(self._get_db(), self.config)
 		return lib.allocate_name(class_name, system_comment, username, num)
+
+	## TODO add allocate_infoblox function too
 
 ################################################################################
 
