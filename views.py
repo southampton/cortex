@@ -121,9 +121,11 @@ def vm_create_sandbox():
 
 ################################################################################
 
-@app.route('/task/status/<int:id>', methods=['GET'])
-@cortex.core.login_required
-def task_status(id):
+def render_task_status(id, template):
+	"""The task_status and task_status_log functions do /very/ similar
+	things. This function does that work, and is herely purely to reduce
+	code duplication."""
+
 	# Get a cursor to the database
 	cur = g.db.cursor(mysql.cursors.DictCursor)
 
@@ -131,25 +133,25 @@ def task_status(id):
 	cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status` FROM `tasks` WHERE id = %s", (id,))
 	task = cur.fetchone()
 
-	# Get the events
+	# Get the events for the task
 	cur.execute("SELECT `id`, `source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end` FROM `events` WHERE `related_id` = %s AND `source` = 'neocortex.task'", (id,))
 	events = cur.fetchall()
 
-	return render_template("task-status.html", id=id, task=task, events=events)
+	return render_template(template, id=id, task=task, events=events)
+
+
+@app.route('/task/status/<int:id>', methods=['GET'])
+@cortex.core.login_required
+def task_status(id):
+	"""Handles the Task Status page for a individual task."""
+
+	return render_task_status(id, "task-status.html")
 
 @app.route('/task/status/<int:id>/log', methods=['GET'])
 @cortex.core.login_required
 def task_status_log(id):
-	# Get a cursor to the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
+	"""Much like task_status, but only returns the event log. This is used by 
+	an AJAX routine on the page to refresh the log every 10 seconds."""
 
-	# Get the task
-	cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status` FROM `tasks` WHERE id = %s", (id,))
-	task = cur.fetchone()
-
-	# Get the events
-	cur.execute("SELECT `id`, `source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end` FROM `events` WHERE `related_id` = %s AND `source` = 'neocortex.task'", (id,))
-	events = cur.fetchall()
-
-	return render_template("task-status-log.html", id=id, task=task, events=events)
+	return render_task_status(id, "task-status-log.html")
 

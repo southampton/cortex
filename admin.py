@@ -34,8 +34,27 @@ def get_classes(hide_disabled = False):
 	# Return the results
 	return cur.fetchall()
 
+################################################################################
+
+@app.route('/admin/tasks')
+def admin_tasks():
+	"""Displays the list of tasks to the user."""
+
+	# Get all the tasks from the database
+	cur = g.db.cursor(mysql.cursors.DictCursor)
+	cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status` FROM `tasks`")
+	tasks = cur.fetchall()
+
+	# Render the page
+	return render_template('admin-tasks.html', tasks=tasks)
+
+################################################################################
+
 @app.route('/admin/classes', methods=['GET', 'POST'])
 def admin_classes():
+	"""Handles the content of the Admin -> Classes page"""
+
+	# On a GET request, display the list of classes page
 	if request.method == 'GET':
 		classes = get_classes(hide_disabled=False)
 		return render_template('admin-classes.html', classes=classes)
@@ -45,13 +64,13 @@ def admin_classes():
 		cur    = g.db.cursor()
 
 		if action in ['add_class','edit_class']:		
-			# class name/prefix
+			# Validate class name/prefix
 			class_name   = request.form['class_name']
 			if not re.match(r'^[a-z]{1,16}$',class_name):
 				flash("The class prefix you sent was invalid. It can only contain lowercase letters and be at least 1 character long and at most 16","alert-danger")
 				return redirect(url_for('admin_classes'))
 
-			# number of digits in hostname/server name
+			# Validate number of digits in hostname/server name
 			try:
 				class_digits = int(request.form['class_digits'])
 			except ValueError:
@@ -62,18 +81,19 @@ def admin_classes():
 				flash("The class digits you sent was invalid. It must be between 1 and 10.","alert-danger")
 				return redirect(url_for('admin_classes'))
 
-			# is the new class active?
+			# Extract whether the new class is active
 			if "class_active" in request.form:
 				class_disabled = 0
 			else:
 				class_disabled = 1
 
+			# Validate the comment for the class
 			class_comment = request.form['class_comment']
 			if not re.match(r'^.{3,512}$',class_comment):
 				flash("The class comment you sent was invalid. It must be between 3 and 512 characters long.","alert-danger")
 				return redirect(url_for('admin_classes'))
 
-			## check if the class exists
+			## Check if the class already exists
 			cur.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', (class_name))
 			if cur.fetchone() is None:
 				class_exists = False

@@ -78,7 +78,6 @@ class CortexFlask(Flask):
 				views_file = os.path.join(fqp,"views.py")
 				try:
 					view_module = imp.load_source(entry, views_file)
-					self.workflows.append({'config': {}, 'display': 'changeme', 'name': entry })
 					self.logger.info("Loaded workflow '" + entry + "' views module")
 				except Exception as ex:
 					self.logger.warn("Could not load workflow from file " + views_file + ": " + str(ex))
@@ -110,18 +109,14 @@ class CortexFlask(Flask):
 		])
 		self.jinja_loader = choice_loader
 		
-
-
-	def load_user_templates(self):
-		if self.config['LOCAL_TEMPLATE_DIR']:
-			choice_loader = jinja2.ChoiceLoader(
-			[
-				jinja2.FileSystemLoader(self.config['LOCAL_TEMPLATE_DIR']),
-				self.jinja_loader,
-			])
-			self.jinja_loader = choice_loader
-			self.logger.info('bargate will load templates from local source: ' + str(self.config['LOCAL_TEMPLATE_DIR']))			
-
+	def workflow_handler(self, workflow_name, workflow_title, **options):
+		def decorator(f):
+			rule = "/workflows/" + workflow_name
+			endpoint = options.pop('endpoint', None)
+			self.add_url_rule(rule, endpoint, f, **options)
+			self.workflows.append({'display': workflow_title, 'name': workflow_name, 'view_func': f.__name__ })
+			return f
+		return decorator
 
 	def log_exception(self, exc_info):
 		"""Logs an exception.  This is called by :meth:`handle_exception`

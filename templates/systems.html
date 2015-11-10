@@ -2,7 +2,7 @@
 {% block body %}
 
 <div class="page-header">
-	<div class="pull-right" style="display:none"><button id="showdecom" type="button" class="btn btn-success btn-sm">Show Decommissioned Systems</button></div>
+{#	<div class="pull-right" style="display:none"><button id="showdecom" type="button" class="btn btn-success btn-sm">Show Decommissioned Systems</button></div>#}
 <h3>Systems</h3>
 </div>
 
@@ -62,7 +62,7 @@ $(function() {
 			});
 		});
 	});
-	$('#showdecom').click(function() {
+{#	$('#showdecom').click(function() {
 		$('#showdecom').toggleClass('btn-success');
 		$('#showdecom').toggleClass('btn-danger');
 		$('#systemsWrapper').fadeOut(150, function() {
@@ -70,7 +70,7 @@ $(function() {
 				$('#systemsWrapper').fadeIn(150);
 			});
 		});
-	});
+	}); #}
 });
 </script>
 {% endblock %}

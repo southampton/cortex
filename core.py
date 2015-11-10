@@ -453,15 +453,28 @@ def auth_user(username, password):
 ################################################################################
 
 def neocortex_connect():
+	"""This function connects to the Neocortex job daemon using the Pyro4
+	Remote Procedure Call (RPC) library."""
+
+	# Connect, and perform some set up, including setting up a pre-shared
+	# message signing key
 	proxy = Pyro4.Proxy('PYRO:neocortex@localhost:1888')
 	proxy._pyroHmacKey = app.config['NEOCORTEX_KEY']
 	proxy._pyroTimeout = 5
+
 	## TODO better error handling
+
+	# Ping the server to ensure it's alive
 	proxy.ping()
+
 	return proxy
 
 ################################################################################
 
 @app.context_processor
 def inject_template_data():
-    return dict(workflows=app.workflows)
+	"""This function is called on every page load. It injects a 'workflows'
+	variable in to every render_template call, which is used to populate the
+	Workflows menu on the page."""
+
+	return dict(workflows=app.workflows)

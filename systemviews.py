@@ -16,8 +16,15 @@ import MySQLdb as mysql
 @app.route('/systems')
 @cortex.core.login_required
 def systems():
+	"""Shows the list of known systems to the user."""
+
+	# Get the list of systems
 	systems = cortex.core.get_systems()
+
+	# Get the list of active classes (used to populate the tab bar)
 	classes = cortex.admin.get_classes(True)
+
+	# Render
 	return render_template('systems.html', systems=systems, classes=classes)
 
 ################################################################################
@@ -25,11 +32,14 @@ def systems():
 @app.route('/systems/new', methods=['GET','POST'])
 @cortex.core.login_required
 def systems_new():
+	"""Handles the Allocate New System Name(s) page"""
 
+	# On GET requests, just show big buttons for all the classes
 	if request.method == 'GET':
 		classes = cortex.admin.get_classes(True)
 		return render_template('systems-new.html', classes=classes)
 
+	# On POST requests...
 	elif request.method == 'POST':
 		## The user has asked for one or more new system names.
 
@@ -54,11 +64,13 @@ def systems_new():
 		else:
 			system_comment = ""
 
-		## Allocate the names asked for.
+		## Allocate the names asked for
 		try:
+			# To prevent code duplication, this is done remotely by Neocortex. So, connect:
 			neocortex   = cortex.core.neocortex_connect()
-			new_systems = neocortex.allocate_name(class_name, system_comment, username=session['username'], num=system_number)
 
+			# Allocate the name
+			new_systems = neocortex.allocate_name(class_name, system_comment, username=session['username'], num=system_number)
 		except NotFoundError:
 			flash("The class prefix you asked for does not exist!", "alert-danger")
 			return redirect(url_for('systems_new'))
