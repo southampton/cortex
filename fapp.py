@@ -109,6 +109,23 @@ class CortexFlask(Flask):
 		])
 		self.jinja_loader = choice_loader
 		
+	"""This is a decorator function that is used in workflows to add the principal view function
+	into the app. It performs the function of Flask's @app.route but also adds the view function
+	to a menu on the website to allow the workflow to be activated by the user.
+
+	Usage is as such: @app.workflow_handler(__name__,"Title on menu", methods=['GET','POST'])
+
+	:param workflow_name: the name of the workflow. This should always be __name__.
+	:param workflow_title: the name of the workflow. This should always be __name__.
+	:param options: the options to be forwarded to the underlying
+                     :class:`~werkzeug.routing.Rule` object.  A change
+                     to Werkzeug is handling of method options.  methods
+                     is a list of methods this rule should be limited
+                     to (``GET``, ``POST`` etc.).  By default a rule
+                     just listens for ``GET`` (and implicitly ``HEAD``).
+                     Starting with Flask 0.6, ``OPTIONS`` is implicitly
+                     added and handled by the standard request handling.
+	"""
 	def workflow_handler(self, workflow_name, workflow_title, **options):
 		def decorator(f):
 			rule = "/workflows/" + workflow_name
