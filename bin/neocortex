@@ -189,81 +189,92 @@ class NeoCortexLib(object):
 
 	################################################################################
 
-	def vmware_clone_vm(self, template_name, vm_name, os_type, ipaddress, gateway, netmask):
-		si = SmartConnect(host=self.config['VMWARE_HOST'], user=self.config['VMWARE_USER'], pwd=self.config['VMWARE_PASS'], port=self.config['VMWARE_PORT'])
-		content = si.RetrieveContent()
-		template = self.vmware_get_obj(content, [vim.VirtualMachine], template_name)
+#	def vmware_clone_vm(self, template_name, vm_name, os_type, ipaddress, gateway, netmask):
 
-		## TODO allow changing these...
-		datacenter = self.vmware_get_obj(content, [vim.Datacenter], None)
-		datastore  = self.vmware_get_obj(content, [vim.Datastore], None)
-		cluster    = self.vmware_get_obj(content, [vim.ClusterComputeResource], None)
+	def vmware_vm_custspec(self, dhcp=True, gateway=None, netmask=None, ipaddr=None, dns_servers="8.8.8.8", dns_domain="localdomain", os_type=None, os_domain="localdomain", timezone=None, hwClockUTC=True, domain_join_user=None, domain_join_pass=None, fullname=None, orgname=None,productid=""):
+		"""This function generates a vmware VM customisation spec for use in cloning a VM. 
 
-		rpool      = self.vmware_get_obj(content, [vim.ResourcePool], 'Root Resource Pool')
-		destfolder = datacenter.vmFolder
+		   If you choose DHCP (the default) the gateway, netmask, ipaddr, dns_servers and dns_domain parameters are ignored.
 
-		if rpool == None:
-			rpool = cluster.resourcePool
-	
-		relospec = vim.vm.RelocateSpec()
-		relospec.datastore = datastore
-		relospec.pool = rpool
- 
+		   For Linux use these optional parameters:
+		   domain - usually soton.ac.uk
+		   hwClockUTC - usually True
+		   timezone - usually 'Europe/London'
+
+		   For Windows use these optional parameters:
+		   timezone - numerical ID, usually 85 for UK.
+		   domain   - the AD domain to join, usually soton.ac.uk
+		   domainAdminUser - the user to join AD with
+		   domainAdminPass - the user's password
+		   fullname - the fullname of the customer
+		   orgname - the organisation name of the customer
+
+		"""
+
 		## global IP settings
 		globalIPsettings = vim.vm.customization.GlobalIPSettings()
-		globalIPsettings.dnsSuffixList = ['soton.ac.uk']
-		globalIPsettings.dnsServerList  = ['152.78.110.110','152.78.111.81', '152.78.111.113']
+
+		## these are optional for DHCP
+		if not dhcp:
+			globalIPsettings.dnsSuffixList = [dns_domain]
+			globalIPsettings.dnsServerList  = dns_servers
+
+		## network settings master object
+		ipSettings                   = vim.vm.customization.IPSettings()
 
 		## the IP address
-		ipAddr = vim.vm.customization.FixedIp()
-		ipAddr.ipAddress = ipaddress
+		if dhcp:
+			ipSettings.ip            = vim.vm.customization.DhcpIpGenerator()
+		else:
+			fixedIP                  = vim.vm.customization.FixedIp()
+			fixedIP.ipAddress        = ipaddr
+			ipSettings.ip            = fixedIP
+			ipSettings.dnsDomain     = dns_domain
+			ipSettings.dnsServerList = dns_servers
+			ipSettings.gateway       = [gateway]
+			ipSettings.subnetMask    = netmask
 
-		## network settings
-		ipSettings               = vim.vm.customization.IPSettings()
-		ipSettings.dnsDomain     = "soton.ac.uk"
-		ipSettings.dnsServerList = ['152.78.110.110','152.78.111.81', '152.78.111.113']
-		ipSettings.gateway       = [gateway]
-		ipSettings.ip            = ipAddr
-		ipSettings.subnetMask    = netmask
-		adapterMapping           = vim.vm.customization.AdapterMapping()
-		adapterMapping.adapter   = ipSettings
+		## Create the 'adapter mapping'
+		adapterMapping            = vim.vm.customization.AdapterMapping()
+		adapterMapping.adapter    = ipSettings
 
-		# the customisation specification
-		custspec = vim.vm.customization.Specification()
+		# create the customisation specification
+		custspec                  = vim.vm.customization.Specification()
 		custspec.globalIPSettings = globalIPsettings
-		custspec.nicSettingMap = [adapterMapping]
+		custspec.nicSettingMap    = [adapterMapping]
 
 		if os_type == self.OS_TYPE_BY_NAME['Linux']:
+
 			linuxprep            = vim.vm.customization.LinuxPrep()
-			linuxprep.domain     = "soton.ac.uk"
+			linuxprep.domain     = os_domain
 			linuxprep.hostName   = vim.vm.customization.VirtualMachineNameGenerator()
-			linuxprep.hwClockUTC = True
-			linuxprep.timeZone   = "Europe/London"
+			linuxprep.hwClockUTC = hwClockUTC
+			linuxprep.timeZone   = timezone
 
 			## finally load in the sysprep into the customisation spec
 			custspec.identity = linuxprep
-		
-		if os_type == self.OS_TYPE_BY_NAME['Windows']:
+	
+		elif os_type == self.OS_TYPE_BY_NAME['Windows']:
 
 			## the windows sysprep /CRI
 			guiUnattended = vim.vm.customization.GuiUnattended()
 			guiUnattended.autoLogon = False
 			guiUnattended.autoLogonCount = 0
-			guiUnattended.timeZone = 85
+			guiUnattended.timeZone = timezone
 
 			sysprepIdentity = vim.vm.customization.Identification()
-			sysprepIdentity.domainAdmin = ""
+			sysprepIdentity.domainAdmin = domain_join_user
 			sysprepPassword = vim.vm.customization.Password()
 			sysprepPassword.plainText = True
-			sysprepPassword.value = ""
+			sysprepPassword.value = domain_join_pass
 			sysprepIdentity.domainAdminPassword = sysprepPassword
-			sysprepIdentity.joinDomain = "devdomain.soton.ac.uk"
+			sysprepIdentity.joinDomain = os_domain
 
 			sysprepUserData = vim.vm.customization.UserData()
 			sysprepUserData.computerName = vim.vm.customization.VirtualMachineNameGenerator()
-			sysprepUserData.fullName = "University of Southampton"
-			sysprepUserData.orgName = "University of Southampton"
-			sysprepUserData.productId = ""
+			sysprepUserData.fullName = fullname
+			sysprepUserData.orgName = orgname
+			sysprepUserData.productId = productid
 
 			sysprep                = vim.vm.customization.Sysprep()
 			sysprep.guiUnattended  = guiUnattended
@@ -273,17 +284,69 @@ class NeoCortexLib(object):
 			## finally load in the sysprep into the customisation spec
 			custspec.identity = sysprep
 
-		## Create the clone spec!
+		else:
+			raise Exception("Invalid os_type")
+
+		return custspec
+	
+
+	def vmware_clone_vm(self, vm_template, vm_name, vm_datacenter=None, vm_datastore=None, vm_folder=None, vm_cluster=None, vm_rpool=None, vm_network=None, vm_poweron=False, custspec=None):
+		"""This function connects to vcenter and clones a virtual machine. Only vm_template and
+		   vm_name are required parameters although this is unlikely what you'd want - please
+		   read the parameters and check if you want to use them.
+
+		   If you want to customise the VM after cloning attach a customisation spec via the 
+		   custspec optional parameter.
+
+		   TODO: vm_network currently does not work.
+		   TODO: exception throwing when objects are not found...
+
+		"""
+
+		## Connect to vCenter
+		si = SmartConnect(host=self.config['VMWARE_HOST'], user=self.config['VMWARE_USER'], pwd=self.config['VMWARE_PASS'], port=self.config['VMWARE_PORT'])
+		content = si.RetrieveContent()
+
+		## Get the template
+		template = self.vmware_get_obj(content, [vim.VirtualMachine], vm_template)
+
+		## VMware datacenter - this is only used to get the folder
+		datacenter = self.vmware_get_obj(content, [vim.Datacenter], vm_datacenter)
+
+		## VMware folder
+		if vm_folder:
+			destfolder = get_obj(content, [vim.Folder], vm_folder)
+		else:
+			destfolder = datacenter.vmFolder
+
+		## VMware datastore
+		datastore = self.vmware_get_obj(content, [vim.Datastore], vm_datastore)
+
+		## VMware Cluster
+		cluster = self.vmware_get_obj(content, [vim.ClusterComputeResource], vm_cluster)
+
+		## Resource pool TODO what about multiple "Root Resource Pool"'s ?!?
+		rpool = self.vmware_get_obj(content, [vim.ResourcePool], vm_rpool)
+		if rpool == None:
+			rpool = cluster.resourcePool
+
+		## Create the relocation specification
+		relospec = vim.vm.RelocateSpec()
+		relospec.datastore = datastore
+		relospec.pool = rpool
+
+		## Create the clone spec
 		clonespec = vim.vm.CloneSpec()
+		clonespec.powerOn  = vm_poweron
 		clonespec.location = relospec
-		clonespec.customization = custspec
-		clonespec.powerOn = False
+
+		## If the user wants to customise the VM after creation...
+		if not custspec == False:
+			clonespec.customization = custspec
 
 		return template.Clone(folder=destfolder, name=vm_name, spec=clonespec)
 
 	############################################################################
-
-#	def vmware_get_vm(self, name):
 
 	def vmware_vmreconfig_cpu(self, vm, cpus, cpus_per_socket, hotadd=True):
 
@@ -299,7 +362,6 @@ class NeoCortexLib(object):
 		configSpec.memoryHotAddEnabled = hotadd
 		configSpec.memoryMB            = megabytes
 		return vm.ReconfigVM_Task(configSpec)
-
 
 	def vmware_vm_add_disk(self, vm, size_in_bytes, thin=True):
 		
@@ -317,7 +379,7 @@ class NeoCortexLib(object):
 
 				## can't have more than 16 disks
 				if unit_number >= 16:
-					return False				
+					raise Exception("Too many disks on the SCSI controller")				
 
 		if controller == None:
 			raise Exception("No scsi controller found!")
@@ -349,11 +411,10 @@ class NeoCortexLib(object):
 		return vm.ReconfigVM_Task(spec=configSpec)
 	
 		## create service now object.
-		## power it on 
+		## power it on
 
 		## puppet stuff?
 		## let users logon??
-		## puppet environment group?!
 		## windows ou?
 		## machineid
 
