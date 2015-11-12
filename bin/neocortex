@@ -175,9 +175,13 @@ class NeoCortexLib(object):
 
 		while not task_done:
 			if task.info.state == 'success':
+				#print task
+				#print task.info.entity
 				return True
 
 			elif task.info.state == 'error':
+				#print task.info.error.faultMessage
+				#return False
 				return False
 
 			## lets not busy wait CPU 100%...
@@ -190,6 +194,7 @@ class NeoCortexLib(object):
 		content = si.RetrieveContent()
 		template = self.vmware_get_obj(content, [vim.VirtualMachine], template_name)
 
+		## TODO allow changing these...
 		datacenter = self.vmware_get_obj(content, [vim.Datacenter], None)
 		datastore  = self.vmware_get_obj(content, [vim.Datastore], None)
 		cluster    = self.vmware_get_obj(content, [vim.ClusterComputeResource], None)
@@ -214,14 +219,14 @@ class NeoCortexLib(object):
 		ipAddr.ipAddress = ipaddress
 
 		## network settings
-		ipSettings = vim.vm.customization.IPSettings()
-		ipSettings.dnsDomain = "soton.ac.uk"
+		ipSettings               = vim.vm.customization.IPSettings()
+		ipSettings.dnsDomain     = "soton.ac.uk"
 		ipSettings.dnsServerList = ['152.78.110.110','152.78.111.81', '152.78.111.113']
-		ipSettings.gateway = [gateway]
-		ipSettings.ip = ipAddr
-		ipSettings.subnetMask = netmask
-		adapterMapping = vim.vm.customization.AdapterMapping()
-		adapterMapping.adapter = ipSettings
+		ipSettings.gateway       = [gateway]
+		ipSettings.ip            = ipAddr
+		ipSettings.subnetMask    = netmask
+		adapterMapping           = vim.vm.customization.AdapterMapping()
+		adapterMapping.adapter   = ipSettings
 
 		# the customisation specification
 		custspec = vim.vm.customization.Specification()
@@ -229,11 +234,11 @@ class NeoCortexLib(object):
 		custspec.nicSettingMap = [adapterMapping]
 
 		if os_type == self.OS_TYPE_BY_NAME['Linux']:
-			linuxprep = vim.vm.customization.LinuxPrep()
-			linuxprep.domain = "soton.ac.uk"
-			linuxprep.hostName = vim.vm.customization.VirtualMachineNameGenerator()
+			linuxprep            = vim.vm.customization.LinuxPrep()
+			linuxprep.domain     = "soton.ac.uk"
+			linuxprep.hostName   = vim.vm.customization.VirtualMachineNameGenerator()
 			linuxprep.hwClockUTC = True
-			linuxprep.timeZone = "Europe/London"
+			linuxprep.timeZone   = "Europe/London"
 
 			## finally load in the sysprep into the customisation spec
 			custspec.identity = linuxprep
@@ -276,22 +281,81 @@ class NeoCortexLib(object):
 
 		return template.Clone(folder=destfolder, name=vm_name, spec=clonespec)
 
-		## reconfig to cpu/ram/disk.
+	############################################################################
+
+#	def vmware_get_vm(self, name):
+
+	def vmware_vmreconfig_cpu(self, vm, cpus, cpus_per_socket, hotadd=True):
+
+		configSpec                   = vim.VirtualMachineConfigSpec()
+		configSpec.cpuHotAddEnabled  = hotadd
+		configSpec.numCPUs           = cpus
+		configSpec.numCoresPerSocket = cpus_per_socket
+		return vm.ReconfigVM_Task(configSpec)
+
+	def vmware_vmreconfig_ram(self, vm, megabytes=1024, hotadd=True):
 		
-		## put machine ID in.
+		configSpec                     = vim.VirtualMachineConfigSpec()
+		configSpec.memoryHotAddEnabled = hotadd
+		configSpec.memoryMB            = megabytes
+		return vm.ReconfigVM_Task(configSpec)
 
+
+	def vmware_vm_add_disk(self, vm, size_in_bytes, thin=True):
+		
+		# find the last SCSI controller on the VM
+		for device in vm.config.hardware.device:
+			if isinstance(device, vim.vm.device.VirtualSCSIController):
+				controller = device
+
+			if hasattr(device.backing, 'fileName'):
+				unit_number = int(device.unitNumber) + 1
+
+				## unit_number 7 reserved scsi controller (cos of historical legacy stuff when LUN numbers were 0 to 7 and 7 was the highest priority hence the controller)
+				if unit_number == 7:
+					unit_number = 8
+
+				## can't have more than 16 disks
+				if unit_number >= 16:
+					return False				
+
+		if controller == None:
+			raise Exception("No scsi controller found!")
+
+		if unit_number == None:
+			raise Exception("Unable to calculate logical unit number for SCSI device")
+
+		newdev = vim.vm.device.VirtualDeviceSpec()		
+		newdev.fileOperation = "create"
+		newdev.operation = "add"
+		newdev.device = vim.vm.device.VirtualDisk()
+
+		newdev.device.backing = vim.vm.device.VirtualDisk.FlatVer2BackingInfo()
+		newdev.device.backing.diskMode = 'persistent'
+		if thin:
+			newdev.device.backing.thinProvisioned = True
+
+
+		newdev.device.capacityInBytes = size_in_bytes
+		newdev.device.capacityInKB = size_in_bytes * 1024
+		newdev.device.controllerKey = controller.key
+		newdev.device.unitNumber = unit_number
+
+		devices = []
+		devices.append(newdev)
+
+		configSpec = vim.vm.ConfigSpec()
+		configSpec.deviceChange = devices
+		return vm.ReconfigVM_Task(spec=configSpec)
+	
 		## create service now object.
-
 		## power it on 
 
 		## puppet stuff?
-
 		## let users logon??
-
 		## puppet environment group?!
-
 		## windows ou?
-
+		## machineid
 
 class TaskHelper(object):
 

@@ -107,7 +107,7 @@ def vm_create_standard():
 			abort(500)
 
 		## OH MY GOD WE ARE LOOKING FOR NUCLEAR WESSELS
-		#cortex.core.vmware_clone_vm('2012r2template',system_name, cortex.core.OS_TYPE_BY_NAME['Windows'], ipv4addr, "192.168.63.126", "255.255.255.128")
+		#cortex.core.vmware_clone_vm('2012R2_Template',system_name, cortex.core.OS_TYPE_BY_NAME['Windows'], ipv4addr, "192.168.63.126", "255.255.255.128")
 		cortex.core.vmware_clone_vm('autotest_rhel6template',system_name, cortex.core.OS_TYPE_BY_NAME['Linux'], ipv4addr, "192.168.63.126", "255.255.255.128")
 
 		return jsonify(system_name=system_name, ipv4addr=ipv4addr)
