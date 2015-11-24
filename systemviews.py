@@ -25,7 +25,7 @@ def systems():
 	classes = cortex.admin.get_classes(True)
 
 	# Render
-	return render_template('systems.html', systems=systems, classes=classes)
+	return render_template('systems.html', systems=systems, classes=classes, active='systems')
 
 ################################################################################
 
@@ -37,7 +37,7 @@ def systems_new():
 	# On GET requests, just show big buttons for all the classes
 	if request.method == 'GET':
 		classes = cortex.admin.get_classes(True)
-		return render_template('systems-new.html', classes=classes)
+		return render_template('systems-new.html', classes=classes, active='systems')
 
 	# On POST requests...
 	elif request.method == 'POST':
@@ -122,7 +122,7 @@ def systems_edit(id):
 		# Get the system out of the database
 		system = cortex.core.get_system_by_id(id)
 
-		return render_template('systems-edit.html', system=system)
+		return render_template('systems-edit.html', system=system, active='systems')
 	elif request.method == 'POST':
 		try:
 			# Get a cursor to the database
@@ -300,7 +300,7 @@ def systems_json():
 			cmdb_id = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
 		else:
 			cmdb_id = ''
-		system_data.append([row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'].strftime('%Y-%m-%d %H:%M:%S'), row['cmdb_operational_status'], cmdb_id, row['id']])
+		system_data.append([row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'].strftime('%Y-%m-%d %H:%M:%S'), row['cmdb_operational_status'], cmdb_id, row['id'], row['vmware_guest_state']])
 
 	# Return JSON data in the format DataTables wants
 	return jsonify(draw=draw, recordsTotal=system_count, recordsFiltered=filtered_count, data=system_data)

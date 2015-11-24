@@ -29,15 +29,20 @@ i.fa
 </div>
 
 <script type="text/javascript">
-window.setInterval(function() {
+var interval = window.setInterval(function() {
 	$.ajax({
 		url: '{{ url_for('task_status_log', id=id) }}',
 		success: function(data, textStatus, xhr) {
 			$('#status-log').html(data);
+			var taskStatus = $('#taskStatus').attr('data-taskstatus');
+			if (taskStatus != 0)
+			{
+				window.clearInterval(interval);
+			}
 		},
 		dataType: 'html'
 	});
-}, 1000);
+}, 2000);
 </script>
 
 {% endblock %}

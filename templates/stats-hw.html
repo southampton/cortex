@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block body %}
+<script type="text/javascript" src="//www.google.com/jsapi"></script>
+<script type="text/javascript">
+	google.load("visualization", "1", {packages:["corechart"]});
+	google.setOnLoadCallback(prepDataAndDrawChart);
+
+	var hwData;
+
+	function prepDataAndDrawChart()
+	{
+		hwData = new google.visualization.DataTable();
+		hwData.addColumn('string', 'VMware Hardware Version');
+		hwData.addColumn('number', 'Count');
+		hwData.addRows([
+{%- for row in stats_hw -%}
+	['{{ row.hwVersion }}', {{ row.count }}],
+{%- endfor -%}
+		]);
+
+		drawChart()
+	}
+
+	function drawChart()
+	{
+		var chart_hw = new google.visualization.PieChart(document.getElementById('chart_hw'));
+		chart_hw.draw(hwData, {title: 'VMware Hardware Version', is3D: true});
+	}
+</script>
+<div class="page-header">
+<h3>Statistics - Hardware Version</h3>
+</div>
+<div class="container" role="main">
+	<div id="chart_hw" style="width:100%; height: 500px"></div>
+</div>
+{% endblock %}

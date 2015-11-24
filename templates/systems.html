@@ -46,10 +46,23 @@ $(function() {
 		"searching": true,
 		"rowCallback": function(row, data, index) {
 			{#- data[6] is CMDB URL, data[5] is database ID, data[4] is operational status #}
-			$('td:eq(5)', row).html('<a class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/edit/' + data[6] + '"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i>Edit</a>' + (data[5] != '' ? '<a class="btn btn-xs btn-default" href="' + data[5] + '" target="_blank"><i style="margin-right:0.2em" class="fa fa-fw fa-cloud"></i>CMDB</a>' : ''));
+			$('td:eq(5)', row).html('<a class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/edit/' + data[6] + '"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i>View</a>' + (data[5] != '' ? '<a class="btn btn-xs btn-default" href="' + data[5] + '" target="_blank"><i style="margin-right:0.2em" class="fa fa-fw fa-cloud"></i>CMDB</a>' : ''));
 			if (data[4] == "" || data[4] == undefined)
 			{
 				$('td:eq(4)', row).html("Unknown");
+			}
+
+			if (data[7] == "running")
+			{
+				$('td:eq(0)', row).html("<i style='color:#2c2;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-play' />" + data[0]);
+			}
+			else if (data[7] == "notRunning")
+			{
+				$('td:eq(0)', row).html("<i style='color:#c22;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-stop' />" + data[0]);
+			}
+			else
+			{
+				$('td:eq(0)', row).html("<i style='color:#22c;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-question' />" + data[0]);
 			}
 		}
 	});

@@ -46,7 +46,7 @@ def admin_tasks():
 	tasks = cur.fetchall()
 
 	# Render the page
-	return render_template('admin-tasks.html', tasks=tasks)
+	return render_template('admin-tasks.html', tasks=tasks, active='admin')
 
 ################################################################################
 
@@ -57,7 +57,7 @@ def admin_classes():
 	# On a GET request, display the list of classes page
 	if request.method == 'GET':
 		classes = get_classes(hide_disabled=False)
-		return render_template('admin-classes.html', classes=classes)
+		return render_template('admin-classes.html', classes=classes, active='admin')
 
 	elif request.method == 'POST':
 		action = request.form['action']

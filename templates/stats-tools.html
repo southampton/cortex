@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+{% block body %}
+<script type="text/javascript" src="//www.google.com/jsapi"></script>
+<script type="text/javascript">
+	google.load("visualization", "1", {packages:["corechart"]});
+	google.setOnLoadCallback(prepDataAndDrawChart);
+
+	var statusData;
+	var versionData;
+
+	function prepDataAndDrawChart()
+	{
+		statusData = new google.visualization.DataTable();
+		statusData.addColumn('string', 'VMware Tools Status');
+		statusData.addColumn('number', 'Count');
+		statusData.addRows([
+{%- for row in stats_status -%}
+	['{{ row.toolsRunningStatus }}', {{ row.count }}],
+{%- endfor -%}
+		]);
+
+		versionData = new google.visualization.DataTable();
+		versionData.addColumn('string', 'VMware Tools Versions');
+		versionData.addColumn('number', 'Count');
+		versionData.addRows([
+{%- for row in stats_version -%}
+	['{{ row.toolsVersionStatus }}', {{ row.count }}],
+{%- endfor -%}
+		]);
+
+		drawChart()
+	}
+
+	function drawChart()
+	{
+		var chart_status = new google.visualization.PieChart(document.getElementById('chart_status'));
+		chart_status.draw(statusData, {title: 'VMware Tools Status', is3D: true});
+
+		var chart_status = new google.visualization.PieChart(document.getElementById('chart_versions'));
+		chart_status.draw(versionData, {title: 'VMware Tools Versions', is3D: true});
+	}
+</script>
+<div class="page-header">
+<h3>Statistics - VMware Tools</h3>
+</div>
+<div class="container" role="main">
+	<div id="chart_status" style="width:100%; height: 500px"></div>
+</div>
+<div class="container" role="main">
+	<div id="chart_versions" style="width:100%; height: 500px"></div>
+</div>
+{% endblock %}

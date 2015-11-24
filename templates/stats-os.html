@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+{% block body %}
+<script type="text/javascript" src="//www.google.com/jsapi"></script>
+<script type="text/javascript">
+	google.load("visualization", "1", {packages:["corechart"]});
+	google.setOnLoadCallback(prepDataAndDrawChart);
+
+	var osData, linuxData, windowsData;
+
+	function prepDataAndDrawChart()
+	{
+		osData = new google.visualization.DataTable();
+		osData.addColumn('string', 'Operating System');
+		osData.addColumn('number', 'Count');
+		osData.addRows([
+{%- for key in stats_osgroup|sort -%}
+			['{{ key }}', {{ stats_osgroup[key] }}],
+{%- endfor -%}
+		]);
+	
+		linuxData = new google.visualization.DataTable();
+		linuxData.addColumn('string', 'Operating System');
+		linuxData.addColumn('number', 'Count');
+		linuxData.addRows([
+{%- for row in stats_osfull -%}
+	{%- if 'Linux' in row.guestOS or 'CentOS' in row.guestFullname -%}
+		['{{ row.guestOS }}', {{ row.count }}],
+	{%- endif -%}
+{%- endfor -%}
+		]);
+
+		windowsData = new google.visualization.DataTable();
+		windowsData.addColumn('string', 'Operating System');
+		windowsData.addColumn('number', 'Count');
+		windowsData.addRows([
+{%- for row in stats_osfull -%}
+	{%- if 'Windows' in row.guestOS -%}
+		['{{ row.guestOS }}', {{ row.count }}],
+	{%- endif -%}
+{%- endfor -%}
+		]);
+
+		drawChart()
+	}
+
+	function drawChart()
+	{
+		var chart_os = new google.visualization.PieChart(document.getElementById('chart_os'));
+		chart_os.draw(osData, {title: 'OS Type Breakdown', is3D: true});
+		var chart_linux = new google.visualization.PieChart(document.getElementById('chart_linux'));
+		chart_linux.draw(linuxData, {title: 'Linux Breakdown', is3D: true});
+		var chart_windows = new google.visualization.PieChart(document.getElementById('chart_windows'));
+		chart_windows.draw(windowsData, {title: 'Windows Breakdown', is3D: true});
+	}
+</script>
+<div class="page-header">
+<h3>Statistics - Operating Systems</h3>
+</div>
+<div class="container" role="main">
+	<div id="chart_os" style="width:100%; height: 500px"></div>
+	<div id="chart_linux" style="width:100%; height: 500px"></div>
+	<div id="chart_windows" style="width:100%; height: 500px"></div>
+</div>
+{% endblock %}

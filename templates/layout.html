@@ -34,22 +34,25 @@
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Systems <b class="caret"></b></a>
 							<ul class="dropdown-menu">
 								<li><a href="{{ url_for('systems') }}"><i class="fa fa-server fa-fw"></i> Systems</a></li>
-								<li><a href="{{ url_for('systems_new') }} "><i class="fa fa-book fa-fw"></i> Allocate new system name</a></li>
+								<li><a href="{{ url_for('systems_new') }}"><i class="fa fa-book fa-fw"></i> Allocate new system name</a></li>
 							</ul>
 						</li>
 						<li class="dropdown{%if active == 'create'%} active{%endif%}">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Workflows <b class="caret"></b></a>
 							<ul class="dropdown-menu">
-								{% for workflow in workflows %}
-								<li><a href="{{ url_for(workflow.view_func) }} "><i class="fa fa-plus-circle fa-fw"></i> {{ workflow.display }}</a></li>
-								{% endfor %}
+								{% for workflow in workflows -%}
+								<li><a href="{{ url_for(workflow.view_func)}}"><i class="fa fa-plus-circle fa-fw"></i> {{ workflow.display }}</a></li>
+								{%- endfor %}
 							</ul>
 						</li>
-						<li class="dropdown{%if active == 'create'%} active{%endif%}">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Create <b class="caret"></b></a>
+						<li class="dropdown{%if active == 'stats'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Statistics <b class="caret"></b></a>
 							<ul class="dropdown-menu">
-								<li><a href="{{ url_for('vm_create_standard') }} "><i class="fa fa-plus-circle fa-fw"></i> Create Standard VM</a></li>
-								<li><a href="{{ url_for('systems_new') }} "><i class="fa fa-edit fa-fw"></i> Create Sandbox VM</a></li>
+								<li><a href="{{ url_for('stats_os') }}"><i class="fa fa-pie-chart fa-fw"></i> Operating Systems</a></li>
+								<li><a href="{{ url_for('stats_hw') }}"><i class="fa fa-pie-chart fa-fw"></i> Hardware Version</a></li>
+								<li><a href="{{ url_for('stats_power') }}"><i class="fa fa-pie-chart fa-fw"></i> Power State</a></li>
+								<li><a href="{{ url_for('stats_specs') }}"><i class="fa fa-bar-chart fa-fw"></i> RAM & CPU</a></li>
+								<li><a href="{{ url_for('stats_tools') }}"><i class="fa fa-pie-chart fa-fw"></i> VM Tools</a></li>
 							</ul>
 						</li>
 						<li class="dropdown{%if active == 'admin'%} active{%endif%}">

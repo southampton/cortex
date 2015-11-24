@@ -61,7 +61,6 @@ def logout():
 	return redirect(url_for('login'))
 
 #### HELP PAGES
-
 @app.route('/about')
 def about():
 	return render_template('about.html', active='help')
@@ -75,8 +74,11 @@ def nojs():
 	return render_template('nojs.html')
 	
 @app.route('/test')
+@cortex.core.login_required
 def test():
-	return render_template('test.html')
+	neocortex = cortex.core.neocortex_connect()
+	task_id = neocortex.cache_vmware(session['username'])
+	return redirect(url_for('task_status',id=task_id))
 
 @app.route('/dashboard')
 def dashboard():
@@ -84,40 +86,33 @@ def dashboard():
 
 ################################################################################
 
-@app.route('/vm/create/standard', methods=['GET','POST'])
-@cortex.core.login_required
-def vm_create_standard():
-	domain = "soton.ac.uk"
+#@app.route('/vm/create/standard', methods=['GET','POST'])
+#@cortex.core.login_required
+#def vm_create_standard():
+#	domain = "soton.ac.uk"
 
-	if request.method == 'GET' or request.method == 'HEAD':
-		return render_template('vm-create.html')
-	elif request.method == 'POST':
-		# Allocate a system and get its information
-		system_info = cortex.core.allocate_name('play', 'Automatic VM', 1)
-
-		# Grab the system name from the returned dictionary
-		system_name = system_info.keys()[0]
-		print system_name
-
-		# Allocate an IPv4 Address and Create a Host
-		ipv4addr = cortex.core.infoblox_create_host(system_name + "." + domain, "192.168.63.0/25")
-		print ipv4addr
-
-		if ipv4addr is None:
-			abort(500)
-
-		## OH MY GOD WE ARE LOOKING FOR NUCLEAR WESSELS
-		#cortex.core.vmware_clone_vm('2012R2_Template',system_name, cortex.core.OS_TYPE_BY_NAME['Windows'], ipv4addr, "192.168.63.126", "255.255.255.128")
-		cortex.core.vmware_clone_vm('autotest_rhel6template',system_name, cortex.core.OS_TYPE_BY_NAME['Linux'], ipv4addr, "192.168.63.126", "255.255.255.128")
-
-		return jsonify(system_name=system_name, ipv4addr=ipv4addr)
-
-################################################################################
-
-@app.route('/vm/create/sandbox', methods=['GET','POST'])
-@cortex.core.login_required
-def vm_create_sandbox():
-	return "Not Implemented"
+#	if request.method == 'GET' or request.method == 'HEAD':
+#		return render_template('vm-create.html')
+#	elif request.method == 'POST':
+#		# Allocate a system and get its information
+#		system_info = cortex.core.allocate_name('play', 'Automatic VM', 1)
+#
+#		# Grab the system name from the returned dictionary
+#		system_name = system_info.keys()[0]
+#		print system_name
+#
+#		# Allocate an IPv4 Address and Create a Host
+#		ipv4addr = cortex.core.infoblox_create_host(system_name + "." + domain, "192.168.63.0/25")
+#		print ipv4addr
+#
+#		if ipv4addr is None:
+#			abort(500)
+#
+#		## OH MY GOD WE ARE LOOKING FOR NUCLEAR WESSELS
+#		#cortex.core.vmware_clone_vm('2012R2_Template',system_name, cortex.core.OS_TYPE_BY_NAME['Windows'], ipv4addr, "192.168.63.126", "255.255.255.128")
+#		cortex.core.vmware_clone_vm('autotest_rhel6template',system_name, cortex.core.OS_TYPE_BY_NAME['Linux'], ipv4addr, "192.168.63.126", "255.255.255.128")
+#
+#		return jsonify(system_name=system_name, ipv4addr=ipv4addr)
 
 ################################################################################
 

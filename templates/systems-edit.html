@@ -28,11 +28,14 @@
   </div>
 </div>
 
+<form role="form" class="form-horizontal" method="POST">
 <div class="page-header">
+<div class="pull-right">
+<button class="btn btn-sm btn-primary" type="submit">Save Changes</button>
+</div>
 <h3>{{ system.name }}</h3>
 </div>
 
-<form role="form" class="form-horizontal" method="POST">
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 	<fieldset>
 		<div class="form-group">
@@ -46,19 +49,20 @@
 			<label class="col-sm-2 control-label" for="allocation_comment">Comment:</label><div class="col-sm-10"><input class="form-control" type="text" name="allocation_comment" id="allocation_comment" value="{{ system.allocation_comment or '' }}" /></div>
 		</div>
 		<div class="form-group">
-			<label class="col-sm-2 control-label" for="cmdb_id">CMDB System ID:</label><div class="col-sm-10"><div class="input-group"><input class="form-control" type="text" name="cmdb_id" id="cmdb_id" value="{{ system.cmdb_id or '' }}" /><div class="input-group-addon" style="padding:1px"><a data-toggle="modal" data-target="#search" class="btn btn-sm">Search</a></div></div>
-			<div class="col-sm-2"></div><p class="help-block col-sm-10">This is the unique identifier of the CMDB entry in ServiceNow, known as the 'sys_id'. This can be found in the URL for a CMDB entry, which is accessible from a CMDB page, by right-clicking the header and selecting Copy URL.</p>
+			<label class="col-sm-2 control-label" for="vmware_uuid">VMware UUID:</label><div class="col-sm-10"><input class="form-control" type="text" name="vmware_uuid" id="vmware_uuid" value="{{ system.vmware_uuid or '' }}" /></div>
+			<label class="col-sm-2 control-label"></label><div style="margin-bottom:0px" class="col-sm-10 help-block">This is the UUID of the VM within VMware.</div>
 		</div>
-		<div class="form-group pull-right">
-			<div class="col-sm-12">
-				<a class="btn btn-default" href="{{ url_for('systems') }}">Cancel</a>&nbsp;
-				<button class="btn btn-primary" type="submit">Save Changes</button>
-			</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label" for="cmdb_id">CMDB System ID:</label><div class="col-sm-10"><div class="input-group"><input class="form-control" type="text" name="cmdb_id" id="cmdb_id" value="{{ system.cmdb_id or '' }}" /><div class="input-group-addon" style="padding:1px"><a data-toggle="modal" data-target="#search" class="btn btn-sm">Search</a></div></div>
+			<div class="help-block">This is the unique identifier of the CMDB entry in ServiceNow, known as the 'sys_id'. This can be found in the URL for a CMDB entry, which is accessible from a CMDB page, by right-clicking the header and selecting Copy URL.</div>
 		</div>
 
 {%- if system.cmdb_id %}
 		<div class="clearfix"></div>
 		<div class="page-header" style="margin-top:0px">
+			<div class="pull-right">
+				<a class="btn btn-sm btn-primary" href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank"><i class="fa fa-sm fa-cloud"></i>&nbsp;&nbsp;Full details on ServiceNow</a>
+			</div>
 			<h4>CMDB Details</h4>
 		</div>
 
@@ -73,8 +77,29 @@
 		<div class="form-group">
 			<label class="col-sm-2 control-label" for="cmdb_short_description">Description:</label><div class="col-sm-10"><input readonly="readonly" class="form-control" type="text" name="cmdb_short_description" id="cmdb_short_description" value="{{ system.cmdb_short_description or '' }}" /></div>
 		</div>
-		<div class="form-group pull-right">
-			<div class="col-sm-12"><a class="btn btn-primary" href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank"><i class="fa fa-sm fa-cloud"></i>&nbsp;&nbsp;Full details on ServiceNow</a></div>
+{% endif %}
+
+{%- if system.vmware_uuid %}
+		<div class="clearfix"></div>
+		<div class="page-header" style="margin-top:0px">
+			<h4>VMware Details</h4>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-2 control-label" for="vm_name">Name in VMware:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_name" id="vm_name" value="{{ system.vmware_name or '' }}" /></div>
+			<label class="col-sm-2 control-label" for="vm_vcenter">vCenter:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_vcenter" id="vm_vcenter" value="{{ system.vmware_vcenter or '' }}" /></div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label" for="vm_state">Power State:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_state" id="vm_state" value="{{ system.vmware_guest_state or '' }}" /></div>
+			<label class="col-sm-2 control-label" for="vm_tools">VMware Tools:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_tools" id="vm_tools" value="{{ system.vmware_tools_version_status or '' }}" /></div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label" for="vm_cpus">Total CPUs:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_cpus" id="vm_cpus" value="{{ system.vmware_cpus or '' }}" /></div>
+			<label class="col-sm-2 control-label" for="vm_ram">RAM (MB):</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_ram" id="vm_ram" value="{{ system.vmware_ram or '' }}" /></div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-2 control-label" for="vm_os">Operating System:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_os" id="vm_os" value="{{ system.vmware_os or '' }}" /></div>
+			<label class="col-sm-2 control-label" for="vm_ipaddr">IP Address:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_ipaddr" id="vm_ipaddr" value="{{ system.vmware_ipaddr or '' }}" /></div>
 		</div>
 {% endif %}
 	</fieldset>

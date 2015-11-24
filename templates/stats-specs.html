@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+{% block body %}
+<script type="text/javascript" src="//www.google.com/jsapi"></script>
+<script type="text/javascript">
+	google.load("visualization", "1", {packages:["corechart"]});
+	google.setOnLoadCallback(prepDataAndDrawChart);
+
+	var specData;
+	var cpuData;
+
+	function prepDataAndDrawChart()
+	{
+		specData = new google.visualization.DataTable();
+		specData.addColumn('string', 'VMware Specs');
+		specData.addColumn('number', 'Count');
+		specData.addRows([
+{%- for key, value in stats_ram|dictsort(false, 'value') -%}
+	['{{ key }}', {{ value }}],
+{%- endfor -%}
+		]);
+
+		cpuData = new google.visualization.DataTable();
+		cpuData.addColumn('string', 'VMware Specs');
+		cpuData.addColumn('number', 'Count');
+		cpuData.addRows([
+{%- for key, value in stats_cpu|dictsort(false, 'value') -%}
+	['{{ key }}', {{ value }}],
+{%- endfor -%}
+		]);
+
+		drawChart()
+	}
+
+	function drawChart()
+	{
+		var chart_specs = new google.visualization.BarChart(document.getElementById('chart_specs'));
+		chart_specs.draw(specData, {title: 'RAM Specs', pieSliceText: 'label'});
+
+		var chart_cpu = new google.visualization.BarChart(document.getElementById('chart_cpu'));
+		chart_cpu.draw(cpuData, {title: 'CPU Specs', pieSliceText: 'label'});
+	}
+</script>
+<div class="page-header">
+<h3>Statistics - VM Specs</h3>
+</div>
+<div class="container" role="main">
+	<div id="chart_specs" style="width:100%; height: 600px"></div>
+</div>
+<div class="container" role="main">
+	<div id="chart_cpu" style="width:100%; height: 600px"></div>
+</div>
+{% endblock %}

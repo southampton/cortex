@@ -202,7 +202,7 @@ def get_system_count(class_name = None, search = None, show_decom = True):
 
 		# Allow the search to match on name, allocation_comment or 
 		# allocation_who
-		query = query + "(`name` LIKE %s OR `allocation_comment` LIKE %s OR `allocation_who` LIKE %s)"
+		query = query + "(`systems`.`name` LIKE %s OR `systems`.`allocation_comment` LIKE %s OR `systems`.`allocation_who` LIKE %s)"
 
 		# Add the filter string to the parameters of the query. Add it 
 		# three times as there are three columns to match on.
@@ -232,7 +232,7 @@ def get_system_count(class_name = None, search = None, show_decom = True):
 def get_system_by_id(id):
 	# Query the database
 	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute("SELECT `id`, `type`, `class`, `number`, `systems`.`name` AS `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `cmdb_id`, `sys_class_name` AS `cmdb_sys_class_name`, `sncache_cmdb_ci`.`name` AS `cmdb_name`, `operational_status` AS `cmdb_operational_status`, `u_number` AS `cmdb_u_number`, `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` WHERE `id` = %s", (id,))
+	cur.execute("SELECT `systems`.`id` AS `id`, `type`, `class`, `number`, `systems`.`name` AS `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `cmdb_id`, `sys_class_name` AS `cmdb_sys_class_name`, `sncache_cmdb_ci`.`name` AS `cmdb_name`, `operational_status` AS `cmdb_operational_status`, `u_number` AS `cmdb_u_number`, `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description`, `vmware_cache_vm`.`name` AS `vmware_name`, `vmware_cache_vm`.`vcenter` AS `vmware_vcenter`, `vmware_cache_vm`.`uuid` AS `vmware_uuid`, `vmware_cache_vm`.`numCPU` AS `vmware_cpus`, `vmware_cache_vm`.`memoryMB` AS `vmware_ram`, `vmware_cache_vm`.`guestState` AS `vmware_guest_state`, `vmware_cache_vm`.`guestFullName` AS `vmware_os`, `vmware_cache_vm`.`hwVersion` AS `vmware_hwversion`, `vmware_cache_vm`.`ipaddr` AS `vmware_ipaddr`, `vmware_cache_vm`.`toolsVersionStatus` AS `vmware_tools_version_status` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` LEFT JOIN `vmware_cache_vm` ON `systems`.`name` = `vmware_cache_vm`.`name` WHERE `systems`.`id` = %s", (id,))
 
 	# Return the results
 	return cur.fetchone()
@@ -246,7 +246,7 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 
 	# Start with no parameters, and a generic SELECT from the appropriate table
 	params = ()
-	query = "SELECT `systems`.`id` AS `id`, `systems`.`type` AS `type`, `systems`.`class` AS `class`, `systems`.`number` AS `number`, `systems`.`name` AS `name`, `systems`.`allocation_date` AS `allocation_date`, `systems`.`allocation_who` AS `allocation_who`, `systems`.`allocation_comment` AS `allocation_comment`, `systems`.`cmdb_id` AS `cmdb_id`, `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` "
+	query = "SELECT `systems`.`id` AS `id`, `systems`.`type` AS `type`, `systems`.`class` AS `class`, `systems`.`number` AS `number`, `systems`.`name` AS `name`, `systems`.`allocation_date` AS `allocation_date`, `systems`.`allocation_who` AS `allocation_who`, `systems`.`allocation_comment` AS `allocation_comment`, `systems`.`cmdb_id` AS `cmdb_id`, `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status`, `vmware_cache_vm`.`guestState` AS `vmware_guest_state` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` LEFT JOIN `vmware_cache_vm` ON `systems`.`name` = `vmware_cache_vm`.`name` "
 
 	# If a class_name is specfied, add on a WHERE clause
 	if class_name is not None:
@@ -267,7 +267,7 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 
 		# Allow the search to match on name, allocation_comment or 
 		# allocation_who
-		query = query + "(`name` LIKE %s OR `allocation_comment` LIKE %s OR `allocation_who` LIKE %s)"
+		query = query + "(`systems`.`name` LIKE %s OR `systems`.`allocation_comment` LIKE %s OR `systems`.`allocation_who` LIKE %s)"
 
 		# Add the filter string to the parameters of the query. Add it 
 		# three times as there are three columns to match on.

@@ -172,6 +172,7 @@ import cortex.admin
 # load view functions
 import cortex.views
 import cortex.systemviews
+import cortex.statsviews
 
 #if app.config['TOTP_ENABLED']:
 #	if app.config['REDIS_ENABLED']:
