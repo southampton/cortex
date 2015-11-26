@@ -40,6 +40,7 @@ def run(helper, options):
 		content = si.RetrieveContent()
 		helper.end_event(description="Connected to instance " + instance['hostname'])
 
+
 		vm_properties = ["name", "config.uuid", "config.hardware.numCPU",
 		                 "config.hardware.memoryMB", "guest.guestState",
 		                 "config.guestFullName", "config.guestId",

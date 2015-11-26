@@ -4,9 +4,11 @@ import Pyro4
 import os
 import MySQLdb as mysql
 import sys
-import requests
 import json
 import time
+
+import requests
+requests.packages.urllib3.disable_warnings()
 
 ## for vmware
 from pyVmomi import vim
@@ -172,8 +174,6 @@ class NeoCortexLib(object):
 			time.sleep(1)
 
 	################################################################################
-
-#	def vmware_clone_vm(self, template_name, vm_name, os_type, ipaddress, gateway, netmask):
 
 	def vmware_vm_custspec(self, dhcp=True, gateway=None, netmask=None, ipaddr=None, dns_servers="8.8.8.8", dns_domain="localdomain", os_type=None, os_domain="localdomain", timezone=None, hwClockUTC=True, domain_join_user=None, domain_join_pass=None, fullname=None, orgname=None,productid=""):
 		"""This function generates a vmware VM customisation spec for use in cloning a VM. 
