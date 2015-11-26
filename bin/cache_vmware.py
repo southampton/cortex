@@ -14,8 +14,11 @@ def run(helper, options):
 	of the import fails, the old data is retained.
 	"""
 
-	## Get cursor to the database
-	curd = helper.curd
+	## Get cursor to the database as a /seperate/ connection
+	## so that the helper object can still make changes to mysql
+	## whilst this big mysql transaction goes on
+	tdb = helper.db_connect()
+	curd = tdb.cursor(mysql.cursors.DictCursor)
 
 	helper.event("delete_cache", "Deleting existing cache")
 
@@ -82,7 +85,6 @@ def run(helper, options):
 
 		## List data centers ##########
 		helper.event("vmware_cache_dc", "Caching datacenter information from " + instance['hostname'])
-		print "Caching DCs"
 		dcs = helper.lib.vmware_get_objects(content, [vim.Datacenter])
 
 		# For each Data Center, put it in the database
@@ -93,7 +95,6 @@ def run(helper, options):
 
 		## List clusters ##########
 		helper.event("vmware_cache_dc", "Caching cluster information from " + instance['hostname'])
-		print "Caching Clusters"
 		clusters = helper.lib.vmware_get_objects(content, [vim.ClusterComputeResource])
 
 		# For each cluster
@@ -124,5 +125,5 @@ def run(helper, options):
 
 	# Commit all the changes to the database
 	helper.event("vmware_cache_dc", "Saving cache to disk")
-	helper.db.commit()
+	tdb.commit()
 	helper.end_event(description="Saved cache to disk")

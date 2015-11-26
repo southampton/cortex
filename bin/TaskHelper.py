@@ -24,7 +24,7 @@ class TaskHelper(object):
 
 	def run(self, task_module, options):
 
-		self.db   = mysql.connect(self.config['MYSQL_HOST'],self.config['MYSQL_USER'],self.config['MYSQL_PASS'],self.config['MYSQL_NAME'])
+		self.db   = self.db_connect()
 		self.curd = self.db.cursor(mysql.cursors.DictCursor)
 		self.lib  = NeoCortexLib(self.db, self.config)
 
@@ -34,6 +34,9 @@ class TaskHelper(object):
 		except Exception as ex:
 			self._log_exception(ex)
 			self._end_task(False)
+
+	def db_connect(self):
+		return mysql.connect(self.config['MYSQL_HOST'],self.config['MYSQL_USER'],self.config['MYSQL_PASS'],self.config['MYSQL_NAME'])
 
 	def _log_exception(self, ex):
 		exception_type = str(type(ex).__name__)

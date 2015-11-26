@@ -3,40 +3,8 @@
 
 from cortex import app
 import cortex.core
-from flask import Flask, request, session, g, redirect, url_for, abort, flash, render_template
+from flask import Flask, request, session, g, redirect, url_for, abort, flash, render_template, make_response
 import traceback
-
-def debugError(msg):
-	return output_error("Debug Message",msg)
-
-#### Output error handler
-## outputs a template error page, or if redirect is set, redirects with a popup
-## error set on the users' session so it pops up a modal dialog after redirect
-def output_error(title,message,redirect_to=None):
-	"""This function is called by other error functions to show the error to the
-	end user. It takes a title, message and a further error type. If redirect
-	is set then rather than show an error it will return the 'redirect' after
-	setting the popup error flags so that after the redirect a popup error is 
-	shown to the user. Redirect should be a string returned from flask redirect().
-	"""
-	
-	debug = ''
-	
-	if app.debug:
-		if app.config['DEBUG_FULL_ERRORS']:
-			debug = traceback.format_exc()
-			redirect_to = None
-			
-	if redirect_to == None:
-		## Render an error page
-		return render_template('error.html',title=title,message=message,debug=debug), 200
-	else:
-		## Set error popup and return
-		cortex.core.poperr_set(title,message)
-		return redirect_to
-
-################################################################################
-#### Flask error handlers - captures "abort" calls from within flask and our code
 
 def fatal(title="Fatal Error",message="Default Message"):
 	g.fault_title = title
@@ -158,12 +126,86 @@ def error405(error):
 	
 	return render_template('error.html',title="Not allowed",message="Method not allowed. This usually happens when your browser sent a POST rather than a GET, or vice versa.",debug=debug), 405
 
-################################################################################
-#### TEST ERROR PAGES
-
-@app.route('/err/<int:number>')
-def error_test(number):
+@app.errorhandler(Exception)
+def error_handler(error):
+	trace = str(traceback.format_exc())
 	if app.debug:
-		abort(number)
+		debug = trace
 	else:
-		return redirect(url_for('login'))
+		debug = "Debug output disabled. Ask your system administrator to consult the error log for more information"
+
+	error_resp = """
+<!doctype html>
+<html>
+<head>
+    <title>Cortex - Critical Error</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type="text/css">
+    body {
+        background-color: #f0f0f2;
+        margin: 0;
+        padding: 0;
+        font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    div {
+        width: 800px;
+        margin: 5em auto;
+        padding: 50px;
+        background-color: #fff;
+        border-radius: 1em;
+    }
+    @media (max-width: 900px) {
+        body {
+            background-color: #fff;
+        }
+        div {
+            width: auto;
+            margin: 0 auto;
+            border-radius: 0;
+            padding: 1em;
+        }
+    }
+    </style>    
+</head>
+<body>
+<div>
+    <h1>Cortex critical error</h1>
+    <p>Whilst processing your request an error occured that could not be interpreted.</p>
+	<pre>%s</pre>
+</div>
+</body>
+</html>
+""" % (debug)
+
+	if 'username' in session:
+		usr = session['username']
+	else:
+		usr = 'Not logged in'
+
+	app.logger.error("""Critical Error!
+HTTP Path:            %s
+HTTP Method:          %s
+Client IP Address:    %s
+User Agent:           %s
+User Platform:        %s
+User Browser:         %s
+User Browser Version: %s
+Username:             %s
+Traceback:
+%s
+""" % (
+
+			request.path,
+			request.method,
+			request.remote_addr,
+			request.user_agent.string,
+			request.user_agent.platform,
+			request.user_agent.browser,
+			request.user_agent.version,
+			usr,
+			trace,			
+		))
+
+	return make_response(error_resp, 500)

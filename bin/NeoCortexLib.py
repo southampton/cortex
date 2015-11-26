@@ -290,7 +290,7 @@ class NeoCortexLib(object):
 
 		"""
 
-		content = si.RetrieveContent()
+		content = service_instance.RetrieveContent()
 
 		## Get the template
 		template = self.vmware_get_obj(content, [vim.VirtualMachine], vm_template)
