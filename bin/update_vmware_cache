@@ -38,8 +38,8 @@ if __name__ == "__main__":
 		neocortex._pyroHmacKey = config['NEOCORTEX_KEY']
 		neocortex._pyroTimeout = 5
 
-	# Ping the server to ensure it's alive
-		task_id = neocortex.cache_vmware('scheduler')
+		# Ping the server to ensure it's alive
+		task_id = neocortex.start_internal_task('scheduler', 'cache_vmware.py', '_cache_vmware')
 
 		print "job submitted with ID " + str(task_id)
 	except Exception as ex:

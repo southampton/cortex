@@ -72,13 +72,6 @@ def changelog():
 @app.route('/nojs')
 def nojs():
 	return render_template('nojs.html')
-	
-@app.route('/test')
-@cortex.core.login_required
-def test():
-	neocortex = cortex.core.neocortex_connect()
-	task_id = neocortex.cache_vmware(session['username'])
-	return redirect(url_for('task_status',id=task_id))
 
 @app.route('/dashboard')
 def dashboard():

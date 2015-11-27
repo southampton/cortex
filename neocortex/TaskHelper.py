@@ -36,7 +36,7 @@ class TaskHelper(object):
 			self._end_task(False)
 
 	def db_connect(self):
-		return mysql.connect(self.config['MYSQL_HOST'],self.config['MYSQL_USER'],self.config['MYSQL_PASS'],self.config['MYSQL_NAME'])
+		return mysql.connect(self.config['MYSQL_HOST'], self.config['MYSQL_USER'], self.config['MYSQL_PASS'], self.config['MYSQL_NAME'], charset='utf8')
 
 	def _log_exception(self, ex):
 		exception_type = str(type(ex).__name__)

@@ -76,7 +76,7 @@ class NeoCortex(object):
 		
 	def _db_connect(self):
 		syslog.syslog("Attempting connection to MySQL")
-		self.db = mysql.connect(self.config['MYSQL_HOST'], self.config['MYSQL_USER'], self.config['MYSQL_PASS'], self.config['MYSQL_NAME'])
+		self.db = mysql.connect(self.config['MYSQL_HOST'], self.config['MYSQL_USER'], self.config['MYSQL_PASS'], self.config['MYSQL_NAME'], charset='utf8')
 		curd = self.db.cursor(mysql.cursors.DictCursor)
 		curd.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED")
 		syslog.syslog("Connection to MySQL established")
@@ -168,16 +168,15 @@ class NeoCortex(object):
 		lib = NeoCortexLib(self._get_db(), self.config)
 		return lib.allocate_name(class_name, system_comment, username, num)
 
-	def cache_vmware(self, username="SYSTEM"):
-		task_file = "cache_vmware.py"
-		workflow_name = "_cache_vmware"
+	## This function allows arbitrary taks to be called
+	def start_internal_task(self, username, task_file, task_name):
 		try:
-			task_module = imp.load_source(workflow_name, task_file)
+			task_module = imp.load_source(task_name, task_file)
 		except Exception as ex:
-			raise ImportError("Could not load vmware cache task from file " + task_file + ": " + str(ex))
+			raise ImportError("Could not load internal task from file " + task_file + ": " + str(ex))
 
-		task_id      = self._record_task(workflow_name, username)
-		task_helper  = TaskHelper(self.config, workflow_name, task_id, username)
+		task_id      = self._record_task(task_name, username)
+		task_helper  = TaskHelper(self.config, task_name, task_id, username)
 		task         = Process(target=task_helper.run, args=(task_module, {}))
 		task.start()
 
