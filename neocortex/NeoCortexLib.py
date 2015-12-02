@@ -140,11 +140,21 @@ class NeoCortexLib(object):
 	def vmware_get_obj(self, content, vimtype, name):
 		"""
 		Return an object by name, if name is None the
-		first found object is returned
+		first found object is returned. Searches within
+		content.rootFolder (i.e. everything on the vCenter)
+		"""
+
+		return self.vmware_get_obj_within_parent(content, vimtype, name, content.rootFolder)
+
+	def vmware_get_obj_within_parent(self, content, vimtype, name, parent):
+		"""
+		Return an object by name, if name is None the
+		first found object is returned. Set parent to be
+		a Folder, Datacenter, ComputeResource or ResourcePool under
+		which to search for the object.
 		"""
 		obj = None
-		container = content.viewManager.CreateContainerView(
-		content.rootFolder, vimtype, True)
+		container = content.viewManager.CreateContainerView(parent, vimtype, True)
 		for c in container.view:
 			if name:
 				if c.name == name:
@@ -315,13 +325,30 @@ class NeoCortexLib(object):
 		## VMware datastore
 		datastore = self.vmware_get_obj(content, [vim.Datastore], vm_datastore)
 
-		## VMware Cluster
+		## Get the VMware Cluster
 		cluster = self.vmware_get_obj(content, [vim.ClusterComputeResource], vm_cluster)
 
-		## Resource pool TODO what about multiple "Root Resource Pool"'s ?!?
-		rpool = self.vmware_get_obj(content, [vim.ResourcePool], vm_rpool)
-		if rpool == None:
+		## You can't specify a cluster for a VM to be created on, instead you specify either a host or a resource pool.
+		## We will thus create within a resource pool. 
+
+		# If this function isn't passed a resource pool then choose the default:
+		if vm_rpool == None:
 			rpool = cluster.resourcePool
+
+		else:
+
+			## But if we are given a specific resource pool...
+			## ...but we werent given a specific cluster, then just search for the resource pool name anywhere on the vCenter:
+			if vm_cluster == None:
+				rpool = self.vmware_get_obj(content, [vim.ResourcePool], vm_rpool)
+
+			else:
+				# ...but if we were given a specific cluster *and* a specific resource pool, then search for the resource pool within that cluster's resource pools:
+				rpool = self.vmware_get_obj_within_parent(content, [vim.ResourcePool], vm_rpool, cluster.resourcePool)
+
+			## If we didn't find a resource pool just use the default one for the cluster
+			if rpool == None:
+				rpool = cluster.resourcePool					
 
 		## Create the relocation specification
 		relospec = vim.vm.RelocateSpec()
