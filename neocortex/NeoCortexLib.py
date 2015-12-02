@@ -135,6 +135,8 @@ class NeoCortexLib(object):
 		else:
 			raise InfobloxError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
 
+	################################################################################
+
 	def vmware_get_obj(self, content, vimtype, name):
 		"""
 		Return an object by name, if name is None the
@@ -153,6 +155,8 @@ class NeoCortexLib(object):
 				break
 
 		return obj
+
+	################################################################################
 
 	def vmware_task_wait(self, task):
 		""" wait for vcenter task to finish """
@@ -273,9 +277,13 @@ class NeoCortexLib(object):
 
 		return custspec
 
+	################################################################################
+
 	def vmware_smartconnect(self, tag):
 		instance = self.config['VMWARE'][tag]
 		return SmartConnect(host=instance['hostname'], user=instance['user'], pwd=instance['pass'], port=instance['port'])
+
+	################################################################################
 	
 	def vmware_clone_vm(self, service_instance, vm_template, vm_name, vm_datacenter=None, vm_datastore=None, vm_folder=None, vm_cluster=None, vm_rpool=None, vm_network=None, vm_poweron=False, custspec=None):
 		"""This function connects to vcenter and clones a virtual machine. Only vm_template and
@@ -348,6 +356,8 @@ class NeoCortexLib(object):
 		configSpec.numCoresPerSocket = cpus_per_socket
 		return vm.ReconfigVM_Task(configSpec)
 
+	############################################################################
+
 	def vmware_vmreconfig_ram(self, vm, megabytes=1024, hotadd=True):
 		"""Reconfigures the amount of RAM a VM has, and whether memory can be hot-
 		added to the system. 'vm' is a PyVmomi managed object, 'megabytes' is the 
@@ -360,6 +370,8 @@ class NeoCortexLib(object):
 		configSpec.memoryHotAddEnabled = hotadd
 		configSpec.memoryMB            = megabytes
 		return vm.ReconfigVM_Task(configSpec)
+
+	############################################################################
 
 	def vmware_vm_add_disk(self, vm, size_in_bytes, thin=True):
 		
@@ -408,10 +420,14 @@ class NeoCortexLib(object):
 		configSpec.deviceChange = devices
 		return vm.ReconfigVM_Task(spec=configSpec)
 
+	############################################################################
+
 	def vmware_vm_poweron(self, vm):
 		"""Powers on a virtual machine."""
 
 		return vm.PowerOn()
+
+	############################################################################
 
 	def vmware_collect_properties(self, service_instance, view_ref, obj_type, path_set=None, include_mors=False):
 		"""
@@ -477,6 +493,7 @@ class NeoCortexLib(object):
 
 		return data
 
+	############################################################################
 
 	def vmware_get_container_view(self, service_instance, obj_type, container=None):
 		"""
@@ -494,6 +511,8 @@ class NeoCortexLib(object):
 		view_ref = service_instance.content.viewManager.CreateContainerView(container=container, type=obj_type, recursive=True)
 		return view_ref
 
+	############################################################################
+
 	def vmware_get_objects(self, content, vimtype):
 		"""
 		Return an object by name, if name is None the
@@ -503,8 +522,28 @@ class NeoCortexLib(object):
 		container = content.viewManager.CreateContainerView(content.rootFolder, vimtype, True)
 		return container.view
 
-	## --> THIS IS CURRENTLY UNTESTED!!! <--
-	def servicenow_create_ci(self, ci_name, os_type, os_name, cpus, ram_mb, disk_gb, ipaddr, virtual=True):
+	############################################################################
+
+	def set_link_id(self, cortex_system_id, cmdb_id):
+		"""
+		Sets the identifiers that link a system from the Cortex `systems` 
+		table to their relevant item in the CMDB.
+		 - cortex_system_id: The id of the system in the table (not the name)
+		 - cmdb_id: The value to store for the CMDB ID field.
+		"""
+
+		# Get a cursor to the database
+		cur = self.db.cursor(mysql.cursors.DictCursor)
+
+		# Update the database
+		cur.execute("UPDATE `systems` SET `cmdb_id` = %s WHERE `id` = %s", (cmdb_id, cortex_system_id))
+
+		# Commit
+		self.db.commit()
+
+	################################################################################
+
+	def servicenow_create_ci(self, ci_name, os_type, os_name, cpus='', ram_mb='', disk_gb='', ipaddr='', virtual=True):
 		"""Creates a new CI within ServiceNow.
 		     - ci_name: The name of the CI, e.g. srv01234
 		     - os_type: The OS type as a number, see OS_TYPE_BY_NAME
@@ -531,13 +570,13 @@ class NeoCortexLib(object):
 
 		# json= was only added in Requests 2.4.2, so might need to be data=json.dumps(vm_data)
 		# Content-Type header may be superfluous as Requests might add it anyway, due to json=
-		r = requests.post('https://' + self.config['SN_HOST'] + '/api/now/v1/table/' + table_name + '/', auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=vm_data)
+		r = requests.post('https://' + self.config['SN_HOST'] + '/api/now/v1/table/' + table_name, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=vm_data)
 
 		# Parse the response
 		if r is not None:
-			# Parse the JSON and return the sys_id that ServiceNow gives us
+			# Parse the JSON and return the sys_id that ServiceNow gives us along with the CMDB ID (u_number)
 			response_json = r.json()
-			return response_json['sys_id']
+			return (response_json['result']['sys_id'], response_json['result']['u_number'])
 		else:
 			raise Exception('Failed to create ServiceNow object. API Request failed')
 

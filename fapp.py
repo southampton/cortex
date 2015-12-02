@@ -70,6 +70,9 @@ class CortexFlask(Flask):
 		entries = os.listdir(self.config['WORKFLOWS_DIR'])
 		found = False
 		for entry in entries:
+			if entry.startswith('.'):
+				continue
+
 			fqp = os.path.join(self.config['WORKFLOWS_DIR'],entry)
 
 			if os.path.isdir(fqp):

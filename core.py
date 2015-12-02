@@ -478,3 +478,15 @@ def inject_template_data():
 	Workflows menu on the page."""
 
 	return dict(workflows=app.workflows)
+
+################################################################################
+
+def vmware_list_clusters(tag):
+
+	if tag in app.config['VMWARE']:
+		## SQL to grab the clusters from the cache
+		cur = g.db.cursor(mysql.cursors.DictCursor)
+		cur.execute("SELECT * FROM `vmware_cache_clusters` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname']))
+		return cur.fetchall()
+	else:
+		raise Exception("Invalid vmware tag")
