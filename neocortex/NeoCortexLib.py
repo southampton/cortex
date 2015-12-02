@@ -175,16 +175,44 @@ class NeoCortexLib(object):
 
 		while not task_done:
 			if task.info.state == 'success':
-				#print task
-				#print task.info.entity
 				return True
 
-			elif task.info.state == 'error':
-				#print task.info.error.faultMessage
-				#return False
+			if task.info.state == 'error':
 				return False
 
+			## other states are 'queued' and 'running'
+			## which we should just wait on.
+
 			## lets not busy wait CPU 100%...
+			time.sleep(1)
+
+	def vmware_task_complete(self, task, on_error="VMware API Task Failed"):
+		"""
+		Block until the given task is complete. An exception is 
+		thrown if the task results in an error state. This function
+		does not return a variable.
+		"""
+
+		task_done = False
+
+		while not task_done:
+			if task.info.state == 'success':
+				return
+
+			if task.info.state == 'error':
+			
+				## Try to get a meaningful error message
+				if hasattr(task.info.error,'msg'):
+					error_message = task.info.error.msg
+				else:
+					error_message = str(task.info.error)
+
+				on_error = on_error + ': '
+
+				raise RuntimeError(on_error + error_message)
+
+			## If not success or error, then sleep a bit and check again.
+			## Otherwise we just busywaitloop the CPU at 100% for no reason.
 			time.sleep(1)
 
 	################################################################################
@@ -348,7 +376,7 @@ class NeoCortexLib(object):
 
 			## If we didn't find a resource pool just use the default one for the cluster
 			if rpool == None:
-				rpool = cluster.resourcePool					
+				rpool = cluster.resourcePool
 
 		## Create the relocation specification
 		relospec = vim.vm.RelocateSpec()
