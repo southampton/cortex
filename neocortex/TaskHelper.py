@@ -10,13 +10,17 @@ import sys
 import requests
 import json
 import time
-
-#pip install setproctitle
-from setproctitle import setproctitle
-
+from setproctitle import setproctitle #pip install setproctitle
 from NeoCortexLib import NeoCortexLib
 
 class TaskHelper(object):
+
+	class TaskFatalError(Exception):
+		def __init__(self, message="The task failed for an unspecified reason"):
+			self.message = str(message)
+
+		def __str__(self):
+			return self.message
 
 	def __init__(self, config, workflow_name, task_id, username):
 		self.config        = config
@@ -37,6 +41,9 @@ class TaskHelper(object):
 		try:
 			task_module.run(self, options)
 			self._end_task(True)
+		except TaskHelper.TaskFatalError as ex:
+			self._log_fatal_error(str(ex))
+			self._end_task(False)
 		except Exception as ex:
 			self._log_exception(ex)
 			self._end_task(False)
@@ -49,6 +56,11 @@ class TaskHelper(object):
 		exception_message = str(ex)
 		self.curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, 2, NOW(), NOW())", 
 			('neocortex.task',self.task_id, self.workflow_name + "." + 'exception', self.username, "An exception occured during task execution: " + exception_type + " - " + exception_message))
+		self.db.commit()
+
+	def _log_fatal_error(self, message):
+		self.curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, 2, NOW(), NOW())", 
+			('neocortex.task',self.task_id, self.workflow_name + "." + 'exception', self.username, message))
 		self.db.commit()
 
 	def event(self, name, description, success=True):

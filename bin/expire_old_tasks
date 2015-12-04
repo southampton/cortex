@@ -1,0 +1,55 @@
+#!/usr/bin/python
+
+import os
+import imp
+import sys
+import MySQLdb as mysql
+
+CONFIG_FILE = '/data/cortex/cortex.conf'
+
+def load_config(): 
+	d = imp.new_module('config')
+	d.__file__ = CONFIG_FILE
+	try:
+		with open(CONFIG_FILE) as config_file:
+			exec(compile(config_file.read(), CONFIG_FILE, 'exec'), d.__dict__)
+	except IOError as e:
+		print 'Unable to load configuration file ' + e.strerror
+		sys.exit(1)
+	config = {}
+
+	for key in dir(d):
+		if key.isupper():
+			config[key] = getattr(d, key)
+
+	## ensure we have required config options
+	for wkey in ['MYSQL_USER', 'MYSQL_PASS', 'MYSQL_NAME', 'MYSQL_PORT']:
+		if not wkey in config.keys():
+			print "Missing configuation option: " + wkey
+			sys.exit(1)
+
+	return config
+
+if __name__ == "__main__":
+	config = load_config()
+
+	# Connect to the database
+	db = mysql.connect(host=config['MYSQL_HOST'], port=config['MYSQL_PORT'], user=config['MYSQL_USER'], passwd=config['MYSQL_PASS'], db=config['MYSQL_NAME'])
+	cur = db.cursor(mysql.cursors.DictCursor)
+
+	# Query for jobs which are not finished, and have been running for more than eight hours
+	cur.execute('SELECT `id`, `module` FROM `tasks` WHERE `end` IS NULL AND `start` < DATE_SUB(NOW(), INTERVAL 8 HOUR) AND `status` = %s', (0,))
+	rows = cur.fetchall()
+
+	# Iterate over each task that needs expiring
+	for row in rows:
+		# Add an event to say we expired the task
+		cur.execute('INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, NOW(), NULL)', ('neocortex.task', row['id'], 'expire_old_tasks.expire', 'scheduler', 'Task auto-expired after 8 hours', 2))
+		print cur._last_executed
+
+		# Set the task as failed
+		cur.execute('UPDATE `tasks` SET `status` = %s WHERE `id` = %s', (2, row['id']))
+		print cur._last_executed
+
+	# Save our changes
+	db.commit()

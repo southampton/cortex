@@ -169,7 +169,7 @@ class NeoCortexLib(object):
 	################################################################################
 
 	def vmware_task_wait(self, task):
-		""" wait for vcenter task to finish """
+		"""Waits for vCenter task to finish"""
 
 		task_done = False
 
@@ -185,6 +185,8 @@ class NeoCortexLib(object):
 
 			## lets not busy wait CPU 100%...
 			time.sleep(1)
+
+	################################################################################
 
 	def vmware_task_complete(self, task, on_error="VMware API Task Failed"):
 		"""
@@ -579,7 +581,7 @@ class NeoCortexLib(object):
 
 	############################################################################
 
-	def set_link_id(self, cortex_system_id, cmdb_id):
+	def set_link_ids(self, cortex_system_id, cmdb_id):
 		"""
 		Sets the identifiers that link a system from the Cortex `systems` 
 		table to their relevant item in the CMDB.
