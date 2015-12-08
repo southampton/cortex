@@ -46,6 +46,9 @@ if __name__ == "__main__":
 		# Add an event to say we expired the task
 		cur.execute('INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, NOW(), NULL)', ('neocortex.task', row['id'], 'expire_old_tasks.expire', 'scheduler', 'Task auto-expired after 8 hours', 2))
 
+		# Locate any events within the task that are in progress and cancel them
+		cur.execute('UPDATE `events` SET `status` = %s WHERE `source` = %s AND `related_id` = %s AND `status` = %s', (2, 'neocortex.task', row['id'], 0))
+
 		# Set the task as failed
 		cur.execute('UPDATE `tasks` SET `status` = %s WHERE `id` = %s', (2, row['id']))
 
