@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 
-from cortex import app, NotFoundError, DisabledError
+from cortex import app
 import cortex.core
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
@@ -71,12 +71,6 @@ def systems_new():
 
 			# Allocate the name
 			new_systems = neocortex.allocate_name(class_name, system_comment, username=session['username'], num=system_number)
-		except NotFoundError:
-			flash("The class prefix you asked for does not exist!", "alert-danger")
-			return redirect(url_for('systems_new'))
-		except DisabledError:
-			flash("Sorry, that class prefix is currently not enabled for use. Please choose another.", "alert-danger")
-			return redirect(url_for('systems_view'))
 		except Exception as ex:
 			flash("A fatal error occured when trying to allocate names: " + str(ex), "alert-danger")
 			return redirect(url_for('systems_new'))

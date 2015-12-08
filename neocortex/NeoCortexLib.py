@@ -23,6 +23,20 @@ class NeoCortexLib(object):
 	SYSTEM_TYPE_BY_ID = {0: "System", 1: "Legacy", 2: "Other"}
 	SYSTEM_TYPE_BY_NAME = {"System": 0, "Legacy": 1, "Other": 2}
 
+	class TaskFatalError(Exception):
+		def __init__(self, message="The task failed for an unspecified reason"):
+			self.message = str(message)
+
+		def __str__(self):
+			return self.message
+
+	class VMwareTaskError(Exception):
+		def __init__(self, message="An error was returned from vmware"):
+			self.message = str(message)
+
+		def __str__(self):
+			return self.message
+
 	def __init__(self, db, config):
 		self.db = db
 		self.config = config
@@ -67,15 +81,15 @@ class NeoCortexLib(object):
 			class_data = cur.fetchone()
 		except Exception as ex:
 			cur.execute('UNLOCK TABLES;')
-			raise NotFoundError
+			raise Exception("Selected system class does not exist: cannot allocate system name")
 
 		# 2b. Ensure the class was found and that it is not disabled
 		if class_data == None:
 			cur.execute('UNLOCK TABLES;')
-			raise NotFoundError
+			raise Exception("Selected system class does not exist: cannot allocate system name")
 		elif int(class_data['disabled']) == 1:
 			cur.execute('UNLOCK TABLES;')
-			raise DisabledError
+			raise Exception("Selected system class has been disabled: cannot allocate: cannot allocate system name")
 
 		try:
 			## 3. Increment the number by the number we're simultaneously allocating
@@ -145,6 +159,8 @@ class NeoCortexLib(object):
 		"""
 
 		return self.vmware_get_obj_within_parent(content, vimtype, name, content.rootFolder)
+
+	################################################################################
 
 	def vmware_get_obj_within_parent(self, content, vimtype, name, parent):
 		"""

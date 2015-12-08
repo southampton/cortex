@@ -15,13 +15,6 @@ from NeoCortexLib import NeoCortexLib
 
 class TaskHelper(object):
 
-	class TaskFatalError(Exception):
-		def __init__(self, message="The task failed for an unspecified reason"):
-			self.message = str(message)
-
-		def __str__(self):
-			return self.message
-
 	def __init__(self, config, workflow_name, task_id, username):
 		self.config        = config
 		self.workflow_name = workflow_name
@@ -40,13 +33,16 @@ class TaskHelper(object):
 
 		try:
 			task_module.run(self, options)
-			self._end_task(True)
-		except TaskHelper.TaskFatalError as ex:
-			self._log_fatal_error(str(ex))
-			self._end_task(False)
+			self._end_task()
+		except self.lib.TaskFatalError as ex:
+			self._log_fatal_error("The task failed: " + str(ex))
+			self._end_task(success=False)
+		except self.lib.VMwareTaskError as ex:
+			self._log_fatal_error("The task failed because VMware returned an error: " + str(ex))
+			self._end_task(success=False)
 		except Exception as ex:
 			self._log_exception(ex)
-			self._end_task(False)
+			self._end_task(success=False)
 
 	def db_connect(self):
 		return mysql.connect(self.config['MYSQL_HOST'], self.config['MYSQL_USER'], self.config['MYSQL_PASS'], self.config['MYSQL_NAME'], charset='utf8')
@@ -55,7 +51,7 @@ class TaskHelper(object):
 		exception_type = str(type(ex).__name__)
 		exception_message = str(ex)
 		self.curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, 2, NOW(), NOW())", 
-			('neocortex.task',self.task_id, self.workflow_name + "." + 'exception', self.username, "An exception occured during task execution: " + exception_type + " - " + exception_message))
+			('neocortex.task',self.task_id, self.workflow_name + "." + 'exception', self.username, "The task failed because an exception was raised: " + exception_type + " - " + exception_message))
 		self.db.commit()
 
 	def _log_fatal_error(self, message):

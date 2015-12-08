@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 
-from cortex import app, NotFoundError, DisabledError
+from cortex import app
 import cortex.core
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 

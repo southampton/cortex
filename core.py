@@ -48,8 +48,12 @@ def login_required(f):
 		return f(*args, **kwargs)
 	return decorated_function
 
+################################################################################
+
 def is_user_logged_in():
-	return session.get('logged_in',False)
+	return session.get('logged_in', False)
+
+################################################################################
 
 @app.before_request
 def before_request():
