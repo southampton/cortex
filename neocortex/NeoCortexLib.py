@@ -413,6 +413,60 @@ class NeoCortexLib(object):
 		return template.Clone(folder=destfolder, name=vm_name, spec=clonespec)
 
 	############################################################################
+	
+	def update_vm_cache(self, vm, tag):
+		"""
+		"""
+
+		# Get a cursor to the database
+		cur = self.db.cursor(mysql.cursors.DictCursor)
+		
+		# Get the instance details of the vCenter given by tag
+		instance = self.config['VMWARE'][tag]
+
+		if vm.guest.hostName is not None:
+			hostName = vm.guest.hostName
+		else:
+			hostName = ""
+
+		if vm.guest.ipAddress is not None:
+			ipAddress = vm.guest.ipAddress
+		else:
+			ipAddress = ""
+
+		if vm.config.annotation is not None:
+			annotation = vm.config.annotation
+		else:
+			annotation = ""
+
+		# Put in the resource pool name rather than a Managed Object
+		if vm.resourcePool is not None:
+			cluster = vm.resourcePool.owner.name
+		else:
+			cluster = "None"
+
+		# Put the VM in the database
+		cur.execute("REPLACE INTO `vmware_cache_vm` (`id`, `vcenter`, `name`, `uuid`, `numCPU`, `memoryMB`, `guestState`, `guestFullName`, `guestId`, `hwVersion`, `hostname`, `ipaddr`, `annotation`, `cluster`, `toolsRunningStatus`, `toolsVersionStatus`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (vm._moId, instance['hostname'], vm.name, vm.config.uuid, vm.config.hardware.numCPU, vm.config.hardware.memoryMB, vm.guest.guestState, vm.config.guestFullName, vm.config.guestId, vm.config.version, hostName, ipAddress, annotation, cluster, vm.guest.toolsRunningStatus, vm.guest.toolsVersionStatus2))
+
+		# Commit
+		self.db.commit()
+
+	############################################################################
+	
+	def puppet_enc_register(self, system_id, certname, environment):
+		"""
+		"""
+
+		# Get a cursor to the database
+		cur = self.db.cursor(mysql.cursors.DictCursor)
+
+		# Insert the row
+		cur.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`, `include_default`, `classes`, `variables`) VALUES (%s, %s, %s, %s, %s, %s)", (system_id, certname, environment, 1, "", ""))
+
+		# Commit
+		self.db.commit()
+
+	############################################################################
 
 	def vmware_vmreconfig_cpu(self, vm, cpus, cpus_per_socket, hotadd=True):
 		"""Reconfigures the CPU count of a VM and enables/disabled CPU hot-add. 'vm' 

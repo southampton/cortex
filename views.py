@@ -75,37 +75,27 @@ def nojs():
 
 @app.route('/dashboard')
 def dashboard():
-	return render_template('dashboard.html')
+	"""This renders the front page after the user logged in."""
 
-################################################################################
+	# Get a cursor to the database
+	cur = g.db.cursor(mysql.cursors.DictCursor)
+	
+	# Get number of VMs
+	cur.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm`');
+	row = cur.fetchone()
+	vm_count = row['count']
 
-#@app.route('/vm/create/standard', methods=['GET','POST'])
-#@cortex.core.login_required
-#def vm_create_standard():
-#	domain = "soton.ac.uk"
+	# Get number of in-progress tasks
+	cur.execute('SELECT COUNT(*) AS `count` FROM `tasks` WHERE `status` = %s', (0,))
+	row = cur.fetchone()
+	task_progress_count = row['count']
 
-#	if request.method == 'GET' or request.method == 'HEAD':
-#		return render_template('vm-create.html')
-#	elif request.method == 'POST':
-#		# Allocate a system and get its information
-#		system_info = cortex.core.allocate_name('play', 'Automatic VM', 1)
-#
-#		# Grab the system name from the returned dictionary
-#		system_name = system_info.keys()[0]
-#		print system_name
-#
-#		# Allocate an IPv4 Address and Create a Host
-#		ipv4addr = cortex.core.infoblox_create_host(system_name + "." + domain, "192.168.63.0/25")
-#		print ipv4addr
-#
-#		if ipv4addr is None:
-#			abort(500)
-#
-#		## OH MY GOD WE ARE LOOKING FOR NUCLEAR WESSELS
-#		#cortex.core.vmware_clone_vm('2012R2_Template',system_name, cortex.core.OS_TYPE_BY_NAME['Windows'], ipv4addr, "192.168.63.126", "255.255.255.128")
-#		cortex.core.vmware_clone_vm('autotest_rhel6template',system_name, cortex.core.OS_TYPE_BY_NAME['Linux'], ipv4addr, "192.168.63.126", "255.255.255.128")
-#
-#		return jsonify(system_name=system_name, ipv4addr=ipv4addr)
+	# Get number of failed tasks in the last 3 hours
+	cur.execute('SELECT COUNT(*) AS `count` FROM `tasks` WHERE `status` = %s AND `end` > DATE_SUB(NOW(), INTERVAL 3 HOUR)', (2,))
+	row = cur.fetchone()
+	task_failed_count = row['count']
+
+	return render_template('dashboard.html', vm_count=vm_count, task_progress_count=task_progress_count, task_failed_count=task_failed_count)
 
 ################################################################################
 
@@ -142,4 +132,8 @@ def task_status_log(id):
 	an AJAX routine on the page to refresh the log every 10 seconds."""
 
 	return render_task_status(id, "task-status-log.html")
+
+@app.route('/codemirror')
+def codemirror_test():
+	return render_template('codemirror.html', active='help')
 
