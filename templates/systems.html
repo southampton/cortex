@@ -1,6 +1,11 @@
 {% extends "layout.html" %}
 {% block body %}
 
+<style type="text/css">
+a.server-link { text-decoration: none !important; color: inherit; }
+a.server-link:hover { text-decoration: underline !important; }
+</style>
+
 <div class="page-header">
 {#	<div class="pull-right" style="display:none"><button id="showdecom" type="button" class="btn btn-success btn-sm">Show Decommissioned Systems</button></div>#}
 <h3>Systems</h3>
@@ -52,17 +57,20 @@ $(function() {
 				$('td:eq(4)', row).html("Unknown");
 			}
 
+			var view_link = "<a class='server-link' href='/systems/edit/" + data[6] + "'>" + data[0] + "</a>";
+			console.log(view_link);
+
 			if (data[7] == "running")
 			{
-				$('td:eq(0)', row).html("<i style='color:#2c2;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-play' />" + data[0]);
+				$('td:eq(0)', row).html("<i style='color:#2c2;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-play' />" + view_link);
 			}
 			else if (data[7] == "notRunning")
 			{
-				$('td:eq(0)', row).html("<i style='color:#c22;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-stop' />" + data[0]);
+				$('td:eq(0)', row).html("<i style='color:#c22;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-stop' />" + view_link);
 			}
 			else
 			{
-				$('td:eq(0)', row).html("<i style='color:#22c;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-question' />" + data[0]);
+				$('td:eq(0)', row).html("<i style='color:#22c;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-question' />" + view_link);
 			}
 		}
 	});

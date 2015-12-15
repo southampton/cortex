@@ -37,7 +37,7 @@ def systems_new():
 	# On GET requests, just show big buttons for all the classes
 	if request.method == 'GET':
 		classes = cortex.admin.get_classes(True)
-		return render_template('systems-new.html', classes=classes, active='systems')
+		return render_template('systems-new.html', classes=classes, active='allocate')
 
 	# On POST requests...
 	elif request.method == 'POST':

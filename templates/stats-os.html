@@ -9,48 +9,52 @@
 
 	function prepDataAndDrawChart()
 	{
-		osData = new google.visualization.DataTable();
-		osData.addColumn('string', 'Operating System');
-		osData.addColumn('number', 'Count');
-		osData.addRows([
-{%- for key in stats_osgroup|sort -%}
-			['{{ key }}', {{ stats_osgroup[key] }}],
-{%- endfor -%}
-		]);
-	
-		linuxData = new google.visualization.DataTable();
-		linuxData.addColumn('string', 'Operating System');
-		linuxData.addColumn('number', 'Count');
-		linuxData.addRows([
-{%- for row in stats_osfull -%}
-	{%- if 'Linux' in row.guestOS or 'CentOS' in row.guestFullname -%}
-		['{{ row.guestOS }}', {{ row.count }}],
-	{%- endif -%}
-{%- endfor -%}
-		]);
+        var osData = google.visualization.arrayToDataTable([
+          ['Virtual Machines', 'Number'],
+          ['Linux Servers',     {{types['linux']}}],
+          ['Windows Servers',      {{types['windows_server']}}],
+          ['Desktops',  {{types['windows_desktop']}}],
+          ['BSD Servers', {{types['bsd']}}],
+        ]);
 
-		windowsData = new google.visualization.DataTable();
-		windowsData.addColumn('string', 'Operating System');
-		windowsData.addColumn('number', 'Count');
-		windowsData.addRows([
-{%- for row in stats_osfull -%}
-	{%- if 'Windows' in row.guestOS -%}
-		['{{ row.guestOS }}', {{ row.count }}],
-	{%- endif -%}
-{%- endfor -%}
-		]);
+        var linuxData = google.visualization.arrayToDataTable([
+          ['Virtual Machines', 'Number'],
+          ['RHEL3',     {{types['rhel3']}}],
+          ['RHEL4', {{types['rhel4']}}],
+          ['RHEL5',  {{types['rhel5']}}],
+          ['RHEL6',  {{types['rhel6']}}],
+          ['RHEL7',  {{types['rhel7']}}],
+          ['Ubuntu',  {{types['ubuntu']}}],
+          ['Debian',  {{types['debian']}}],
+          ['Other',  {{types['linux_other']}}],
+        ]);
 
-		drawChart()
-	}
+        var windowsData = google.visualization.arrayToDataTable([
+          ['Virtual Machines', 'Number'],
+          ['Server 2003',     {{types['ws2003']}}],
+          ['Server 2008',      {{types['ws2008']}}],
+          ['Server 2012',  {{types['ws2012']}}],
+        ]);
 
-	function drawChart()
-	{
+        var windowsDesktopsData = google.visualization.arrayToDataTable([
+          ['Virtual Machines', 'Number'],
+          ['Windows 7',     {{types['wd7']}}],
+          ['Windows 8',      {{types['wd8']}}],
+          ['Windows 10',  {{types['wd10']}}],
+        ]);
+
+
 		var chart_os = new google.visualization.PieChart(document.getElementById('chart_os'));
-		chart_os.draw(osData, {title: 'OS Type Breakdown', is3D: true});
+		chart_os.draw(osData, {title: 'OS Family', is3D: true});
+
 		var chart_linux = new google.visualization.PieChart(document.getElementById('chart_linux'));
-		chart_linux.draw(linuxData, {title: 'Linux Breakdown', is3D: true});
+		chart_linux.draw(linuxData, {title: 'Linux Servers', is3D: true});
+
 		var chart_windows = new google.visualization.PieChart(document.getElementById('chart_windows'));
-		chart_windows.draw(windowsData, {title: 'Windows Breakdown', is3D: true});
+		chart_windows.draw(windowsData, {title: 'Windows Servers', is3D: true});
+
+		var chart_windows_desktops = new google.visualization.PieChart(document.getElementById('chart_windows_desktops'));
+		chart_windows_desktops.draw(windowsDesktopsData, {title: 'Windows Desktops', is3D: true});
 	}
 </script>
 <div class="page-header">
@@ -60,5 +64,6 @@
 	<div id="chart_os" style="width:100%; height: 500px"></div>
 	<div id="chart_linux" style="width:100%; height: 500px"></div>
 	<div id="chart_windows" style="width:100%; height: 500px"></div>
+	<div id="chart_windows_desktops" style="width:100%; height: 500px"></div>
 </div>
 {% endblock %}

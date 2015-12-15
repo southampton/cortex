@@ -30,13 +30,8 @@
 				{%- if session.logged_in %}
 				<div class="navbar-collapse collapse" id="navbar-collapse-1">	
 					<ul class="nav navbar-nav">
-						<li class="dropdown{%if active == 'systems'%} active{%endif%}">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Systems <b class="caret"></b></a>
-							<ul class="dropdown-menu">
-								<li><a href="{{ url_for('systems') }}"><i class="fa fa-server fa-fw"></i> Systems</a></li>
-								<li><a href="{{ url_for('systems_new') }}"><i class="fa fa-book fa-fw"></i> Allocate new system name</a></li>
-							</ul>
-						</li>
+						<li class="{%if active == 'systems'%} active{%endif%}"><a href="{{ url_for('systems') }}"><i class="fa fa-server fa-fw"></i> Systems</a></li>
+						<li class="{%if active == 'allocate'%} active{%endif%}"><a href="{{ url_for('systems_new') }}"><i class="fa fa-book fa-fw"></i> Allocate Name</a></li>
 						<li class="dropdown{%if active == 'create'%} active{%endif%}">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Workflows <b class="caret"></b></a>
 							<ul class="dropdown-menu">

@@ -1,13 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
 
-<style type="text/css">
-.CodeMirror {
-  border: 1px solid #eee;
-  height: 50px;
-}
-</style>
-
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
@@ -48,6 +41,14 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/js-yaml/3.4.6/js-yaml.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/yaml-lint.js"></script>
 
+<style type="text/css">
+.CodeMirror {
+  border: 1px solid #eee;
+  height: auto;
+}
+</style>
+
+
 <script>
 $(document).ready(function(){	
 
@@ -57,6 +58,7 @@ $(document).ready(function(){
 		gutters: ["CodeMirror-lint-markers"],
 		lint: true,
 		indentUnit: 2,
+		viewportMargin: Infinity
 	});
 
 	editor.setOption("extraKeys", 
@@ -67,14 +69,17 @@ $(document).ready(function(){
 	  }
 	});
 
-	$('#myModal').on('shown.bs.modal', function (e) {
-		var demo1 = CodeMirror.fromTextArea(document.getElementById('demo1'), 
-		{
-			mode: 'yaml',
-			indentUnit: 2,
-			readOnly: true,
-		});
+	var demo1 = CodeMirror.fromTextArea(document.getElementById('demo1'), 
+	{
+		mode: 'yaml',
+		indentUnit: 2,
+		readOnly: true,
+	});
 
+	demo1.setSize('100%', 120);
+
+	$('#myModal').on('shown.bs.modal', function (e) {
+		demo1.refresh();
 	});
 });
 </script>
