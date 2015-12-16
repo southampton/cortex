@@ -177,7 +177,7 @@ def systems_puppet_enc(id):
 			error = True
 
 		# Validate environement:
-		if environment not in [e['name'] for e in environments]:
+		if environment not in [e['id'] for e in environments]:
 			flash('Invalid environment', 'alert-danger')
 			error = True
 
