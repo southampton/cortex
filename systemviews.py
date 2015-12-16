@@ -345,9 +345,9 @@ def systems_json():
 
 	# Validate the flag for showing decommissioned systems.
 	show_decom = True
-	if 'show_decom' in request.args:
-		if str(request.args['show_decom']) == '0':
-			show_decom = False
+	#if 'show_decom' in request.args:
+	#	if str(request.args['show_decom']) == '0':
+	#		show_decom = False
 
 	# Handle the search parameter. This is the textbox on the DataTables
 	# view that the user can search by typing in
