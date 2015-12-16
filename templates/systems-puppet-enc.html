@@ -1,0 +1,172 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Classifying Puppet nodes</h4>
+      </div>
+      <div class="modal-body">
+		<p>Cortex functions as a Puppet <i>External Node Classifier</i> or "ENC". You can use it to define what Puppet classes are used by nodes. Puppet defines a YAML based syntax
+		for how ENCs tell Puppet what classes and parameters to load and Cortex exposes that to you verbatim. This allows you as the administrator to have full control over what
+		a node's configuration is.</p>
+		<p>PuppetLabs documentation for this syntax is here: <a href="https://docs.puppetlabs.com/guides/external_nodes.html">https://docs.puppetlabs.com/guides/external_nodes.html</a></p> 
+		<h3>Defining classes</h3>
+		<p>Each line should be the name of class to import, with no indentation and ending with a colon character. Any parameters to be passed should be passed on subsequent lines indented by two spaces. Arrays can be passed by indenting again and prefixing each item in the array with a dash, or by using square-bracketed array syntax. Comments can be entered by starting a line with a hash. Here is an example:</p>
+
+		<textarea id="demo1">puppet:
+myservice:
+  some_parameter: This is a string. Quotation marks are entirely optional.
+  # This is a comment
+  my_example_array_1: [1, 2, 3]
+  my_example_array_2:
+    - abc1d23
+    - efg4h56</textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{#- CodeMirror style -#}
+<link href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/codemirror.min.css" rel="stylesheet">
+<link href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/lint.min.css" rel="stylesheet">
+
+{#- CodeMirror scripts -#}
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/codemirror.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/mode/yaml/yaml.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/lint.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/js-yaml/3.4.6/js-yaml.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/yaml-lint.js"></script>
+
+{#- Override CodeMirror style - must come after CodeMirror style imports -#}
+<style type="text/css">
+.CodeMirror {
+  border: 1px solid #eee;
+  height: auto;
+}
+</style>
+
+<script>
+$(document).ready(function() {
+	var classes_editor = CodeMirror.fromTextArea(document.getElementById('classes'), 
+	{
+		mode: 'yaml',
+		gutters: ["CodeMirror-lint-markers"],
+		lint: true,
+		indentUnit: 2,
+		viewportMargin: Infinity,
+	});
+
+	var variables_editor = CodeMirror.fromTextArea(document.getElementById('variables'), 
+	{
+		mode: 'yaml',
+		gutters: ["CodeMirror-lint-markers"],
+		lint: true,
+		indentUnit: 2,
+		viewportMargin: Infinity
+	});
+
+	classes_editor.setOption("extraKeys", 
+	{
+	  Tab: function(cm) {
+		var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
+		cm.replaceSelection(spaces);
+	  }
+	});
+
+	variables_editor.setOption("extraKeys", 
+	{
+	  Tab: function(cm) {
+		var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
+		cm.replaceSelection(spaces);
+	  }
+	});
+
+
+	var demo1 = CodeMirror.fromTextArea(document.getElementById('demo1'), 
+	{
+		mode: 'yaml',
+		indentUnit: 2,
+		readOnly: true,
+	});
+
+	demo1.setSize('100%', 170);
+
+	$('#myModal').on('shown.bs.modal', function (e) {
+		demo1.refresh();
+	});
+});
+</script>
+<form class="form-horizontal" method="POST" role="form">
+<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+	<div class="page-header">
+		<button class="btn btn-sm btn-primary pull-right" type="submit">Save Changes</button>
+		<h3>{{ system.name }}</h3>
+	</div>
+	<div class="panel panel-default">
+		<div class="panel-heading">Node Options</div>
+		<div class="panel-body" style="padding-bottom:0em">
+			<div class="form-group">
+				<label title="The CN of the certificate registered with the Puppet Master" class="col-sm-2 control-label" for="certname">Cert Name:</label>
+				<div class="col-sm-10"><input class="form-control" type="text" id="certname" name="certname" value="{{ system.puppet_certname }}" /></div>
+			</div>
+			<div class="form-group">
+				<label title="The Puppet environment that this node sis in" class="col-sm-2 control-label" for="environment">Environment:</label>
+				<div class="col-sm-10"> <select class="form-control" id="environment" name="environment">
+{% for environment in environments -%}
+{%- if environment.puppet %}
+					<option value="{{ environment.id }}"{% if system.puppet_env == environment.puppet %} selected="selected"{% endif %}>{{ environment.name }} ({{ environment.puppet }})</option>
+{%- endif %}
+{%- endfor %}
+				</select></div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-offset-2 col-sm-10">
+					<div class="checkbox" style="padding-top:0em">
+						<label title="Check to include the default UoS classes" for="include_default"><input type="checkbox" id="include_default" name="include_default"{% if system.puppet_include_default %} checked="checked"{% endif %}/>Include the default UoS classes</label>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+<div class="row">
+	<div class="col-md-9">
+		<div class="panel panel-default">
+			<div class="panel-heading">Classes</div>
+			<div class="panel-body" style="padding:0px">
+				<textarea id="classes" name="classes">{{ system.puppet_classes }}</textarea>
+			</div>
+		</div>
+
+		<div class="panel panel-default">
+			<div class="panel-heading">Global Variables</div>
+			<div class="panel-body" style="padding:0px">
+				<textarea id="variables" name="variables">{{ system.puppet_variables }}</textarea>
+			</div>
+		</div>
+		
+		<button class="btn btn-primary" type="submit">Save Changes</button>
+	</div>
+	<div class="col-md-3">
+		<div class="panel panel-default">
+			<div class="panel-heading">Help</div>
+			<div class="panel-body">
+				<p>Use the <strong>Classes</strong> field to define the classes that this node will import. You can also
+				define parameters for the classes.</p>
+				<p>Use the <strong>Global Variables</strong> field to define the variables that will be sent to all the
+				classes imported by this node.</p>
+				<p>The format of this field is YAML. Use two spaces for indentation. Do not use tabs, but you can safely
+					press tab (it will enter 2 spaces).</p>
+				<div class="text-center">
+					<button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#myModal">  Find out more</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}

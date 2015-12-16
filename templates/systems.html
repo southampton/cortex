@@ -50,15 +50,14 @@ $(function() {
 		},
 		"searching": true,
 		"rowCallback": function(row, data, index) {
-			{#- data[6] is CMDB URL, data[5] is database ID, data[4] is operational status #}
-			$('td:eq(5)', row).html('<a class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/edit/' + data[6] + '"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i>View</a>' + (data[5] != '' ? '<a class="btn btn-xs btn-default" href="' + data[5] + '" target="_blank"><i style="margin-right:0.2em" class="fa fa-fw fa-cloud"></i>CMDB</a>' : ''));
+			{#- data[5] is CMDB URL, data[6] is database ID, data[4] is operational status, data[8] is Puppet Cert Name #}
+			$('td:eq(5)', row).html((data[8] != null ? '<a class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/puppet-enc/' + data[6] + '"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i>ENC</a>': '') + (data[5] != '' ? '<a class="btn btn-xs btn-default" href="' + data[5] + '" target="_blank"><i style="margin-right:0.2em" class="fa fa-fw fa-cloud"></i>CMDB</a>' : ''));
 			if (data[4] == "" || data[4] == undefined)
 			{
 				$('td:eq(4)', row).html("Unknown");
 			}
 
 			var view_link = "<a class='server-link' href='/systems/edit/" + data[6] + "'>" + data[0] + "</a>";
-			console.log(view_link);
 
 			if (data[7] == "running")
 			{
