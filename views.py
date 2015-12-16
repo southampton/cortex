@@ -36,14 +36,19 @@ def login():
 			
 			## Check if two-factor is enabled for this account
 			## TWO STEP LOGONS
-			if app.config['TOTP_ENABLED']:
-				if cortex.totp.totp_user_enabled(session['username']):
-					app.logger.debug('User "' + session['username'] + '" has two step enabled. Redirecting to two-step handler')
-					return redirect(url_for('totp_logon_view',next=request.form.get('next',default=None)))
-
+			#if app.config['TOTP_ENABLED']:
+			#	if cortex.totp.totp_user_enabled(session['username']):
+			#		app.logger.debug('User "' + session['username'] + '" has two step enabled. Redirecting to two-step handler')
+			#		return redirect(url_for('totp_logon_view',next=request.form.get('next',default=None)))
 			## Successful logon without 2-step needed
-			return cortex.core.logon_ok()
 
+
+			## TODO temp restrict all logons to admins
+			if cortex.core.is_user_global_admin(session['username']):
+				return cortex.core.logon_ok()
+			else:
+				flash('Permission denied','alert-danger')
+				return redirect(url_for('login'))
 
 ################################################################################
 #### LOGOUT
@@ -133,7 +138,18 @@ def task_status_log(id):
 
 	return render_task_status(id, "task-status-log.html")
 
-@app.route('/codemirror')
-def codemirror_test():
-	return render_template('codemirror.html', active='help')
+@app.route('/user/groups')
+@cortex.core.login_required
+def user_groups():
+	ldap_groups = cortex.core.get_users_groups(session['username'])
+	groups = []
 
+	for lgroup in ldap_groups:
+		p = re.compile("^(cn|CN)=([^,;]+),")
+		matched = p.match(lgroup)
+		if matched:
+			name = matched.group(2)
+			groups.append({"name": name, "dn": lgroup})
+	
+
+	return render_template('user-groups.html', active='user',groups=groups)

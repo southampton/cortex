@@ -20,6 +20,7 @@ import json
 import requests
 import Pyro4
 import inspect
+import redis
 
 ################################################################################
 
@@ -50,6 +51,30 @@ def login_required(f):
 
 ################################################################################
 
+def global_admin_required(f):
+	"""This is a decorator function that when called ensures the user is a global admin
+	Usage is as such: @cortex.core.global_admin_required
+	"""
+	@wraps(f)
+	def decorated_function(*args, **kwargs):
+		if not is_user_global_admin(session['username']):
+			abort(403)
+		return f(*args, **kwargs)
+	return decorated_function
+
+################################################################################
+
+def is_user_global_admin(username):
+	groups = get_users_groups(username)
+	groups = [x.lower() for x in groups]
+
+	if app.config['LDAP_ADMIN_GROUP'].lower() in groups:
+		return True
+
+	return False
+
+################################################################################
+
 def is_user_logged_in():
 	return session.get('logged_in', False)
 
@@ -67,13 +92,12 @@ def before_request():
 	if (request.user_agent.browser == "msie" and int(round(float(request.user_agent.version))) <= 8):
 		return render_template('foad.html')
 
-	## Connect to redis
-	#if app.config['REDIS_ENABLED']:
-	#	try:
-	#		g.redis = redis.StrictRedis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'], db=0)
-	#		g.redis.get('foo')
-	#	except Exception as ex:
-	#		cortex.errors.fatal('Unable to connect to redis',str(ex))
+	# Connect to redis
+	try:
+		g.redis = redis.StrictRedis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'], db=0)
+		g.redis.get('foo') # it doesnt matter that this key doesnt exist, its just to force a test call to redis.
+	except Exception as ex:
+		cortex.errors.fatal('Unable to connect to redis',str(ex))
 	
 	## Connect to database
 	try:
@@ -406,8 +430,6 @@ def auth_user(username, password):
 		app.logger.debug("cortex.core.auth_user empty password")
 		return False
 
-	## LDAP auth. This is preferred as of May 2015 due to issues with python-kerberos.
-
 	## connect to LDAP and turn off referals
 	l = ldap.initialize(app.config['LDAP_URI'])
 	l.set_option(ldap.OPT_REFERRALS, 0)
@@ -464,6 +486,93 @@ def auth_user(username, password):
 
 	## Catch all return false for LDAP auth
 	return False
+
+################################################################################
+#### Authentication
+
+def get_users_groups(username,from_cache=True):
+	"""Returns a set (not a list) of groups that a user belongs to. The result is 
+    cached to improve performance and to lessen the impact on the LDAP server. The 
+	results are returned from the cache unless you set "from_cache" to be 
+	False. 
+
+	This function will return None in all cases where the user was not found
+	or where the user has no groups. It is not expeceted that a user will ever
+	be in no groups, and if they are, then they probably shouldn't be using cortex.
+	"""
+
+	## This uses REDIS to cache the LDAP response
+	## because Active Directory is dog slow and takes forever to respond
+	## with a list of groups, making pages load really slowly. 
+
+	if from_cache == False:
+		return get_users_groups_from_ldap(username)
+	else:
+		# Check the cache to see if it already has entries for the user
+		# we use a key to set whether we /have/ cached the users 
+		groups = g.redis.smembers("ldap/user/groups/" + username)
+
+		if groups == None:
+			return get_users_groups_from_ldap(username)
+		elif not len(groups) > 0:
+			return get_users_groups_from_ldap(username)
+		else:
+			app.logger.debug("cortex.core.get_users_groups: returning groups from cache for " + username)		
+			return groups
+
+		
+def get_users_groups_from_ldap(username):
+		app.logger.debug("cortex.core.get_users_groups_from_ldap: building cache for " + username)		
+
+		## connect to LDAP and turn off referals
+		l = ldap.initialize(app.config['LDAP_URI'])
+		l.set_option(ldap.OPT_REFERRALS, 0)
+
+		## and bind to the server with a username/password if needed in order to search for the full DN for the user who is logging in.
+		try:
+			if app.config['LDAP_ANON_BIND']:
+				l.simple_bind_s()
+			else:
+				l.simple_bind_s( (app.config['LDAP_BIND_USER']), (app.config['LDAP_BIND_PW']) )
+		except ldap.LDAPError as e:
+			flash('Internal Error - Could not connect to LDAP directory: ' + str(e),'alert-danger')
+			app.logger.error("Could not bind to LDAP: " + str(e))
+			abort(500)
+
+		app.logger.debug("cortex.core.get_users_groups_from_ldap: searching for username in base " + app.config['LDAP_SEARCH_BASE'] + " looking for attribute " + app.config['LDAP_USER_ATTRIBUTE'])
+
+		## Now search for the user object
+		try:
+			results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE,(app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
+		except ldap.LDAPError as e:
+			app.logger.debug("cortex.core.get_users_groups_from_ldap: no user object found")
+			return None
+
+		app.logger.debug("cortex.core.get_users_groups_from_ldap: found user object")
+	
+		## handle the search results
+		for result in results:
+			dn	= result[0]
+			attrs	= result[1]
+
+			if dn == None:
+				return None
+			else:
+				app.logger.debug("cortex.core.get_users_groups_from_ldap: found user dn " + str(dn))
+				## Found the DN. Yay! Now bind with that DN and the password the user supplied
+
+				if 'memberOf' in attrs:
+					if len(attrs['memberOf']) > 0:
+						for group in attrs['memberOf']:
+							g.redis.sadd("ldap/user/groups/" + username,group)
+						g.redis.expire("ldap/user/groups/" + username,app.config['LDAP_GROUPS_CACHE_EXPIRE'])
+						return attrs['memberOf']
+					else:
+						return None
+				else:
+					return None
+
+		return None
 
 ################################################################################
 

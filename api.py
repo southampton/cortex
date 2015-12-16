@@ -23,6 +23,11 @@ def api_puppet_enc(certname):
 	# Decode YAML for classes
 	if len(node['classes'].strip()) != 0:
 		response['classes'] = yaml.load(node['classes'])
+		if node['include_default']:
+			response['classes']['uos_linux_base'] = None
+	else:
+		if node['include_default']:
+			response['classes'] = {'uos_linux_base': None}
 
 	# Decode YAML for environment
 	variables = None

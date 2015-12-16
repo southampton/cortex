@@ -670,7 +670,7 @@ class NeoCortexLib(object):
 
 	################################################################################
 
-	def servicenow_create_ci(self, ci_name, os_type, os_name, cpus='', ram_mb='', disk_gb='', ipaddr='', virtual=True):
+	def servicenow_create_ci(self, ci_name, os_type, os_name, cpus='', ram_mb='', disk_gb='', ipaddr='', virtual=True, environment=None):
 		"""Creates a new CI within ServiceNow.
 		     - ci_name: The name of the CI, e.g. srv01234
 		     - os_type: The OS type as a number, see OS_TYPE_BY_NAME
@@ -680,6 +680,7 @@ class NeoCortexLib(object):
 		     - disk_gb: The total amount of disk space in GiB
 		     - ipaddr: The IP address of the CI
 		     - virtual: Boolean indicating if the CI is a VM (True) or Physical (False). Defaults to True.
+		     - environment: The id of the environment (see the application configuration) that the CI is in
 
 		On success, returns the sys_id of the object created in ServiceNow.
 		"""
@@ -693,7 +694,15 @@ class NeoCortexLib(object):
 			raise Exception('Unknown os_type passed to servicenow_create_ci')
 
 		# Build the data for the CI
-		vm_data = { 'name': str(ci_name), 'os': str(os_name), 'cpu_count': str(cpus), 'disk_space': str(disk_gb), 'virtual': str(virtual).lower(), 'ip_address': ipaddr, 'ram': str(ram_mb) }
+		vm_data = { 'name': str(ci_name), 'os': str(os_name), 'cpu_count': str(cpus), 'disk_space': str(disk_gb), 'virtual': str(virtual).lower(), 'ip_address': ipaddr, 'ram': str(ram_mb), 'operational_status': 'In Service' }
+
+		# Add environment if we've got it
+		environments = dict((e['id'], e) for e in self.config['ENVIRONMENTS'] if e['cmdb'])
+		print environment
+		print environments
+		if environment is not None and environment in environments:
+			vm_data['u_environment'] = environments[environment]['cmdb']
+		print vm_data
 
 		# json= was only added in Requests 2.4.2, so might need to be data=json.dumps(vm_data)
 		# Content-Type header may be superfluous as Requests might add it anyway, due to json=
