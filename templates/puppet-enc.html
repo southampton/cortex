@@ -127,7 +127,7 @@ $(document).ready(function() {
 			<div class="form-group">
 				<div class="col-sm-offset-2 col-sm-10">
 					<div class="checkbox" style="padding-top:0em">
-						<label title="Check to include the default classes that deploy are standard build" for="include_default"><input type="checkbox" id="include_default" name="include_default"{% if system.puppet_include_default %} checked="checked"{% endif %}/>Include the <a href="{{url_for('puppet_default')}}">default classes</a></label>
+						<label title="Check to include the default classes that deploy are standard build" for="include_default"><input type="checkbox" id="include_default" name="include_default"{% if system.puppet_include_default %} checked="checked"{% endif %}/>Include the <a href="{{url_for('puppet_enc_default')}}">default classes</a></label>
 					</div>
 				</div>
 			</div>
