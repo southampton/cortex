@@ -55,9 +55,9 @@
 						<li class="dropdown{%if active == 'puppet'%} active{%endif%}">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Puppet <b class="caret"></b></a>
 							<ul class="dropdown-menu">
-								<li><a href="{{ url_for('puppet_nodes') }}"><i class="fa fa-pie-chart fa-fw"></i> Nodes</a></li>
-								<li><a href="{{ url_for('vmware_hw') }}"><i class="fa fa-pie-chart fa-fw"></i> Groups</a></li>
-								<li><a href="{{ url_for('vmware_power') }}"><i class="fa fa-pie-chart fa-fw"></i> Default classes</a></li>
+								<li><a href="{{ url_for('puppet_nodes') }}"><i class="fa fa-server fa-fw"></i> Nodes</a></li>
+								<!--<li><a href="{{ url_for('vmware_hw') }}"><i class="fa fa-pie-chart fa-fw"></i> Groups</a></li>-->
+								<li><a href="{{ url_for('puppet_enc_default') }}"><i class="fa fa-globe fa-fw"></i> Default classes</a></li>
 							</ul>
 						</li>
 						<li class="dropdown{%if active == 'admin'%} active{%endif%}">

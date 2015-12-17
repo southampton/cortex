@@ -24,15 +24,15 @@ def puppet_enc_edit(id):
 
 	# If we've got a new node, then don't show "None"
 	if system['puppet_classes'] is None:
-		system['puppet_classes'] = "# Global variables to include can be entered here"
+		system['puppet_classes'] = "# Global variables to include can be entered here\n"
 	if system['puppet_variables'] is None:
-		system['puppet_variables'] = "# Classes to include can be entered here"
+		system['puppet_variables'] = "# Classes to include can be entered here\n"
 	if system['puppet_certname'] is None:
 		system['puppet_certname'] = ""
 
 	# On any GET request, just display the information
 	if request.method == 'GET':
-		return render_template('systems-puppet-enc.html', system=system, active='systems', environments=environments)
+		return render_template('puppet-enc.html', system=system, active='puppet', environments=environments)
 
 	# On any POST request, validate the input and then save
 	elif request.method == 'POST':
@@ -79,19 +79,59 @@ def puppet_enc_edit(id):
 			system['puppet_classes'] = classes
 			system['puppet_variables'] = variables
 			system['puppet_include_default'] = include_default
-			return render_template('systems-puppet-enc.html', system=system, active='systems', environments=environments)
+			return render_template('puppet-enc.html', system=system, active='puppet', environments=environments)
 
 		# Get a cursor to the database
 		cur = g.db.cursor(mysql.cursors.DictCursor)
 
 		# Update the system
 		cur.execute('UPDATE `puppet_nodes` SET `certname` = %s, `env` = %s, `classes` = %s, `variables` = %s, `include_default` = %s WHERE `id` = %s', (certname, env_dict[environment]['puppet'], classes, variables, include_default, id))
-		g.db.commit();
+		g.db.commit()
 
 		# Redirect back to the systems page
 		flash('Puppet ENC for host ' + system['name'] + ' updated', 'alert-success')
 
-		return redirect(url_for('systems'))
+		return redirect(url_for('puppet_enc_edit',id=id))
+
+################################################################################
+
+@app.route('/puppet/default', methods=['GET', 'POST'])
+@cortex.core.login_required
+def puppet_enc_default():
+	## Get the default YAML out of the kv table
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute("SELECT `value` FROM `kv_settings` WHERE `key` = 'puppet.enc.default'")
+	result = curd.fetchone()
+	if result == None:
+		classes = "# Classes to include on all nodes using the default settings can be entered here\n"
+	else:
+		classes = result['value']
+
+	# On any GET request, just display the information
+	if request.method == 'GET':
+		return render_template('puppet-default.html', classes=classes, active='puppet')
+
+	# On any POST request, validate the input and then save
+	elif request.method == 'POST':
+		# Extract data from form
+		classes = request.form.get('classes', '')
+
+		# Validate classes YAML
+		try:
+			yaml.load(classes)
+		except Exception, e:
+			flash('Invalid YAML syntax: ' + str(e), 'alert-danger')
+			return render_template('puppet-default.html', classes=classes, active='puppet')
+
+		# Get a cursor to the database
+		# Update the system
+		curd.execute('REPLACE INTO `kv_settings` (`key`,`value`) VALUES ("puppet.enc.default",%s)', (classes,))
+		g.db.commit()
+
+		# Redirect back
+		flash('Puppet default settings updated', 'alert-success')
+
+		return redirect(url_for('puppet_enc_default'))
 
 @app.route('/puppet/nodes')
 @cortex.core.login_required
