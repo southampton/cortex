@@ -22,6 +22,9 @@ def puppet_enc_edit(id):
 	environments = cortex.core.get_puppet_environments()
 	env_dict = cortex.core.get_environments_as_dict()
 
+	if system == None:
+		abort(404)
+
 	# If we've got a new node, then don't show "None"
 	if system['puppet_classes'] is None:
 		system['puppet_classes'] = "# Global variables to include can be entered here\n"
@@ -222,10 +225,24 @@ def puppet_group_edit(name):
 		return redirect(url_for('puppet_group_edit',name=name))
 
 
-@app.route('/puppet/raw/<certname>', methods=['GET', 'POST'])
+@app.route('/puppet/yaml/<int:id>', methods=['GET', 'POST'])
 @cortex.core.login_required
-def puppet_dump(certname):
-	return puppet_generate_config(certname)
+def puppet_node_yaml(id):
+	system = cortex.core.get_system_by_id(id)
+
+	if system == None:
+		abort(404)
+
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	## Get the group from the DB
+	curd.execute('SELECT * FROM `puppet_nodes` WHERE `id` = %s', system['id'])
+	node = curd.fetchone()
+
+	if node == None:
+		abort(404)
+
+	return render_template('puppet-node-yaml.html', raw=puppet_generate_config(node['certname']), system=system, node=node, active='puppet')
 
 def puppet_generate_config(certname):
 	"""Generates a YAML document describing the configuration of a particular
@@ -266,7 +283,6 @@ def puppet_generate_config(certname):
 		if group['classes'] == None:
 			continue
 
-		print group
 		if cortex.core.host_in_netgroup(certname,group['name']):
 
 			# Convert from YAML to python types for the classes for this group

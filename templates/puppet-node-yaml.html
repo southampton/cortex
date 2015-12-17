@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% block body %}
+
+{#- CodeMirror style -#}
+<link href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/codemirror.min.css" rel="stylesheet">
+<link href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/lint.min.css" rel="stylesheet">
+
+{#- CodeMirror scripts -#}
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/codemirror.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/mode/yaml/yaml.min.js"></script>
+
+{#- Override CodeMirror style - must come after CodeMirror style imports -#}
+<style type="text/css">
+.CodeMirror {
+  border: 1px solid #eee;
+  height: auto;
+}
+</style>
+
+<script>
+$(document).ready(function() {
+	var classes = CodeMirror.fromTextArea(document.getElementById('classes'), 
+	{
+		mode: 'yaml',
+		gutters: ["CodeMirror-lint-markers"],
+		lint: true,
+		indentUnit: 2,
+		viewportMargin: Infinity,
+		readOnly: true,
+	});
+
+});
+</script>
+	<div class="page-header">
+		<div class="pull-right">
+			<a href="{{url_for('puppet_enc_edit',id=system.id)}}" class="btn btn-sm btn-primary">Edit node</a>
+		</div>
+		<h3><i class="fa fa-fw fa-server"></i> Puppet configuration for `{{node.certname}}`</h3>
+		<p class="text-muted">This is the configuration for the node taking into account its group memberships and global default classes.</p>
+	</div>
+<div class="row">
+	<div class="col-md-9">
+		<div class="panel panel-default">
+			<div class="panel-heading">Node YAML</div>
+			<div class="panel-body" style="padding:0px">
+				<textarea id="classes" name="classes">{{ raw }}</textarea>
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}

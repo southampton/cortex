@@ -105,6 +105,9 @@ $(document).ready(function() {
 <form class="form-horizontal" method="POST" role="form">
 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 	<div class="page-header">
+		<div class="pull-right">
+			<a href="{{url_for('puppet_node_yaml',id=system.id)}}" class="btn btn-sm btn-primary">View configuration</a>
+		</div>
 		<h3><i class="fa fa-fw fa-server"></i> {{ system.name }}</h3>
 	</div>
 	<div class="panel panel-default">
