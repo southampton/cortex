@@ -137,11 +137,159 @@ def puppet_enc_default():
 @cortex.core.login_required
 def puppet_nodes():
 	# Get a cursor to the databaseo
-	cur = g.db.cursor(mysql.cursors.DictCursor)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get OS statistics
-	cur.execute('SELECT `puppet_nodes`.`certname` AS `certname`, `systems`.`id` AS `id`, `systems`.`name` AS `name`  FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` ORDER BY `puppet_nodes`.`certname` ')
-	results = cur.fetchall()
+	curd.execute('SELECT `puppet_nodes`.`certname` AS `certname`, `systems`.`id` AS `id`, `systems`.`name` AS `name`  FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` ORDER BY `puppet_nodes`.`certname` ')
+	results = curd.fetchall()
 
 	return render_template('puppet-nodes.html', active='puppet', data=results)
 
+@app.route('/puppet/groups', methods=['GET', 'POST'])
+@cortex.core.login_required
+def puppet_groups():
+	# Get a cursor to the databaseo
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	if request.method == 'GET':
+		# Get OS statistics
+		curd.execute('SELECT * FROM `puppet_groups`')
+		results = curd.fetchall()
+
+		return render_template('puppet-groups.html', active='puppet', data=results)
+	else:
+		netgroup_name = request.form['netgroup_name']
+
+		if len(netgroup_name.strip()) == 0:
+			flash('Invalid netgroup name', 'alert-danger')
+			return redirect(url_for('puppet_groups'))
+
+		## Make sure that group hasnt already been imported
+		curd.execute('SELECT 1 FROM `puppet_groups` WHERE `name` = %s', netgroup_name)
+		found = curd.fetchone()
+		if found:
+			flash('That netgroup has already been imported as a Puppet Group', 'alert-warning')
+			return redirect(url_for('puppet_groups'))			
+
+		if not cortex.core.netgroup_is_valid(netgroup_name):
+			flash('That netgroup does not exist', 'alert-danger')
+			return redirect(url_for('puppet_groups'))
+
+		curd.execute('INSERT INTO `puppet_groups` (`name`) VALUES (%s)', (netgroup_name))
+		g.db.commit()
+
+		flash('The netgroup has imported as a Puppet Group', 'alert-success')
+		return redirect(url_for('puppet_groups'))
+
+@app.route('/puppet/group/<name>', methods=['GET', 'POST'])
+@cortex.core.login_required
+def puppet_group_edit(name):
+	# Get a cursor to the databaseo
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	## Get the group from the DB
+	curd.execute('SELECT * FROM `puppet_groups` WHERE `name` = %s', name)
+	group = curd.fetchone()
+	if not group:
+		flash('I could not find a Puppet Group with that name', 'alert-warning')
+		return redirect(url_for('puppet_groups'))
+
+	if group['classes'] is None:
+		group['classes'] = "# Classes to include can be entered here\n"
+
+	# On any GET request, just display the information
+	if request.method == 'GET':
+		return render_template('puppet-group.html', group=group, active='puppet')
+
+	# On any POST request, validate the input and then save
+	elif request.method == 'POST':
+		# Extract data from form
+		classes = request.form.get('classes', '')
+
+		# Validate classes YAML
+		try:
+			yaml.load(classes)
+		except Exception, e:
+			flash('Invalid YAML syntax for classes: ' + str(e), 'alert-danger')
+			return render_template('puppet-group.html', group=group, classes=classes, active='puppet')
+
+		# Update the system
+		curd.execute('UPDATE `puppet_groups` SET `classes` = %s WHERE `name` = %s', (classes,name))
+		g.db.commit()
+
+		# Redirect back to the systems page
+		flash('Changes saved successfully', 'alert-success')
+		return redirect(url_for('puppet_group_edit',name=name))
+
+
+@app.route('/puppet/raw/<certname>', methods=['GET', 'POST'])
+@cortex.core.login_required
+def puppet_dump(certname):
+	return puppet_generate_config(certname)
+
+def puppet_generate_config(certname):
+	"""Generates a YAML document describing the configuration of a particular
+	node given as 'certname'."""
+
+	# Get a cursor to the databaseo
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get the task
+	curd.execute("SELECT `classes`, `variables`, `env`, `include_default` FROM `puppet_nodes` WHERE `certname` = %s", (certname,))
+	node = curd.fetchone()
+
+	curd.execute("SELECT `value` FROM `kv_settings` WHERE `key` = 'puppet.enc.default'")
+	default_classes = curd.fetchone()
+	if default_classes is not None:
+		default_classes = yaml.load(default_classes['value'])
+	
+		## yaml load can come back with no actual objects, e.g. comments, blank etc.
+		if default_classes == None:
+			default_classes = {}
+	else:
+		default_classes = {}
+
+	# Start building response
+	response = {'environment': node['env']}
+
+	# Decode YAML for classes from the node
+	if len(node['classes'].strip()) != 0:
+		response['classes'] = yaml.load(node['classes'])
+	else:
+		response['classes'] = {}
+
+	# Find all netgroups this node is a member of to load in their classes too
+	curd.execute("SELECT `name`, `classes` FROM `puppet_groups` ORDER BY `name`")
+	groups = curd.fetchall()
+
+	for group in groups:
+		if group['classes'] == None:
+			continue
+
+		print group
+		if cortex.core.host_in_netgroup(certname,group['name']):
+
+			# Convert from YAML to python types for the classes for this group
+			group_classes = yaml.load(group['classes'])
+
+			## If there are classes within that
+			if not group_classes == None:
+				## Get the name of each class
+				for classname in group_classes:
+					# And if the class hasn't already been loaded by the node...
+					if not classname in response['classes']:
+						# import this class and its params too
+						response['classes'][classname] = group_classes[classname]
+
+	if node['include_default']:
+		# Load in global default classes too, unless we already loaded settings for those class names
+		for classname in default_classes:
+			if not classname in response['classes']:
+				response['classes'][classname] = default_classes[classname]
+
+	# Decode YAML for environment
+	variables = None
+	if len(node['variables'].strip()) != 0:
+		response['variables'] = yaml.load(node['variables'])
+
+	return yaml.dump(response)

@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+{% block body %}
+
+{#- CodeMirror style -#}
+<link href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/codemirror.min.css" rel="stylesheet">
+<link href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/lint.min.css" rel="stylesheet">
+
+{#- CodeMirror scripts -#}
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/codemirror.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/mode/yaml/yaml.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/lint.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/js-yaml/3.4.6/js-yaml.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/yaml-lint.js"></script>
+
+{#- Override CodeMirror style - must come after CodeMirror style imports -#}
+<style type="text/css">
+.CodeMirror {
+  border: 1px solid #eee;
+  height: auto;
+}
+</style>
+
+<script>
+$(document).ready(function() {
+	var classes_editor = CodeMirror.fromTextArea(document.getElementById('classes'), 
+	{
+		mode: 'yaml',
+		gutters: ["CodeMirror-lint-markers"],
+		lint: true,
+		indentUnit: 2,
+		viewportMargin: Infinity,
+	});
+
+	classes_editor.setOption("extraKeys", 
+	{
+	  Tab: function(cm) {
+		var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
+		cm.replaceSelection(spaces);
+	  }
+	});
+
+});
+</script>
+<form class="form-horizontal" method="POST" role="form">
+<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+	<div class="page-header">
+		<h3><i class="fa fa-fw fa-object-group"></i> Puppet Group `{{group.name}}`</h3>
+		<p class="text-muted">The following classes will be applied to hosts in the matching netgroup.</p>
+	</div>
+<div class="row">
+	<div class="col-md-9">
+		<div class="panel panel-default">
+			<div class="panel-heading">Classes</div>
+			<div class="panel-body" style="padding:0px">
+				<textarea id="classes" name="classes">{{ group.classes }}</textarea>
+			</div>
+		</div>
+
+		<button class="btn btn-primary" type="submit">Save Changes</button>
+	</div>
+	<div class="col-md-3">
+		<div class="panel panel-default">
+			<div class="panel-heading">Help</div>
+			<div class="panel-body">
+				<p>Use the <strong>Classes</strong> field to define the classes that nodes in this group will import.
+				define parameters for the classes. The per node configuration can override these values.</p>
+				<p>The format of this field is YAML. Use two spaces for indentation. Do not use tabs, but you can safely
+					press tab (it will enter 2 spaces).</p>
+				<div class="text-center">
+					<button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#myModal">  Find out more</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}
