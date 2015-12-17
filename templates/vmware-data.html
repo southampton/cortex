@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="page-header">
+<h3><i class="fa fa-th fa-fw"></i> VMware Data</h3>
+</div>
+<table class="table table-condensed table-striped" id="data">
+	<thead>
+		<tr>
+			<th style="width:0.3em"></th>
+			<th>Name</th>
+			<th>Cluster / Host</th>
+			<th>IP Address</th>
+			<th>OS</th>
+			<th>vCPU</th>
+			<th>RAM</th>
+			<th>H/W</th>
+			<th>Tools State</th>
+			<th>Tools Version</th>
+		</tr>
+	</thead>
+	<tbody>
+{% for vm in data -%}
+		<tr>
+			<td>{%    if vm.guestState == "running"    %}<i style='color:#2c2;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-play' />
+			    {%- elif vm.guestState == "notRunning" %}<i style='color:#c22;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-stop' />
+			    {%- else                               %}<i style='color:#22c;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-question' />{% endif %}</td>
+			<td>{{ vm.name }}</td>
+			<td>{{ vm.cluster }}</td>
+			<td>{{ vm.ipaddr }}</td>
+			<td>{{ vm.guestFullName | replace('Microsoft', '') | replace(' (64-bit)', '') | replace(' (32-bit)', '') | replace('Red Hat Enterprise Linux', 'RHEL') }}</td>
+			<td>{{ vm.numCPU }}</td>
+			<td>{{ vm.memoryMB }}</td>
+			<td>{{ vm.hwVersion | replace('vmx-', '') }}</td>
+			<td>{{ vm.toolsRunningStatus | replace('guestTools', '') }}</td>
+			<td>{{ vm.toolsVersionStatus | replace('guestTools', '') }}</td>
+		</tr>
+{%- endfor %}
+	</tbody>
+</table>
+<script type="text/javascript">
+        $('#data').DataTable({
+                "lengthMenu": [[10,20,50,100,-1], [10,20,50,100,'All']],
+                "pageLength": 20,
+                "order": [[1, 'asc']],
+		"columns": [{ "orderable": false, "targets": 0 }, null, null, null, null, null, null, null, null, null],
+                "searching": true,
+        });
+</script>
+{% endblock %}

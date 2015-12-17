@@ -124,5 +124,37 @@ def admin_classes():
 				flash("System class updated","alert-success")
 				return redirect(url_for('admin_classes'))
 
-				## Save changes to an existing class
-				return
+		else:
+			abort(400)
+
+################################################################################
+
+@app.route('/admin/maintenance', methods=['GET','POST'])
+def admin_maint():
+	"""Allows the user to kick off scheduled jobs on demand"""
+
+	if request.method == 'GET':
+		# Make sure the jobs aren't already running
+		cur = g.db.cursor(mysql.cursors.DictCursor)
+		cur.execute("SELECT `id` FROM `tasks` WHERE `module` = '_cache_vmware' AND `status` = 0")
+		vmcache_task_id = cur.fetchone()
+		cur.execute("SELECT `id` FROM `tasks` WHERE `module` = '_cache_servicenow' AND `status` = 0")
+		sncache_task_id = cur.fetchone()
+
+		# Render the page
+		return render_template('admin-maint.html', active='admin', sncache_task_id=sncache_task_id,vmcache_task_id=vmcache_task_id)
+
+	else:
+		module = request.form['task_name']
+		neocortex = cortex.core.neocortex_connect()
+
+		if module == 'vmcache':
+			task_id = neocortex.start_internal_task('scheduler', 'cache_vmware.py', '_cache_vmware')
+		elif module == 'sncache':	
+			task_id = neocortex.start_internal_task('scheduler', 'cache_servicenow.py', '_cache_servicenow')
+		else:
+			abort(400)
+
+		return redirect(url_for('task_status', id=task_id))
+
+

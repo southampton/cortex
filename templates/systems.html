@@ -8,7 +8,7 @@ a.server-link:hover { text-decoration: underline !important; }
 
 <div class="page-header">
 {#	<div class="pull-right" style="display:none"><button id="showdecom" type="button" class="btn btn-success btn-sm">Show Decommissioned Systems</button></div>#}
-<h3>Systems</h3>
+<h3><i class="fa fa-server fa-fw"></i> Systems</h3>
 </div>
 
 <ul id="class-tabs" class="nav nav-tabs" style="margin-bottom:1em">
@@ -51,7 +51,7 @@ $(function() {
 		"searching": true,
 		"rowCallback": function(row, data, index) {
 			{#- data[5] is CMDB URL, data[6] is database ID, data[4] is operational status, data[8] is Puppet Cert Name #}
-			$('td:eq(5)', row).html((data[8] != null ? '<a class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/puppet-enc/' + data[6] + '"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i>ENC</a>': '') + (data[5] != '' ? '<a class="btn btn-xs btn-default" href="' + data[5] + '" target="_blank"><i style="margin-right:0.2em" class="fa fa-fw fa-cloud"></i>CMDB</a>' : ''));
+			$('td:eq(5)', row).html((data[8] != null ? '<a class="btn btn-xs btn-default" style="margin-right:0.5em" href="/puppet/enc/' + data[6] + '"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i>Puppet</a>': '') + (data[5] != '' ? '<a class="btn btn-xs btn-default" href="' + data[5] + '" target="_blank"><i style="margin-right:0.2em" class="fa fa-fw fa-cloud"></i>CMDB</a>' : ''));
 			if (data[4] == "" || data[4] == undefined)
 			{
 				$('td:eq(4)', row).html("Unknown");

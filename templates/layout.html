@@ -40,21 +40,32 @@
 								{%- endfor %}
 							</ul>
 						</li>
-						<li class="dropdown{%if active == 'stats'%} active{%endif%}">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Statistics <b class="caret"></b></a>
+						<li class="dropdown{%if active == 'vmware'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">VMware <b class="caret"></b></a>
 							<ul class="dropdown-menu">
-								<li><a href="{{ url_for('stats_os') }}"><i class="fa fa-pie-chart fa-fw"></i> Operating Systems</a></li>
-								<li><a href="{{ url_for('stats_hw') }}"><i class="fa fa-pie-chart fa-fw"></i> Hardware Version</a></li>
-								<li><a href="{{ url_for('stats_power') }}"><i class="fa fa-pie-chart fa-fw"></i> Power State</a></li>
-								<li><a href="{{ url_for('stats_specs') }}"><i class="fa fa-bar-chart fa-fw"></i> RAM & CPU</a></li>
-								<li><a href="{{ url_for('stats_tools') }}"><i class="fa fa-pie-chart fa-fw"></i> VM Tools</a></li>
+								<li><a href="{{ url_for('vmware_os') }}"><i class="fa fa-pie-chart fa-fw"></i> Operating Systems</a></li>
+								<li><a href="{{ url_for('vmware_hw') }}"><i class="fa fa-pie-chart fa-fw"></i> Hardware Version</a></li>
+								<li><a href="{{ url_for('vmware_power') }}"><i class="fa fa-pie-chart fa-fw"></i> Power State</a></li>
+								<li><a href="{{ url_for('vmware_specs') }}"><i class="fa fa-bar-chart fa-fw"></i> RAM & CPU</a></li>
+								<li><a href="{{ url_for('vmware_tools') }}"><i class="fa fa-pie-chart fa-fw"></i> VM Tools</a></li>
+								<li role="separator" class="divider"></li>
+								<li><a href="{{ url_for('vmware_data') }}"><i class="fa fa-th fa-fw"></i> VM Data</a></li>
+							</ul>
+						</li>
+						<li class="dropdown{%if active == 'puppet'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Puppet <b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								<li><a href="{{ url_for('puppet_nodes') }}"><i class="fa fa-pie-chart fa-fw"></i> Nodes</a></li>
+								<li><a href="{{ url_for('vmware_hw') }}"><i class="fa fa-pie-chart fa-fw"></i> Groups</a></li>
+								<li><a href="{{ url_for('vmware_power') }}"><i class="fa fa-pie-chart fa-fw"></i> Default classes</a></li>
 							</ul>
 						</li>
 						<li class="dropdown{%if active == 'admin'%} active{%endif%}">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin <b class="caret"></b></a>
 							<ul class="dropdown-menu">
-								<li><a href="{{ url_for('admin_classes') }}"><i class="fa fa-fw fa-gears"></i> Classes</a></li>
-								<li><a href="{{ url_for('admin_tasks') }}"><i class="fa fa-fw fa-gears"></i> Tasks</a></li>
+								<li><a href="{{ url_for('admin_classes') }}"><i class="fa fa-fw fa-table"></i> Classes</a></li>
+								<li><a href="{{ url_for('admin_tasks') }}"><i class="fa fa-fw fa-tasks"></i> Tasks</a></li>
+								<li><a href="{{ url_for('admin_maint') }}"><i class="fa fa-fw fa-gears"></i> Maintenance</a></li>
 							</ul>
 						</li>
 					</ul>
@@ -74,7 +85,7 @@
 			</div>
 		</div>
 
-		<div class="container">
+		<div class="container-fluid">
 			{% for category, message in get_flashed_messages(with_categories=true) %}
               <div class="alert alert-dismissable {{category}}"><button type="button" class="close" data-dismiss="alert">×</button>{{message}}</div>
 			{% endfor %}

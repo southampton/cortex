@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="page-header">
+<h3>Puppet Nodes</h3>
+</div>
+<table class="table table-condensed table-striped" id="data">
+	<thead>
+		<tr>
+			<th>System Name</th>
+			<th>Puppet Certificate Name</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+{% for node in data -%}
+		<tr>
+			<td>{{ node.name }}</td>
+			<td>{{ node.certname }}</td>
+			<td><a href="{{url_for('puppet_enc_edit',id=node.id) }}" class="btn btn-default btn-xs"><i class="fa fa-fw fa-code"></i> Settings</a></td>
+		</tr>
+{%- endfor %}
+	</tbody>
+</table>
+<script type="text/javascript">
+        $('#data').DataTable({
+                "lengthMenu": [[10,20,50,100,-1], [10,20,50,100,'All']],
+                "pageLength": 20,
+                "order": [[0, 'asc']],
+        });
+</script>
+{% endblock %}

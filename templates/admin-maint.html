@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<div class="page-header">
+<h3><i class="fa fa-fw fa-gears"></i> Maintenance Tasks</h3>
+<div class="text-muted">These tasks are scheduled to run automatically but you can start them on demand here if needed.</div>
+</div>
+
+<div class="row">
+	<div class="col-md-3">
+		<div class="well">
+			<h3 style="margin-top:0px"><i class="fa fa-fa fa-upload"></i> Update VMware Cache</h3>
+			<p>Updates the Cortex database with data from VMware</p>
+			<form method="POST">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input type="hidden" name="task_name" value="vmcache"/>
+			{% if vmcache_task_id %}
+				<a href="{{url_for('task_status',id=vmcache_task_id['id'])}}" class="btn btn-primary form-control"><i class="fa fa-fw fa-cog fa-spin"></i> View in progress task</a>
+			{% else %}
+			<button class="form-control btn btn-success" type="submit"><i class="fa fa-fw fa-play"></i> Start</input>
+			{% endif %}
+			</form>
+		</div>
+	</div>
+	<div class="col-md-3">
+		<div class="well">
+			<h3 style="margin-top:0px"><i class="fa fa-fa fa-cloud-download"></i> Update CMDB Cache</h3>
+			<p>Updates the Cortex database with data from the ServiceNow CMDB</p>
+			<form method="POST">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input type="hidden" name="task_name" value="sncache"/>
+			{% if sncache_task_id %}
+				<a href="{{url_for('task_status',id=sncache_task_id['id'])}}" class="btn btn-primary form-control"><i class="fa fa-fw fa-cog fa-spin"></i> View in progress task</a>
+			{% else %}
+			<button class="form-control btn btn-success" type="submit"><i class="fa fa-fw fa-play"></i> Start</input>
+			{% endif %}
+			</form>
+		</div>
+	</div>
+</div>
+{% endblock %}

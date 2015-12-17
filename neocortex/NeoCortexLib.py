@@ -698,11 +698,8 @@ class NeoCortexLib(object):
 
 		# Add environment if we've got it
 		environments = dict((e['id'], e) for e in self.config['ENVIRONMENTS'] if e['cmdb'])
-		print environment
-		print environments
 		if environment is not None and environment in environments:
 			vm_data['u_environment'] = environments[environment]['cmdb']
-		print vm_data
 
 		# json= was only added in Requests 2.4.2, so might need to be data=json.dumps(vm_data)
 		# Content-Type header may be superfluous as Requests might add it anyway, due to json=

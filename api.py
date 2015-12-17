@@ -6,7 +6,7 @@ import re
 import MySQLdb as mysql
 import yaml
 
-@app.route('/api/puppet-enc/<certname>')
+@app.route('/api/puppet/enc/<certname>')
 def api_puppet_enc(certname):
 	"""Returns the YAML associated with the given node."""
 

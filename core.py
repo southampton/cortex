@@ -365,6 +365,9 @@ def get_puppet_environments():
 def get_cmdb_environments():
 	return [e for e in app.config['ENVIRONMENTS'] if e['cmdb']]
 
+def get_environments_as_dict():
+	return dict((e['id'], e) for e in app.config['ENVIRONMENTS'])
+
 ################################################################################
 
 def class_display_name(name):

@@ -13,9 +13,9 @@ import MySQLdb as mysql
 
 ################################################################################
 
-@app.route('/stats/os')
+@app.route('/vmware/os')
 @cortex.core.login_required
-def stats_os():
+def vmware_os():
 	"""Shows VM operating system statistics."""
 
 	# Get a cursor to the databaseo
@@ -111,13 +111,13 @@ def stats_os():
 			types['bsd'] += 1
 
 	# Render
-	return render_template('stats-os.html', active='stats', types=types)
+	return render_template('vmware-os.html', active='vmware', types=types)
 
 ################################################################################
 
-@app.route('/stats/hardware')
+@app.route('/vmware/hardware')
 @cortex.core.login_required
-def stats_hw():
+def vmware_hw():
 	"""Shows VM hardware version statistics."""
 
 	# Get a cursor to the databaseo
@@ -128,35 +128,37 @@ def stats_hw():
 	results = cur.fetchall()
 
 	# Render
-	return render_template('stats-hw.html', active='stats', stats_hw=results)
+	return render_template('vmware-hw.html', active='vmware', stats_hw=results)
 
 ################################################################################
 
-@app.route('/stats/power')
+@app.route('/vmware/power')
 @cortex.core.login_required
-def stats_power():
+def vmware_power():
 	"""Shows VM hardware power state statistics."""
 	cur = g.db.cursor(mysql.cursors.DictCursor)
 	cur.execute('SELECT `guestState`, COUNT(*) AS `count` FROM `vmware_cache_vm` GROUP BY `guestState` ORDER BY `guestState`')
 	results = cur.fetchall()
-	return render_template('stats-power.html', active='stats', stats_power=results)
+	return render_template('vmware-power.html', active='vmware', stats_power=results)
 
-@app.route('/stats/tools')
+################################################################################
+
+@app.route('/vmware/tools')
 @cortex.core.login_required
-def stats_tools():
+def vmware_tools():
 	"""Shows VM tools statistics."""
 	cur = g.db.cursor(mysql.cursors.DictCursor)
 	cur.execute('SELECT `toolsRunningStatus`, COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `guestState` = "running" GROUP BY `toolsRunningStatus` ORDER BY `toolsRunningStatus`')
 	stats_status = cur.fetchall()
 	cur.execute('SELECT `toolsVersionStatus`, COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `guestState` = "running" GROUP BY `toolsVersionStatus` ORDER BY `toolsVersionStatus`')
 	stats_version = cur.fetchall()
-	return render_template('stats-tools.html', active='stats', stats_status=stats_status, stats_version=stats_version)
+	return render_template('vmware-tools.html', active='vmware', stats_status=stats_status, stats_version=stats_version)
 
 ################################################################################
 
-@app.route('/stats/specs')
+@app.route('/vmware/specs')
 @cortex.core.login_required
-def stats_specs():
+def vmware_specs():
 	"""Shows VM hardware spec statistics."""
 
 	# Get a cursor to the databaseo
@@ -229,4 +231,18 @@ def stats_specs():
 		except KeyError as ex:
 			data_cpu['Other'] += 1
 			
-	return render_template('stats-specs.html', active='stats', stats_ram=data_ram, stats_cpu=data_cpu)
+	return render_template('vmware-specs.html', active='vmware', stats_ram=data_ram, stats_cpu=data_cpu)
+
+################################################################################
+
+@app.route('/vmware/data')
+@cortex.core.login_required
+def vmware_data():
+	# Get a cursor to the databaseo
+	cur = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get OS statistics
+	cur.execute('SELECT * FROM `vmware_cache_vm` ORDER BY `name`')
+	results = cur.fetchall()
+
+	return render_template('vmware-data.html', active='vmware', data=results)

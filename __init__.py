@@ -177,8 +177,9 @@ import cortex.admin
 
 # load view functions
 import cortex.views
-import cortex.systemviews
-import cortex.statsviews
+import cortex.vmware
+import cortex.systems
+import cortex.puppet
 import cortex.api
 
 #if app.config['TOTP_ENABLED']:
