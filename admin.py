@@ -149,9 +149,9 @@ def admin_maint():
 		neocortex = cortex.core.neocortex_connect()
 
 		if module == 'vmcache':
-			task_id = neocortex.start_internal_task('scheduler', 'cache_vmware.py', '_cache_vmware')
+			task_id = neocortex.start_internal_task(session['username'], 'cache_vmware.py', '_cache_vmware')
 		elif module == 'sncache':	
-			task_id = neocortex.start_internal_task('scheduler', 'cache_servicenow.py', '_cache_servicenow')
+			task_id = neocortex.start_internal_task(session['username'], 'cache_servicenow.py', '_cache_servicenow')
 		else:
 			abort(400)
 
