@@ -3,8 +3,11 @@
 # Configuration
 CACHE_DIR='/var/cache/cortex-penc'
 CORTEX_URL='https://cortex.dev.soton.ac.uk/api/puppet/enc'
+AUTH_TOKEN=''
 
 import sys, requests, warnings, os
+
+################################################################################
 
 def cache_catalog(certname, catalog):
 	"""Caches the catalog for the given node to disk"""
@@ -13,6 +16,8 @@ def cache_catalog(certname, catalog):
 	with open(os.path.join(CACHE_DIR, certname), 'w') as f:
 		# Write the catalog
 		f.write(catalog)
+
+################################################################################
 
 def print_catalog(certname):
 	"""Reads the catalog from disk (if possible) and then prints it out. Returns 0 on success and 1 on error"""
@@ -26,6 +31,8 @@ def print_catalog(certname):
 
 	return 0
 
+################################################################################
+
 # Validate arguments
 if len(sys.argv) <= 1:
 	print >> sys.stderr, "Usage: cortex-env-wrapper <nodename"
@@ -38,7 +45,7 @@ certname = sys.argv[1]
 try:
 	with warnings.catch_warnings():
 		warnings.simplefilter("ignore", requests.packages.urllib3.exceptions.InsecureRequestWarning)
-		r = requests.get(CORTEX_URL + '/' + certname, headers={'Accept': 'application/yml'}, verify=False)
+		r = requests.get(CORTEX_URL + '/' + certname + '?auth_token=' + AUTH_TOKEN, headers={'Accept': 'application/yml'}, verify=False)
 except Exception, e:
 	# On exception, attempt to print cache
 	sys.exit(print_catalog(certname))

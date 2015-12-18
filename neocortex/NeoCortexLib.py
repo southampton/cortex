@@ -704,13 +704,15 @@ class NeoCortexLib(object):
 		# Decide which ServiceNow table we need to put the CI in to, based on the OS
 		if os_type == self.OS_TYPE_BY_NAME['Linux']:
 			table_name = "cmdb_ci_linux_server"
+			model_id = "Generic Linux Virtual Server"
 		elif os_type == self.OS_TYPE_BY_NAME['Windows']:
 			table_name = "cmdb_ci_windows_server"
+			model_id = "Generic Windows Virtual Server"
 		else:
 			raise Exception('Unknown os_type passed to servicenow_create_ci')
 
 		# Build the data for the CI
-		vm_data = { 'name': str(ci_name), 'os': str(os_name), 'cpu_count': str(cpus), 'disk_space': str(disk_gb), 'virtual': str(virtual).lower(), 'ip_address': ipaddr, 'ram': str(ram_mb), 'operational_status': 'In Service' }
+		vm_data = { 'name': str(ci_name), 'os': str(os_name), 'cpu_count': str(cpus), 'disk_space': str(disk_gb), 'virtual': str(virtual).lower(), 'ip_address': ipaddr, 'ram': str(ram_mb), 'operational_status': 'In Service', 'model_id': model_id }
 
 		# Add environment if we've got it
 		environments = dict((e['id'], e) for e in self.config['ENVIRONMENTS'] if e['cmdb'])

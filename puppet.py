@@ -264,6 +264,10 @@ def puppet_generate_config(certname):
 	curd.execute("SELECT `id`, `classes`, `variables`, `env`, `include_default` FROM `puppet_nodes` WHERE `certname` = %s", (certname,))
 	node = curd.fetchone()
 
+	# If we don't find the node, return nothing
+	if node is None:
+		return None
+
 	# Get the system
 	system = cortex.core.get_system_by_id(node['id'])
 
