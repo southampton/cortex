@@ -263,21 +263,21 @@ def get_system_count(class_name = None, search = None, show_decom = True):
 def get_system_by_id(id):
 	# Query the database
 	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute("SELECT `systems`.`id` AS `id`, `type`, `class`, `number`, `systems`.`name` AS `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `cmdb_id`, `sys_class_name` AS `cmdb_sys_class_name`, `sncache_cmdb_ci`.`name` AS `cmdb_name`, `operational_status` AS `cmdb_operational_status`, `u_number` AS `cmdb_u_number`, `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description`, `vmware_cache_vm`.`name` AS `vmware_name`, `vmware_cache_vm`.`vcenter` AS `vmware_vcenter`, `vmware_cache_vm`.`uuid` AS `vmware_uuid`, `vmware_cache_vm`.`numCPU` AS `vmware_cpus`, `vmware_cache_vm`.`memoryMB` AS `vmware_ram`, `vmware_cache_vm`.`guestState` AS `vmware_guest_state`, `vmware_cache_vm`.`guestFullName` AS `vmware_os`, `vmware_cache_vm`.`hwVersion` AS `vmware_hwversion`, `vmware_cache_vm`.`ipaddr` AS `vmware_ipaddr`, `vmware_cache_vm`.`toolsVersionStatus` AS `vmware_tools_version_status`, `puppet_nodes`.`certname` AS `puppet_certname`, `puppet_nodes`.`env` AS `puppet_env`, `puppet_nodes`.`include_default` AS `puppet_include_default`, `puppet_nodes`.`classes` AS `puppet_classes`, `puppet_nodes`.`variables` AS `puppet_variables` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` LEFT JOIN `vmware_cache_vm` ON `systems`.`name` = `vmware_cache_vm`.`name` LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` WHERE `systems`.`id` = %s", (id,))
+	cur.execute("SELECT `systems`.`id` AS `id`, `type`, `class`, `number`, `systems`.`name` AS `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `cmdb_id`, `sys_class_name` AS `cmdb_sys_class_name`, `sncache_cmdb_ci`.`name` AS `cmdb_name`, `operational_status` AS `cmdb_operational_status`, `u_number` AS `cmdb_u_number`, `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description`, `vmware_cache_vm`.`name` AS `vmware_name`, `vmware_cache_vm`.`vcenter` AS `vmware_vcenter`, `vmware_cache_vm`.`uuid` AS `vmware_uuid`, `vmware_cache_vm`.`numCPU` AS `vmware_cpus`, `vmware_cache_vm`.`memoryMB` AS `vmware_ram`, `vmware_cache_vm`.`powerState` AS `vmware_guest_state`, `vmware_cache_vm`.`guestFullName` AS `vmware_os`, `vmware_cache_vm`.`hwVersion` AS `vmware_hwversion`, `vmware_cache_vm`.`ipaddr` AS `vmware_ipaddr`, `vmware_cache_vm`.`toolsVersionStatus` AS `vmware_tools_version_status`, `puppet_nodes`.`certname` AS `puppet_certname`, `puppet_nodes`.`env` AS `puppet_env`, `puppet_nodes`.`include_default` AS `puppet_include_default`, `puppet_nodes`.`classes` AS `puppet_classes`, `puppet_nodes`.`variables` AS `puppet_variables`, `sncache_cmdb_ci`.`u_environment` AS `cmdb_environment`, `sncache_cmdb_ci`.`short_description` AS `cmdb_description` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` LEFT JOIN `vmware_cache_vm` ON `systems`.`name` = `vmware_cache_vm`.`name` LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` WHERE `systems`.`id` = %s", (id,))
 
 	# Return the results
 	return cur.fetchone()
 
 ################################################################################
 
-def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, show_decom = True):
+def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, show_decom = True, only_other = False):
 	"""Returns the list of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost), and ordered (defaults to "name")"""
 
 	## BUILD THE QUERY
 
 	# Start with no parameters, and a generic SELECT from the appropriate table
 	params = ()
-	query = "SELECT `systems`.`id` AS `id`, `systems`.`type` AS `type`, `systems`.`class` AS `class`, `systems`.`number` AS `number`, `systems`.`name` AS `name`, `systems`.`allocation_date` AS `allocation_date`, `systems`.`allocation_who` AS `allocation_who`, `systems`.`allocation_comment` AS `allocation_comment`, `systems`.`cmdb_id` AS `cmdb_id`, `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status`, `vmware_cache_vm`.`guestState` AS `vmware_guest_state`, `puppet_nodes`.`certname` AS `puppet_certname` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` LEFT JOIN `vmware_cache_vm` ON `systems`.`name` = `vmware_cache_vm`.`name` LEFT JOIN `puppet_nodes` ON `puppet_nodes`.`id` = `systems`.`id` "
+	query = "SELECT `systems`.`id` AS `id`, `systems`.`type` AS `type`, `systems`.`class` AS `class`, `systems`.`number` AS `number`, `systems`.`name` AS `name`, `systems`.`allocation_date` AS `allocation_date`, `systems`.`allocation_who` AS `allocation_who`, `systems`.`allocation_comment` AS `allocation_comment`, `systems`.`cmdb_id` AS `cmdb_id`, `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status`, `vmware_cache_vm`.`powerState` AS `vmware_guest_state`, `puppet_nodes`.`certname` AS `puppet_certname`, `sncache_cmdb_ci`.`u_environment` AS `cmdb_environment`, `sncache_cmdb_ci`.`short_description` AS `cmdb_description` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` LEFT JOIN `vmware_cache_vm` ON `systems`.`name` = `vmware_cache_vm`.`name` LEFT JOIN `puppet_nodes` ON `puppet_nodes`.`id` = `systems`.`id` "
 
 	# If a class_name is specfied, add on a WHERE clause
 	if class_name is not None:
@@ -312,6 +312,15 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 			query = query + "WHERE "
 
 		query = query + ' (`sncache_cmdb_ci`.`operational_status` = "In Service" OR `sncache_cmdb_ci`.`operational_status` IS NULL)'
+
+	# Restrict to other/legacy types
+	if only_other:
+		if class_name is not None or search is not None or show_decom == False:
+			query = query + " AND "
+		else:
+			query = query + "WHERE "
+	
+		query = query + ' `systems`.`type` != 0'
 
 	# Handle the ordering of the rows
 	query = query + " ORDER BY ";

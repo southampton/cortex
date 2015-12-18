@@ -222,7 +222,6 @@ def systems_json():
 	# Validate and extract ordering column. This parameter is the index of the
 	# column on the HTML table to order by
 	if 'order[0][column]' in request.args:
-		print "order[0][column] = " + request.args['order[0][column]']
 		order_column = int(request.args['order[0][column]'])
 	else:   
 		order_column = 0
@@ -230,7 +229,6 @@ def systems_json():
 	# Validate and extract ordering direction. 'asc' for ascending, 'desc' for
 	# descending.
 	if 'order[0][dir]' in request.args:
-		print "order[0][dir] = " + request.args['order[0][dir]']
 		if request.args['order[0][dir]'] == 'asc':
 			order_asc = True
 		elif request.args['order[0][dir]'] == 'desc':
@@ -260,8 +258,14 @@ def systems_json():
 	# class, e.g .srv, vhost, etc.
 	filter_group = None
 	if 'filter_group' in request.args:
-		if request.args['filter_group'] != '':
+		# The filtering on starting with * ignores some special filter groups
+		if request.args['filter_group'] != '' and request.args['filter_group'][0] != '*':
 			filter_group = str(request.args['filter_group'])
+
+	# Filter group being *OTHER should hide our group names and filter on 
+	only_other = False
+	if request.args['filter_group'] == '*OTHER':
+		only_other = True
 
 	# Validate the flag for showing decommissioned systems.
 	show_decom = True
@@ -282,7 +286,7 @@ def systems_json():
 	filtered_count = cortex.core.get_system_count(filter_group, search, show_decom)
 
 	# Get results of query
-	results = cortex.core.get_systems(filter_group, search, order_column, order_asc, start, length, show_decom)
+	results = cortex.core.get_systems(filter_group, search, order_column, order_asc, start, length, show_decom, only_other)
 
 	# DataTables wants an array in JSON, so we build this here, returning
 	# only the columns we want. We format the date as a string as

@@ -136,6 +136,8 @@ def puppet_enc_default():
 
 		return redirect(url_for('puppet_enc_default'))
 
+################################################################################
+
 @app.route('/puppet/nodes')
 @cortex.core.login_required
 def puppet_nodes():
@@ -147,6 +149,8 @@ def puppet_nodes():
 	results = curd.fetchall()
 
 	return render_template('puppet-nodes.html', active='puppet', data=results)
+
+################################################################################
 
 @app.route('/puppet/groups', methods=['GET', 'POST'])
 @cortex.core.login_required
@@ -183,6 +187,8 @@ def puppet_groups():
 
 		flash('The netgroup has imported as a Puppet Group', 'alert-success')
 		return redirect(url_for('puppet_groups'))
+
+################################################################################
 
 @app.route('/puppet/group/<name>', methods=['GET', 'POST'])
 @cortex.core.login_required
@@ -224,6 +230,7 @@ def puppet_group_edit(name):
 		flash('Changes saved successfully', 'alert-success')
 		return redirect(url_for('puppet_group_edit',name=name))
 
+################################################################################
 
 @app.route('/puppet/yaml/<int:id>', methods=['GET', 'POST'])
 @cortex.core.login_required
@@ -244,6 +251,8 @@ def puppet_node_yaml(id):
 
 	return render_template('puppet-node-yaml.html', raw=puppet_generate_config(node['certname']), system=system, node=node, active='puppet')
 
+################################################################################
+
 def puppet_generate_config(certname):
 	"""Generates a YAML document describing the configuration of a particular
 	node given as 'certname'."""
@@ -252,8 +261,11 @@ def puppet_generate_config(certname):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get the task
-	curd.execute("SELECT `classes`, `variables`, `env`, `include_default` FROM `puppet_nodes` WHERE `certname` = %s", (certname,))
+	curd.execute("SELECT `id`, `classes`, `variables`, `env`, `include_default` FROM `puppet_nodes` WHERE `certname` = %s", (certname,))
 	node = curd.fetchone()
+
+	# Get the system
+	system = cortex.core.get_system_by_id(node['id'])
 
 	curd.execute("SELECT `value` FROM `kv_settings` WHERE `key` = 'puppet.enc.default'")
 	default_classes = curd.fetchone()
@@ -303,9 +315,18 @@ def puppet_generate_config(certname):
 			if not classname in response['classes']:
 				response['classes'][classname] = default_classes[classname]
 
-	# Decode YAML for environment
+	# Decode YAML for environment (Puppet calls them parameters, but we call them [global] variables)
 	variables = None
 	if len(node['variables'].strip()) != 0:
-		response['variables'] = yaml.load(node['variables'])
+		response['parameters'] = yaml.load(node['variables'])
+	else:
+		response['parameters'] = {}
+
+	# Add in (and indeed potentially overwrite) some auto-generated variables
+	response['parameters']['uos_motd_sn_environment'] = system['cmdb_environment']
+	if system['cmdb_description'] is None or len(system['cmdb_description'].strip()) == 0:
+		response['parameters']['uos_motd_sn_description'] = 'DESCRIPTION NOT SET IN SERVICENOW'
+	else:
+		response['parameters']['uos_motd_sn_description'] = system['cmdb_description']
 
 	return yaml.dump(response)

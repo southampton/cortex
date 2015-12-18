@@ -15,7 +15,8 @@ a.server-link:hover { text-decoration: underline !important; }
 	{%- for class in classes %}
 	<li {% if loop.index0 == 0 %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="{{ class.name }}" role="tab">{{ class.name }}</a></li>
 	{%- endfor %}
-	<li role="presentation"><a style="cursor:pointer" data-class="" role="tab">All</a></li>
+	<li role="presentation"><a style="cursor:pointer" data-class="*OTHER" role="tab">Other/Legacy</a></li>
+	<li role="presentation"><a style="cursor:pointer" data-class="*ALL" role="tab">All</a></li>
 </ul>
 <div id="systemsWrapper">
 <table class="table table-condensed table-striped" id="systems">
@@ -59,13 +60,17 @@ $(function() {
 
 			var view_link = "<a class='server-link' href='/systems/edit/" + data[6] + "'>" + data[0] + "</a>";
 
-			if (data[7] == "running")
+			if (data[7] == "poweredOn")
 			{
 				$('td:eq(0)', row).html("<i style='color:#2c2;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-play' />" + view_link);
 			}
-			else if (data[7] == "notRunning")
+			else if (data[7] == "poweredOff")
 			{
 				$('td:eq(0)', row).html("<i style='color:#c22;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-stop' />" + view_link);
+			}
+			else if (data[7] == "suspended")
+			{
+				$('td:eq(0)', row).html("<i style='color:#c82;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-pause' />" + view_link);
 			}
 			else
 			{

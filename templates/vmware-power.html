@@ -14,7 +14,7 @@
 		hwData.addColumn('number', 'Count');
 		hwData.addRows([
 {%- for row in stats_power -%}
-	['{{ row.guestState }}', {{ row.count }}],
+	['{{ row.powerState }}', {{ row.count }}],
 {%- endfor -%}
 		]);
 

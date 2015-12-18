@@ -415,8 +415,7 @@ class NeoCortexLib(object):
 	############################################################################
 	
 	def update_vm_cache(self, vm, tag):
-		"""
-		"""
+		"""Updates the VMware cache data with the information about the VM."""
 
 		# Get a cursor to the database
 		cur = self.db.cursor(mysql.cursors.DictCursor)
@@ -446,7 +445,7 @@ class NeoCortexLib(object):
 			cluster = "None"
 
 		# Put the VM in the database
-		cur.execute("REPLACE INTO `vmware_cache_vm` (`id`, `vcenter`, `name`, `uuid`, `numCPU`, `memoryMB`, `guestState`, `guestFullName`, `guestId`, `hwVersion`, `hostname`, `ipaddr`, `annotation`, `cluster`, `toolsRunningStatus`, `toolsVersionStatus`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (vm._moId, instance['hostname'], vm.name, vm.config.uuid, vm.config.hardware.numCPU, vm.config.hardware.memoryMB, vm.guest.guestState, vm.config.guestFullName, vm.config.guestId, vm.config.version, hostName, ipAddress, annotation, cluster, vm.guest.toolsRunningStatus, vm.guest.toolsVersionStatus2))
+		cur.execute("REPLACE INTO `vmware_cache_vm` (`id`, `vcenter`, `name`, `uuid`, `numCPU`, `memoryMB`, `powerState`, `guestFullName`, `guestId`, `hwVersion`, `hostname`, `ipaddr`, `annotation`, `cluster`, `toolsRunningStatus`, `toolsVersionStatus`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (vm._moId, instance['hostname'], vm.name, vm.config.uuid, vm.config.hardware.numCPU, vm.config.hardware.memoryMB, vm.runtime.powerState, vm.config.guestFullName, vm.config.guestId, vm.config.version, hostName, ipAddress, annotation, cluster, vm.guest.toolsRunningStatus, vm.guest.toolsVersionStatus2))
 
 		# Commit
 		self.db.commit()
@@ -553,6 +552,23 @@ class NeoCortexLib(object):
 		"""Powers on a virtual machine."""
 
 		return vm.PowerOn()
+
+	############################################################################
+
+	def vmware_wait_for_poweron(self, vm, timeout=30):
+		"""Waits for a virtual machine to be marked as powered up by VMware."""
+
+		# Initialise our timer
+		timer = 0
+
+		# While the VM is not marked as powered on, and our timer has not hit our timeout
+		while vm.runtime.powerState != vim.VirtualMachinePowerState.poweredOn and timer < timeout:
+			# Wait
+			time.sleep(1)
+			timer = timer + 1
+
+		# Return whether the VM is powered up or not
+		return vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn
 
 	############################################################################
 
@@ -703,17 +719,28 @@ class NeoCortexLib(object):
 
 		# json= was only added in Requests 2.4.2, so might need to be data=json.dumps(vm_data)
 		# Content-Type header may be superfluous as Requests might add it anyway, due to json=
-		r = requests.post('https://' + self.config['SN_HOST'] + '/api/now/v1/table/' + table_name, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=vm_data)
+		r = requests.post('https://' + self.config['SN_HOST'] + '/api/now/v1/table/' + table_name + "?sysparm_display_value=true", auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=vm_data)
 
 		# Parse the response
-		if r is not None:
+		if r is not None and r.status_code >= 200 and r.status_code <= 299:
 			# Parse the JSON and return the sys_id that ServiceNow gives us along with the CMDB ID (u_number)
 			response_json = r.json()
-			return (response_json['result']['sys_id'], response_json['result']['u_number'])
+			retval = (response_json['result']['sys_id'], response_json['result']['u_number'])
 		else:
-			raise Exception('Failed to create ServiceNow object. API Request failed')
+			error = "Failed to create ServiceNow object. API Request failed."
+			if r is not None:
+				error = error + " HTTP Response code: " + str(r.status_code)
+			raise Exception(error)
+
+		# Get a cursor to the database
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+
+		# Update the cache row
+		curd.execute("REPLACE INTO `sncache_cmdb_ci` (`sys_id`, `sys_class_name`, `name`, `operational_status`, `u_number`, `short_description`, `u_environment`, `virtual`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (retval[0], table_name, vm_data['name'], 'In Service', retval[1], '', response_json['result']['u_environment'], 1))
+		self.db.commit()
+
+		return retval
 
 		## puppet stuff?
 		## let users logon??
 		## windows ou?
-		## machineid	

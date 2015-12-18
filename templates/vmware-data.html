@@ -21,8 +21,9 @@
 	<tbody>
 {% for vm in data -%}
 		<tr>
-			<td>{%    if vm.guestState == "running"    %}<i style='color:#2c2;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-play' />
-			    {%- elif vm.guestState == "notRunning" %}<i style='color:#c22;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-stop' />
+			<td>{%    if vm.powerState == "poweredOn"  %}<i style='color:#2c2;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-play' />
+			    {%- elif vm.powerState == "poweredOff" %}<i style='color:#c22;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-stop' />
+			    {%- elif vm.powerState == "suspended"  %}<i style='color:#c82;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-pause' />
 			    {%- else                               %}<i style='color:#22c;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-question' />{% endif %}</td>
 			<td>{{ vm.name }}</td>
 			<td>{{ vm.cluster }}</td>

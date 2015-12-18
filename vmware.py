@@ -137,7 +137,7 @@ def vmware_hw():
 def vmware_power():
 	"""Shows VM hardware power state statistics."""
 	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute('SELECT `guestState`, COUNT(*) AS `count` FROM `vmware_cache_vm` GROUP BY `guestState` ORDER BY `guestState`')
+	cur.execute('SELECT `powerState`, COUNT(*) AS `count` FROM `vmware_cache_vm` GROUP BY `powerState` ORDER BY `powerState`')
 	results = cur.fetchall()
 	return render_template('vmware-power.html', active='vmware', stats_power=results)
 
@@ -148,9 +148,9 @@ def vmware_power():
 def vmware_tools():
 	"""Shows VM tools statistics."""
 	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute('SELECT `toolsRunningStatus`, COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `guestState` = "running" GROUP BY `toolsRunningStatus` ORDER BY `toolsRunningStatus`')
+	cur.execute('SELECT `toolsRunningStatus`, COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `powerState` = "poweredOn" GROUP BY `toolsRunningStatus` ORDER BY `toolsRunningStatus`')
 	stats_status = cur.fetchall()
-	cur.execute('SELECT `toolsVersionStatus`, COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `guestState` = "running" GROUP BY `toolsVersionStatus` ORDER BY `toolsVersionStatus`')
+	cur.execute('SELECT `toolsVersionStatus`, COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `powerState` = "poweredOn" GROUP BY `toolsVersionStatus` ORDER BY `toolsVersionStatus`')
 	stats_version = cur.fetchall()
 	return render_template('vmware-tools.html', active='vmware', stats_status=stats_status, stats_version=stats_version)
 

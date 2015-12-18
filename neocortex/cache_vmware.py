@@ -42,10 +42,11 @@ def run(helper, options):
 
 
 		vm_properties = ["name", "config.uuid", "config.hardware.numCPU",
-		                 "config.hardware.memoryMB", "guest.guestState",
+		                 "config.hardware.memoryMB", "runtime.powerState",
 		                 "config.guestFullName", "config.guestId",
 		                 "config.version", "guest.hostName", "guest.ipAddress", 
-		                 "config.annotation", "resourcePool", "guest.toolsRunningStatus", "guest.toolsVersionStatus2"]
+		                 "config.annotation", "resourcePool", "guest.toolsRunningStatus", 
+				 "guest.toolsVersionStatus2", "config.template"]
 
 
 		## List VMs ##########
@@ -80,7 +81,7 @@ def run(helper, options):
 				vm['cluster'] = "None"
 
 			# Put the VM in the database
-			curd.execute("INSERT INTO `vmware_cache_vm` (`id`, `vcenter`, `name`, `uuid`, `numCPU`, `memoryMB`, `guestState`, `guestFullName`, `guestId`, `hwVersion`, `hostname`, `ipaddr`, `annotation`, `cluster`, `toolsRunningStatus`, `toolsVersionStatus`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (vm['obj']._moId, instance['hostname'], vm['name'], vm['config.uuid'], vm['config.hardware.numCPU'], vm['config.hardware.memoryMB'], vm['guest.guestState'], vm['config.guestFullName'], vm['config.guestId'], vm['config.version'], vm['guest.hostName'], vm['guest.ipAddress'], vm['config.annotation'], vm['cluster'], vm['guest.toolsRunningStatus'], vm['guest.toolsVersionStatus2']))			
+			curd.execute("INSERT INTO `vmware_cache_vm` (`id`, `vcenter`, `name`, `uuid`, `numCPU`, `memoryMB`, `powerState`, `guestFullName`, `guestId`, `hwVersion`, `hostname`, `ipaddr`, `annotation`, `cluster`, `toolsRunningStatus`, `toolsVersionStatus`, `template`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (vm['obj']._moId, instance['hostname'], vm['name'], vm['config.uuid'], vm['config.hardware.numCPU'], vm['config.hardware.memoryMB'], vm['runtime.powerState'], vm['config.guestFullName'], vm['config.guestId'], vm['config.version'], vm['guest.hostName'], vm['guest.ipAddress'], vm['config.annotation'], vm['cluster'], vm['guest.toolsRunningStatus'], vm['guest.toolsVersionStatus2'], vm['config.template']))			
 
 		helper.end_event(description="Cached virtual machine information for " + instance['hostname'])
 
