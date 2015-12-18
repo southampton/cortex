@@ -165,28 +165,40 @@ def puppet_groups():
 
 		return render_template('puppet-groups.html', active='puppet', data=results)
 	else:
-		netgroup_name = request.form['netgroup_name']
+		if request.form['action'] == 'add':
+			netgroup_name = request.form['netgroup_name']
 
-		if len(netgroup_name.strip()) == 0:
-			flash('Invalid netgroup name', 'alert-danger')
+			if len(netgroup_name.strip()) == 0:
+				flash('Invalid netgroup name', 'alert-danger')
+				return redirect(url_for('puppet_groups'))
+
+			## Make sure that group hasnt already been imported
+			curd.execute('SELECT 1 FROM `puppet_groups` WHERE `name` = %s', netgroup_name)
+			found = curd.fetchone()
+			if found:
+				flash('That netgroup has already been imported as a Puppet Group', 'alert-warning')
+				return redirect(url_for('puppet_groups'))			
+
+			if not cortex.core.netgroup_is_valid(netgroup_name):
+				flash('That netgroup does not exist', 'alert-danger')
+				return redirect(url_for('puppet_groups'))
+
+			curd.execute('INSERT INTO `puppet_groups` (`name`) VALUES (%s)', (netgroup_name))
+			g.db.commit()
+
+			flash('The netgroup "' + netgroup_name + '" has imported as a Puppet Group', 'alert-success')
 			return redirect(url_for('puppet_groups'))
+		elif request.form['action'] == 'delete':
+			group_name = request.form['group']
 
-		## Make sure that group hasnt already been imported
-		curd.execute('SELECT 1 FROM `puppet_groups` WHERE `name` = %s', netgroup_name)
-		found = curd.fetchone()
-		if found:
-			flash('That netgroup has already been imported as a Puppet Group', 'alert-warning')
-			return redirect(url_for('puppet_groups'))			
+			try:
+				curd.execute('DELETE FROM `puppet_groups` WHERE `name` = %s', group_name)
+				g.db.commit()
+				flash('Deleted Puppet group "' + group_name + '"', 'alert-success')
+			except Exception, e:
+				flash('Failed to delete Puppet group', 'alert-danger')
 
-		if not cortex.core.netgroup_is_valid(netgroup_name):
-			flash('That netgroup does not exist', 'alert-danger')
 			return redirect(url_for('puppet_groups'))
-
-		curd.execute('INSERT INTO `puppet_groups` (`name`) VALUES (%s)', (netgroup_name))
-		g.db.commit()
-
-		flash('The netgroup has imported as a Puppet Group', 'alert-success')
-		return redirect(url_for('puppet_groups'))
 
 ################################################################################
 

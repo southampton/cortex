@@ -20,7 +20,7 @@
 myservice:
   some_parameter: This is a string. Quotation marks are entirely optional.
   # This is a comment
-  my_example_array_1: [1, 2, 3]
+  my_example_array_1: [a, "b", c, 1]
   my_example_array_2:
     - abc1d23
     - efg4h56</textarea>
@@ -139,14 +139,14 @@ $(document).ready(function() {
 <div class="row">
 	<div class="col-md-9">
 		<div class="panel panel-default">
-			<div class="panel-heading">Classes</div>
+			<div class="panel-heading">Editor: Classes</div>
 			<div class="panel-body" style="padding:0px">
 				<textarea id="classes" name="classes">{{ system.puppet_classes }}</textarea>
 			</div>
 		</div>
 
 		<div class="panel panel-default">
-			<div class="panel-heading">Global Variables</div>
+			<div class="panel-heading">Editor: Global Variables</div>
 			<div class="panel-body" style="padding:0px">
 				<textarea id="variables" name="variables">{{ system.puppet_variables }}</textarea>
 			</div>
@@ -161,7 +161,7 @@ $(document).ready(function() {
 				<p>Use the <strong>Classes</strong> field to define the classes that this node will import. You can also
 				define parameters for the classes.</p>
 				<p>Use the <strong>Global Variables</strong> field to define the variables that will be sent to all the
-				classes imported by this node.</p>
+				classes imported by this node. Extra system variables will be added.</p>
 				<p>The format of this field is YAML. Use two spaces for indentation. Do not use tabs, but you can safely
 					press tab (it will enter 2 spaces).</p>
 				<div class="text-center">

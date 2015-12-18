@@ -70,15 +70,22 @@ def logout():
 def about():
 	return render_template('about.html', active='help')
 
+################################################################################
+
 @app.route('/about/changelog')
 def changelog():
 	return render_template('changelog.html', active='help')
+
+################################################################################
 
 @app.route('/nojs')
 def nojs():
 	return render_template('nojs.html')
 
+################################################################################
+
 @app.route('/dashboard')
+@cortex.core.login_required
 def dashboard():
 	"""This renders the front page after the user logged in."""
 
@@ -122,6 +129,7 @@ def render_task_status(id, template):
 
 	return render_template(template, id=id, task=task, events=events)
 
+################################################################################
 
 @app.route('/task/status/<int:id>', methods=['GET'])
 @cortex.core.login_required
@@ -130,6 +138,8 @@ def task_status(id):
 
 	return render_task_status(id, "task-status.html")
 
+################################################################################
+
 @app.route('/task/status/<int:id>/log', methods=['GET'])
 @cortex.core.login_required
 def task_status_log(id):
@@ -137,6 +147,8 @@ def task_status_log(id):
 	an AJAX routine on the page to refresh the log every 10 seconds."""
 
 	return render_task_status(id, "task-status-log.html")
+
+################################################################################
 
 @app.route('/user/groups')
 @cortex.core.login_required

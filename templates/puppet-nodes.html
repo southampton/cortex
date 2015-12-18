@@ -23,9 +23,10 @@
 </table>
 <script type="text/javascript">
         $('#data').DataTable({
-                "lengthMenu": [[10,20,50,100,-1], [10,20,50,100,'All']],
-                "pageLength": 20,
+                "lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
+                "pageLength": 15,
                 "order": [[0, 'asc']],
+		"columns": [null, null, { "orderable": false, "targets": 0 }]
         });
 </script>
 {% endblock %}
