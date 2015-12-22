@@ -2,30 +2,32 @@
 {% block body %}
 
 <div class="modal fade" id="search" role="dialog">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">Search CMDB</h4>
-      </div>
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Search CMDB</h4>
+			</div>
 
-      <div class="modal-body">
-        <table id="search_table" class="table table-condensed table-striped">
-          <thead>
-            <th width="15%">CMDB ID</th>
-            <th width="85%">Name</th>
-            <th></th>
-          </thead>
-          <tbody>
-          </tbody>
-        </table>
-      </div>
+			<div class="modal-body">
+				<table id="search_table" class="table table-condensed table-striped">
+					<thead>
+						<tr>
+							<th width="15%">CMDB ID</th>
+							<th width="85%">Name</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+			</div>
 
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
 </div>
 
 <form role="form" class="form-horizontal" method="POST">

@@ -9,40 +9,39 @@
 
 	function prepDataAndDrawChart()
 	{
-        var osData = google.visualization.arrayToDataTable([
-          ['Virtual Machines', 'Number'],
-          ['Linux Servers',     {{types['linux']}}],
-          ['Windows Servers',      {{types['windows_server']}}],
-          ['Desktops',  {{types['windows_desktop']}}],
-          ['BSD Servers', {{types['bsd']}}],
-        ]);
+		var osData = google.visualization.arrayToDataTable([
+		  ['Virtual Machines', 'Number'],
+		  ['Linux Servers',     {{types['linux']}}],
+		  ['Windows Servers',      {{types['windows_server']}}],
+		  ['Desktops',  {{types['windows_desktop']}}],
+		  ['BSD Servers', {{types['bsd']}}],
+		]);
 
-        var linuxData = google.visualization.arrayToDataTable([
-          ['Virtual Machines', 'Number'],
-          ['RHEL3',     {{types['rhel3']}}],
-          ['RHEL4', {{types['rhel4']}}],
-          ['RHEL5',  {{types['rhel5']}}],
-          ['RHEL6',  {{types['rhel6']}}],
-          ['RHEL7',  {{types['rhel7']}}],
-          ['Ubuntu',  {{types['ubuntu']}}],
-          ['Debian',  {{types['debian']}}],
-          ['Other',  {{types['linux_other']}}],
-        ]);
+		var linuxData = google.visualization.arrayToDataTable([
+		  ['Virtual Machines', 'Number'],
+		  ['RHEL3',     {{types['rhel3']}}],
+		  ['RHEL4', {{types['rhel4']}}],
+		  ['RHEL5',  {{types['rhel5']}}],
+		  ['RHEL6',  {{types['rhel6']}}],
+		  ['RHEL7',  {{types['rhel7']}}],
+		  ['Ubuntu',  {{types['ubuntu']}}],
+		  ['Debian',  {{types['debian']}}],
+		  ['Other',  {{types['linux_other']}}],
+		]);
 
-        var windowsData = google.visualization.arrayToDataTable([
-          ['Virtual Machines', 'Number'],
-          ['Server 2003',     {{types['ws2003']}}],
-          ['Server 2008',      {{types['ws2008']}}],
-          ['Server 2012',  {{types['ws2012']}}],
-        ]);
+		var windowsData = google.visualization.arrayToDataTable([
+		  ['Virtual Machines', 'Number'],
+		  ['Server 2003',     {{types['ws2003']}}],
+		  ['Server 2008',      {{types['ws2008']}}],
+		  ['Server 2012',  {{types['ws2012']}}],
+		]);
 
-        var windowsDesktopsData = google.visualization.arrayToDataTable([
-          ['Virtual Machines', 'Number'],
-          ['Windows 7',     {{types['wd7']}}],
-          ['Windows 8',      {{types['wd8']}}],
-          ['Windows 10',  {{types['wd10']}}],
-        ]);
-
+		var windowsDesktopsData = google.visualization.arrayToDataTable([
+		  ['Virtual Machines', 'Number'],
+		  ['Windows 7',     {{types['wd7']}}],
+		  ['Windows 8',      {{types['wd8']}}],
+		  ['Windows 10',  {{types['wd10']}}],
+		]);
 
 		var chart_os = new google.visualization.PieChart(document.getElementById('chart_os'));
 		chart_os.draw(osData, {title: 'OS Family', is3D: true});

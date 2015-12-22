@@ -10,7 +10,6 @@ from Crypto.Cipher import AES ## used for crypto of password
 import base64                 ## used for crypto of password
 import os                     ## used throughout
 import datetime               ## used in ut_to_string, online functions
-#import redis                  ## used in before_request
 import time                   ## used in before_request
 import random                 ## used in pwgen            
 import string                 ## used in pwgen
@@ -68,10 +67,34 @@ def global_admin_required(f):
 ################################################################################
 
 def is_user_global_admin(username):
+	"""Returns a boolean indicating if the given user is a global admin."""
+
 	groups = get_users_groups(username)
 	groups = [x.lower() for x in groups]
 
 	if app.config['LDAP_ADMIN_GROUP'].lower() in groups:
+		return True
+
+	return False
+
+################################################################################
+
+def is_user_in_group(group_cn):
+	"""Returns a boolean indicating if the logged in user is in the given
+	group, which is specified given it's entire CN. The group name 
+	comparison is performed in a case insensitive manner. If no users is
+	logged in, this function will return False."""
+
+	# If user is not logged in, then assume we're not in the group
+	if not is_user_logged_in():
+		return False
+
+	# Get a lowercase list of groups
+	groups = get_users_groups(session['username'])
+	groups = [x.lower() for x in groups]
+
+	# See if the user is in the group and return true if they are
+	if group.lower() in groups:
 		return True
 
 	return False
@@ -505,9 +528,9 @@ def auth_user(username, password):
 ################################################################################
 #### Authentication
 
-def get_users_groups(username,from_cache=True):
+def get_users_groups(username, from_cache=True):
 	"""Returns a set (not a list) of groups that a user belongs to. The result is 
-    cached to improve performance and to lessen the impact on the LDAP server. The 
+	cached to improve performance and to lessen the impact on the LDAP server. The 
 	results are returned from the cache unless you set "from_cache" to be 
 	False. 
 
@@ -535,6 +558,7 @@ def get_users_groups(username,from_cache=True):
 			app.logger.debug("cortex.core.get_users_groups: returning groups from cache for " + username)		
 			return groups
 
+################################################################################
 		
 def get_users_groups_from_ldap(username):
 		app.logger.debug("cortex.core.get_users_groups_from_ldap: building cache for " + username)		
@@ -621,6 +645,9 @@ def inject_template_data():
 ################################################################################
 
 def vmware_list_clusters(tag):
+	"""Return a list of clusters from within a given vCenter. The tag
+	parameter defines an entry in the vCenter configuration dictionary that
+	is within the application configuration."""
 
 	if tag in app.config['VMWARE']:
 		## SQL to grab the clusters from the cache
@@ -628,11 +655,12 @@ def vmware_list_clusters(tag):
 		cur.execute("SELECT * FROM `vmware_cache_clusters` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname']))
 		return cur.fetchall()
 	else:
-		raise Exception("Invalid vmware tag")
+		raise Exception("Invalid VMware tag")
 
 ################################################################################
 
 def netgroup_is_valid(name):
+	"""Validates the name of a netgroup"""
 
 	try:
 		## try to switch to 'str' object rather than unicode
@@ -657,7 +685,10 @@ def netgroup_is_valid(name):
 		libc.endnetgrent()
 		return False
 
-def host_in_netgroup(host,netgroup):
+################################################################################
+
+def host_in_netgroup(host, netgroup):
+	"""Determines if a given host exists within a given netgroup."""
 
 	try:
 		## try to switch to 'str' objects rather than unicode

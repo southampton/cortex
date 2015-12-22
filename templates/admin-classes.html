@@ -2,59 +2,50 @@
 {% block body %}
 
 <div class="modal fade" id="edit_class" role="dialog">
-  <div class="modal-dialog">
-    <div class="modal-content">
-
-	<form role="form" method="POST" class="form-horizontal">
-		<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-		<input name="action" type="hidden" value="edit_class"/>
-		<input name="class_name" type="hidden" value="" id="edit_class_name_hidden"/>
-
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">Edit class</h4>
-      </div>
-
-      <div class="modal-body">
-
-		<div class="form-group">
-			<label class="col-sm-3 control-label">Class prefix</label>
-			<div class="col-sm-9">
-			  <p class="form-control-static" id="edit_class_name" name="class_name">N/A</p>
-			</div>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form role="form" method="POST" class="form-horizontal">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input name="action" type="hidden" value="edit_class"/>
+				<input name="class_name" type="hidden" value="" id="edit_class_name_hidden"/>
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title">Edit class</h4>
+				</div>
+				<div class="modal-body">
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Class prefix</label>
+						<div class="col-sm-9">
+							<p class="form-control-static" id="edit_class_name" name="class_name">N/A</p>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Digits</label>
+						<div class="col-sm-9">
+							<input class="form-control" id="edit_class_digits" type="number" value="5" max="10" min="1" name="class_digits"></input>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Comment</label>
+						<div class="col-sm-9">
+							<input class="form-control" id="edit_class_comment" type="text" name="class_comment"></input>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="checkbox col-sm-offset-3 col-sm-9">
+							<label>
+								<input type="checkbox" checked="checked" id="edit_class_active" name="class_active"> Allow new allocations?
+							</label>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="submit" class="btn btn-primary">Save changes</button>
+				</div>
+			</form>
 		</div>
-
-		<div class="form-group">
-			<label class="col-sm-3 control-label">Digits</label>
-			<div class="col-sm-9">
-			  <input class="form-control" id="edit_class_digits" type="number" value="5" max="10" min="1" name="class_digits"></input>
-			</div>
-		</div>
-
-		<div class="form-group">
-			<label class="col-sm-3 control-label">Comment</label>
-			<div class="col-sm-9">
-			  <input class="form-control" id="edit_class_comment" type="text" name="class_comment"></input>
-			</div>
-		</div>
-
-		<div class="form-group">
-		  <div class="checkbox col-sm-offset-3 col-sm-9">
-			<label>
-			  <input type="checkbox" checked="checked" id="edit_class_active" name="class_active"> Allow new allocations?
-			</label>
-		  </div>
-		</div>
-
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Save changes</button>
-      </div>
-		</form>
-    </div>
-  </div>
+	</div>
 </div>
 
 <script type="text/javascript">
@@ -77,59 +68,58 @@ $( document ).ready(function()
 </script>
 
 <div class="modal fade" id="add_class" role="dialog">
-  <div class="modal-dialog">
-    <div class="modal-content">
-	<form role="form" method="POST" class="form-horizontal">
-		<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-		<input name="action" type="hidden" value="add_class"/>
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">Add class</h4>
-      </div>
-      <div class="modal-body">
-		<p>
-			The class prefix should be short, typically three characters, e.g. 'srv' or 'stg'. The digits are the number of digits after
-			the class prefix, typically this is five, e.g. srv00000 or srv99999. If you're not sure, it's best to use a three character prefix
-			and five digits.
-		</p>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form role="form" method="POST" class="form-horizontal">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input name="action" type="hidden" value="add_class"/>
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title">Add class</h4>
+				</div>
+				<div class="modal-body">
+					<p>
+						The class prefix should be short, typically three characters, e.g. 'srv' or 'stg'. The digits are the number of digits after
+						the class prefix, typically this is five, e.g. srv00000 or srv99999. If you're not sure, it's best to use a three character prefix
+						and five digits.
+					</p>
 
-		<div class="form-group">
-			<label class="col-sm-3 control-label">Prefix</label>
-			<div class="col-sm-9">
-			  <input class="form-control" name="class_name" id="prefix"></input>
-			</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Prefix</label>
+						<div class="col-sm-9">
+							<input class="form-control" name="class_name" id="prefix"></input>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Digits</label>
+						<div class="col-sm-9">
+							<input class="form-control" type="number" value="5" max="10" min="1" name="class_digits"></input>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Comment</label>
+						<div class="col-sm-9">
+							<input class="form-control" type="text" name="class_comment"></input>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<div class="checkbox col-sm-offset-3 col-sm-9">
+						<label>
+							<input type="checkbox" checked="checked" name="class_active"> Enabled for use
+						</label>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="submit" class="btn btn-primary">Add class</button>
+				</div>
+			</form>
 		</div>
-
-		<div class="form-group">
-			<label class="col-sm-3 control-label">Digits</label>
-			<div class="col-sm-9">
-			  <input class="form-control" type="number" value="5" max="10" min="1" name="class_digits"></input>
-			</div>
-		</div>
-
-		<div class="form-group">
-			<label class="col-sm-3 control-label">Comment</label>
-			<div class="col-sm-9">
-			  <input class="form-control" type="text" name="class_comment"></input>
-			</div>
-		</div>
-
-		<div class="form-group">
-		  <div class="checkbox col-sm-offset-3 col-sm-9">
-			<label>
-			  <input type="checkbox" checked="checked" name="class_active"> Enabled for use
-			</label>
-		  </div>
-		</div>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Add class</button>
-      </div>
-		</form>
-    </div>
-  </div>
+	</div>
 </div>
 
 <div class="page-header">
@@ -145,14 +135,16 @@ digits defines a system name format that would fit the name 'server0099', for
 example. An inactive system class cannot have new system names assigned, either 
 manually or automatically.</p>
 
-<table class="table table-striped" id="classes">
+<table class="table table-condensed table-striped" id="classes">
 	<thead>
-		<th>Name</th>
-		<th>Digits</th>
-		<th>Active</th>
-		<th>Entries</th>
-		<th width="30%">Comment</th>
-		<th></th>
+		<tr>
+			<th>Name</th>
+			<th>Digits</th>
+			<th>Active</th>
+			<th>Entries</th>
+			<th width="30%">Comment</th>
+			<th></th>
+		</tr>
 	</thead>
 	<tbody>
 {%- for class in classes %}

@@ -15,8 +15,8 @@
 {#- Override CodeMirror style - must come after CodeMirror style imports -#}
 <style type="text/css">
 .CodeMirror {
-  border: 1px solid #eee;
-  height: auto;
+	border: 1px solid #eee;
+	height: auto;
 }
 </style>
 
@@ -33,10 +33,10 @@ $(document).ready(function() {
 
 	classes_editor.setOption("extraKeys", 
 	{
-	  Tab: function(cm) {
-		var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
-		cm.replaceSelection(spaces);
-	  }
+		Tab: function(cm) {
+			var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
+			cm.replaceSelection(spaces);
+		}
 	});
 
 });
@@ -67,7 +67,7 @@ $(document).ready(function() {
 				<p>The format of this field is YAML. Use two spaces for indentation. Do not use tabs, but you can safely
 					press tab (it will enter 2 spaces).</p>
 				<div class="text-center">
-					<button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#myModal">  Find out more</button>
+					<button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#myModal">Find out more</button>
 				</div>
 			</div>
 		</div>

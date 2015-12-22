@@ -39,12 +39,12 @@
 	</tbody>
 </table>
 <script type="text/javascript">
-        $('#data').DataTable({
-                "lengthMenu": [[10,20,50,100,-1], [10,20,50,100,'All']],
-                "pageLength": 20,
-                "order": [[1, 'asc']],
+	$('#data').DataTable({
+		"lengthMenu": [[10,20,50,100,-1], [10,20,50,100,'All']],
+		"pageLength": 20,
+		"order": [[1, 'asc']],
 		"columns": [{ "orderable": false, "targets": 0 }, null, null, null, null, null, null, null, null, null],
-                "searching": true,
-        });
+		"searching": true,
+	});
 </script>
 {% endblock %}

@@ -107,7 +107,11 @@ def dashboard():
 	row = cur.fetchone()
 	task_failed_count = row['count']
 
-	return render_template('dashboard.html', vm_count=vm_count, task_progress_count=task_progress_count, task_failed_count=task_failed_count)
+	# Get tasks for user
+	cur.execute('SELECT `id`, `module`, `start`, `end`, `status` FROM `tasks` WHERE `username` = %s ORDER BY `start` DESC LIMIT 5', (session['username'],))
+	tasks = cur.fetchall()
+
+	return render_template('dashboard.html', vm_count=vm_count, task_progress_count=task_progress_count, task_failed_count=task_failed_count, tasks=tasks)
 
 ################################################################################
 

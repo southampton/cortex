@@ -74,7 +74,7 @@
 							{{ poperr.1 }}
 						</div>
 						<div class="modal-footer">
-							<a href="#" class="btn btn-default"  data-dismiss="modal">OK</a>
+							<a href="#" class="btn btn-default" data-dismiss="modal">OK</a>
 						</div>
 					</div>
 				</div>
@@ -84,7 +84,7 @@
 
 		<div class="{% if browse_mode %}container container-directory{%else%}container{%endif%}">
 			{% for category, message in get_flashed_messages(with_categories=true) %}
-              <div class="alert alert-dismissable {{category}}"><button type="button" class="close" data-dismiss="alert">×</button>{{message}}</div>
+			<div class="alert alert-dismissable {{category}}"><button type="button" class="close" data-dismiss="alert">×</button>{{message}}</div>
 			{% endfor %}
 			{% block body %}{% endblock -%}
 		</div>

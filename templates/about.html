@@ -2,160 +2,158 @@
 {% block body %}
 
 <div class="loader">
-  <div class="circle one"></div>
-  <div class="circle two"></div>
-  <div class="circle three"></div>
+	<div class="circle one"></div>
+	<div class="circle two"></div>
+	<div class="circle three"></div>
 </div>
 
 <div class='append'>
-  <div class='bars' id='bar1'></div>
-  <div class='bars' id='bar2'></div>
-  <div class='bars' id='bar3'></div>
+	<div class='bars' id='bar1'></div>
+	<div class='bars' id='bar2'></div>
+	<div class='bars' id='bar3'></div>
 </div>
 
 <style type="text/css">
 .circle {
-  position: absolute;
-  border: 8px solid transparent;
-  border-top-color: #e94925;
-  border-radius: 50%;
-  -webkit-animation: rotate linear infinite;
-          animation: rotate linear infinite;
+	position: absolute;
+	border: 8px solid transparent;
+	border-top-color: #e94925;
+	border-radius: 50%;
+	-webkit-animation: rotate linear infinite;
+	        animation: rotate linear infinite;
 }
 .circle.one {
-  height: 100px;
-  width: 100px;
-  left: 100px;
-  top: 100px;
-  -webkit-animation-duration: 0.85s;
-          animation-duration: 0.85s;
+	height: 100px;
+	width: 100px;
+	left: 100px;
+	top: 100px;
+	-webkit-animation-duration: 0.85s;
+	        animation-duration: 0.85s;
 }
 .circle.two {
-  height: 150px;
-  width: 150px;
-  top: 76px;
-  left: 76px;
-  -webkit-animation-duration: 0.95s;
-          animation-duration: 0.95s;
+	height: 150px;
+	width: 150px;
+	top: 76px;
+	left: 76px;
+	-webkit-animation-duration: 0.95s;
+	        animation-duration: 0.95s;
 }
 .circle.three {
-  height: 200px;
-  width: 200px;
-  top: 50px;
-  left: 50px;
-  -webkit-animation-duration: 1.05s;
-          animation-duration: 1.05s;
+	height: 200px;
+	width: 200px;
+	top: 50px;
+	left: 50px;
+	-webkit-animation-duration: 1.05s;
+	        animation-duration: 1.05s;
 }
 .loader {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  margin: -90px 0 0 -90px;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin: -90px 0 0 -90px;
 }
 body {
-  background-color: #1a1a1a;
+	background-color: #1a1a1a;
 }
 @-webkit-keyframes rotate {
-  from {
-    -webkit-transform: rotateZ(360deg);
-            transform: rotateZ(360deg);
-  }
-  to {
-    -webkit-transform: rotateZ(0deg);
-            transform: rotateZ(0deg);
-  }
+	from {
+	  -webkit-transform: rotateZ(360deg);
+	          transform: rotateZ(360deg);
+	}
+	to {
+	  -webkit-transform: rotateZ(0deg);
+	          transform: rotateZ(0deg);
+	}
 }
 @keyframes rotate {
-  from {
-    -webkit-transform: rotateZ(360deg);
-            transform: rotateZ(360deg);
-  }
-  to {
-    -webkit-transform: rotateZ(0deg);
-            transform: rotateZ(0deg);
-  }
+	from {
+	  -webkit-transform: rotateZ(360deg);
+	          transform: rotateZ(360deg);
+	}
+	to {
+	  -webkit-transform: rotateZ(0deg);
+	          transform: rotateZ(0deg);
+	}
 }
 
 /***************************************/
 
 .append {
-  posistion: absolute;
-  z-index: -100;
-  margin: 5vh auto;
-  width: 450px;
+	posistion: absolute;
+	z-index: -100;
+	margin: 5vh auto;
+	width: 450px;
 }
 
 .bars {
-  display: block;
-  width: 150px;
-  height: 150px;
-  background: #666666;
-  border-radius: 50px;
-  margin: 0px 0;
-  opacity: 0.0;
-  /* initial state */
-  -webkit-animation: pulsate 1s ease-out infinite;
-          animation: pulsate 1s ease-out infinite;
-  float: left;
+	display: block;
+	width: 150px;
+	height: 150px;
+	background: #666666;
+	border-radius: 50px;
+	margin: 0px 0;
+	opacity: 0.0;
+	/* initial state */
+	-webkit-animation: pulsate 1s ease-out infinite;
+	        animation: pulsate 1s ease-out infinite;
+	float: left;
 }
 
 #bar1 {
-  -webkit-animation-delay: 0s;
-          animation-delay: 0s;
+	-webkit-animation-delay: 0s;
+	        animation-delay: 0s;
 }
 
 #bar2 {
-  -webkit-animation-delay: 0.2s;
-          animation-delay: 0.2s;
+	-webkit-animation-delay: 0.2s;
+	        animation-delay: 0.2s;
 }
 
 #bar3 {
-  -webkit-animation-delay: 0.4s;
-          animation-delay: 0.4s;
+	-webkit-animation-delay: 0.4s;
+	        animation-delay: 0.4s;
 }
 
 @-webkit-keyframes pulsate {
-  0% {
-    -webkit-transform: scale(0.1, 0.1);
-            transform: scale(0.1, 0.1);
-    opacity: 0.0;
-  }
-  50% {
-    opacity: 1.0;
-  }
-  100% {
-    -webkit-transform: scale(1, 1);
-            transform: scale(1, 1);
-    opacity: 0.0;
-  }
+	0% {
+	  -webkit-transform: scale(0.1, 0.1);
+	          transform: scale(0.1, 0.1);
+	  opacity: 0.0;
+	}
+	50% {
+	  opacity: 1.0;
+	}
+	100% {
+	  -webkit-transform: scale(1, 1);
+	          transform: scale(1, 1);
+	  opacity: 0.0;
+	}
 }
 
 @keyframes pulsate {
-  0% {
-    -webkit-transform: scale(0.1, 0.1);
-            transform: scale(0.1, 0.1);
-    opacity: 0.0;
-  }
-  50% {
-    opacity: 1.0;
-  }
-  100% {
-    -webkit-transform: scale(1, 1);
-            transform: scale(1, 1);
-    opacity: 0.0;
-  }
+	0% {
+	  -webkit-transform: scale(0.1, 0.1);
+	          transform: scale(0.1, 0.1);
+	  opacity: 0.0;
+	}
+	50% {
+	  opacity: 1.0;
+	}
+	100% {
+	  -webkit-transform: scale(1, 1);
+	          transform: scale(1, 1);
+	  opacity: 0.0;
+	}
 }
-
-
 </style>
 
 <div style="font-family: 'Orbitron', cursive;
-    font-weight: 600;
-    font-size: 200px;
-    text-shadow: 0px 0px 30px rgba(150, 150, 150, 1);
-    color: #999999 !important;
-    position: relative;
-    top: 3px; text-align: center; padding-top: 30px; padding-top: 25%">
+font-weight: 600;
+font-size: 200px;
+text-shadow: 0px 0px 30px rgba(150, 150, 150, 1);
+color: #999999 !important;
+position: relative;
+ top: 3px; text-align: center; padding-top: 30px; padding-top: 25%">
 <span class="animated shake">cortex</span>
 </div>
 
