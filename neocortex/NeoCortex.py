@@ -122,9 +122,9 @@ class NeoCortex(object):
 			import pwd
 			os.setuid(pwd.getpwnam(self.config['NEOCORTEX_SET_UID']).pw_uid)
 
-	def _record_task(self, module_name, username):
+	def _record_task(self, module_name, username, description=None):
 		curd = self._get_cursor()
-		curd.execute("INSERT INTO `tasks` (module, username, start) VALUES (%s, %s, NOW())", (module_name, username))
+		curd.execute("INSERT INTO `tasks` (`module`, `username`, `start`, `description`) VALUES (%s, %s, NOW(), %s)", (module_name, username, description))
 		self.db.commit()
 		return curd.lastrowid
 
@@ -137,7 +137,8 @@ class NeoCortex(object):
 	## method - the method to call within this system
 	## username - who submitted this task
 	## options - a dictionary of arguments for the method.
-	def create_task(self, workflow_name, username, options):
+	## description - an optional description of the task
+	def create_task(self, workflow_name, username, options, description=None):
 
 		if not os.path.isdir(self.config['WORKFLOWS_DIR']):
 			raise IOError("The config option WORKFLOWS_DIR is not a directory")
@@ -156,7 +157,7 @@ class NeoCortex(object):
 		except Exception as ex:
 			raise ImportError("Could not load workflow from file " + task_file + ": " + str(ex))
 
-		task_id      = self._record_task(workflow_name, username)
+		task_id      = self._record_task(workflow_name, username, description)
 		task_helper  = TaskHelper(self.config, workflow_name, task_id, username)
 		task         = Process(target=task_helper.run, args=(task_module, options))
 		task.start()
@@ -169,13 +170,13 @@ class NeoCortex(object):
 		return lib.allocate_name(class_name, system_comment, username, num)
 
 	## This function allows arbitrary taks to be called
-	def start_internal_task(self, username, task_file, task_name):
+	def start_internal_task(self, username, task_file, task_name, description=None):
 		try:
 			task_module = imp.load_source(task_name, task_file)
 		except Exception as ex:
 			raise ImportError("Could not load internal task from file " + task_file + ": " + str(ex))
 
-		task_id      = self._record_task(task_name, username)
+		task_id      = self._record_task(task_name, username, description)
 		task_helper  = TaskHelper(self.config, task_name, task_id, username)
 		task         = Process(target=task_helper.run, args=(task_module, {}))
 		task.start()

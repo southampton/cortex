@@ -42,7 +42,7 @@ def admin_tasks():
 
 	# Get all the tasks from the database
 	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status` FROM `tasks`")
+	cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks`")
 	tasks = cur.fetchall()
 
 	# Render the page
@@ -149,9 +149,9 @@ def admin_maint():
 		neocortex = cortex.core.neocortex_connect()
 
 		if module == 'vmcache':
-			task_id = neocortex.start_internal_task(session['username'], 'cache_vmware.py', '_cache_vmware')
+			task_id = neocortex.start_internal_task(session['username'], 'cache_vmware.py', '_cache_vmware', description="Caches information about virtual machines, datacenters and clusters from VMware")
 		elif module == 'sncache':	
-			task_id = neocortex.start_internal_task(session['username'], 'cache_servicenow.py', '_cache_servicenow')
+			task_id = neocortex.start_internal_task(session['username'], 'cache_servicenow.py', '_cache_servicenow', description="Caches server CIs from the ServiceNow CMDB")
 		else:
 			abort(400)
 

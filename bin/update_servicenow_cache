@@ -39,7 +39,7 @@ if __name__ == "__main__":
 		neocortex._pyroTimeout = 5
 
 		# Ping the server to ensure it's alive
-		task_id = neocortex.start_internal_task('scheduler', 'cache_servicenow.py', '_cache_servicenow')
+		task_id = neocortex.start_internal_task('scheduler', 'cache_servicenow.py', '_cache_servicenow', description="Caches server CIs from the ServiceNow CMDB")
 
 		print "job submitted with ID " + str(task_id)
 	except Exception as ex:

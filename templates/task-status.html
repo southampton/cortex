@@ -21,7 +21,8 @@ i.fa-times
 </style>
 
 <div class="page-header">
-<h3><i class="fa fa-fw fa-info"></i> Task Status</h3>
+<h3><i class="fa fa-fw fa-info"></i> Task Status
+<small>&nbsp;{{ task.module }}{% if task.description %} - {{ task.description }}{% endif %}</small></h3>
 </div>
 
 <div id="status-log">

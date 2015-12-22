@@ -1,6 +1,5 @@
 {% extends "layout.html" %}
 {% block body %}
-
 <div class="page-header">
 <h3><i class="fa fa-fw fa-tasks"></i> Tasks</h3>
 <div class="text-muted">The list below shows a list of all past and present tasks that have been run on the system</div>
@@ -23,7 +22,7 @@
 {%- for task in tasks %}
 		<tr>
 			<td>{{ task.id }}</td>
-			<td>{{ task.module }}</td>
+			<td>{% if task.description %}<abbr title="{{ task.description }}">{% endif %}{{ task.module }}{% if task.description %}</abbr>{% endif %}</td>
 			<td>{{ task.start }}</td>
 			<td>{{ task.end or '' }}</td>
 			<td>{% if task.start and task.end %}{{ task.end - task.start }}{% endif %}</td>

@@ -96,6 +96,11 @@ def dashboard():
 	cur.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm`');
 	row = cur.fetchone()
 	vm_count = row['count']
+	
+	# Get number of CIs
+	cur.execute('SELECT COUNT(*) AS `count` FROM `sncache_cmdb_ci`');
+	row = cur.fetchone()
+	ci_count = row['count']
 
 	# Get number of in-progress tasks
 	cur.execute('SELECT COUNT(*) AS `count` FROM `tasks` WHERE `status` = %s', (0,))
@@ -108,10 +113,10 @@ def dashboard():
 	task_failed_count = row['count']
 
 	# Get tasks for user
-	cur.execute('SELECT `id`, `module`, `start`, `end`, `status` FROM `tasks` WHERE `username` = %s ORDER BY `start` DESC LIMIT 5', (session['username'],))
+	cur.execute('SELECT `id`, `module`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` = %s ORDER BY `start` DESC LIMIT 5', (session['username'],))
 	tasks = cur.fetchall()
 
-	return render_template('dashboard.html', vm_count=vm_count, task_progress_count=task_progress_count, task_failed_count=task_failed_count, tasks=tasks)
+	return render_template('dashboard.html', vm_count=vm_count, ci_count=ci_count, task_progress_count=task_progress_count, task_failed_count=task_failed_count, tasks=tasks)
 
 ################################################################################
 
@@ -124,7 +129,7 @@ def render_task_status(id, template):
 	cur = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get the task
-	cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status` FROM `tasks` WHERE id = %s", (id,))
+	cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE id = %s", (id,))
 	task = cur.fetchone()
 
 	# Get the events for the task
