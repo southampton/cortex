@@ -5,16 +5,17 @@ import os
 import re
 import MySQLdb as mysql
 
-@app.route('/api/puppet/enc/<certname>')
+@app.route('/api/puppet/enc/<certname>', methods=['POST'])
+@app.disable_csrf_check
 def api_puppet_enc(certname):
 	"""Returns the YAML associated with the given node."""
 
 	# The request should contain a parameter on the query string which contains
 	# the authentication pre-shared key. Validate this:
-	if 'auth_token' not in request.args:
+	if 'auth_token' not in request.form:
 		app.logger.error('auth_token missing from Puppet ENC API request (certname: ' + certname + ')')
 		return abort(401)
-	if request.args['auth_token'] != app.config['ENC_API_AUTH_TOKEN']:
+	if request.form['auth_token'] != app.config['ENC_API_AUTH_TOKEN']:
 		app.logger.error('Incorrect auth_token on request to Puppet ENC API (certname: ' + certname + ')')
 		return abort(401)
 

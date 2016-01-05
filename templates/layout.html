@@ -13,6 +13,7 @@
 		<script type="text/javascript" src="{{ url_for('static', filename='js/cortex.js') }}"></script>
 		<script type="text/javascript" src="{{ url_for('static', filename='/js/ext/jquery.dataTables.min.js') }}"></script>
 		<script type="text/javascript" src="{{ url_for('static', filename='/js/ext/dataTables.bootstrap.min.js') }}"></script>
+		{% block head %}{% endblock -%}
 	</head>
 	<body>
 		<div class="navbar navbar-fixed-top navbar-default" role="navigation">

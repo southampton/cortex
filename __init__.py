@@ -7,7 +7,7 @@ import os.path
 from logging.handlers import SMTPHandler
 from logging.handlers import RotatingFileHandler
 from logging import Formatter
-from cortex.fapp import CortexFlask
+from cortex.app import CortexFlask
 from datetime import timedelta
 
 ################################################################################
@@ -189,8 +189,7 @@ import cortex.api
 #		app.logger.error("Cannot enable TOTP 2-factor auth because REDIS is not enabled")
 
 # load jinja functions
-app.jinja_env.globals['csrf_token']         = core.generate_csrf_token
-app.jinja_env.filters['class_display_name'] = core.class_display_name
+#app.jinja_env.filters['class_display_name'] = core.class_display_name
 
 # preload workflows
 app.load_workflows()

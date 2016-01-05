@@ -131,20 +131,6 @@ def before_request():
 	except Exception as ex:
 		cortex.errors.fatal('Unable to connect to MySQL', str(ex))
 
-	## Check CSRF key is valid
-	if request.method == "POST":
-		## check csrf token is valid
-		token = session.get('_csrf_token')
-		if not token or token != request.form.get('_csrf_token'):
-			if 'username' in session:
-				app.logger.warning('CSRF protection alert: %s failed to present a valid POST token', session['username'])
-			else:
-	 			app.logger.warning('CSRF protection alert: a non-logged in user failed to present a valid POST token')
-
-			### the user should not have accidentally triggered this
-			### so just throw a 400
-			abort(400)
-
 ################################################################################
 
 def get_cmdb_ci_count(search = None):
@@ -404,26 +390,15 @@ def get_environments_as_dict():
 	return dict((e['id'], e) for e in app.config['ENVIRONMENTS'])
 
 ################################################################################
-
-def class_display_name(name):
-	"""Maps a ServiceNow sys_class_name to a user-readable name"""
-
-	if name in app.config['CMDB_CLASS_NAMES']:
-		return app.config['CMDB_CLASS_NAMES'][name]
-	else:
-		return 'Unknown'
-
-################################################################################
-
-def generate_csrf_token():
-	"""This function is used in __init__.py to generate a CSRF token for use
-	in templates.
-	"""
-
-	if '_csrf_token' not in session:
-		session['_csrf_token'] = pwgen(32)
-	return session['_csrf_token']
-
+#
+#def class_display_name(name):
+#	"""Maps a ServiceNow sys_class_name to a user-readable name"""
+#
+#	if name in app.config['CMDB_CLASS_NAMES']:
+#		return app.config['CMDB_CLASS_NAMES'][name]
+#	else:
+#		return 'Unknown'
+#
 ################################################################################
 
 def pwgen(length=16):
