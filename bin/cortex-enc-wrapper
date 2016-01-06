@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys, requests, warnings, os, ConfigParser
+import sys, requests, warnings, os, ConfigParser, syslog
 
 ################################################################################
 
@@ -33,12 +33,16 @@ if len(sys.argv) <= 1:
 	print >> sys.stderr, "Usage: cortex-env-wrapper <nodename>"
 	sys.exit(1)
 
+# Open syslog
+syslog.openlog(logoption=syslog.LOG_PID, facility=syslog.LOG_USER)
+
 # Read config file
 config = ConfigParser.RawConfigParser()
 try:
 	config.read('/data/cortex/enc.conf')
 except Exception as e:
 	print >> sys.stderr, "Failed to read configuration: " + str(e)
+	syslog.syslog(syslog.LOG_ERR, "Failed to read configuration: " + str(e))
 	sys.exit(1)
 
 try:
@@ -51,6 +55,7 @@ try:
 		ssl_verify = True
 except Exception as e:
 	print >> sys.stderr, 'Failed to get configuration option: ' + str(e)
+	syslog.syslog(syslog.LOG_ERR, "Failed to get configuration option: " + str(e))
 	sys.exit(1)
 
 # Get the certname of the node to find
@@ -79,10 +84,12 @@ if r.status_code == 200:
 elif r.status_code == 404:
 	# Return blank catalog to Pupper
 	print "classes:"
+	syslog.syslog(syslog.LOG_WARNING, "Returning blank catalog - cortex returned 404 for node " + certname)
 	sys.exit(0)
 
 # On any other response, attempt to return the cache
 else:
+	syslog.syslog(syslog.LOG_WARNING, "Returning cached catalog - cortex returned " + str(r.status_code) + " for node " + certname)
 	sys.exit(print_catalog(certname, cache_dir))
 
 # Shouldn't get here
