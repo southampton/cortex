@@ -77,7 +77,7 @@ def api_puppet_enc_enable(certname):
 			curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`) VALUES (%s, %s)", (system['id'], certname))
 			g.db.commit()
 			app.logger.info('Created Puppet ENC entry for certname "' + certname + '"')
-			print "OK", 201
+			return "OK", 201
 
 	## return success 
 	return "OK", 200
