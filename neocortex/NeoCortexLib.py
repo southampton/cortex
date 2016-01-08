@@ -457,10 +457,10 @@ class NeoCortexLib(object):
 		"""
 
 		# Get a cursor to the database
-		cur = self.db.cursor(mysql.cursors.DictCursor)
+		curd = self.db.cursor(mysql.cursors.DictCursor)
 
 		# Insert the row
-		cur.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`, `include_default`, `classes`, `variables`) VALUES (%s, %s, %s, %s, %s, %s)", (system_id, certname, environment, 1, "", ""))
+		curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`, `include_default`, `classes`, `variables`) VALUES (%s, %s, %s, %s, %s, %s)", (system_id, certname, environment, 1, "", ""))
 
 		# Commit
 		self.db.commit()

@@ -18,17 +18,17 @@ import yaml
 @cortex.core.login_required
 def puppet_enc_edit(id):
 	# Get the system out of the database
-	system = cortex.core.get_system_by_id(id)
+	system       = cortex.core.get_system_by_id(id)
 	environments = cortex.core.get_puppet_environments()
-	env_dict = cortex.core.get_environments_as_dict()
+	env_dict     = cortex.core.get_environments_as_dict()
 
 	if system == None:
 		abort(404)
 
 	# If we've got a new node, then don't show "None"
-	if system['puppet_classes'] is None:
+	if system['puppet_classes'] is None or system['puppet_classes'] == '':
 		system['puppet_classes'] = "# Global variables to include can be entered here\n"
-	if system['puppet_variables'] is None:
+	if system['puppet_variables'] is None or system['puppet_variables'] == '':
 		system['puppet_variables'] = "# Classes to include can be entered here\n"
 	if system['puppet_certname'] is None:
 		system['puppet_certname'] = ""
@@ -299,7 +299,13 @@ def puppet_generate_config(certname):
 
 	# Decode YAML for classes from the node
 	if len(node['classes'].strip()) != 0:
-		response['classes'] = yaml.load(node['classes'])
+		node_classes = yaml.load(node['classes'])
+
+		## yaml load can come back with no actual objects, e.g. comments, blank etc.
+		if node_classes == None:
+			response['classes'] = {}
+		else:
+			response['classes'] = node_classes
 	else:
 		response['classes'] = {}
 

@@ -4,6 +4,8 @@ import jinja2
 import os.path
 from os import walk
 import imp
+import random                 ## used in pwgen            
+import string                 ## used in pwgen
 
 class CortexFlask(Flask):
 
@@ -15,15 +17,26 @@ class CortexFlask(Flask):
 		super(CortexFlask, self).__init__(name)
 		self._exempt_views = set()
 		self.before_request(self._csrf_protect)
-		self.jinja_env.globals['csrf_token'] = self.generate_csrf_token
+		self.jinja_env.globals['csrf_token'] = self._generate_csrf_token
 
 	################################################################################
 
-	def generate_csrf_token(self):
+	def pwgen(self, length=16):
+		"""This is very crude password generator. It is currently only used to generate
+		a CSRF token.
+		"""
+
+		urandom = random.SystemRandom()
+		alphabet = string.ascii_letters + string.digits
+		return str().join(urandom.choice(alphabet) for _ in range(length))
+
+################################################################################
+
+	def _generate_csrf_token(self):
 		"""This function is used to generate a CSRF token for use in templates."""
 
 		if '_csrf_token' not in session:
-			session['_csrf_token'] = pwgen(32)
+			session['_csrf_token'] = self.pwgen(32)
 
 		return session['_csrf_token']
 
@@ -54,7 +67,7 @@ class CortexFlask(Flask):
 					### so just throw a 400
 					abort(400)
 			else:
-				self.logger.info('View ' + view_location + ' is exempt from CSRF checks')
+				self.logger.debug('View ' + view_location + ' is exempt from CSRF checks')
 
 	################################################################################
 
@@ -68,10 +81,9 @@ class CortexFlask(Flask):
 		:param view: The view to be wrapped by the decorator.
 		"""
 
-		#view_location = '{0}.{1}'.format(view.__module__, view.__name__)
 		view_location = view.__module__ + '.' + view.__name__
 		self._exempt_views.add(view_location)
-		self.logger.info('Added CSRF check exemption for ' + view_location)
+		self.logger.debug('Added CSRF check exemption for ' + view_location)
 		return view
 
 	################################################################################

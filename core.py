@@ -20,6 +20,7 @@ import requests
 import Pyro4
 import inspect
 import redis
+import re
 # for netgroups
 from ctypes import CDLL,c_char_p
 from ctypes import byref as _byref
@@ -267,6 +268,7 @@ def get_system_count(class_name = None, search = None, show_decom = True):
 	# Return the count
 	return row['count']
 
+
 ################################################################################
 
 def get_system_by_id(id):
@@ -274,7 +276,17 @@ def get_system_by_id(id):
 	cur = g.db.cursor(mysql.cursors.DictCursor)
 	cur.execute("SELECT `systems`.`id` AS `id`, `type`, `class`, `number`, `systems`.`name` AS `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `cmdb_id`, `sys_class_name` AS `cmdb_sys_class_name`, `sncache_cmdb_ci`.`name` AS `cmdb_name`, `operational_status` AS `cmdb_operational_status`, `u_number` AS `cmdb_u_number`, `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description`, `vmware_cache_vm`.`name` AS `vmware_name`, `vmware_cache_vm`.`vcenter` AS `vmware_vcenter`, `vmware_cache_vm`.`uuid` AS `vmware_uuid`, `vmware_cache_vm`.`numCPU` AS `vmware_cpus`, `vmware_cache_vm`.`memoryMB` AS `vmware_ram`, `vmware_cache_vm`.`powerState` AS `vmware_guest_state`, `vmware_cache_vm`.`guestFullName` AS `vmware_os`, `vmware_cache_vm`.`hwVersion` AS `vmware_hwversion`, `vmware_cache_vm`.`ipaddr` AS `vmware_ipaddr`, `vmware_cache_vm`.`toolsVersionStatus` AS `vmware_tools_version_status`, `puppet_nodes`.`certname` AS `puppet_certname`, `puppet_nodes`.`env` AS `puppet_env`, `puppet_nodes`.`include_default` AS `puppet_include_default`, `puppet_nodes`.`classes` AS `puppet_classes`, `puppet_nodes`.`variables` AS `puppet_variables`, `sncache_cmdb_ci`.`u_environment` AS `cmdb_environment`, `sncache_cmdb_ci`.`short_description` AS `cmdb_description` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` LEFT JOIN `vmware_cache_vm` ON `systems`.`name` = `vmware_cache_vm`.`name` LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` WHERE `systems`.`id` = %s", (id,))
 
-	# Return the results
+	# Return the result
+	return cur.fetchone()
+
+################################################################################
+
+def get_system_by_name(name):
+	# Query the database
+	cur = g.db.cursor(mysql.cursors.DictCursor)
+	cur.execute("SELECT `systems`.`id` AS `id`, `type`, `class`, `number`, `systems`.`name` AS `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `cmdb_id`, `sys_class_name` AS `cmdb_sys_class_name`, `sncache_cmdb_ci`.`name` AS `cmdb_name`, `operational_status` AS `cmdb_operational_status`, `u_number` AS `cmdb_u_number`, `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description`, `vmware_cache_vm`.`name` AS `vmware_name`, `vmware_cache_vm`.`vcenter` AS `vmware_vcenter`, `vmware_cache_vm`.`uuid` AS `vmware_uuid`, `vmware_cache_vm`.`numCPU` AS `vmware_cpus`, `vmware_cache_vm`.`memoryMB` AS `vmware_ram`, `vmware_cache_vm`.`powerState` AS `vmware_guest_state`, `vmware_cache_vm`.`guestFullName` AS `vmware_os`, `vmware_cache_vm`.`hwVersion` AS `vmware_hwversion`, `vmware_cache_vm`.`ipaddr` AS `vmware_ipaddr`, `vmware_cache_vm`.`toolsVersionStatus` AS `vmware_tools_version_status`, `puppet_nodes`.`certname` AS `puppet_certname`, `puppet_nodes`.`env` AS `puppet_env`, `puppet_nodes`.`include_default` AS `puppet_include_default`, `puppet_nodes`.`classes` AS `puppet_classes`, `puppet_nodes`.`variables` AS `puppet_variables`, `sncache_cmdb_ci`.`u_environment` AS `cmdb_environment`, `sncache_cmdb_ci`.`short_description` AS `cmdb_description` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` LEFT JOIN `vmware_cache_vm` ON `systems`.`name` = `vmware_cache_vm`.`name` LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` WHERE `systems`.`name` = %s", (name,))
+
+	# Return the result
 	return cur.fetchone()
 
 ################################################################################
@@ -683,4 +695,32 @@ def host_in_netgroup(host, netgroup):
 			return False
 	except Exception as ex:
 		return False
+
+################################################################################
+
+def is_valid_hostname(hostname):
+	"""Determines if a given hostname is valid"""
+
+	if len(hostname) > 255:
+		return False
+
+	if hostname[-1] == ".":
+		hostname = hostname[:-1]
+
+	allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+	return all(allowed.match(x) for x in hostname.split("."))
+
+################################################################################
+
+def is_valid_certname(certname):
+	"""Determines if a given puppet certname is valid - i.e. blah.soton.ac.uk"""
+
+	if len(certname) > 255:
+		return False
+
+	if certname[-1] == ".":
+		certname = certname[:-1]
+
+	allowed = re.compile("^(?!-)[A-Z\d-]{1,63}(?<!-)\.soton\.ac\.uk$", re.IGNORECASE)
+	return bool(allowed.match(certname))
 
