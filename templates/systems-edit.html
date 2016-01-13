@@ -14,8 +14,8 @@
 					<thead>
 						<tr>
 							<th width="15%">CMDB ID</th>
-							<th width="85%">Name</th>
-							<th></th>
+							<th width="*">Name</th>
+							<th width="10%"></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -119,6 +119,7 @@ $(document).ready(function()
 		}
 
 		dataTable = $('#search_table').DataTable({
+			"autoWidth": false,
 			"lengthMenu": [[10], [10]],
 			"pageLength": 10,
 			"columns": [{ "orderable": false, "targets": 0 }, { "orderable": false, "targets": 0 }, { "orderable": false, "targets": 0 }],

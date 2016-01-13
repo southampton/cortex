@@ -686,7 +686,7 @@ class NeoCortexLib(object):
 
 	################################################################################
 
-	def servicenow_create_ci(self, ci_name, os_type, os_name, cpus='', ram_mb='', disk_gb='', ipaddr='', virtual=True, environment=None):
+	def servicenow_create_ci(self, ci_name, os_type, os_name, cpus='', ram_mb='', disk_gb='', ipaddr='', virtual=True, environment=None, short_description='', comments='', location=None):
 		"""Creates a new CI within ServiceNow.
 		     - ci_name: The name of the CI, e.g. srv01234
 		     - os_type: The OS type as a number, see OS_TYPE_BY_NAME
@@ -697,6 +697,9 @@ class NeoCortexLib(object):
 		     - ipaddr: The IP address of the CI
 		     - virtual: Boolean indicating if the CI is a VM (True) or Physical (False). Defaults to True.
 		     - environment: The id of the environment (see the application configuration) that the CI is in
+		     - short_description: The value of the short_description (Description) field in ServiceNow. A purpose, or something.
+		     - comments: The value of the comments field in ServiceNow. Any random information.
+		     - location: The value of the location field in ServiceNow
 
 		On success, returns the sys_id of the object created in ServiceNow.
 		"""
@@ -712,7 +715,11 @@ class NeoCortexLib(object):
 			raise Exception('Unknown os_type passed to servicenow_create_ci')
 
 		# Build the data for the CI
-		vm_data = { 'name': str(ci_name), 'os': str(os_name), 'cpu_count': str(cpus), 'disk_space': str(disk_gb), 'virtual': str(virtual).lower(), 'ip_address': ipaddr, 'ram': str(ram_mb), 'operational_status': 'In Service', 'model_id': model_id }
+		vm_data = { 'name': str(ci_name), 'os': str(os_name), 'cpu_count': str(cpus), 'disk_space': str(disk_gb), 'virtual': str(virtual).lower(), 'ip_address': ipaddr, 'ram': str(ram_mb), 'operational_status': 'In Service', 'model_id': model_id, 'short_description': short_description, 'comments': comments }
+
+		# Add location if we've got it
+		if location is not None:
+			vm_data['location'] = location
 
 		# Add environment if we've got it
 		environments = dict((e['id'], e) for e in self.config['ENVIRONMENTS'] if e['cmdb'])

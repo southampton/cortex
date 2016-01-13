@@ -7,12 +7,6 @@
 	<div class="circle three"></div>
 </div>
 
-<div class='append'>
-	<div class='bars' id='bar1'></div>
-	<div class='bars' id='bar2'></div>
-	<div class='bars' id='bar3'></div>
-</div>
-
 <style type="text/css">
 .circle {
 	position: absolute;
@@ -76,75 +70,6 @@ body {
 	}
 }
 
-/***************************************/
-
-.append {
-	posistion: absolute;
-	z-index: -100;
-	margin: 5vh auto;
-	width: 450px;
-}
-
-.bars {
-	display: block;
-	width: 150px;
-	height: 150px;
-	background: #666666;
-	border-radius: 50px;
-	margin: 0px 0;
-	opacity: 0.0;
-	/* initial state */
-	-webkit-animation: pulsate 1s ease-out infinite;
-	        animation: pulsate 1s ease-out infinite;
-	float: left;
-}
-
-#bar1 {
-	-webkit-animation-delay: 0s;
-	        animation-delay: 0s;
-}
-
-#bar2 {
-	-webkit-animation-delay: 0.2s;
-	        animation-delay: 0.2s;
-}
-
-#bar3 {
-	-webkit-animation-delay: 0.4s;
-	        animation-delay: 0.4s;
-}
-
-@-webkit-keyframes pulsate {
-	0% {
-	  -webkit-transform: scale(0.1, 0.1);
-	          transform: scale(0.1, 0.1);
-	  opacity: 0.0;
-	}
-	50% {
-	  opacity: 1.0;
-	}
-	100% {
-	  -webkit-transform: scale(1, 1);
-	          transform: scale(1, 1);
-	  opacity: 0.0;
-	}
-}
-
-@keyframes pulsate {
-	0% {
-	  -webkit-transform: scale(0.1, 0.1);
-	          transform: scale(0.1, 0.1);
-	  opacity: 0.0;
-	}
-	50% {
-	  opacity: 1.0;
-	}
-	100% {
-	  -webkit-transform: scale(1, 1);
-	          transform: scale(1, 1);
-	  opacity: 0.0;
-	}
-}
 </style>
 
 <div style="font-family: 'Orbitron', cursive;
@@ -154,7 +79,7 @@ text-shadow: 0px 0px 30px rgba(150, 150, 150, 1);
 color: #999999 !important;
 position: relative;
  top: 3px; text-align: center; padding-top: 30px; padding-top: 25%">
-<span class="animated shake">cortex</span>
+cortex
 </div>
 
 <!--
