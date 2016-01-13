@@ -291,7 +291,7 @@ def get_system_by_name(name):
 
 ################################################################################
 
-def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, show_decom = True, only_other = False):
+def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, show_decom = True, only_other = False, return_cursor = False):
 	"""Returns the list of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost), and ordered (defaults to "name")"""
 
 	## BUILD THE QUERY
@@ -385,7 +385,10 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 	cur.execute(query, params)
 
 	# Return the results
-	return cur.fetchall()
+	if return_cursor:
+		return cur
+	else:
+		return cur.fetchall()
 
 ################################################################################
 

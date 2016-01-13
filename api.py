@@ -1,9 +1,35 @@
 from cortex import app
 import cortex.core
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, jsonify
+from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, jsonify, Response
 import os 
 import re
 import MySQLdb as mysql
+import yaml
+from cortex.systems import systems_csv_stream
+
+################################################################################
+
+@app.route('/api/systems/csv', methods=['POST'])
+@app.disable_csrf_check
+def api_systems_csv():
+	"""Returns a CSV file, much like the /systems/download/csv but with API
+	auth rather than normal auth."""
+
+	# TODO: This auth_token should not by the ENC_API_AUTH_TOKEN.
+	if 'auth_token' not in request.form:
+		app.logger.warn('auth_token missing from Systems API request')
+		return abort(401)
+	if request.form['auth_token'] != app.config['ENC_API_AUTH_TOKEN']:
+		app.logger.warn('Incorrect auth_token on request to Systems API')
+		return abort(401)
+
+	# Get the list of systems
+	cur = cortex.core.get_systems(return_cursor=True)
+
+	# Return the response (systems_csv_stream is in systems.py)
+	return Response(systems_csv_stream(cur), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
+	
+################################################################################
 
 @app.route('/api/puppet/enc/<certname>', methods=['POST'])
 @app.disable_csrf_check
@@ -35,6 +61,8 @@ def api_puppet_enc(certname):
 	r.headers['Content-Type'] = "application/x-yaml"
 	return r
 
+################################################################################
+
 @app.route('/api/puppet/enc-enable/<certname>', methods=['GET','POST'])
 @app.disable_csrf_check
 def api_puppet_enc_enable(certname):
@@ -44,7 +72,9 @@ def api_puppet_enc_enable(certname):
 	ENC and won't recieve any base configuration. This API endpoint tries to match the
 	certname against an entry in the systems table and then adds it into the Puppet nodes
 	table so the ENC will return results for it. It only accepts node names ending in .soton.ac.uk
-	which is all the ENC supports."""
+	which is all the ENC supports.
+
+	The response is YAML containing the environment of the node."""
 
 	# The request should contain a parameter on the query string which contains
 	# the authentication pre-shared key. Validate this:
@@ -70,14 +100,20 @@ def api_puppet_enc_enable(certname):
 		app.logger.warn('Could not match certname to a system name on request to the Puppet Node Enable API (certname: ' + certname + ')')
 		abort(404)
 
+	node_yaml = {}
+
 	## Create puppet ENC entry if it does not already exist
 	if 'puppet_certname' in system:
 		if system['puppet_certname'] == None:
 			curd = g.db.cursor(mysql.cursors.DictCursor)
-			curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`) VALUES (%s, %s)", (system['id'], certname))
+			curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `environment`) VALUES (%s, %s, 'production')", (system['id'], certname))
 			g.db.commit()
 			app.logger.info('Created Puppet ENC entry for certname "' + certname + '"')
-			return "OK", 201
+			node_yaml['environment'] = 'production'
+	else:
+		node_yaml['environment'] = system['puppet_environment']
 
-	## return success 
-	return "OK", 200
+	node_yaml['certname'] = certname
+	response = make_response(node_yaml)
+	response.headers['Content-Type'] = "application/x-yaml"
+	return response	

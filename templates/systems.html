@@ -8,7 +8,7 @@ a.server-link:hover { text-decoration: underline !important; }
 
 <div class="page-header">
 {#	<div class="pull-right" style="display:none"><button id="showdecom" type="button" class="btn btn-success btn-sm">Show Decommissioned Systems</button></div>#}
-<h3><i class="fa fa-server fa-fw"></i> Systems</h3>
+<h3><i class="fa fa-server fa-fw"></i> Systems<a class="btn btn-primary btn-sm pull-right" href="{{ url_for('systems_download_csv') }}"><i class="fa fa-fw fa-download"></i> Download CSV</a></h3>
 </div>
 
 <ul id="class-tabs" class="nav nav-tabs" style="margin-bottom:1em">

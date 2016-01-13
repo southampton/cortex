@@ -3,7 +3,7 @@
 
 from cortex import app
 import cortex.core
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
+from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
 import os 
 import time
 import json
@@ -11,6 +11,8 @@ import re
 import werkzeug
 import MySQLdb as mysql
 import yaml
+import csv
+import io
 
 ################################################################################
 
@@ -27,6 +29,49 @@ def systems():
 
 	# Render
 	return render_template('systems.html', systems=systems, classes=classes, active='systems')
+
+################################################################################
+
+# This function streams our CSV response from the data
+def systems_csv_stream(cursor):
+	# Get the first row
+	row = cursor.fetchone()
+
+	# Write header
+	output = io.BytesIO()
+	writer = csv.writer(output)
+	writer.writerow(['Name', 'Comment', 'Allocated by', 'Allocation date', 'CI Operational Status', 'CMDB Link'])
+	yield output.getvalue()
+
+	# Write data
+	while row is not None:
+		output = io.BytesIO()
+		writer = csv.writer(output)
+
+		# Generate link to CMDB
+		cmdb_url = ""
+		if row['cmdb_id'] is not None and row['cmdb_id'] != "":
+			cmdb_url = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
+
+		# Write a row to the CSV output
+		writer.writerow([row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_url])
+		yield output.getvalue()
+
+		# Iterate
+		row = cursor.fetchone()
+
+################################################################################
+
+@app.route('/systems/download/csv')
+@cortex.core.login_required
+def systems_download_csv():
+	"""Downloads the list of allocated server names as a CSV file."""
+
+	# Get the list of systems
+	cur = cortex.core.get_systems(return_cursor=True)
+
+	# Return the response
+	return Response(systems_csv_stream(cur), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
 
 ################################################################################
 
