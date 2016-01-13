@@ -6,7 +6,7 @@
 
 <p>Your systems have now been allocated names. You can now optionally set individual comments/notes about each name. You do not need to do this if you do not wish.</p>
 
-<form class="form-horizontal" method="POST" action="{{ url_for('systems_bulk') }}">
+<form class="form-horizontal" method="POST" action="{{ url_for('systems_bulk_save') }}">
 <input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 	{% for key, value in systems|dictsort %}
 	<div class="form-group">

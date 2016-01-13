@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="page-header">
+<h3>Allocate new system name(s)</h3>
+</div>
+
+<p>Your new system names are ready for use:</p>
+
+<div class="list-group">
+	{% for system in systems %}
+  <a href="{{url_for('systems_edit',id=system['id'])}}" class="list-group-item">
+    <h4 class="list-group-item-heading">{{system['name']}}</h4>
+    <p class="list-group-item-text">{{system['comment']}}</p>
+  </a>
+	{% endfor %}
+</div>
+
+
+
+
+
+{% endblock %}

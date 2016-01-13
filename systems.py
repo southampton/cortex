@@ -125,19 +125,21 @@ def systems_new():
 		# list page and flash up success. If they requested more than one
 		# system, then redirect to a bulk-comments-edit page where they can
 		# change the comments on all of the systems.
-		if len(new_systems) == 1:
+		if len(new_systems) == 1: 
 			flash("System name allocated successfully", "alert-success")
-			return redirect(url_for('systems'))
+			return redirect(url_for('systems_edit', id=new_systems[new_systems.keys()[0]]))
 		else:
 			return render_template('systems-new-bulk.html', systems=new_systems, comment=system_comment)
 
 ################################################################################
 
-@app.route('/systems/bulk', methods=['POST'])
+@app.route('/systems/bulk/save', methods=['POST'])
 @cortex.core.login_required
-def systems_bulk():
+def systems_bulk_save():
 	"""This is a POST handler used to set comments for a series of existing 
 	systems which have been allocated already"""
+
+	found_keys = []
 
 	## Find a list of systems from the form. Each of the form input elements
 	## containing a system comment has a name that starts "system_comment_"
@@ -145,13 +147,31 @@ def systems_bulk():
 		 if key.startswith("system_comment_"):
 			## yay we found one! blindly update it!
 			updateid = key.replace("system_comment_", "")
+			found_keys.append(updateid)
 			cur = g.db.cursor()
 			cur.execute("UPDATE `systems` SET `allocation_comment` = %s WHERE `id` = %s", (request.form[key], updateid))
 
 	g.db.commit()
 
 	flash("Comments successfully updated", "alert-success")
-	return(redirect(url_for("systems")))
+	return(redirect(url_for("systems_bulk_view",start=min(found_keys),finish=max(found_keys))))
+
+################################################################################
+
+@app.route('/systems/bulk/view/<int:start>/<int:finish>', methods=['GET'])
+@cortex.core.login_required
+def systems_bulk_view(start,finish):
+	"""This is a GET handler to view the list of assigned names"""
+
+	start  = int(start)
+	finish = int(finish)
+
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute("SELECT `id`, `name`, `allocation_comment` AS `comment` FROM `systems` WHERE `id` >= %s AND `id` <= %s",(start,finish))
+	systems = curd.fetchall()
+
+	return render_template('systems-new-bulk-done.html', systems=systems)
+
 
 ################################################################################
 
