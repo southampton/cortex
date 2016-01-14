@@ -2,15 +2,15 @@
 {% block body %}
 
 {#- CodeMirror style -#}
-<link href="{{ url_for('static', filename='css/ext/codemirror.min.css') }}" rel="stylesheet">
-<link href="{{ url_for('static', filename='css/ext/lint.min.css') }}" rel="stylesheet">
+<link href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/codemirror.min.css" rel="stylesheet">
+<link href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/lint.min.css" rel="stylesheet">
 
 {#- CodeMirror scripts -#}
-<script src="{{ url_for('static', filename='js/ext/codemirror.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/ext/yaml.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/ext/lint.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/ext/js-yaml.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/ext/yaml-lint.js') }}"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/codemirror.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/mode/yaml/yaml.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/lint.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/js-yaml/3.4.6/js-yaml.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/yaml-lint.js"></script>
 
 {#- Override CodeMirror style - must come after CodeMirror style imports -#}
 <style type="text/css">

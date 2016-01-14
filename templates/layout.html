@@ -8,11 +8,11 @@
 		<link rel="icon" href="../../favicon.ico">
 		{% include 'header-links.html' %}
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}">
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/ext/dataTables.bootstrap.min.css') }}">
+		<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.9/css/dataTables.bootstrap.min.css">
 		{% include 'javascript.html' %}
 		<script type="text/javascript" src="{{ url_for('static', filename='js/cortex.js') }}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='/js/ext/jquery.dataTables.min.js') }}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='/js/ext/dataTables.bootstrap.min.js') }}"></script>
+		<script type="text/javascript" src="//cdn.datatables.net/1.10.9/js/jquery.dataTables.min.js"></script>
+		<script type="text/javascript" src="//cdn.datatables.net/1.10.9/js/dataTables.bootstrap.min.js"></script>
 		{% block head %}{% endblock -%}
 	</head>
 	<body>
