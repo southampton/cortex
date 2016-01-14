@@ -15,11 +15,12 @@ def api_systems_csv():
 	"""Returns a CSV file, much like the /systems/download/csv but with API
 	auth rather than normal auth."""
 
-	# TODO: This auth_token should not by the ENC_API_AUTH_TOKEN.
+	# The request should contain a parameter in the passed form which
+	# contains the authentication pre-shared key. Validate this:
 	if 'auth_token' not in request.form:
 		app.logger.warn('auth_token missing from Systems API request')
 		return abort(401)
-	if request.form['auth_token'] != app.config['ENC_API_AUTH_TOKEN']:
+	if request.form['auth_token'] != app.config['CORTEX_API_AUTH_TOKEN']:
 		app.logger.warn('Incorrect auth_token on request to Systems API')
 		return abort(401)
 
@@ -36,8 +37,8 @@ def api_systems_csv():
 def api_puppet_enc(certname):
 	"""Returns the YAML associated with the given node."""
 
-	# The request should contain a parameter on the query string which contains
-	# the authentication pre-shared key. Validate this:
+	# The request should contain a parameter in the passed form which 
+	# contains the autthentication pre-shared key. Validate this:
 	if 'auth_token' not in request.form:
 		app.logger.warn('auth_token missing from Puppet ENC API request (certname: ' + certname + ')')
 		return abort(401)
