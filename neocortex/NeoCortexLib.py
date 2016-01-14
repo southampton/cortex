@@ -459,8 +459,13 @@ class NeoCortexLib(object):
 		# Get a cursor to the database
 		curd = self.db.cursor(mysql.cursors.DictCursor)
 
+		# Add environment if we've got it
+		environments = dict((e['id'], e) for e in self.config['ENVIRONMENTS'] if e['puppet'])
+		if environment is not None and environment in environments:
+			puppet_environment = environments[environment]['puppet']
+
 		# Insert the row
-		curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`, `include_default`, `classes`, `variables`) VALUES (%s, %s, %s, %s, %s, %s)", (system_id, certname, environment, 1, "", ""))
+		curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`, `include_default`, `classes`, `variables`) VALUES (%s, %s, %s, %s, %s, %s)", (system_id, certname, puppet_environment, 1, "", ""))
 
 		# Commit
 		self.db.commit()
@@ -683,6 +688,55 @@ class NeoCortexLib(object):
 
 		# Commit
 		self.db.commit()
+
+	################################################################################
+
+	def servicenow_link_task_to_ci(self, ci_sys_id, task_number):
+		"""Links a ServiceNow 'task' (Incident Task, Project Task, etc.) to a CI so that it appears in the related records. 
+		   Note that you should NOT use this function to link an incident to a CI (even though ServiceNow will kind of let
+		   you do this...)
+		     - ci_sys_id: The sys_id of the created configuration item, as returned by servicenow_create_ci
+		     - task_number: The task number (e.g. INCTASK0123456, PRJTASK0123456) to link to. NOT the sys_id of the task."""
+
+		# Request information about the task (incident task, project task, etc.) to get its sys_id
+		r = requests.get('https://' + self.config['SN_HOST'] + '/api/now/v1/table/task?sysparm_fields=sys_id&sysparm_query=number=' + task_number, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json'})
+
+		# Check we got a valid response
+		if r is not None and r.status_code >= 200 and r.status_code <= 299:
+			# Get the response
+			response_json = r.json()
+			
+			# This returns something like this:
+			# {"result": [{"sys_id": "f49bc4bb0fc3b500488ec453e2050ec3", "number": "PRJTASK0123456"}]}
+			
+			# Get the sys_id of the task
+			try:
+				task_sys_id = response_json['result'][0]['sys_id']
+			except Exception as e:
+				# Handle JSON not containing 'result', a first element, or a 'sys_id' parameter (not that this should happen, really...)
+				raise Exception("Failed to query ServiceNow for task information. Invalid response from ServiceNow.")
+
+			# Make a post request to link the given CI to the task
+			r = requests.post('https://' + self.config['SN_HOST'] + '/api/now/v1/table/task_ci', auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json={'ci_item': ci_sys_id, 'task': task_sys_id})
+
+			# If we succeeded, return the sys_id of the link table entry
+			if r is not None and r.status_code >= 200 and r.status_code <= 299:
+				return response_json['result'][0]['sys_id']
+			else:
+				error = "Failed to link ServiceNow task and CI."
+				if r is not None:
+					error = error + " HTTP Response code: " + str(r.status_code)
+				raise Exception(error)
+		else:
+			# Return error with appropriate information
+			error = "Failed to query ServiceNow for task information."
+			if r is not None:
+				if r.status_code == 404:
+					error = error + " Task '" + str(task_number) + "' does not exist"
+				else:
+					error = error + " HTTP Response code: " + str(r.status_code)
+			raise Exception(error)
+
 
 	################################################################################
 
