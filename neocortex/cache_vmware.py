@@ -30,7 +30,7 @@ def run(helper, options):
 		# Get the hostname
 		instance = helper.config['VMWARE'][key]
 
-		helper.event("vmware_connect", "Connecting to vmware instance " + instance['hostname'])
+		helper.event("vmware_connect", "Connecting to VMware instance " + instance['hostname'])
 		si = SmartConnect(host=instance['hostname'], user=instance['user'], pwd=instance['pass'], port=instance['port'])
 		content = si.RetrieveContent()
 		helper.end_event(description="Connected to instance " + instance['hostname'])

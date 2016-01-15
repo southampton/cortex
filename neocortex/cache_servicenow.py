@@ -10,7 +10,7 @@ def run(helper, options):
 	curd = db.cursor(mysql.cursors.DictCursor)
 
 	# Start event
-	helper.event('servicenow_download_ci', 'Downloading CMDB data from ServiceNow')	
+	helper.event('servicenow_download_ci', 'Downloading CMDB data from ServiceNow instance ' + helper.config['SN_HOST'])	
 
 	# Make the request to download all CI data using the JSONv2 API (which allows
 	# the resolving of choice value to choice label using the displayvalue=true
