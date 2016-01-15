@@ -235,7 +235,7 @@ class NeoCortexLib(object):
 
 	################################################################################
 
-	def vmware_vm_custspec(self, dhcp=True, gateway=None, netmask=None, ipaddr=None, dns_servers="8.8.8.8", dns_domain="localdomain", os_type=None, os_domain="localdomain", timezone=None, hwClockUTC=True, domain_join_user=None, domain_join_pass=None, fullname=None, orgname=None,productid=""):
+	def vmware_vm_custspec(self, dhcp=True, gateway=None, netmask=None, ipaddr=None, dns_servers="8.8.8.8", dns_domain="localdomain", os_type=None, os_domain="localdomain", timezone=None, hwClockUTC=True, domain_join_user=None, domain_join_pass=None, fullname=None, orgname=None, productid=""):
 		"""This function generates a vmware VM customisation spec for use in cloning a VM. 
 
 		   If you choose DHCP (the default) the gateway, netmask, ipaddr, dns_servers and dns_domain parameters are ignored.
@@ -469,6 +469,15 @@ class NeoCortexLib(object):
 
 		# Commit
 		self.db.commit()
+
+	############################################################################
+
+	def vmware_vmreconfig_notes(self, vm, notes):
+		"""Sets the notes annotation for the VM."""
+
+		configSpec              = vim.VirtualMachineConfigSpec()
+		configSpec.annotation   = notes
+		return vm.ReconfigVM_Task(configSpec)
 
 	############################################################################
 
@@ -799,7 +808,7 @@ class NeoCortexLib(object):
 		curd = self.db.cursor(mysql.cursors.DictCursor)
 
 		# Update the cache row
-		curd.execute("REPLACE INTO `sncache_cmdb_ci` (`sys_id`, `sys_class_name`, `name`, `operational_status`, `u_number`, `short_description`, `u_environment`, `virtual`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (retval[0], response_json['result']['sys_class_name'], vm_data['name'], 'In Service', retval[1], '', response_json['result']['u_environment'], 1))
+		curd.execute("REPLACE INTO `sncache_cmdb_ci` (`sys_id`, `sys_class_name`, `name`, `operational_status`, `u_number`, `short_description`, `u_environment`, `virtual`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (retval[0], response_json['result']['sys_class_name'], vm_data['name'], 'In Service', retval[1], short_description, response_json['result']['u_environment'], 1))
 		self.db.commit()
 
 		return retval
