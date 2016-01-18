@@ -340,7 +340,12 @@ def puppet_generate_config(certname):
 	# Decode YAML for environment (Puppet calls them parameters, but we call them [global] variables)
 	variables = None
 	if len(node['variables'].strip()) != 0:
-		response['parameters'] = yaml.load(node['variables'])
+		params = yaml.load(node['variables'])
+
+		if not params == None:
+			response['parameters'] = params
+		else:
+			response['parameters'] = {}
 	else:
 		response['parameters'] = {}
 
