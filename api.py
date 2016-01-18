@@ -118,14 +118,11 @@ def api_puppet_enc_enable(certname):
 		g.db.commit()
 		app.logger.info('Created Puppet ENC entry for certname "' + certname + '"')
 	else:
-		if 'puppet_environment' in system:
-			if system['puppet_environment'] != None:
-				node_yaml['environment'] = system['puppet_environment']
+		if 'puppet_env' in system:
+			if system['puppet_env'] != None:
+				node_yaml['environment'] = system['puppet_env']
 
 	node_yaml['certname'] = certname
 	r = make_response(yaml.dump(node_yaml))
-
-	print yaml.dump(node_yaml)	
-
 	r.headers['Content-Type'] = "application/x-yaml"
 	return r
