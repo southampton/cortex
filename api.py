@@ -101,20 +101,31 @@ def api_puppet_enc_enable(certname):
 		app.logger.warn('Could not match certname to a system name on request to the Puppet Node Enable API (certname: ' + certname + ')')
 		abort(404)
 
-	node_yaml = {}
+	## Store yaml in a dict. Default env to production, unless we can change it.
+	node_yaml = {'environment': 'production'}
 
 	## Create puppet ENC entry if it does not already exist
+	create_entry = False
 	if 'puppet_certname' in system:
 		if system['puppet_certname'] == None:
-			curd = g.db.cursor(mysql.cursors.DictCursor)
-			curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `environment`) VALUES (%s, %s, 'production')", (system['id'], certname))
-			g.db.commit()
-			app.logger.info('Created Puppet ENC entry for certname "' + certname + '"')
-			node_yaml['environment'] = 'production'
+			create_entry = True
 	else:
-		node_yaml['environment'] = system['puppet_environment']
+		create_entry = True
+
+	if create_entry:
+		curd = g.db.cursor(mysql.cursors.DictCursor)
+		curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `environment`) VALUES (%s, %s, 'production')", (system['id'], certname))
+		g.db.commit()
+		app.logger.info('Created Puppet ENC entry for certname "' + certname + '"')
+	else:
+		if 'puppet_environment' in system:
+			if system['puppet_environment'] != None:
+				node_yaml['environment'] = system['puppet_environment']
 
 	node_yaml['certname'] = certname
 	r = make_response(yaml.dump(node_yaml))
+
+	print yaml.dump(node_yaml)	
+
 	r.headers['Content-Type'] = "application/x-yaml"
 	return r
