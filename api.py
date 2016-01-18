@@ -64,7 +64,7 @@ def api_puppet_enc(certname):
 
 ################################################################################
 
-@app.route('/api/puppet/enc-enable/<certname>', methods=['GET','POST'])
+@app.route('/api/puppet/enc-enable/<certname>', methods=['POST'])
 @app.disable_csrf_check
 def api_puppet_enc_enable(certname):
 	"""Ensures a particular server name is added to the Puppet ENC. This
@@ -115,6 +115,6 @@ def api_puppet_enc_enable(certname):
 		node_yaml['environment'] = system['puppet_environment']
 
 	node_yaml['certname'] = certname
-	response = make_response(node_yaml)
-	response.headers['Content-Type'] = "application/x-yaml"
-	return response	
+	r = make_response(yaml.dump(node_yaml))
+	r.headers['Content-Type'] = "application/x-yaml"
+	return r
