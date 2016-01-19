@@ -350,10 +350,15 @@ def puppet_generate_config(certname):
 		response['parameters'] = {}
 
 	# Add in (and indeed potentially overwrite) some auto-generated variables
-	response['parameters']['uos_motd_sn_environment'] = system['cmdb_environment']
-	if system['cmdb_description'] is None or len(system['cmdb_description'].strip()) == 0:
-		response['parameters']['uos_motd_sn_description'] = 'DESCRIPTION NOT SET IN SERVICENOW'
+	if 'cmdb_id' not in system or system['cmdb_id'] is None or len(system['cmdb_id'].strip()) == 0:
+		# Not linked to a ServiceNow entry, put in some defaults
+		response['parameters']['uos_motd_sn_environment'] = 'ERROR: Not linked to ServiceNow. Visit: ' + url_for('systems_edit', _external=True, id=system['id'])
+		response['parameters']['uos_motd_sn_description'] = 'ERROR: Not linked to ServiceNow. Visit: ' + url_for('systems_edit', _external=True, id=system['id'])
 	else:
-		response['parameters']['uos_motd_sn_description'] = system['cmdb_description']
+		response['parameters']['uos_motd_sn_environment'] = system['cmdb_environment']
+		if system['cmdb_description'] is None or len(system['cmdb_description'].strip()) == 0:
+			response['parameters']['uos_motd_sn_description'] = 'ERROR: Description not set in ServiceNow. Visit: ' + (app.config['CMDB_URL_FORMAT'] % system['cmdb_id'])
+		else:
+			response['parameters']['uos_motd_sn_description'] = system['cmdb_description']
 
 	return yaml.dump(response)
