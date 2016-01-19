@@ -9,6 +9,7 @@
 		<tr>
 			<th>System Name</th>
 			<th>Puppet Certificate Name</th>
+			<th>Puppet Environment</th>
 			<th></th>
 		</tr>
 	</thead>
@@ -17,6 +18,7 @@
 		<tr>
 			<td>{{ node.name }}</td>
 			<td>{{ node.certname }}</td>
+			<td>{{ node.env }}</td>
 			<td><a href="{{url_for('puppet_enc_edit',id=node.id) }}" class="btn btn-default btn-xs"><i class="fa fa-fw fa-code"></i> Settings</a></td>
 		</tr>
 {%- endfor %}
@@ -27,7 +29,7 @@ $('#data').DataTable({
 	"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 	"pageLength": 15,
 	"order": [[0, 'asc']],
-	"columns": [null, null, { "orderable": false, "targets": 0 }]
+	"columns": [null, null, null, { "orderable": false, "targets": 0 }]
 });
 </script>
 {% endblock %}

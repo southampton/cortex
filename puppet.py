@@ -145,7 +145,7 @@ def puppet_nodes():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get OS statistics
-	curd.execute('SELECT `puppet_nodes`.`certname` AS `certname`, `systems`.`id` AS `id`, `systems`.`name` AS `name`  FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` ORDER BY `puppet_nodes`.`certname` ')
+	curd.execute('SELECT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`  FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` ORDER BY `puppet_nodes`.`certname` ')
 	results = curd.fetchall()
 
 	return render_template('puppet-nodes.html', active='puppet', data=results)
