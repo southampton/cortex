@@ -405,16 +405,6 @@ def get_environments_as_dict():
 	return dict((e['id'], e) for e in app.config['ENVIRONMENTS'])
 
 ################################################################################
-#
-#def class_display_name(name):
-#	"""Maps a ServiceNow sys_class_name to a user-readable name"""
-#
-#	if name in app.config['CMDB_CLASS_NAMES']:
-#		return app.config['CMDB_CLASS_NAMES'][name]
-#	else:
-#		return 'Unknown'
-#
-################################################################################
 
 def pwgen(length=16):
 	"""This is very crude password generator. It is currently only used to generate

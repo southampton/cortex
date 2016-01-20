@@ -52,7 +52,6 @@ MYSQL_PORT=3306
 
 ## CMDB Integration
 CMDB_URL_FORMAT="http://localhost/cmdb/%s"
-CMDB_CLASS_NAMES={'cmdb_ci_esx_server': 'VMware ESXi Server', 'cmdb_ci_linux_server': 'Linux Server', 'cmdb_ci_win_server': 'Windows Server', 'cmdb_ci_solaris_server': 'Solaris Server', 'cmdb_ci_server': 'Generic Server', 'cmdb_ci': 'Unknown'}
 
 ## Cortex internal version number
 VERSION='0.1'
@@ -181,15 +180,6 @@ import cortex.vmware
 import cortex.systems
 import cortex.puppet
 import cortex.api
-
-#if app.config['TOTP_ENABLED']:
-#	if app.config['REDIS_ENABLED']:
-#		import cortex.totp
-#	else:
-#		app.logger.error("Cannot enable TOTP 2-factor auth because REDIS is not enabled")
-
-# load jinja functions
-#app.jinja_env.filters['class_display_name'] = core.class_display_name
 
 # preload workflows
 app.load_workflows()
