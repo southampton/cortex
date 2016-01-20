@@ -1,0 +1,132 @@
+{% extends "layout.html" %}
+{% block body %}
+{% include 'codemirror.html' %}
+
+<div class="page-header">
+<h3><i class="fa fa-fw fa-info-circle"></i> Puppet Help</h3>
+</div>
+
+<script>
+$(document).ready(function() 
+{
+	var phelp1 = CodeMirror.fromTextArea(document.getElementById('phelp1'), {mode: 'yaml', indentUnit: 2, readOnly: true});
+	var phelp2 = CodeMirror.fromTextArea(document.getElementById('phelp2'), {mode: 'yaml', indentUnit: 2, readOnly: true});
+	var phelp3 = CodeMirror.fromTextArea(document.getElementById('phelp3'), {mode: 'yaml', indentUnit: 2, readOnly: true});
+	var phelp4 = CodeMirror.fromTextArea(document.getElementById('phelp4'), {mode: 'yaml', indentUnit: 2, readOnly: true});
+
+	phelp1.setSize('100%', 130);
+	phelp2.setSize('100%', 110);
+	phelp3.setSize('100%', 250);
+	phelp4.setSize('100%', 320);
+});
+</script>
+
+				<h2>Introduction</h2>
+
+				<p>Cortex functions as a Puppet <i>External Node Classifier</i> or "ENC". You can use it to define what Puppet classes are used by nodes. Puppet uses a <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a> 
+				based syntax for how ENCs tell Puppet what classes and parameters to load. Cortex exposes this syntax to you 'as-is', this allows you as the administrator to have full control over what a node's configuration is.
+				You define, using YAML, a set of classes to import and global variables to set. Cortex also determines a node's environment through the ENC functionality.</p>
+				<p>PuppetLabs documentation for the YAML syntax can be found here: <a href="https://docs.puppetlabs.com/guides/external_nodes.html#enc-output-format">https://docs.puppetlabs.com/guides/external_nodes.html</a></p> 
+
+				<h3>How does Cortex build a node's configuration?</h3>
+				<p>When building the configuration for a node, which is to say the classes to import and variables to set, Cortex checks in three places to determine what to do:</p>
+				<ul>
+					<li>Default classes configuration (unless the node has opted out)</li>
+					<li>The configuration for groups that the node is a member of</li>
+					<li>The configuration for the particular node</li>
+				</ul>
+				<p>At each stage Cortex adds classes (and their parameters) to be imported. The subsequent stage can add different classes to import 
+				but cannot prevent a class from being imported which was imported in the stage above. For example:
+				</p>
+				<ul>
+					<li>The 'default classes' setting is configured to import the class "base"</li>
+					<li>The groups stage is configured to import the class "serviceX"</li>
+					<li>The node stage is configured to import the class "serviceAcme" with the class parameter "widget-colour" set to "Green"</li>
+				</ul>
+				<p>The resulting node configuration is thus:</p>
+				<ul>
+					<li>Class 'base' is imported</li>
+					<li>Class 'serviceX' is imported</li>
+					<li>Class 'serviceAcme' is imported with the widget-colour set to "Green"</li>
+				</ul>
+				<p>You can determine what the resulting output is for any node by viewing the node in Cortex and clicking "View Configuration"</p>
+
+				<p>Also note that:</p>
+				<ul>
+					<li>Only a node may set 'global variables'. Groups and the 'default classes' config cannot set variables but can set class parameters</li>
+					<li>A node may opt out out of the 'default classes'. This allows it to override the base configuration. It cannot opt out of group configuration - instead remove it from groups as needed.</li>
+				</ul>
+
+				<h3>Class overrides</h3>
+				<p>Puppet does not allow a class to be defined twice but the Cortex ENC does let you define a class twice. If you define a class in 'default classes' and also define it in the node 
+				configuration then Cortex will simply import the class once. If class parameters are set in multiple places then Cortex ENC will use the parameters set last, e.g:</p>
+				<ul>
+					<li>the default classes config imports the class "acme" with the parameter "widget-colour" set to "Red"</li>
+ 					<li>a group the node is in imports the class "acme" with the parameter "widget-colour" set to "Green"</li>
+					<li>the node imports the class "acme" with the parameter "widget-colour" set to "Blue"</li>
+				</ul>
+				<p>In the above example the widget-colour will be set to Blue, as the node's priority is always highest, then groups, then the default classes.</p>
+				<p>Class overrides in Cortex allow basic defaults to be set in the 'default classes' section and allows nodes to override these without having to use Hiera.</p>
+
+				<h3>YAML Syntax</h3>
+				<h4>Comments</h4>
+				<p>It is useful to add comments to explain what a class import does or why it is present. In YAML comment lines starting with a hash '#' character.</p> 
+				<h4>Classes</h4>
+				<p>Each line of the editor should be the name of class to import, with no indentation and ending with a single colon character. For example:</p>
+
+				<textarea id="phelp1"># this is a comment line
+pulp:
+uwsgi:
+nginx:
+postgresql:
+</textarea>
+
+				<h4>Parameterised Classes</h4>
+
+				<p>Parameters can be passed to the classes you import. You do this by entering the names of the parameters idented by two spaces on the following lines, followed by a colon, and then the value you wish
+				to pass. For example:</p>
+
+				<textarea id="phelp2">apache:
+mysql:
+  innodb_buffer_pool_size: 134217728
+  innodb_data_home_dir: "/data/innodb/"
+</textarea>
+
+				<p>Parameters can be a number, a string, a YAML array or a a YAML hash. The following is an example of array and of a hash:</p>
+
+				<textarea id="phelp3">
+# example of passing an array to a class
+aptsetup:
+  additional_apt_repos:
+    - "deb localrepo.example.com/ubuntu lucid production"
+    - "deb localrepo.example.com/ubuntu lucid vendor"
+
+# example of passing a hash to a class
+sshd: 
+  sshd_settings: 
+    password_allowed: "yes"
+    root_allowed: "no"
+</textarea>
+
+				<h4>Global variables</h4>
+				<p>Global variables can be set per-node (and cannot be set in 'default classes' or in groups). In most cases global variables should be avoided, but if you really need
+				to set them you can do per node. Global variables are top-scoped variables available in any Puppet module or manifest. Global variables use the same syntax as used in
+				class parameters above. For example:
+
+				<textarea id="phelp4">
+# simple global variable
+variable_name: value
+
+# global variable with an array as the value
+array_variable:
+  - a
+  - b
+  - c
+
+# global variable with a hash as the value
+hash_variable: 
+  opt1: a
+  opt2: b
+  opt3: c
+</textarea>
+{% endblock %}

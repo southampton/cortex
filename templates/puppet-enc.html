@@ -1,55 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
-
-<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-	<div class="modal-dialog modal-lg" role="document">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title" id="myModalLabel">Classifying Puppet nodes</h4>
-			</div>
-			<div class="modal-body">
-				<p>Cortex functions as a Puppet <i>External Node Classifier</i> or "ENC". You can use it to define what Puppet classes are used by nodes. Puppet defines a YAML based syntax
-				for how ENCs tell Puppet what classes and parameters to load and Cortex exposes that to you verbatim. This allows you as the administrator to have full control over what
-				a node's configuration is.</p>
-				<p>PuppetLabs documentation for this syntax is here: <a href="https://docs.puppetlabs.com/guides/external_nodes.html">https://docs.puppetlabs.com/guides/external_nodes.html</a></p> 
-				<h3>Defining classes</h3>
-				<p>Each line should be the name of class to import, with no indentation and ending with a colon character. Any parameters to be passed should be passed on subsequent lines indented by two spaces. Arrays can be passed by indenting again and prefixing each item in the array with a dash, or by using square-bracketed array syntax. Comments can be entered by starting a line with a hash. Here is an example:</p>
-
-				<textarea id="demo1">puppet:
-myservice:
-  some_parameter: This is a string. Quotation marks are entirely optional.
-  # This is a comment
-  my_example_array_1: [a, "b", c, 1]
-  my_example_array_2:
-    - abc1d23
-    - efg4h56</textarea>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-			</div>
-		</div>
-	</div>
-</div>
-
-{#- CodeMirror style -#}
-<link href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/codemirror.min.css" rel="stylesheet">
-<link href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/lint.min.css" rel="stylesheet">
-
-{#- CodeMirror scripts -#}
-<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/codemirror.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/mode/yaml/yaml.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/lint.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/js-yaml/3.4.6/js-yaml.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/yaml-lint.js"></script>
-
-{#- Override CodeMirror style - must come after CodeMirror style imports -#}
-<style type="text/css">
-.CodeMirror {
-	border: 1px solid #eee;
-	height: auto;
-}
-</style>
+{% include 'codemirror.html' %}
 
 <script>
 $(document).ready(function() {
@@ -159,13 +110,13 @@ $(document).ready(function() {
 			<div class="panel-heading">Help</div>
 			<div class="panel-body">
 				<p>Use the <strong>Classes</strong> field to define the classes that this node will import. You can also
-				define parameters for the classes.</p>
-				<p>Use the <strong>Global Variables</strong> field to define the variables that will be sent to all the
-				classes imported by this node. Extra system variables will be added.</p>
-				<p>The format of this field is YAML. Use two spaces for indentation. Do not use tabs, but you can safely
-					press tab (it will enter 2 spaces).</p>
+				define parameters for the classes. Nodes will also import classes configured in groups and the default node configuration.</p>
+				<p>Use the <strong>Global Variables</strong> field to define the global puppet variables that will be sent to all the
+				classes imported by this node. Groups and the default node configuration cannot set global variables - only this field can.</p>
+				<p>The format of this field is <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a>. Use two spaces for indentation. Do not use tabs, but you can safely
+					press the tab key within the editor (it will enter 2 spaces for you).</p>
 				<div class="text-center">
-					<button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#myModal">Find out more</button>
+					<a href="{{url_for('puppet_help')}}" target="_blank" class="btn btn-success btn-lg">Find out more</a>
 				</div>
 			</div>
 		</div>

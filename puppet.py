@@ -14,6 +14,13 @@ import yaml
 
 ################################################################################
 
+@app.route('/help/puppet', methods=['GET', 'POST'])
+@cortex.core.login_required
+def puppet_help():
+	return render_template('puppet-help.html', active='help')
+
+################################################################################
+
 @app.route('/puppet/enc/<int:id>', methods=['GET', 'POST'])
 @cortex.core.login_required
 def puppet_enc_edit(id):

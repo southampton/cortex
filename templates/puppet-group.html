@@ -1,24 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
-
-{#- CodeMirror style -#}
-<link href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/codemirror.min.css" rel="stylesheet">
-<link href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/lint.min.css" rel="stylesheet">
-
-{#- CodeMirror scripts -#}
-<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/codemirror.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/mode/yaml/yaml.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/lint.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/js-yaml/3.4.6/js-yaml.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/yaml-lint.js"></script>
-
-{#- Override CodeMirror style - must come after CodeMirror style imports -#}
-<style type="text/css">
-.CodeMirror {
-	border: 1px solid #eee;
-	height: auto;
-}
-</style>
+{% include 'codemirror.html' %}
 
 <script>
 $(document).ready(function() {
@@ -62,12 +44,12 @@ $(document).ready(function() {
 		<div class="panel panel-default">
 			<div class="panel-heading">Help</div>
 			<div class="panel-body">
-				<p>Use the <strong>Classes</strong> field to define the classes that nodes in this group will import.
-				define parameters for the classes. The per node configuration can override these values.</p>
-				<p>The format of this field is YAML. Use two spaces for indentation. Do not use tabs, but you can safely
-					press tab (it will enter 2 spaces).</p>
+				<p>Use this field to define the classes that nodes in this group will import. You can also
+				define parameters for the classes. Node configuration can override class parameters set here but cannot prevent the classes being imported.</p>
+				<p>The format of this field is <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a>. Use two spaces for indentation. Do not use tabs, but you can safely
+					press the tab key within the editor (it will enter 2 spaces for you).</p>
 				<div class="text-center">
-					<button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#myModal">Find out more</button>
+					<a href="{{url_for('puppet_help')}}" target="_blank" class="btn btn-success btn-lg">Find out more</a>
 				</div>
 			</div>
 		</div>

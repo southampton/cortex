@@ -106,7 +106,7 @@ def admin_classes():
 					return redirect(url_for('admin_classes'))
 
 				## sql insert
-				cur.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`) VALUES (%s, %s, %s)''', (class_name, class_digits, class_comment, class_disabled))
+				cur.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`) VALUES (%s, %s, %s, %s)''', (class_name, class_digits, class_comment, class_disabled))
 				g.db.commit()
 
 				flash("System class created","alert-success")
