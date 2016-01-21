@@ -1,7 +1,46 @@
 {% extends "layout.html" %}
 {% block body %}
 
-<div class="modal fade" id="search" role="dialog">
+<div class="modal" id="edit" role="dialog">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<form role="form" class="form-horizontal" method="POST">
+			<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title">Edit system</h4>
+				</div>
+
+				<div class="modal-body">
+					<div class="form-group">
+					<label class="col-sm-2 control-label" for="allocation_comment">Comment:</label><div class="col-sm-10"><input class="form-control" type="text" name="allocation_comment" id="allocation_comment" value="{{ system.allocation_comment or '' }}" /></div>
+					</div>
+
+{%- if not system_class or system_class.link_vmware %}
+		<div class="form-group">
+			<label class="col-sm-2 control-label" for="vmware_uuid">VMware UUID:</label><div class="col-sm-10"><div class="input-group"><input class="form-control" type="text" name="vmware_uuid" id="vmware_uuid" value="{{ system.vmware_uuid or '' }}" /> <div class="input-group-addon" style="padding:1px"><a id="btn_vmware_search" data-toggle="modal" data-target="#search" class="btn btn-sm">Search</a></div></div></div>
+			<label class="col-sm-2 control-label"></label><div style="margin-bottom:0px" class="col-sm-10 help-block">This is the UUID of the VM within VMware.</div>
+		</div>
+{%- endif %}
+{%- if not system_class or system_class.cmdb_type %}
+		<div class="form-group">
+			<label class="col-sm-2 control-label" for="cmdb_id">CMDB System ID:</label><div class="col-sm-10"><div class="input-group"><input class="form-control" type="text" name="cmdb_id" id="cmdb_id" value="{{ system.cmdb_id or '' }}" /><div class="input-group-addon" style="padding:1px"><a id="btn_cmdb_search" data-toggle="modal" data-target="#search" class="btn btn-sm">Search</a></div></div>
+			<div class="help-block">This is the unique identifier of the CMDB entry in ServiceNow, known as the 'sys_id'. This can be found in the URL for a CMDB entry, which is accessible from a CMDB page, by right-clicking the header and selecting Copy URL.</div></div>
+		</div>
+{%- endif %}
+
+				</div>				
+
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="submit" class="btn btn-primary">Save</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div class="modal" id="search_cmdb" role="dialog">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -10,7 +49,7 @@
 			</div>
 
 			<div class="modal-body">
-				<table id="search_table" class="table table-condensed table-striped">
+				<table id="search_cmdb_table" class="table table-condensed table-striped">
 					<thead>
 						<tr>
 							<th width="15%">CMDB ID</th>
@@ -24,105 +63,178 @@
 			</div>
 
 			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+				<button id="btn_cmdb_search_cancel" type="button" class="btn btn-default">Cancel</button>
 			</div>
 		</div>
 	</div>
 </div>
 
-<form role="form" class="form-horizontal" method="POST">
+<div class="modal" id="search_vmware" role="dialog">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Search VMWare</h4>
+			</div>
+
+			<div class="modal-body">
+				<table id="search_vmware_table" class="table table-condensed table-striped">
+					<thead>
+						<tr>
+							<th width="45%">VM Name</th>
+							<th width="45%">VMware UUID</th>
+							<th width="10%"></th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+			</div>
+
+			<div class="modal-footer">
+				<button id="btn_vmware_search_cancel" type="button" class="btn btn-default">Cancel</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<form role="form" class="form-horizontal">
 <div class="page-header">
 <div class="pull-right">
-<button class="btn btn-sm btn-primary" type="submit">Save Changes</button>
+
+{%- if system.cmdb_id %}<a class="btn btn-sm btn-primary" href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank"><i class="fa fa-sm fa-cloud"></i> ServiceNow</a>{%endif%} 
+{%- if system.puppet_certname %} <a class="btn btn-sm btn-success" href="{{ url_for('puppet_enc_edit',id=system.id) }}" target="_blank"><i class="fa fa-sm fa-book"></i> Puppet</a>{%endif%}
+<button class="btn btn-sm btn-warning" type="button" data-toggle="modal" data-target="#edit"><i class="fa fa-edit fa-fw"></i> Edit system</button>
 </div>
-<h3>{{ system.name }}</h3>
+<h3><i class="fa fa-fw fa-server"></i> {{ system.name }}</h3>
 </div>
 
-	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-	<fieldset>
-		<div class="form-group">
-			<label class="col-sm-2 control-label" for="name">Name:</label><div class="col-sm-10"><input readonly="readonly" class="form-control" type="text" name="name" id="name" value="{{ system.name }}" /></div>
-		</div>
-		<div class="form-group">
-			<label class="col-sm-2 control-label" for="allocation_who">Allocated by:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="allocation_who" id="allocation_who" value="{{ system.allocation_who or '' }}" /></div>
-			<label class="col-sm-2 control-label" for="allocation_date">Allocation Date:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="allocation_date" id="allocation_date" value="{{ system.allocation_date or '' }}" /></div>
-		</div>
-		<div class="form-group">
+		<!--<div class="form-group">
 			<label class="col-sm-2 control-label" for="allocation_comment">Comment:</label><div class="col-sm-10"><input class="form-control" type="text" name="allocation_comment" id="allocation_comment" value="{{ system.allocation_comment or '' }}" /></div>
+		</div>-->
+		<div class="form-group">
+			<label class="col-sm-2 control-label" for="allocation_comment">Comment:</label><div class="col-sm-10"><p class="form-control-static">{{ system.allocation_comment or '' }}</p></div>
 		</div>
 		<div class="form-group">
-			<label class="col-sm-2 control-label" for="vmware_uuid">VMware UUID:</label><div class="col-sm-10"><input class="form-control" type="text" name="vmware_uuid" id="vmware_uuid" value="{{ system.vmware_uuid or '' }}" /></div>
-			<label class="col-sm-2 control-label"></label><div style="margin-bottom:0px" class="col-sm-10 help-block">This is the UUID of the VM within VMware.</div>
+			<label class="col-sm-2 control-label" for="allocation_who">Allocated by:</label><div class="col-sm-10"><p class="form-control-static">{{ system.allocation_who or '' }}</p></div>
 		</div>
 		<div class="form-group">
-			<label class="col-sm-2 control-label" for="cmdb_id">CMDB System ID:</label><div class="col-sm-10"><div class="input-group"><input class="form-control" type="text" name="cmdb_id" id="cmdb_id" value="{{ system.cmdb_id or '' }}" /><div class="input-group-addon" style="padding:1px"><a data-toggle="modal" data-target="#search" class="btn btn-sm">Search</a></div></div>
-			<div class="help-block">This is the unique identifier of the CMDB entry in ServiceNow, known as the 'sys_id'. This can be found in the URL for a CMDB entry, which is accessible from a CMDB page, by right-clicking the header and selecting Copy URL.</div></div>
+			<label class="col-sm-2 control-label" for="allocation_date">Allocation Date:</label><div class="col-sm-10"><p class="form-control-static">{{ system.allocation_date or '' }}</p></div>
 		</div>
 
-{%- if system.cmdb_id %}
-		<div class="clearfix"></div>
-		<div class="page-header" style="margin-top:0px">
-			<div class="pull-right">
-				<a class="btn btn-sm btn-primary" href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank"><i class="fa fa-sm fa-cloud"></i>&nbsp;&nbsp;Full details on ServiceNow</a>
+
+	<div class="row">
+
+
+		{%- if system.cmdb_id %}
+		<div class="col-md-6">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h3 class="panel-title">CMDB Details</h3> 
+				</div>
+			<div class="panel-body">
+
+
+
+		<!--<div class="form-group">
+			<label class="col-sm-3 control-label" for="cmdb_name">Name in CMDB:</label><div class="col-sm-9"><input readonly="readonly" class="form-control" type="text" name="cmdb_name" id="cmdb_name" value="{{ system.cmdb_name or '' }}" /></div>
+		</div>-->
+		<div class="form-group">
+			<label class="col-sm-3 control-label" for="cmdb_name">Type:</label>
+			<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_sys_class_name or 'Unknown' }}</p></div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label" for="cmdb_u_number">ID:</label>
+			<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_u_number or 'Unknown' }}</p></div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label" for="cmdb_operational_status">Status:</label>
+			<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_operational_status or 'Unknown' }}</p></div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label" for="cmdb_operational_status">Environment:</label>
+			<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_environment or 'Unknown' }}</p></div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label" for="cmdb_short_description">OS:</label>
+			<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_os or 'N/A' }}</p></div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label" for="cmdb_short_description">Description:</label>
+			<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_short_description or 'N/A' }}</p></div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label" for="cmdb_short_description">Comments:</label>
+			<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_comments or 'N/A' }}</p></div>
+		</div>
+
 			</div>
-			<h4>CMDB Details</h4>
 		</div>
-
-		<div class="form-group">
-			<label class="col-sm-2 control-label" for="cmdb_name">Name in CMDB:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="cmdb_name" id="cmdb_name" value="{{ system.cmdb_name or '' }}" /></div>
-			<label class="col-sm-2 control-label" for="cmdb_name">CMDB Type:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="cmdb_sys_class_name" id="cmdb_sys_class_name" value="{{ system.cmdb_sys_class_name or '' }}" /></div>
-		</div>
-		<div class="form-group">
-			<label class="col-sm-2 control-label" for="cmdb_u_number">CMDB Number:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="cmdb_u_number" id="cmdb_u_number" value="{{ system.cmdb_u_number or '' }}" /></div>
-			<label class="col-sm-2 control-label" for="cmdb_operational_status">Status:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="cmdb_operational_status" id="cmdb_operational_status" value="{{ system.cmdb_operational_status or '' }}" /></div>
-		</div>
-		<div class="form-group">
-			<label class="col-sm-2 control-label" for="cmdb_short_description">Description:</label><div class="col-sm-10"><input readonly="readonly" class="form-control" type="text" name="cmdb_short_description" id="cmdb_short_description" value="{{ system.cmdb_short_description or '' }}" /></div>
-		</div>
+	</div>
 {% endif %}
 
-{%- if system.vmware_uuid %}
-		<div class="clearfix"></div>
-		<div class="page-header" style="margin-top:0px">
-			<h4>VMware Details</h4>
-		</div>
+		{%- if system.vmware_uuid %}
+		<div class="col-md-6">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h3 class="panel-title">VMware Details</h3> 
+				</div>
+			<div class="panel-body">
 
+		<!--<div class="form-group">
+			<label class="col-sm-3 control-label" for="vm_name">Name in VMware:</label><div class="col-sm-9"><input readonly="readonly" class="form-control" type="text" name="vm_name" id="vm_name" value="{{ system.vmware_name or '' }}" /></div>
+		</div>-->
 		<div class="form-group">
-			<label class="col-sm-2 control-label" for="vm_name">Name in VMware:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_name" id="vm_name" value="{{ system.vmware_name or '' }}" /></div>
-			<label class="col-sm-2 control-label" for="vm_vcenter">vCenter:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_vcenter" id="vm_vcenter" value="{{ system.vmware_vcenter or '' }}" /></div>
+			<label class="col-sm-3 control-label" for="vm_vcenter">vCenter:</label>
+			<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_vcenter or '' }}</p></div>
 		</div>
 		<div class="form-group">
-			<label class="col-sm-2 control-label" for="vm_state">Power State:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_state" id="vm_state" value="{{ system.vmware_guest_state or '' }}" /></div>
-			<label class="col-sm-2 control-label" for="vm_tools">VMware Tools:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_tools" id="vm_tools" value="{{ system.vmware_tools_version_status or '' }}" /></div>
+			<label class="col-sm-3 control-label" for="vm_state">Power State:</label>
+			<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_guest_state or '' }}</p></div>
 		</div>
 		<div class="form-group">
-			<label class="col-sm-2 control-label" for="vm_cpus">Total CPUs:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_cpus" id="vm_cpus" value="{{ system.vmware_cpus or '' }}" /></div>
-			<label class="col-sm-2 control-label" for="vm_ram">RAM (MB):</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_ram" id="vm_ram" value="{{ system.vmware_ram or '' }}" /></div>
+			<label class="col-sm-3 control-label" for="vm_tools">VMware Tools:</label>
+			<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_tools_version_status or '' }}</p></div>
 		</div>
 		<div class="form-group">
-			<label class="col-sm-2 control-label" for="vm_os">Operating System:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_os" id="vm_os" value="{{ system.vmware_os or '' }}" /></div>
-			<label class="col-sm-2 control-label" for="vm_ipaddr">IP Address:</label><div class="col-sm-4"><input readonly="readonly" class="form-control" type="text" name="vm_ipaddr" id="vm_ipaddr" value="{{ system.vmware_ipaddr or '' }}" /></div>
+			<label class="col-sm-3 control-label" for="vm_cpus">Spec:</label>
+			<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_cpus or 'Unknown' }} vCPU, {{ system.vmware_ram or '' }} MB RAM</p></div>
 		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label" for="vm_os">OS:</label>
+			<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_os or '' }}</p></div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label" for="vm_cpus">Hostname:</label>
+			<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_hostname or 'Unknown' }}</p></div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label" for="vm_ipaddr">IP Address:</label>
+			<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_ipaddr or 'Unknown' }}</p></div>
+		</div>
+	</div>
 {% endif %}
-	</fieldset>
+
+	</div>
 </form>
 
 <script type="text/javascript">
-var dataTable = undefined;
+var dataTableCMDB = undefined;
+var dataTableVMware = undefined;
 $(document).ready(function()
 {
-	$('#search').on('show.bs.modal', function(event)
+	$('#search_cmdb').on('show.bs.modal', function(event)
 	{
-		if (dataTable != undefined)
+		if (dataTableCMDB != undefined)
 		{
-			dataTable.destroy();
+			dataTableCMDB.destroy();
 		}
 
-		dataTable = $('#search_table').DataTable({
+		dataTableCMDB = $('#search_cmdb_table').DataTable({
 			"autoWidth": false,
 			"lengthMenu": [[10], [10]],
 			"pageLength": 10,
-			"columns": [{ "orderable": false, "targets": 0 }, { "orderable": false, "targets": 0 }, { "orderable": false, "targets": 0 }],
+			"columns": [{ "orderable": true, "targets": 0 }, { "orderable": true, "targets": 0 }, { "orderable": false, "data": null }],
 			"serverSide": true,
 			"searchDelay": 500,
 			"ajax": {
@@ -130,16 +242,99 @@ $(document).ready(function()
 			},
 			"searching": "true",
 			"rowCallback": function(row, data, index) {
-				$('td:eq(2)', row).html('<button data-sys-id="' + data[2] + '" class="select btn btn-xs btn-success">Select</button>');
+				$('td:eq(2)', row).html('<button data-sys-id="' + data[2] + '" class="cmdb_select btn btn-xs btn-success">Select</button>');
 			},
 			"drawCallback": function(settings) {
-				$('.select').click(function() {
+				$('.cmdb_select').click(function() {
 					$('#cmdb_id').val($(this).attr('data-sys-id'));
-					$('#search').modal('hide');
+					$('#search_cmdb').modal('hide');
+					$('#edit').modal('show');
 				});
 			}
 		});
 	});
+
+	$('#search_vmware').on('show.bs.modal', function(event)
+	{
+		if (dataTableVMware != undefined)
+		{
+			dataTableVMware.destroy();
+		}
+
+		dataTableVMware = $('#search_vmware_table').DataTable({
+			"autoWidth": false,
+			"lengthMenu": [[10], [10]],
+			"pageLength": 10,
+			"columns": [{ "orderable": true, "targets": 0 }, { "orderable": true, "targets": 0 }, { "orderable": false, "data": null }],
+			"serverSide": true,
+			"searchDelay": 500,
+			"ajax": {
+				"url": "/systems/vmware/json"
+			},
+			"searching": "true",
+			"rowCallback": function(row, data, index) {
+				$('td:eq(2)', row).html('<button data-vmware-uuid="' + data[1] + '" class="vmware_select btn btn-xs btn-success">Select</button>');
+			},
+			"drawCallback": function(settings) {
+				$('.vmware_select').click(function() {
+					$('#vmware_uuid').val($(this).attr('data-vmware-uuid'));
+					$('#search_vmware').modal('hide');
+					$('#edit').modal('show');
+				});
+			}
+		});
+	});
+
+	$('#btn_cmdb_search').click(function (event)
+	{
+		$('#edit').modal('hide');
+		$('#search_cmdb').modal('show');
+	});
+
+	$('#btn_cmdb_search_cancel').click(function (event)
+	{
+		$('#search_cmdb').modal('hide');
+		$('#edit').modal('show');
+	});
+
+	$('#btn_vmware_search').click(function (event)
+	{
+		$('#edit').modal('hide');
+		$('#search_vmware').modal('show');
+	});
+
+	$('#btn_vmware_search_cancel').click(function (event)
+	{
+		$('#search_vmware').modal('hide');
+		$('#edit').modal('show');
+	});
 });
 </script>
 {% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -13,10 +13,10 @@ a.server-link:hover { text-decoration: underline !important; }
 
 <ul id="class-tabs" class="nav nav-tabs" style="margin-bottom:1em">
 	{%- for class in classes %}
-	<li {% if loop.index0 == 0 %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="{{ class.name }}" role="tab">{{ class.name }}</a></li>
+	<li {% if loop.index0 == 0 %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="{{ class.name }}" data-vmware="{{ class.link_vmware }}" role="tab">{{ class.name }}</a></li>
 	{%- endfor %}
-	<li role="presentation"><a style="cursor:pointer" data-class="*OTHER" role="tab">Other/Legacy</a></li>
-	<li role="presentation"><a style="cursor:pointer" data-class="*ALL" role="tab">All</a></li>
+	<li role="presentation"><a style="cursor:pointer" data-class="*OTHER" data-vmware="1" role="tab">Other/Legacy</a></li>
+	<li role="presentation"><a style="cursor:pointer" data-class="*ALL" data-vmware="1" role="tab">All</a></li>
 </ul>
 <div id="systemsWrapper">
 <table class="table table-condensed table-striped" id="systems">
@@ -40,7 +40,7 @@ $(function() {
 	var systemsTable = $('#systems').DataTable({
 		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 		"pageLength": 15,
-		"order": [[0, 'asc']],
+		"order": [[0, 'desc']],
 		"columns": [null, null, null, null, null, { "orderable": false, "targets": 0 }],
 		"serverSide": true,
 		"searchDelay": 500,
@@ -54,7 +54,17 @@ $(function() {
 		"searching": true,
 		"rowCallback": function(row, data, index) {
 			{#- data[5] is CMDB URL, data[6] is database ID, data[4] is operational status, data[8] is Puppet Cert Name #}
-			$('td:eq(5)', row).html((data[8] != null ? '<a class="btn btn-xs btn-default" style="margin-right:0.5em" href="/puppet/enc/' + data[6] + '"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i>Puppet</a>': '') + (data[5] != '' ? '<a class="btn btn-xs btn-default" href="' + data[5] + '" target="_blank"><i style="margin-right:0.2em" class="fa fa-fw fa-cloud"></i>CMDB</a>' : ''));
+			$('td:eq(5)', row).html(
+				'<a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/edit/' + data[6] + '">' +
+				'	<i class="fa fa-fw fa-info-circle"></i>' +
+				'</a>' + (data[5] != '' ?
+				'<a title="CMDB" style="margin-right:0.5em" class="btn btn-xs btn-primary" href="' + data[5] + '" target="_blank">' +
+				'	<i class="fa fa-fw fa-cloud"></i>' +
+				'</a>' : '') + (data[8] != null ?
+				'<a title="Puppet" class="btn btn-xs btn-success" href="/puppet/enc/' + data[6] + '">' +
+				'	<i class="fa fa-fw fa-book"></i>' +
+				'</a>': ''));
+
 			if (data[4] == "" || data[4] == undefined)
 			{
 				$('td:eq(4)', row).html("Unknown");
@@ -62,21 +72,28 @@ $(function() {
 
 			var view_link = "<a class='server-link' href='/systems/edit/" + data[6] + "'>" + data[0] + "</a>";
 
-			if (data[7] == "poweredOn")
+			if ($('#class-tabs li.active a').attr('data-vmware') == 1)
 			{
-				$('td:eq(0)', row).html("<i style='color:#2c2;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-play' />" + view_link);
-			}
-			else if (data[7] == "poweredOff")
-			{
-				$('td:eq(0)', row).html("<i style='color:#c22;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-stop' />" + view_link);
-			}
-			else if (data[7] == "suspended")
-			{
-				$('td:eq(0)', row).html("<i style='color:#c82;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-pause' />" + view_link);
+				if (data[7] == "poweredOn")
+				{
+					$('td:eq(0)', row).html("<i title='VM Powered On' style='color:#2c2;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-play' />" + view_link);
+				}
+				else if (data[7] == "poweredOff")
+				{
+					$('td:eq(0)', row).html("<i title='VM Powered Off' style='color:#c22;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-stop' />" + view_link);
+				}
+				else if (data[7] == "suspended")
+				{
+					$('td:eq(0)', row).html("<i title='VM Suspended' style='color:#c82;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-pause' />" + view_link);
+				}
+				else
+				{
+					$('td:eq(0)', row).html("<i title='Unknown State' style='color:#22c;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-question' />" + view_link);
+				}
 			}
 			else
 			{
-				$('td:eq(0)', row).html("<i style='color:#22c;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-question' />" + view_link);
+				$('td:eq(0)', row).html(view_link);
 			}
 		}
 	});

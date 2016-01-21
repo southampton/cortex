@@ -3,6 +3,7 @@
 
 from cortex import app
 import cortex.core
+import cortex.admin
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
 import os 
 import time
@@ -181,15 +182,16 @@ def systems_edit(id):
 	if request.method == 'GET' or request.method == 'HEAD':
 		# Get the system out of the database
 		system = cortex.core.get_system_by_id(id)
+		system_class = cortex.admin.get_class(system['class'])
 
-		return render_template('systems-edit.html', system=system, active='systems')
+		return render_template('systems-edit.html', system=system, system_class=system_class, active='systems')
 	elif request.method == 'POST':
 		try:
 			# Get a cursor to the database
 			cur = g.db.cursor(mysql.cursors.DictCursor)
 
 			# Update the system
-			cur.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s WHERE `id` = %s', (request.form['allocation_comment'], request.form['cmdb_id'], id))
+			cur.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s WHERE `id` = %s', (request.form['allocation_comment'], request.form['cmdb_id'], request.form['vmware_uuid'], id))
 			g.db.commit();
 
 			flash('System updated', "alert-success") 
@@ -198,9 +200,121 @@ def systems_edit(id):
 			flash('Failed to update system: ' + str(ex), 'alert-danger')
 
 		# Regardless of success or error, redirect to the systems page
-		return redirect(url_for('systems'))
+		return redirect(url_for('systems_edit', id=id))
 	else:
 		abort(400)
+
+################################################################################
+
+@app.route('/systems/vmware/json')
+@cortex.core.login_required
+def systems_vmware_json():
+	"""Used by DataTables to extract infromation from the VMware cache. The
+	parameters and return format are dictated by DataTables"""
+
+	# Validate and extract 'draw' parameter. This parameter is simply a counter
+	# that DataTables uses internally.
+	if 'draw' in request.args:
+		draw = int(request.args['draw'])
+	else:   
+		abort(400)
+
+	# Validate and extract 'start' parameter. This parameter is the index of the
+	# first row to return.
+	if 'start' in request.args:
+		start = int(request.args['start'])
+	else:   
+		abort(400)
+
+	# Validate and extract 'length' parameter. This parameter is the number of
+	# rows that we should return
+	if 'length' in request.args:
+		length = int(request.args['length'])
+		if length < 0:
+			length = None
+	else:   
+		abort(400)
+
+	# Handle the search parameter. This is the textbox on the DataTables
+	# view that the user can search by typing in
+	search = None
+	if 'search[value]' in request.args:
+		if request.args['search[value]'] != '':
+			search = str(request.args['search[value]'])
+
+	# Validate and extract ordering column. This parameter is the index of the
+	# column on the HTML table to order by
+	if 'order[0][column]' in request.args:
+		order_column = int(request.args['order[0][column]'])
+	else:   
+		order_column = 0
+
+	# Validate and extract ordering direction. 'asc' for ascending, 'desc' for
+	# descending.
+	if 'order[0][dir]' in request.args:
+		if request.args['order[0][dir]'] == 'asc':
+			order_dir = "ASC"
+		elif request.args['order[0][dir]'] == 'desc':
+			order_dir = "DESC"
+		else:
+			abort(400)
+	else:
+		order_dir = "DESC"
+
+	# Validate and convert the ordering column number to the name of the
+	# column as it is in the database
+	if order_column == 0:
+		order_column = 'name'
+	elif order_column == 1:
+		order_column = 'uuid'
+	else:
+		abort(400)
+
+	# Query the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get total number of VMs in cache
+	curd.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm`;')
+	total_count = curd.fetchone()['count']
+
+	# Get total number of VMs that match query
+	if search is not None:
+		curd.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `name` LIKE %s', ("%" + search + "%"))
+		filtered_count = curd.fetchone()['count']
+	else:
+		# If unfiltered, return the total count
+		filtered_count = total_count
+
+	# Build query	
+	query = 'SELECT `name`, `uuid` FROM `vmware_cache_vm` '
+	query_params = ()
+	if search is not None:
+		query = query + 'WHERE `name` LIKE %s '
+		query_params = ("%" + search + "%")
+
+	# Add on ordering
+	query = query + "ORDER BY " + order_column + " " + order_dir + " "
+
+	# Add on query limits
+	query = query + "LIMIT " + str(start)
+	if length is not None:
+		query = query + "," + str(length)
+	else:
+		query = query + ",18446744073709551610"
+
+	# Perform the query
+	curd.execute(query, query_params)
+
+	# Turn the results in to an appropriately shaped arrau
+	row = curd.fetchone()
+	system_data = []
+	while row is not None:
+		system_data.append([row['name'], row['uuid']])
+		row = curd.fetchone()
+
+	# Return JSON data in the format DataTables wants
+	return jsonify(draw=draw, recordsTotal=total_count, recordsFiltered=filtered_count, data=system_data)
+
 
 ################################################################################
 
@@ -240,10 +354,38 @@ def systems_cmdb_json():
 		if request.args['search[value]'] != '':
 			search = str(request.args['search[value]'])
 
+	# Validate and extract ordering column. This parameter is the index of the
+	# column on the HTML table to order by
+	if 'order[0][column]' in request.args:
+		order_column = int(request.args['order[0][column]'])
+	else:   
+		order_column = 0
+
+	# Validate and extract ordering direction. 'asc' for ascending, 'desc' for
+	# descending.
+	if 'order[0][dir]' in request.args:
+		if request.args['order[0][dir]'] == 'asc':
+			order_asc = True
+		elif request.args['order[0][dir]'] == 'desc':
+			order_asc = False
+		else:
+			abort(400)
+	else:
+		order_asc = False
+
+	# Validate and convert the ordering column number to the name of the
+	# column as it is in the database
+	if order_column == 0:
+		order_column = 'u_number'
+	elif order_column == 1:
+		order_column = 'short_description'
+	else:
+		abort(400)
+
 	# Get results of query
 	total_count = cortex.core.get_cmdb_ci_count()
 	filtered_count = cortex.core.get_cmdb_ci_count(search)
-	results = cortex.core.get_cmdb_cis(start, length, search)
+	results = cortex.core.get_cmdb_cis(start, length, search, order_column, order_asc)
 
 	system_data = []
 	for row in results:

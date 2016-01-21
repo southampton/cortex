@@ -681,19 +681,23 @@ class NeoCortexLib(object):
 
 	############################################################################
 
-	def set_link_ids(self, cortex_system_id, cmdb_id):
+	def set_link_ids(self, cortex_system_id, cmdb_id = None, vmware_uuid = None):
 		"""
 		Sets the identifiers that link a system from the Cortex `systems` 
 		table to their relevant item in the CMDB.
 		 - cortex_system_id: The id of the system in the table (not the name)
 		 - cmdb_id: The value to store for the CMDB ID field.
+                 - vmware_uuid: The UUID of the VM in VMware
 		"""
 
 		# Get a cursor to the database
 		cur = self.db.cursor(mysql.cursors.DictCursor)
 
 		# Update the database
-		cur.execute("UPDATE `systems` SET `cmdb_id` = %s WHERE `id` = %s", (cmdb_id, cortex_system_id))
+		if cmdb_id is not None:
+			cur.execute("UPDATE `systems` SET `cmdb_id` = %s WHERE `id` = %s", (cmdb_id, cortex_system_id))
+		if vmware_uuid is not None:
+			cur.execute("UPDATE `systems` SET `vmware_uuid` = %s WHERE `id` = %s", (vmware_uuid, cortex_system_id))
 
 		# Commit
 		self.db.commit()

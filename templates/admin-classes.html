@@ -32,6 +32,24 @@
 						</div>
 					</div>
 					<div class="form-group">
+						<label class="col-sm-3 control-label">CMDB Type</label>
+						<div class="col-sm-9">
+							<select class="form-control" id="edit_class_cmdb_type" name="class_cmdb_type">
+								<option value="">None</option>
+{%- for type in cmdb_types %}
+								<option value="{{ type }}">{{ cmdb_types[type] }} ({{ type }})</option>
+{% endfor -%}
+							</select>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="checkbox col-sm-offset-3 col-sm-9">
+							<label>
+								<input type="checkbox" checked="checked" id="edit_class_link_vmware" name="class_link_vmware"> Link to VMware
+							</label>
+						</div>
+					</div>
+					<div class="form-group">
 						<div class="checkbox col-sm-offset-3 col-sm-9">
 							<label>
 								<input type="checkbox" checked="checked" id="edit_class_active" name="class_active"> Allow new allocations?
@@ -57,9 +75,11 @@ $( document ).ready(function()
 		var active = button.data('active')
 		$('#edit_class_active').prop('checked', !button.data('active'));
 		$('#edit_class_name').text(button.data('name'));
-		$('#edit_class_name_hidden').attr('value',button.data('name'));
-		$('#edit_class_digits').attr('value',button.data('digits'));
-		$('#edit_class_comment').attr('value',button.data('comment'));
+		$('#edit_class_name_hidden').attr('value', button.data('name'));
+		$('#edit_class_digits').attr('value', button.data('digits'));
+		$('#edit_class_comment').attr('value', button.data('comment'));
+		$('#edit_class_cmdb_type').val(button.data('type'));
+		$('#edit_class_link_vmware').prop('checked', button.data('vmware'));
 	})
 	$('#add_class').on('shown.bs.modal', function () {
 		$('#prefix').focus()
@@ -102,6 +122,26 @@ $( document ).ready(function()
 						<label class="col-sm-3 control-label">Comment</label>
 						<div class="col-sm-9">
 							<input class="form-control" type="text" name="class_comment"></input>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label class="col-sm-3 control-label">CMDB Type</label>
+						<div class="col-sm-9">
+							<select class="form-control" name="class_cmdb_type">
+								<option value="">None</option>
+{%- for type in cmdb_types %}
+								<option value="{{ type }}">{{ cmdb_types[type] }} ({{ type }})</option>
+{% endfor -%}
+							</select>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<div class="checkbox col-sm-offset-3 col-sm-9">
+							<label>
+								<input type="checkbox" checked="checked" name="class_link_vmware"> Link to VMware
+							</label>
 						</div>
 					</div>
 
@@ -154,7 +194,7 @@ manually or automatically.</p>
 			<td>{% if class.disabled %}<i style="color:#d00" class="fa fa-fw fa-times"></i>{% else %}<i style="color:#0d0" class="fa fa-fw fa-check"></i>{% endif %}</td>
 			<td>{{ class.lastid }}</td>
 			<td>{{ class.comment }}</td>
-			<td><a data-toggle="modal" data-target="#edit_class" data-active="{{class.disabled}}" data-comment="{{class.comment}}" data-name="{{class.name}}" data-digits="{{class.digits}}" class="btn btn-default btn-xs"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i><span class="hidden-sm hidden-xs">Edit</span></a></td>
+			<td><a data-toggle="modal" data-target="#edit_class" data-active="{{class.disabled}}" data-comment="{{class.comment}}" data-name="{{class.name}}" data-digits="{{class.digits}}" data-vmware="{{class.link_vmware}}" data-type="{{class.cmdb_type or ''}}" class="btn btn-default btn-xs"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i><span class="hidden-sm hidden-xs">Edit</span></a></td>
 		</tr>
 {%- endfor %}
 	</tbody>
