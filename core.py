@@ -630,7 +630,17 @@ def inject_template_data():
 	variable in to every render_template call, which is used to populate the
 	Workflows menu on the page."""
 
-	return dict(workflows=app.workflows)
+	## TODO inject active=
+
+	injectdata = dict(workflows=app.workflows)
+
+	for workflow in app.workflows:
+		if workflow['view_func'] == request.endpoint:
+			injectdata['active'] = 'workflows'
+			break
+
+	return injectdata
+
 
 ################################################################################
 

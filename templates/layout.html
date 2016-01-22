@@ -6,18 +6,38 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>Cortex</title>
 		<link rel="icon" href="../../favicon.ico">
-		{% include 'header-links.html' %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}">
+		<link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}">
+		<!-- CSS -->
+		<link href="//netdna.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+		<link href="//netdna.bootstrapcdn.com/bootswatch/3.3.6/lumen/bootstrap.min.css" rel="stylesheet">
 		<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.9/css/dataTables.bootstrap.min.css">
-		{% include 'javascript.html' %}
+		<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/metisMenu/2.2.0/metisMenu.min.css">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}">
+
+		<!-- javascript -->
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+		<script src="//netdna.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+		<script src="{{ url_for('static', filename='js/jquery.tablesorter.min.js') }}"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/metisMenu/2.2.0/metisMenu.min.js"></script>
+
+		<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+		<!--[if lt IE 9]>
+			<script src="{{ url_for('static', filename='https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js') }}"></script>
+		<![endif]-->
 		<script type="text/javascript" src="{{ url_for('static', filename='js/cortex.js') }}"></script>
 		<script type="text/javascript" src="//cdn.datatables.net/1.10.9/js/jquery.dataTables.min.js"></script>
 		<script type="text/javascript" src="//cdn.datatables.net/1.10.9/js/dataTables.bootstrap.min.js"></script>
 		{% block head %}{% endblock -%}
+
+		<script>
+		$(function() {
+			$("#sidemenu").metisMenu();
+		});
+		</script>
 	</head>
 	<body>
 		<div class="navbar navbar-fixed-top navbar-default" role="navigation">
-			<div class="container">
+			<div class="container-fluid">
 				<div class="navbar-header">
 					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
 						<span class="sr-only">Toggle navigation</span>
@@ -25,15 +45,15 @@
 						<span class="icon-bar"></span>
 						<span class="icon-bar"></span>
 					</button>
-					<a href="{{ url_for('dashboard') }}" class="navbar-brand">cortex</a>
+					<a href="{{ url_for('dashboard') }}" class="navbar-brand">cortex systems manager</a>
 				</div>
 			
 				{%- if session.logged_in %}
 				<div class="navbar-collapse collapse" id="navbar-collapse-1">	
 					<ul class="nav navbar-nav">
-						<li class="{%if active == 'systems'%} active{%endif%}"><a href="{{ url_for('systems') }}"><i class="fa fa-server fa-fw"></i> Systems</a></li>
-						<li class="{%if active == 'allocate'%} active{%endif%}"><a href="{{ url_for('systems_new') }}"><i class="fa fa-book fa-fw"></i> Allocate Name</a></li>
-						<li class="dropdown{%if active == 'create'%} active{%endif%}">
+						<li class="visible-xs" class="{%if active == 'systems'%} active{%endif%}"><a href="{{ url_for('systems') }}">Systems</a></li>
+						<li class="visible-xs" class="{%if active == 'allocate'%} active{%endif%}"><a href="{{ url_for('systems_new') }}">Allocate Name</a></li>
+						<li class="visible-xs" class="dropdown{%if active == 'create'%} active{%endif%}">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Workflows <b class="caret"></b></a>
 							<ul class="dropdown-menu">
 								{% for workflow in workflows -%}
@@ -41,7 +61,7 @@
 								{%- endfor %}
 							</ul>
 						</li>
-						<li class="dropdown{%if active == 'vmware'%} active{%endif%}">
+						<li class="visible-xs" class="dropdown{%if active == 'vmware'%} active{%endif%}">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">VMware <b class="caret"></b></a>
 							<ul class="dropdown-menu">
 								<li><a href="{{ url_for('vmware_os') }}"><i class="fa fa-pie-chart fa-fw"></i> Operating Systems</a></li>
@@ -53,7 +73,7 @@
 								<li><a href="{{ url_for('vmware_data') }}"><i class="fa fa-th fa-fw"></i> VM Data</a></li>
 							</ul>
 						</li>
-						<li class="dropdown{%if active == 'puppet'%} active{%endif%}">
+						<li class="visible-xs" class="dropdown{%if active == 'puppet'%} active{%endif%}">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Puppet <b class="caret"></b></a>
 							<ul class="dropdown-menu">
 								<li><a href="{{ url_for('puppet_nodes') }}"><i class="fa fa-server fa-fw"></i> Nodes</a></li>
@@ -61,7 +81,7 @@
 								<li><a href="{{ url_for('puppet_enc_default') }}"><i class="fa fa-globe fa-fw"></i> Default classes</a></li>
 							</ul>
 						</li>
-						<li class="dropdown{%if active == 'admin'%} active{%endif%}">
+						<li class="visible-xs" class="dropdown{%if active == 'admin'%} active{%endif%}">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin <b class="caret"></b></a>
 							<ul class="dropdown-menu">
 								<li><a href="{{ url_for('admin_classes') }}"><i class="fa fa-fw fa-table"></i> Classes</a></li>
@@ -70,8 +90,9 @@
 							</ul>
 						</li>
 					</ul>
-					
+
 					<ul class="nav navbar-nav navbar-right">
+						<li class="hidden-xs"><a href="{{ url_for('dashboard') }}"><i class="fa fa-fw fa-th"></i> Dashboard</a></li>						
 						<li class="dropdown{%if active == 'user'%} active{%endif%}">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-fw fa-user"></i> {{ session.username }} <b class="caret"></b></a>
 							<ul class="dropdown-menu">
@@ -80,17 +101,118 @@
 							</ul>
 						</li>
 					</ul>
+
+					<form class="navbar-form navbar-right hidden-xs hidden-sm navbar-search" role="search" method="GET" action="{{url_for('systems_search')}}">
+						<div class="form-group">
+							<input type="text" class="form-control" placeholder="Search for systems..." name="query">
+							<!--<button type="submit" class="btn btn-default" style=""><i class="fa fa-fw fa-search"></i></button>-->
+						</div>
+					</form>
+				
 					
 				</div>
 				{%- endif %}
 			</div>
 		</div>
 
-		<div class="container">
-			{% for category, message in get_flashed_messages(with_categories=true) %}
-			<div class="alert alert-dismissable {{category}}"><button type="button" class="close" data-dismiss="alert">×</button>{{message}}</div>
-			{% endfor %}
-			{% block body %}{% endblock -%}
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-sm-3 col-md-2 sidebar">
+
+				<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+				  <div class="panel panel-default">
+					<div class="panel-heading panel-heading-sidebar" role="tab" id="headingOne">
+					  <h4 class="panel-title">
+						<a {% if active != 'systems' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%} role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-controls="collapseOne">
+						  Systems <span class="caret arrow"></span>
+						</a>
+					  </h4>
+					</div>
+					<div id="collapseOne" class="panel-collapse collapse{% if active == 'systems' %} in{%endif%}" role="tabpanel" aria-labelledby="headingOne" {% if active != 'systems' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%}>
+						<ul class="list-group list-group-sidebar">
+							<li><a href="{{ url_for('systems') }}">Systems</a></li>
+							<li><a href="{{ url_for('systems_new') }}">Allocate system name</a></li>
+						</ul>
+					</div>
+				  </div>
+				  <div class="panel panel-default">
+					<div class="panel-heading panel-heading-sidebar" role="tab" id="headingTwo">
+					  <h4 class="panel-title">
+						<a {% if active != 'workflows' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%} role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" aria-controls="collapseTwo">
+						  Workflows <span class="caret arrow"></span>
+						</a>
+					  </h4>
+					</div>
+					<div id="collapseTwo" class="panel-collapse collapse{% if active == 'workflows' %} in{%endif%}"" role="tabpanel" aria-labelledby="headingTwo" {% if active != 'workflows' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%}>
+						<ul class="list-group list-group-sidebar">
+							{% for workflow in workflows -%}
+							<li><a href="{{ url_for(workflow.view_func)}}"><i class="fa fa-plus-circle fa-fw"></i>{{ workflow.display }}</a></li>
+							{%- endfor %}
+						</ul>
+
+					</div>
+				  </div>
+				  <div class="panel panel-default">
+					<div class="panel-heading panel-heading-sidebar" role="tab" id="headingThree">
+					  <h4 class="panel-title">
+						<a {% if active != 'vmware' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%} role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-controls="collapseThree">
+						  VMWare <span class="caret arrow"></span>
+						</a>
+					  </h4>
+					</div>
+					<div id="collapseThree" class="panel-collapse collapse{% if active == 'vmware' %} in{%endif%}" role="tabpanel" aria-labelledby="headingThree" {% if active != 'vmware' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%}>
+						<ul class="list-group list-group-sidebar">
+							<li><a href="{{ url_for('vmware_os') }}"><i class="fa fa-pie-chart fa-fw"></i>Operating Systems</a></li>
+							<li><a href="{{ url_for('vmware_hw') }}"><i class="fa fa-pie-chart fa-fw"></i>Hardware Version</a></li>
+							<li><a href="{{ url_for('vmware_power') }}"><i class="fa fa-pie-chart fa-fw"></i>Power State</a></li>
+							<li><a href="{{ url_for('vmware_specs') }}"><i class="fa fa-bar-chart fa-fw"></i>RAM & CPU</a></li>
+							<li><a href="{{ url_for('vmware_tools') }}"><i class="fa fa-pie-chart fa-fw"></i>VM Tools</a></li>
+							<li><a href="{{ url_for('vmware_data') }}"><i class="fa fa-th fa-fw"></i>VM Data</a></li>
+						</ul>
+					</div>
+				  </div>
+				  <div class="panel panel-default">
+					<div class="panel-heading panel-heading-sidebar" role="tab" id="headingFour">
+					  <h4 class="panel-title">
+						<a {% if active != 'puppet' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%} role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseFour" aria-controls="collapseFour">
+						  Puppet <span class="caret arrow"></span>
+						</a>
+					  </h4>
+					</div>
+					<div id="collapseFour" class="panel-collapse collapse{% if active == 'puppet' %} in{%endif%}" role="tabpanel" aria-labelledby="headingFour" {% if active != 'puppet' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%}>
+						<ul class="list-group list-group-sidebar">
+							<li><a href="{{ url_for('puppet_nodes') }}"><i class="fa fa-server fa-fw"></i>Nodes</a></li>
+							<li><a href="{{ url_for('puppet_groups') }}"><i class="fa fa-object-group fa-fw"></i>Groups</a></li>
+							<li><a href="{{ url_for('puppet_enc_default') }}"><i class="fa fa-globe fa-fw"></i>Default classes</a></li>
+						</ul>		
+					</div>
+				  </div>
+				  <div class="panel panel-default">
+					<div class="panel-heading panel-heading-sidebar" role="tab" id="headingFive">
+					  <h4 class="panel-title">
+						<a {% if active != 'admin' %}class="collapsed" aria-expanded="false"{%else%}aria-expanded="true"{%endif%} role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseFive" aria-controls="collapseFive">
+						  Settings <span class="caret arrow"></span>
+						</a>
+					  </h4>
+					</div>
+					<div id="collapseFive" class="panel-collapse collapse{% if active == 'admin' %} in{%endif%}" role="tabpanel" aria-labelledby="headingFive" {% if active != 'admin' %}class="collapsed" aria-expanded="false"{%else%}aria-expanded="true"{%endif%}>
+						<ul class="list-group list-group-sidebar">
+							<li><a href="{{ url_for('admin_classes') }}"><i class="fa fa-fw fa-table"></i>Classes</a></li>
+							<li><a href="{{ url_for('admin_tasks') }}"><i class="fa fa-fw fa-tasks"></i>Tasks</a></li>
+							<li><a href="{{ url_for('admin_maint') }}"><i class="fa fa-fw fa-gears"></i>Maintenance</a></li>
+						</ul>		
+					</div>
+				  </div>
+				</div>
+
+				</div>
+				<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+					{% for category, message in get_flashed_messages(with_categories=true) %}
+					<div class="alert alert-dismissable {{category}}"><button type="button" class="close" data-dismiss="alert">×</button>{{message}}</div>
+					{% endfor %}
+					{% block body %}{% endblock -%}
+				</div>
+			</div>
 		</div>
 	</body>
 </html>

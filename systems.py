@@ -63,6 +63,27 @@ def systems_csv_stream(cursor):
 
 ################################################################################
 
+@app.route('/systems/search')
+@cortex.core.login_required
+def systems_search():
+	# Get the query from the URL
+	query = request.args.get('query')
+	if query is None:
+		return abort(400)
+
+	# Search for the system
+	system = cortex.core.get_system_by_name(query)
+
+	if system is not None:
+		# If we found the system, redirect to the system's edit page
+		return redirect(url_for('systems_edit', id=system['id']))
+	else:
+		# If we didn't find the system, flash an error and go to the systems list
+		flash('Unable to find system "' + query + '"', 'alert-warning')
+		return redirect(url_for('systems'))
+
+################################################################################
+
 @app.route('/systems/download/csv')
 @cortex.core.login_required
 def systems_download_csv():
@@ -84,7 +105,7 @@ def systems_new():
 	# On GET requests, just show big buttons for all the classes
 	if request.method == 'GET':
 		classes = cortex.admin.get_classes(True)
-		return render_template('systems-new.html', classes=classes, active='allocate')
+		return render_template('systems-new.html', classes=classes, active='systems')
 
 	# On POST requests...
 	elif request.method == 'POST':
