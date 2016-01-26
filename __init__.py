@@ -76,23 +76,10 @@ LDAP_ADMIN_GROUP    = "CN=jfEstMembers,OU=resource,OU=jf,OU=jf,OU=pk,OU=User,DC=
 # You probably don't want to change this.
 LDAP_GROUPS_CACHE_EXPIRE = '900'
 
-## login background random int.
-LOGIN_IMAGE_RANDOM_MAX = 17
-
-## TOTP 2-factor auth
-TOTP_ENABLED = False
-TOTP_IDENT   = 'cortex'
-
-## Infoblox server
+# Infoblox server
 INFOBLOX_HOST = "localhost" 
 INFOBLOX_USER = "user"
 INFOBLOX_PASS = "pass"
-
-## VMWare vCenter configuration
-VMWARE_HOST = "localhost"
-VMWARE_PORT = 443
-VMWARE_USER = ""
-VMWARE_PASS = ""
 
 ## Neocortex is a daemon 
 NEOCORTEX_KEY="changeme"

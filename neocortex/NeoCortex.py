@@ -170,7 +170,7 @@ class NeoCortex(object):
 		return lib.allocate_name(class_name, system_comment, username, num)
 
 	## This function allows arbitrary taks to be called
-	def start_internal_task(self, username, task_file, task_name, description=None):
+	def start_internal_task(self, username, task_file, task_name, options=None, description=None):
 		try:
 			task_module = imp.load_source(task_name, task_file)
 		except Exception as ex:
@@ -178,7 +178,7 @@ class NeoCortex(object):
 
 		task_id      = self._record_task(task_name, username, description)
 		task_helper  = TaskHelper(self.config, task_name, task_id, username)
-		task         = Process(target=task_helper.run, args=(task_module, {}))
+		task         = Process(target=task_helper.run, args=(task_module, options))
 		task.start()
 
 		return task_id

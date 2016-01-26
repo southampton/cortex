@@ -238,11 +238,31 @@ def vmware_specs():
 @app.route('/vmware/data')
 @cortex.core.login_required
 def vmware_data():
-	# Get a cursor to the databaseo
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-
-	# Get OS statistics
-	cur.execute('SELECT * FROM `vmware_cache_vm` ORDER BY `name`')
-	results = cur.fetchall()
-
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT * FROM `vmware_cache_vm` ORDER BY `name`')
+	results = curd.fetchall()
 	return render_template('vmware-data.html', active='vmware', data=results)
+
+################################################################################
+
+@app.route('/vmware/clusters')
+@cortex.core.login_required
+def vmware_clusters():
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT `a`.`cluster`, `a`.`vcenter`, `b`.`hosts`, `a`.`vm_count`, (`b`.`ram_usage` * 1048576) AS `ram_usage`, (`a`.`assigned_ram` * 1048576) AS `assigned_ram`, `b`.`ram` AS `total_ram`, `a`.`assigned_cores`, `b`.`cores` AS `total_cores`, `b`.`cpu_usage` AS `cpu_usage_mhz`, ROUND(`b`.`cpuhz` / 1000000) AS `total_mhz` FROM (SELECT `cluster`, `vcenter`, COUNT(*) AS `vm_count`, SUM(`numCPU`) AS `assigned_cores`, SUM(`memoryMB`) AS `assigned_ram` FROM `vmware_cache_vm` WHERE `cluster` != "None" group by `cluster`) `a` JOIN `vmware_cache_clusters` `b` ON `a`.`cluster` = `b`.`name`;')
+
+	# Take the above query and group it by vCenter
+	vcenters = {}
+	row = curd.fetchone()
+	while row is not None:
+		# If this is the first time we've seen a vCenter, create a new array
+		if row['vcenter'] not in vcenters:
+			vcenters[row['vcenter']] = []
+
+		# Add a row to the array
+		vcenters[row['vcenter']].append(row)
+
+		# Iterate to next cluster
+		row = curd.fetchone()
+
+	return render_template('vmware-clusters.html', active='vmware', vcenters=vcenters)

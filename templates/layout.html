@@ -69,7 +69,7 @@
 								<li><a href="{{ url_for('vmware_power') }}"><i class="fa fa-pie-chart fa-fw"></i> Power State</a></li>
 								<li><a href="{{ url_for('vmware_specs') }}"><i class="fa fa-bar-chart fa-fw"></i> RAM & CPU</a></li>
 								<li><a href="{{ url_for('vmware_tools') }}"><i class="fa fa-pie-chart fa-fw"></i> VM Tools</a></li>
-								<li role="separator" class="divider"></li>
+								<li><a href="{{ url_for('vmware_clusters') }}"><i class="fa fa-cubes fa-fw"></i> Clusters</a></li>
 								<li><a href="{{ url_for('vmware_data') }}"><i class="fa fa-th fa-fw"></i> VM Data</a></li>
 							</ul>
 						</li>
@@ -92,7 +92,7 @@
 					</ul>
 
 					<ul class="nav navbar-nav navbar-right">
-						<li class="hidden-xs"><a href="{{ url_for('dashboard') }}"><i class="fa fa-fw fa-th"></i> Dashboard</a></li>						
+						<li class="hidden-xs"><a href="{{ url_for('dashboard') }}"><i class="fa fa-fw fa-dashboard"></i> Dashboard</a></li>						
 						<li class="dropdown{%if active == 'user'%} active{%endif%}">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-fw fa-user"></i> {{ session.username }} <b class="caret"></b></a>
 							<ul class="dropdown-menu">
@@ -105,7 +105,6 @@
 					<form class="navbar-form navbar-right hidden-xs hidden-sm navbar-search" role="search" method="GET" action="{{url_for('systems_search')}}">
 						<div class="form-group">
 							<input type="text" class="form-control" placeholder="Search for systems..." name="query">
-							<!--<button type="submit" class="btn btn-default" style=""><i class="fa fa-fw fa-search"></i></button>-->
 						</div>
 					</form>
 				
@@ -130,8 +129,8 @@
 					</div>
 					<div id="collapseOne" class="panel-collapse collapse{% if active == 'systems' %} in{%endif%}" role="tabpanel" aria-labelledby="headingOne" {% if active != 'systems' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%}>
 						<ul class="list-group list-group-sidebar">
-							<li><a href="{{ url_for('systems') }}">Systems</a></li>
-							<li><a href="{{ url_for('systems_new') }}">Allocate system name</a></li>
+							<li><a href="{{ url_for('systems') }}"><i class="fa fa-fw fa-list"></i>Systems</a></li>
+							<li><a href="{{ url_for('systems_new') }}"><i class="fa fa-fw fa-plus"></i>Allocate system name</a></li>
 						</ul>
 					</div>
 				  </div>
@@ -156,7 +155,7 @@
 					<div class="panel-heading panel-heading-sidebar" role="tab" id="headingThree">
 					  <h4 class="panel-title">
 						<a {% if active != 'vmware' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%} role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-controls="collapseThree">
-						  VMWare <span class="caret arrow"></span>
+						  VMware <span class="caret arrow"></span>
 						</a>
 					  </h4>
 					</div>
@@ -167,6 +166,7 @@
 							<li><a href="{{ url_for('vmware_power') }}"><i class="fa fa-pie-chart fa-fw"></i>Power State</a></li>
 							<li><a href="{{ url_for('vmware_specs') }}"><i class="fa fa-bar-chart fa-fw"></i>RAM & CPU</a></li>
 							<li><a href="{{ url_for('vmware_tools') }}"><i class="fa fa-pie-chart fa-fw"></i>VM Tools</a></li>
+							<li><a href="{{ url_for('vmware_clusters') }}"><i class="fa fa-cubes fa-fw"></i>Clusters</a></li>
 							<li><a href="{{ url_for('vmware_data') }}"><i class="fa fa-th fa-fw"></i>VM Data</a></li>
 						</ul>
 					</div>

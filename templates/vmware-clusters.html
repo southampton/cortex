@@ -1,0 +1,95 @@
+{% extends "layout.html" %}
+{% block body %}
+<style type="text/css">
+@import url(https://fonts.googleapis.com/css?family=Lato:400,700);
+.cluster
+{
+	padding-left: auto;
+	padding-right: auto;
+	border-radius: 24px;
+	box-shadow: 0px 0px 2px 2px rgba(0,0,0,.2);
+	margin: 20px 0px;
+	padding: 20px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	text-align: center;
+	font-family: 'Lato', sans-serif;
+}
+
+.admin-block h1, h2
+{
+}
+
+.admin-block h1
+{
+	font-size: 63px;
+	font-weight: bold;
+}
+
+.tab-pane
+{
+	margin-top: 20px;
+}
+</style>
+
+<ul class="nav nav-tabs" role="tablist">
+	{%- for address, clusters in vcenters|dictsort %}
+	<li role="presentation"{% if loop.first %} class="active"{%endif%}><a href="#tab_{{loop.index}}" data-toggle="tab" data-index="{{loop.index}}">{{address}}</a></li>
+	{%- endfor %}
+</ul>
+
+<div class="tab-content">
+{%- for address, clusters in vcenters|dictsort %}
+	<div class="tab-pane{% if loop.first %} active{%endif%}" id="tab_{{loop.index}}">
+		<table class="table table-condensed table-striped" id="table_{{loop.index}}">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Hosts</th>
+					<th>VM Count</th>
+					<th>Physical RAM</th>
+					<th>Allocated RAM</th>
+					<th>Used RAM</th>
+					<th>Physical Mhz</th>
+					<th>Used Mhz</th>
+					<th>Physical Cores</th>
+					<th>Allocated Cores</th>
+				</tr>
+			</thead>
+			<tbody>
+				{%- for cluster in clusters %}
+				<tr>
+					<td>{{ cluster.cluster }}</td>
+					<td>{{ cluster.hosts }}</td>
+					<td>{{ cluster.vm_count }}</td>
+					<td data-order="{{cluster.total_ram}}">{{ cluster.total_ram | filesizeformat }}</td>
+					<td data-order="{{cluster.assigned_ram}}">{{ cluster.assigned_ram | filesizeformat }}</td>
+					<td data-order="{{cluster.ram_usage}}">{{ cluster.ram_usage | filesizeformat }}</td>
+					<td>{{ cluster.total_mhz }}</td>
+					<td>{{ cluster.cpu_usage_mhz }}</td>
+					<td>{{ cluster.total_cores }}</td>
+					<td>{{ cluster.assigned_cores }}</td>
+				</tr>
+				{%- endfor %}
+			</tbody>
+		</table>
+	</div>
+{%- endfor %}
+</div>
+
+<script type="text/javascript">
+{# Build DataTables -#}
+tables = new Array();
+{%- for address, clusters in vcenters|dictsort %}
+tables.push($('#table_{{loop.index}}').DataTable());
+{%- endfor %}
+
+{# Work around DataTables not handling resize properly -#}
+$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+	var tabIndex = $(e.target).data('index');
+	$('#table_' + tabIndex).css('width', '100%');
+	{#- Array index is zero-based (hence the minus one) #}
+	tables[tabIndex - 1].columns.adjust();
+});
+</script>
+{% endblock %}

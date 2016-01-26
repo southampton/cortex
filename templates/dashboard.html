@@ -4,54 +4,56 @@
 @import url(https://fonts.googleapis.com/css?family=Lato:400,700);
 .admin-block
 {
-	min-height: 220px;
+	min-height: 150px;
 	padding-left: auto;
 	padding-right: auto;
-	border-radius: 6px;
-	box-shadow: 0px 0px 2px 2px rgba(0,0,0,.15);
+	border-radius: 24px;
+	box-shadow: 0px 0px 2px 2px rgba(0,0,0,.2);
 	margin: 20px 0px;
 	padding: 20px;
 	padding-top: 10px;
 	padding-bottom: 10px;
-	background-color: #f8f5f0;
 	text-align: center;
 	font-family: 'Lato', sans-serif;
 }
 
-.admin-block h1
+.admin-block h2
 {
-	font-size: 63px;
+	color: #FFFFFF;
+	font-size: 2em;
 }
 
-.status-img
+.admin-block h1
 {
-	margin-top: 20px;
-	margin-bottom: 10px;
+	font-size: 3em;
+	font-weight: bold;
+	color: #FFFFFF;
 }
 </style>
+
 <div class="row">
 	<div class="col-md-3">
-		<div class="admin-block">
-			<h1><strong>{{ vm_count }}</strong></h1>
-			<h2>Virtual Machines</h2>
+		<div class="admin-block bg-primary">
+			<h1><i class="fa fa-fw fa-server"></i>{{ vm_count }}</h1>
+			<h2>Virtual machines</h2>
 		</div>
 	</div>
 	<div class="col-md-3">
-		<div class="admin-block">
-			<h1><strong>{{ ci_count }}</strong></h1>
-			<h2>ServiceNow CMDB Items</h2>
+		<div class="admin-block bg-success">
+			<h1><i class="fa fa-fw fa-book"></i>{{ ci_count }}</h1>
+			<h2>ServiceNow CIs</h2>
 		</div>
 	</div>
 	<div class="col-md-3">
-		<div class="admin-block">
-			<h1><strong>{{ task_progress_count }}</strong></h1>
-			<h2>Tasks In Progress</h2>
+		<div class="admin-block bg-warning">
+			<h1><i class="fa fa-fw fa-cog"></i>{{ task_progress_count }}</h1>
+			<h2>Tasks in progress</h2>
 		</div>
 	</div>
 	<div class="col-md-3">
-		<div class="admin-block">
-			<h1><strong>{{ task_failed_count }}</strong></h1>
-			<h2>Recently Failed Tasks</h2>
+		<div class="admin-block bg-danger">
+			<h1><i class="fa fa-fw fa-exclamation-triangle"></i>{{ task_failed_count }}</h1>
+			<h2>Recent failed tasks</h2>
 		</div>
 	</div>
 </div>

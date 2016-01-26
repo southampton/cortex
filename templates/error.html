@@ -1,18 +1,9 @@
 {% extends "layout.html" %}
 {% block body %}
 
-<style type="text/css">
-body
-{
-	padding-top: 0px;
-}
-</style>
 
-</div>
 <div class="error-block">
-	<div class="error-img error-text">
-		<i class="fa fa-fw fa-exclamation-triangle"></i>
-	</div>
+	<img src="{{url_for('static',filename='images/tbservers.png')}}"></img>
 	<div class="error-header error-text">
 		{{title}}
 	</div>
@@ -20,9 +11,9 @@ body
 		{{ message }}
 	</div>
 	{% if debug %}
-	<div class="error-debug">
+	<!--<div class="error-debug">
 		<pre>{{ debug }}</pre>
-	</div>
+	</div>-->
 	{% endif %}
 </div>
 

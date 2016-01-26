@@ -1,6 +1,25 @@
 {% extends "layout.html" %}
 {% block body %}
 
+<style type="text/css">
+.cselect
+{
+	padding: 20px;
+	text-align: center;
+}
+
+.cselect h1
+{
+	font-size: 4em;
+	font-weight: bold;
+}
+
+.cselect p
+{
+	font-size: 1.5em;
+}
+</style>
+
 <div class="modal fade" id="allocate" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -71,20 +90,19 @@ $( document ).ready(function()
 
 
 <div class="page-header">
-<h3><i class="fa fa-book fa-fw"></i> Allocate new system name(s)</h3>
+<h3><i class="fa fa-plus fa-fw"></i> Allocate new system names</h3>
 </div>
 
 <div class="row">
-	<ul style="list-style: none;">
 	{% for class in classes %}
-		<li style="float: left; height: 250px; padding: 10px; text-align: center; background-color: #f9f9f9; border: 5px solid #FFFFFF; width: 33%;">
-			<p style="font-size: 4em; font-weight: bold;">{{ class.name }} </p>
-			<p>{{class.comment}}</p>
-			<br/>
-			<a data-toggle="modal" data-target="#allocate" data-name="{{class.name}}" class="btn btn-default"><i class="fa fa-fw fa-plus fa-3x"></i></a>
-		</li>
+	<div class="col-md-4 cselect">
+		<div class="well">
+		<h1>{{class.name}}</h1>
+		<p>{{class.comment}}</p>
+		<p><a data-toggle="modal" data-target="#allocate" data-name="{{class.name}}" class="btn btn-success"><i class="fa fa-fw fa-plus fa-3x"></i></a></p>
+		</div>
+	</div>
 	{% endfor %}
-	</ul>
 </div>
 
 {% endblock %}

@@ -95,31 +95,11 @@ table#classes td:last-child
 	{
 		padding-top: 80px;
 	
-		position:fixed !important;
-		position:absolute;
-		top:0;
-		right:0;
-		bottom:0;
-		left:0;
-	
-		background-image: url("/static/images/fire.jpg");
-		background-size: cover;
-		color: #fffff;
 		text-align: center;
 	
 		overflow: auto;
 	}
 	
-	.error-text
-	{
-		color: #ffffff;
-		text-shadow:
-		   3px 3px 0 #000,
-		 -1px -1px 0 #000,  
-		  1px -1px 0 #000,
-		  -1px 1px 0 #000,
-		   1px 1px 0 #000;
-	}
 	.error-img
 	{
 		font-size: 10em;
@@ -141,10 +121,6 @@ table#classes td:last-child
 	{
 		padding-top: 80px;
 		text-align: center;
-	}
-	.error-text
-	{
-		color: #000000;
 	}
 	.error-img
 	{
@@ -238,4 +214,19 @@ ul.list-group-sidebar i.fa
 .navbar-search input
 {
 	width: 25em !important;
+}
+
+.placeholders {
+  margin-bottom: 30px;
+  text-align: center;
+}
+.placeholders h4 {
+  margin-bottom: 0;
+}
+.placeholder {
+  margin-bottom: 20px;
+}
+.placeholder img {
+  display: inline-block;
+  border-radius: 50%;
 }

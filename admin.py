@@ -150,11 +150,13 @@ def admin_maint():
 		cur = g.db.cursor(mysql.cursors.DictCursor)
 		cur.execute("SELECT `id` FROM `tasks` WHERE `module` = '_cache_vmware' AND `status` = 0")
 		vmcache_task_id = cur.fetchone()
+		cur.execute("SELECT `id` FROM `tasks` WHERE `module` = '_cache_vmware_novm' AND `status` = 0")
+		vmcache_novm_task_id = cur.fetchone()
 		cur.execute("SELECT `id` FROM `tasks` WHERE `module` = '_cache_servicenow' AND `status` = 0")
 		sncache_task_id = cur.fetchone()
 
 		# Render the page
-		return render_template('admin-maint.html', active='admin', sncache_task_id=sncache_task_id,vmcache_task_id=vmcache_task_id)
+		return render_template('admin-maint.html', active='admin', sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id, vmcache_novm_task_id=vmcache_novm_task_id)
 
 	else:
 		module = request.form['task_name']
@@ -162,7 +164,9 @@ def admin_maint():
 
 		if module == 'vmcache':
 			task_id = neocortex.start_internal_task(session['username'], 'cache_vmware.py', '_cache_vmware', description="Caches information about virtual machines, datacenters and clusters from VMware")
-		elif module == 'sncache':	
+		elif module == 'vmcache_novm':
+			task_id = neocortex.start_internal_task(session['username'], 'cache_vmware.py', '_cache_vmware_novm', options={'skip_vms': True}, description="Caches information about virtual machines, datacenters and clusters from VMware")
+		elif module == 'sncache':
 			task_id = neocortex.start_internal_task(session['username'], 'cache_servicenow.py', '_cache_servicenow', description="Caches server CIs from the ServiceNow CMDB")
 		else:
 			abort(400)
