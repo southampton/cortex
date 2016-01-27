@@ -30,7 +30,7 @@ class CortexFlask(Flask):
 		alphabet = string.ascii_letters + string.digits
 		return str().join(urandom.choice(alphabet) for _ in range(length))
 
-################################################################################
+	################################################################################
 
 	def _generate_csrf_token(self):
 		"""This function is used to generate a CSRF token for use in templates."""

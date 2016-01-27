@@ -100,7 +100,58 @@ def run(helper, options):
 
 		## List clusters ##########
 		helper.event("vmware_cache_cluster", "Downloading cluster information from " + instance['hostname'])
-		clusters[key] = helper.lib.vmware_get_objects(content, [vim.ClusterComputeResource])
+		clusters_proxy = helper.lib.vmware_get_objects(content, [vim.ClusterComputeResource])
+		clusters[key] = {}
+		for cluster in clusters_proxy:
+			# Get the managed object reference
+			moId = cluster._moId
+
+			# Start a section for this cluster
+			clusters[key][moId] = {}
+
+			## Recurse up to find the data center
+			parent = cluster.parent
+			found = False
+
+			# Loop until we find the data center
+			while not found:
+				try:
+					# If we've got a Datacenter object as the parent
+					# then we've foudn what we're looking for
+					if isinstance(parent, vim.Datacenter):
+						clusterdc = parent._moId
+						found = True
+					else:
+						# Recurse to parent
+						parent = parent.parent
+				except Exception as ex:
+					clusterdc = "Unknown"
+					break
+
+			# Calculate cluster statistics
+			total_ram   = 0
+			total_cores = 0
+			total_hz    = 0
+			total_cpu_usage = 0
+			total_ram_usage = 0
+			for host in cluster.host:
+				total_ram = total_ram + host.hardware.memorySize
+				total_cores = total_cores + host.hardware.cpuInfo.numCpuCores
+				total_hz = total_hz + host.hardware.cpuInfo.hz
+				total_cpu_usage = total_cpu_usage + host.summary.quickStats.overallCpuUsage
+				total_ram_usage = total_ram_usage + host.summary.quickStats.overallMemoryUsage
+
+			# Put in our data
+			clusters[key][moId]['_moId'] = moId
+			clusters[key][moId]['name'] = cluster.name
+			clusters[key][moId]['dc'] = clusterdc
+			clusters[key][moId]['total_ram'] = total_ram
+			clusters[key][moId]['total_cores'] = total_cores
+			clusters[key][moId]['total_hz'] = total_hz
+			clusters[key][moId]['total_cpu_usage'] = total_cpu_usage
+			clusters[key][moId]['total_ram_usage'] = total_ram_usage
+			clusters[key][moId]['host_count'] = len(cluster.host)
+
 		helper.end_event(description="Downloaded cluster information from " + instance['hostname'])
 
 	# Note: We delete the cache from the database after downloading all the data, so 
@@ -138,42 +189,12 @@ def run(helper, options):
 			curd.execute("INSERT INTO `vmware_cache_datacenters` (`id`, `name`, `vcenter`) VALUES (%s, %s, %s)", (dc._moId, dc.name, instance['hostname']))
 
 		# For each cluster
-		for cluster in clusters[key]:
-			## Recurse up to find the data center
-			parent = cluster.parent
-			found = False
-
-			# Loop until we find the data center
-			while not found:
-				try:
-					# If we've got a Datacenter object as the parent
-					# then we've foudn what we're looking for
-					if isinstance(parent, vim.Datacenter):
-						clusterdc = parent._moId
-						found = True
-					else:
-						# Recurse to parent
-						parent = parent.parent
-				except Exception as ex:
-					clusterdc = "Unknown"
-					break
-
-			total_ram   = 0
-			total_cores = 0
-			total_hz    = 0
-			total_cpu_usage = 0
-			total_ram_usage = 0
-			host_count = len(cluster.host)
-
-			for host in cluster.host:
-				total_ram = total_ram + host.hardware.memorySize
-				total_cores = total_cores + host.hardware.cpuInfo.numCpuCores
-				total_hz = total_hz + host.hardware.cpuInfo.hz
-				total_cpu_usage = total_cpu_usage + host.summary.quickStats.overallCpuUsage
-				total_ram_usage = total_ram_usage + host.summary.quickStats.overallMemoryUsage
+		for moId in clusters[key]:
+			# Get the cluster
+			cluster = clusters[key][moId]
 
 			# Put the cluster in the database
-			curd.execute("INSERT INTO `vmware_cache_clusters` (`id`, `name`, `vcenter`, `did`, `ram`, `cores`, `cpuhz`, `cpu_usage`, `ram_usage`, `hosts`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (cluster._moId, cluster.name, instance['hostname'], clusterdc, total_ram, total_cores, total_hz, total_cpu_usage, total_ram_usage, host_count))
+			curd.execute("INSERT INTO `vmware_cache_clusters` (`id`, `name`, `vcenter`, `did`, `ram`, `cores`, `cpuhz`, `cpu_usage`, `ram_usage`, `hosts`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (cluster['_moId'], cluster['name'], instance['hostname'], cluster['dc'], cluster['total_ram'], cluster['total_cores'], cluster['total_hz'], cluster['total_cpu_usage'], cluster['total_ram_usage'], cluster['host_count']))
 
 		helper.end_event(description="Cached information from " + instance['hostname'])
 

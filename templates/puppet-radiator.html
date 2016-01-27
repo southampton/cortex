@@ -1,0 +1,20 @@
+<html>
+	<head>
+		<title>Puppet Radiator View</title>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/radiator.css') }}">
+		<script type="text/javascript">
+			function updateFontSize()
+			{
+				$('body').css('font-size', ($(window).height() / 12) + "px");
+			}
+			$(window).resize(function() { updateFontSize(); });
+			$(document).ready(function() { updateFontSize(); });
+			window.setTimeout(function() { location.reload(); }, 60000);
+		</script>
+
+	</head>
+	<body>
+{% include 'puppet-radiator-body.html' %}
+	</body>
+</html>

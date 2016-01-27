@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+
+<div class="text/css">
+.facts
+{
+	font-family: monospace;
+}
+</div>
+
+{#- This macro renders a sequence of items, recursing to renderlist and rendermacro as necessary -#}
+{%- macro renderlist(l) %}
+<ul class="facts">
+{%- for item in l %}
+{%-     if item is mapping -%}
+	{{ renderdict(item) }}
+{%-     elif item is sequence and item is not string -%}
+	{{ renderlist(item) }}
+{%-     else -%}
+	<li>{{ item }}</li>
+{%-     endif -%}
+{%- endfor %}
+</ul>
+{% endmacro %}
+{#- This macro renders a dictionary of items, recursing to renderlist and rendermacro as necessary -#}
+{%- macro renderdict(d) %}
+<ul class="facts">
+{%- for key,value in d|dictsort %}
+	<li><strong>{{ key }}: </strong>
+{%-     if d[key] is mapping -%}
+		{{ renderdict(d[key]) }}
+{%-     elif d[key] is sequence and d[key] is not string -%}
+		{{ renderlist(d[key]) }}
+{%-     else -%}
+		{{ d[key] }}
+{%-     endif -%}
+	</li>
+{%- endfor %}
+</ul>
+{% endmacro %}
+{% block body %}
+<div class="page-header">
+<h3><i class="fa fa-fw fa-puzzle-piece"></i> Facts - {{ node.name }}</h3>
+<p class="text-muted"><strong>Environment:</strong> {{ node.facts_environment }}, <strong>Facts generated at:</strong> {{ node.facts_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+</div>
+<ul class="facts">
+{%- for fact in facts %}
+	<li><strong>{{ fact.name }}:</strong>
+{%-     if fact.value is mapping -%}
+		{{ renderdict(fact.value) }}
+{%-     else -%}
+		{{ fact.value }}
+{%-     endif -%}
+	</li>
+{%- endfor %}
+</ul>
+{% endblock %}

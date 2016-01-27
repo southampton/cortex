@@ -249,7 +249,7 @@ def vmware_data():
 @cortex.core.login_required
 def vmware_clusters():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT `a`.`cluster`, `a`.`vcenter`, `b`.`hosts`, `a`.`vm_count`, (`b`.`ram_usage` * 1048576) AS `ram_usage`, (`a`.`assigned_ram` * 1048576) AS `assigned_ram`, `b`.`ram` AS `total_ram`, `a`.`assigned_cores`, `b`.`cores` AS `total_cores`, `b`.`cpu_usage` AS `cpu_usage_mhz`, ROUND(`b`.`cpuhz` / 1000000) AS `total_mhz` FROM (SELECT `cluster`, `vcenter`, COUNT(*) AS `vm_count`, SUM(`numCPU`) AS `assigned_cores`, SUM(`memoryMB`) AS `assigned_ram` FROM `vmware_cache_vm` WHERE `cluster` != "None" group by `cluster`) `a` JOIN `vmware_cache_clusters` `b` ON `a`.`cluster` = `b`.`name`;')
+	curd.execute('SELECT `a`.`cluster`, `a`.`vcenter`, `b`.`hosts`, `a`.`vm_count`, (`b`.`ram_usage` * 1048576) AS `ram_usage`, (`a`.`assigned_ram` * 1048576) AS `assigned_ram`, `b`.`ram` AS `total_ram`, `a`.`assigned_cores`, `b`.`cores` AS `total_cores`, `b`.`cpu_usage` AS `cpu_usage_mhz`, ROUND(`b`.`cpuhz` / 1000) AS `total_mhz` FROM (SELECT `cluster`, `vcenter`, COUNT(*) AS `vm_count`, SUM(`numCPU`) AS `assigned_cores`, SUM(`memoryMB`) AS `assigned_ram` FROM `vmware_cache_vm` WHERE `cluster` != "None" group by `cluster`) `a` JOIN `vmware_cache_clusters` `b` ON `a`.`cluster` = `b`.`name`;')
 
 	# Take the above query and group it by vCenter
 	vcenters = {}

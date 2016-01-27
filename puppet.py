@@ -11,6 +11,7 @@ import re
 import werkzeug
 import MySQLdb as mysql
 import yaml
+import pypuppetdb
 
 ################################################################################
 
@@ -148,7 +149,7 @@ def puppet_enc_default():
 @app.route('/puppet/nodes')
 @cortex.core.login_required
 def puppet_nodes():
-	# Get a cursor to the databaseo
+	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get OS statistics
@@ -369,3 +370,71 @@ def puppet_generate_config(certname):
 			response['parameters']['uos_motd_sn_description'] = system['cmdb_description']
 
 	return yaml.dump(response)
+
+################################################################################
+
+def puppetdb_connect():
+	"""Connects to PuppetDB using the parameters specified in the 
+	application configuration."""
+
+	# Connect to PuppetDB
+	return pypuppetdb.connect(app.config['PUPPETDB_HOST'], port=app.config['PUPPETDB_PORT'], ssl_cert=app.config['PUPPETDB_SSL_CERT'], ssl_key=app.config['PUPPETDB_SSL_KEY'], ssl_verify=app.config['PUPPETDB_SSL_VERIFY'])
+
+################################################################################
+
+def puppetdb_get_node_stats(db = None):
+	if db is None:
+		db = puppetdb_connect()
+
+	# Get information about all the nodes, including their status
+	nodes = db.nodes(with_status = True)
+
+	# Initialise stats
+	count = 0
+	stats = {
+		'changed': 0,
+		'unchanged': 0,
+		'failed': 0,
+		'unreported': 0,
+		'noop': 0,
+	}
+	unknown = 0
+
+	# Iterate over nodes, counting statii
+	for node in nodes:
+		# Count number of nodes (we can't do len(nodes) as it's a generator)
+		count += 1
+
+		# Count the status types
+		if node.status in stats:
+			stats[node.status] += 1
+		else:
+			unknown += 1
+
+	# Put the remaining stats in our dictionary
+	stats['count'] = count
+	stats['unknown'] = unknown
+
+	return stats
+
+################################################################################
+
+@app.route('/puppet/facts/<node>')
+@cortex.core.login_required
+def puppet_facts(node):
+	db = puppetdb_connect()
+	node = db.node(node)
+	return render_template('puppet-facts.html', facts=db.node(node).facts(), node=node, active='puppet')
+
+################################################################################
+
+@app.route('/puppet/dashboard')
+@cortex.core.login_required
+def puppet_dashboard():
+	return render_template('puppet-dashboard.html', stats=puppetdb_get_node_stats(), active='puppet')
+
+################################################################################
+
+@app.route('/puppet/radiator')
+def puppet_radiator():
+	return render_template('puppet-radiator.html', stats=puppetdb_get_node_stats(), active='puppet')
