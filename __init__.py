@@ -47,7 +47,7 @@ REDIS_PORT=6379
 MYSQL_HOST='localhost'
 MYSQL_USER='cortex'
 MYSQL_PW=''
-MYSQL_DB=''
+MYSQL_DB='cortex'
 MYSQL_PORT=3306
 
 ## CMDB Integration
@@ -77,14 +77,37 @@ LDAP_ADMIN_GROUP    = "CN=jfEstMembers,OU=resource,OU=jf,OU=jf,OU=pk,OU=User,DC=
 LDAP_GROUPS_CACHE_EXPIRE = '900'
 
 # Infoblox server
-INFOBLOX_HOST = "localhost" 
-INFOBLOX_USER = "user"
-INFOBLOX_PASS = "pass"
+INFOBLOX_HOST = "" 
+INFOBLOX_USER = ""
+INFOBLOX_PASS = ""
 
-## Neocortex is a daemon 
-NEOCORTEX_KEY="changeme"
+# ServiceNow instance
+SN_HOST = ''
+SN_USER = ''
+SN_PASS = ''
+CMDB_URL_FORMAT = 'https://myinstance.service-now.com/nav_to.do?uri=cmdb_ci_server.do?sys_id=%s'
+CMDB_CACHED_CLASSES={'cmdb_ci_server': 'Server'}
 
-WORKFLOWS_DIR="/data/cortex/workflows/"
+# VMware configuration
+VMWARE={}
+
+# Neocortex is a daemon 
+NEOCORTEX_KEY='changeme'
+WORKFLOWS_DIR='/data/cortex/workflows/'
+
+# Other
+ENVIRONMENTS = []
+
+# API pre-shared keys
+ENC_API_AUTH_TOKEN = 'changeme'
+CORTEX_API_AUTH_TOKEN = 'changeme'
+
+# PuppetDB
+PUPPETDB_HOST=''
+PUPPETDB_PORT=8081
+PUPPETDB_SSL_VERIFY=False
+PUPPETDB_SSL_CERT=''
+PUPPETDB_SSL_KEY=''
 
 ################################################################################
 

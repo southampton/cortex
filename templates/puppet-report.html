@@ -1,0 +1,114 @@
+{% extends "layout.html" %}
+{% block body %}
+<style type="text/css">
+@import url(https://fonts.googleapis.com/css?family=Lato:400,700);
+.message
+{
+	font-family: monospace;
+	font-size: 90%;
+	white-space: pre-wrap;
+}
+.admin-block
+{
+	padding-left: auto;
+	padding-right: auto;
+	border-radius: 12px;
+	box-shadow: 0px 0px 2px 2px rgba(0,0,0,.2);
+	margin: 5px 0px 20px 0px;
+	padding: 10px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	text-align: center;
+	font-family: 'Lato', sans-serif;
+}
+.admin-block-header
+{
+	box-shadow: none;
+}
+.admin-block h2
+{
+	color: #FFFFFF;
+	font-size: 1.5em;
+	margin: 0px;
+}
+.admin-block-header h2
+{
+	color: #555;
+}
+.level-err
+{
+	color: #ff4136;
+}
+.level-info
+{
+	color: #158cba;
+}
+</style>
+<div class="page-header">
+<a href="{{ url_for('puppet_reports', node=report.node) }}" class="pull-right btn btn-sm btn-primary"><i class="fa fa-fw fa-files-o"></i> Node Reports</a>
+<h3><i class="fa fa-fw fa-file-text-o"></i> {{ report.node }} - Puppet Report</h3>
+<p class="text-muted">Received: {{ report.received.strftime('%Y-%m-%d %H:%M:%S') }}. Run time: {{ report.run_time }}</p>
+</div>
+<div class="row">
+	<div class="col-md-2">
+		<div class="admin-block admin-block-header">
+			<h2>Events:</h2>
+		</div>
+	</div>
+	<div class="col-md-1">
+		<div class="admin-block bg-primary">
+			<h2><span>{{ metrics.events.total }}</span></h2>
+		</div>
+	</div>
+	<div class="col-md-1">
+		<div class=" admin-block bg-success">
+			<h2><span>{{ metrics.events.success }}</span></h2>
+		</div>
+	</div>
+	<div class="col-md-1">
+		<div class=" admin-block bg-danger">
+			<h2><span>{{ metrics.events.failure }}</span></h2>
+		</div>
+	</div>
+	<div class="col-md-1"></div>
+	<div class="col-md-2">
+		<div class="admin-block admin-block-header">
+			<h2>Resources:</h2>
+		</div>
+	</div>
+	<div class="col-md-1">
+		<div class="admin-block bg-primary">
+			<h2><span>{{ metrics.resources.total }}</span></h2>
+		</div>
+	</div>
+	<div class="col-md-1">
+		<div class="admin-block bg-success">
+			<h2><span>{{ metrics.resources.total - metrics.resources.changed }}</span></h2>
+		</div>
+	</div>
+	<div class="col-md-1">
+		<div class="admin-block bg-warning">
+			<h2><span>{{ metrics.resources.changed }}</span></h2>
+		</div>
+	</div>
+</div>
+<div class="page-header"></div>
+<table class="table table-condensed table-striped">
+	<thead>
+		<tr>
+			<th style="width:10em">Time</th>
+			<th style="width:4em">Level</th>
+			<th>Message</th>
+		</tr>
+	</thead>
+	<tbody>
+{%-     for log in report.logs %}
+		<tr class="level-{{ log.level }}">
+			<td>{{ log.time[0:19].replace('T', ' ') }}</td>
+			<td>{{ log.level }}</td>
+			<td class="message">{{ log.source }}: {{ log.message }}</td>
+		</tr>
+{%-     endfor %}
+	</tbody>
+</table>
+{% endblock %}

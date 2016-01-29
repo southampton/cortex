@@ -1,12 +1,5 @@
 {% extends "layout.html" %}
 
-<div class="text/css">
-.facts
-{
-	font-family: monospace;
-}
-</div>
-
 {#- This macro renders a sequence of items, recursing to renderlist and rendermacro as necessary -#}
 {%- macro renderlist(l) %}
 <ul class="facts">
@@ -25,7 +18,7 @@
 {%- macro renderdict(d) %}
 <ul class="facts">
 {%- for key,value in d|dictsort %}
-	<li><strong>{{ key }}: </strong>
+	<li><strong>{{ key }}:&nbsp;</strong> 
 {%-     if d[key] is mapping -%}
 		{{ renderdict(d[key]) }}
 {%-     elif d[key] is sequence and d[key] is not string -%}
@@ -38,19 +31,34 @@
 </ul>
 {% endmacro %}
 {% block body %}
+<style type="text/css">
+.facts
+{
+	font-family: monospace;
+}
+</style>
+
 <div class="page-header">
-<h3><i class="fa fa-fw fa-puzzle-piece"></i> Facts - {{ node.name }}</h3>
+<h3><i class="fa fa-fw fa-puzzle-piece"></i> Facts{% if node %} - {{ node.name }}{% endif %}</h3>
+{%- if node %}
 <p class="text-muted"><strong>Environment:</strong> {{ node.facts_environment }}, <strong>Facts generated at:</strong> {{ node.facts_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+{%- endif %}
 </div>
-<ul class="facts">
-{%- for fact in facts %}
-	<li><strong>{{ fact.name }}:</strong>
-{%-     if fact.value is mapping -%}
-		{{ renderdict(fact.value) }}
-{%-     else -%}
-		{{ fact.value }}
-{%-     endif -%}
-	</li>
-{%- endfor %}
-</ul>
+{%- if facts %}
+<div style="overflow-x: scroll">
+	<ul class="facts">
+	{%- for fact in facts %}
+		<li><strong>{{ fact.name }}:&nbsp;</strong> 
+	{%-     if fact.value is mapping -%}
+			{{ renderdict(fact.value) }}
+	{%-     else -%}
+			{{ fact.value }}
+	{%-     endif -%}
+		</li>
+	{%- endfor %}
+	</ul>
+</div>
+{% else %}
+<p>No facts found for this node. Is this node registered with Puppet?</p>
+{%- endif %}
 {% endblock %}

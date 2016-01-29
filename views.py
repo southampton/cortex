@@ -68,13 +68,13 @@ def logout():
 #### HELP PAGES
 @app.route('/about')
 def about():
-	return render_template('about.html', active='help')
+	return render_template('about.html', active='help', title="About")
 
 ################################################################################
 
 @app.route('/about/changelog')
 def changelog():
-	return render_template('changelog.html', active='help')
+	return render_template('changelog.html', active='help', title="Changelog")
 
 ################################################################################
 
@@ -116,7 +116,7 @@ def dashboard():
 	cur.execute('SELECT `id`, `module`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` = %s ORDER BY `start` DESC LIMIT 5', (session['username'],))
 	tasks = cur.fetchall()
 
-	return render_template('dashboard.html', vm_count=vm_count, ci_count=ci_count, task_progress_count=task_progress_count, task_failed_count=task_failed_count, tasks=tasks)
+	return render_template('dashboard.html', vm_count=vm_count, ci_count=ci_count, task_progress_count=task_progress_count, task_failed_count=task_failed_count, tasks=tasks, title="Dashboard")
 
 ################################################################################
 
@@ -136,7 +136,7 @@ def render_task_status(id, template):
 	cur.execute("SELECT `id`, `source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end` FROM `events` WHERE `related_id` = %s AND `source` = 'neocortex.task'", (id,))
 	events = cur.fetchall()
 
-	return render_template(template, id=id, task=task, events=events)
+	return render_template(template, id=id, task=task, events=events, title="Task Status")
 
 ################################################################################
 
@@ -145,7 +145,7 @@ def render_task_status(id, template):
 def task_status(id):
 	"""Handles the Task Status page for a individual task."""
 
-	return render_task_status(id, "task-status.html")
+	return render_task_status(id, "task-status.html", title="Task Status")
 
 ################################################################################
 
@@ -173,4 +173,4 @@ def user_groups():
 			groups.append({"name": name, "dn": lgroup})
 	
 
-	return render_template('user-groups.html', active='user',groups=groups)
+	return render_template('user-groups.html', active='user', groups=groups, title="AD Groups")

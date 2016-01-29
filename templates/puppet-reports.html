@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+{% block body %}
+<style type="text/css">
+.status-unchanged
+{
+	color: #28b62c;
+}
+.status-changed
+{
+	color: #158cba;
+}
+.status-disabled
+{
+	color: #ff851b;
+}
+.status-failed
+{
+	color: #ff4136;
+}
+.status-unknown
+{
+	color: #888;
+}
+</style>
+<div class="page-header">
+<h3><i class="fa fa-fw fa-files-o"></i> Puppet Reports</h3>
+</div>
+<table class="table table-condensed table-striped" id="data">
+	<thead>
+		<tr>
+			<th>Report Time</th>
+			<th>Version</th>
+			<th>Run Time</th>
+			<th>Status</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+{%- if reports %}
+{%-     for report in reports %}
+		<tr>
+			<td>{{ report.received.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+			<td>{{ report.version }}</td>
+			<td>{{ report.run_time }}</td>
+			<td class="status-{{ report.status }}">{{ report.status }}</td>
+			<td><a href="{{ url_for('puppet_report', report_hash=report.hash_) }}" class="btn btn-xs btn-primary"><i class="fa fa-fw fa-file-text-o"></i> View</a></td>
+		</tr>
+{%- endfor %}
+{%- endif %}
+	</tbody>
+</table>
+<script type="text/javascript">
+$('#data').DataTable({
+	"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
+	"pageLength": 15,
+	"order": [[0, 'desc']],
+	"columns": [null, null, null, null, { "orderable": false, "targets": 0 }]
+});
+</script>
+{% endblock %}

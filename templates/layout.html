@@ -4,7 +4,7 @@
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>Cortex</title>
+		<title>{% if title %}{{ title }} - {% endif %}Cortex</title>
 		<link rel="icon" href="../../favicon.ico">
 		<link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}">
 		{#- CSS #}
@@ -173,7 +173,7 @@
 									<a {% if active != 'admin' %}class="collapsed" aria-expanded="false"{%else%}aria-expanded="true"{%endif%} role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseFive" aria-controls="collapseFive">Settings <span class="caret arrow"></span></a>
 								</h4>
 							</div>
-							<div id="collapseFive" class="panel-collapse collapse{% if active == 'admin' %} in{%endif%}" role="tabpanel" aria-labelledby="headingFive" {% if active != 'admin' %}class="collapsed" aria-expanded="false"{%else%}aria-expanded="true"{%endif%}>
+							<div id="collapseFive" class="panel-collapse collapse{% if active == 'admin' %} in{% else %} collapsed{%endif%}" role="tabpanel" aria-labelledby="headingFive" {% if active != 'admin' %} aria-expanded="false"{%else%}aria-expanded="true"{%endif%}>
 								<ul class="list-group list-group-sidebar">
 									<li><a href="{{ url_for('admin_classes') }}"><i class="fa fa-fw fa-table"></i>Classes</a></li>
 									<li><a href="{{ url_for('admin_tasks') }}"><i class="fa fa-fw fa-tasks"></i>Tasks</a></li>

@@ -47,7 +47,7 @@ def admin_tasks():
 	tasks = cur.fetchall()
 
 	# Render the page
-	return render_template('admin-tasks.html', tasks=tasks, active='admin')
+	return render_template('admin-tasks.html', tasks=tasks, active='admin', title="Tasks")
 
 ################################################################################
 
@@ -58,7 +58,7 @@ def admin_classes():
 	# On a GET request, display the list of classes page
 	if request.method == 'GET':
 		classes = get_classes(hide_disabled=False)
-		return render_template('admin-classes.html', classes=classes, active='admin', cmdb_types=app.config['CMDB_CACHED_CLASSES'])
+		return render_template('admin-classes.html', classes=classes, active='admin', cmdb_types=app.config['CMDB_CACHED_CLASSES'], title="Classes")
 
 	elif request.method == 'POST':
 		action = request.form['action']
@@ -156,7 +156,7 @@ def admin_maint():
 		sncache_task_id = cur.fetchone()
 
 		# Render the page
-		return render_template('admin-maint.html', active='admin', sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id, vmcache_novm_task_id=vmcache_novm_task_id)
+		return render_template('admin-maint.html', active='admin', sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id, vmcache_novm_task_id=vmcache_novm_task_id, title="Maintenance Tasks")
 
 	else:
 		module = request.form['task_name']

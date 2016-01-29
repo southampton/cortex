@@ -10,7 +10,13 @@
 			}
 			$(window).resize(function() { updateFontSize(); });
 			$(document).ready(function() { updateFontSize(); });
-			window.setTimeout(function() { location.reload(); }, 60000);
+			window.setInterval(function()
+			{
+				$.ajax('{{ url_for('puppet_radiator_body') }}').done(function (data)
+				{
+					$('body').html(data);
+				});
+			}, 60000);
 		</script>
 
 	</head>

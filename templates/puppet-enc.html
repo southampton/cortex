@@ -1,7 +1,6 @@
 {% extends "layout.html" %}
+{% block head %}{% include 'codemirror.html' %}{% endblock %}
 {% block body %}
-{% include 'codemirror.html' %}
-
 <script>
 $(document).ready(function() {
 	var classes_editor = CodeMirror.fromTextArea(document.getElementById('classes'), 
@@ -37,20 +36,6 @@ $(document).ready(function() {
 			cm.replaceSelection(spaces);
 		}
 	});
-
-
-	var demo1 = CodeMirror.fromTextArea(document.getElementById('demo1'), 
-	{
-		mode: 'yaml',
-		indentUnit: 2,
-		readOnly: true,
-	});
-
-	demo1.setSize('100%', 170);
-
-	$('#myModal').on('shown.bs.modal', function (e) {
-		demo1.refresh();
-	});
 });
 </script>
 <form class="form-horizontal" method="POST" role="form">
@@ -71,7 +56,7 @@ $(document).ready(function() {
 			<div class="form-group">
 				<label title="The Puppet environment that this node sits in (the actual name within Puppet is given in brackets)" class="col-sm-2 control-label" for="environment">Environment:</label>
 				<div class="col-sm-10"> <select class="form-control" id="environment" name="environment">
-{% for environment in environments -%}
+{%- for environment in environments -%}
 {%- if environment.puppet %}
 					<option value="{{ environment.id }}"{% if system.puppet_env == environment.puppet %} selected="selected"{% endif %}>{{ environment.name }} ({{ environment.puppet }})</option>
 {%- endif %}

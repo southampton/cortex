@@ -1,14 +1,6 @@
 {% extends "layout.html" %}
-{% block body %}
-
-{#- CodeMirror style -#}
-<link href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/codemirror.min.css" rel="stylesheet">
-<link href="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/addon/lint/lint.min.css" rel="stylesheet">
-
-{#- CodeMirror scripts -#}
-<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/codemirror.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/mode/yaml/yaml.min.js"></script>
-
+{% block head %}
+{% include 'codemirror.html' %}
 {#- Override CodeMirror style - must come after CodeMirror style imports -#}
 <style type="text/css">
 .CodeMirror {
@@ -16,6 +8,8 @@
 	height: auto;
 }
 </style>
+{% endblock %}
+{% block body %}
 
 <script>
 $(document).ready(function() {

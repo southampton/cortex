@@ -111,7 +111,7 @@ def vmware_os():
 			types['bsd'] += 1
 
 	# Render
-	return render_template('vmware-os.html', active='vmware', types=types)
+	return render_template('vmware-os.html', active='vmware', types=types, title="Statistics - Operating Systems")
 
 ################################################################################
 
@@ -128,7 +128,7 @@ def vmware_hw():
 	results = cur.fetchall()
 
 	# Render
-	return render_template('vmware-hw.html', active='vmware', stats_hw=results)
+	return render_template('vmware-hw.html', active='vmware', stats_hw=results, title="Statistics - Hardware Version")
 
 ################################################################################
 
@@ -139,7 +139,7 @@ def vmware_power():
 	cur = g.db.cursor(mysql.cursors.DictCursor)
 	cur.execute('SELECT `powerState`, COUNT(*) AS `count` FROM `vmware_cache_vm` GROUP BY `powerState` ORDER BY `powerState`')
 	results = cur.fetchall()
-	return render_template('vmware-power.html', active='vmware', stats_power=results)
+	return render_template('vmware-power.html', active='vmware', stats_power=results, title="Statistics - VM Power State")
 
 ################################################################################
 
@@ -152,7 +152,7 @@ def vmware_tools():
 	stats_status = cur.fetchall()
 	cur.execute('SELECT `toolsVersionStatus`, COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `powerState` = "poweredOn" GROUP BY `toolsVersionStatus` ORDER BY `toolsVersionStatus`')
 	stats_version = cur.fetchall()
-	return render_template('vmware-tools.html', active='vmware', stats_status=stats_status, stats_version=stats_version)
+	return render_template('vmware-tools.html', active='vmware', stats_status=stats_status, stats_version=stats_version, title="Statistics - VMware Tools")
 
 ################################################################################
 
@@ -231,7 +231,7 @@ def vmware_specs():
 		except KeyError as ex:
 			data_cpu['Other'] += 1
 			
-	return render_template('vmware-specs.html', active='vmware', stats_ram=data_ram, stats_cpu=data_cpu)
+	return render_template('vmware-specs.html', active='vmware', stats_ram=data_ram, stats_cpu=data_cpu, title="Statistics - VM Specs")
 
 ################################################################################
 
@@ -241,7 +241,7 @@ def vmware_data():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT * FROM `vmware_cache_vm` ORDER BY `name`')
 	results = curd.fetchall()
-	return render_template('vmware-data.html', active='vmware', data=results)
+	return render_template('vmware-data.html', active='vmware', data=results, title="VMware Data")
 
 ################################################################################
 
@@ -265,4 +265,4 @@ def vmware_clusters():
 		# Iterate to next cluster
 		row = curd.fetchone()
 
-	return render_template('vmware-clusters.html', active='vmware', vcenters=vcenters)
+	return render_template('vmware-clusters.html', active='vmware', vcenters=vcenters, title="VMware Clusters")

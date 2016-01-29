@@ -29,7 +29,7 @@ def systems():
 	classes = cortex.admin.get_classes(True)
 
 	# Render
-	return render_template('systems.html', systems=systems, classes=classes, active='systems')
+	return render_template('systems.html', systems=systems, classes=classes, active='systems', title="Systems")
 
 ################################################################################
 
@@ -105,7 +105,7 @@ def systems_new():
 	# On GET requests, just show big buttons for all the classes
 	if request.method == 'GET':
 		classes = cortex.admin.get_classes(True)
-		return render_template('systems-new.html', classes=classes, active='systems')
+		return render_template('systems-new.html', classes=classes, active='systems', title="Allocate new system names")
 
 	# On POST requests...
 	elif request.method == 'POST':
@@ -151,7 +151,7 @@ def systems_new():
 			flash("System name allocated successfully", "alert-success")
 			return redirect(url_for('systems_edit', id=new_systems[new_systems.keys()[0]]))
 		else:
-			return render_template('systems-new-bulk.html', systems=new_systems, comment=system_comment)
+			return render_template('systems-new-bulk.html', systems=new_systems, comment=system_comment, title="Systems")
 
 ################################################################################
 
@@ -192,7 +192,7 @@ def systems_bulk_view(start,finish):
 	curd.execute("SELECT `id`, `name`, `allocation_comment` AS `comment` FROM `systems` WHERE `id` >= %s AND `id` <= %s",(start,finish))
 	systems = curd.fetchall()
 
-	return render_template('systems-new-bulk-done.html', systems=systems)
+	return render_template('systems-new-bulk-done.html', systems=systems, title="Systems")
 
 
 ################################################################################
@@ -205,7 +205,7 @@ def systems_edit(id):
 		system = cortex.core.get_system_by_id(id)
 		system_class = cortex.admin.get_class(system['class'])
 
-		return render_template('systems-edit.html', system=system, system_class=system_class, active='systems')
+		return render_template('systems-edit.html', system=system, system_class=system_class, active='systems', title=system['name'])
 	elif request.method == 'POST':
 		try:
 			# Get a cursor to the database
