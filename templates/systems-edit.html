@@ -101,10 +101,9 @@
 <form role="form" class="form-horizontal">
 <div class="page-header">
 <div class="pull-right">
-
-{%- if system.cmdb_id %}<a class="btn btn-sm btn-primary" href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank"><i class="fa fa-sm fa-cloud"></i> ServiceNow</a>{%endif%} 
-{%- if system.puppet_certname %} <a class="btn btn-sm btn-success" href="{{ url_for('puppet_enc_edit',id=system.id) }}" target="_blank"><i class="fa fa-sm fa-book"></i> Puppet</a>{%endif%}
-<button class="btn btn-sm btn-warning" type="button" data-toggle="modal" data-target="#edit"><i class="fa fa-edit fa-fw"></i> Edit system</button>
+	{%- if system.cmdb_id %}<a class="btn btn-sm btn-primary" href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank"><i class="fa fa-sm fa-cloud"></i> ServiceNow</a>{%endif%} 
+	{%- if system.puppet_certname %} <a class="btn btn-sm btn-success" href="{{ url_for('puppet_enc_edit',node=system.puppet_certname) }}"><i class="fa fa-sm fa-book"></i> Puppet</a>{%endif%}
+	<button class="btn btn-sm btn-warning" type="button" data-toggle="modal" data-target="#edit"><i class="fa fa-edit fa-fw"></i> Edit system</button>
 </div>
 <h3><i class="fa fa-fw fa-server"></i> {{ system.name }}</h3>
 </div>
