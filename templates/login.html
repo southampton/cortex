@@ -58,9 +58,6 @@
 		</div>
 
 		<div class="container">
-			<div class="visible-xs mobilelogo">
-				<img src="{{ url_for('static', filename='images/uoslogowhite.png') }}"></img>
-			</div>
 			<div class="loginbox animated zoomIn" id="loginbox">
 				<h1>cortex</h1>
 				{% for category, message in get_flashed_messages(with_categories=true) %}
@@ -83,20 +80,15 @@
 						<label>Password:</label>
 						<input type="password" class="login-input form-control" id="loginPassword" name="password">
 					</div>
-					{% if config['REMEMBER_ME_ENABLED'] %}
-					<div class="checkbox">
+					<div class="checkbox hidden-xs">
 						<label>
 							<input type="checkbox" class="" value="sec" id="sec" name="sec"> Keep me logged in on this computer <span class="glyphicon glyphicon-question-sign" data-toggle="popover" data-placement="bottom" title="Login Security" data-trigger="hover" data-content="If you are on a private computer you trust then selecting this option will keep you logged in even if you close the browser window. Do not use this on public or shared computers."></span>
 						</label>
 					</div>
-					{% endif %}
-					<div class="form-group text-center">
+					<div class="form-group text-center submit-box">
 						<button class="btn btn-default btn-lg" type="submit">Login</button>
 					</div>
 				</form>
-				<p class="text-center">
-					<a href="https://www.southampton.ac.uk/about/conditions-policies.page">Terms and Conditions</a> - <a href="{{ url_for('about') }}">About</a>
-				</p>
 			</div>
 		</div>
 	</body>

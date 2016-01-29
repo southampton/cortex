@@ -1,0 +1,6 @@
+<div class="pull-right">
+	<a href="{{url_for('puppet_enc_edit',node=nodename)}}" class="btn btn-sm {% if pactive == 'edit'%}btn-success{%else%}btn-default{%endif%}"><i class="fa fa-fw fa-edit"></i> Classify</a>
+	<a href="{{url_for('puppet_node_yaml',node=nodename)}}" class="btn btn-sm {% if pactive == 'view'%}btn-success{%else%}btn-default{%endif%}"><i class="fa fa-fw fa-code"></i> View YAML</a>
+	<a href="{{url_for('puppet_reports',node=nodename)}}" class="btn btn-sm {% if pactive == 'reports'%}btn-success{%else%}btn-default{%endif%}"><i class="fa fa-fw fa-files-o"></i> Reports</a>
+	<a href="{{url_for('puppet_facts',node=nodename)}}" class="btn btn-sm {% if pactive == 'facts'%}btn-success{%else%}btn-default{%endif%}"><i class="fa fa-fw fa-puzzle-piece"></i> Facts</a>
+</div>

@@ -26,9 +26,7 @@ $(document).ready(function() {
 });
 </script>
 	<div class="page-header">
-		<div class="pull-right">
-			<a href="{{url_for('puppet_enc_edit',id=system.id)}}" class="btn btn-sm btn-primary">Edit node</a>
-		</div>
+		{% include 'puppet-node-header.html' %}
 		<h3><i class="fa fa-fw fa-server"></i> Puppet configuration for {{node.certname}}</h3>
 		<p class="text-muted">This is the configuration for the node taking into account its group memberships and global default classes. Additional system global variables are also visible here.</p>
 	</div>

@@ -19,7 +19,7 @@
 			<td>{{ node.name }}</td>
 			<td>{{ node.certname }}</td>
 			<td>{{ node.env }}</td>
-			<td><a href="{{url_for('puppet_enc_edit',id=node.id) }}" class="btn btn-default btn-xs"><i class="fa fa-fw fa-code"></i> Settings</a> <a href="{{url_for('puppet_facts',node=node.certname) }}" class="btn btn-primary btn-xs"><i class="fa fa-fw fa-puzzle-piece"></i> Facts</a> <a href="{{url_for('puppet_reports',node=node.certname) }}" class="btn btn-success btn-xs"><i class="fa fa-fw fa-files-o"></i> Reports</a></td>
+			<td><a href="{{url_for('puppet_enc_edit',node=node.certname) }}" class="btn btn-default btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a></td>
 		</tr>
 {%- endfor %}
 	</tbody>

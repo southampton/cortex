@@ -39,7 +39,6 @@ EMAIL_FROM='root'
 EMAIL_SUBJECT='Cortex Runtime Error'
 
 ## Redis
-REDIS_ENABLED=True
 REDIS_HOST='localhost'
 REDIS_PORT=6379
 

@@ -145,7 +145,7 @@ def render_task_status(id, template):
 def task_status(id):
 	"""Handles the Task Status page for a individual task."""
 
-	return render_task_status(id, "task-status.html", title="Task Status")
+	return render_task_status(id, "task-status.html")
 
 ################################################################################
 

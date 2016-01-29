@@ -23,11 +23,11 @@ def puppet_help():
 
 ################################################################################
 
-@app.route('/puppet/enc/<int:id>', methods=['GET', 'POST'])
+@app.route('/puppet/enc/<node>', methods=['GET', 'POST'])
 @cortex.core.login_required
-def puppet_enc_edit(id):
+def puppet_enc_edit(node):
 	# Get the system out of the database
-	system       = cortex.core.get_system_by_id(id)
+	system       = cortex.core.get_system_by_puppet_certname(node)
 	environments = cortex.core.get_puppet_environments()
 	env_dict     = cortex.core.get_environments_as_dict()
 
@@ -44,7 +44,7 @@ def puppet_enc_edit(id):
 
 	# On any GET request, just display the information
 	if request.method == 'GET':
-		return render_template('puppet-enc.html', system=system, active='puppet', environments=environments, title=system['name'])
+		return render_template('puppet-enc.html', system=system, active='puppet', environments=environments, title=system['name'],nodename=node,pactive="edit")
 
 	# On any POST request, validate the input and then save
 	elif request.method == 'POST':
@@ -103,7 +103,7 @@ def puppet_enc_edit(id):
 		# Redirect back to the systems page
 		flash('Puppet ENC for host ' + system['name'] + ' updated', 'alert-success')
 
-		return redirect(url_for('puppet_enc_edit',id=id))
+		return redirect(url_for('puppet_enc_edit',node=node))
 
 ################################################################################
 
@@ -253,10 +253,10 @@ def puppet_group_edit(name):
 
 ################################################################################
 
-@app.route('/puppet/yaml/<int:id>', methods=['GET', 'POST'])
+@app.route('/puppet/yaml/<node>', methods=['GET', 'POST'])
 @cortex.core.login_required
-def puppet_node_yaml(id):
-	system = cortex.core.get_system_by_id(id)
+def puppet_node_yaml(node):
+	system = cortex.core.get_system_by_puppet_certname(node)
 
 	if system == None:
 		abort(404)
@@ -270,7 +270,7 @@ def puppet_node_yaml(id):
 	if node == None:
 		abort(404)
 
-	return render_template('puppet-node-yaml.html', raw=puppet_generate_config(node['certname']), system=system, node=node, active='puppet', title="Puppet Configuration")
+	return render_template('puppet-node-yaml.html', raw=puppet_generate_config(node['certname']), system=system, node=node, active='puppet', title="Puppet Configuration",nodename=node['certname'],pactive="view")
 
 ################################################################################
 
@@ -426,9 +426,9 @@ def puppet_facts(node):
 	dbnode = None
 	facts = None
 	try:
-		db = puppetdb_connect()
+		db     = puppetdb_connect()
 		dbnode = db.node(node)
-		facts = db.node(dbnode).facts()
+		facts  = db.node(dbnode).facts()
 	except HTTPError, he:
 		if he.response.status_code == 404:
 			facts = None
@@ -437,7 +437,7 @@ def puppet_facts(node):
 	except Exception, e:
 		raise(e)
 
-	return render_template('puppet-facts.html', facts=facts, node=dbnode, active='puppet', title=node + " - Puppet Facts")
+	return render_template('puppet-facts.html', facts=facts, node=dbnode, active='puppet', title=node + " - Puppet Facts",nodename=node,pactive="facts")
 
 ################################################################################
 
@@ -474,7 +474,7 @@ def puppet_reports(node):
 	except Exception, e:
 		raise(e)
 
-	return render_template('puppet-reports.html', reports=reports, active='puppet', title=node + " - Puppet Reports")
+	return render_template('puppet-reports.html', reports=reports, active='puppet', title=node + " - Puppet Reports", nodename=node, pactive="reports")
 
 ################################################################################
 
