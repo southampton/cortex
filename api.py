@@ -37,7 +37,7 @@ def api_systems_csv():
 ################################################################################
 
 @app.route('/api/systems/vm-authenticate/<hostname>/<uuid>')
-def api_systems_authenticate():
+def api_systems_authenticate(hostname,uuid):
 	"""Authenticates a system with it's hostname and VMware UUID."""
 
 	# Strip off any domain name from the hostname if it exists
