@@ -49,7 +49,9 @@ $(document).ready(function() {
 		<div class="panel-body" style="padding-bottom:0em">
 			<div class="form-group">
 				<label title="The Common Name (CN) of the certificate registered with the Puppet Master" class="col-sm-2 control-label" for="certname">Cert Name:</label>
-				<div class="col-sm-10"><input class="form-control" type="text" id="certname" name="certname" value="{{ system.puppet_certname }}" /></div>
+				<div class="col-sm-10">
+					<p class="form-control-static">{{ system.puppet_certname }}</p>
+				</div>
 			</div>
 			<div class="form-group">
 				<label title="The Puppet environment that this node sits in (the actual name within Puppet is given in brackets)" class="col-sm-2 control-label" for="environment">Environment:</label>

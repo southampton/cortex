@@ -49,7 +49,6 @@ def puppet_enc_edit(node):
 	# On any POST request, validate the input and then save
 	elif request.method == 'POST':
 		# Extract data from form
-		certname = request.form.get('certname', '')
 		environment = request.form.get('environment', '')
 		classes = request.form.get('classes', '')
 		variables = request.form.get('variables', '')
@@ -58,11 +57,6 @@ def puppet_enc_edit(node):
 		else:
 			include_default = False
 		error = False
-
-		# Validate certificate name
-		if len(certname.strip()) == 0:
-			flash('Invalid certificate name', 'alert-danger')
-			error = True
 
 		# Validate environement:
 		if environment not in [e['id'] for e in environments]:
@@ -86,7 +80,6 @@ def puppet_enc_edit(node):
 		# On error, overwrite what is in the system object with our form variables
 		# and return the page back to the user for fixing
 		if error:
-			system['puppet_certname'] = certname
 			system['puppet_env'] = environment
 			system['puppet_classes'] = classes
 			system['puppet_variables'] = variables
@@ -97,7 +90,7 @@ def puppet_enc_edit(node):
 		cur = g.db.cursor(mysql.cursors.DictCursor)
 
 		# Update the system
-		cur.execute('UPDATE `puppet_nodes` SET `certname` = %s, `env` = %s, `classes` = %s, `variables` = %s, `include_default` = %s WHERE `id` = %s', (certname, env_dict[environment]['puppet'], classes, variables, include_default, id))
+		cur.execute('UPDATE `puppet_nodes` SET `env` = %s, `classes` = %s, `variables` = %s, `include_default` = %s WHERE `certname` = %s', (env_dict[environment]['puppet'], classes, variables, include_default, system['puppet_certname']))
 		g.db.commit()
 
 		# Redirect back to the systems page
