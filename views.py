@@ -72,12 +72,6 @@ def about():
 
 ################################################################################
 
-@app.route('/about/changelog')
-def changelog():
-	return render_template('changelog.html', active='help', title="Changelog")
-
-################################################################################
-
 @app.route('/nojs')
 def nojs():
 	return render_template('nojs.html')

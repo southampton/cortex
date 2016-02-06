@@ -66,7 +66,7 @@ try:
 	with warnings.catch_warnings():
 		if not ssl_verify:
 			warnings.simplefilter("ignore", requests.packages.urllib3.exceptions.InsecureRequestWarning)
-		r = requests.post(cortex_url + '/' + certname, data={'auth_token': auth_token}, headers={'Accept': 'application/yml'}, verify=ssl_verify)
+		r = requests.get(cortex_url + '/' + certname, headers={'Accept': 'application/yml', 'X-Auth-Token': auth_token}, verify=ssl_verify)
 except Exception as e:
 	# On exception, attempt to print cache
 	sys.exit(print_catalog(certname, cache_dir))

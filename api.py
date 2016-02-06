@@ -9,18 +9,22 @@ from cortex.systems import systems_csv_stream
 
 ################################################################################
 
-@app.route('/api/systems/csv', methods=['POST'])
-@app.disable_csrf_check
+def fqdn_strip_domain(fqdn):
+	return fqdn.split('.')[0]
+
+################################################################################
+
+@app.route('/api/systems/csv')
 def api_systems_csv():
 	"""Returns a CSV file, much like the /systems/download/csv but with API
 	auth rather than normal auth."""
 
 	# The request should contain a parameter in the passed form which
 	# contains the authentication pre-shared key. Validate this:
-	if 'auth_token' not in request.form:
+	if 'X-Auth-Token' not in request.headers:
 		app.logger.warn('auth_token missing from Systems API request')
 		return abort(401)
-	if request.form['auth_token'] != app.config['CORTEX_API_AUTH_TOKEN']:
+	if request.headers['X-Auth-Token'] != app.config['CORTEX_API_AUTH_TOKEN']:
 		app.logger.warn('Incorrect auth_token on request to Systems API')
 		return abort(401)
 
@@ -32,17 +36,40 @@ def api_systems_csv():
 	
 ################################################################################
 
-@app.route('/api/puppet/enc/<certname>', methods=['POST'])
-@app.disable_csrf_check
+@app.route('/api/systems/vm-authenticate/<hostname>/<uuid>')
+def api_systems_authenticate():
+	"""Authenticates a system with it's hostname and VMware UUID."""
+
+	# Strip off any domain name from the hostname if it exists
+	hostname = fqdn_strip_domain(hostname)
+
+	# Match an entry in the systems table
+	system = cortex.core.get_system_by_name(hostname)
+
+	# Ensure we have a system
+	if not system:
+		app.logger.warn('Could not locate host in systems table for Authentication API (hostname: ' + hostname + ')')
+		return abort(404)
+
+	# Compare the UUIDs
+	if uuid.lower() != system['vmware_uuid'].lower():
+		app.logger.warn('Incorrect UUID for host for Authentication API (hostname: ' + hostname + ', UUID: ' + uuid + ')')
+		return abort(404)
+
+	return jsonify({'success': 1})
+
+################################################################################
+
+@app.route('/api/puppet/enc/<certname>')
 def api_puppet_enc(certname):
 	"""Returns the YAML associated with the given node."""
 
 	# The request should contain a parameter in the passed form which 
 	# contains the autthentication pre-shared key. Validate this:
-	if 'auth_token' not in request.form:
+	if 'X-Auth-Token' not in request.headers:
 		app.logger.warn('auth_token missing from Puppet ENC API request (certname: ' + certname + ')')
 		return abort(401)
-	if request.form['auth_token'] != app.config['ENC_API_AUTH_TOKEN']:
+	if request.headers['X-Auth-Token'] != app.config['ENC_API_AUTH_TOKEN']:
 		app.logger.warn('Incorrect auth_token on request to Puppet ENC API (certname: ' + certname + ')')
 		return abort(401)
 
@@ -64,8 +91,7 @@ def api_puppet_enc(certname):
 
 ################################################################################
 
-@app.route('/api/puppet/enc-enable/<certname>', methods=['POST'])
-@app.disable_csrf_check
+@app.route('/api/puppet/enc-enable/<certname>')
 def api_puppet_enc_enable(certname):
 	"""Ensures a particular server name is added to the Puppet ENC. This
 	is usually done as part of a VM workflow, but for physical boxes and manually
@@ -79,10 +105,10 @@ def api_puppet_enc_enable(certname):
 
 	# The request should contain a parameter on the query string which contains
 	# the authentication pre-shared key. Validate this:
-	if 'auth_token' not in request.form:
+	if 'X-Auth-Token' not in request.headers:
 		app.logger.error('auth_token missing from Puppet Node Enable API request (certname: ' + certname + ')')
 		return abort(401)
-	if request.form['auth_token'] != app.config['ENC_API_AUTH_TOKEN']:
+	if request.headers['X-Auth-Token'] != app.config['ENC_API_AUTH_TOKEN']:
 		app.logger.error('Incorrect auth_token on request to Puppet Node Enable API (certname: ' + certname + ')')
 		return abort(401)
 
@@ -92,7 +118,7 @@ def api_puppet_enc_enable(certname):
 		abort(400)
 
 	## Remove the .soton.ac.uk
-	system_name = certname.replace(".soton.ac.uk","")
+	system_name = fqdn_strip_domain(certname)
 
 	## Match an entry in the systems table
 	system = cortex.core.get_system_by_name(system_name)

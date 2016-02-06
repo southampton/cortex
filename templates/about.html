@@ -78,56 +78,8 @@ font-weight: 600;
 font-size: 180px;
 text-shadow: 0px 0px 30px rgba(150, 150, 150, 1);
 color: #999999 !important;">cortex</span>
-<p style="font-size: 30px; font-family: 'Orbitron', cursive;">Version 1 - r20150129</p>
+<p style="font-size: 30px; font-family: 'Orbitron', cursive;">Version {{config.VERSION_MAJOR}} - r{{config.VERSION_MINOR}}</p>
 <p style="font-size: 20px; font-family: 'Orbitron', cursive;"><a href="http://github.com/southampton/cortex">view on github</a></p>
 </div>
-
-<!--
-<div class="row">
-	<div class="col-sm-5">
-		<div class="panel panel-default" style="height: 145px">	
-			<div class="panel-body">	
-				<h1 style="font-size: 35px; margin: 0px"><i class="fa fa-university fa-fw"></i> Cortex {{ config.VERSION }}</h1>
-				<h4 style="font-size: 20px">VM and System Automation Engine</h4>
-				<p>
-				Written by <a href="http://www.evad.io">David Bell</a>, <a href="http://www.claytonpeters.co.uk">Clayton Peters</a> &amp; <a href="http://www.vryan.co.uk">Ryan Harris</a>
-				</p>				
-			</div>
-		</div>
-		<div class="panel panel-default" style="height: 200px">
-			<div class="panel-heading">
-				<h4 class="panel-title">Project Information</h4>
-			</div>
-			<div class="panel-body">
-				<ul class="nav nav-list">
-					<li><a href="http://github.com/southampton/cortex"><i class="fa fa-fw fa-github-alt"></i> GitHub Project Page</a></li>
-					<li><a href="{{ url_for('changelog') }}"><i class="fa fa-fw fa-list-alt"></i> View Changelog</a></li>
-				</ul>
-			</div>
-		</div>
-	</div>
-
-	<div class="col-sm-7">
-		<div class="panel panel-default" style="height: 368px">
-			<div class="panel-heading">
-				<h4 class="panel-title">Acknowledgements</h4>
-			</div>
-			<div class="panel-body">
-				<p>
-				Cortex stands on the shoulders of giants. It is made possible by the following open source projects:
-				</p>
-					<ul>
-						<li><a href="http://flask.pocoo.org/">Flask</a></li>
-						<li><a href="http://getbootstrap.com">Twitter Bootstrap</a></li>
-						<li><a href="http://bootswatch.com/">Bootswatch</a></li>
-						<li><a href="http://www.python.org">Python</a></li>
-						<li><a href="http://fortawesome.github.com/Font-Awesome/">Font Awesome</a></li>
-						<li><a href="https://github.com/vmware/pyvmomi/">PyVmomi</a></li>
-					</ul>
-				</div>
-			</div>
-		</div>
-	</div>
-</div>-->
 
 {% endblock %}

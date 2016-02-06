@@ -21,8 +21,6 @@ DEBUG_TOOLBAR = False
 
 ## Session signing key
 # Key used to sign/encrypt session data stored in cookies.
-# If you've set up cortex behind a load balancer then this must match on all
-# web servers.
 SECRET_KEY = ''
 
 ## File logging
@@ -53,7 +51,8 @@ MYSQL_PORT=3306
 CMDB_URL_FORMAT="http://localhost/cmdb/%s"
 
 ## Cortex internal version number
-VERSION='0.1'
+VERSION_MAJOR='1.0'
+VERSION_MINOR='2016012901'
 
 ## Flask defaults (changed to what we prefer)
 SESSION_COOKIE_SECURE      = False
@@ -98,7 +97,7 @@ WORKFLOWS_DIR='/data/cortex/workflows/'
 ENVIRONMENTS = []
 
 # API pre-shared keys
-ENC_API_AUTH_TOKEN = 'changeme'
+ENC_API_AUTH_TOKEN    = 'changeme'
 CORTEX_API_AUTH_TOKEN = 'changeme'
 
 # PuppetDB
@@ -139,7 +138,7 @@ else:
 	file_handler.setLevel(logging.INFO)
 
 ## Output some startup info
-app.logger.info('cortex version ' + app.config['VERSION'] + ' initialised')
+app.logger.info('cortex version ' + app.config['VERSION_MAJOR'] + " r" + app.config['VERSION_MINOR'] + ' initialised')
 app.logger.info('cortex debug status: ' + str(app.config['DEBUG']))
 
 # set up e-mail alert logging
