@@ -16,8 +16,8 @@
 				<div class="bar"><span class="bar-text">Failed</span><div class="bar-internal{% if stats['failed'] == stats['count'] %} bar-full{% endif %}" style="width:{{ stats['failed'] / stats['count'] * 100 }}%"><span class="bar-text">Failed</span></div></div>
 			</div>
 			<div class="chart-row row-unknown">
-				<div class="count">{{ stats['unknown'] }}</div>
-				<div class="bar"><span class="bar-text">Unknown</span><div class="bar-internal{% if stats['unknown'] == stats['count'] %} bar-full{% endif %}" style="width:{{ stats['unknown'] / stats['count'] * 100 }}%"><span class="bar-text">Unknown</span></div></div>
+				<div class="count">{{ stats['unknown'] + stats['unreported'] }}</div>
+				<div class="bar"><span class="bar-text">Unknown</span><div class="bar-internal{% if (stats['unknown'] + stats['unreported']) == stats['count'] %} bar-full{% endif %}" style="width:{{ (stats['unknown'] + stats['unreported']) / stats['count'] * 100 }}%"><span class="bar-text">Unknown</span></div></div>
 			</div>
 			<div class="chart-row row-total">
 				<div class="count">{{ stats['count'] }}</div>
