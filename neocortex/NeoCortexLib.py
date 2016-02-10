@@ -652,6 +652,54 @@ class NeoCortexLib(object):
 
 	############################################################################
 
+	def vmware_set_guestinfo_variable(self, vm, variable, value):
+		"""Sets a guestinfo variable that is accessible from VMware Tools
+		inside the VM."""
+
+		configSpec = vim.VirtualMachineConfigSpec()
+		configSpec.extraConfig.append(vim.OptionValue())
+		configSpec.extraConfig[0].key = variable
+		configSpec.extraConfig[0].value = value
+		vm.ReconfigVM_Task(configSpec)
+
+	############################################################################
+
+	def vmware_wait_for_customisations(self, service_instance, vm, desired_status=2, timeout=300):
+		"""Waits for customisations"""
+
+		# Build an event filter for the VM
+		filterSpec = vim.EventFilterSpec()
+		filterSpec.entity = vim.EventFilterSpecByEntity(entity=vm, recursion=vim.EventFilterSpecRecursionOption.self)
+
+		# Initial status
+		status = 0
+		timer = 0
+
+		# Whilst we're not at our desired status, and we've not timed out...
+		while status != desired_status and timer < timeout:
+			# Query latest events
+			events = service_instance.content.eventManager.QueryEvents(filterSpec)
+
+			# Iterate over the events
+			for event in events:
+				# If the event is the one we're looking for the break out
+				if type(event) == vim.event.CustomizationStartedEvent and desired_status == 1:
+					status = 1
+					break
+				elif type(event) == vim.event.CustomizationSucceeded and desired_status == 2:
+					status = 2
+					break
+	
+			# Sleep brifly if we've not hit our status
+			if status != desired_status:
+				time.sleep(1)
+				timer = timer + 1
+
+		# Return whether we reached the desired status or not (so return False on timeout)
+		return status == desired_status
+
+	############################################################################
+
 	def vmware_get_container_view(self, service_instance, obj_type, container=None):
 		"""
 		Get a vSphere Container View reference to all objects of type 'obj_type'
