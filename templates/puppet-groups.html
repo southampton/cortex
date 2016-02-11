@@ -12,7 +12,7 @@
 					<h4 class="modal-title" id="myModalLabel">Add Puppet Group</h4>
 				</div>
 				<div class="modal-body">
-					<p>Puppet groups are actually UNIX netgroups. To assign classes to puppet groups you must first import the netgroup below.</p>
+					<p>Puppet groups are actually UNIX netgroups. To assign classes to puppet groups you must first import an existing netgroup below. You thus must have created this netgroup in NIS first.</p>
 					<div class="form-group">
 						<label title="the unix netgroup name" class="control-label" for="certname">Netgroup name:</label>
 						<input class="form-control" type="text" id="netgroup_name" name="netgroup_name" value="" />
@@ -52,10 +52,10 @@
 
 <div class="page-header">
 	<div class="pull-right">
-		<a href="#" data-toggle="modal" data-target="#addgroup" class="btn btn-sm btn-primary"><i class="fa fa-fa fa-plus"></i> Add Group</a>
+		<a href="#" data-toggle="modal" data-target="#addgroup" class="btn btn-sm btn-primary"><i class="fa fa-fa fa-plus"></i> Add Netgroup</a>
 	</div>
 	<h3><i class="fa fa-fw fa-object-group"></i> Puppet Groups</h3>
-	<p class="text-muted">Puppet Groups are provided by UNIX netgroups. You can attach classes to netgroups which affect the hosts in those netgroups.
+	<p class="text-muted">Puppet Groups are provided by UNIX netgroups. You can attach classes to netgroups which affect the hosts in those netgroups. To use this functionality first create a netgroup in NIS and then click "Add Netgroup" at the top right.
 </div>
 <table class="table table-condensed table-striped" id="data">
 	<thead>
