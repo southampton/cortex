@@ -36,9 +36,9 @@ def puppet_enc_edit(node):
 
 	# If we've got a new node, then don't show "None"
 	if system['puppet_classes'] is None or system['puppet_classes'] == '':
-		system['puppet_classes'] = "# Global variables to include can be entered here\n"
+		system['puppet_classes'] = "# Classes to include can be entered here\n"
 	if system['puppet_variables'] is None or system['puppet_variables'] == '':
-		system['puppet_variables'] = "# Classes to include can be entered here\n"
+		system['puppet_variables'] = "# Global variables to include can be entered here\n"
 	if system['puppet_certname'] is None:
 		system['puppet_certname'] = ""
 
