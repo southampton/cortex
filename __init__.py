@@ -63,7 +63,7 @@ PERMANENT_SESSION_LIFETIME = timedelta(days=7)
 ## LDAP AUTH
 LDAP_URI            = 'ldaps://localhost.localdomain'
 LDAP_SEARCH_BASE    = ''
-LDAP_USER_ATTRIBUTE = 'sAMAccountName' ## default to AD style as lets face it, sadly, most people use it :'(
+LDAP_USER_ATTRIBUTE = 'sAMAccountName'
 LDAP_ANON_BIND      = True
 LDAP_BIND_USER      = ''
 LDAP_BIND_PW        = ''
@@ -96,8 +96,10 @@ WORKFLOWS_DIR='/data/cortex/workflows/'
 # Other
 ENVIRONMENTS = []
 
-# API pre-shared keys
+## API pre-shared keys
+# used by puppet master to get ENC data
 ENC_API_AUTH_TOKEN    = 'changeme'
+# used by all other API calls
 CORTEX_API_AUTH_TOKEN = 'changeme'
 
 # PuppetDB
@@ -106,6 +108,11 @@ PUPPETDB_PORT=8081
 PUPPETDB_SSL_VERIFY=False
 PUPPETDB_SSL_CERT=''
 PUPPETDB_SSL_KEY=''
+
+# Puppet Autosign server
+PUPPET_AUTOSIGN_URL='https://yourserver.tld/getcert'
+PUPPET_AUTOSIGN_KEY='changeme'
+PUPPET_AUTOSIGN_VERIFY=False
 
 ################################################################################
 
@@ -188,6 +195,7 @@ import cortex.vmware
 import cortex.systems
 import cortex.puppet
 import cortex.api
+import cortex.register
 
 # preload workflows
 app.load_workflows()

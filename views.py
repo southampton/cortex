@@ -34,16 +34,7 @@ def login():
 			## Set the username in the session
 			session['username']  = request.form['username'].lower()
 			
-			## Check if two-factor is enabled for this account
-			## TWO STEP LOGONS
-			#if app.config['TOTP_ENABLED']:
-			#	if cortex.totp.totp_user_enabled(session['username']):
-			#		app.logger.debug('User "' + session['username'] + '" has two step enabled. Redirecting to two-step handler')
-			#		return redirect(url_for('totp_logon_view',next=request.form.get('next',default=None)))
-			## Successful logon without 2-step needed
-
-
-			## TODO temp restrict all logons to admins
+			## restrict all logons to admins
 			if cortex.core.is_user_global_admin(session['username']):
 				return cortex.core.logon_ok()
 			else:

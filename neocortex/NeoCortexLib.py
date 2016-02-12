@@ -6,6 +6,7 @@ import MySQLdb as mysql
 import sys
 import json
 import time
+import redis
 
 import requests
 requests.packages.urllib3.disable_warnings()
@@ -868,3 +869,14 @@ class NeoCortexLib(object):
 		## puppet stuff?
 		## let users logon??
 		## windows ou?
+
+	################################################################################
+
+	def redis_set_vm_data(self, vm, key, value):
+		"""Sets a value in Redis relating to a VM."""
+
+		# Connect to Redis
+                r = redis.StrictRedis(host=self.config['REDIS_HOST'], port=self.config['REDIS_PORT'], db=0)
+
+		# Set the value
+		r.set("vm/" + vm.config.uuid + "/" + key, value)
