@@ -654,13 +654,13 @@ class NeoCortexLib(object):
 
 	def vmware_set_guestinfo_variable(self, vm, variable, value):
 		"""Sets a guestinfo variable that is accessible from VMware Tools
-		inside the VM."""
+		inside the VM. Returns the VMware task."""
 
 		configSpec = vim.VirtualMachineConfigSpec()
 		configSpec.extraConfig.append(vim.OptionValue())
 		configSpec.extraConfig[0].key = variable
 		configSpec.extraConfig[0].value = value
-		vm.ReconfigVM_Task(configSpec)
+		return vm.ReconfigVM_Task(configSpec)
 
 	############################################################################
 

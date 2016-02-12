@@ -8,7 +8,14 @@ a.server-link:hover { text-decoration: underline !important; }
 
 <div class="page-header">
 {#	<div class="pull-right" style="display:none"><button id="showdecom" type="button" class="btn btn-success btn-sm">Show Decommissioned Systems</button></div>#}
-<h3><i class="fa fa-server fa-fw"></i> Systems<a class="btn btn-primary btn-sm pull-right" href="{{ url_for('systems_download_csv') }}"><i class="fa fa-fw fa-download"></i> Download CSV</a></h3>
+<h3><i class="fa fa-server fa-fw"></i> Systems<a class="btn btn-primary btn-sm pull-right" href="{{ url_for('systems_download_csv') }}"><i class="fa fa-fw fa-download"></i> Download CSV</a>
+	<small><strong>&nbsp;Legend:</strong>
+		<i title='VM Powered On' style='color:#2c2;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-play'></i>On
+		<i title='VM Powered Off' style='color:#c22;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-stop'></i>Off
+		<i title='VM Suspended' style='color:#c82;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-pause'></i>Suspended
+		<i title='Unknown State' style='color:#22c;font-size:8pt;margin-right:0.3em' class='fa fa-fw fa-question'></i>Unknown
+	</small>
+</h3>
 </div>
 
 <ul id="class-tabs" class="nav nav-tabs" style="margin-bottom:1em">
