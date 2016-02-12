@@ -43,6 +43,10 @@
 {
 	color: #158cba;
 }
+.col-md-1
+{
+	text-align: center;
+}
 </style>
 <div class="page-header">
 <a href="{{ url_for('puppet_reports', node=report.node) }}" class="pull-right btn btn-sm btn-primary"><i class="fa fa-fw fa-files-o"></i> Node Reports</a>
@@ -50,44 +54,52 @@
 <p class="text-muted">Received: {{ report.received.strftime('%Y-%m-%d %H:%M:%S') }}. Run time: {{ report.run_time }}</p>
 </div>
 <div class="row">
-	<div class="col-md-2">
+</div>
+<div class="row">
+	<div class="col-md-2" style="padding-top:1.3em">
 		<div class="admin-block admin-block-header">
 			<h2>Events:</h2>
 		</div>
 	</div>
 	<div class="col-md-1">
-		<div class="admin-block bg-primary">
+		Total
+		<div class="admin-block bg-primary" title="Total">
 			<h2><span>{{ metrics.events.total }}</span></h2>
 		</div>
 	</div>
 	<div class="col-md-1">
-		<div class=" admin-block bg-success">
+		Success
+		<div class=" admin-block bg-success" title="Success">
 			<h2><span>{{ metrics.events.success }}</span></h2>
 		</div>
 	</div>
 	<div class="col-md-1">
-		<div class=" admin-block bg-danger">
+		Failed
+		<div class=" admin-block bg-danger" title="Failure">
 			<h2><span>{{ metrics.events.failure }}</span></h2>
 		</div>
 	</div>
 	<div class="col-md-1"></div>
-	<div class="col-md-2">
+	<div class="col-md-2" style="padding-top:1.3em">
 		<div class="admin-block admin-block-header">
 			<h2>Resources:</h2>
 		</div>
 	</div>
 	<div class="col-md-1">
-		<div class="admin-block bg-primary">
+		Total
+		<div class="admin-block bg-primary" title="Total">
 			<h2><span>{{ metrics.resources.total }}</span></h2>
 		</div>
 	</div>
 	<div class="col-md-1">
-		<div class="admin-block bg-success">
+		Stable
+		<div class="admin-block bg-success" title="Unchanged">
 			<h2><span>{{ metrics.resources.total - metrics.resources.changed }}</span></h2>
 		</div>
 	</div>
 	<div class="col-md-1">
-		<div class="admin-block bg-warning">
+		Changed
+		<div class="admin-block bg-warning" title="Changed">
 			<h2><span>{{ metrics.resources.changed }}</span></h2>
 		</div>
 	</div>
