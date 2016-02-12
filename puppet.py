@@ -441,6 +441,38 @@ def puppet_dashboard():
 
 ################################################################################
 
+@app.route('/puppet/dashboard/status/<status>')
+@cortex.core.login_required
+def puppet_dashboard_status(status):
+	# Page Titles to use
+	page_title_map = {'unchanged': 'Normal', 'changed': 'Changed', 'noop': 'Disabled (No-op)', 'failed': 'Failed', 'unknown': 'Unknown'}
+
+	# If we have an invalid status, return 404
+	if status not in page_title_map:
+		abort(404)
+
+	# Connect to PuppetDB
+	db = puppetdb_connect()
+
+	# Get information about all the nodes, including their status
+	nodes = db.nodes(with_status = True)
+
+	# Create a filterd array
+	nodes_of_type = []
+
+	# Iterate over nodes and do the filtering
+	for node in nodes:
+		# If the status matches...
+		if node.status == status:
+			nodes_of_type.append(node)
+		# Or if the required status is 'unknown' and it's not one of the normal statii
+		elif status == 'unknown' and node.status not in ['unchanged', 'changed', 'noop', 'failed']:
+			nodes_of_type.append(node)
+
+	return render_template('puppet-dashboard-status.html', active='puppet', title="Puppet Dashboard", nodes=nodes_of_type, status=page_title_map[status])
+
+################################################################################
+
 @app.route('/puppet/radiator')
 def puppet_radiator():
 	return render_template('puppet-radiator.html', stats=puppetdb_get_node_stats(), active='puppet')
