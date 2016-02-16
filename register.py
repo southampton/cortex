@@ -43,7 +43,7 @@ def api_register_system():
 			app.logger.warn('Non-admin user attempted to register ' + hostname + ', username: ' + request.form['username'] + ')')
 			abort(403)
 
-		interface = True
+		interactive = True
 
 	## OR clients can send the vmware UUID as authentication instead (without a hostname)
 	elif 'uuid' in request.form:
@@ -90,8 +90,9 @@ def api_register_system():
 		app.logger.error("Error occured contacting cortex-puppet-autosign server. HTTP status code: '" + str(r.status_code) + "'")
 		abort(500)
 			
-	## Get the satellite registration keys out of the database
-	# TODO
+
+
+		
 
 	## systems authenticating by UUID also want to know their hostname and 
 	## IP address in order to configure themselves!
@@ -105,8 +106,11 @@ def api_register_system():
 		else:
 			cdata['ipaddress'] = netaddr
 
+		## Mark as done
+		g.redis.setex("vm/" + system['vmware_uuid'] + "/" + "notify", 28800, "inprogress")
+
 	## Default to production env for puppet
-	cdata['environment'] = 'production'	
+	cdata['environment'] = 'production'
 	cdata['certname']    = fqdn
 
 	## Create puppet ENC entry if it does not already exist
@@ -127,5 +131,35 @@ def api_register_system():
 			if system['puppet_env'] != None:
 				cdata['environment'] = system['puppet_env']
 
+	## Get the satellite registration key (if any)
+	if 'ident' in request.form:
+		ident = request.form['ident']
+
+		if ident in app.config['SATELLITE_KEYS']:
+			data = app.config['SATELLITE_KEYS'][ident]
+			if cdata['environment'] in data:
+				cdata['satellite_activation_key'] = data[cdata['environment']]
+
 	return(jsonify(cdata))
 
+@app.route('/api/installer/notify',methods=['POST'])
+@app.disable_csrf_check
+def api_installer_notify():
+	"""API endpoint to allow the bonemeal installer to notify cortex that the 
+		the installation is now complete and is about to reboot."""
+
+	if 'uuid' in request.form:
+		## VMware UUID based authentication
+		system = cortex.core.get_system_by_vmware_uuid(request.form['uuid'])
+
+		if not system:
+			app.logger.warn('Could not match vmware uuid to a system for the register API (UUID: ' + uuid + ')')
+			abort(404)
+
+		## Mark as done
+		g.redis.setex("vm/" + system['vmware_uuid'] + "/" + "notify", 28800, "done")
+
+		return "OK"
+
+	else:
+		abort(401)

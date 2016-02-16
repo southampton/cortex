@@ -1,12 +1,5 @@
 #!/usr/bin/python
-#
 
-from flask import Flask
-import logging
-import os.path
-from logging.handlers import SMTPHandler
-from logging.handlers import RotatingFileHandler
-from logging import Formatter
 from cortex.app import CortexFlask
 from datetime import timedelta
 
@@ -114,82 +107,22 @@ PUPPET_AUTOSIGN_URL='https://yourserver.tld/getcert'
 PUPPET_AUTOSIGN_KEY='changeme'
 PUPPET_AUTOSIGN_VERIFY=False
 
+# Red Hat Satellite Keys
+SATELLITE_KEYS = {
+	'el7s' : {
+		'development': 'changeme'
+	}
+}
+
 ################################################################################
 
-# set up our application
+# initalise cortex
 app = CortexFlask(__name__)
 
-# load default config
-app.config.from_object(__name__)
-
-# try to load config from various paths
-if os.path.isfile('/etc/cortex.conf'):
-	app.config.from_pyfile('/etc/cortex.conf')
-elif os.path.isfile('/etc/cortex/cortex.conf'):
-	app.config.from_pyfile('/etc/cortex/cortex.conf')
-elif os.path.isfile('/data/cortex/cortex.conf'):
-	app.config.from_pyfile('/data/cortex/cortex.conf')
-
-## Set up logging to file
-if app.config['FILE_LOG'] == True:
-	file_handler = RotatingFileHandler(app.config['LOG_DIR'] + '/' + app.config['LOG_FILE'], 'a', app.config['LOG_FILE_MAX_SIZE'], app.config['LOG_FILE_MAX_FILES'])
-	file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
-	app.logger.addHandler(file_handler)
-
-## Set up the max log level
-if app.debug:
-	app.logger.setLevel(logging.DEBUG)
-	file_handler.setLevel(logging.DEBUG)
-else:
-	app.logger.setLevel(logging.INFO)
-	file_handler.setLevel(logging.INFO)
-
-## Output some startup info
-app.logger.info('cortex version ' + app.config['VERSION_MAJOR'] + " r" + app.config['VERSION_MINOR'] + ' initialised')
-app.logger.info('cortex debug status: ' + str(app.config['DEBUG']))
-
-# set up e-mail alert logging
-if app.config['EMAIL_ALERTS'] == True:
-	## Log to file where e-mail alerts are going to
-	app.logger.info('cortex e-mail alerts are enabled and being sent to: ' + str(app.config['ADMINS']))
-
-	## Create the mail handler
-	mail_handler = SMTPHandler(app.config['SMTP_SERVER'], app.config['EMAIL_FROM'], app.config['ADMINS'], app.config['EMAIL_SUBJECT'])
-
-	## Set the minimum log level (errors) and set a formatter
-	mail_handler.setLevel(logging.ERROR)
-	mail_handler.setFormatter(Formatter("""
-A fatal error occured in Cortex.
-
-Message type:       %(levelname)s
-Location:           %(pathname)s:%(lineno)d
-Module:             %(module)s
-Function:           %(funcName)s
-Time:               %(asctime)s
-Logger Name:        %(name)s
-Process ID:         %(process)d
-
-Further Details:
-
-%(message)s
-
-"""))
-
-	app.logger.addHandler(mail_handler)
-
-## Debug Toolbar
-if app.config['DEBUG_TOOLBAR']:
-	app.debug = True
-	from flask_debugtoolbar import DebugToolbarExtension
-	toolbar = DebugToolbarExtension(app)
-	app.logger.info('cortex debug toolbar enabled - DO NOT USE THIS ON PRODUCTION SYSTEMS!')
-
-# load core functions
+# load cortex modules
 import cortex.core
 import cortex.errors
 import cortex.admin
-
-# load view functions
 import cortex.views
 import cortex.vmware
 import cortex.systems
@@ -197,5 +130,5 @@ import cortex.puppet
 import cortex.api
 import cortex.register
 
-# preload workflows
+# load workflow modules
 app.load_workflows()

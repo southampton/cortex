@@ -6,6 +6,12 @@ from os import walk
 import imp
 import random                 ## used in pwgen            
 import string                 ## used in pwgen
+## for config loading
+import logging
+import os.path
+from logging.handlers import SMTPHandler
+from logging.handlers import RotatingFileHandler
+from logging import Formatter
 
 class CortexFlask(Flask):
 
@@ -13,11 +19,81 @@ class CortexFlask(Flask):
 
 	################################################################################
 
-	def __init__(self,name):
-		super(CortexFlask, self).__init__(name)
+	def __init__(self,init_object_name):
+		super(CortexFlask, self).__init__(init_object_name)
+
+		## CSRF exemption support
 		self._exempt_views = set()
 		self.before_request(self._csrf_protect)
+
+		## CSRF token function in templates
 		self.jinja_env.globals['csrf_token'] = self._generate_csrf_token
+
+		## load the __init__.py config defaults
+		self.config.from_object(init_object_name)
+
+		## load system config file
+		if os.path.isfile('/data/cortex/cortex.conf'):
+			self.config.from_pyfile('/data/cortex/cortex.conf')
+		elif os.path.isfile('/etc/cortex/cortex.conf'):
+			self.config.from_pyfile('/etc/cortex/cortex.conf')
+		elif os.path.isfile('/etc/cortex.conf'):
+			self.config.from_pyfile('/etc/cortex.conf')
+
+		## Set up logging to file
+		if self.config['FILE_LOG'] == True:
+			file_handler = RotatingFileHandler(self.config['LOG_DIR'] + '/' + self.config['LOG_FILE'], 'a', self.config['LOG_FILE_MAX_SIZE'], self.config['LOG_FILE_MAX_FILES'])
+			file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
+			self.logger.addHandler(file_handler)
+
+		## Set up the max log level
+		if self.debug:
+			self.logger.setLevel(logging.DEBUG)
+			file_handler.setLevel(logging.DEBUG)
+		else:
+			self.logger.setLevel(logging.INFO)
+			file_handler.setLevel(logging.INFO)
+
+		## Output some startup info
+		self.logger.info('cortex version ' + self.config['VERSION_MAJOR'] + " r" + self.config['VERSION_MINOR'] + ' initialised')
+		self.logger.info('cortex debug status: ' + str(self.config['DEBUG']))
+
+		# set up e-mail alert logging
+		if self.config['EMAIL_ALERTS'] == True:
+
+			## Log to file where e-mail alerts are going to
+			self.logger.info('cortex e-mail alerts are enabled and being sent to: ' + str(self.config['ADMINS']))
+
+			## Create the mail handler
+			mail_handler = SMTPHandler(self.config['SMTP_SERVER'], self.config['EMAIL_FROM'], self.config['ADMINS'], self.config['EMAIL_SUBJECT'])
+
+			## Set the minimum log level (errors) and set a formatter
+			mail_handler.setLevel(logging.ERROR)
+			mail_handler.setFormatter(Formatter("""
+A fatal error occured in Cortex.
+
+Message type:       %(levelname)s
+Location:           %(pathname)s:%(lineno)d
+Module:             %(module)s
+Function:           %(funcName)s
+Time:               %(asctime)s
+Logger Name:        %(name)s
+Process ID:         %(process)d
+
+Further Details:
+
+%(message)s
+
+"""))
+
+			self.logger.addHandler(mail_handler)
+
+		## Debug Toolbar
+		if self.config['DEBUG_TOOLBAR']:
+			self.debug = True
+			from flask_debugtoolbar import DebugToolbarExtension
+			toolbar = DebugToolbarExtension(app)
+			self.logger.info('cortex debug toolbar enabled - DO NOT USE THIS ON LIVE SYSTEMS!')
 
 	################################################################################
 

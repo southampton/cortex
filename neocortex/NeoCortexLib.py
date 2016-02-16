@@ -866,17 +866,61 @@ class NeoCortexLib(object):
 
 		return retval
 
-		## puppet stuff?
-		## let users logon??
-		## windows ou?
+	################################################################################
+	
+	def _connect_redis(self):
+		"""Connects to the Redis instance specified in the configuration and 
+		returns a StrictRedis object"""
+
+		return redis.StrictRedis(host=self.config['REDIS_HOST'], port=self.config['REDIS_PORT'], db=0)
 
 	################################################################################
 
-	def redis_set_vm_data(self, vm, key, value):
+	def redis_set_vm_data(self, vm, key, value, expire=28800):
 		"""Sets a value in Redis relating to a VM."""
 
-		# Connect to Redis
-                r = redis.StrictRedis(host=self.config['REDIS_HOST'], port=self.config['REDIS_PORT'], db=0)
+		r = self._connect_redis()
 
-		# Set the value
-		r.set("vm/" + vm.config.uuid + "/" + key, value)
+		if expire is not None:
+			r.setex("vm/" + vm.config.uuid + "/" + key, expire, value)
+		else:
+			r.set("vm/" + vm.config.uuid + "/" + key, value)
+
+	################################################################################
+
+	def redis_get_vm_data(self, vm, key):
+		"""Gets a value in Redis relating to a VM."""
+
+		return self._connect_redis().get("vm/" + vm.config.uuid + "/" + key)
+
+	###############################################################################
+
+	def wait_for_guest_notify(self, vm, states, timeout=28800):
+		"""Waits for the in-guest customisations to become one of the listed states."""
+
+		# Get the current state of the notify variable
+		notify = self.redis_get_vm_data(vm, 'notify')
+
+		# Start a timer
+		timer = 0
+
+		# Whilst we've not hit our timeout, and the installer hasn't set a
+		# notification value that is one of our states...
+		while timer < timeout:
+			# If we have a value for notify and the value is one of
+			# the states we are looking for...
+			if notify is not None and notify in states:
+				# ...escape the loop
+				break
+
+			# ...sleep and increment timer
+			time.sleep(1)
+			timer = timer + 1
+
+			# Get the lastest value of the notify
+			notify = self.redis_get_vm_data(vm, 'notify')
+
+		# Return the latest value, which may be None if the in-guest installer
+		# never runs. Otherwise it can be any other value, which may not
+		# necessarily be one of the given states.
+		return notify
