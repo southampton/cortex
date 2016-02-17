@@ -51,7 +51,7 @@ def api_puppet_enc(certname):
 		abort(400)
 
 	# Generate the Puppet configuration
-	node_yaml = cortex.puppet.puppet_generate_config(certname)
+	node_yaml = cortex.lib.puppet.generate_node_config(certname)
 
 	# If we don't get any configuration, return 404
 	if node_yaml is None:

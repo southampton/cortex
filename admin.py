@@ -9,34 +9,6 @@ import MySQLdb as mysql
 
 ################################################################################
 
-def get_class(name):
-	"""Tries to return the class data from a given name/prefix"""
-
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute("SELECT `name`, `digits`, `comment`, `disabled`, `lastid`, `link_vmware`, `cmdb_type` FROM `classes` WHERE `name` = %s", (name,))
-	return cur.fetchone()
-
-################################################################################
-
-def get_classes(hide_disabled = False):
-	"""Returns the list of system classes in the database"""
-
-	# Build the query
-	query = "SELECT `name`, `digits`, `comment`, `disabled`, `lastid`, `link_vmware`, `cmdb_type` FROM `classes`";
-	if hide_disabled:
-		query = query + " WHERE `disabled` = False";
-
-	query = query + " ORDER BY `lastid` DESC"
-
-	# Query the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute(query)
-
-	# Return the results
-	return cur.fetchall()
-
-################################################################################
-
 @app.route('/admin/tasks')
 @cortex.lib.user.login_required
 def admin_tasks():
@@ -59,7 +31,7 @@ def admin_classes():
 
 	# On a GET request, display the list of classes page
 	if request.method == 'GET':
-		classes = get_classes(hide_disabled=False)
+		classes = cortex.lib.classes.list(hide_disabled=False)
 		return render_template('admin-classes.html', classes=classes, active='admin', cmdb_types=app.config['CMDB_CACHED_CLASSES'], title="Classes")
 
 	elif request.method == 'POST':

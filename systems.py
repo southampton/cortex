@@ -5,6 +5,7 @@ from cortex import app, admin
 import cortex.lib.core
 import cortex.lib.systems
 import cortex.lib.cmdb
+import cortex.lib.classes
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
 import os 
 import time
@@ -27,7 +28,7 @@ def systems():
 	systems = cortex.lib.systems.get_systems()
 
 	# Get the list of active classes (used to populate the tab bar)
-	classes = cortex.admin.get_classes(True)
+	classes = cortex.lib.classes.list(hide_disabled=True)
 
 	# Render
 	return render_template('systems.html', systems=systems, classes=classes, active='systems', title="Systems")
@@ -105,7 +106,7 @@ def systems_new():
 
 	# On GET requests, just show big buttons for all the classes
 	if request.method == 'GET':
-		classes = cortex.admin.get_classes(True)
+		classes = cortex.lib.classes.list(hide_disabled=True)
 		return render_template('systems-new.html', classes=classes, active='systems', title="Allocate new system names")
 
 	# On POST requests...
@@ -204,7 +205,7 @@ def systems_edit(id):
 	if request.method == 'GET' or request.method == 'HEAD':
 		# Get the system out of the database
 		system = cortex.lib.systems.get_system_by_id(id)
-		system_class = cortex.admin.get_class(system['class'])
+		system_class = cortex.lib.classes.get(system['class'])
 
 		return render_template('systems-edit.html', system=system, system_class=system_class, active='systems', title=system['name'])
 	elif request.method == 'POST':
