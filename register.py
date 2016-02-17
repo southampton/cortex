@@ -1,11 +1,11 @@
 from cortex import app
-import cortex.core
+import cortex.lib.core
+import cortex.lib.systems
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, jsonify, Response
 import os 
 import re
 import MySQLdb as mysql
 import requests
-from cortex.systems import systems_csv_stream
 
 ################################################################################
 
@@ -24,22 +24,22 @@ def api_register_system():
 
 		## Get the hostname and remove the domain portions, if any
 		## we want the 'short' hostname / the node name
-		hostname = cortex.core.fqdn_strip_domain(request.form['hostname'])
+		hostname = cortex.lib.core.fqdn_strip_domain(request.form['hostname'])
 
 		# Match the hostname to a system record in the database
-		system = cortex.core.get_system_by_name(hostname)
+		system = cortex.lib.systems.get_system_by_name(hostname)
 
 		if not system:
 			app.logger.warn('Could not locate host in systems table for register API (hostname: ' + hostname + ')')
 			abort(404)
 
 		## LDAP username/password authentication
-		if not cortex.core.auth_user(request.form['username'], request.form['password']):
+		if not cortex.lib.user.authenticate(request.form['username'], request.form['password']):
 			app.logger.warn('Incorrect username/password when registering ' + hostname + ', username: ' + request.form['username'] + ')')
 			abort(403)
 
 		## LDAP authorisation
-		if not cortex.core.is_user_global_admin(request.form['username']):
+		if not cortex.lib.user.is_global_admin(request.form['username']):
 			app.logger.warn('Non-admin user attempted to register ' + hostname + ', username: ' + request.form['username'] + ')')
 			abort(403)
 
@@ -48,7 +48,7 @@ def api_register_system():
 	## OR clients can send the vmware UUID as authentication instead (without a hostname)
 	elif 'uuid' in request.form:
 		## VMware UUID based authentication
-		system = cortex.core.get_system_by_vmware_uuid(request.form['uuid'])
+		system = cortex.lib.systems.get_system_by_vmware_uuid(request.form['uuid'])
 
 		if not system:
 			app.logger.warn('Could not match vmware uuid to a system for the register API (UUID: ' + uuid + ')')
@@ -150,7 +150,7 @@ def api_installer_notify():
 
 	if 'uuid' in request.form:
 		## VMware UUID based authentication
-		system = cortex.core.get_system_by_vmware_uuid(request.form['uuid'])
+		system = cortex.lib.systems.get_system_by_vmware_uuid(request.form['uuid'])
 
 		if not system:
 			app.logger.warn('Could not match vmware uuid to a system for the register API (UUID: ' + uuid + ')')

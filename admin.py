@@ -2,7 +2,7 @@
 #
 
 from cortex import app
-import cortex.core
+import cortex.lib.core
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 import re
 import MySQLdb as mysql
@@ -38,6 +38,7 @@ def get_classes(hide_disabled = False):
 ################################################################################
 
 @app.route('/admin/tasks')
+@cortex.lib.user.login_required
 def admin_tasks():
 	"""Displays the list of tasks to the user."""
 
@@ -52,6 +53,7 @@ def admin_tasks():
 ################################################################################
 
 @app.route('/admin/classes', methods=['GET', 'POST'])
+@cortex.lib.user.login_required
 def admin_classes():
 	"""Handles the content of the Admin -> Classes page"""
 
@@ -142,6 +144,7 @@ def admin_classes():
 ################################################################################
 
 @app.route('/admin/maintenance', methods=['GET','POST'])
+@cortex.lib.user.login_required
 def admin_maint():
 	"""Allows the user to kick off scheduled jobs on demand"""
 
@@ -160,7 +163,7 @@ def admin_maint():
 
 	else:
 		module = request.form['task_name']
-		neocortex = cortex.core.neocortex_connect()
+		neocortex = cortex.lib.core.neocortex_connect()
 
 		if module == 'vmcache':
 			task_id = neocortex.start_internal_task(session['username'], 'cache_vmware.py', '_cache_vmware', description="Caches information about virtual machines, datacenters and clusters from VMware")

@@ -2,14 +2,8 @@
 #
 
 from cortex import app
-import cortex.core
 from flask import Flask, request, session, g, redirect, url_for, abort, flash, render_template, make_response
 import traceback
-
-def fatal(title="Fatal Error",message="Default Message"):
-	g.fault_title = title
-	g.fault_message = message
-	abort(500)
 
 @app.errorhandler(500)
 def error500(error):

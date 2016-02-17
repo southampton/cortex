@@ -1,8 +1,8 @@
 #!/usr/bin/python
-#
 
 from cortex import app
-import cortex.core
+import cortex.lib.core
+import cortex.lib.systems
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
 import time
@@ -17,19 +17,19 @@ from requests.exceptions import HTTPError
 ################################################################################
 
 @app.route('/help/puppet', methods=['GET', 'POST'])
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def puppet_help():
 	return render_template('puppet-help.html', active='help', title="Puppet Help")
 
 ################################################################################
 
 @app.route('/puppet/enc/<node>', methods=['GET', 'POST'])
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def puppet_enc_edit(node):
 	# Get the system out of the database
-	system       = cortex.core.get_system_by_puppet_certname(node)
-	environments = cortex.core.get_puppet_environments()
-	env_dict     = cortex.core.get_environments_as_dict()
+	system       = cortex.lib.systems.get_system_by_puppet_certname(node)
+	environments = cortex.lib.core.get_puppet_environments()
+	env_dict     = cortex.lib.core.get_environments_as_dict()
 
 	if system == None:
 		abort(404)
@@ -101,7 +101,7 @@ def puppet_enc_edit(node):
 ################################################################################
 
 @app.route('/puppet/default', methods=['GET', 'POST'])
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def puppet_enc_default():
 	## Get the default YAML out of the kv table
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -141,7 +141,7 @@ def puppet_enc_default():
 ################################################################################
 
 @app.route('/puppet/nodes')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def puppet_nodes():
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -155,7 +155,7 @@ def puppet_nodes():
 ################################################################################
 
 @app.route('/puppet/groups', methods=['GET', 'POST'])
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def puppet_groups():
 	# Get a cursor to the databaseo
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -181,7 +181,7 @@ def puppet_groups():
 				flash('That netgroup has already been imported as a Puppet Group', 'alert-warning')
 				return redirect(url_for('puppet_groups'))			
 
-			if not cortex.core.netgroup_is_valid(netgroup_name):
+			if not cortex.lib.netgroup.exists(netgroup_name):
 				flash('That netgroup does not exist', 'alert-danger')
 				return redirect(url_for('puppet_groups'))
 
@@ -205,7 +205,7 @@ def puppet_groups():
 ################################################################################
 
 @app.route('/puppet/group/<name>', methods=['GET', 'POST'])
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def puppet_group_edit(name):
 	# Get a cursor to the databaseo
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -247,9 +247,9 @@ def puppet_group_edit(name):
 ################################################################################
 
 @app.route('/puppet/yaml/<node>', methods=['GET', 'POST'])
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def puppet_node_yaml(node):
-	system = cortex.core.get_system_by_puppet_certname(node)
+	system = cortex.lib.systems.get_system_by_puppet_certname(node)
 
 	if system == None:
 		abort(404)
@@ -283,7 +283,7 @@ def puppet_generate_config(certname):
 		return None
 
 	# Get the system
-	system = cortex.core.get_system_by_id(node['id'])
+	system = cortex.lib.systems.get_system_by_id(node['id'])
 
 	curd.execute("SELECT `value` FROM `kv_settings` WHERE `key` = 'puppet.enc.default'")
 	default_classes = curd.fetchone()
@@ -319,7 +319,7 @@ def puppet_generate_config(certname):
 		if group['classes'] == None:
 			continue
 
-		if cortex.core.host_in_netgroup(certname,group['name']):
+		if cortex.lib.netgroup.contains_host(certname,group['name']):
 
 			# Convert from YAML to python types for the classes for this group
 			group_classes = yaml.load(group['classes'])
@@ -414,7 +414,7 @@ def puppetdb_get_node_stats(db = None):
 ################################################################################
 
 @app.route('/puppet/facts/<node>')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def puppet_facts(node):
 	dbnode = None
 	facts = None
@@ -435,14 +435,14 @@ def puppet_facts(node):
 ################################################################################
 
 @app.route('/puppet/dashboard')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def puppet_dashboard():
 	return render_template('puppet-dashboard.html', stats=puppetdb_get_node_stats(), active='puppet', title="Puppet Dashboard")
 
 ################################################################################
 
 @app.route('/puppet/dashboard/status/<status>')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def puppet_dashboard_status(status):
 	# Page Titles to use
 	page_title_map = {'unchanged': 'Normal', 'changed': 'Changed', 'noop': 'Disabled (No-op)', 'failed': 'Failed', 'unknown': 'Unknown'}
@@ -486,7 +486,7 @@ def puppet_radiator_body():
 ################################################################################
 
 @app.route('/puppet/reports/<node>')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def puppet_reports(node):
 	try:
 		db = puppetdb_connect()
@@ -504,7 +504,7 @@ def puppet_reports(node):
 ################################################################################
 
 @app.route('/puppet/report/<report_hash>')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def puppet_report(report_hash):
 	db = puppetdb_connect()
 	reports = db.reports(query='["=", "hash", "' + report_hash + '"]')

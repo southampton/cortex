@@ -1,17 +1,18 @@
 #!/usr/bin/python
-from flask import Flask, request, session, abort
+from flask import Flask, request, session, abort, g
 import jinja2 
 import os.path
 from os import walk
 import imp
-import random                 ## used in pwgen            
-import string                 ## used in pwgen
-## for config loading
+import random
+import string
 import logging
 import os.path
 from logging.handlers import SMTPHandler
 from logging.handlers import RotatingFileHandler
 from logging import Formatter
+import redis
+import MySQLdb as mysql
 
 class CortexFlask(Flask):
 
@@ -94,6 +95,12 @@ Further Details:
 			from flask_debugtoolbar import DebugToolbarExtension
 			toolbar = DebugToolbarExtension(app)
 			self.logger.info('cortex debug toolbar enabled - DO NOT USE THIS ON LIVE SYSTEMS!')
+
+		## Set up before_request function to run on each request
+		self.before_request(self.start_request)
+	
+		## Set up a context processor (inject data into jinja on each request)
+		self.context_processor(self.inject_template_data)
 
 	################################################################################
 
@@ -304,3 +311,50 @@ Username:             %s
 			
 		), exc_info=exc_info)
 
+################################################################################
+
+	def start_request(self):
+		"""This function is run before the request is handled by Flask. It is used
+		to connect to MySQL and Redis, and to tell old Internet Explorer versions
+		to go away.
+		"""
+
+		# Check for MSIE version <= 8.0
+		if (request.user_agent.browser == "msie" and int(round(float(request.user_agent.version))) <= 10):
+			return render_template('foad.html')
+
+		# Connect to redis
+		try:
+			g.redis = redis.StrictRedis(host=self.config['REDIS_HOST'], port=self.config['REDIS_PORT'], db=0)
+			g.redis.get('foo') # it doesnt matter that this key doesnt exist, its just to force a test call to redis.
+		except Exception as ex:
+			self.fatal_error('Unable to connect to redis',str(ex))
+	
+		## Connect to database
+		try:
+			g.db = mysql.connect(host=self.config['MYSQL_HOST'], port=self.config['MYSQL_PORT'], user=self.config['MYSQL_USER'], passwd=self.config['MYSQL_PASS'], db=self.config['MYSQL_NAME'])
+		except Exception as ex:
+			self.fatal_error('Unable to connect to MySQL', str(ex))
+
+################################################################################
+
+	def inject_template_data(self):
+		"""This function is called on every page load. It injects a 'workflows'
+		variable in to every render_template call, which is used to populate the
+		Workflows menu on the page."""
+
+		injectdata = dict(workflows=self.workflows)
+
+		for workflow in self.workflows:
+			if workflow['view_func'] == request.endpoint:
+				injectdata['active'] = 'workflows'
+				break
+
+		return injectdata
+
+################################################################################
+
+	def fatal_error(self,title,message):
+		g.fault_title = title
+		g.fault_message = message
+		abort(500)

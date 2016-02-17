@@ -1,11 +1,12 @@
 from cortex import app
-import cortex.core
+import cortex.lib.core
+import cortex.lib.systems
+from cortex.systems import systems_csv_stream
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, jsonify, Response
 import os 
 import re
 import MySQLdb as mysql
 import yaml
-from cortex.systems import systems_csv_stream
 
 ################################################################################
 
@@ -24,9 +25,9 @@ def api_systems_csv():
 		return abort(401)
 
 	# Get the list of systems
-	cur = cortex.core.get_systems(return_cursor=True)
+	cur = cortex.lib.systems.get_systems(return_cursor=True)
 
-	# Return the response (systems_csv_stream is in systems.py)
+	# Return the response 
 	return Response(systems_csv_stream(cur), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
 	
 ################################################################################
@@ -45,7 +46,7 @@ def api_puppet_enc(certname):
 		app.logger.warn('Incorrect auth_token on request to Puppet ENC API (certname: ' + certname + ')')
 		return abort(401)
 
-	if not cortex.core.is_valid_hostname(certname):
+	if not cortex.lib.core.is_valid_hostname(certname):
 		app.logger.warn('Invalid certname presented to Puppet ENC API (certname: ' + certname + ')')
 		abort(400)
 

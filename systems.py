@@ -1,9 +1,10 @@
 #!/usr/bin/python
 #
 
-from cortex import app
-import cortex.core
-import cortex.admin
+from cortex import app, admin
+import cortex.lib.core
+import cortex.lib.systems
+import cortex.lib.cmdb
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
 import os 
 import time
@@ -18,12 +19,12 @@ import io
 ################################################################################
 
 @app.route('/systems')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def systems():
 	"""Shows the list of known systems to the user."""
 
 	# Get the list of systems
-	systems = cortex.core.get_systems()
+	systems = cortex.lib.systems.get_systems()
 
 	# Get the list of active classes (used to populate the tab bar)
 	classes = cortex.admin.get_classes(True)
@@ -64,7 +65,7 @@ def systems_csv_stream(cursor):
 ################################################################################
 
 @app.route('/systems/search')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def systems_search():
 	# Get the query from the URL
 	query = request.args.get('query')
@@ -72,7 +73,7 @@ def systems_search():
 		return abort(400)
 
 	# Search for the system
-	system = cortex.core.get_system_by_name(query)
+	system = cortex.lib.systems.get_system_by_name(query)
 
 	if system is not None:
 		# If we found the system, redirect to the system's edit page
@@ -85,12 +86,12 @@ def systems_search():
 ################################################################################
 
 @app.route('/systems/download/csv')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def systems_download_csv():
 	"""Downloads the list of allocated server names as a CSV file."""
 
 	# Get the list of systems
-	cur = cortex.core.get_systems(return_cursor=True)
+	cur = cortex.lib.systems.get_systems(return_cursor=True)
 
 	# Return the response
 	return Response(systems_csv_stream(cur), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
@@ -98,7 +99,7 @@ def systems_download_csv():
 ################################################################################
 
 @app.route('/systems/new', methods=['GET','POST'])
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def systems_new():
 	"""Handles the Allocate New System Name(s) page"""
 
@@ -135,7 +136,7 @@ def systems_new():
 		## Allocate the names asked for
 		try:
 			# To prevent code duplication, this is done remotely by Neocortex. So, connect:
-			neocortex   = cortex.core.neocortex_connect()
+			neocortex   = cortex.lib.core.neocortex_connect()
 
 			# Allocate the name
 			new_systems = neocortex.allocate_name(class_name, system_comment, username=session['username'], num=system_number)
@@ -156,7 +157,7 @@ def systems_new():
 ################################################################################
 
 @app.route('/systems/bulk/save', methods=['POST'])
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def systems_bulk_save():
 	"""This is a POST handler used to set comments for a series of existing 
 	systems which have been allocated already"""
@@ -181,7 +182,7 @@ def systems_bulk_save():
 ################################################################################
 
 @app.route('/systems/bulk/view/<int:start>/<int:finish>', methods=['GET'])
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def systems_bulk_view(start,finish):
 	"""This is a GET handler to view the list of assigned names"""
 
@@ -198,11 +199,11 @@ def systems_bulk_view(start,finish):
 ################################################################################
 
 @app.route('/systems/edit/<int:id>', methods=['GET', 'POST'])
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def systems_edit(id):
 	if request.method == 'GET' or request.method == 'HEAD':
 		# Get the system out of the database
-		system = cortex.core.get_system_by_id(id)
+		system = cortex.lib.systems.get_system_by_id(id)
 		system_class = cortex.admin.get_class(system['class'])
 
 		return render_template('systems-edit.html', system=system, system_class=system_class, active='systems', title=system['name'])
@@ -228,7 +229,7 @@ def systems_edit(id):
 ################################################################################
 
 @app.route('/systems/vmware/json')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def systems_vmware_json():
 	"""Used by DataTables to extract infromation from the VMware cache. The
 	parameters and return format are dictated by DataTables"""
@@ -340,7 +341,7 @@ def systems_vmware_json():
 ################################################################################
 
 @app.route('/systems/cmdb/json')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def systems_cmdb_json():
 	"""Used by DataTables to extract information from the ServiceNow CMDB CI
 	cache. The parameters and return format are as dictated by DataTables"""
@@ -404,9 +405,9 @@ def systems_cmdb_json():
 		abort(400)
 
 	# Get results of query
-	total_count = cortex.core.get_cmdb_ci_count()
-	filtered_count = cortex.core.get_cmdb_ci_count(search)
-	results = cortex.core.get_cmdb_cis(start, length, search, order_column, order_asc)
+	total_count    = cortex.lib.cmdb.get_ci_count()
+	filtered_count = cortex.lib.cortex.get_ci_count(search)
+	results        = cortex.lib.cmdb.get_cis(start, length, search, order_column, order_asc)
 
 	system_data = []
 	for row in results:
@@ -418,7 +419,7 @@ def systems_cmdb_json():
 ################################################################################
 
 @app.route('/systems/json')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def systems_json():
 	"""Used by DataTables to extract information from the systems table in
 	the database. The parameters and return format are as dictated by 
@@ -510,11 +511,11 @@ def systems_json():
 
 	# Get number of systems that match the query, and the number of systems
 	# within the filter group
-	system_count = cortex.core.get_system_count(filter_group, show_decom=show_decom)
-	filtered_count = cortex.core.get_system_count(filter_group, search, show_decom)
+	system_count = cortex.lib.systems.get_system_count(filter_group, show_decom=show_decom)
+	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, show_decom)
 
 	# Get results of query
-	results = cortex.core.get_systems(filter_group, search, order_column, order_asc, start, length, show_decom, only_other)
+	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, show_decom, only_other)
 
 	# DataTables wants an array in JSON, so we build this here, returning
 	# only the columns we want. We format the date as a string as

@@ -45,7 +45,7 @@ CMDB_URL_FORMAT="http://localhost/cmdb/%s"
 
 ## Cortex internal version number
 VERSION_MAJOR='1.0'
-VERSION_MINOR='2016020602'
+VERSION_MINOR='2016021610'
 
 ## Flask defaults (changed to what we prefer)
 SESSION_COOKIE_SECURE      = False
@@ -116,11 +116,17 @@ SATELLITE_KEYS = {
 
 ################################################################################
 
+
 # initalise cortex
 app = CortexFlask(__name__)
 
+# load workflow modules
+app.load_workflows()
+
 # load cortex modules
-import cortex.core
+## nb. this is done so that decorators are processed, otherwise there is no need
+## to import them during application initalisation at all. 
+import cortex.lib.user
 import cortex.errors
 import cortex.admin
 import cortex.views
@@ -129,6 +135,6 @@ import cortex.systems
 import cortex.puppet
 import cortex.api
 import cortex.register
+import cortex.user
 
-# load workflow modules
-app.load_workflows()
+

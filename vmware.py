@@ -2,7 +2,7 @@
 #
 
 from cortex import app
-import cortex.core
+import cortex.lib.user
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
 import os 
 import time
@@ -16,7 +16,7 @@ import MySQLdb as mysql
 ################################################################################
 
 @app.route('/vmware/os')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def vmware_os():
 	"""Shows VM operating system statistics."""
 
@@ -118,7 +118,7 @@ def vmware_os():
 ################################################################################
 
 @app.route('/vmware/hardware')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def vmware_hw():
 	"""Shows VM hardware version statistics."""
 
@@ -135,7 +135,7 @@ def vmware_hw():
 ################################################################################
 
 @app.route('/vmware/power')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def vmware_power():
 	"""Shows VM hardware power state statistics."""
 	cur = g.db.cursor(mysql.cursors.DictCursor)
@@ -146,7 +146,7 @@ def vmware_power():
 ################################################################################
 
 @app.route('/vmware/tools')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def vmware_tools():
 	"""Shows VM tools statistics."""
 	cur = g.db.cursor(mysql.cursors.DictCursor)
@@ -159,7 +159,7 @@ def vmware_tools():
 ################################################################################
 
 @app.route('/vmware/specs')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def vmware_specs():
 	"""Shows VM hardware spec statistics."""
 
@@ -238,7 +238,7 @@ def vmware_specs():
 ################################################################################
 
 @app.route('/vmware/data')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def vmware_data():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT * FROM `vmware_cache_vm` WHERE `template` = 0 ORDER BY `name`')
@@ -248,7 +248,7 @@ def vmware_data():
 ################################################################################
 
 @app.route('/vmware/clusters')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def vmware_clusters():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT `a`.`cluster`, `a`.`vcenter`, `b`.`hosts`, `a`.`vm_count`, (`b`.`ram_usage` * 1048576) AS `ram_usage`, (`a`.`assigned_ram` * 1048576) AS `assigned_ram`, `b`.`ram` AS `total_ram`, `a`.`assigned_cores`, `b`.`cores` AS `total_cores`, `b`.`cpu_usage` AS `cpu_usage_mhz`, ROUND(`b`.`cpuhz` / 1000) AS `total_mhz` FROM (SELECT `cluster`, `vcenter`, COUNT(*) AS `vm_count`, SUM(`numCPU`) AS `assigned_cores`, SUM(`memoryMB`) AS `assigned_ram` FROM `vmware_cache_vm` WHERE `cluster` != "None" group by `cluster`) `a` JOIN `vmware_cache_clusters` `b` ON `a`.`cluster` = `b`.`name`;')
@@ -297,7 +297,7 @@ def vmware_csv_stream(cursor):
 ################################################################################
 
 @app.route('/vmware/download/csv')
-@cortex.core.login_required
+@cortex.lib.user.login_required
 def vmware_download_csv():
 	"""Downloads the VMware data as a CSV file."""
 
