@@ -20,7 +20,59 @@ def admin_tasks():
 	tasks = cur.fetchall()
 
 	# Render the page
-	return render_template('admin-tasks.html', tasks=tasks, active='admin', title="Tasks")
+	return render_template('admin-tasks.html', tasks=tasks, active='admin', title="Tasks", tasktype='all')
+
+################################################################################
+
+@app.route('/admin/tasks/active')
+@cortex.lib.user.login_required
+def admin_tasks_active():
+	"""Displays the active tasks"""
+
+	cur = g.db.cursor(mysql.cursors.DictCursor)
+
+	neocortex = cortex.lib.core.neocortex_connect()
+	neotasks  = neocortex.active_tasks()
+	tasks     = []
+
+	for ntask in neotasks:
+		cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `id` = %s", (int(ntask)))
+		task = cur.fetchone()
+		if not task == None:
+			tasks.append(task)
+
+	# Render the page
+	return render_template('admin-tasks.html', tasks=tasks, active='admin', title="Active Tasks", tasktype='active')
+
+################################################################################
+
+@app.route('/admin/tasks/user')
+@cortex.lib.user.login_required
+def admin_tasks_user():
+	"""Displays the list of tasks, excluding any system tasks"""
+
+	# Get all the tasks from the database
+	cur = g.db.cursor(mysql.cursors.DictCursor)
+	cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` != 'scheduler'")
+	tasks = cur.fetchall()
+
+	# Render the page
+	return render_template('admin-tasks.html', tasks=tasks, active='admin', title="User Tasks", tasktype='user')
+
+################################################################################
+
+@app.route('/admin/tasks/system')
+@cortex.lib.user.login_required
+def admin_tasks_system():
+	"""Displays the list of tasks started by the system"""
+
+	# Get all the tasks from the database
+	cur = g.db.cursor(mysql.cursors.DictCursor)
+	cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` = 'scheduler'")
+	tasks = cur.fetchall()
+
+	# Render the page
+	return render_template('admin-tasks.html', tasks=tasks, active='admin', title="System Tasks", tasktype='system')
 
 ################################################################################
 

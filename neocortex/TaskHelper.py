@@ -24,6 +24,10 @@ class TaskHelper(object):
 
 	def run(self, task_module, options):
 
+		# Don't process signals
+		signal.signal(signal.SIGINT, signal.SIG_DFL)
+		signal.signal(signal.SIGTERM, signal.SIG_DFL)
+
 		self.db   = self.db_connect()
 		self.curd = self.db.cursor(mysql.cursors.DictCursor)
 		self.lib  = NeoCortexLib(self.db, self.config)

@@ -28,6 +28,7 @@ ADMINS=['root']
 SMTP_SERVER='localhost'
 EMAIL_FROM='root'
 EMAIL_SUBJECT='Cortex Runtime Error'
+EMAIL_DOMAIN='localdomain'
 
 ## Redis
 REDIS_HOST='localhost'

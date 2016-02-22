@@ -150,14 +150,14 @@ def api_installer_notify():
 
 	if 'uuid' in request.form:
 		## VMware UUID based authentication
-		system = cortex.lib.systems.get_system_by_vmware_uuid(request.form['uuid'])
+		system = cortex.lib.systems.get_system_by_vmware_uuid(request.form['uuid'].lower())
 
 		if not system:
-			app.logger.warn('Could not match vmware uuid to a system for the register API (UUID: ' + uuid + ')')
+			app.logger.warn('Could not match vmware uuid to a system for the register API (UUID: ' + request.form['uuid'].lower() + ')')
 			abort(404)
 
 		## Mark as done
-		g.redis.setex("vm/" + system['vmware_uuid'] + "/" + "notify", 28800, "done")
+		g.redis.setex("vm/" + system['vmware_uuid'].lower() + "/" + "notify", 28800, "done")
 
 		return "OK"
 

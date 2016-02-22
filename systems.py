@@ -28,7 +28,7 @@ def systems():
 	systems = cortex.lib.systems.get_systems()
 
 	# Get the list of active classes (used to populate the tab bar)
-	classes = cortex.lib.classes.list(hide_disabled=True)
+	classes = cortex.lib.classes.list()
 
 	# Render
 	return render_template('systems.html', systems=systems, classes=classes, active='systems', title="Systems")

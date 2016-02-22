@@ -7,6 +7,8 @@ import sys
 import json
 import time
 import redis
+import smtplib
+from email.mime.text import MIMEText
 
 import requests
 requests.packages.urllib3.disable_warnings()
@@ -825,7 +827,7 @@ class NeoCortexLib(object):
 			table_name = "cmdb_ci_linux_server"
 			model_id = "Generic Linux Virtual Server"
 		elif os_type == self.OS_TYPE_BY_NAME['Windows']:
-			table_name = "cmdb_ci_windows_server"
+			table_name = "cmdb_ci_win_server"
 			model_id = "Generic Windows Virtual Server"
 		else:
 			raise Exception('Unknown os_type passed to servicenow_create_ci')
@@ -924,3 +926,25 @@ class NeoCortexLib(object):
 		# never runs. Otherwise it can be any other value, which may not
 		# necessarily be one of the given states.
 		return notify
+
+	########################################################################
+
+	def send_email(self, to_addr, subject, contents):
+		# Get e-mail configuration
+		server = self.config['SMTP_SERVER']
+		from_addr = self.config['EMAIL_FROM']
+
+		# Add on a default domain for recipient if we don't have one
+		if to_addr.find('@') < 0 and 'EMAIL_DOMAIN' in self.config and len(self.config['EMAIL_DOMAIN']) > 0:
+			to_addr = to_addr + '@' + self.config['EMAIL_DOMAIN']
+
+		# Build the message
+		msg = MIMEText(contents)
+		msg['Subject'] = subject
+		msg['From'] = from_addr
+		msg['To'] = to_addr
+
+		# Send the mail
+		smtp = smtplib.SMTP(server)
+		smtp.sendmail(from_addr, [to_addr], msg.as_string())
+		smtp.quit()

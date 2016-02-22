@@ -1,8 +1,26 @@
 {% extends "layout.html" %}
 {% block body %}
 <div class="page-header">
-<h3><i class="fa fa-fw fa-tasks"></i> Tasks</h3>
-<div class="text-muted">The list below shows a list of all past and present tasks that have been run on the system</div>
+<h3>
+	<div class="pull-right">
+		<a class="btn btn-sm {% if tasktype == 'all' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_tasks') }}">All</a>
+		<a class="btn btn-sm {% if tasktype == 'active' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_tasks_active') }}">Active</a>
+		<a class="btn btn-sm {% if tasktype == 'user' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_tasks_user') }}">User</a>
+		<a class="btn btn-sm {% if tasktype == 'system' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_tasks_system') }}">System</a>
+	</div>
+	<i class="fa fa-fw fa-tasks"></i> {{ title }}
+</h3>
+<div class="text-muted">
+{%- if tasktype == 'all' %}
+The list below shows all past and present tasks that have been run on the system
+{%- elif tasktype == 'active' %}
+The list below shows tasks currently supervised by the NeoCortex task daemon
+{%- elif tasktype == 'user' %}
+The list below shows all past and present tasks started by a user
+{%- elif tasktype == 'system' %}
+The list below shows all past and present system-started tasks
+{%- endif -%}
+</div>
 </div>
 
 <table class="table table-condensed table-striped" id="tasks">

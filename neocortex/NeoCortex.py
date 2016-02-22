@@ -5,6 +5,7 @@ import syslog
 import signal
 import os
 import imp
+import multiprocessing
 from multiprocessing import Process, Value
 import MySQLdb as mysql
 import sys
@@ -41,17 +42,47 @@ class NeoCortex(object):
 		signal.signal(signal.SIGTERM, self._signal_handler_term)
 		signal.signal(signal.SIGINT, self._signal_handler_int)
 
+		## preload a connection to mysql
+		self._get_db()
+
 	def _signal_handler_term(self, signal, frame):
+		print "Got SIGTERM"
 		self._signal_handler('SIGTERM')
 	
 	def _signal_handler_int(self, signal, frame):
+		print "Got SIGINT"
 		self._signal_handler('SIGINT')
 	
 	def _signal_handler(self, signal):
-		global pyro_daemon
-		syslog.syslog('neocortex caught signal ' + str(signal) + ' - exiting')
+		#global pyro_daemon
+		syslog.syslog('neocortex caught signal ' + str(signal))
+
+		## Mark each task as terminated
+		curd = self._get_cursor()
+
+		## get child processes		
+		active_processes = multiprocessing.active_children()
+		print "Actve: " + str(len(active_processes))
+
+		for proc in active_processes:
+			print "Processing: " + str(proc)
+			syslog.syslog('marking task ' + proc.name + " as finished")
+			task_id = int(proc.name)
+			## mark the task as finished (error)
+			curd.execute("UPDATE `tasks` SET `status` = 2, `end` = NOW() WHERE `id` = %s", (task_id))
+			## close any events with an error
+			curd.execute("UPDATE `events` SET `status` = 2, `end` = NOW() WHERE `source` = 'neocortex.task' AND `related_id` = %s AND `status` = 0", (task_id))
+			## insert an event to say that it was terminated due to neocortex stopping
+			curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, 2, NOW(), NOW())", 
+			('neocortex.task', task_id, "neocortex.shutdown", "system", "The task was terminated because neocortex was asked to shutdown"))
+			self.db.commit()
+
+		print "starting Pyro shutdown"
 		Pyro4.core.Daemon.shutdown(self.pyro)
+		syslog.syslog('neocortex exited')
+		print "sys.exit() starting"
 		sys.exit(0)
+		print "sys.exit(0) finished"
 
 	def _get_cursor(self):
 		self._get_db()
@@ -128,13 +159,13 @@ class NeoCortex(object):
 		self.db.commit()
 		return curd.lastrowid
 
-	## 'PUBLIC' METHODS ##########################################################
+	## RPC METHODS #############################################################
 
 	def ping(self):
 		return True
 
 	#### this function is used to submit jobs/tasks.
-	## method - the method to call within this system
+	## workflow_name - the name of the workflow to start
 	## username - who submitted this task
 	## options - a dictionary of arguments for the method.
 	## description - an optional description of the task
@@ -159,15 +190,12 @@ class NeoCortex(object):
 
 		task_id      = self._record_task(workflow_name, username, description)
 		task_helper  = TaskHelper(self.config, workflow_name, task_id, username)
-		task         = Process(target=task_helper.run, args=(task_module, options))
+		task         = Process(target=task_helper.run, args=(task_module, options), name=str(task_id))
 		task.start()
 
-		return task_id
+		syslog.syslog('started task workflow/' + workflow_name + ' with task id ' + str(task_id) + ' and worker pid ' + str(task.pid))
 
-	## This function allows the Flask web app to allocate names (as well as tasks)
-	def allocate_name(self, class_name, system_comment, username, num):
-		lib = NeoCortexLib(self._get_db(), self.config)
-		return lib.allocate_name(class_name, system_comment, username, num)
+		return task_id
 
 	## This function allows arbitrary taks to be called
 	def start_internal_task(self, username, task_file, task_name, options=None, description=None):
@@ -178,7 +206,24 @@ class NeoCortex(object):
 
 		task_id      = self._record_task(task_name, username, description)
 		task_helper  = TaskHelper(self.config, task_name, task_id, username)
-		task         = Process(target=task_helper.run, args=(task_module, options))
+		task         = Process(target=task_helper.run, args=(task_module, options), name=str(task_id))
 		task.start()
 
+		syslog.syslog('started task internal/' + task_name + ' with task id ' + str(task_id) + ' and worker pid ' + str(task.pid))
+
 		return task_id
+
+	## This function allows the Flask web app to allocate names (as well as tasks)
+	def allocate_name(self, class_name, system_comment, username, num):
+		lib = NeoCortexLib(self._get_db(), self.config)
+		return lib.allocate_name(class_name, system_comment, username, num)
+
+	## List active tasks - returns a list of task ids
+	def active_tasks(self):
+		active_processes = multiprocessing.active_children()
+		active_tasks = []
+		for proc in active_processes:
+			active_tasks.append(int(proc.name))
+
+		return active_tasks
+		
