@@ -247,7 +247,7 @@ Further Details:
 
 	################################################################################
 		
-	def workflow_handler(self, workflow_name, workflow_title, **options):
+	def workflow_handler(self, workflow_name, workflow_title, workflow_order, **options):
 		"""This is a decorator function that is used in workflows to add the principal view function
 		into the app. It performs the function of Flask's @app.route but also adds the view function
 		to a menu on the website to allow the workflow to be activated by the user.
@@ -255,7 +255,8 @@ Further Details:
 		Usage is as such: @app.workflow_handler(__name__,"Title on menu", methods=['GET','POST'])
 
 		:param workflow_name: the name of the workflow. This should always be __name__.
-		:param workflow_title: the name of the workflow. This should always be __name__.
+		:param workflow_title: the title of the workflow, as it appears in the list
+		:param workflow_order: an integer hint as to the ordering of the workflow within the list.
 		:param options: the options to be forwarded to the underlying
 			     :class:`~werkzeug.routing.Rule` object.  A change
 			     to Werkzeug is handling of method options.  methods
@@ -270,7 +271,7 @@ Further Details:
 			rule = "/workflows/" + workflow_name
 			endpoint = options.pop('endpoint', None)
 			self.add_url_rule(rule, endpoint, f, **options)
-			self.workflows.append({'display': workflow_title, 'name': workflow_name, 'view_func': f.__name__ })
+			self.workflows.append({'display': workflow_title, 'name': workflow_name, 'order': workflow_order, 'view_func': f.__name__ })
 			return f
 		return decorator
 

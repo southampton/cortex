@@ -42,12 +42,17 @@
 				{%- if session.logged_in %}
 				<div class="navbar-collapse collapse" id="navbar-collapse-1">	
 					<ul class="nav navbar-nav">
-						<li class="visible-xs {%if active == 'systems'%} active{%endif%}"><a href="{{ url_for('systems') }}">Systems</a></li>
-						<li class="visible-xs {%if active == 'allocate'%} active{%endif%}"><a href="{{ url_for('systems_new') }}">Allocate Name</a></li>
+						<li class="visible-xs dropdown{%if active == 'systems'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Systems <b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								<li class="visible-xs {%if active == 'systems'%} active{%endif%}"><a href="{{ url_for('systems') }}">Systems</a></li>
+								<li class="visible-xs {%if active == 'systems_new'%} active{%endif%}"><a href="{{ url_for('systems_new') }}">Allocate Name</a></li>
+							</ul>
+						</li>
 						<li class="visible-xs dropdown{%if active == 'create'%} active{%endif%}">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Workflows <b class="caret"></b></a>
 							<ul class="dropdown-menu">
-								{% for workflow in workflows -%}
+								{% for workflow in workflows|sort(attribute='order') -%}
 								<li><a href="{{ url_for(workflow.view_func)}}"><i class="fa fa-plus-circle fa-fw"></i> {{ workflow.display }}</a></li>
 								{%- endfor %}
 							</ul>
@@ -75,7 +80,7 @@
 							</ul>
 						</li>
 						<li class="visible-xs dropdown{%if active == 'admin'%} active{%endif%}">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin <b class="caret"></b></a>
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Administration <b class="caret"></b></a>
 							<ul class="dropdown-menu">
 								<li><a href="{{ url_for('admin_classes') }}"><i class="fa fa-fw fa-table"></i> Classes</a></li>
 								<li><a href="{{ url_for('admin_tasks') }}"><i class="fa fa-fw fa-tasks"></i> Tasks</a></li>
@@ -127,7 +132,7 @@
 							</div>
 							<div id="collapseTwo" class="panel-collapse collapse{% if active == 'workflows' %} in{%endif%}" role="tabpanel" aria-labelledby="headingTwo" {% if active != 'workflows' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%}>
 								<ul class="list-group list-group-sidebar">
-{%- for workflow in workflows %}
+{%- for workflow in workflows|sort(attribute='order') %}
 									<li><a href="{{ url_for(workflow.view_func)}}"><i class="fa fa-plus-circle fa-fw"></i>{{ workflow.display }}</a></li>
 {%- endfor %}
 								</ul>

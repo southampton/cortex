@@ -46,7 +46,7 @@ CMDB_URL_FORMAT="http://localhost/cmdb/%s"
 
 ## Cortex internal version number
 VERSION_MAJOR='1.0'
-VERSION_MINOR='2016021703'
+VERSION_MINOR='2016022206'
 
 ## Flask defaults (changed to what we prefer)
 SESSION_COOKIE_SECURE      = False

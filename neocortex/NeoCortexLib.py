@@ -21,8 +21,8 @@ from pyVim.connect import SmartConnect, Disconnect
 class NeoCortexLib(object):
 	"""Library functions used in both neocortex itself and the neocortex tasks, hence a seperate object"""
 
-	OS_TYPE_BY_ID   = {0: "None", 1: "Linux", 2: "Windows" }
-	OS_TYPE_BY_NAME = {"None": 0, "Linux": 1, "Windows": 2}
+	OS_TYPE_BY_ID   = {0: "None", 1: "Linux", 2: "Windows", 3: "ESXi", 4: "Solaris" }
+	OS_TYPE_BY_NAME = {"None": 0, "Linux": 1, "Windows": 2, "ESXi": 3, "Solaris": 4 }
 	SYSTEM_TYPE_BY_ID = {0: "System", 1: "Legacy", 2: "Other"}
 	SYSTEM_TYPE_BY_NAME = {"System": 0, "Legacy": 1, "Other": 2}
 
@@ -146,11 +146,11 @@ class NeoCortexLib(object):
 				try:
 					return response['ipv4addrs'][0]['ipv4addr']
 				except Exception as ex:
-					raise InfobloxError("Malformed JSON response from Infoblox API")
+					raise RuntimeError("Malformed JSON response from Infoblox API")
 			else:
-				raise InfobloxError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
+				raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
 		else:
-			raise InfobloxError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
+			raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
 
 	################################################################################
 
@@ -829,11 +829,29 @@ class NeoCortexLib(object):
 		elif os_type == self.OS_TYPE_BY_NAME['Windows']:
 			table_name = "cmdb_ci_win_server"
 			model_id = "Generic Windows Virtual Server"
+		elif os_type == self.OS_TYPE_BY_NAME['ESXi']:
+			table_name = "cmdb_ci_esx_server"
+			model_id = ""
+		elif os_type == self.OS_TYPE_BY_NAME['Solaris']:
+			table_name = "cmdb_ci_solaris_server"
+			model_id = "Generic UNIX Virtual Server"
 		else:
 			raise Exception('Unknown os_type passed to servicenow_create_ci')
 
 		# Build the data for the CI
-		vm_data = { 'name': str(ci_name), 'os': str(os_name), 'cpu_count': str(cpus), 'disk_space': str(disk_gb), 'virtual': str(virtual).lower(), 'ip_address': ipaddr, 'ram': str(ram_mb), 'operational_status': 'In Service', 'model_id': model_id, 'short_description': short_description, 'comments': comments }
+		vm_data = { 'name': str(ci_name), 'os': str(os_name), 'virtual': str(virtual).lower(), 'ip_address': ipaddr, 'operational_status': 'In Service', 'model_id': model_id, 'short_description': short_description, 'comments': comments }
+
+		# Add CPU count if we've got it
+		if cpus is not None:
+			vm_data['cpus'] = str(cpus)
+
+		# Add disk space if we've got it
+		if disk_gb is not None:
+			vm_data['disk_space'] = str(disk_gb)
+
+		# Add RAM if we've got it
+		if ram_mb is not None:
+			vm_data['ram'] = str(ram_mb)
 
 		# Add location if we've got it
 		if location is not None:
