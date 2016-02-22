@@ -46,11 +46,9 @@ class NeoCortex(object):
 		self._get_db()
 
 	def _signal_handler_term(self, signal, frame):
-		print "Got SIGTERM"
 		self._signal_handler('SIGTERM')
 	
 	def _signal_handler_int(self, signal, frame):
-		print "Got SIGINT"
 		self._signal_handler('SIGINT')
 	
 	def _signal_handler(self, signal):
@@ -62,10 +60,8 @@ class NeoCortex(object):
 
 		## get child processes		
 		active_processes = multiprocessing.active_children()
-		print "Actve: " + str(len(active_processes))
 
 		for proc in active_processes:
-			print "Processing: " + str(proc)
 			syslog.syslog('marking task ' + proc.name + " as finished")
 			task_id = int(proc.name)
 			## mark the task as finished (error)
@@ -77,12 +73,9 @@ class NeoCortex(object):
 			('neocortex.task', task_id, "neocortex.shutdown", "system", "The task was terminated because neocortex was asked to shutdown"))
 			self.db.commit()
 
-		print "starting Pyro shutdown"
 		Pyro4.core.Daemon.shutdown(self.pyro)
 		syslog.syslog('neocortex exited')
-		print "sys.exit() starting"
 		sys.exit(0)
-		print "sys.exit(0) finished"
 
 	def _get_cursor(self):
 		self._get_db()
