@@ -24,6 +24,7 @@ def run(helper, options):
 	vm_data = {}
 	dcs = {}
 	clusters = {}
+	folders = {}
 
 	skip_vms = False
 	if options is not None and 'skip_vms' in options and options['skip_vms'] == True:
@@ -94,9 +95,14 @@ def run(helper, options):
 			helper.end_event(description="Downloaded virtual machine information for " + instance['hostname'])
 		
 		## List DCs ##########
-		helper.event("vmware_cache_dc", "Downloading datacenter information from " + instance['hostname'])
+		helper.event("vmware_cache_dc", "Downloading datacenter and folder information from " + instance['hostname'])
 		dcs[key] = helper.lib.vmware_get_objects(content, [vim.Datacenter])
-		helper.end_event(description="Downloaded datacenter information for " + instance['hostname'])
+
+		for datacenter in dcs[key]:
+			folders[datacenter._moId] = []
+			recurse_folder(datacenter.vmFolder,folders[datacenter._moId])
+
+		helper.end_event(description="Downloaded datacenter and folder information for " + instance['hostname'])
 
 		## List clusters ##########
 		helper.event("vmware_cache_cluster", "Downloading cluster information from " + instance['hostname'])
@@ -152,10 +158,8 @@ def run(helper, options):
 			clusters[key][moId]['total_ram_usage'] = total_ram_usage
 			clusters[key][moId]['host_count'] = len(cluster.host)
 
-		helper.end_event(description="Downloaded cluster information from " + instance['hostname'])
-
 	# Note: We delete the cache from the database after downloading all the data, so 
-	# as to not lock the table
+	# as to not lock the table and have it empty whilst the job is running
 
 	## Delete existing data from database
 	helper.event("delete_cache", "Deleting existing cache")
@@ -184,9 +188,12 @@ def run(helper, options):
 				# Put the VM in the database
 				curd.execute("INSERT INTO `vmware_cache_vm` (`id`, `vcenter`, `name`, `uuid`, `numCPU`, `memoryMB`, `powerState`, `guestFullName`, `guestId`, `hwVersion`, `hostname`, `ipaddr`, `annotation`, `cluster`, `toolsRunningStatus`, `toolsVersionStatus`, `template`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (vm['_moId'], instance['hostname'], vm['name'], vm['config.uuid'], vm['config.hardware.numCPU'], vm['config.hardware.memoryMB'], vm['runtime.powerState'], vm['config.guestFullName'], vm['config.guestId'], vm['config.version'], vm['guest.hostName'], vm['guest.ipAddress'], vm['config.annotation'], vm['cluster'], vm['guest.toolsRunningStatus'], vm['guest.toolsVersionStatus2'], vm['config.template']))
 
-		# For each Data Center, put it in the database
+		# For each Data Center, put it in the database (and the folders too)
 		for dc in dcs[key]:
 			curd.execute("INSERT INTO `vmware_cache_datacenters` (`id`, `name`, `vcenter`) VALUES (%s, %s, %s)", (dc._moId, dc.name, instance['hostname']))
+
+			for folder in folders[dc._moId]:
+				curd.execute("INSERT INTO `vmware_cache_folders` (`id`, `name`, `vcenter`, `did`, `parent`) VALUES (%s, %s, %s, %s, %s)",(folder['_moId'], folder['name'], instance['hostname'], dc._moId, folder['parent']))
 
 		# For each cluster
 		for moId in clusters[key]:
@@ -202,3 +209,15 @@ def run(helper, options):
 	helper.event("vmware_cache_dc", "Saving cache to disk")
 	tdb.commit()
 	helper.end_event(description="Saved cache to disk")
+
+def recurse_folder(folder, folders):
+	children = folder.childEntity
+
+	for child in children:
+		if isinstance(child, vim.Folder):
+			folders.append({'_moId': child._moId, 'name': child.name, 'parent': folder._moId})
+
+			if len(child.childEntity) > 0:
+				recurse_folder(child, folders)
+ 
+
