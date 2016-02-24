@@ -15,9 +15,9 @@ def admin_tasks():
 	"""Displays the list of tasks to the user."""
 
 	# Get all the tasks from the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks`")
-	tasks = cur.fetchall()
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks`")
+	tasks = curd.fetchall()
 
 	# Render the page
 	return render_template('admin-tasks.html', tasks=tasks, active='admin', title="Tasks", tasktype='all')
@@ -29,15 +29,16 @@ def admin_tasks():
 def admin_tasks_active():
 	"""Displays the active tasks"""
 
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-
+	# Get the list of tasks from NeoCortex
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 	neocortex = cortex.lib.core.neocortex_connect()
 	neotasks  = neocortex.active_tasks()
 	tasks     = []
 
+	# Get additional information out of the database
 	for ntask in neotasks:
-		cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `id` = %s", (int(ntask)))
-		task = cur.fetchone()
+		curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `id` = %s", (int(ntask)))
+		task = curd.fetchone()
 		if not task == None:
 			tasks.append(task)
 
@@ -52,9 +53,9 @@ def admin_tasks_user():
 	"""Displays the list of tasks, excluding any system tasks"""
 
 	# Get all the tasks from the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` != 'scheduler'")
-	tasks = cur.fetchall()
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` != 'scheduler'")
+	tasks = curd.fetchall()
 
 	# Render the page
 	return render_template('admin-tasks.html', tasks=tasks, active='admin', title="User Tasks", tasktype='user')
@@ -67,9 +68,9 @@ def admin_tasks_system():
 	"""Displays the list of tasks started by the system"""
 
 	# Get all the tasks from the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` = 'scheduler'")
-	tasks = cur.fetchall()
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` = 'scheduler'")
+	tasks = curd.fetchall()
 
 	# Render the page
 	return render_template('admin-tasks.html', tasks=tasks, active='admin', title="System Tasks", tasktype='system')
@@ -88,9 +89,9 @@ def admin_classes():
 
 	elif request.method == 'POST':
 		action = request.form['action']
-		cur    = g.db.cursor()
+		curd   = g.db.cursor()
 
-		if action in ['add_class','edit_class']:		
+		if action in ['add_class', 'edit_class']:		
 			# Validate class name/prefix
 			class_name = request.form['class_name']
 			if not re.match(r'^[a-z]{1,16}$', class_name):
@@ -131,9 +132,9 @@ def admin_classes():
 			else:
 				class_link_vmware = 0
 
-			## Check if the class already exists
-			cur.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', (class_name))
-			if cur.fetchone() is None:
+			# Check if the class already exists
+			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', (class_name))
+			if curd.fetchone() is None:
 				class_exists = False
 			else:
 				class_exists = True
@@ -143,11 +144,11 @@ def admin_classes():
 					flash('A system class already exists with that prefix', 'alert-danger')
 					return redirect(url_for('admin_classes'))
 
-				## sql insert
-				cur.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES (%s, %s, %s, %s, %s, %s)''', (class_name, class_digits, class_comment, class_disabled, class_link_vmware, class_cmdb_type))
+				# SQL insert
+				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES (%s, %s, %s, %s, %s, %s)''', (class_name, class_digits, class_comment, class_disabled, class_link_vmware, class_cmdb_type))
 				g.db.commit()
 
-				flash("System class created","alert-success")
+				flash("System class created", "alert-success")
 				return redirect(url_for('admin_classes'))							
 			
 
@@ -156,10 +157,10 @@ def admin_classes():
 					flash('No system class matching that name/prefix could be found', 'alert-danger')
 					return redirect(url_for('admin_classes'))
 
-				cur.execute('''UPDATE `classes` SET `digits` = %s, `disabled` = %s, `comment` = %s, `link_vmware` = %s, `cmdb_type` = %s WHERE `name` = %s''', (class_digits, class_disabled, class_comment, class_link_vmware, class_cmdb_type, class_name))
+				curd.execute('''UPDATE `classes` SET `digits` = %s, `disabled` = %s, `comment` = %s, `link_vmware` = %s, `cmdb_type` = %s WHERE `name` = %s''', (class_digits, class_disabled, class_comment, class_link_vmware, class_cmdb_type, class_name))
 				g.db.commit()
 
-				flash("System class updated","alert-success")
+				flash("System class updated", "alert-success")
 				return redirect(url_for('admin_classes'))
 
 		else:
@@ -167,14 +168,16 @@ def admin_classes():
 
 ################################################################################
 
-@app.route('/admin/maintenance', methods=['GET','POST'])
+@app.route('/admin/maintenance', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def admin_maint():
 	"""Allows the user to kick off scheduled jobs on demand"""
 
+	# Connect to NeoCortex and the database
 	neocortex = cortex.lib.core.neocortex_connect()
-	cur = g.db.cursor(mysql.cursors.DictCursor)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 
+	# Initial setup
 	vmcache_task_id = None
 	vmcache_novm_task_id = None
 	sncache_task_id = None
@@ -186,8 +189,8 @@ def admin_maint():
 		for task in active_tasks:
 			task_id = int(task)
 
-			cur.execute("SELECT `module` FROM `tasks` WHERE `id` = %s",(task_id))
-			task_data = cur.fetchone()
+			curd.execute("SELECT `module` FROM `tasks` WHERE `id` = %s", (task_id))
+			task_data = curd.fetchone()
 
 			if task_data['module'] == '_cache_vmware':
 				vmcache_task_id = task_id
@@ -200,8 +203,10 @@ def admin_maint():
 		return render_template('admin-maint.html', active='admin', sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id, vmcache_novm_task_id=vmcache_novm_task_id, title="Maintenance Tasks")
 
 	else:
+		# Find out what task to start
 		module = request.form['task_name']
 
+		# Start the appropriate internal task
 		if module == 'vmcache':
 			task_id = neocortex.start_internal_task(session['username'], 'cache_vmware.py', '_cache_vmware', description="Caches information about virtual machines, datacenters and clusters from VMware")
 		elif module == 'vmcache_novm':
@@ -211,6 +216,6 @@ def admin_maint():
 		else:
 			abort(400)
 
+		# Show the user the status of the task
 		return redirect(url_for('task_status', id=task_id))
-
 

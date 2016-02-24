@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import sys
-print sys.path
 import cortex.errors
 from cortex import app
 from flask import g
@@ -51,10 +50,10 @@ def vmware_list_clusters(tag):
 	is within the application configuration."""
 
 	if tag in app.config['VMWARE']:
-		## SQL to grab the clusters from the cache
-		cur = g.db.cursor(mysql.cursors.DictCursor)
-		cur.execute("SELECT * FROM `vmware_cache_clusters` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname']))
-		return cur.fetchall()
+		# SQL to grab the clusters from the cache
+		curd = g.db.cursor(mysql.cursors.DictCursor)
+		curd.execute("SELECT * FROM `vmware_cache_clusters` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname']))
+		return curd.fetchall()
 	else:
 		raise Exception("Invalid VMware tag")
 
@@ -66,15 +65,22 @@ def is_valid_hostname(hostname):
 	if len(hostname) > 255:
 		return False
 
+	# Trim off any trailing dot
 	if hostname[-1] == ".":
 		hostname = hostname[:-1]
 
+	# Build a regex to match on valid hostname components
 	allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+
+	# Return true if all the parts of the hostname match the regex
 	return all(allowed.match(x) for x in hostname.split("."))
 
 ################################################################################
 
 def fqdn_strip_domain(fqdn):
+	"""Strips the domain from a fully-qualified domain name, returning just
+	the hostname name component"""
+
 	# n.b split always returns a list with 1 entry even if the seperator isnt found
 	return fqdn.split('.')[0]
 

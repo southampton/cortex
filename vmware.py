@@ -20,12 +20,12 @@ import MySQLdb as mysql
 def vmware_os():
 	"""Shows VM operating system statistics."""
 
-	# Get a cursor to the databaseo
-	cur = g.db.cursor(mysql.cursors.DictCursor)
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get OS IDs for all virtual machines
-	cur.execute('SELECT `guestId` FROM `vmware_cache_vm`')
-	results = cur.fetchall()
+	curd.execute('SELECT `guestId` FROM `vmware_cache_vm`')
+	results = curd.fetchall()
 
 	types = {}
 	types['windows']   = 0
@@ -122,12 +122,12 @@ def vmware_os():
 def vmware_hw():
 	"""Shows VM hardware version statistics."""
 
-	# Get a cursor to the databaseo
-	cur = g.db.cursor(mysql.cursors.DictCursor)
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get OS statistics
-	cur.execute('SELECT `hwVersion`, COUNT(*) AS `count` FROM `vmware_cache_vm` GROUP BY `hwVersion` ORDER BY `hwVersion`')
-	results = cur.fetchall()
+	curd.execute('SELECT `hwVersion`, COUNT(*) AS `count` FROM `vmware_cache_vm` GROUP BY `hwVersion` ORDER BY `hwVersion`')
+	results = curd.fetchall()
 
 	# Render
 	return render_template('vmware-hw.html', active='vmware', stats_hw=results, title="Statistics - Hardware Version")
@@ -138,9 +138,15 @@ def vmware_hw():
 @cortex.lib.user.login_required
 def vmware_power():
 	"""Shows VM hardware power state statistics."""
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute('SELECT `powerState`, COUNT(*) AS `count` FROM `vmware_cache_vm` GROUP BY `powerState` ORDER BY `powerState`')
-	results = cur.fetchall()
+
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get the power statistics
+	curd.execute('SELECT `powerState`, COUNT(*) AS `count` FROM `vmware_cache_vm` GROUP BY `powerState` ORDER BY `powerState`')
+	results = curd.fetchall()
+
+	# Render
 	return render_template('vmware-power.html', active='vmware', stats_power=results, title="Statistics - VM Power State")
 
 ################################################################################
@@ -149,11 +155,17 @@ def vmware_power():
 @cortex.lib.user.login_required
 def vmware_tools():
 	"""Shows VM tools statistics."""
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute('SELECT `toolsRunningStatus`, COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `powerState` = "poweredOn" GROUP BY `toolsRunningStatus` ORDER BY `toolsRunningStatus`')
-	stats_status = cur.fetchall()
-	cur.execute('SELECT `toolsVersionStatus`, COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `powerState` = "poweredOn" GROUP BY `toolsVersionStatus` ORDER BY `toolsVersionStatus`')
-	stats_version = cur.fetchall()
+
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get tools statistics
+	curd.execute('SELECT `toolsRunningStatus`, COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `powerState` = "poweredOn" GROUP BY `toolsRunningStatus` ORDER BY `toolsRunningStatus`')
+	stats_status = curd.fetchall()
+	curd.execute('SELECT `toolsVersionStatus`, COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `powerState` = "poweredOn" GROUP BY `toolsVersionStatus` ORDER BY `toolsVersionStatus`')
+	stats_version = curd.fetchall()
+
+	# Render
 	return render_template('vmware-tools.html', active='vmware', stats_status=stats_status, stats_version=stats_version, title="Statistics - VMware Tools")
 
 ################################################################################
@@ -163,12 +175,12 @@ def vmware_tools():
 def vmware_specs():
 	"""Shows VM hardware spec statistics."""
 
-	# Get a cursor to the databaseo
-	cur = g.db.cursor(mysql.cursors.DictCursor)
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-	# Get OS statistics
-	cur.execute('SELECT `memoryMB`, `numCPU` FROM `vmware_cache_vm`')
-	results = cur.fetchall()
+	# Get CPU and RAM statistics
+	curd.execute('SELECT `memoryMB`, `numCPU` FROM `vmware_cache_vm`')
+	results = curd.fetchall()
 
 	data_ram = {
 		'Less than 1GB': 0,
@@ -240,9 +252,17 @@ def vmware_specs():
 @app.route('/vmware/data')
 @cortex.lib.user.login_required
 def vmware_data():
+	"""Displays page containing a giant table of information of everything
+	we know about all the VMs."""
+
+	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get all the information about every VM
 	curd.execute('SELECT * FROM `vmware_cache_vm` WHERE `template` = 0 ORDER BY `name`')
 	results = curd.fetchall()
+
+	# Render
 	return render_template('vmware-data.html', active='vmware', data=results, title="VMware Data")
 
 ################################################################################
@@ -250,7 +270,10 @@ def vmware_data():
 @app.route('/vmware/clusters')
 @cortex.lib.user.login_required
 def vmware_clusters():
+	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Generate statistics about the clusters
 	curd.execute('SELECT `a`.`cluster`, `a`.`vcenter`, `b`.`hosts`, `a`.`vm_count`, (`b`.`ram_usage` * 1048576) AS `ram_usage`, (`a`.`assigned_ram` * 1048576) AS `assigned_ram`, `b`.`ram` AS `total_ram`, `a`.`assigned_cores`, `b`.`cores` AS `total_cores`, `b`.`cpu_usage` AS `cpu_usage_mhz`, ROUND(`b`.`cpuhz` / 1000) AS `total_mhz` FROM (SELECT `cluster`, `vcenter`, COUNT(*) AS `vm_count`, SUM(`numCPU`) AS `assigned_cores`, SUM(`memoryMB`) AS `assigned_ram` FROM `vmware_cache_vm` WHERE `cluster` != "None" group by `cluster`) `a` JOIN `vmware_cache_clusters` `b` ON `a`.`cluster` = `b`.`name`;')
 
 	# Take the above query and group it by vCenter
@@ -267,12 +290,14 @@ def vmware_clusters():
 		# Iterate to next cluster
 		row = curd.fetchone()
 
+	# Render
 	return render_template('vmware-clusters.html', active='vmware', vcenters=vcenters, title="VMware Clusters")
 
 ################################################################################
 
-# This function streams our CSV response from the data
 def vmware_csv_stream(cursor):
+	"""Streams data from each row in the cursor as a line of CSV."""
+
 	# Get the first row
 	row = cursor.fetchone()
 
@@ -307,5 +332,4 @@ def vmware_download_csv():
 
 	# Return the response
 	return Response(vmware_csv_stream(curd), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="vmware.csv"'})
-
 

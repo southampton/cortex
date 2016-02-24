@@ -37,7 +37,7 @@ def error500(error):
 	else:
 		debug = None
 
-	## send a log about this
+	# Send a log about this
 	app.logger.error("""
 Title:                %s
 Message:              %s
@@ -72,12 +72,12 @@ Traceback:
 			debug,	
 		))
 		
-	return render_template('error.html',title=err_title,message=err_msg,debug=debug), 500
+	return render_template('error.html', title=err_title, message=err_msg, debug=debug), 500
 
 @app.errorhandler(400)
 def error400(error):
-	"""Handles abort(400) calls in code.
-	"""
+	"""Handles abort(400) calls in code."""
+
 	if app.debug:
 		debug = traceback.format_exc()
 	else:
@@ -85,12 +85,11 @@ def error400(error):
 		
 	app.logger.info('abort400 was called! ' + str(debug))
 		
-	return render_template('error.html',title="Bad Request",message='Your request was invalid, please try again.',debug=debug), 400
+	return render_template('error.html', title="Bad Request", message='Your request was invalid, please try again.', debug=debug), 400
 
 @app.errorhandler(403)
 def error403(error):
-	"""Handles abort(403) calls in code.
-	"""
+	"""Handles abort(403) calls in code."""
 	
 	if app.debug:
 		debug = traceback.format_exc()
@@ -99,31 +98,29 @@ def error403(error):
 		
 	app.logger.info('abort403 was called!')
 	
-	return render_template('error.html',title="Permission Denied",message='You do not have permission to access this resource.',debug=debug), 403
+	return render_template('error.html', title="Permission Denied", message='You do not have permission to access this resource.', debug=debug), 403
 
 @app.errorhandler(404)
 def error404(error):
-	"""Handles abort(404) calls in code.
-	"""
+	"""Handles abort(404) calls in code."""
 
 	if app.debug:
 		debug = traceback.format_exc()
 	else:
 		debug = None
 
-	return render_template('error.html',title="Not found",message="Sorry, I couldn't find what you requested.",debug=debug), 404
+	return render_template('error.html', title="Not found", message="Sorry, I couldn't find what you requested.", debug=debug), 404
 
 @app.errorhandler(405)
 def error405(error):
-	"""Handles abort(405) calls in code.
-	"""
+	"""Handles abort(405) calls in code."""
 	
 	if app.debug:
 		debug = traceback.format_exc()
 	else:
 		debug = None
 	
-	return render_template('error.html',title="Not allowed",message="Method not allowed. This usually happens when your browser sent a POST rather than a GET, or vice versa.",debug=debug), 405
+	return render_template('error.html', title="Not allowed", message="Method not allowed. This usually happens when your browser sent a POST rather than a GET, or vice versa.", debug=debug), 405
 
 @app.errorhandler(Exception)
 def error_handler(error):

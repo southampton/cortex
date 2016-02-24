@@ -27,11 +27,11 @@ def get_ci_count(search = None):
 		params = (like_string, like_string)
 
 	# Query the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute(query, params)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute(query, params)
 
 	# Get the results
-	row = cur.fetchone()
+	row = curd.fetchone()
 
 	# Return the count
 	return row['count']
@@ -88,8 +88,8 @@ def get_cis(limit_start = None, limit_length = None, search = None, order_by = "
 			query = query + "18446744073709551610"
 
 	# Query the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute(query, params)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute(query, params)
 
 	# Return the results
-	return cur.fetchall()
+	return curd.fetchall()

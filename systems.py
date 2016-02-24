@@ -92,14 +92,14 @@ def systems_download_csv():
 	"""Downloads the list of allocated server names as a CSV file."""
 
 	# Get the list of systems
-	cur = cortex.lib.systems.get_systems(return_cursor=True)
+	curd = cortex.lib.systems.get_systems(return_cursor=True)
 
 	# Return the response
-	return Response(systems_csv_stream(cur), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
+	return Response(systems_csv_stream(curd), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
 
 ################################################################################
 
-@app.route('/systems/new', methods=['GET','POST'])
+@app.route('/systems/new', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def systems_new():
 	"""Handles the Allocate New System Name(s) page"""
@@ -111,7 +111,7 @@ def systems_new():
 
 	# On POST requests...
 	elif request.method == 'POST':
-		## The user has asked for one or more new system names.
+		# The user has asked for one or more new system names.
 
 		# Grab the prefix chosen and validate it's a valid class name.
 		# The regular expression matches on an entire string of 1 to 16 lowercase characters
@@ -134,7 +134,7 @@ def systems_new():
 		else:
 			system_comment = ""
 
-		## Allocate the names asked for
+		# Allocate the names asked for
 		try:
 			# To prevent code duplication, this is done remotely by Neocortex. So, connect:
 			neocortex   = cortex.lib.core.neocortex_connect()
@@ -165,11 +165,11 @@ def systems_bulk_save():
 
 	found_keys = []
 
-	## Find a list of systems from the form. Each of the form input elements
-	## containing a system comment has a name that starts "system_comment_"
+	# Find a list of systems from the form. Each of the form input elements
+	# containing a system comment has a name that starts "system_comment_"
 	for key, value in request.form.iteritems():
 		 if key.startswith("system_comment_"):
-			## yay we found one! blindly update it!
+			# Yay we found one! blindly update it!
 			updateid = key.replace("system_comment_", "")
 			found_keys.append(updateid)
 			cur = g.db.cursor()
@@ -178,20 +178,20 @@ def systems_bulk_save():
 	g.db.commit()
 
 	flash("Comments successfully updated", "alert-success")
-	return(redirect(url_for("systems_bulk_view",start=min(found_keys),finish=max(found_keys))))
+	return(redirect(url_for("systems_bulk_view", start=min(found_keys), finish=max(found_keys))))
 
 ################################################################################
 
 @app.route('/systems/bulk/view/<int:start>/<int:finish>', methods=['GET'])
 @cortex.lib.user.login_required
-def systems_bulk_view(start,finish):
+def systems_bulk_view(start, finish):
 	"""This is a GET handler to view the list of assigned names"""
 
 	start  = int(start)
 	finish = int(finish)
 
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute("SELECT `id`, `name`, `allocation_comment` AS `comment` FROM `systems` WHERE `id` >= %s AND `id` <= %s",(start,finish))
+	curd.execute("SELECT `id`, `name`, `allocation_comment` AS `comment` FROM `systems` WHERE `id` >= %s AND `id` <= %s", (start, finish))
 	systems = curd.fetchall()
 
 	return render_template('systems-new-bulk-done.html', systems=systems, title="Systems")
@@ -211,10 +211,10 @@ def systems_edit(id):
 	elif request.method == 'POST':
 		try:
 			# Get a cursor to the database
-			cur = g.db.cursor(mysql.cursors.DictCursor)
+			curd = g.db.cursor(mysql.cursors.DictCursor)
 
 			# Update the system
-			cur.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s WHERE `id` = %s', (request.form['allocation_comment'], request.form['cmdb_id'], request.form['vmware_uuid'], id))
+			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s WHERE `id` = %s', (request.form['allocation_comment'], request.form['cmdb_id'], request.form['vmware_uuid'], id))
 			g.db.commit();
 
 			flash('System updated', "alert-success") 

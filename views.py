@@ -10,12 +10,16 @@ import MySQLdb as mysql
 
 @app.route('/about')
 def about():
+	"""Renders the about page"""
+
 	return render_template('about.html', active='help', title="About")
 
 ################################################################################
 
 @app.route('/nojs')
 def nojs():
+	"""Renders the 'you have JavaScript disabled' page"""
+
 	return render_template('nojs.html')
 
 ################################################################################
@@ -26,31 +30,31 @@ def dashboard():
 	"""This renders the front page after the user logged in."""
 
 	# Get a cursor to the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 	
 	# Get number of VMs
-	cur.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm`');
-	row = cur.fetchone()
+	curd.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm`');
+	row = curd.fetchone()
 	vm_count = row['count']
 	
 	# Get number of CIs
-	cur.execute('SELECT COUNT(*) AS `count` FROM `sncache_cmdb_ci`');
-	row = cur.fetchone()
+	curd.execute('SELECT COUNT(*) AS `count` FROM `sncache_cmdb_ci`');
+	row = curd.fetchone()
 	ci_count = row['count']
 
 	# Get number of in-progress tasks
-	cur.execute('SELECT COUNT(*) AS `count` FROM `tasks` WHERE `status` = %s', (0,))
-	row = cur.fetchone()
+	curd.execute('SELECT COUNT(*) AS `count` FROM `tasks` WHERE `status` = %s', (0,))
+	row = curd.fetchone()
 	task_progress_count = row['count']
 
 	# Get number of failed tasks in the last 3 hours
-	cur.execute('SELECT COUNT(*) AS `count` FROM `tasks` WHERE `status` = %s AND `end` > DATE_SUB(NOW(), INTERVAL 3 HOUR)', (2,))
-	row = cur.fetchone()
+	curd.execute('SELECT COUNT(*) AS `count` FROM `tasks` WHERE `status` = %s AND `end` > DATE_SUB(NOW(), INTERVAL 3 HOUR)', (2,))
+	row = curd.fetchone()
 	task_failed_count = row['count']
 
 	# Get tasks for user
-	cur.execute('SELECT `id`, `module`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` = %s ORDER BY `start` DESC LIMIT 5', (session['username'],))
-	tasks = cur.fetchall()
+	curd.execute('SELECT `id`, `module`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` = %s ORDER BY `start` DESC LIMIT 5', (session['username'],))
+	tasks = curd.fetchall()
 
 	return render_template('dashboard.html', vm_count=vm_count, ci_count=ci_count, task_progress_count=task_progress_count, task_failed_count=task_failed_count, tasks=tasks, title="Dashboard")
 
@@ -62,15 +66,15 @@ def render_task_status(id, template):
 	code duplication."""
 
 	# Get a cursor to the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get the task
-	cur.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE id = %s", (id,))
-	task = cur.fetchone()
+	curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE id = %s", (id,))
+	task = curd.fetchone()
 
 	# Get the events for the task
-	cur.execute("SELECT `id`, `source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end` FROM `events` WHERE `related_id` = %s AND `source` = 'neocortex.task'", (id,))
-	events = cur.fetchall()
+	curd.execute("SELECT `id`, `source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end` FROM `events` WHERE `related_id` = %s AND `source` = 'neocortex.task' ORDER BY `start`", (id,))
+	events = curd.fetchall()
 
 	return render_template(template, id=id, task=task, events=events, title="Task Status")
 

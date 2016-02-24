@@ -15,8 +15,8 @@ def api_systems_csv():
 	"""Returns a CSV file, much like the /systems/download/csv but with API
 	auth rather than normal auth."""
 
-	# The request should contain a parameter in the passed form which
-	# contains the authentication pre-shared key. Validate this:
+	# The request should contain a parameter in the headers which contains
+	# the authentication pre-shared key. Validate this:
 	if 'X-Auth-Token' not in request.headers:
 		app.logger.warn('auth_token missing from Systems API request')
 		return abort(401)
@@ -27,18 +27,17 @@ def api_systems_csv():
 	# Get the list of systems
 	cur = cortex.lib.systems.get_systems(return_cursor=True)
 
-	# Return the response 
+	# Return the response as a downloadable CSV
 	return Response(systems_csv_stream(cur), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
 	
 ################################################################################
-
 
 @app.route('/api/puppet/enc/<certname>')
 def api_puppet_enc(certname):
 	"""Returns the YAML associated with the given node."""
 
-	# The request should contain a parameter in the passed form which 
-	# contains the autthentication pre-shared key. Validate this:
+	# The request should contain a parameter in the headers which contains
+	# the autthentication pre-shared key. Validate this:
 	if 'X-Auth-Token' not in request.headers:
 		app.logger.warn('auth_token missing from Puppet ENC API request (certname: ' + certname + ')')
 		return abort(401)
@@ -46,6 +45,7 @@ def api_puppet_enc(certname):
 		app.logger.warn('Incorrect auth_token on request to Puppet ENC API (certname: ' + certname + ')')
 		return abort(401)
 
+	# Check that we've got a valid hostname
 	if not cortex.lib.core.is_valid_hostname(certname):
 		app.logger.warn('Invalid certname presented to Puppet ENC API (certname: ' + certname + ')')
 		abort(400)

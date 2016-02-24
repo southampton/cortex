@@ -9,7 +9,7 @@ import requests
 
 ################################################################################
 
-@app.route('/api/register',methods=['POST'])
+@app.route('/api/register', methods=['POST'])
 @app.disable_csrf_check
 def api_register_system():
 	"""API endpoint for when linux systems register with Cortex to obtain their
@@ -19,11 +19,11 @@ def api_register_system():
        is checked against the VMware systems cache."""
 
 
-	## Clients can send hostname, username and password (interactive installation)
+	# Clients can send hostname, username and password (interactive installation)
 	if 'hostname' in request.form and 'username' in request.form and 'password' in request.form:
 
-		## Get the hostname and remove the domain portions, if any
-		## we want the 'short' hostname / the node name
+		# Get the hostname and remove the domain portions, if any
+		# we want the 'short' hostname / the node name
 		hostname = cortex.lib.core.fqdn_strip_domain(request.form['hostname'])
 
 		# Match the hostname to a system record in the database
@@ -33,21 +33,21 @@ def api_register_system():
 			app.logger.warn('Could not locate host in systems table for register API (hostname: ' + hostname + ')')
 			abort(404)
 
-		## LDAP username/password authentication
+		# LDAP username/password authentication
 		if not cortex.lib.user.authenticate(request.form['username'], request.form['password']):
 			app.logger.warn('Incorrect username/password when registering ' + hostname + ', username: ' + request.form['username'] + ')')
 			abort(403)
 
-		## LDAP authorisation
+		# LDAP authorisation
 		if not cortex.lib.user.is_global_admin(request.form['username']):
 			app.logger.warn('Non-admin user attempted to register ' + hostname + ', username: ' + request.form['username'] + ')')
 			abort(403)
 
 		interactive = True
 
-	## OR clients can send the vmware UUID as authentication instead (without a hostname)
+	# OR clients can send the vmware UUID as authentication instead (without a hostname)
 	elif 'uuid' in request.form:
-		## VMware UUID based authentication
+		# VMware UUID based authentication
 		system = cortex.lib.systems.get_system_by_vmware_uuid(request.form['uuid'])
 
 		if not system:
@@ -60,10 +60,10 @@ def api_register_system():
 	else:
 		abort(401)
 
-	## Build the node's fqdn
+	# Build the node's fqdn
 	fqdn = hostname + '.soton.ac.uk'
 
-	## Contact the puppet-autosign server to get ssl certificates for this hostname
+	# Contact the puppet-autosign server to get ssl certificates for this hostname
 	autosign_url = app.config['PUPPET_AUTOSIGN_URL']
 	if not autosign_url.endswith('/'):
 		autosign_url += '/'
@@ -90,12 +90,8 @@ def api_register_system():
 		app.logger.error("Error occured contacting cortex-puppet-autosign server. HTTP status code: '" + str(r.status_code) + "'")
 		abort(500)
 			
-
-
-		
-
-	## systems authenticating by UUID also want to know their hostname and 
-	## IP address in order to configure themselves!
+	# Systems authenticating by UUID also want to know their hostname and 
+	# IP address in order to configure themselves!
 
 	if not interactive:
 		cdata['hostname']  = system['name']
@@ -106,14 +102,14 @@ def api_register_system():
 		else:
 			cdata['ipaddress'] = netaddr
 
-		## Mark as done
+		# Mark as done
 		g.redis.setex("vm/" + system['vmware_uuid'] + "/" + "notify", 28800, "inprogress")
 
-	## Default to production env for puppet
+	# Default to production env for puppet
 	cdata['environment'] = 'production'
 	cdata['certname']    = fqdn
 
-	## Create puppet ENC entry if it does not already exist
+	# Create puppet ENC entry if it does not already exist
 	create_entry = False
 	if 'puppet_certname' in system:
 		if system['puppet_certname'] == None:
@@ -131,7 +127,7 @@ def api_register_system():
 			if system['puppet_env'] != None:
 				cdata['environment'] = system['puppet_env']
 
-	## Get the satellite registration key (if any)
+	# Get the satellite registration key (if any)
 	if 'ident' in request.form:
 		ident = request.form['ident']
 
@@ -142,21 +138,21 @@ def api_register_system():
 
 	return(jsonify(cdata))
 
-@app.route('/api/installer/notify',methods=['POST'])
+@app.route('/api/installer/notify', methods=['POST'])
 @app.disable_csrf_check
 def api_installer_notify():
 	"""API endpoint to allow the bonemeal installer to notify cortex that the 
 		the installation is now complete and is about to reboot."""
 
 	if 'uuid' in request.form:
-		## VMware UUID based authentication
+		# VMware UUID based authentication
 		system = cortex.lib.systems.get_system_by_vmware_uuid(request.form['uuid'].lower())
 
 		if not system:
 			app.logger.warn('Could not match vmware uuid to a system for the register API (UUID: ' + request.form['uuid'].lower() + ')')
 			abort(404)
 
-		## Mark as done
+		# Mark as done
 		g.redis.setex("vm/" + system['vmware_uuid'].lower() + "/" + "notify", 28800, "done")
 
 		return "OK"

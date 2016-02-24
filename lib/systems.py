@@ -52,11 +52,11 @@ def get_system_count(class_name = None, search = None, show_decom = True):
 		query = query + ' (`sncache_cmdb_ci`.`operational_status` = "In Service" OR `sncache_cmdb_ci`.`operational_status` IS NULL)'
 
 	# Query the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute(query, params)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute(query, params)
 
 	# Get the results
-	row = cur.fetchone()
+	row = curd.fetchone()
 
 	# Return the count
 	return row['count']
@@ -71,41 +71,41 @@ def systems_select_query():
 
 def get_system_by_id(id):
 	# Query the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute(systems_select_query() + "WHERE `systems`.`id` = %s", (id,))
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute(systems_select_query() + "WHERE `systems`.`id` = %s", (id,))
 
 	# Return the result
-	return cur.fetchone()
+	return curd.fetchone()
 
 ################################################################################
 
 def get_system_by_name(name):
 	# Query the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute(systems_select_query() + "WHERE `systems`.`name` = %s", (name,))
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute(systems_select_query() + "WHERE `systems`.`name` = %s", (name,))
 
 	# Return the result
-	return cur.fetchone()
+	return curd.fetchone()
 
 ################################################################################
 
 def get_system_by_puppet_certname(name):
 	# Query the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute(systems_select_query() + "WHERE `puppet_nodes`.`certname` = %s", (name,))
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute(systems_select_query() + "WHERE `puppet_nodes`.`certname` = %s", (name,))
 
 	# Return the result
-	return cur.fetchone()
+	return curd.fetchone()
 
 ################################################################################
 
 def get_system_by_vmware_uuid(name):
 	# Query the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute(systems_select_query() + "WHERE `systems`.`vmware_uuid` = %s", (name,))
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute(systems_select_query() + "WHERE `systems`.`vmware_uuid` = %s", (name,))
 
 	# Return the result
-	return cur.fetchone()
+	return curd.fetchone()
 
 ################################################################################
 
@@ -158,7 +158,6 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 			query = query + " AND "
 		else:
 			query = query + "WHERE "
-	
 		query = query + ' `systems`.`type` != 0'
 
 	# Handle the ordering of the rows
@@ -199,11 +198,11 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 			query = query + "18446744073709551610"
 
 	# Query the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute(query, params)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute(query, params)
 
 	# Return the results
 	if return_cursor:
-		return cur
+		return curd
 	else:
-		return cur.fetchall()
+		return curd.fetchall()

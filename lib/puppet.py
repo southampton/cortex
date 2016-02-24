@@ -32,7 +32,7 @@ def generate_node_config(certname):
 	if default_classes is not None:
 		default_classes = yaml.load(default_classes['value'])
 	
-		## yaml load can come back with no actual objects, e.g. comments, blank etc.
+		# YAML load can come back with no actual objects, e.g. comments, blank etc.
 		if default_classes == None:
 			default_classes = {}
 	else:
@@ -45,7 +45,7 @@ def generate_node_config(certname):
 	if len(node['classes'].strip()) != 0:
 		node_classes = yaml.load(node['classes'])
 
-		## yaml load can come back with no actual objects, e.g. comments, blank etc.
+		# YAML load can come back with no actual objects, e.g. comments, blank etc.
 		if node_classes == None:
 			response['classes'] = {}
 		else:
@@ -66,9 +66,9 @@ def generate_node_config(certname):
 			# Convert from YAML to python types for the classes for this group
 			group_classes = yaml.load(group['classes'])
 
-			## If there are classes within that
+			# If there are classes within that
 			if not group_classes == None:
-				## Get the name of each class
+				# Get the name of each class
 				for classname in group_classes:
 					# And if the class hasn't already been loaded by the node...
 					if not classname in response['classes']:

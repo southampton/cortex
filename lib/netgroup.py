@@ -7,10 +7,10 @@ def exists(name):
 	"""Validates the name of a netgroup"""
 
 	try:
-		## try to switch to 'str' object rather than unicode
+		# Try to switch to 'str' object rather than unicode
 		name = name.encode('utf8')
 	except Exception as ex:
-		## ignore
+		# Ignore
 		pass
 
 	host,user,domain = c_char_p(None),c_char_p(None),c_char_p(None)
@@ -35,11 +35,11 @@ def contains_host(host, netgroup):
 	"""Determines if a given host exists within a given netgroup."""
 
 	try:
-		## try to switch to 'str' objects rather than unicode
+		# Try to switch to 'str' objects rather than unicode
 		host     = host.encode('utf8')
 		netgroup = netgroup.encode('utf8')
 	except Exception as ex:
-		## ignore, might already have been a str
+		# Ignore, might already have been a str
 		pass
 
 	libc = CDLL('libc.so.6')

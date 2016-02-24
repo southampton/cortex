@@ -8,9 +8,9 @@ import MySQLdb as mysql
 def get(name):
 	"""Tries to return the class data from a given name/prefix"""
 
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute("SELECT `name`, `digits`, `comment`, `disabled`, `lastid`, `link_vmware`, `cmdb_type` FROM `classes` WHERE `name` = %s", (name,))
-	return cur.fetchone()
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute("SELECT `name`, `digits`, `comment`, `disabled`, `lastid`, `link_vmware`, `cmdb_type` FROM `classes` WHERE `name` = %s", (name,))
+	return curd.fetchone()
 
 ################################################################################
 
@@ -25,10 +25,10 @@ def list(hide_disabled = False):
 	query = query + " ORDER BY `lastid` DESC"
 
 	# Query the database
-	cur = g.db.cursor(mysql.cursors.DictCursor)
-	cur.execute(query)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute(query)
 
 	# Return the results
-	return cur.fetchall()
+	return curd.fetchall()
 
 ################################################################################

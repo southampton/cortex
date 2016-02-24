@@ -25,7 +25,7 @@ def login_required(f):
 
 ################################################################################
 
-## NOT CURRENTLY IN USE
+# NOT CURRENTLY IN USE
 def global_admin_required(f):
 	"""This is a decorator function that when called ensures the user is a global admin
 	Usage is as such: @cortex.lib.user.global_admin_required"""
@@ -52,7 +52,7 @@ def is_global_admin(username):
 
 ################################################################################
 
-## NOT CURRENTLY IN USE
+# NOT CURRENTLY IN USE
 def is_in_group(group_cn):
 	"""Returns a boolean indicating if the logged in user is in the given
 	group, which is specified given it's entire CN. The group name 
@@ -96,13 +96,13 @@ def logon_ok():
 	"""This function is called post-logon or post TOTP logon to complete the logon sequence
 	"""
 
-	## Mark as logged on
+	# Mark as logged on
 	session['logged_in'] = True
 
-	## Log a successful login
+	# Log a successful login
 	app.logger.info('User "' + session['username'] + '" logged in from "' + request.remote_addr + '" using ' + request.user_agent.string)
 		
-	## determine if "next" variable is set (the URL to be sent to)
+	# Determine if "next" variable is set (the URL to be sent to)
 	next = request.form.get('next',default=None)
 	
 	if next == None:
@@ -111,7 +111,7 @@ def logon_ok():
 		return redirect(next)
 
 ################################################################################
-#### Authentication
+# Authentication
 
 def authenticate(username, password):
 	if len(username) == 0:
@@ -119,11 +119,11 @@ def authenticate(username, password):
 	if len(password) == 0:
 		return False
 
-	## connect to LDAP and turn off referals
+	# Connect to LDAP and turn off referals
 	l = ldap.initialize(app.config['LDAP_URI'])
 	l.set_option(ldap.OPT_REFERRALS, 0)
 
-	## and bind to the server with a username/password if needed in order to search for the full DN for the user who is logging in.
+	# Bind to the server with a username/password if needed in order to search for the full DN for the user who is logging in.
 	try:
 		if app.config['LDAP_ANON_BIND']:
 			l.simple_bind_s()
@@ -134,38 +134,38 @@ def authenticate(username, password):
 		app.logger.error("Could not bind to LDAP: " + str(e))
 		abort(500)
 
-	## Now search for the user object to bind as
+	# Now search for the user object to bind as
 	try:
 		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE,(app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
 	except ldap.LDAPError as e:
 		return False
 
-	## handle the search results
+	# Handle the search results
 	for result in results:
 		dn	= result[0]
 		attrs	= result[1]
 
 		if dn == None:
-			## No dn returned. Return false.
+			# No dn returned. Return false.
 			return False
 		else:
-			## Found the DN. Yay! Now bind with that DN and the password the user supplied
+			# Found the DN. Yay! Now bind with that DN and the password the user supplied
 			try:
 				lauth = ldap.initialize(app.config['LDAP_URI'])
 				lauth.set_option(ldap.OPT_REFERRALS, 0)
 				lauth.simple_bind_s( (dn), (password) )
 			except ldap.LDAPError as e:
-				## password was wrong
+				# Password was wrong
 				return False
 
-			## Return that LDAP auth succeeded
+			# Return that LDAP auth succeeded
 			return True
 
-	## Catch all return false for LDAP auth
+	# Catch all return false for LDAP auth
 	return False
 
 ################################################################################
-#### Authentication
+# Authentication
 
 def get_users_groups(username, from_cache=True):
 	"""Returns a set (not a list) of groups that a user belongs to. The result is 
@@ -178,9 +178,9 @@ def get_users_groups(username, from_cache=True):
 	be in no groups, and if they are, then they probably shouldn't be using cortex.
 	"""
 
-	## This uses REDIS to cache the LDAP response
-	## because Active Directory is dog slow and takes forever to respond
-	## with a list of groups, making pages load really slowly. 
+	# This uses REDIS to cache the LDAP response
+	# because Active Directory is dog slow and takes forever to respond
+	# with a list of groups, making pages load really slowly. 
 
 	if from_cache == False:
 		return get_users_groups_from_ldap(username)
@@ -199,47 +199,46 @@ def get_users_groups(username, from_cache=True):
 ################################################################################
 		
 def get_users_groups_from_ldap(username):
-		## connect to LDAP and turn off referals
-		l = ldap.initialize(app.config['LDAP_URI'])
-		l.set_option(ldap.OPT_REFERRALS, 0)
+	# Connect to LDAP and turn off referals
+	l = ldap.initialize(app.config['LDAP_URI'])
+	l.set_option(ldap.OPT_REFERRALS, 0)
 
-		## and bind to the server with a username/password if needed in order to search for the full DN for the user who is logging in.
-		try:
-			if app.config['LDAP_ANON_BIND']:
-				l.simple_bind_s()
-			else:
-				l.simple_bind_s( (app.config['LDAP_BIND_USER']), (app.config['LDAP_BIND_PW']) )
-		except ldap.LDAPError as e:
-			flash('Internal Error - Could not connect to LDAP directory: ' + str(e),'alert-danger')
-			app.logger.error("Could not bind to LDAP: " + str(e))
-			abort(500)
+	# Bind to the server with a username/password if needed in order to search for the full DN for the user who is logging in.
+	try:
+		if app.config['LDAP_ANON_BIND']:
+			l.simple_bind_s()
+		else:
+			l.simple_bind_s( (app.config['LDAP_BIND_USER']), (app.config['LDAP_BIND_PW']) )
+	except ldap.LDAPError as e:
+		flash('Internal Error - Could not connect to LDAP directory: ' + str(e),'alert-danger')
+		app.logger.error("Could not bind to LDAP: " + str(e))
+		abort(500)
 
-		## Now search for the user object
-		try:
-			results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE,(app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
-		except ldap.LDAPError as e:
+	# Now search for the user object
+	try:
+		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE,(app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
+	except ldap.LDAPError as e:
+		return None
+
+	# Handle the search results
+	for result in results:
+		dn	= result[0]
+		attrs	= result[1]
+
+		if dn == None:
 			return None
-
-		## handle the search results
-		for result in results:
-			dn	= result[0]
-			attrs	= result[1]
-
-			if dn == None:
-				return None
-			else:
-				## Found the DN. Yay! Now bind with that DN and the password the user supplied
-
-				if 'memberOf' in attrs:
-					if len(attrs['memberOf']) > 0:
-						for group in attrs['memberOf']:
-							g.redis.sadd("ldap/user/groups/" + username,group)
-						g.redis.expire("ldap/user/groups/" + username,app.config['LDAP_GROUPS_CACHE_EXPIRE'])
-						return attrs['memberOf']
-					else:
-						return None
+		else:
+			# Found the DN. Yay! Now bind with that DN and the password the user supplied
+			if 'memberOf' in attrs:
+				if len(attrs['memberOf']) > 0:
+					for group in attrs['memberOf']:
+						g.redis.sadd("ldap/user/groups/" + username,group)
+					g.redis.expire("ldap/user/groups/" + username,app.config['LDAP_GROUPS_CACHE_EXPIRE'])
+					return attrs['memberOf']
 				else:
 					return None
+			else:
+				return None
 
-		return None
+	return None
 

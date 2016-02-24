@@ -23,17 +23,17 @@ class CortexFlask(Flask):
 	def __init__(self,init_object_name):
 		super(CortexFlask, self).__init__(init_object_name)
 
-		## CSRF exemption support
+		# CSRF exemption support
 		self._exempt_views = set()
 		self.before_request(self._csrf_protect)
 
-		## CSRF token function in templates
+		# CSRF token function in templates
 		self.jinja_env.globals['csrf_token'] = self._generate_csrf_token
 
-		## load the __init__.py config defaults
+		# Load the __init__.py config defaults
 		self.config.from_object(init_object_name)
 
-		## load system config file
+		# Load system config file
 		if os.path.isfile('/data/cortex/cortex.conf'):
 			self.config.from_pyfile('/data/cortex/cortex.conf')
 		elif os.path.isfile('/etc/cortex/cortex.conf'):
@@ -41,13 +41,13 @@ class CortexFlask(Flask):
 		elif os.path.isfile('/etc/cortex.conf'):
 			self.config.from_pyfile('/etc/cortex.conf')
 
-		## Set up logging to file
+		# Set up logging to file
 		if self.config['FILE_LOG'] == True:
 			file_handler = RotatingFileHandler(self.config['LOG_DIR'] + '/' + self.config['LOG_FILE'], 'a', self.config['LOG_FILE_MAX_SIZE'], self.config['LOG_FILE_MAX_FILES'])
 			file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
 			self.logger.addHandler(file_handler)
 
-		## Set up the max log level
+		# Set up the max log level
 		if self.debug:
 			self.logger.setLevel(logging.DEBUG)
 			file_handler.setLevel(logging.DEBUG)
@@ -55,20 +55,19 @@ class CortexFlask(Flask):
 			self.logger.setLevel(logging.INFO)
 			file_handler.setLevel(logging.INFO)
 
-		## Output some startup info
+		# Output some startup info
 		self.logger.info('cortex version ' + self.config['VERSION_MAJOR'] + " r" + self.config['VERSION_MINOR'] + ' initialised')
 		self.logger.info('cortex debug status: ' + str(self.config['DEBUG']))
 
 		# set up e-mail alert logging
 		if self.config['EMAIL_ALERTS'] == True:
-
-			## Log to file where e-mail alerts are going to
+			# Log to file where e-mail alerts are going to
 			self.logger.info('cortex e-mail alerts are enabled and being sent to: ' + str(self.config['ADMINS']))
 
-			## Create the mail handler
+			# Create the mail handler
 			mail_handler = SMTPHandler(self.config['SMTP_SERVER'], self.config['EMAIL_FROM'], self.config['ADMINS'], self.config['EMAIL_SUBJECT'])
 
-			## Set the minimum log level (errors) and set a formatter
+			# Set the minimum log level (errors) and set a formatter
 			mail_handler.setLevel(logging.ERROR)
 			mail_handler.setFormatter(Formatter("""
 A fatal error occured in Cortex.
@@ -89,17 +88,17 @@ Further Details:
 
 			self.logger.addHandler(mail_handler)
 
-		## Debug Toolbar
+		# Debug Toolbar
 		if self.config['DEBUG_TOOLBAR']:
 			self.debug = True
 			from flask_debugtoolbar import DebugToolbarExtension
 			toolbar = DebugToolbarExtension(app)
 			self.logger.info('cortex debug toolbar enabled - DO NOT USE THIS ON LIVE SYSTEMS!')
 
-		## Set up before_request function to run on each request
+		# Set up before_request function to run on each request
 		self.before_request(self.start_request)
 	
-		## Set up a context processor (inject data into jinja on each request)
+		# Set up a context processor (inject data into jinja on each request)
 		self.context_processor(self.inject_template_data)
 
 	################################################################################
@@ -146,8 +145,7 @@ Further Details:
 					else:
 			 			self.logger.warning('CSRF protection alert: a non-logged in user failed to present a valid POST token')
 
-					### the user should not have accidentally triggered this
-					### so just throw a 400
+					# The user should not have accidentally triggered this so just throw a 400
 					abort(400)
 			else:
 				self.logger.debug('View ' + view_location + ' is exempt from CSRF checks')
@@ -172,12 +170,19 @@ Further Details:
 	################################################################################
 
 	def _load_workflow_settings(self, filename): 
+		"""Extracts the settings from the given config file."""
+
+		# Start a new module, which will be the context for parsing the config
 		d = imp.new_module('config')
 		d.__file__ = filename
 
+		# Read the contents of the configuration file and execute it as a
+		# Python script within the context of a new module
 		with open(filename) as config_file:
 			exec(compile(config_file.read(), filename, 'exec'), d.__dict__)
 
+		# Extract the config options, which are those variables whose names are
+		# entirely in uppercase
 		new_config = {}
 		for key in dir(d):
 			if key.isupper():
@@ -192,26 +197,30 @@ Further Details:
 		which is defined in app.config['WORKFLOWS_DIR']. Each config file is loaded
 		and the display name stored"""
 
-		## where to store workflow settings
+		# Where to store workflow settings
 		self.wfsettings = {}
 
-		## list all entries in the directory
+		# Ensure that we have a directory
 		if not os.path.isdir(self.config['WORKFLOWS_DIR']):
 			self.logger.error("The config option WORKFLOWS_DIR is not a directory!")
 			return
 
+		# List all entries in the directory and iterate over them
 		entries = os.listdir(self.config['WORKFLOWS_DIR'])
 		found = False
 		for entry in entries:
+			# Ignore the . and .. entries, along with any hidden files
 			if entry.startswith('.'):
 				continue
 
-			fqp = os.path.join(self.config['WORKFLOWS_DIR'],entry)
+			# Get the fully qualified path of the file
+			fqp = os.path.join(self.config['WORKFLOWS_DIR'], entry)
 
+			# If it's a directory...
 			if os.path.isdir(fqp):
-				## this is or rather should be a workflow directory
+				# This is or rather should be a workflow directory
 				found = True
-				views_file = os.path.join(fqp,"views.py")
+				views_file = os.path.join(fqp, "views.py")
 				try:
 					view_module = imp.load_source(entry, views_file)
 					self.logger.info("Loaded workflow '" + entry + "' views module")
@@ -219,8 +228,8 @@ Further Details:
 					self.logger.warn("Could not load workflow from file " + views_file + ": " + str(ex))
 					continue
 
-				## Load settings for this workflow if they exist ( settings files are optional )
-				settings_file = os.path.join(fqp,"workflow.conf")
+				# Load settings for this workflow if they exist ( settings files are optional )
+				settings_file = os.path.join(fqp, "workflow.conf")
 				if os.path.isfile(settings_file):
 					try:
 						self.wfsettings[entry] = self._load_workflow_settings(settings_file)
@@ -229,19 +238,24 @@ Further Details:
 						self.logger.warn("Could not load workflow config file " + settings_file + ": " + str(ex))
 						continue
 
+		# Warn if we didn't find any workflows
 		if not found:
 			self.logger.warn("The WORKFLOWS_DIR directory is empty, no workflows could be loaded!")
 
-		## set up template loading
+		# Set up template loading. Firstly build a list of FileSystemLoaders
+		# that will process templates in each workflows' templates directory
 		loader_data = {}
 		for workflow in self.workflows:
-			template_dir = os.path.join(self.config['WORKFLOWS_DIR'],workflow['name'],'templates')
+			template_dir = os.path.join(self.config['WORKFLOWS_DIR'], workflow['name'], 'templates')
 			loader_data[workflow['name']] = jinja2.FileSystemLoader(template_dir)
 
+		# Create a ChoiceLoader, which by default will use the default 
+		# template loader, and if that fails, uses a PrefixLoader which
+		# can check the workflow template directories
 		choice_loader = jinja2.ChoiceLoader(
 		[
 			self.jinja_loader,
-			jinja2.PrefixLoader(loader_data,'::')
+			jinja2.PrefixLoader(loader_data, '::')
 		])
 		self.jinja_loader = choice_loader
 
@@ -268,11 +282,20 @@ Further Details:
 		"""
 
 		def decorator(f):
+			# Build the path that the workflow handler will be displayed on
 			rule = "/workflows/" + workflow_name
+
+			# Get the endpoint
 			endpoint = options.pop('endpoint', None)
+
+			# This is what Flask normally does for a route, which allows the
+			# page to be accessible
 			self.add_url_rule(rule, endpoint, f, **options)
+
+			# Collect information about the workflow and store it in our workflows list
 			self.workflows.append({'display': workflow_title, 'name': workflow_name, 'order': workflow_order, 'view_func': f.__name__ })
 			return f
+
 		return decorator
 
 	################################################################################
@@ -320,7 +343,7 @@ Username:             %s
 		to go away.
 		"""
 
-		# Check for MSIE version <= 8.0
+		# Check for MSIE version <= 10.0
 		if (request.user_agent.browser == "msie" and int(round(float(request.user_agent.version))) <= 10):
 			return render_template('foad.html')
 
@@ -329,9 +352,9 @@ Username:             %s
 			g.redis = redis.StrictRedis(host=self.config['REDIS_HOST'], port=self.config['REDIS_PORT'], db=0)
 			g.redis.get('foo') # it doesnt matter that this key doesnt exist, its just to force a test call to redis.
 		except Exception as ex:
-			self.fatal_error('Unable to connect to redis',str(ex))
+			self.fatal_error('Unable to connect to redis', str(ex))
 	
-		## Connect to database
+		# Connect to database
 		try:
 			g.db = mysql.connect(host=self.config['MYSQL_HOST'], port=self.config['MYSQL_PORT'], user=self.config['MYSQL_USER'], passwd=self.config['MYSQL_PASS'], db=self.config['MYSQL_NAME'])
 		except Exception as ex:
@@ -344,8 +367,13 @@ Username:             %s
 		variable in to every render_template call, which is used to populate the
 		Workflows menu on the page."""
 
+		# Inject in our list of workflows, so each page will see a 'workflows'
+		# variable
 		injectdata = dict(workflows=self.workflows)
 
+		# If the current request is for a page that is a workflow, set the
+		# value of the 'active' variable that's passed to the page templates
+		# to say it's a workflow (this allows the navigation bar to work)
 		for workflow in self.workflows:
 			if workflow['view_func'] == request.endpoint:
 				injectdata['active'] = 'workflows'
@@ -355,7 +383,10 @@ Username:             %s
 
 ################################################################################
 
-	def fatal_error(self,title,message):
+	def fatal_error(self, title, message):
+		"""Aborts with an HTTP 500 (Internal Server Error) and produces
+		an appropriate fatal error page"""
+
 		g.fault_title = title
 		g.fault_message = message
 		abort(500)

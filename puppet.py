@@ -45,7 +45,7 @@ def puppet_enc_edit(node):
 
 	# On any GET request, just display the information
 	if request.method == 'GET':
-		return render_template('puppet-enc.html', system=system, active='puppet', environments=environments, title=system['name'],nodename=node,pactive="edit")
+		return render_template('puppet-enc.html', system=system, active='puppet', environments=environments, title=system['name'], nodename=node, pactive="edit")
 
 	# On any POST request, validate the input and then save
 	elif request.method == 'POST':
@@ -88,23 +88,23 @@ def puppet_enc_edit(node):
 			return render_template('puppet-enc.html', system=system, active='puppet', environments=environments, title=system.name)
 
 		# Get a cursor to the database
-		cur = g.db.cursor(mysql.cursors.DictCursor)
+		curd = g.db.cursor(mysql.cursors.DictCursor)
 
 		# Update the system
-		cur.execute('UPDATE `puppet_nodes` SET `env` = %s, `classes` = %s, `variables` = %s, `include_default` = %s WHERE `certname` = %s', (env_dict[environment]['puppet'], classes, variables, include_default, system['puppet_certname']))
+		curd.execute('UPDATE `puppet_nodes` SET `env` = %s, `classes` = %s, `variables` = %s, `include_default` = %s WHERE `certname` = %s', (env_dict[environment]['puppet'], classes, variables, include_default, system['puppet_certname']))
 		g.db.commit()
 
 		# Redirect back to the systems page
 		flash('Puppet ENC for host ' + system['name'] + ' updated', 'alert-success')
 
-		return redirect(url_for('puppet_enc_edit',node=node))
+		return redirect(url_for('puppet_enc_edit', node=node))
 
 ################################################################################
 
 @app.route('/puppet/default', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def puppet_enc_default():
-	## Get the default YAML out of the kv table
+	# Get the default YAML out of the kv table
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute("SELECT `value` FROM `kv_settings` WHERE `key` = 'puppet.enc.default'")
 	result = curd.fetchone()
@@ -131,7 +131,7 @@ def puppet_enc_default():
 
 		# Get a cursor to the database
 		# Update the system
-		curd.execute('REPLACE INTO `kv_settings` (`key`,`value`) VALUES ("puppet.enc.default",%s)', (classes,))
+		curd.execute('REPLACE INTO `kv_settings` (`key`, `value`) VALUES ("puppet.enc.default", %s)', (classes,))
 		g.db.commit()
 
 		# Redirect back
@@ -175,7 +175,7 @@ def puppet_groups():
 				flash('Invalid netgroup name', 'alert-danger')
 				return redirect(url_for('puppet_groups'))
 
-			## Make sure that group hasnt already been imported
+			# Make sure that group hasnt already been imported
 			curd.execute('SELECT 1 FROM `puppet_groups` WHERE `name` = %s', netgroup_name)
 			found = curd.fetchone()
 			if found:
@@ -211,7 +211,7 @@ def puppet_group_edit(name):
 	# Get a cursor to the databaseo
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-	## Get the group from the DB
+	# Get the group from the DB
 	curd.execute('SELECT * FROM `puppet_groups` WHERE `name` = %s', name)
 	group = curd.fetchone()
 	if not group:
@@ -238,12 +238,12 @@ def puppet_group_edit(name):
 			return render_template('puppet-group.html', group=group, classes=classes, active='puppet', title=group['name'])
 
 		# Update the system
-		curd.execute('UPDATE `puppet_groups` SET `classes` = %s WHERE `name` = %s', (classes,name))
+		curd.execute('UPDATE `puppet_groups` SET `classes` = %s WHERE `name` = %s', (classes, name))
 		g.db.commit()
 
 		# Redirect back to the systems page
 		flash('Changes saved successfully', 'alert-success')
-		return redirect(url_for('puppet_group_edit',name=name))
+		return redirect(url_for('puppet_group_edit', name=name))
 
 ################################################################################
 
@@ -257,14 +257,14 @@ def puppet_node_yaml(node):
 
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-	## Get the group from the DB
+	# Get the group from the DB
 	curd.execute('SELECT * FROM `puppet_nodes` WHERE `id` = %s', system['id'])
 	node = curd.fetchone()
 
 	if node == None:
 		abort(404)
 
-	return render_template('puppet-node-yaml.html', raw=cortex.lib.puppet.generate_node_config(node['certname']), system=system, node=node, active='puppet', title="Puppet Configuration",nodename=node['certname'],pactive="view")
+	return render_template('puppet-node-yaml.html', raw=cortex.lib.puppet.generate_node_config(node['certname']), system=system, node=node, active='puppet', title="Puppet Configuration", nodename=node['certname'], pactive="view")
 
 ################################################################################
 
@@ -285,7 +285,7 @@ def puppet_facts(node):
 	except Exception, e:
 		raise(e)
 
-	return render_template('puppet-facts.html', facts=facts, node=dbnode, active='puppet', title=node + " - Puppet Facts",nodename=node,pactive="facts")
+	return render_template('puppet-facts.html', facts=facts, node=dbnode, active='puppet', title=node + " - Puppet Facts", nodename=node, pactive="facts")
 
 ################################################################################
 
@@ -361,6 +361,7 @@ def puppet_reports(node):
 @app.route('/puppet/report/<report_hash>')
 @cortex.lib.user.login_required
 def puppet_report(report_hash):
+	# Connect to Puppet DB and query for a report with the given hash
 	db = cortex.lib.puppet.puppetdb_connect()
 	reports = db.reports(query='["=", "hash", "' + report_hash + '"]')
 
