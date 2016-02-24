@@ -7,6 +7,7 @@ import re
 import MySQLdb as mysql
 from functools import wraps
 import ldap
+from werkzeug.urls import url_encode
 
 ################################################################################
 
@@ -17,7 +18,7 @@ def login_required(f):
 	@wraps(f)
 	def decorated_function(*args, **kwargs):
 		if not is_logged_in():
-			flash('You must login first!','alert-danger')
+			flash('You must login first!', 'alert-danger')
 			args = url_encode(request.args)
 			return redirect(url_for('login', next=request.script_root + request.path + "?" + args))
 		return f(*args, **kwargs)
@@ -103,7 +104,7 @@ def logon_ok():
 	app.logger.info('User "' + session['username'] + '" logged in from "' + request.remote_addr + '" using ' + request.user_agent.string)
 		
 	# Determine if "next" variable is set (the URL to be sent to)
-	next = request.form.get('next',default=None)
+	next = request.form.get('next', default=None)
 	
 	if next == None:
 		return redirect(url_for('dashboard'))
@@ -130,13 +131,13 @@ def authenticate(username, password):
 		else:
 			l.simple_bind_s( (app.config['LDAP_BIND_USER']), (app.config['LDAP_BIND_PW']) )
 	except ldap.LDAPError as e:
-		flash('Internal Error - Could not connect to LDAP directory: ' + str(e),'alert-danger')
+		flash('Internal Error - Could not connect to LDAP directory: ' + str(e), 'alert-danger')
 		app.logger.error("Could not bind to LDAP: " + str(e))
 		abort(500)
 
 	# Now search for the user object to bind as
 	try:
-		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE,(app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
+		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
 	except ldap.LDAPError as e:
 		return False
 
@@ -210,13 +211,13 @@ def get_users_groups_from_ldap(username):
 		else:
 			l.simple_bind_s( (app.config['LDAP_BIND_USER']), (app.config['LDAP_BIND_PW']) )
 	except ldap.LDAPError as e:
-		flash('Internal Error - Could not connect to LDAP directory: ' + str(e),'alert-danger')
+		flash('Internal Error - Could not connect to LDAP directory: ' + str(e), 'alert-danger')
 		app.logger.error("Could not bind to LDAP: " + str(e))
 		abort(500)
 
 	# Now search for the user object
 	try:
-		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE,(app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
+		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
 	except ldap.LDAPError as e:
 		return None
 
@@ -232,8 +233,8 @@ def get_users_groups_from_ldap(username):
 			if 'memberOf' in attrs:
 				if len(attrs['memberOf']) > 0:
 					for group in attrs['memberOf']:
-						g.redis.sadd("ldap/user/groups/" + username,group)
-					g.redis.expire("ldap/user/groups/" + username,app.config['LDAP_GROUPS_CACHE_EXPIRE'])
+						g.redis.sadd("ldap/user/groups/" + username, group)
+					g.redis.expire("ldap/user/groups/" + username, app.config['LDAP_GROUPS_CACHE_EXPIRE'])
 					return attrs['memberOf']
 				else:
 					return None

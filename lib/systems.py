@@ -3,7 +3,6 @@
 from cortex import app
 import cortex.errors
 import MySQLdb as mysql
-from werkzeug.urls import url_encode
 from flask import Flask, request, redirect, session, url_for, abort, render_template, flash, g
 
 ################################################################################

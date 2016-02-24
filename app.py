@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from flask import Flask, request, session, abort, g
+from flask import Flask, request, session, abort, g, render_template
 import jinja2 
 import os.path
 from os import walk
