@@ -5,15 +5,18 @@ from cortex import app
 from flask import Flask, request, session, g, redirect, url_for, abort, flash, render_template, make_response
 import traceback
 
+################################################################################
+
 def fatal(title, message):
 	g.fault_title = title
 	g.fault_message = message
 	abort(500)
 
+################################################################################
+
 @app.errorhandler(500)
 def error500(error):
-	"""Handles abort(500) calls in code.
-	"""
+	"""Handles abort(500) calls in code."""
 	
 	# Default error title/msg
 	err_title  = "Internal Error"
@@ -74,6 +77,8 @@ Traceback:
 		
 	return render_template('error.html', title=err_title, message=err_msg, debug=debug), 500
 
+################################################################################
+
 @app.errorhandler(400)
 def error400(error):
 	"""Handles abort(400) calls in code."""
@@ -86,6 +91,8 @@ def error400(error):
 	app.logger.info('abort400 was called! ' + str(debug))
 		
 	return render_template('error.html', title="Bad Request", message='Your request was invalid, please try again.', debug=debug), 400
+
+################################################################################
 
 @app.errorhandler(403)
 def error403(error):
@@ -100,6 +107,8 @@ def error403(error):
 	
 	return render_template('error.html', title="Permission Denied", message='You do not have permission to access this resource.', debug=debug), 403
 
+################################################################################
+
 @app.errorhandler(404)
 def error404(error):
 	"""Handles abort(404) calls in code."""
@@ -110,6 +119,8 @@ def error404(error):
 		debug = None
 
 	return render_template('error.html', title="Not found", message="Sorry, I couldn't find what you requested.", debug=debug), 404
+
+################################################################################
 
 @app.errorhandler(405)
 def error405(error):
@@ -122,14 +133,22 @@ def error405(error):
 	
 	return render_template('error.html', title="Not allowed", message="Method not allowed. This usually happens when your browser sent a POST rather than a GET, or vice versa.", debug=debug), 405
 
+################################################################################
+
 @app.errorhandler(Exception)
 def error_handler(error):
+	"""Handles generic exceptions within the application, displaying the
+	traceback if the application is running in debug mode."""
+
+	# Get the traceback
 	trace = str(traceback.format_exc())
 	if app.debug:
 		debug = trace
 	else:
 		debug = "Debug output disabled. Ask your system administrator to consult the error log for more information"
 
+	# Build the response. Not using a template here to prevent any Jinja 
+	# issues from causing this to fail.
 	error_resp = """
 <!doctype html>
 <html>

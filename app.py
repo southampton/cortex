@@ -20,7 +20,11 @@ class CortexFlask(Flask):
 
 	################################################################################
 
-	def __init__(self,init_object_name):
+	def __init__(self, init_object_name):
+		"""Constructor for the CortexFlask application. Reads the config, sets
+		up logging, configures Jinja and Flask."""
+
+		# Call the superclass (Flask) constructor
 		super(CortexFlask, self).__init__(init_object_name)
 
 		# CSRF exemption support
@@ -105,8 +109,7 @@ Further Details:
 
 	def pwgen(self, length=16):
 		"""This is very crude password generator. It is currently only used to generate
-		a CSRF token.
-		"""
+		a CSRF token."""
 
 		urandom = random.SystemRandom()
 		alphabet = string.ascii_letters + string.digits

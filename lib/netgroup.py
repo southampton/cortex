@@ -3,6 +3,8 @@
 from ctypes import CDLL,c_char_p
 from ctypes import byref as _byref
 
+################################################################################
+
 def exists(name):
 	"""Validates the name of a netgroup"""
 

@@ -182,6 +182,7 @@ def vmware_specs():
 	curd.execute('SELECT `memoryMB`, `numCPU` FROM `vmware_cache_vm`')
 	results = curd.fetchall()
 
+	# The list of entries for our RAM histogram
 	data_ram = {
 		'Less than 1GB': 0,
 		'1GB': 0,
@@ -199,6 +200,7 @@ def vmware_specs():
 		'Other': 0,
 	}
 
+	# The list of entries for our CPU histogram
 	data_cpu = {
 		1: 0,
 		2: 0,
@@ -211,6 +213,7 @@ def vmware_specs():
 	for vm in results:
 		vm['memoryMB'] = int(vm['memoryMB'])
 
+		# Add the VM to the memory histogram
 		if vm['memoryMB'] < 1024:
 			data_ram['Less than 1GB'] += 1
 		elif vm['memoryMB'] == 1024:
@@ -240,6 +243,7 @@ def vmware_specs():
 		else:
 			data_ram['Other'] += 1
 
+		# Add the VM to the CPU histogram
 		try:
 			data_cpu[int(vm['numCPU'])] += 1
 		except KeyError as ex:
@@ -301,7 +305,7 @@ def vmware_csv_stream(cursor):
 	# Get the first row
 	row = cursor.fetchone()
 
-	# Write header
+	# Write CSV header
 	output = io.BytesIO()
 	writer = csv.writer(output)
 	writer.writerow(['Name', 'Cluster/Host', 'Annotation', 'Power State', 'IP Address', 'Operating System', 'vCPUs', 'RAM (MeB)', 'H/W Version', 'Tools State', 'Tools Version'])
@@ -309,6 +313,8 @@ def vmware_csv_stream(cursor):
 
 	# Write data
 	while row is not None:
+		# There's no way to flush (and empty) a CSV writer, so we create
+		# a new one each time
 		output = io.BytesIO()
 		writer = csv.writer(output)
 

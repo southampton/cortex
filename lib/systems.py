@@ -69,6 +69,8 @@ def systems_select_query():
 ################################################################################
 
 def get_system_by_id(id):
+	"""Gets all the information about a system by its database ID."""
+
 	# Query the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute(systems_select_query() + "WHERE `systems`.`id` = %s", (id,))
@@ -79,6 +81,8 @@ def get_system_by_id(id):
 ################################################################################
 
 def get_system_by_name(name):
+	"""Gets all the information about a system by its hostname."""
+
 	# Query the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute(systems_select_query() + "WHERE `systems`.`name` = %s", (name,))
@@ -89,6 +93,9 @@ def get_system_by_name(name):
 ################################################################################
 
 def get_system_by_puppet_certname(name):
+	"""Gets all the information about a system by its Puppet certificate 
+	name."""
+
 	# Query the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute(systems_select_query() + "WHERE `puppet_nodes`.`certname` = %s", (name,))
@@ -99,6 +106,8 @@ def get_system_by_puppet_certname(name):
 ################################################################################
 
 def get_system_by_vmware_uuid(name):
+	"""Gets all the information about a system by its VMware UUID."""
+
 	# Query the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute(systems_select_query() + "WHERE `systems`.`vmware_uuid` = %s", (name,))

@@ -35,12 +35,14 @@ def systems():
 
 ################################################################################
 
-# This function streams our CSV response from the data
 def systems_csv_stream(cursor):
+	"""Streams a CSV response of systems data from the database using the
+	given cursor"""
+
 	# Get the first row
 	row = cursor.fetchone()
 
-	# Write header
+	# Write CSV header
 	output = io.BytesIO()
 	writer = csv.writer(output)
 	writer.writerow(['Name', 'Comment', 'Allocated by', 'Allocation date', 'CI Operational Status', 'CMDB Link'])
@@ -48,6 +50,8 @@ def systems_csv_stream(cursor):
 
 	# Write data
 	while row is not None:
+		# There's no way to flush (and empty) a CSV writer, so we create
+		# a new one each time
 		output = io.BytesIO()
 		writer = csv.writer(output)
 
@@ -68,6 +72,9 @@ def systems_csv_stream(cursor):
 @app.route('/systems/search')
 @cortex.lib.user.login_required
 def systems_search():
+	"""Allows the user to search for a system by entering its name in the 
+	search box"""
+
 	# Get the query from the URL
 	query = request.args.get('query')
 	if query is None:

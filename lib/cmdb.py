@@ -2,8 +2,10 @@
 
 from cortex import app
 import cortex.errors
-from flask import Flask, request, redirect, session, url_for, abort, render_template, flash, g
-import MySQLdb as mysql	      ## used in before_request
+from flask import Flask, request, g
+import MySQLdb as mysql
+
+################################################################################
 
 def get_ci_count(search = None):
 	"""Returns the number of CMDB CIs in the database, optionally restricted by a search term"""

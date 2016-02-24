@@ -138,11 +138,13 @@ def api_register_system():
 
 	return(jsonify(cdata))
 
+################################################################################
+
 @app.route('/api/installer/notify', methods=['POST'])
 @app.disable_csrf_check
 def api_installer_notify():
 	"""API endpoint to allow the bonemeal installer to notify cortex that the 
-		the installation is now complete and is about to reboot."""
+	the installation is now complete and is about to reboot."""
 
 	if 'uuid' in request.form:
 		# VMware UUID based authentication
@@ -156,6 +158,5 @@ def api_installer_notify():
 		g.redis.setex("vm/" + system['vmware_uuid'].lower() + "/" + "notify", 28800, "done")
 
 		return "OK"
-
 	else:
 		abort(401)

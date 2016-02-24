@@ -13,10 +13,10 @@ def generate_node_config(certname):
 	"""Generates a YAML document describing the configuration of a particular
 	node given as 'certname'."""
 
-	# Get a cursor to the databaseo
+	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-	# Get the task
+	# Get the Puppet node from the database
 	curd.execute("SELECT `id`, `classes`, `variables`, `env`, `include_default` FROM `puppet_nodes` WHERE `certname` = %s", (certname,))
 	node = curd.fetchone()
 
@@ -27,6 +27,7 @@ def generate_node_config(certname):
 	# Get the system
 	system = cortex.lib.systems.get_system_by_id(node['id'])
 
+	# Get the Puppet default classes
 	curd.execute("SELECT `value` FROM `kv_settings` WHERE `key` = 'puppet.enc.default'")
 	default_classes = curd.fetchone()
 	if default_classes is not None:
@@ -119,6 +120,8 @@ def puppetdb_connect():
 ################################################################################
 
 def puppetdb_get_node_stats(db = None):
+	"""Calculate statistics on node statuses by talking to PuppetDB"""
+
 	if db is None:
 		db = puppetdb_connect()
 

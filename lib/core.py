@@ -11,15 +11,26 @@ import re
 ################################################################################
 
 def get_environments():
+	"""Get all the information about all the environments."""
+
 	return app.config['ENVIRONMENTS']
 
 def get_puppet_environments():
+	"""Get all the information about all the environments that have a 
+	Puppet environment."""
+
 	return [e for e in app.config['ENVIRONMENTS'] if e['puppet']]
 
 def get_cmdb_environments():
+	"""Get all the information about all the environments that have a 
+	ServiceNow environment."""
+
 	return [e for e in app.config['ENVIRONMENTS'] if e['cmdb']]
 
 def get_environments_as_dict():
+	"""Get all the information about all the environments but as a 
+	dictionary keyed on the environment rather than an ordered list"""
+
 	return dict((e['id'], e) for e in app.config['ENVIRONMENTS'])
 
 ################################################################################

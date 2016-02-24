@@ -13,8 +13,8 @@ from werkzeug.urls import url_encode
 
 def login_required(f):
 	"""This is a decorator function that when called ensures the user has logged in.
-	Usage is as such: @cortex.lib.user.login_required
-	"""
+	Usage is as such: @cortex.lib.user.login_required"""
+
 	@wraps(f)
 	def decorated_function(*args, **kwargs):
 		if not is_logged_in():
@@ -77,12 +77,17 @@ def is_in_group(group_cn):
 ################################################################################
 
 def is_logged_in():
+	"""Returns a boolean indicating whether the current session has a logged
+	in user."""
+
 	return session.get('logged_in', False)
 
 ################################################################################
 
 def clear_session():
-	"""Ends the logged in user's login session. The session remains but it is marked as being not logged in."""
+	"""Ends the logged in user's login session. The session remains but it 
+	is marked as being not logged in."""
+
 	app.logger.info('User "' + session['username'] + '" logged out from "' + request.remote_addr + '" using ' + request.user_agent.string)
 
 	# Remove the following items from the session
@@ -94,8 +99,8 @@ def clear_session():
 ################################################################################
 
 def logon_ok(): 
-	"""This function is called post-logon or post TOTP logon to complete the logon sequence
-	"""
+	"""This function is called post-logon or post TOTP logon to complete the
+	logon sequence"""
 
 	# Mark as logged on
 	session['logged_in'] = True
@@ -115,6 +120,9 @@ def logon_ok():
 # Authentication
 
 def authenticate(username, password):
+	"""Determines whether the given username and password are valid by using
+	them to authenticate against LDAP."""
+
 	if len(username) == 0:
 		return False
 	if len(password) == 0:
@@ -166,7 +174,6 @@ def authenticate(username, password):
 	return False
 
 ################################################################################
-# Authentication
 
 def get_users_groups(username, from_cache=True):
 	"""Returns a set (not a list) of groups that a user belongs to. The result is 
@@ -200,6 +207,10 @@ def get_users_groups(username, from_cache=True):
 ################################################################################
 		
 def get_users_groups_from_ldap(username):
+	"""Talks to LDAP and gets the list of the given users groups. This
+	information is then stored in Redis so that it can be accessed 
+	quickly."""
+
 	# Connect to LDAP and turn off referals
 	l = ldap.initialize(app.config['LDAP_URI'])
 	l.set_option(ldap.OPT_REFERRALS, 0)

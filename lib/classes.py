@@ -30,5 +30,3 @@ def list(hide_disabled = False):
 
 	# Return the results
 	return curd.fetchall()
-
-################################################################################

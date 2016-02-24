@@ -5,6 +5,8 @@ import cortex.lib.user
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 import re
 
+################################################################################
+
 @app.route('/', methods=['GET', 'POST'])
 def login():
 	"""Handles the login page, logging a user in on correct authentication."""

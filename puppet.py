@@ -20,6 +20,8 @@ from requests.exceptions import HTTPError
 @app.route('/help/puppet', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def puppet_help():
+	"""Displays the Puppet ENC help page."""
+
 	return render_template('puppet-help.html', active='help', title="Puppet Help")
 
 ################################################################################
@@ -27,6 +29,8 @@ def puppet_help():
 @app.route('/puppet/enc/<node>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def puppet_enc_edit(node):
+	"""Handles the manage Puppet node page"""
+
 	# Get the system out of the database
 	system       = cortex.lib.systems.get_system_by_puppet_certname(node)
 	environments = cortex.lib.core.get_puppet_environments()
@@ -104,6 +108,8 @@ def puppet_enc_edit(node):
 @app.route('/puppet/default', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def puppet_enc_default():
+	"""Handles the Puppet ENC Default Classes page"""
+
 	# Get the default YAML out of the kv table
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute("SELECT `value` FROM `kv_settings` WHERE `key` = 'puppet.enc.default'")
@@ -144,13 +150,16 @@ def puppet_enc_default():
 @app.route('/puppet/nodes')
 @cortex.lib.user.login_required
 def puppet_nodes():
+	"""Handles the Puppet nodes list page"""
+
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-	# Get OS statistics
+	# Get Puppet nodes from the database
 	curd.execute('SELECT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`  FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` ORDER BY `puppet_nodes`.`certname` ')
 	results = curd.fetchall()
 
+	# Render
 	return render_template('puppet-nodes.html', active='puppet', data=results, title="Puppet Nodes")
 
 ################################################################################
@@ -158,6 +167,8 @@ def puppet_nodes():
 @app.route('/puppet/groups', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def puppet_groups():
+	"""Handles the Puppet Groups page"""
+
 	# Get a cursor to the databaseo
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
@@ -208,7 +219,9 @@ def puppet_groups():
 @app.route('/puppet/group/<name>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def puppet_group_edit(name):
-	# Get a cursor to the databaseo
+	"""Handles the Puppet group editing page (for assigning classes to a group)"""
+
+	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get the group from the DB
@@ -250,20 +263,27 @@ def puppet_group_edit(name):
 @app.route('/puppet/yaml/<node>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def puppet_node_yaml(node):
+	"""Handles the Puppet node YAML preview page."""
+
+	# Get the system
 	system = cortex.lib.systems.get_system_by_puppet_certname(node)
 
+	# 404 if the system doesn't exist
 	if system == None:
 		abort(404)
 
+	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get the group from the DB
 	curd.execute('SELECT * FROM `puppet_nodes` WHERE `id` = %s', system['id'])
 	node = curd.fetchone()
 
+	# 404 if the node isn't in Puppet (can this actually trigger given the above checks?)
 	if node == None:
 		abort(404)
 
+	# Render the page
 	return render_template('puppet-node-yaml.html', raw=cortex.lib.puppet.generate_node_config(node['certname']), system=system, node=node, active='puppet', title="Puppet Configuration", nodename=node['certname'], pactive="view")
 
 ################################################################################
@@ -271,20 +291,26 @@ def puppet_node_yaml(node):
 @app.route('/puppet/facts/<node>')
 @cortex.lib.user.login_required
 def puppet_facts(node):
+	"""Handle the Puppet node facts page"""
+
 	dbnode = None
 	facts = None
 	try:
+		# Connect to PuppetDB, get the node information and then it's related facts
 		db     = cortex.lib.puppet.puppetdb_connect()
 		dbnode = db.node(node)
 		facts  = db.node(dbnode).facts()
 	except HTTPError, he:
+		# If we get a 404 from the PuppetDB API
 		if he.response.status_code == 404:
+			# We will continue to render the page, just with no facts and display a nice error
 			facts = None
 		else:
 			raise(he)
 	except Exception, e:
 		raise(e)
 
+	# Render
 	return render_template('puppet-facts.html', facts=facts, node=dbnode, active='puppet', title=node + " - Puppet Facts", nodename=node, pactive="facts")
 
 ################################################################################
@@ -292,6 +318,8 @@ def puppet_facts(node):
 @app.route('/puppet/dashboard')
 @cortex.lib.user.login_required
 def puppet_dashboard():
+	"""Handles the Puppet dashboard page."""
+
 	return render_template('puppet-dashboard.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet', title="Puppet Dashboard")
 
 ################################################################################
@@ -330,12 +358,18 @@ def puppet_dashboard_status(status):
 
 @app.route('/puppet/radiator')
 def puppet_radiator():
+	"""Handles the Puppet radiator view page. Similar to the dashboard."""
+
 	return render_template('puppet-radiator.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet')
 
 ################################################################################
 
 @app.route('/puppet/radiator/body')
 def puppet_radiator_body():
+	"""Handles the body of the Puppet radiator view. JavaScript on the page
+	calls this function to update the content using AJAX rather than a
+	iffy page refresh."""
+
 	return render_template('puppet-radiator-body.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet')
 
 ################################################################################
@@ -343,11 +377,16 @@ def puppet_radiator_body():
 @app.route('/puppet/reports/<node>')
 @cortex.lib.user.login_required
 def puppet_reports(node):
+	"""Handles the Puppet reports page for a node"""
+
 	try:
+		# Connect to PuppetDB and get the reports
 		db = cortex.lib.puppet.puppetdb_connect()
 		reports = db.node(node).reports()
 	except HTTPError, he:
+		# If we get a 404 response from PuppetDB
 		if he.response.status_code == 404:
+			# Still display the page but with a nice error
 			reports = None
 		else:
 			raise(he)
@@ -361,6 +400,8 @@ def puppet_reports(node):
 @app.route('/puppet/report/<report_hash>')
 @cortex.lib.user.login_required
 def puppet_report(report_hash):
+	"""Displays an individual report for a Puppet node"""
+
 	# Connect to Puppet DB and query for a report with the given hash
 	db = cortex.lib.puppet.puppetdb_connect()
 	reports = db.reports(query='["=", "hash", "' + report_hash + '"]')
