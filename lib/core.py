@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import sys
 import cortex.errors
 from cortex import app
 from flask import g
@@ -49,7 +48,7 @@ def neocortex_connect():
 	try:
 		proxy.ping()
 	except Pyro4.errors.PyroError as ex:
-		cortex.errors.fatal("task engine error","An error occured when connecting to the neocortex task engine: " + str(ex))
+		app.fatal_error("task engine error","An error occured when connecting to the neocortex task engine: " + str(ex))
 
 	return proxy
 

@@ -35,7 +35,7 @@ class CortexFlask(Flask):
 		self.jinja_env.globals['csrf_token'] = self._generate_csrf_token
 
 		# Load the __init__.py config defaults
-		self.config.from_object(init_object_name)
+		self.config.from_object("cortex.defaultcfg")
 
 		# Load system config file
 		if os.path.isfile('/data/cortex/cortex.conf'):
