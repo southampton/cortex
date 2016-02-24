@@ -22,7 +22,7 @@ from requests.exceptions import HTTPError
 def puppet_help():
 	"""Displays the Puppet ENC help page."""
 
-	return render_template('puppet-help.html', active='help', title="Puppet Help")
+	return render_template('puppet-help.html', active='puppet', title="Puppet Help")
 
 ################################################################################
 
