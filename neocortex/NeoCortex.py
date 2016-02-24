@@ -52,29 +52,8 @@ class NeoCortex(object):
 		self._signal_handler('SIGINT')
 	
 	def _signal_handler(self, signal):
-		#global pyro_daemon
-		syslog.syslog('neocortex caught signal ' + str(signal))
-
-		## Mark each task as terminated
-		curd = self._get_cursor()
-
-		## get child processes		
-		active_processes = multiprocessing.active_children()
-
-		for proc in active_processes:
-			syslog.syslog('marking task ' + proc.name + " as finished")
-			task_id = int(proc.name)
-			## mark the task as finished (error)
-			curd.execute("UPDATE `tasks` SET `status` = 2, `end` = NOW() WHERE `id` = %s", (task_id))
-			## close any events with an error
-			curd.execute("UPDATE `events` SET `status` = 2, `end` = NOW() WHERE `source` = 'neocortex.task' AND `related_id` = %s AND `status` = 0", (task_id))
-			## insert an event to say that it was terminated due to neocortex stopping
-			curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, 2, NOW(), NOW())", 
-			('neocortex.task', task_id, "neocortex.shutdown", "system", "The task was terminated because neocortex was asked to shutdown"))
-			self.db.commit()
-
+		syslog.syslog('caught signal ' + str(signal) + "; exiting")
 		Pyro4.core.Daemon.shutdown(self.pyro)
-		syslog.syslog('neocortex exited')
 		sys.exit(0)
 
 	def _get_cursor(self):

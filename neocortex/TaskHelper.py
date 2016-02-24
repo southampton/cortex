@@ -22,11 +22,21 @@ class TaskHelper(object):
 		self.username      = username
 		self.event_id      = -1
 
+	def _signal_handler(self, signal, frame):
+		syslog.syslog('task id ' + str(self.task_id) + ' caught exit signal')
+
+		self.end_event(success=False)
+		self.event('neocortex.shutdown','The task was terminated because neocortex was asked to shutdown')
+		self._end_task(success=False)
+
+		syslog.syslog('task id ' + str(self.task_id) + ' marked as finished')
+		sys.exit(0)
+
 	def run(self, task_module, options):
 
-		# Don't process signals
-		signal.signal(signal.SIGINT, signal.SIG_DFL)
-		signal.signal(signal.SIGTERM, signal.SIG_DFL)
+		## Set up signal handlers to mark the task as error'ed
+		signal.signal(signal.SIGTERM, self._signal_handler)
+		signal.signal(signal.SIGINT, self._signal_handler)
 
 		self.db   = self.db_connect()
 		self.curd = self.db.cursor(mysql.cursors.DictCursor)

@@ -23,6 +23,15 @@ def login():
 			
 			## Set the username in the session
 			session['username']  = request.form['username'].lower()
+
+			## Permanent sessions
+			permanent = request.form.get('sec',default="")
+
+			## Set session as permanent or not
+			if permanent == 'sec':
+				session.permanent = True
+			else:
+				session.permanent = False
 			
 			## restrict all logons to admins
 			if cortex.lib.user.is_global_admin(session['username']):

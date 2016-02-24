@@ -367,7 +367,7 @@ class NeoCortexLib(object):
 
 		## VMware folder
 		if vm_folder:
-			destfolder = get_obj(content, [vim.Folder], vm_folder)
+			destfolder = self.vmware_get_obj(content, [vim.Folder], vm_folder)
 		else:
 			destfolder = datacenter.vmFolder
 

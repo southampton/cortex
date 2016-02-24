@@ -26,7 +26,7 @@
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 				<input type="hidden" name="task_name" value="vmcache"/>
 			{%- if vmcache_task_id %}
-				<a href="{{url_for('task_status',id=vmcache_task_id['id'])}}" class="btn btn-primary form-control"><i class="fa fa-fw fa-cog fa-spin"></i> View in progress task</a>
+				<a href="{{url_for('task_status',id=vmcache_task_id)}}" class="btn btn-primary form-control"><i class="fa fa-fw fa-cog fa-spin"></i> View in progress task</a>
 			{%- else %}
 			<button class="form-control btn btn-success" type="submit"><i class="fa fa-fw fa-play"></i> Start</button>
 			{%- endif %}
@@ -41,7 +41,7 @@
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 				<input type="hidden" name="task_name" value="vmcache_novm"/>
 			{%- if vmcache_novm_task_id %}
-				<a href="{{url_for('task_status',id=vmcache_task_id['id'])}}" class="btn btn-primary form-control"><i class="fa fa-fw fa-cog fa-spin"></i> View in progress task</a>
+				<a href="{{url_for('task_status',id=vmcache_novm_task_id)}}" class="btn btn-primary form-control"><i class="fa fa-fw fa-cog fa-spin"></i> View in progress task</a>
 			{%- else %}
 			<button class="form-control btn btn-success" type="submit"><i class="fa fa-fw fa-play"></i> Start</button>
 			{%- endif %}
@@ -56,7 +56,7 @@
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 				<input type="hidden" name="task_name" value="sncache"/>
 			{%- if sncache_task_id %}
-				<a href="{{url_for('task_status',id=sncache_task_id['id'])}}" class="btn btn-primary form-control"><i class="fa fa-fw fa-cog fa-spin"></i> View in progress task</a>
+				<a href="{{url_for('task_status',id=sncache_task_id)}}" class="btn btn-primary form-control"><i class="fa fa-fw fa-cog fa-spin"></i> View in progress task</a>
 			{%- else %}
 			<button class="form-control btn btn-success" type="submit"><i class="fa fa-fw fa-play"></i> Start</button>
 			{%- endif %}

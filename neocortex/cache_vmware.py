@@ -166,6 +166,7 @@ def run(helper, options):
 	curd.execute("START TRANSACTION")
 	curd.execute("DELETE FROM `vmware_cache_clusters`")
 	curd.execute("DELETE FROM `vmware_cache_datacenters`")
+	curd.execute("DELETE FROM `vmware_cache_folders`")
 	if not skip_vms:
 		curd.execute("DELETE FROM `vmware_cache_vm`")
 	helper.end_event(description="Deleted existing cache")

@@ -172,22 +172,35 @@ def admin_classes():
 def admin_maint():
 	"""Allows the user to kick off scheduled jobs on demand"""
 
+	neocortex = cortex.lib.core.neocortex_connect()
+	cur = g.db.cursor(mysql.cursors.DictCursor)
+
+	vmcache_task_id = None
+	vmcache_novm_task_id = None
+	sncache_task_id = None
+
 	if request.method == 'GET':
-		# Make sure the jobs aren't already running
-		cur = g.db.cursor(mysql.cursors.DictCursor)
-		cur.execute("SELECT `id` FROM `tasks` WHERE `module` = '_cache_vmware' AND `status` = 0")
-		vmcache_task_id = cur.fetchone()
-		cur.execute("SELECT `id` FROM `tasks` WHERE `module` = '_cache_vmware_novm' AND `status` = 0")
-		vmcache_novm_task_id = cur.fetchone()
-		cur.execute("SELECT `id` FROM `tasks` WHERE `module` = '_cache_servicenow' AND `status` = 0")
-		sncache_task_id = cur.fetchone()
+		# See which tasks are already running
+		active_tasks = neocortex.active_tasks()
+
+		for task in active_tasks:
+			task_id = int(task)
+
+			cur.execute("SELECT `module` FROM `tasks` WHERE `id` = %s",(task_id))
+			task_data = cur.fetchone()
+
+			if task_data['module'] == '_cache_vmware':
+				vmcache_task_id = task_id
+			elif task_data['module'] == '_cache_vmware_novm':
+				vmcache_novm_task_id = task_id
+			elif task_data['module'] == '_cache_servicenow':
+				sncache_task_id = task_id
 
 		# Render the page
 		return render_template('admin-maint.html', active='admin', sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id, vmcache_novm_task_id=vmcache_novm_task_id, title="Maintenance Tasks")
 
 	else:
 		module = request.form['task_name']
-		neocortex = cortex.lib.core.neocortex_connect()
 
 		if module == 'vmcache':
 			task_id = neocortex.start_internal_task(session['username'], 'cache_vmware.py', '_cache_vmware', description="Caches information about virtual machines, datacenters and clusters from VMware")
