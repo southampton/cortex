@@ -33,7 +33,7 @@ def dashboard():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	
 	# Get number of VMs
-	curd.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm`');
+	curd.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `template` = 0');
 	row = curd.fetchone()
 	vm_count = row['count']
 	
