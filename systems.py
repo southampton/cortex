@@ -407,7 +407,7 @@ def systems_cmdb_json():
 
 	# Get results of query
 	total_count    = cortex.lib.cmdb.get_ci_count()
-	filtered_count = cortex.lib.cortex.get_ci_count(search)
+	filtered_count = cortex.lib.cmdb.get_ci_count(search)
 	results        = cortex.lib.cmdb.get_cis(start, length, search, order_column, order_asc)
 
 	system_data = []
