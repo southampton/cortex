@@ -105,6 +105,9 @@ Further Details:
 		# Set up a context processor (inject data into jinja on each request)
 		self.context_processor(self.inject_template_data)
 
+		# check the database is up and is working
+		self.init_database()
+
 	################################################################################
 
 	def pwgen(self, length=16):
@@ -393,3 +396,177 @@ Username:             %s
 		g.fault_title = title
 		g.fault_message = message
 		abort(500)
+
+################################################################################
+
+	def init_database(self):
+		"""Ensures cortex can talk to the database (rather than waiting for a HTTP
+		connection to trigger before_request) and the tables are there. Only runs
+		at cortex startup."""
+
+		# Connect to database
+		try:
+			temp_db = mysql.connect(host=self.config['MYSQL_HOST'], port=self.config['MYSQL_PORT'], user=self.config['MYSQL_USER'], passwd=self.config['MYSQL_PASS'], db=self.config['MYSQL_NAME'])
+		except Exception as ex:
+			raise Exception("Could not connect to MySQL server: " + str(type(ex)) + " - " + str(ex))
+
+		self.logger.info("Successfully connected to the MySQL database server")
+
+		## Now create tables if they don't exist
+		cursor = temp_db.cursor()
+
+		## Turn on autocommit so each table is created in sequence
+		cursor.connection.autocommit(True)
+
+		## Turn off warnings (MySQLdb generates warnings even though we use IF NOT EXISTS- wtf?!)
+		cursor._defer_warnings = True
+
+		self.logger.info("Checking for and creating tables as necessary")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `classes` (`name` varchar(16) NOT NULL,
+		  `digits` tinyint(4) NOT NULL,
+		  `disabled` tinyint(1) NOT NULL DEFAULT '0',
+		  `lastid` int(11) DEFAULT '0',
+		  `comment` text,
+		  `link_vmware` tinyint(1) NOT NULL DEFAULT '0',
+		  `cmdb_type` varchar(64) DEFAULT NULL,
+		  PRIMARY KEY (`name`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `events` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `source` varchar(255) NOT NULL,
+		  `related_id` mediumint(11) DEFAULT NULL,
+		  `name` varchar(255) NOT NULL,
+		  `username` varchar(64) NOT NULL,
+		  `desc` text,
+		  `status` tinyint(4) NOT NULL DEFAULT '0',
+		  `start` datetime NOT NULL,
+		  `end` datetime DEFAULT NULL,
+		  PRIMARY KEY (`id`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `kv_settings` (
+		  `key` varchar(64) NOT NULL,
+		  `value` text,
+		  PRIMARY KEY (`key`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `systems` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `type` tinyint(4) NOT NULL,
+		  `class` varchar(16) DEFAULT NULL,
+		  `number` mediumint(11) DEFAULT NULL,
+		  `name` varchar(256) NOT NULL,
+		  `allocation_date` datetime DEFAULT NULL,
+		  `allocation_who` varchar(64) DEFAULT NULL,
+		  `allocation_comment` text NOT NULL,
+		  `cmdb_id` varchar(128) DEFAULT NULL,
+		  `vmware_uuid` varchar(36) DEFAULT NULL,
+		  PRIMARY KEY (`id`),
+		  KEY `class` (`class`),
+		  KEY `name` (`name`(255)),
+		  KEY `allocation_who` (`allocation_who`),
+		  CONSTRAINT `systems_ibfk_1` FOREIGN KEY (`class`) REFERENCES `classes` (`name`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `tasks` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `module` varchar(64) NOT NULL,
+		  `username` varchar(64) NOT NULL,
+		  `start` datetime NOT NULL,
+		  `end` datetime DEFAULT NULL,
+		  `status` tinyint(4) NOT NULL DEFAULT '0',
+		  `description` text,
+		  PRIMARY KEY (`id`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS  `puppet_groups` (
+		  `name` varchar(255) NOT NULL,
+		  `classes` text NOT NULL,
+		  PRIMARY KEY (`name`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_nodes` (
+		  `id` mediumint(11) NOT NULL,
+		  `certname` varchar(255) NOT NULL,
+		  `env` varchar(255) NOT NULL DEFAULT 'production',
+		  `include_default` tinyint(1) NOT NULL DEFAULT '1',
+		  `classes` text NOT NULL,
+		  `variables` text NOT NULL,
+		  PRIMARY KEY (`id`),
+		  CONSTRAINT `puppet_nodes_ibfk_1` FOREIGN KEY (`id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `sncache_cmdb_ci` (
+		  `sys_id` varchar(32) NOT NULL,
+		  `sys_class_name` varchar(128) NOT NULL,
+		  `name` varchar(255) NOT NULL,
+		  `operational_status` varchar(255) NOT NULL,
+		  `u_number` varchar(255) NOT NULL,
+		  `short_description` text NOT NULL,
+		  `u_environment` varchar(255) DEFAULT NULL,
+		  `virtual` tinyint(1) NOT NULL,
+		  `comments` text,
+		  `os` varchar(128) DEFAULT NULL,
+		  PRIMARY KEY (`sys_id`),
+		  KEY `u_number` (`u_number`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `vmware_cache_clusters` (
+		  `id` varchar(255) NOT NULL,
+		  `name` varchar(255) NOT NULL,
+		  `vcenter` varchar(255) NOT NULL,
+		  `did` varchar(255) DEFAULT NULL,
+		  `ram` bigint DEFAULT 0,
+		  `cores` int DEFAULT 0,
+		  `cpuhz` bigint DEFAULT 0,
+		  `ram_usage` bigint DEFAULT 0,
+		  `cpu_usage` bigint DEFAULT 0,
+		  `hosts` bigint(20) DEFAULT '0',
+		  PRIMARY KEY (`id`,`vcenter`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `vmware_cache_datacenters` (
+		  `id` varchar(255) NOT NULL,
+		  `name` varchar(255) NOT NULL,
+		  `vcenter` varchar(255) NOT NULL,
+		  PRIMARY KEY (`id`,`vcenter`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `vmware_cache_vm` (
+		  `id` varchar(255) NOT NULL,
+		  `vcenter` varchar(255) NOT NULL,
+		  `name` varchar(255) NOT NULL,
+		  `uuid` varchar(36) NOT NULL,
+		  `numCPU` int(11) NOT NULL,
+		  `memoryMB` int(11) NOT NULL,
+		  `powerState` varchar(255) NOT NULL,
+		  `guestFullName` varchar(255) NOT NULL,
+		  `guestId` varchar(255) NOT NULL,
+		  `hwVersion` varchar(255) NOT NULL,
+		  `hostname` varchar(255) NOT NULL,
+		  `ipaddr` varchar(255) NOT NULL,
+		  `annotation` text,
+		  `cluster` varchar(255) NOT NULL,
+		  `toolsRunningStatus` varchar(255) NOT NULL,
+		  `toolsVersionStatus` varchar(255) NOT NULL,
+		  `template` tinyint(1) NOT NULL DEFAULT '0',
+		  PRIMARY KEY (`id`,`vcenter`),
+		  KEY `uuid` (`uuid`),
+		  KEY `name` (`name`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `vmware_cache_folders` (
+		  `id` varchar(255) NOT NULL,
+		  `name` varchar(255) NOT NULL,
+		  `vcenter` varchar(255) NOT NULL,
+		  `did` varchar(255) NOT NULL,
+		  `parent` varchar(255) NOT NULL,
+		  PRIMARY KEY (`id`,`vcenter`,`did`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		## Close database connection
+		temp_db.close()
+
+		self.logger.info("Database initialisation complete")

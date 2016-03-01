@@ -7,13 +7,16 @@ import sys
 import json
 import time
 import redis
+
+# For email
 import smtplib
 from email.mime.text import MIMEText
 
+# Disable insecure platform warnings
 import requests
 requests.packages.urllib3.disable_warnings()
 
-## for vmware
+# For VMware
 from pyVmomi import vim
 from pyVmomi import vmodl
 from pyVim.connect import SmartConnect, Disconnect
@@ -966,3 +969,48 @@ class NeoCortexLib(object):
 		smtp = smtplib.SMTP(server)
 		smtp.sendmail(from_addr, [to_addr], msg.as_string())
 		smtp.quit()
+
+	########################################################################
+
+	def windows_move_computer_to_default_ou(self, hostname):
+		"""Moves a Computer object in Active Directory to reside within the default OU.
+		Args:
+		  hostname (string): The hostname of the computer object to move
+		Returns:
+		  Nothing."""
+
+		proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + self.config['WINRPC_HOST'] + ':' + str(self.config['WINRPC_PORT']))
+		proxy._pyroHmacKey = self.config['WINRPC_KEY']
+		if proxy.move_to_default_ou(hostname) != 0:
+			raise Exception('Remote call returned failure response')
+
+	########################################################################
+
+	def windows_join_default_groups(self, hostname):
+		"""Adds a Computer object in Active Directory to the default list of groups.
+		Args:
+		  hostname (string): The hostname of the computer object to put in to groups
+		Returns:
+		  Nothing."""
+
+		proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + self.config['WINRPC_HOST'] + ':' + str(self.config['WINRPC_PORT']))
+		proxy._pyroHmacKey = self.config['WINRPC_KEY']
+		if proxy.join_groups(hostname) < 0:
+			raise Exception('Remote call returned failure response')
+
+	########################################################################
+
+	def windows_set_computer_details(self, hostname, description, location):
+		"""Sets various details about the computer object in AD.
+		Args:
+		  hostname (string): The hostname of the computer object to modify
+                  description (string): The description of the computer
+		  location (string): The location of the computer
+		Returns:
+		  Nothing."""
+
+		proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + self.config['WINRPC_HOST'] + ':' + str(self.config['WINRPC_PORT']))
+		proxy._pyroHmacKey = self.config['WINRPC_KEY']
+		if proxy.set_information(hostname, description, location) != 0:
+			raise Exception('Remote call returned failure response')
+

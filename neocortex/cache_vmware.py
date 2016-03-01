@@ -70,6 +70,11 @@ def run(helper, options):
 				# Get the managed object reference
 				moId = vm['obj']._moId
 
+				# Ensure we have a config.uuid (it's kind of essential...)
+				if 'config.uuid' not in vm:
+					# If we don't, ignore this VM
+					continue
+
 				# Start a vm_data section for this vm
 				vm_data[key][moId] = {}
 

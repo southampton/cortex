@@ -119,7 +119,7 @@ def api_register_system():
 
 	if create_entry:
 		curd = g.db.cursor(mysql.cursors.DictCursor)
-		curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `environment`) VALUES (%s, %s, 'production')", (system['id'], fqdn))
+		curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`) VALUES (%s, %s, 'production')", (system['id'], fqdn))
 		g.db.commit()
 		app.logger.info('Created Puppet ENC entry for certname "' + fqdn + '"')
 	else:
