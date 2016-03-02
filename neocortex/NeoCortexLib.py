@@ -7,6 +7,7 @@ import sys
 import json
 import time
 import redis
+import ssl
 
 # For email
 import smtplib
@@ -343,7 +344,12 @@ class NeoCortexLib(object):
 
 	def vmware_smartconnect(self, tag):
 		instance = self.config['VMWARE'][tag]
-		return SmartConnect(host=instance['hostname'], user=instance['user'], pwd=instance['pass'], port=instance['port'])
+
+		sslContext = ssl.create_default_context()
+		sslContext.check_hostname = False
+		sslContext.verify_mode = ssl.CERT_NONE
+
+		return SmartConnect(host=instance['hostname'], user=instance['user'], pwd=instance['pass'], port=instance['port'], sslContext=sslContext)
 
 	################################################################################
 	

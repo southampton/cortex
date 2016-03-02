@@ -22,7 +22,7 @@ a.server-link:hover { text-decoration: underline !important; }
 	{%- for class in classes %}
 	<li {% if loop.index0 == 0 %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="{{ class.name }}" data-vmware="{{ class.link_vmware }}" role="tab">{{ class.name }}</a></li>
 	{%- endfor %}
-	<li role="presentation"><a style="cursor:pointer" data-class="*OTHER" data-vmware="1" role="tab">Other/Legacy</a></li>
+	<li {% if classes|length == 0 %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="*OTHER" data-vmware="1" role="tab">Other/Legacy</a></li>
 	<li role="presentation"><a style="cursor:pointer" data-class="*ALL" data-vmware="1" role="tab">All</a></li>
 </ul>
 <div id="systemsWrapper">

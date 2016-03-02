@@ -5,7 +5,6 @@ import MySQLdb as mysql
 import sys
 from pyVmomi import vim
 from pyVmomi import vmodl
-from pyVim.connect import SmartConnect, Disconnect
 
 def run(helper, options):
 	"""
@@ -36,7 +35,7 @@ def run(helper, options):
 		instance = helper.config['VMWARE'][key]
 
 		helper.event("vmware_connect", "Connecting to VMware instance " + instance['hostname'])
-		si = SmartConnect(host=instance['hostname'], user=instance['user'], pwd=instance['pass'], port=instance['port'])
+		si = helper.lib.vmware_smartconnect(key)	
 		content = si.RetrieveContent()
 		helper.end_event(description="Connected to instance " + instance['hostname'])
 
