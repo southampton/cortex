@@ -79,6 +79,7 @@ VMWARE={}
 # Neocortex is a daemon 
 NEOCORTEX_KEY='changeme'
 WORKFLOWS_DIR='/data/cortex/workflows/'
+NEOCORTEX_TASKS_DIR='/data/cortex/cortex/neocortex'
 
 # Other
 ENVIRONMENTS = []

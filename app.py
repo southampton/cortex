@@ -38,12 +38,7 @@ class CortexFlask(Flask):
 		self.config.from_object("cortex.defaultcfg")
 
 		# Load system config file
-		if os.path.isfile('/data/cortex/cortex.conf'):
-			self.config.from_pyfile('/data/cortex/cortex.conf')
-		elif os.path.isfile('/etc/cortex/cortex.conf'):
-			self.config.from_pyfile('/etc/cortex/cortex.conf')
-		elif os.path.isfile('/etc/cortex.conf'):
-			self.config.from_pyfile('/etc/cortex.conf')
+		self.config.from_pyfile('/data/cortex/cortex.conf')
 
 		# Set up logging to file
 		if self.config['FILE_LOG'] == True:

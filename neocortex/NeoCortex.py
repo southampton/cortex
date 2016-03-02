@@ -100,7 +100,7 @@ class NeoCortex(object):
 				self.config[key] = getattr(d, key)
 
 		## ensure we have required config options
-		for wkey in ['NEOCORTEX_SET_GID', 'NEOCORTEX_SET_UID', 'NEOCORTEX_KEY', 'WORKFLOWS_DIR']:
+		for wkey in ['NEOCORTEX_SET_GID', 'NEOCORTEX_SET_UID', 'NEOCORTEX_KEY', 'WORKFLOWS_DIR', 'NEOCORTEX_TASKS_DIR']:
 			if not wkey in self.config.keys():
 				print "Missing configuation option: " + wkey
 				sys.exit(1)
@@ -171,6 +171,15 @@ class NeoCortex(object):
 
 	## This function allows arbitrary taks to be called
 	def start_internal_task(self, username, task_file, task_name, options=None, description=None):
+
+		if not os.path.isdir(self.config['NEOCORTEX_TASKS_DIR']):
+			raise IOError("The config option NEOCORTEX_TASKS_DIR is not a directory")
+
+		task_file = os.path.join(self.config['NEOCORTEX_TASKS_DIR'], task_file)
+
+		if not os.path.exists(task_file):
+			raise IOError("The neocortex task file specified was not found")
+
 		try:
 			task_module = imp.load_source(task_name, task_file)
 		except Exception as ex:
