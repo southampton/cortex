@@ -37,7 +37,7 @@ def admin_tasks_active():
 
 	# Get additional information out of the database
 	for ntask in neotasks:
-		curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `id` = %s", (int(ntask)))
+		curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `id` = %s", (ntask['id']))
 		task = curd.fetchone()
 		if not task == None:
 			tasks.append(task)
@@ -187,17 +187,12 @@ def admin_maint():
 		active_tasks = neocortex.active_tasks()
 
 		for task in active_tasks:
-			task_id = int(task)
-
-			curd.execute("SELECT `module` FROM `tasks` WHERE `id` = %s", (task_id))
-			task_data = curd.fetchone()
-
-			if task_data['module'] == '_cache_vmware':
-				vmcache_task_id = task_id
-			elif task_data['module'] == '_cache_vmware_novm':
-				vmcache_novm_task_id = task_id
-			elif task_data['module'] == '_cache_servicenow':
-				sncache_task_id = task_id
+			if task['name'] == '_cache_vmware':
+				vmcache_task_id = task['id']
+			elif task['name'] == '_cache_vmware_novm':
+				vmcache_novm_task_id = task['id']
+			elif task['name'] == '_cache_servicenow':
+				sncache_task_id = task['id']
 
 		# Render the page
 		return render_template('admin-maint.html', active='admin', sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id, vmcache_novm_task_id=vmcache_novm_task_id, title="Maintenance Tasks")

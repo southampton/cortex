@@ -23,47 +23,44 @@
 <div class="modal fade" id="allocate" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
-
 			<form role="form" method="POST" class="form-horizontal">
-			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-			<input name="class_name" type="hidden" value="" id="class_name_hidden"/>
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input name="class_name" type="hidden" value="" id="class_name_hidden"/>
 
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title">Allocate new system name(s)</h4>
-			</div>
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title">Allocate new system name(s)</h4>
+				</div>
 
-			<div class="modal-body">
-		<p>Please select how many new system names you'd like and choose a comment. If more than one name is created then you will be asked to set a per-name comment after creation.</p>
+				<div class="modal-body">
+					<p>Please select how many new system names you'd like and choose a comment. If more than one name is created then you will be asked to set a per-name comment after creation.</p>
 
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Prefix</label>
+						<div class="col-sm-9">
+							<p class="form-control-static" id="class_name" name="class_name">N/A</p>
+						</div>
+					</div>
 
-		<div class="form-group">
-			<label class="col-sm-3 control-label">Prefix</label>
-			<div class="col-sm-9">
-				<p class="form-control-static" id="class_name" name="class_name">N/A</p>
-			</div>
-		</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">How many?</label>
+						<div class="col-sm-9">
+							<input class="form-control" type="number" value="1" max="50" min="1" name="system_number"></input>
+						</div>
+					</div>
 
-		<div class="form-group">
-			<label class="col-sm-3 control-label">How many?</label>
-			<div class="col-sm-9">
-				<input class="form-control" type="number" value="1" max="50" min="1" name="system_number"></input>
-			</div>
-		</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Comment</label>
+						<div class="col-sm-9">
+							<input class="form-control" id="system_comment" type="text" name="system_comment"></input>
+						</div>
+					</div>
+				</div>
 
-		<div class="form-group">
-			<label class="col-sm-3 control-label">Comment</label>
-			<div class="col-sm-9">
-				<input class="form-control" id="system_comment" type="text" name="system_comment"></input>
-			</div>
-		</div>
-
-			</div>
-
-			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-				<button type="submit" class="btn btn-primary">Allocate</button>
-			</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="submit" class="btn btn-primary">Allocate</button>
+				</div>
 			</form>
 		</div>
 	</div>
@@ -72,7 +69,6 @@
 <script type="text/javascript">
 $( document ).ready(function() 
 {
-
 	$('#allocate').on('show.bs.modal', function (event)
 	{
 		var button = $(event.relatedTarget)
@@ -94,7 +90,8 @@ $( document ).ready(function()
 </div>
 
 <div class="row">
-	{% for class in classes %}
+{%- if classes|length != 0 %}
+{%- for class in classes %}
 	<div class="col-md-4 cselect">
 		<div class="well">
 		<h1>{{class.name}}</h1>
@@ -102,7 +99,12 @@ $( document ).ready(function()
 		<p><a data-toggle="modal" data-target="#allocate" data-name="{{class.name}}" class="btn btn-success"><i class="fa fa-fw fa-plus fa-3x"></i></a></p>
 		</div>
 	</div>
-	{% endfor %}
+{%- endfor %}
+{%- else %}
+<div class="col-sm-12">
+	<p>There are no classes defined. An administrator needs to define some <a href="{{ url_for('admin_classes') }}">Classes</a> before any systems can be allocated.</p>
+</div>
+{%- endif %}
 </div>
 
 {% endblock %}

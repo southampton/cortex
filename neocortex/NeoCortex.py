@@ -131,6 +131,12 @@ class NeoCortex(object):
 		self.db.commit()
 		return curd.lastrowid
 
+	## This is called on each pyro loop timeout/run to make sure defunct processes
+	## (finished tasks waiting for us to reap them) are reaped
+	def _onloop(self):
+		multiprocessing.active_children()
+		return True
+
 	## RPC METHODS #############################################################
 
 	def ping(self):
@@ -162,7 +168,7 @@ class NeoCortex(object):
 
 		task_id      = self._record_task(workflow_name, username, description)
 		task_helper  = TaskHelper(self.config, workflow_name, task_id, username)
-		task         = Process(target=task_helper.run, args=(task_module, options), name=str(task_id))
+		task         = Process(target=task_helper.run, args=(task_module, options), name=json.dumps({'id': task_id, 'name': workflow_name, 'type': 'workflow'}))
 		task.start()
 
 		syslog.syslog('started task workflow/' + workflow_name + ' with task id ' + str(task_id) + ' and worker pid ' + str(task.pid))
@@ -171,6 +177,14 @@ class NeoCortex(object):
 
 	## This function allows arbitrary taks to be called
 	def start_internal_task(self, username, task_file, task_name, options=None, description=None):
+
+		## Ensure that task_name is not already running
+		active_processes = multiprocessing.active_children()
+		for proc in active_processes:
+			proc_data = json.loads(proc.name)
+			if proc_data['name'] == task_name:
+				raise Exception("That task is already running, refusing to start another instance")
+		
 
 		if not os.path.isdir(self.config['NEOCORTEX_TASKS_DIR']):
 			raise IOError("The config option NEOCORTEX_TASKS_DIR is not a directory")
@@ -187,7 +201,7 @@ class NeoCortex(object):
 
 		task_id      = self._record_task(task_name, username, description)
 		task_helper  = TaskHelper(self.config, task_name, task_id, username)
-		task         = Process(target=task_helper.run, args=(task_module, options), name=str(task_id))
+		task         = Process(target=task_helper.run, args=(task_module, options), name=json.dumps({'id': task_id, 'name': task_name, 'type': 'internal'}))
 		task.start()
 
 		syslog.syslog('started task internal/' + task_name + ' with task id ' + str(task_id) + ' and worker pid ' + str(task.pid))
@@ -204,7 +218,8 @@ class NeoCortex(object):
 		active_processes = multiprocessing.active_children()
 		active_tasks = []
 		for proc in active_processes:
-			active_tasks.append(int(proc.name))
+			proc_data = json.loads(proc.name)
+			active_tasks.append(proc_data)
 
 		return active_tasks
 		

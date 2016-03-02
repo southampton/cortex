@@ -5,7 +5,7 @@ import syslog
 import signal
 import os
 import imp
-from multiprocessing import Process, Value
+import multiprocessing
 import MySQLdb as mysql
 import sys
 import requests
@@ -26,4 +26,4 @@ if __name__ == "__main__":
 	pyro._pyroHmacKey = neocortex.config['NEOCORTEX_KEY']
 	uri               = pyro.register(neocortex,'neocortex')
 	syslog.syslog('neocortex started')
-	pyro.requestLoop()
+	pyro.requestLoop(neocortex._onloop)
