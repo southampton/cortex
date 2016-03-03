@@ -357,7 +357,7 @@ Username:             %s
 	
 		# Connect to database
 		try:
-			g.db = mysql.connect(host=self.config['MYSQL_HOST'], port=self.config['MYSQL_PORT'], user=self.config['MYSQL_USER'], passwd=self.config['MYSQL_PASS'], db=self.config['MYSQL_NAME'])
+			g.db = mysql.connect(host=self.config['MYSQL_HOST'], port=self.config['MYSQL_PORT'], user=self.config['MYSQL_USER'], passwd=self.config['MYSQL_PASS'], db=self.config['MYSQL_NAME'], charset="utf8")
 		except Exception as ex:
 			self.fatal_error('Unable to connect to MySQL', str(ex))
 

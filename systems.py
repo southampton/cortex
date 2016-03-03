@@ -536,7 +536,12 @@ def systems_json():
 			cmdb_id = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
 		else:
 			cmdb_id = ''
-		system_data.append([row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'].strftime('%Y-%m-%d %H:%M:%S'), row['cmdb_operational_status'], cmdb_id, row['id'], row['vmware_guest_state'], row['puppet_certname']])
+
+		if row['allocation_date'] is not None:
+			row['allocation_date'] = row['allocation_date'].strftime('%Y-%m-%d %H:%M:%S')
+		else:
+			row['allocation_date'] = "Unknown"
+		system_data.append([row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_id, row['id'], row['vmware_guest_state'], row['puppet_certname']])
 
 	# Return JSON data in the format DataTables wants
 	return jsonify(draw=draw, recordsTotal=system_count, recordsFiltered=filtered_count, data=system_data)
