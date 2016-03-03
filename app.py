@@ -43,7 +43,7 @@ class CortexFlask(Flask):
 		# Set up logging to file
 		if self.config['FILE_LOG'] == True:
 			file_handler = RotatingFileHandler(self.config['LOG_DIR'] + '/' + self.config['LOG_FILE'], 'a', self.config['LOG_FILE_MAX_SIZE'], self.config['LOG_FILE_MAX_FILES'])
-			file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
+			file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
 			self.logger.addHandler(file_handler)
 
 		# Set up the max log level
