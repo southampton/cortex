@@ -1,0 +1,70 @@
+import subprocess, imp, sys, Pyro4
+
+def psescape(s):
+	"""Escapes a string so that it can be safely passed to PowerShell."""
+
+	return s.replace("`", "``").replace("\"", "`\"").replace("\'", "`\'").replace("$", "`$")
+
+class CortexWindowsRPC(object):
+	"""The CortexWindowsRPC class is the remotely-callable object that performs
+	Cortex-specific tasks."""
+
+	def __init__(self):
+		"""Initialises the CortexWindowsRPC object and loads its configuration"""
+
+		# Read and execute the config
+		d = imp.new_module('config')
+		d.__file__ = 'cortex-windows-rpc.conf'
+		try:
+			with open('cortex-windows-rpc.conf') as config_file:
+				exec(compile(config_file.read(), 'cortex-windows-rpc.conf', 'exec'), d.__dict__)
+		except IOError as e:
+			print >> sys.stderr, "Failed to read configuration file: " + str(e)
+			sys.exit(1)
+
+		# Extract config from loaded environment
+		self.config = {}
+		for key in dir(d):
+			if key.isupper():
+				self.config[key] = getattr(d, key)
+
+		# Ensure we have required configuration options
+		for wkey in ['POWERSHELL_PATH', 'TARGET_OU', 'GROUPS', 'MANAGED_BY', 'WINRPC_KEY', 'WINRPC_PORT']:
+			if not wkey in self.config:
+				print >> sys.stderr, "Missing configuration option: " + wkey
+				sys.exit(1)
+
+	################################################################################
+
+	def move_to_default_ou(self, hostname):
+		return subprocess.call([self.config['POWERSHELL_PATH'], '-Command', 'Get-ADComputer "' + psescape(hostname + '$') + '" | Move-ADObject -TargetPath "' + psescape(self.config['TARGET_OU']) + '"'])
+
+	################################################################################
+
+	def join_groups(self, hostname):
+		returncode = 0
+		for group in self.config['GROUPS']:
+			if subprocess.call([self.config['POWERSHELL_PATH'], '-Command', 'Add-ADGroupMember -Identity "' + psescape(group) + '" -Members "' + psescape(hostname + '$') + '"']) != 0:
+				returncode = 1
+
+		return returncode
+
+	################################################################################
+
+	def set_information(self, hostname, description, location):
+		return subprocess.call([self.config['POWERSHELL_PATH'], '-Command', 'Set-ADComputer -Identity "' + psescape(hostname + '$') + '" -Description "' + psescape(description) + '" -Location "' + psescape(location) + '" -ManagedBy "' + psescape(self.config['MANAGED_BY']) + '"'])
+
+	################################################################################
+
+	def ping(self):
+		"""A simple test function to indicate if the daemon is up"""
+		return True
+
+# The object containing the configuration and code
+rpc_handler = CortexWindowsRPC()
+
+# Set up the Pyro4 daemon
+daemon = Pyro4.Daemon(host="", port=rpc_handler.config['WINRPC_PORT'])
+daemon._pyroHmacKey = rpc_handler.config['WINRPC_KEY']
+daemon.register(rpc_handler, 'CortexWindowsRPC')
+daemon.requestLoop()
