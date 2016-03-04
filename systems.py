@@ -519,8 +519,8 @@ def systems_json():
 
 	# Get number of systems that match the query, and the number of systems
 	# within the filter group
-	system_count = cortex.lib.systems.get_system_count(filter_group, show_decom=show_decom)
-	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, show_decom)
+	system_count = cortex.lib.systems.get_system_count(filter_group, show_decom=show_decom, only_other=only_other)
+	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, show_decom, only_other=only_other)
 
 	# Get results of query
 	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, show_decom, only_other)

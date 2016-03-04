@@ -7,7 +7,7 @@ from flask import Flask, request, redirect, session, url_for, abort, render_temp
 
 ################################################################################
 
-def get_system_count(class_name = None, search = None, show_decom = True):
+def get_system_count(class_name = None, search = None, show_decom = True, only_other = False):
 	"""Returns the number of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost)"""
 
 	## BUILD THE QUERY
@@ -49,6 +49,14 @@ def get_system_count(class_name = None, search = None, show_decom = True):
 			query = query + "WHERE "
 
 		query = query + ' (`sncache_cmdb_ci`.`operational_status` = "In Service" OR `sncache_cmdb_ci`.`operational_status` IS NULL)'
+
+	# Restrict to other/legacy types
+	if only_other:
+		if class_name is not None or search is not None or show_decom == False:
+			query = query + " AND "
+		else:
+			query = query + "WHERE "
+		query = query + ' `systems`.`type` != 0'
 
 	# Query the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
