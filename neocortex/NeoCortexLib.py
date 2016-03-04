@@ -990,6 +990,10 @@ class NeoCortexLib(object):
 		if proxy.move_to_default_ou(hostname) != 0:
 			raise Exception('Remote call returned failure response')
 
+		# Performing other Windows tasks too quickly can result in them
+		# silently failing, so give AD some time to catch up
+		time.sleep(5)
+
 	########################################################################
 
 	def windows_join_default_groups(self, hostname):
@@ -1003,6 +1007,10 @@ class NeoCortexLib(object):
 		proxy._pyroHmacKey = self.config['WINRPC_KEY']
 		if proxy.join_groups(hostname) < 0:
 			raise Exception('Remote call returned failure response')
+
+		# Performing other Windows tasks too quickly can result in them
+		# silently failing, so give AD some time to catch up
+		time.sleep(5)
 
 	########################################################################
 
@@ -1019,4 +1027,8 @@ class NeoCortexLib(object):
 		proxy._pyroHmacKey = self.config['WINRPC_KEY']
 		if proxy.set_information(hostname, description, location) != 0:
 			raise Exception('Remote call returned failure response')
+
+		# Performing other Windows tasks too quickly can result in them
+		# silently failing, so give AD some time to catch up
+		time.sleep(5)
 
