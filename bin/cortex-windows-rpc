@@ -1,4 +1,4 @@
-import subprocess, imp, sys, Pyro4
+import subprocess, imp, sys, Pyro4, datetime
 
 def psescape(s):
 	"""Escapes a string so that it can be safely passed to PowerShell."""
@@ -29,30 +29,68 @@ class CortexWindowsRPC(object):
 				self.config[key] = getattr(d, key)
 
 		# Ensure we have required configuration options
-		for wkey in ['POWERSHELL_PATH', 'TARGET_OU', 'GROUPS', 'MANAGED_BY', 'WINRPC_KEY', 'WINRPC_PORT']:
+		for wkey in ['POWERSHELL_PATH', 'TARGET_OU', 'GROUPS', 'MANAGED_BY', 'WINRPC_KEY', 'WINRPC_PORT', 'LOG_PATH']:
 			if not wkey in self.config:
 				print >> sys.stderr, "Missing configuration option: " + wkey
 				sys.exit(1)
 
+		# Open the log file
+		try:
+			self.logfd = open(self.config['LOG_PATH'], 'ab', 0)
+		except Exception as e:
+			print >> sys.stderr, "Error opening log file: " + str(e)
+			sys.exit(1)
+
+	################################################################################
+
+	def _log(self, state, message):
+		try:
+			self.logfd.write(datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S') + ': ' + str(state) + ': ' + str(message) + '\r\n')
+		except Exception as e:
+			print >> sys.stderr, "Error writing to log file: " + str(e)
+
 	################################################################################
 
 	def move_to_default_ou(self, hostname):
-		return subprocess.call([self.config['POWERSHELL_PATH'], '-Command', 'Get-ADComputer "' + psescape(hostname + '$') + '" | Move-ADObject -TargetPath "' + psescape(self.config['TARGET_OU']) + '"'])
+		self._log('INFO', 'Moving hostname ' + str(hostname) + ' to default OU')
+
+		try:
+			subprocess.check_output([self.config['POWERSHELL_PATH'], '-Command', 'Get-ADComputer "' + psescape(hostname + '$') + '" | Move-ADObject -TargetPath "' + psescape(self.config['TARGET_OU']) + '"'], stderr=subprocess.STDOUT)
+			return 0
+		except subprocess.CalledProcessError, e:
+			self._log('ERROR', 'PowerShell call to move ' + str(hostname) + ' to default OU returned ' + str(e.returncode))
+			self._log('DEBUG', 'PowerShell output: ' + str(e.output))
+			return e.returncode
 
 	################################################################################
 
 	def join_groups(self, hostname):
+		self._log('INFO', 'Joining hostname ' + str(hostname) + ' to default groups')
+
 		returncode = 0
 		for group in self.config['GROUPS']:
-			if subprocess.call([self.config['POWERSHELL_PATH'], '-Command', 'Add-ADGroupMember -Identity "' + psescape(group) + '" -Members "' + psescape(hostname + '$') + '"']) != 0:
-				returncode = 1
+			self._log('INFO', 'Joining hostname to ' + str(hostname) + ' to ' + str(group))
+			try:
+				subprocess.check_output([self.config['POWERSHELL_PATH'], '-Command', 'Add-ADGroupMember -Identity "' + psescape(group) + '" -Members "' + psescape(hostname + '$') + '"'], stderr=subprocess.STDOUT)
+			except subprocess.CalledProcessError, e:
+				self._log('ERROR', 'Failed to join host ' + str(hostname) + ' to group ' + str(group))
+				self._log('DEBUG', 'PowerShell output: ' + str(e.output))
+				returncode = e.returncode
 
 		return returncode
 
 	################################################################################
 
 	def set_information(self, hostname, description, location):
-		return subprocess.call([self.config['POWERSHELL_PATH'], '-Command', 'Set-ADComputer -Identity "' + psescape(hostname + '$') + '" -Description "' + psescape(description) + '" -Location "' + psescape(location) + '" -ManagedBy "' + psescape(self.config['MANAGED_BY']) + '"'])
+		self._log('INFO', 'Setting information for computer, ' + str(hostname))
+
+		try:
+			subprocess.check_output([self.config['POWERSHELL_PATH'], '-Command', 'Set-ADComputer -Identity "' + psescape(hostname + '$') + '" -Description "' + psescape(description) + '" -Location "' + psescape(location) + '" -ManagedBy "' + psescape(self.config['MANAGED_BY']) + '"'], stderr=subprocess.STDOUT)
+			return 0
+		except subprocess.CalledProcessError, e:
+			self._log('ERROR', 'PowerShell call to set information on ' + str(hostname) + ' returned ' + str(e.returncode))
+			self._log('DEBUG', 'PowerShell output: ' + str(e.output))
+			return e.returncode
 
 	################################################################################
 
@@ -62,9 +100,11 @@ class CortexWindowsRPC(object):
 
 # The object containing the configuration and code
 rpc_handler = CortexWindowsRPC()
+rpc_handler._log('INFO', 'Cortex Windows RPC Daemon starting up')
 
 # Set up the Pyro4 daemon
 daemon = Pyro4.Daemon(host="", port=rpc_handler.config['WINRPC_PORT'])
 daemon._pyroHmacKey = rpc_handler.config['WINRPC_KEY']
 daemon.register(rpc_handler, 'CortexWindowsRPC')
+rpc_handler._log('INFO', 'Ready for instructions')
 daemon.requestLoop()
