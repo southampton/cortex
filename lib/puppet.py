@@ -106,7 +106,7 @@ def generate_node_config(certname):
 		else:
 			response['parameters']['uos_motd_sn_description'] = system['cmdb_description']
 
-	return yaml.dump(response)
+	return yaml.safe_dump(response)
 
 ################################################################################
 
