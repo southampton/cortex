@@ -58,6 +58,9 @@ $(function() {
 				d.show_decom = ($('#showdecom').hasClass('btn-success') ? "1" : "0");
 			}
 		},
+		{% if q %}
+		"search": { "search": {{q|tojson|safe}} },
+		{% endif %}
 		"searching": true,
 		"rowCallback": function(row, data, index) {
 			{#- data[5] is CMDB URL, data[6] is database ID, data[4] is operational status, data[8] is Puppet Cert Name #}

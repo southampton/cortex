@@ -30,8 +30,11 @@ def systems():
 	# Get the list of active classes (used to populate the tab bar)
 	classes = cortex.lib.classes.list()
 
+	# Get the search string, if any
+	q = request.args.get('q', None)
+
 	# Render
-	return render_template('systems.html', systems=systems, classes=classes, active='systems', title="Systems")
+	return render_template('systems.html', systems=systems, classes=classes, active='systems', title="Systems",q=q)
 
 ################################################################################
 
@@ -87,9 +90,8 @@ def systems_search():
 		# If we found the system, redirect to the system's edit page
 		return redirect(url_for('systems_edit', id=system['id']))
 	else:
-		# If we didn't find the system, flash an error and go to the systems list
-		flash('Unable to find system "' + query + '"', 'alert-warning')
-		return redirect(url_for('systems'))
+		# If we didn't find the system, search for it instead
+		return redirect(url_for('systems',q=query))
 
 ################################################################################
 
