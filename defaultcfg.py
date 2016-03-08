@@ -55,8 +55,7 @@ LDAP_USER_ATTRIBUTE = 'sAMAccountName'
 LDAP_ANON_BIND      = True
 LDAP_BIND_USER      = ''
 LDAP_BIND_PW        = ''
-
-LDAP_ADMIN_GROUP    = "CN=jfEstMembers,OU=resource,OU=jf,OU=jf,OU=pk,OU=User,DC=soton,DC=ac,DC=uk"
+LDAP_ADMIN_GROUP    = "CN=groupname,OU=localhost,DC=localdomain"
 
 # Number of seconds, into the future, to cache user's group memberships for.
 LDAP_GROUPS_CACHE_EXPIRE = '900'

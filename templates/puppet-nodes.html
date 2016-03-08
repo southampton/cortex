@@ -1,5 +1,28 @@
 {% extends "layout.html" %}
 {% block body %}
+<style type="text/css">
+.status-unchanged
+{
+	color: #28b62c;
+}
+.status-changed
+{
+	color: #158cba;
+}
+.status-disabled
+{
+	color: #ff851b;
+}
+.status-failed
+{
+	color: #ff4136;
+}
+.status-unknown
+{
+	color: #888;
+}
+</style>
+
 <div class="page-header">
 <h3><i class="fa fa-fw fa-server"></i> Puppet Nodes</h3>
 <p class="text-muted">Puppet in Cortex only affects servers registered with the "Puppet 2016" Puppet Master, existing servers will not appear below until they are migrated.</p>
@@ -10,15 +33,17 @@
 			<th>System Name</th>
 			<th>Puppet Certificate Name</th>
 			<th>Puppet Environment</th>
+			<th>Node Status</th>
 			<th></th>
 		</tr>
 	</thead>
 	<tbody>
 {%- for node in data %}
 		<tr>
-			<td>{{ node.name }}</td>
+			<td><a href="{{url_for('puppet_enc_edit',node=node.certname) }}">{{ node.name }}</a></td>
 			<td>{{ node.certname }}</td>
 			<td>{{ node.env }}</td>
+			<td class="status-{{ node.status }}">{{ node.status }}</td>
 			<td><a href="{{url_for('puppet_enc_edit',node=node.certname) }}" class="btn btn-default btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a></td>
 		</tr>
 {%- endfor %}
@@ -29,7 +54,7 @@ $('#data').DataTable({
 	"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 	"pageLength": 15,
 	"order": [[0, 'asc']],
-	"columns": [null, null, null, { "orderable": false, "targets": 0 }]
+	"columns": [null, null, null, null, { "orderable": false, "targets": 0 }]
 });
 </script>
 {% endblock %}

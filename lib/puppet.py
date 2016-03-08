@@ -119,6 +119,24 @@ def puppetdb_connect():
 
 ################################################################################
 
+def puppetdb_get_node_statuses(db=None):
+	"""Gets the statuses of all the nodes"""
+
+	if db is None:
+		db = puppetdb_connect()
+
+	# Get information about all the nodes, including their status
+	nodes = db.nodes(with_status = True)
+
+	# Iterate over nodes, counting statuses
+	statuses = {}
+	for node in nodes:
+		statuses[node.name] = node.status
+
+	return statuses
+
+################################################################################
+
 def puppetdb_get_node_stats(db = None):
 	"""Calculate statistics on node statuses by talking to PuppetDB"""
 

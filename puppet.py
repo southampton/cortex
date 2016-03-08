@@ -159,6 +159,15 @@ def puppet_nodes():
 	curd.execute('SELECT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`  FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` ORDER BY `puppet_nodes`.`certname` ')
 	results = curd.fetchall()
 
+	# Get node statuses
+	statuses = cortex.lib.puppet.puppetdb_get_node_statuses()
+
+	for row in results:
+		if row['certname'] in statuses:
+			row['status'] = statuses[row['certname']]
+		else:
+			row['status'] = 'unknown'
+
 	# Render
 	return render_template('puppet-nodes.html', active='puppet', data=results, title="Puppet Nodes")
 
