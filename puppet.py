@@ -319,8 +319,11 @@ def puppet_facts(node):
 	except Exception, e:
 		raise(e)
 
+	# Load the system data - we don't care if it fails (i.e its not in the systems table)
+	system = cortex.lib.systems.get_system_by_puppet_certname(node)
+
 	# Render
-	return render_template('puppet-facts.html', facts=facts, node=dbnode, active='puppet', title=node + " - Puppet Facts", nodename=node, pactive="facts")
+	return render_template('puppet-facts.html', facts=facts, node=dbnode, active='puppet', title=node + " - Puppet Facts", nodename=node, pactive="facts", system=system)
 
 ################################################################################
 
@@ -337,7 +340,7 @@ def puppet_dashboard():
 @cortex.lib.user.login_required
 def puppet_dashboard_status(status):
 	# Page Titles to use
-	page_title_map = {'unchanged': 'Normal', 'changed': 'Changed', 'noop': 'Disabled (No-op)', 'failed': 'Failed', 'unknown': 'Unknown'}
+	page_title_map = {'unchanged': 'Normal', 'changed': 'Changed', 'noop': 'Disabled', 'failed': 'Failed', 'unknown': 'Unknown'}
 
 	# If we have an invalid status, return 404
 	if status not in page_title_map:
@@ -402,7 +405,10 @@ def puppet_reports(node):
 	except Exception, e:
 		raise(e)
 
-	return render_template('puppet-reports.html', reports=reports, active='puppet', title=node + " - Puppet Reports", nodename=node, pactive="reports")
+	# Load the system data - we don't care if it fails (i.e its not in the systems table)
+	system = cortex.lib.systems.get_system_by_puppet_certname(node)
+
+	return render_template('puppet-reports.html', reports=reports, active='puppet', title=node + " - Puppet Reports", nodename=node, pactive="reports", system=system)
 
 ################################################################################
 

@@ -1,7 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
 <style type="text/css">
-@import url(https://fonts.googleapis.com/css?family=Lato:400,700);
 .admin-block
 {
 	min-height: 150px;
@@ -14,7 +13,17 @@
 	padding-top: 10px;
 	padding-bottom: 10px;
 	text-align: center;
-	font-family: 'Lato', sans-serif;
+}
+
+.admin-block:hover
+{
+	box-shadow: 0px 0px 4px 4px rgba(0,0,0,.5);	
+	text-decoration: none !important;
+}
+
+.col-md-4 > a:hover
+{
+	text-decoration: none;
 }
 
 .admin-block h2
@@ -45,40 +54,52 @@
 </div>
 <div class="row">
 	<div class="col-md-4">
+		<a href="{{ url_for('puppet_nodes') }}">
 		<div class="admin-block bg-info">
 			<h1><i class="fa fa-fw fa-server"></i> {{ stats['count'] }}</h1>
-			<h2><a href="{{ url_for('puppet_nodes') }}">Registered nodes</a></h2>
+			<h2>Registered nodes</h2>
 		</div>
+		</a>
 	</div>
 	<div class="col-md-4">
+		<a href="{{ url_for('puppet_dashboard_status', status='unchanged') }}">
 		<div class="admin-block bg-success">
 			<h1><i class="fa fa-fw fa-check"></i> {{ stats['unchanged'] }}</h1>
-			<h2><a href="{{ url_for('puppet_dashboard_status', status='unchanged') }}">Normal</a></h2>
+			<h2>Normal</h2>
 		</div>
+		</a>
 	</div>
 	<div class="col-md-4">
+		<a href="{{ url_for('puppet_dashboard_status', status='changed') }}">
 		<div class="admin-block bg-primary">
 			<h1><i class="fa fa-fw fa-cog"></i> {{ stats['changed'] }}</h1>
-			<h2><a href="{{ url_for('puppet_dashboard_status', status='changed') }}">Changed</a></h2>
+			<h2>Changed</h2>
 		</div>
+		</a>
 	</div>
 	<div class="col-md-4">
+		<a href="{{ url_for('puppet_dashboard_status', status='noop') }}">
 		<div class="admin-block bg-warning">
 			<h1><i class="fa fa-fw fa-wrench"></i> {{ stats['noop'] }}</h1>
-			<h2><a href="{{ url_for('puppet_dashboard_status', status='noop') }}">Disabled (No-op)</a></h2>
+			<h2>Disabled</h2>
 		</div>
+		</a>
 	</div>
 	<div class="col-md-4">
+		<a href="{{ url_for('puppet_dashboard_status', status='failed') }}">
 		<div class="admin-block bg-danger">
 			<h1><i class="fa fa-fw fa-exclamation-triangle"></i> {{ stats['failed'] }}</h1>
-			<h2><a href="{{ url_for('puppet_dashboard_status', status='failed') }}">Failed</a></h2>
+			<h2>Failed</h2>
 		</div>
+		</a>
 	</div>
 	<div class="col-md-4">
+		<a href="{{ url_for('puppet_dashboard_status', status='unknown') }}">
 		<div class="admin-block bg-default">
 			<h1><i class="fa fa-fw fa-question-circle"></i> {{ stats['unknown'] + stats['unreported'] }}</h1>
-			<h2><a href="{{ url_for('puppet_dashboard_status', status='unknown') }}">Unknown</a></h2>
+			<h2>Unknown</h2>
 		</div>
+		</a>
 	</div>
 </div>
 {% endblock %}

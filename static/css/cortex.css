@@ -246,3 +246,57 @@ ul.list-group-sidebar i.fa
 {
 	margin-bottom: 0px;
 }
+
+.status-unchanged
+{
+	color: #28b62c;
+}
+.status-changed
+{
+	color: #158cba;
+}
+.status-disabled
+{
+	color: #ff851b;
+}
+.status-failed
+{
+	color: #ff4136;
+}
+.status-unknown
+{
+	color: #888;
+}
+
+i.icon-state
+{
+	font-size: 8pt;
+	margin-right: 0.3em;
+}
+
+i.icon-legend
+{
+	margin-left: 0.3em;
+	position: relative;
+	top: -2px;
+}
+
+i.icon-on
+{
+	color: #2c2;
+}
+
+i.icon-off
+{
+	color: #c22;
+}
+
+i.icon-pause
+{
+	color: #c82;
+}
+
+i.icon-unknown
+{
+	color: #22c;
+}

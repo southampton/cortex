@@ -9,7 +9,7 @@
 			</div>
 			<div class="chart-row row-disabled">
 				<div class="count">{{ stats['noop'] }}</div>
-				<div class="bar"><span class="bar-text">Disabled (No-op)</span><div class="bar-internal{% if stats['noop'] == stats['count'] %} bar-full{% endif %}" style="width:{{ stats['noop'] / stats['count'] * 100 }}%"><span class="bar-text">Disabled (No-op)</span></div></div>
+				<div class="bar"><span class="bar-text">Disabled</span><div class="bar-internal{% if stats['noop'] == stats['count'] %} bar-full{% endif %}" style="width:{{ stats['noop'] / stats['count'] * 100 }}%"><span class="bar-text">Disabled</span></div></div>
 			</div>
 			<div class="chart-row row-failed">
 				<div class="count">{{ stats['failed'] }}</div>
