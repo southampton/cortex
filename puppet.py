@@ -319,11 +319,16 @@ def puppet_facts(node):
 	except Exception, e:
 		raise(e)
 
+	# Turn the facts generator in to a dictionary
+	facts_dict = {}
+	for fact in facts:
+		facts_dict[fact.name] = fact.value
+
 	# Load the system data - we don't care if it fails (i.e its not in the systems table)
 	system = cortex.lib.systems.get_system_by_puppet_certname(node)
 
 	# Render
-	return render_template('puppet-facts.html', facts=facts, node=dbnode, active='puppet', title=node + " - Puppet Facts", nodename=node, pactive="facts", system=system)
+	return render_template('puppet-facts.html', facts=facts_dict, node=dbnode, active='puppet', title=node + " - Puppet Facts", nodename=node, pactive="facts", system=system)
 
 ################################################################################
 
@@ -339,8 +344,12 @@ def puppet_dashboard():
 @app.route('/puppet/dashboard/status/<status>')
 @cortex.lib.user.login_required
 def puppet_dashboard_status(status):
+	# For the purposes of the dashboard, unreported is the same as unknown
+	if status == 'unreported':
+		status = 'unknown'
+
 	# Page Titles to use
-	page_title_map = {'unchanged': 'Normal', 'changed': 'Changed', 'noop': 'Disabled', 'failed': 'Failed', 'unknown': 'Unknown'}
+	page_title_map = {'unchanged': 'Normal', 'changed': 'Changed', 'noop': 'Disabled', 'failed': 'Failed', 'unknown': 'Unknown/Unreported'}
 
 	# If we have an invalid status, return 404
 	if status not in page_title_map:

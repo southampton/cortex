@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 
-{#- This macro renders a sequence of items, recursing to renderlist and rendermacro as necessary -#}
+{#- This macro renders a sequence of items, recursing to renderlist and renderdict as necessary -#}
 {%- macro renderlist(l) %}
 <ul class="facts">
 {%- for item in l %}
@@ -14,7 +14,7 @@
 {%- endfor %}
 </ul>
 {% endmacro %}
-{#- This macro renders a dictionary of items, recursing to renderlist and rendermacro as necessary -#}
+{#- This macro renders a dictionary of items, recursing to renderlist and renderdict as necessary -#}
 {%- macro renderdict(d) %}
 <ul class="facts">
 {%- for key,value in d|dictsort %}
@@ -48,18 +48,18 @@
 {%- if facts %}
 <div style="overflow-x: scroll">
 	<ul class="facts">
-	{%- for fact in facts %}
-		<li><strong>{{ fact.name }}:&nbsp;</strong> 
-	{%-     if fact.value is mapping -%}
-			{{ renderdict(fact.value) }}
+	{%- for key,value in facts|dictsort %}
+		<li><strong>{{ key }}:&nbsp;</strong> 
+	{%-     if value is mapping -%}
+			{{ renderdict(value) }}
 	{%-     else -%}
-			{{ fact.value }}
+			{{ value }}
 	{%-     endif -%}
 		</li>
 	{%- endfor %}
 	</ul>
 </div>
 {% else %}
-<p>No facts found for this node. Is this node registered with Puppet?</p>
+<p>No facts found for this node. Check that the node is registered with Puppet and that the Puppet Agent is functioning on the host.</p>
 {%- endif %}
 {% endblock %}

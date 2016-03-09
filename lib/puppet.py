@@ -137,6 +137,24 @@ def puppetdb_get_node_statuses(db=None):
 
 ################################################################################
 
+def puppetdb_get_node_status(node_name, db=None):
+	"""Gets the latest status of a a given node, where node_name is the Puppet certificate name"""
+
+	if db is None:
+		db = puppetdb_connect()
+
+	# Get information about all the nodes, including their status
+	nodes = db.nodes(with_status = True)
+
+	# Iterate over nodes, looking for a specific node
+	for node in nodes:
+		if node.name == node_name:
+			return node.status
+
+	return None
+
+################################################################################
+
 def puppetdb_get_node_stats(db = None):
 	"""Calculate statistics on node statuses by talking to PuppetDB"""
 

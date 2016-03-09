@@ -7,7 +7,7 @@ from flask import Flask, request, redirect, session, url_for, abort, render_temp
 
 ################################################################################
 
-def get_system_count(class_name = None, search = None, show_decom = True, only_other = False):
+def get_system_count(class_name = None, search = None, hide_inactive = True, only_other = False):
 	"""Returns the number of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost)"""
 
 	## BUILD THE QUERY
@@ -16,47 +16,10 @@ def get_system_count(class_name = None, search = None, show_decom = True, only_o
 	params = ()
 	query = 'SELECT COUNT(*) AS `count` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`'
 
-	# If a class_name is specfied, add on a WHERE clause
-	if class_name is not None:
-		query = query + "WHERE `class` = %s"
-		params = (class_name,)
-
-	# If a search term is specified...
-	if search is not None:
-		# Build a filter string
-		like_string = '%' + search + '%'
-
-		# If a class name was specified already, we need to AND the query,
-		# otherwise we need to start the WHERE clause
-		if class_name is not None:
-			query = query + " AND "
-		else:
-			query = query + "WHERE "
-
-		# Allow the search to match on name, allocation_comment or 
-		# allocation_who
-		query = query + "(`systems`.`name` LIKE %s OR `systems`.`allocation_comment` LIKE %s OR `systems`.`allocation_who` LIKE %s)"
-
-		# Add the filter string to the parameters of the query. Add it 
-		# three times as there are three columns to match on.
-		params = params + (like_string, like_string, like_string)
-
-	# If show_decom is set to false, then exclude systems that are no longer In Service
-	if show_decom == False:
-		if class_name is not None or search is not None:
-			query = query + " AND "
-		else:
-			query = query + "WHERE "
-
-		query = query + ' (`sncache_cmdb_ci`.`operational_status` = "In Service" OR `sncache_cmdb_ci`.`operational_status` IS NULL)'
-
-	# Restrict to other/legacy types
-	if only_other:
-		if class_name is not None or search is not None or show_decom == False:
-			query = query + " AND "
-		else:
-			query = query + "WHERE "
-		query = query + ' `systems`.`type` != 0'
+	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
+	query_where = _build_systems_query(class_name, search, None, None, None, None, hide_inactive, only_other)
+	query = query + query_where[0]
+	params = params + query_where[1]
 
 	# Query the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -125,14 +88,10 @@ def get_system_by_vmware_uuid(name):
 
 ################################################################################
 
-def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, show_decom = True, only_other = False, return_cursor = False):
-	"""Returns the list of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost), and ordered (defaults to "name")"""
-
-	## BUILD THE QUERY
-
-	# Start with no parameters, and a generic SELECT from the appropriate table
+def _build_systems_query(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False):
 	params = ()
-	query = "SELECT `systems`.`id` AS `id`, `systems`.`type` AS `type`, `systems`.`class` AS `class`, `systems`.`number` AS `number`, `systems`.`name` AS `name`, `systems`.`allocation_date` AS `allocation_date`, `systems`.`allocation_who` AS `allocation_who`, `systems`.`allocation_comment` AS `allocation_comment`, `systems`.`cmdb_id` AS `cmdb_id`, `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status`, `vmware_cache_vm`.`powerState` AS `vmware_guest_state`, `puppet_nodes`.`certname` AS `puppet_certname`, `sncache_cmdb_ci`.`u_environment` AS `cmdb_environment`, `sncache_cmdb_ci`.`short_description` AS `cmdb_description` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid` LEFT JOIN `puppet_nodes` ON `puppet_nodes`.`id` = `systems`.`id` "
+
+	query = ""
 
 	# If a class_name is specfied, add on a WHERE clause
 	if class_name is not None:
@@ -159,18 +118,18 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 		# three times as there are three columns to match on.
 		params = params + (like_string, like_string, like_string)
 
-	# If show_decom is set to false, then exclude systems that are no longer In Service
-	if show_decom == False:
+	# If hide_inactive is set to false, then exclude systems that are no longer In Service
+	if hide_inactive == True:
 		if class_name is not None or search is not None:
 			query = query + " AND "
 		else:
 			query = query + "WHERE "
 
-		query = query + ' (`sncache_cmdb_ci`.`operational_status` = "In Service" OR `sncache_cmdb_ci`.`operational_status` IS NULL)'
+		query = query + ' ((`systems`.`cmdb_id` IS NOT NULL AND `sncache_cmdb_ci`.`operational_status` = "In Service") OR (`systems`.`cmdb_id` IS NULL AND `systems`.`vmware_uuid` IS NOT NULL))'
 
 	# Restrict to other/legacy types
 	if only_other:
-		if class_name is not None or search is not None or show_decom == False:
+		if class_name is not None or search is not None or hide_inactive == True:
 			query = query + " AND "
 		else:
 			query = query + "WHERE "
@@ -181,13 +140,13 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 
 	# By default, if order is not specified, we order by name
 	if order is None:
-		query = query + "`name`"
+		query = query + "`systems`.`name`"
 
 	# Validate the name of the column to sort by (this prevents errors and
 	# also prevents SQL from accidentally being injected). Add the column
 	# name on to the query
 	if order in ["name", "number", "allocation_comment", "allocation_date", "allocation_who", "cmdb_operational_status"]:
-		query = query + "`" + order + "`"
+		query = query + "`systems`.`" + order + "`"
 
 	# Determine which direction to order in, and add that on
 	if order_asc:
@@ -212,6 +171,25 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 			#
 			# Seriously, this is how MySQL recommends to do this :(
 			query = query + "18446744073709551610"
+
+	return (query, params)
+
+
+################################################################################
+
+def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, return_cursor = False):
+	"""Returns the list of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost), and ordered (defaults to "name")"""
+
+	## BUILD THE QUERY
+
+	# Start with no parameters, and a generic SELECT from the appropriate table
+	params = ()
+	query = "SELECT `systems`.`id` AS `id`, `systems`.`type` AS `type`, `systems`.`class` AS `class`, `systems`.`number` AS `number`, `systems`.`name` AS `name`, `systems`.`allocation_date` AS `allocation_date`, `systems`.`allocation_who` AS `allocation_who`, `systems`.`allocation_comment` AS `allocation_comment`, `systems`.`cmdb_id` AS `cmdb_id`, `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status`, `vmware_cache_vm`.`powerState` AS `vmware_guest_state`, `puppet_nodes`.`certname` AS `puppet_certname`, `sncache_cmdb_ci`.`u_environment` AS `cmdb_environment`, `sncache_cmdb_ci`.`short_description` AS `cmdb_description` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid` LEFT JOIN `puppet_nodes` ON `puppet_nodes`.`id` = `systems`.`id` "
+
+	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
+	query_where = _build_systems_query(class_name, search, order, order_asc, limit_start, limit_length, hide_inactive, only_other)
+	query = query + query_where[0]
+	params = params + query_where[1]
 
 	# Query the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)

@@ -216,6 +216,10 @@ def systems_edit(id):
 		system = cortex.lib.systems.get_system_by_id(id)
 		system_class = cortex.lib.classes.get(system['class'])
 
+		if system['puppet_certname']:
+			system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
+			
+
 		return render_template('systems-edit.html', system=system, system_class=system_class, active='systems', title=system['name'])
 	elif request.method == 'POST':
 		try:
@@ -506,11 +510,11 @@ def systems_json():
 	if request.args['filter_group'] == '*OTHER':
 		only_other = True
 
-	# Validate the flag for showing decommissioned systems.
-	show_decom = True
-	#if 'show_decom' in request.args:
-	#	if str(request.args['show_decom']) == '0':
-	#		show_decom = False
+	# Validate the flag for showing 'inactive' systems.
+	hide_inactive = True
+	if 'hide_inactive' in request.args:
+		if str(request.args['hide_inactive']) == '0':
+			hide_inactive = False
 
 	# Handle the search parameter. This is the textbox on the DataTables
 	# view that the user can search by typing in
@@ -521,11 +525,11 @@ def systems_json():
 
 	# Get number of systems that match the query, and the number of systems
 	# within the filter group
-	system_count = cortex.lib.systems.get_system_count(filter_group, show_decom=show_decom, only_other=only_other)
-	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, show_decom, only_other=only_other)
+	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other)
+	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other)
 
 	# Get results of query
-	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, show_decom, only_other)
+	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other)
 
 	# DataTables wants an array in JSON, so we build this here, returning
 	# only the columns we want. We format the date as a string as

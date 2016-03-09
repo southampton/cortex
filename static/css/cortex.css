@@ -77,7 +77,7 @@ table#classes td:last-child
 	margin: 0 0 23px;
 }
 
-.page-header h3
+.page-header > h3
 {
 	margin-top: 5px;
 }
@@ -266,6 +266,16 @@ ul.list-group-sidebar i.fa
 .status-unknown
 {
 	color: #888;
+}
+.status-unreported
+{
+	color: #888;
+}
+
+/* Make status links get the status color rather than the default 'a' color */
+td.status-unchanged a, td.status-changed a, td.status-disabled a, td.status-failed a, td.status-unknown a, td.status-unreported a
+{
+	color: inherit;
 }
 
 i.icon-state
