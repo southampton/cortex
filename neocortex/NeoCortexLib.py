@@ -978,16 +978,32 @@ class NeoCortexLib(object):
 
 	########################################################################
 
-	def windows_move_computer_to_default_ou(self, hostname):
+	def _get_winrpc_proxy(self, environment):
+		"""Connects to the Cortex Windows RPC proxy.
+		Args:
+		  environment (string): The environment key name to get the details from the config
+		Returns:
+		  A Pyro4.Proxy object connected to the appropriate environment"""
+
+		# Set up a proxy
+		proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + self.config['WINRPC'][environment]['host'] + ':' + str(self.config['WINRPC'][environment]['port']))
+		proxy._pyroHmacKey = self.config['WINRPC'][environment]['key']
+
+		# Attempt to ping the proxy
+		proxy.ping()
+
+		return proxy
+
+	########################################################################
+
+	def windows_move_computer_to_default_ou(self, hostname, environment):
 		"""Moves a Computer object in Active Directory to reside within the default OU.
 		Args:
 		  hostname (string): The hostname of the computer object to move
 		Returns:
 		  Nothing."""
 
-		proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + self.config['WINRPC_HOST'] + ':' + str(self.config['WINRPC_PORT']))
-		proxy._pyroHmacKey = self.config['WINRPC_KEY']
-		if proxy.move_to_default_ou(hostname) != 0:
+		if self._get_winrpc_proxy(environment).move_to_default_ou(hostname) != 0:
 			raise Exception('Remote call returned failure response')
 
 		# Performing other Windows tasks too quickly can result in them
@@ -996,16 +1012,14 @@ class NeoCortexLib(object):
 
 	########################################################################
 
-	def windows_join_default_groups(self, hostname):
+	def windows_join_default_groups(self, hostname, environment):
 		"""Adds a Computer object in Active Directory to the default list of groups.
 		Args:
 		  hostname (string): The hostname of the computer object to put in to groups
 		Returns:
 		  Nothing."""
 
-		proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + self.config['WINRPC_HOST'] + ':' + str(self.config['WINRPC_PORT']))
-		proxy._pyroHmacKey = self.config['WINRPC_KEY']
-		if proxy.join_groups(hostname) < 0:
+		if self._get_winrpc_proxy(environment).join_groups(hostname) < 0:
 			raise Exception('Remote call returned failure response')
 
 		# Performing other Windows tasks too quickly can result in them
@@ -1014,7 +1028,7 @@ class NeoCortexLib(object):
 
 	########################################################################
 
-	def windows_set_computer_details(self, hostname, description, location):
+	def windows_set_computer_details(self, hostname, environment, description, location):
 		"""Sets various details about the computer object in AD.
 		Args:
 		  hostname (string): The hostname of the computer object to modify
@@ -1023,9 +1037,7 @@ class NeoCortexLib(object):
 		Returns:
 		  Nothing."""
 
-		proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + self.config['WINRPC_HOST'] + ':' + str(self.config['WINRPC_PORT']))
-		proxy._pyroHmacKey = self.config['WINRPC_KEY']
-		if proxy.set_information(hostname, description, location) != 0:
+		if self._get_winrpc_proxy(environment).set_information(hostname, description, location) != 0:
 			raise Exception('Remote call returned failure response')
 
 		# Performing other Windows tasks too quickly can result in them
