@@ -59,6 +59,22 @@ The list below shows all past and present system-started tasks
 		"order": [[0, 'desc']],
 		"columns": [null, null, null, null, null, null, null, { "orderable": false, "targets": 0 }],
 		"searching": true,
+{%- if json_source %}
+		"serverSide": true,
+		"searchDelay": 500,
+		"ajax": {
+			"url": "{{ json_source }}",
+			"type": "POST",
+		},
+		"rowCallback": function(row, data, index) {
+			$('td:eq(1)', row).html('<abbr title="' + data[7] + '">' + data[1] + '</abbr>');
+			if      (data[6] == 0) { $('td:eq(6)', row).html('<span style="color:#22c">In Progress</span>'); }
+			else if (data[6] == 1) { $('td:eq(6)', row).html('<span style="color:#2c2">Succeeded</span>'); }
+			else if (data[6] == 2) { $('td:eq(6)', row).html('<span style="color:#c22">Failed</span>'); }
+			else                   { $('td:eq(6)', row).html('Unknown'); }
+			$('td:eq(7)', row).html('<a class="btn btn-xs btn-default" href="/task/status/' + data[0] + '"><i class="fa fa-fw fa-info"></i> Details</a>');
+		}
+{%- endif %}
 	});
 </script>
 {% endblock %}

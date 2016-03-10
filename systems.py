@@ -34,7 +34,7 @@ def systems():
 	q = request.args.get('q', None)
 
 	# Render
-	return render_template('systems.html', systems=systems, classes=classes, active='systems', title="Systems",q=q)
+	return render_template('systems.html', systems=systems, classes=classes, active='systems', title="Systems", q=q)
 
 ################################################################################
 
@@ -251,8 +251,9 @@ def systems_edit(id):
 
 ################################################################################
 
-@app.route('/systems/vmware/json')
+@app.route('/systems/vmware/json', methods=['POST'])
 @cortex.lib.user.login_required
+@app.disable_csrf_check
 def systems_vmware_json():
 	"""Used by DataTables to extract infromation from the VMware cache. The
 	parameters and return format are dictated by DataTables"""
@@ -324,8 +325,9 @@ def systems_vmware_json():
 
 ################################################################################
 
-@app.route('/systems/cmdb/json')
+@app.route('/systems/cmdb/json', methods=['POST'])
 @cortex.lib.user.login_required
+@app.disable_csrf_check
 def systems_cmdb_json():
 	"""Used by DataTables to extract information from the ServiceNow CMDB CI
 	cache. The parameters and return format are as dictated by DataTables"""
@@ -356,8 +358,9 @@ def systems_cmdb_json():
 
 ################################################################################
 
-@app.route('/systems/json')
+@app.route('/systems/json', methods=['POST'])
 @cortex.lib.user.login_required
+@app.disable_csrf_check
 def systems_json():
 	"""Used by DataTables to extract information from the systems table in
 	the database. The parameters and return format are as dictated by 
@@ -385,20 +388,20 @@ def systems_json():
 	# currently selected tab on the page that narrows down by system
 	# class, e.g .srv, vhost, etc.
 	filter_group = None
-	if 'filter_group' in request.args:
+	if 'filter_group' in request.form:
 		# The filtering on starting with * ignores some special filter groups
-		if request.args['filter_group'] != '' and request.args['filter_group'][0] != '*':
-			filter_group = str(request.args['filter_group'])
+		if request.form['filter_group'] != '' and request.form['filter_group'][0] != '*':
+			filter_group = str(request.form['filter_group'])
 
 	# Filter group being *OTHER should hide our group names and filter on 
 	only_other = False
-	if request.args['filter_group'] == '*OTHER':
+	if request.form['filter_group'] == '*OTHER':
 		only_other = True
 
 	# Validate the flag for showing 'inactive' systems.
 	hide_inactive = True
-	if 'hide_inactive' in request.args:
-		if str(request.args['hide_inactive']) == '0':
+	if 'hide_inactive' in request.form:
+		if str(request.form['hide_inactive']) == '0':
 			hide_inactive = False
 
 	# Get number of systems that match the query, and the number of systems
@@ -435,22 +438,22 @@ def systems_json():
 def _systems_extract_datatables():
 	# Validate and extract 'draw' parameter. This parameter is simply a counter
 	# that DataTables uses internally.
-	if 'draw' in request.args:
-		draw = int(request.args['draw'])
+	if 'draw' in request.form:
+		draw = int(request.form['draw'])
 	else:   
 		abort(400)
 
 	# Validate and extract 'start' parameter. This parameter is the index of the
 	# first row to return.
-	if 'start' in request.args:
-		start = int(request.args['start'])
+	if 'start' in request.form:
+		start = int(request.form['start'])
 	else:   
 		abort(400)
 
 	# Validate and extract 'length' parameter. This parameter is the number of
 	# rows that we should return
-	if 'length' in request.args:
-		length = int(request.args['length'])
+	if 'length' in request.form:
+		length = int(request.form['length'])
 		if length < 0:
 			length = None
 	else:   
@@ -458,17 +461,17 @@ def _systems_extract_datatables():
 
 	# Validate and extract ordering column. This parameter is the index of the
 	# column on the HTML table to order by
-	if 'order[0][column]' in request.args:
-		order_column = int(request.args['order[0][column]'])
+	if 'order[0][column]' in request.form:
+		order_column = int(request.form['order[0][column]'])
 	else:   
 		order_column = 0
 
 	# Validate and extract ordering direction. 'asc' for ascending, 'desc' for
 	# descending.
-	if 'order[0][dir]' in request.args:
-		if request.args['order[0][dir]'] == 'asc':
+	if 'order[0][dir]' in request.form:
+		if request.form['order[0][dir]'] == 'asc':
 			order_asc = True
-		elif request.args['order[0][dir]'] == 'desc':
+		elif request.form['order[0][dir]'] == 'desc':
 			order_asc = False
 		else:
 			abort(400)
@@ -478,8 +481,8 @@ def _systems_extract_datatables():
 	# Handle the search parameter. This is the textbox on the DataTables
 	# view that the user can search by typing in
 	search = None
-	if 'search[value]' in request.args:
-		if request.args['search[value]'] != '':
-			search = str(request.args['search[value]'])
+	if 'search[value]' in request.form:
+		if request.form['search[value]'] != '':
+			search = str(request.form['search[value]'])
 
 	return (draw, start, length, order_column, order_asc, search)

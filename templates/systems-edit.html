@@ -250,7 +250,8 @@ $(document).ready(function()
 			"serverSide": true,
 			"searchDelay": 500,
 			"ajax": {
-				"url": "/systems/cmdb/json"
+				"url": "/systems/cmdb/json",
+				"type": "POST"
 			},
 			"searching": "true",
 			"rowCallback": function(row, data, index) {
@@ -281,7 +282,8 @@ $(document).ready(function()
 			"serverSide": true,
 			"searchDelay": 500,
 			"ajax": {
-				"url": "/systems/vmware/json"
+				"url": "/systems/vmware/json",
+				"type": "POST"
 			},
 			"searching": "true",
 			"rowCallback": function(row, data, index) {

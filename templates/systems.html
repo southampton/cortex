@@ -52,6 +52,7 @@ $(function() {
 		"searchDelay": 500,
 		"ajax": {
 			"url": "{{ url_for('systems_json') }}",
+			"type": "POST",
 			"data": function (d) {
 				d.filter_group = $('#class-tabs li.active a').attr('data-class');
 				d.hide_inactive = ($('#hide_inactive').hasClass('btn-success') ? "1" : "0");

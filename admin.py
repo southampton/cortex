@@ -3,7 +3,7 @@
 
 from cortex import app
 import cortex.lib.core
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
+from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
 import re
 import MySQLdb as mysql
 
@@ -14,13 +14,92 @@ import MySQLdb as mysql
 def admin_tasks():
 	"""Displays the list of tasks to the user."""
 
-	# Get all the tasks from the database
+	# Render the page
+	return render_template('admin-tasks.html', active='admin', title="Tasks", tasktype='all', json_source=url_for('admin_tasks_json', tasktype='all'))
+
+################################################################################
+
+@app.route('/admin/tasks/json/<tasktype>', methods=['POST'])
+@cortex.lib.user.login_required
+@app.disable_csrf_check
+def admin_tasks_json(tasktype):
+	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks`")
+
+	# Extract stuff from DataTables requests
+	(draw, start, length, order_column, order_asc, search) = _tasks_extract_datatables()
+
+	# Choose the order column
+	if order_column == 0:
+		order_by = "id"
+	elif order_column == 1:
+		order_by = "module"
+	elif order_column == 2:
+		order_by = "start"
+	elif order_column == 3:
+		order_by = "end"
+	elif order_column == 4:
+		order_by = "elapsed"
+	elif order_column == 5:
+		order_by = "username"
+	elif order_column == 6:
+		order_by = "status"
+	else:
+		abort(400)
+
+	# Choose order direction
+	order_dir = "DESC"
+	if order_asc:
+		order_dir = "ASC"
+
+	# Determine the task type and add that to the query
+	params = ()
+	where_clause = ""
+	if tasktype == 'all':
+		where_clause = '1=1'	# This is just to make 'search' always be able to be an AND and not need an optional WHERE
+	elif tasktype == 'user':
+		where_clause = '`username` != "scheduler"'
+	elif tasktype == 'system':
+		where_clause = '`username` = "scheduler"'
+	else:
+		abort(400)
+
+	# Add on search string if we have one
+	if search:
+		where_clause = where_clause + " AND (`module` LIKE %s OR `username` LIKE %s) "
+		params = params + ('%' + search + '%', '%' + search + '%')
+
+	# Get the total number of tasks
+	curd.execute("SELECT COUNT(*) AS `count` FROM `tasks`")
+	task_count = curd.fetchone()['count']
+
+	# Get the total number of tasks
+	curd.execute("SELECT COUNT(*) AS `count` FROM `tasks` WHERE " + where_clause, params)
+	filtered_task_count = curd.fetchone()['count']
+
+	# Get the list of tasks
+	curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, (`end` - `start`) AS `elapsed`, `description` FROM `tasks` WHERE " + where_clause + " ORDER BY `" + order_by + "` " + order_dir + " LIMIT " + str(start) + "," + str(length), params)
 	tasks = curd.fetchall()
 
-	# Render the page
-	return render_template('admin-tasks.html', tasks=tasks, active='admin', title="Tasks", tasktype='all')
+	# Build an array of tasks
+	task_data = []
+	for task in tasks:
+		# Format elapsed string nicely rather than just seconds which is what comes back from MySQL
+		if task['start'] and task['end']:
+			task['elapsed'] = str(task['end'] - task['start'])
+
+		# Format start time string
+		if task['start']:
+			task['start'] = task['start'].strftime('%Y-%m-%d %H:%M:%S')
+
+		# Format end time string
+		if task['end']:
+			task['end'] = task['end'].strftime('%Y-%m-%d %H:%M:%S')
+
+		# Add row to results
+		task_data.append([task['id'], task['module'], task['start'], task['end'], str(task['elapsed']), task['username'], task['status'], task['description']])
+
+	return jsonify(draw=draw, recordsTotal=task_count, recordsFiltered=filtered_task_count, data=task_data)
 
 ################################################################################
 
@@ -52,13 +131,8 @@ def admin_tasks_active():
 def admin_tasks_user():
 	"""Displays the list of tasks, excluding any system tasks"""
 
-	# Get all the tasks from the database
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` != 'scheduler'")
-	tasks = curd.fetchall()
-
 	# Render the page
-	return render_template('admin-tasks.html', tasks=tasks, active='admin', title="User Tasks", tasktype='user')
+	return render_template('admin-tasks.html', active='admin', title="User Tasks", tasktype='user', json_source=url_for('admin_tasks_json', tasktype='user'))
 
 ################################################################################
 
@@ -67,13 +141,8 @@ def admin_tasks_user():
 def admin_tasks_system():
 	"""Displays the list of tasks started by the system"""
 
-	# Get all the tasks from the database
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` = 'scheduler'")
-	tasks = curd.fetchall()
-
 	# Render the page
-	return render_template('admin-tasks.html', tasks=tasks, active='admin', title="System Tasks", tasktype='system')
+	return render_template('admin-tasks.html', active='admin', title="System Tasks", tasktype='system', json_source=url_for('admin_tasks_json', tasktype='system'))
 
 ################################################################################
 
@@ -214,3 +283,56 @@ def admin_maint():
 		# Show the user the status of the task
 		return redirect(url_for('task_status', id=task_id))
 
+################################################################################
+
+def _tasks_extract_datatables():
+	# Validate and extract 'draw' parameter. This parameter is simply a counter
+	# that DataTables uses internally.
+	if 'draw' in request.form:
+		draw = int(request.form['draw'])
+	else:   
+		abort(400)
+
+	# Validate and extract 'start' parameter. This parameter is the index of the
+	# first row to return.
+	if 'start' in request.form:
+		start = int(request.form['start'])
+	else:   
+		abort(400)
+
+	# Validate and extract 'length' parameter. This parameter is the number of
+	# rows that we should return
+	if 'length' in request.form:
+		length = int(request.form['length'])
+		if length < 0:
+			length = None
+	else:   
+		abort(400)
+
+	# Validate and extract ordering column. This parameter is the index of the
+	# column on the HTML table to order by
+	if 'order[0][column]' in request.form:
+		order_column = int(request.form['order[0][column]'])
+	else:   
+		order_column = 0
+
+	# Validate and extract ordering direction. 'asc' for ascending, 'desc' for
+	# descending.
+	if 'order[0][dir]' in request.form:
+		if request.form['order[0][dir]'] == 'asc':
+			order_asc = True
+		elif request.form['order[0][dir]'] == 'desc':
+			order_asc = False
+		else:
+			abort(400)
+	else:
+		order_asc = False
+
+	# Handle the search parameter. This is the textbox on the DataTables
+	# view that the user can search by typing in
+	search = None
+	if 'search[value]' in request.form:
+		if request.form['search[value]'] != '':
+			search = str(request.form['search[value]'])
+
+	return (draw, start, length, order_column, order_asc, search)
