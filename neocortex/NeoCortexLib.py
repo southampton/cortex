@@ -813,7 +813,7 @@ class NeoCortexLib(object):
 
 	################################################################################
 
-	def servicenow_create_ci(self, ci_name, os_type, os_name, cpus='', ram_mb='', disk_gb='', ipaddr='', virtual=True, environment=None, short_description='', comments='', location=None):
+	def servicenow_create_ci(self, ci_name, os_type, os_name, sockets='', cores_per_socket='', ram_mb='', disk_gb='', ipaddr='', virtual=True, environment=None, short_description='', comments='', location=None):
 		"""Creates a new CI within ServiceNow.
 		     - ci_name: The name of the CI, e.g. srv01234
 		     - os_type: The OS type as a number, see OS_TYPE_BY_NAME
@@ -851,8 +851,10 @@ class NeoCortexLib(object):
 		vm_data = { 'name': str(ci_name), 'os': str(os_name), 'virtual': str(virtual).lower(), 'ip_address': ipaddr, 'operational_status': 'In Service', 'model_id': model_id, 'short_description': short_description, 'comments': comments }
 
 		# Add CPU count if we've got it
-		if cpus is not None:
-			vm_data['cpus'] = str(cpus)
+		if sockets is not None:
+			vm_data['cpu_count'] = str(sockets)
+		if cores_per_socket is not None:
+			vm_data['cpu_core_count'] = str(cores_per_socket)
 
 		# Add disk space if we've got it
 		if disk_gb is not None:
