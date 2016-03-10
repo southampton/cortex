@@ -99,15 +99,14 @@
 </div>
 
 <form role="form" class="form-horizontal">
-<div class="page-header">
-<div class="pull-right">
-	{%- if system.cmdb_id %}<a class="btn btn-sm btn-primary" href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank"><i class="fa fa-sm fa-cloud"></i> ServiceNow</a>{%endif%} 
-	{%- if system.puppet_certname %} <a class="btn btn-sm btn-success" href="{{ url_for('puppet_enc_edit',node=system.puppet_certname) }}"><i class="fa fa-sm fa-book"></i> Puppet</a>{%endif%}
-	<button class="btn btn-sm btn-warning" type="button" data-toggle="modal" data-target="#edit"><i class="fa fa-edit fa-fw"></i> Edit system</button>
-</div>
-<h3><i class="fa fa-fw fa-server"></i> {{ system.name }}</h3>
-</div>
-
+	<div class="page-header">
+		<div class="pull-right">
+			{%- if system.cmdb_id %}<a class="btn btn-sm btn-primary" href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank"><i class="fa fa-sm fa-cloud"></i> ServiceNow</a>{%endif%} 
+			{%- if system.puppet_certname %} <a class="btn btn-sm btn-success" href="{{ url_for('puppet_enc_edit',node=system.puppet_certname) }}"><i class="fa fa-sm fa-book"></i> Puppet</a>{%endif%}
+			<button class="btn btn-sm btn-warning" type="button" data-toggle="modal" data-target="#edit"><i class="fa fa-edit fa-fw"></i> Edit system</button>
+		</div>
+		<h3><i class="fa fa-fw fa-server"></i> {{ system.name }}</h3>
+	</div>
 	<div class="row">
 		<div class="col-md-6">
 			<div class="panel panel-default">
@@ -127,7 +126,7 @@
 				</div>
 			</div>
 		</div>
-	{%- if system.puppet_certname %} 
+{%- if system.puppet_certname %} 
 		<div class="col-md-6">
 			<div class="panel panel-default">
 				<div class="panel-heading">
@@ -146,102 +145,88 @@
 				</div>
 			</div>
 		</div>
-	{% endif %}
-
+{%- endif %}
 	</div>
 
 	<div class="row">
-
-
-		{%- if system.cmdb_id %}
+{%- if system.cmdb_id %}
 		<div class="col-md-6">
 			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h3 class="panel-title">ServiceNow CMDB</h3> 
 				</div>
-			<div class="panel-body">
-
-
-
-		<!--<div class="form-group">
-			<label class="col-sm-3 control-label" for="cmdb_name">Name in CMDB:</label><div class="col-sm-9"><input readonly="readonly" class="form-control" type="text" name="cmdb_name" id="cmdb_name" value="{{ system.cmdb_name or '' }}" /></div>
-		</div>-->
-		<div class="form-group">
-			<label class="col-sm-3 control-label" for="cmdb_name">Type:</label>
-			<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_sys_class_name or 'Unknown' }}</p></div>
-		</div>
-		<div class="form-group">
-			<label class="col-sm-3 control-label" for="cmdb_u_number">ID:</label>
-			<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_u_number or 'Unknown' }}</p></div>
-		</div>
-		<div class="form-group">
-			<label class="col-sm-3 control-label" for="cmdb_operational_status">Status:</label>
-			<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_operational_status or 'Unknown' }}</p></div>
-		</div>
-		<div class="form-group">
-			<label class="col-sm-3 control-label" for="cmdb_operational_status">Environment:</label>
-			<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_environment or 'Unknown' }}</p></div>
-		</div>
-		<div class="form-group">
-			<label class="col-sm-3 control-label" for="cmdb_short_description">OS:</label>
-			<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_os or 'N/A' }}</p></div>
-		</div>
-		<div class="form-group">
-			<label class="col-sm-3 control-label" for="cmdb_short_description">Description:</label>
-			<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_short_description or 'N/A' }}</p></div>
-		</div>
-		<div class="form-group">
-			<label class="col-sm-3 control-label" for="cmdb_short_description">Comments:</label>
-			<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_comments or 'N/A' }}</p></div>
-		</div>
-
+				<div class="panel-body">
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="cmdb_name">Type:</label>
+						<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_sys_class_name or 'Unknown' }}</p></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="cmdb_u_number">ID:</label>
+						<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_u_number or 'Unknown' }}</p></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="cmdb_operational_status">Status:</label>
+						<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_operational_status or 'Unknown' }}</p></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="cmdb_operational_status">Environment:</label>
+						<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_environment or 'Unknown' }}</p></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="cmdb_short_description">OS:</label>
+						<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_os or 'N/A' }}</p></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="cmdb_short_description">Description:</label>
+						<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_short_description or 'N/A' }}</p></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="cmdb_short_description">Comments:</label>
+						<div class="col-sm-9"><p class="form-control-static">{% if system.cmdb_comments %}{% for line in system.cmdb_comments.splitlines() %}{{ line }}<br/>{% endfor %}{% else %}N/A{% endif %}</p></div>
+					</div>
+				</div>
 			</div>
 		</div>
-	</div>
-{% endif %}
-
-		{%- if system.vmware_uuid %}
+{%- endif %}
+{%- if system.vmware_uuid %}
 		<div class="col-md-6">
 			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h3 class="panel-title">VMware</h3> 
 				</div>
-			<div class="panel-body">
-
-		<!--<div class="form-group">
-			<label class="col-sm-3 control-label" for="vm_name">Name in VMware:</label><div class="col-sm-9"><input readonly="readonly" class="form-control" type="text" name="vm_name" id="vm_name" value="{{ system.vmware_name or '' }}" /></div>
-		</div>-->
-		<div class="form-group">
-			<label class="col-sm-3 control-label" for="vm_vcenter">vCenter:</label>
-			<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_vcenter or '' }}</p></div>
+				<div class="panel-body">
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="vm_vcenter">vCenter:</label>
+						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_vcenter or '' }}</p></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="vm_state">Power State:</label>
+						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_guest_state or '' }}</p></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="vm_tools">VMware Tools:</label>
+						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_tools_version_status or '' }}</p></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="vm_cpus">Spec:</label>
+						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_cpus or 'Unknown' }} vCPU, {{ system.vmware_ram or '' }} MB RAM</p></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="vm_os">OS:</label>
+						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_os or '' }}</p></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="vm_cpus">Hostname:</label>
+						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_hostname or 'Unknown' }}</p></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="vm_ipaddr">IP Address:</label>
+						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_ipaddr or 'Unknown' }}</p></div>
+					</div>
+				</div>
+			</div>
 		</div>
-		<div class="form-group">
-			<label class="col-sm-3 control-label" for="vm_state">Power State:</label>
-			<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_guest_state or '' }}</p></div>
-		</div>
-		<div class="form-group">
-			<label class="col-sm-3 control-label" for="vm_tools">VMware Tools:</label>
-			<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_tools_version_status or '' }}</p></div>
-		</div>
-		<div class="form-group">
-			<label class="col-sm-3 control-label" for="vm_cpus">Spec:</label>
-			<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_cpus or 'Unknown' }} vCPU, {{ system.vmware_ram or '' }} MB RAM</p></div>
-		</div>
-		<div class="form-group">
-			<label class="col-sm-3 control-label" for="vm_os">OS:</label>
-			<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_os or '' }}</p></div>
-		</div>
-		<div class="form-group">
-			<label class="col-sm-3 control-label" for="vm_cpus">Hostname:</label>
-			<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_hostname or 'Unknown' }}</p></div>
-		</div>
-		<div class="form-group">
-			<label class="col-sm-3 control-label" for="vm_ipaddr">IP Address:</label>
-			<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_ipaddr or 'Unknown' }}</p></div>
-		</div>
-	</div>
-{% endif %}
-
+{%- endif %}
 	</div>
 </form>
 
