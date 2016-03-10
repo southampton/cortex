@@ -219,15 +219,24 @@ def systems_edit(id):
 		if system['puppet_certname']:
 			system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
 			
-
 		return render_template('systems-edit.html', system=system, system_class=system_class, active='systems', title=system['name'])
 	elif request.method == 'POST':
 		try:
 			# Get a cursor to the database
 			curd = g.db.cursor(mysql.cursors.DictCursor)
 
+			# Extract CMDB ID from form
+			cmdb_id = request.form['cmdb_id'].strip()
+			if len(cmdb_id) == 0:
+				cmdb_id = None
+
+			# Extract VMware UUID from form
+			vmware_uuid = request.form['vmware_uuid'].strip()
+			if len(vmware_uuid) == 0:
+				vmware_uuid = None
+
 			# Update the system
-			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s WHERE `id` = %s', (request.form['allocation_comment'], request.form['cmdb_id'], request.form['vmware_uuid'], id))
+			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, id))
 			g.db.commit();
 
 			flash('System updated', "alert-success") 
