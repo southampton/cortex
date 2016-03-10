@@ -64,7 +64,22 @@ def systems_csv_stream(cursor):
 			cmdb_url = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
 
 		# Write a row to the CSV output
-		writer.writerow([row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_url])
+		outrow = [row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_url]
+
+		# For each element in the output row...
+		for i in range(0, len(outrow)):
+			# ...if it's not None...
+			if outrow[i]:
+				# ...if the element is unicode...
+				if type(outrow[i]) == unicode:
+					# ...decode from utf-8 into a ASCII-compatible byte string
+					outrow[i] = outrow[i].encode('utf-8')
+				else:
+					# ...otherwise just chuck it out as a string
+					outrow[i] = str(outrow[i])
+
+		# Write the output row to the stream
+		writer.writerow(outrow)
 		yield output.getvalue()
 
 		# Iterate
@@ -102,7 +117,7 @@ def systems_download_csv():
 	"""Downloads the list of allocated server names as a CSV file."""
 
 	# Get the list of systems
-	curd = cortex.lib.systems.get_systems(return_cursor=True)
+	curd = cortex.lib.systems.get_systems(return_cursor=True, hide_inactive=False)
 
 	# Return the response
 	return Response(systems_csv_stream(curd), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
