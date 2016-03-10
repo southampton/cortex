@@ -17,7 +17,7 @@ from requests.exceptions import HTTPError
 
 ################################################################################
 
-@app.route('/help/puppet', methods=['GET', 'POST'])
+@app.route('/help/puppet')
 @cortex.lib.user.login_required
 def puppet_help():
 	"""Displays the Puppet ENC help page."""
@@ -269,7 +269,7 @@ def puppet_group_edit(name):
 
 ################################################################################
 
-@app.route('/puppet/yaml/<node>', methods=['GET', 'POST'])
+@app.route('/puppet/yaml/<node>')
 @cortex.lib.user.login_required
 def puppet_node_yaml(node):
 	"""Handles the Puppet node YAML preview page."""
