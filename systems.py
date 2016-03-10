@@ -257,52 +257,13 @@ def systems_vmware_json():
 	"""Used by DataTables to extract infromation from the VMware cache. The
 	parameters and return format are dictated by DataTables"""
 
-	# Validate and extract 'draw' parameter. This parameter is simply a counter
-	# that DataTables uses internally.
-	if 'draw' in request.args:
-		draw = int(request.args['draw'])
-	else:   
-		abort(400)
-
-	# Validate and extract 'start' parameter. This parameter is the index of the
-	# first row to return.
-	if 'start' in request.args:
-		start = int(request.args['start'])
-	else:   
-		abort(400)
-
-	# Validate and extract 'length' parameter. This parameter is the number of
-	# rows that we should return
-	if 'length' in request.args:
-		length = int(request.args['length'])
-		if length < 0:
-			length = None
-	else:   
-		abort(400)
-
-	# Handle the search parameter. This is the textbox on the DataTables
-	# view that the user can search by typing in
-	search = None
-	if 'search[value]' in request.args:
-		if request.args['search[value]'] != '':
-			search = str(request.args['search[value]'])
-
-	# Validate and extract ordering column. This parameter is the index of the
-	# column on the HTML table to order by
-	if 'order[0][column]' in request.args:
-		order_column = int(request.args['order[0][column]'])
-	else:   
-		order_column = 0
+	# Extract information from DataTables
+	(draw, start, length, order_column, order_asc, search) = _systems_extract_datatables()
 
 	# Validate and extract ordering direction. 'asc' for ascending, 'desc' for
 	# descending.
-	if 'order[0][dir]' in request.args:
-		if request.args['order[0][dir]'] == 'asc':
-			order_dir = "ASC"
-		elif request.args['order[0][dir]'] == 'desc':
-			order_dir = "DESC"
-		else:
-			abort(400)
+	if order_asc:
+		order_dir = "ASC"
 	else:
 		order_dir = "DESC"
 
@@ -369,54 +330,8 @@ def systems_cmdb_json():
 	"""Used by DataTables to extract information from the ServiceNow CMDB CI
 	cache. The parameters and return format are as dictated by DataTables"""
 
-	# Validate and extract 'draw' parameter. This parameter is simply a counter
-	# that DataTables uses internally.
-	if 'draw' in request.args:
-		draw = int(request.args['draw'])
-	else:   
-		abort(400)
-
-	# Validate and extract 'start' parameter. This parameter is the index of the
-	# first row to return.
-	if 'start' in request.args:
-		start = int(request.args['start'])
-	else:   
-		abort(400)
-
-	# Validate and extract 'length' parameter. This parameter is the number of
-	# rows that we should return
-	if 'length' in request.args:
-		length = int(request.args['length'])
-		if length < 0:
-			length = None
-	else:   
-		abort(400)
-
-	# Handle the search parameter. This is the textbox on the DataTables
-	# view that the user can search by typing in
-	search = None
-	if 'search[value]' in request.args:
-		if request.args['search[value]'] != '':
-			search = str(request.args['search[value]'])
-
-	# Validate and extract ordering column. This parameter is the index of the
-	# column on the HTML table to order by
-	if 'order[0][column]' in request.args:
-		order_column = int(request.args['order[0][column]'])
-	else:   
-		order_column = 0
-
-	# Validate and extract ordering direction. 'asc' for ascending, 'desc' for
-	# descending.
-	if 'order[0][dir]' in request.args:
-		if request.args['order[0][dir]'] == 'asc':
-			order_asc = True
-		elif request.args['order[0][dir]'] == 'desc':
-			order_asc = False
-		else:
-			abort(400)
-	else:
-		order_asc = False
+	# Extract information from DataTables
+	(draw, start, length, order_column, order_asc, search) = _systems_extract_datatables()
 
 	# Validate and convert the ordering column number to the name of the
 	# column as it is in the database
@@ -448,47 +363,8 @@ def systems_json():
 	the database. The parameters and return format are as dictated by 
 	DataTables"""
 
-	# Validate and extract 'draw' parameter. This parameter is simply a counter
-	# that DataTables uses internally.
-	if 'draw' in request.args:
-		draw = int(request.args['draw'])
-	else:   
-		abort(400)
-
-	# Validate and extract 'start' parameter. This parameter is the index of the
-	# first row to return.
-	if 'start' in request.args:
-		start = int(request.args['start'])
-	else:   
-		abort(400)
-
-	# Validate and extract 'length' parameter. This parameter is the number of
-	# rows that we should return
-	if 'length' in request.args:
-		length = int(request.args['length'])
-		if length < 0:
-			length = None
-	else:   
-		abort(400)
-
-	# Validate and extract ordering column. This parameter is the index of the
-	# column on the HTML table to order by
-	if 'order[0][column]' in request.args:
-		order_column = int(request.args['order[0][column]'])
-	else:   
-		order_column = 0
-
-	# Validate and extract ordering direction. 'asc' for ascending, 'desc' for
-	# descending.
-	if 'order[0][dir]' in request.args:
-		if request.args['order[0][dir]'] == 'asc':
-			order_asc = True
-		elif request.args['order[0][dir]'] == 'desc':
-			order_asc = False
-		else:
-			abort(400)
-	else:
-		order_asc = False
+	# Extract information from DataTables
+	(draw, start, length, order_column, order_asc, search) = _systems_extract_datatables()
 
 	# Validate and convert the ordering column number to the name of the
 	# column as it is in the database
@@ -525,13 +401,6 @@ def systems_json():
 		if str(request.args['hide_inactive']) == '0':
 			hide_inactive = False
 
-	# Handle the search parameter. This is the textbox on the DataTables
-	# view that the user can search by typing in
-	search = None
-	if 'search[value]' in request.args:
-		if request.args['search[value]'] != '':
-			search = str(request.args['search[value]'])
-
 	# Get number of systems that match the query, and the number of systems
 	# within the filter group
 	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other)
@@ -561,3 +430,56 @@ def systems_json():
 	# Return JSON data in the format DataTables wants
 	return jsonify(draw=draw, recordsTotal=system_count, recordsFiltered=filtered_count, data=system_data)
 
+################################################################################
+
+def _systems_extract_datatables():
+	# Validate and extract 'draw' parameter. This parameter is simply a counter
+	# that DataTables uses internally.
+	if 'draw' in request.args:
+		draw = int(request.args['draw'])
+	else:   
+		abort(400)
+
+	# Validate and extract 'start' parameter. This parameter is the index of the
+	# first row to return.
+	if 'start' in request.args:
+		start = int(request.args['start'])
+	else:   
+		abort(400)
+
+	# Validate and extract 'length' parameter. This parameter is the number of
+	# rows that we should return
+	if 'length' in request.args:
+		length = int(request.args['length'])
+		if length < 0:
+			length = None
+	else:   
+		abort(400)
+
+	# Validate and extract ordering column. This parameter is the index of the
+	# column on the HTML table to order by
+	if 'order[0][column]' in request.args:
+		order_column = int(request.args['order[0][column]'])
+	else:   
+		order_column = 0
+
+	# Validate and extract ordering direction. 'asc' for ascending, 'desc' for
+	# descending.
+	if 'order[0][dir]' in request.args:
+		if request.args['order[0][dir]'] == 'asc':
+			order_asc = True
+		elif request.args['order[0][dir]'] == 'desc':
+			order_asc = False
+		else:
+			abort(400)
+	else:
+		order_asc = False
+
+	# Handle the search parameter. This is the textbox on the DataTables
+	# view that the user can search by typing in
+	search = None
+	if 'search[value]' in request.args:
+		if request.args['search[value]'] != '':
+			search = str(request.args['search[value]'])
+
+	return (draw, start, length, order_column, order_asc, search)
