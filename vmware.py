@@ -3,7 +3,7 @@
 
 from cortex import app
 import cortex.lib.user
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
+from flask import Flask, request, session, redirect, url_for, flash, g, render_template, jsonify, Response
 import os 
 import time
 import json

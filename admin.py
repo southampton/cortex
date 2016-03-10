@@ -45,6 +45,7 @@ def admin_tasks_json(tasktype):
 	elif order_column == 6:
 		order_by = "status"
 	else:
+		app.logger.warn('Invalid ordering column parameter in DataTables request')
 		abort(400)
 
 	# Choose order direction
@@ -62,7 +63,7 @@ def admin_tasks_json(tasktype):
 	elif tasktype == 'system':
 		where_clause = '`username` = "scheduler"'
 	else:
-		abort(400)
+		abort(404)
 
 	# Add on search string if we have one
 	if search:
@@ -278,6 +279,7 @@ def admin_maint():
 		elif module == 'sncache':
 			task_id = neocortex.start_internal_task(session['username'], 'cache_servicenow.py', '_cache_servicenow', description="Caches server CIs from the ServiceNow CMDB")
 		else:
+			app.logger.warn('Unknown module name specified when starting task')
 			abort(400)
 
 		# Show the user the status of the task
@@ -291,13 +293,15 @@ def _tasks_extract_datatables():
 	if 'draw' in request.form:
 		draw = int(request.form['draw'])
 	else:   
+		app.logger.warn('\'draw\' parameter missing from DataTables request')
 		abort(400)
 
 	# Validate and extract 'start' parameter. This parameter is the index of the
 	# first row to return.
 	if 'start' in request.form:
 		start = int(request.form['start'])
-	else:   
+	else:
+		app.logger.warn('\'start\' parameter missing from DataTables request')
 		abort(400)
 
 	# Validate and extract 'length' parameter. This parameter is the number of
@@ -306,14 +310,15 @@ def _tasks_extract_datatables():
 		length = int(request.form['length'])
 		if length < 0:
 			length = None
-	else:   
+	else:
+		app.logger.warn('\'length\' parameter missing from DataTables request')
 		abort(400)
 
 	# Validate and extract ordering column. This parameter is the index of the
 	# column on the HTML table to order by
 	if 'order[0][column]' in request.form:
 		order_column = int(request.form['order[0][column]'])
-	else:   
+	else:
 		order_column = 0
 
 	# Validate and extract ordering direction. 'asc' for ascending, 'desc' for
@@ -324,6 +329,7 @@ def _tasks_extract_datatables():
 		elif request.form['order[0][dir]'] == 'desc':
 			order_asc = False
 		else:
+			app.logger.warn('Invalid \'order[0][dir]\' parameter in DataTables request')
 			abort(400)
 	else:
 		order_asc = False

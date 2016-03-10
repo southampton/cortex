@@ -151,7 +151,7 @@ def api_installer_notify():
 		system = cortex.lib.systems.get_system_by_vmware_uuid(request.form['uuid'].lower())
 
 		if not system:
-			app.logger.warn('Could not match vmware uuid to a system for the register API (UUID: ' + request.form['uuid'].lower() + ')')
+			app.logger.warn('Could not match VMware UUID to a system for the installer notify API (UUID: ' + request.form['uuid'].lower() + ')')
 			abort(404)
 
 		# Mark as done
@@ -159,4 +159,5 @@ def api_installer_notify():
 
 		return "OK"
 	else:
+		app.logger.warn('Missing \'uuid\' parameter in installer notify API')
 		abort(401)
