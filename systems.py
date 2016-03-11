@@ -506,6 +506,9 @@ def _systems_extract_datatables():
 	search = None
 	if 'search[value]' in request.form:
 		if request.form['search[value]'] != '':
-			search = str(request.form['search[value]'])
+			if type(request.form['search[value]']) is not str and type(request.form['search[value]']) is not unicode:
+				search = str(request.form['search[value]'])
+			else:
+				search = request.form['search[value]']
 
 	return (draw, start, length, order_column, order_asc, search)
