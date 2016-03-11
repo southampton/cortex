@@ -259,13 +259,11 @@ def admin_maint():
 		for task in active_tasks:
 			if task['name'] == '_cache_vmware':
 				vmcache_task_id = task['id']
-			elif task['name'] == '_cache_vmware_novm':
-				vmcache_novm_task_id = task['id']
 			elif task['name'] == '_cache_servicenow':
 				sncache_task_id = task['id']
 
 		# Render the page
-		return render_template('admin-maint.html', active='admin', sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id, vmcache_novm_task_id=vmcache_novm_task_id, title="Maintenance Tasks")
+		return render_template('admin-maint.html', active='admin', sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id, title="Maintenance Tasks")
 
 	else:
 		# Find out what task to start
@@ -274,8 +272,6 @@ def admin_maint():
 		# Start the appropriate internal task
 		if module == 'vmcache':
 			task_id = neocortex.start_internal_task(session['username'], 'cache_vmware.py', '_cache_vmware', description="Caches information about virtual machines, datacenters and clusters from VMware")
-		elif module == 'vmcache_novm':
-			task_id = neocortex.start_internal_task(session['username'], 'cache_vmware.py', '_cache_vmware_novm', options={'skip_vms': True}, description="Caches information about virtual machines, datacenters and clusters from VMware")
 		elif module == 'sncache':
 			task_id = neocortex.start_internal_task(session['username'], 'cache_servicenow.py', '_cache_servicenow', description="Caches server CIs from the ServiceNow CMDB")
 		else:
