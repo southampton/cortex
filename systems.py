@@ -224,7 +224,7 @@ def systems_bulk_view(start, finish):
 
 ################################################################################
 
-@app.route('/systems/edit/<int:id>', methods=['GET', 'POST'])
+@app.route('/systems/view/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def systems_edit(id):
 	if request.method == 'GET' or request.method == 'HEAD':

@@ -15,11 +15,7 @@ import MySQLdb as mysql
 
 ################################################################################
 
-@app.route('/vmware/os')
-@cortex.lib.user.login_required
-def vmware_os():
-	"""Shows VM operating system statistics."""
-
+def get_os_stats():
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
@@ -28,30 +24,30 @@ def vmware_os():
 	results = curd.fetchall()
 
 	types = {}
-	types['windows']   = 0
-	types['linux'] = 0
-	types['bsd'] = 0
+	types['windows'] = 0
+	types['linux']   = 0
+	types['bsd']     = 0
 
 	types['windows_desktop'] = 0
 	types['windows_server']  = 0
-	types['ws2003'] = 0
-	types['ws2008'] = 0
-	types['ws2012'] = 0
-	types['ws2016'] = 0
+	types['ws2003']          = 0
+	types['ws2008']          = 0
+	types['ws2012']          = 0
+	types['ws2016']          = 0
 
 	types['wdvista'] = 0
-	types['wd7'] = 0
-	types['wd8'] = 0
-	types['wd10'] = 0
+	types['wd7']     = 0
+	types['wd8']     = 0
+	types['wd10']    = 0
 
-	types['ubuntu'] = 0
-	types['debian'] = 0
-	types['rhel'] = 0
-	types['rhel3'] = 0
-	types['rhel4'] = 0
-	types['rhel5'] = 0
-	types['rhel6'] = 0
-	types['rhel7'] = 0
+	types['ubuntu']      = 0
+	types['debian']      = 0
+	types['rhel']        = 0
+	types['rhel3']       = 0
+	types['rhel4']       = 0
+	types['rhel5']       = 0
+	types['rhel6']       = 0
+	types['rhel7']       = 0
 	types['linux_other'] = 0
 
 	for result in results:
@@ -111,6 +107,16 @@ def vmware_os():
 
 		elif "freebsd" in ostr:
 			types['bsd'] += 1
+
+	return types
+
+################################################################################
+
+@app.route('/vmware/os')
+@cortex.lib.user.login_required
+def vmware_os():
+	"""Shows VM operating system statistics."""
+	types = get_os_stats()
 
 	# Render
 	return render_template('vmware-os.html', active='vmware', types=types, title="Statistics - Operating Systems")

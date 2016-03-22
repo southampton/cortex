@@ -65,7 +65,7 @@ $(function() {
 		"rowCallback": function(row, data, index) {
 			{#- data[5] is CMDB URL, data[6] is database ID, data[4] is operational status, data[8] is Puppet Cert Name #}
 			$('td:eq(5)', row).html(
-				'<a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/edit/' + data[6] + '">' +
+				'<a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/view/' + data[6] + '">' +
 				'	<i class="fa fa-fw fa-info-circle"></i>' +
 				'</a>' + (data[5] != '' ?
 				'<a title="CMDB" style="margin-right:0.5em" class="btn btn-xs btn-primary" href="' + data[5] + '" target="_blank">' +
@@ -80,7 +80,7 @@ $(function() {
 				$('td:eq(4)', row).html("Unknown");
 			}
 
-			var view_link = "<a class='server-link' href='/systems/edit/" + data[6] + "'>" + data[0] + "</a>";
+			var view_link = "<a class='server-link' href='/systems/view/" + data[6] + "'>" + data[0] + "</a>";
 
 			if ($('#class-tabs li.active a').attr('data-vmware') == 1)
 			{

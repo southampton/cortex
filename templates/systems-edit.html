@@ -1,6 +1,28 @@
 {% extends "layout.html" %}
 {% block body %}
 
+<style type="text/css">
+@media (min-width: 992px)
+{
+	.equal, .equal > div[class*='col-']
+	{
+		display: -webkit-flex;
+		display: flex;
+		flex: 1 1 auto;
+	}
+
+	.equal .panel
+	{
+		width: 100%;
+	}
+
+	.equal .panel
+	{
+		min-height: 15em;
+	}
+}
+</style>
+
 <div class="modal" id="edit" role="dialog">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
@@ -107,9 +129,9 @@
 		</div>
 		<h3><i class="fa fa-fw fa-server"></i> {{ system.name }}</h3>
 	</div>
-	<div class="row">
+	<div class="row equal">
 		<div class="col-md-6">
-			<div class="panel panel-default">
+			<div class="panel panel-primary">
 				<div class="panel-heading">
 					<h3 class="panel-title">System Record</h3> 
 				</div>
@@ -126,13 +148,13 @@
 				</div>
 			</div>
 		</div>
-{%- if system.puppet_certname %} 
 		<div class="col-md-6">
-			<div class="panel panel-default">
+			<div class="panel {% if system.puppet_certname %} panel-primary{%else%}panel-default{%endif%}">
 				<div class="panel-heading">
 					<h3 class="panel-title">Puppet</h3>
 				</div>
 				<div class="panel-body">
+					{%- if system.puppet_certname %} 
 					<div class="form-group">
 						<label class="col-sm-3 control-label" for="allocation_comment">Certname:</label><div class="col-sm-9"><p class="form-control-static">{{ system.puppet_certname or '' }}</p></div>
 					</div>
@@ -142,20 +164,22 @@
 					<div class="form-group">
 						<label class="col-sm-3 control-label" for="allocation_date">Status:</label><div class="col-sm-9"><p class="form-control-static"><span class="{% if system.puppet_node_status %}status-{{system.puppet_node_status}}{%endif%}">{{ system.puppet_node_status or '' }}</span></p></div>
 					</div>
+					{%else%}
+					<p class="text-muted"><em>This system has not been linked to Puppet.</em></p>
+					{%endif%}
 				</div>
 			</div>
 		</div>
-{%- endif %}
 	</div>
 
-	<div class="row">
-{%- if system.cmdb_id %}
+	<div class="row equal">
 		<div class="col-md-6">
-			<div class="panel panel-default">
+			<div class="panel {% if system.cmdb_id %}panel-primary{%else%}panel-default{%endif%}">
 				<div class="panel-heading">
 					<h3 class="panel-title">ServiceNow CMDB</h3> 
 				</div>
 				<div class="panel-body">
+					{%- if system.cmdb_id %}
 					<div class="form-group">
 						<label class="col-sm-3 control-label" for="cmdb_name">Type:</label>
 						<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_sys_class_name or 'Unknown' }}</p></div>
@@ -184,17 +208,19 @@
 						<label class="col-sm-3 control-label" for="cmdb_short_description">Comments:</label>
 						<div class="col-sm-9"><p class="form-control-static">{% if system.cmdb_comments %}{% for line in system.cmdb_comments.splitlines() %}{{ line }}<br/>{% endfor %}{% else %}N/A{% endif %}</p></div>
 					</div>
+					{%else%}
+					<p class="text-muted"><em>This system record has not been linked to ServiceNow. To do so click Edit System.</em></p>
+					{%endif%}
 				</div>
 			</div>
 		</div>
-{%- endif %}
-{%- if system.vmware_uuid %}
 		<div class="col-md-6">
-			<div class="panel panel-default">
+			<div class="panel {% if system.vmware_uuid %}panel-primary{%else%}panel-default{%endif%}">
 				<div class="panel-heading">
 					<h3 class="panel-title">VMware</h3> 
 				</div>
 				<div class="panel-body">
+					{% if system.vmware_uuid %}
 					<div class="form-group">
 						<label class="col-sm-3 control-label" for="vm_vcenter">vCenter:</label>
 						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_vcenter or '' }}</p></div>
@@ -223,10 +249,12 @@
 						<label class="col-sm-3 control-label" for="vm_ipaddr">IP Address:</label>
 						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_ipaddr or 'Unknown' }}</p></div>
 					</div>
+					{%else%}
+					<p class="text-muted"><em>This system record has not been linked to VMWare. To do so click Edit System.</em></p>
+					{%endif%}
 				</div>
 			</div>
 		</div>
-{%- endif %}
 	</div>
 </form>
 

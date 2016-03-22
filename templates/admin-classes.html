@@ -13,8 +13,13 @@
 					<h4 class="modal-title">Edit class</h4>
 				</div>
 				<div class="modal-body">
+					<p>
+						The class prefix should be short, typically three characters, e.g. 'srv' or 'stg'. The digits are the number of digits after
+						the class prefix, typically this is five, e.g. srv00000 or srv99999. If you're not sure, it's best to use a three character prefix
+						and five digits.
+					</p>
 					<div class="form-group">
-						<label class="col-sm-3 control-label">Class prefix</label>
+						<label class="col-sm-3 control-label">Prefix</label>
 						<div class="col-sm-9">
 							<p class="form-control-static" id="edit_class_name" name="class_name">N/A</p>
 						</div>
@@ -52,7 +57,7 @@
 					<div class="form-group">
 						<div class="checkbox col-sm-offset-3 col-sm-9">
 							<label>
-								<input type="checkbox" checked="checked" id="edit_class_active" name="class_active"> Allow new allocations?
+								<input type="checkbox" checked="checked" id="edit_class_active" name="class_active"> Allow new allocations
 							</label>
 						</div>
 					</div>
@@ -148,7 +153,7 @@ $( document ).ready(function()
 					<div class="form-group">
 						<div class="checkbox col-sm-offset-3 col-sm-9">
 						<label>
-							<input type="checkbox" checked="checked" name="class_active"> Enabled for use
+							<input type="checkbox" checked="checked" name="class_active"> Allow new allocations
 						</label>
 						</div>
 					</div>

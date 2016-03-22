@@ -56,7 +56,10 @@ def dashboard():
 	curd.execute('SELECT `id`, `module`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` = %s ORDER BY `start` DESC LIMIT 5', (session['username'],))
 	tasks = curd.fetchall()
 
-	return render_template('dashboard.html', vm_count=vm_count, ci_count=ci_count, task_progress_count=task_progress_count, task_failed_count=task_failed_count, tasks=tasks, title="Dashboard")
+	# OS VM stats
+	types = cortex.vmware.get_os_stats()
+
+	return render_template('dashboard.html', vm_count=vm_count, ci_count=ci_count, task_progress_count=task_progress_count, task_failed_count=task_failed_count, tasks=tasks, types=types, title="Dashboard")
 
 ################################################################################
 
