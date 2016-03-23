@@ -305,6 +305,21 @@ def vmware_clusters():
 
 ################################################################################
 
+@app.route('/vmware/history')
+@cortex.lib.user.login_required
+def vmware_history():
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get VM count history
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_vm_count`')
+	stats_vms = curd.fetchall()
+
+	# Render
+	return render_template('vmware-history.html', active='vmware', stats_vms=stats_vms, title='VMware History')
+
+################################################################################
+
 def vmware_csv_stream(cursor):
 	"""Streams data from each row in the cursor as a line of CSV."""
 

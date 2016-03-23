@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+{% block body %}
+<script type="text/javascript" src="//www.google.com/jsapi"></script>
+<script type="text/javascript">
+	google.load("visualization", "1", {packages:["corechart"]});
+	google.setOnLoadCallback(prepDataAndDrawChart);
+
+	var data_total;
+	var data_linux;
+	var data_windows;
+
+	function d(s) { return new Date(s); }
+	function prepDataAndDrawChart()
+	{
+		data_total = new google.visualization.DataTable();
+		data_total.addColumn('datetime', 'Time');
+		data_total.addColumn('number', 'Total VMs');
+		data_total.addRows([
+{%- for row in stats_vms -%}
+		[d('{{ row.timestamp.strftime("%Y/%m/%d %H:%M:%S") }}'),{{ row.value }}]
+{%- if not loop.last -%},{%- endif -%}
+{%- endfor -%}
+		]);
+
+		data_linux = new google.visualization.DataTable();
+		data_linux.addColumn('datetime', 'Time');
+		data_linux.addColumn('number', 'Linux');
+		data_linux.addRows([
+{%- for row in stats_linux_vms -%}
+		[d('{{ row.timestamp.strftime("%Y/%m/%d %H:%M:%S") }}'),{{ row.value }}]
+{%- if not loop.last -%},{%- endif -%}
+{%- endfor -%}
+		]);
+
+		data_windows = new google.visualization.DataTable();
+		data_windows.addColumn('datetime', 'Time');
+		data_windows.addColumn('number', 'Windows');
+		data_windows.addRows([
+{%- for row in stats_windows_vms -%}
+		[d('{{ row.timestamp.strftime("%Y/%m/%d %H:%M:%S") }}'),{{ row.value }}]
+{%- if not loop.last -%},{%- endif -%}
+{%- endfor -%}
+		]);
+
+		drawChart();
+	}
+
+	function drawChart()
+	{
+		var now = new Date();
+		var lastCount = parseInt($('#lastCount').val());
+		var lastType = parseInt($('#lastType').val());
+
+		var options = {
+			hAxis: { 
+				viewWindow: { 
+					min: new Date(now.valueOf() - (lastCount * lastType * 1000))
+				}
+			}, 
+			chartArea: {
+				left: '10%',
+				top: '10%',
+				width: '80%',
+				height: '80%'
+			},
+		};
+		var chart1 = new google.visualization.LineChart(document.getElementById('chart_total'));
+		chart1.draw(data_total, options);
+		var chart2 = new google.visualization.LineChart(document.getElementById('chart_breakdown'));
+		chart2.draw(data_linux, options);
+	}
+
+</script>
+<div class="page-header">
+<h3><i class="fa fa-pie-chart fa-fw"></i> Statistics - VMware History</h3>
+</div>
+<div class="container" role="main">
+	<div id="chart_total" style="width:100%; height: 300px"></div>
+	<div id="chart_breakdown" style="width:100%; height: 300px"></div>
+	<div class="row pull-right">Show last <input id="lastCount" type="number" value="5" /> <select id="lastType"><option value="3600">hours</option><option value="86400" selected>days</option><option value="604800">weeks</option></select></div>
+</div>
+<script type="text/javascript">
+	$('#lastCount').change(drawChart);
+	$('#lastType').change(drawChart);
+</script>
+{% endblock %}

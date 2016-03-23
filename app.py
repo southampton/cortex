@@ -561,6 +561,36 @@ Username:             %s
 		  PRIMARY KEY (`id`,`vcenter`,`did`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `stats_vm_count` (
+		  `timestamp` DATETIME NOT NULL,
+		  `value` mediumint(11) NOT NULL,
+		  PRIMARY KEY (`timestamp`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `stats_linux_vm_count` (
+		  `timestamp` DATETIME NOT NULL,
+		  `value` mediumint(11) NOT NULL,
+		  PRIMARY KEY (`timestamp`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `stats_windows_vm_count` (
+		  `timestamp` DATETIME NOT NULL,
+		  `value` mediumint(11) NOT NULL,
+		  PRIMARY KEY (`timestamp`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `stats_desktop_vm_count` (
+		  `timestamp` DATETIME NOT NULL,
+		  `value` mediumint(11) NOT NULL,
+		  PRIMARY KEY (`timestamp`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `stats_other_vm_count` (
+		  `timestamp` DATETIME NOT NULL,
+		  `value` mediumint(11) NOT NULL,
+		  PRIMARY KEY (`timestamp`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
 		## Close database connection
 		temp_db.close()
 
