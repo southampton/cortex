@@ -175,6 +175,13 @@ def run(helper, options):
 		curd.execute("DELETE FROM `vmware_cache_vm`")
 	helper.end_event(description="Deleted existing cache")
 
+	# Statistics gathering setup
+	stats_vms = 0
+	stats_linux = 0
+	stats_winserver = 0
+	stats_windesktop = 0
+	stats_other = 0
+
 	## For each vCenter that appears in the configuration
 	for key in helper.config['VMWARE'].keys():
 		# Get the hostname
@@ -193,6 +200,21 @@ def run(helper, options):
 				# Put the VM in the database
 				curd.execute("INSERT INTO `vmware_cache_vm` (`id`, `vcenter`, `name`, `uuid`, `numCPU`, `memoryMB`, `powerState`, `guestFullName`, `guestId`, `hwVersion`, `hostname`, `ipaddr`, `annotation`, `cluster`, `toolsRunningStatus`, `toolsVersionStatus`, `template`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (vm['_moId'], instance['hostname'], vm['name'], vm['config.uuid'], vm['config.hardware.numCPU'], vm['config.hardware.memoryMB'], vm['runtime.powerState'], vm['config.guestFullName'], vm['config.guestId'], vm['config.version'], vm['guest.hostName'], vm['guest.ipAddress'], vm['config.annotation'], vm['cluster'], vm['guest.toolsRunningStatus'], vm['guest.toolsVersionStatus2'], vm['config.template']))
 
+				# Decide what kind of OS we have and update statistics
+				if vm['config.template'] == 0:
+					ostr = vm['config.guestId']
+					stats_vms += 1
+					if 'win' in ostr:
+						# Check between Windows Server and Desktop
+						if 'winLonghornGuest' in ostr or 'winLonghorn64Guest' in ostr or 'windows7Guest' in ostr or 'windows7_64Guest' in ostr or 'windows8Guest' in ostr or 'windows8_64Guest' in ostr or 'windows9Guest' in ostr or 'windows9_64Guest' in ostr:
+							stats_windesktop += 1
+						else:
+							stats_winserver += 1
+					elif "Linux" in ostr or 'linux' in ostr or 'rhel' in ostr or 'sles' in ostr or 'ubuntu' in ostr or 'centos' in ostr or 'debian' in ostr:
+						stats_linux += 1
+					else:
+						stats_other += 1
+
 		# For each Data Center, put it in the database (and the folders too)
 		for dc in dcs[key]:
 			curd.execute("INSERT INTO `vmware_cache_datacenters` (`id`, `name`, `vcenter`) VALUES (%s, %s, %s)", (dc._moId, dc.name, instance['hostname']))
@@ -209,6 +231,15 @@ def run(helper, options):
 			curd.execute("INSERT INTO `vmware_cache_clusters` (`id`, `name`, `vcenter`, `did`, `ram`, `cores`, `cpuhz`, `cpu_usage`, `ram_usage`, `hosts`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (cluster['_moId'], cluster['name'], instance['hostname'], cluster['dc'], cluster['total_ram'], cluster['total_cores'], cluster['total_hz'], cluster['total_cpu_usage'], cluster['total_ram_usage'], cluster['host_count']))
 
 		helper.end_event(description="Cached information from " + instance['hostname'])
+
+	# Update statistics tables
+	helper.event("vmware_stats_update", "Updating statistics")
+	curd.execute("INSERT INTO `stats_vm_count` (`timestamp`, `value`) VALUES (NOW(), %s)", (stats_vms))
+	curd.execute("INSERT INTO `stats_linux_vm_count` (`timestamp`, `value`) VALUES (NOW(), %s)", (stats_linux))
+	curd.execute("INSERT INTO `stats_windows_vm_count` (`timestamp`, `value`) VALUES (NOW(), %s)", (stats_winserver))
+	curd.execute("INSERT INTO `stats_desktop_vm_count` (`timestamp`, `value`) VALUES (NOW(), %s)", (stats_windesktop))
+	curd.execute("INSERT INTO `stats_other_vm_count` (`timestamp`, `value`) VALUES (NOW(), %s)", (stats_other))
+	helper.end_event(description="Statistics updated")
 
 	# Commit all the changes to the database
 	helper.event("vmware_cache_dc", "Saving cache to disk")

@@ -20,7 +20,7 @@ def get_os_stats():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get OS IDs for all virtual machines
-	curd.execute('SELECT `guestId` FROM `vmware_cache_vm`')
+	curd.execute('SELECT `guestId` FROM `vmware_cache_vm` WHERE `template` = 0')
 	results = curd.fetchall()
 
 	types = {}
