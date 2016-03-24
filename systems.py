@@ -6,6 +6,7 @@ import cortex.lib.core
 import cortex.lib.systems
 import cortex.lib.cmdb
 import cortex.lib.classes
+from cortex.neocortex import NeoCortexLib
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
 import os 
 import time
@@ -122,6 +123,67 @@ def systems_download_csv():
 	# Return the response
 	return Response(systems_csv_stream(curd), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
 
+################################################################################
+
+@app.route('/systems/add', methods=['GET', 'POST'])
+@cortex.lib.user.login_required
+def systems_add_existing():
+	"""Handles the Add Existing System page, which can be used to add missing
+	systems to Cortex"""
+
+	# Get the list of enabled classes
+	classes = cortex.lib.classes.list(hide_disabled=True)
+
+	# On GET requests, just show the form
+	if request.method == 'GET':
+		return render_template('systems-add-existing.html', classes=classes, active='systems', title="Add existing system")
+
+	# On POST requests...
+	elif request.method == 'POST':
+		if 'class' not in request.form or 'number' not in request.form or 'comment' not in request.form:
+			abort(401)
+
+		# Validate the class
+		if request.form['class'].strip() not in [c['name'] for c in classes]:
+			flash('You must choose a valid class', category='alert-danger')
+			return render_template('systems-add-existing.html', classes=classes, active='systems', title="Add existing system")
+
+		# Validate the number
+		if len(request.form['number'].strip()) == 0:
+			flash('You must enter a server number', category='alert-danger')
+			return render_template('systems-add-existing.html', classes=classes, active='systems', title="Add existing system")
+
+		# Extract details
+		class_name = request.form['class'].strip()
+		number = int(request.form['number'].strip())
+		comment = request.form['comment'].strip()
+
+		# Get a cursor to the database
+		curd = g.db.cursor(mysql.cursors.DictCursor)
+
+		# Get the class
+		curd.execute("SELECT * FROM `classes` WHERE `name` = %s", (class_name,))
+		class_data = curd.fetchone()
+
+		# Ensure we have a class
+		if class_data is None:
+			flash('Invalid class selected', category='alert-danger')
+			return render_template('systems-add-existing.html', classes=classes, active='systems', title="Add existing system")
+
+		# Generate the name, padded out correctly
+		lib = NeoCortexLib.NeoCortexLib(g.db, app.config)
+		generated_name = lib.pad_system_name(class_name, number, class_data['digits'])
+
+		# Insert the system
+		curd.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`) VALUES (0, %s, %s, %s, NOW(), %s, %s)", (request.form['class'].strip(), request.form['number'].strip(), generated_name, session['username'], request.form['comment'].strip()))
+		
+		# Commit
+		g.db.commit()
+		
+		# Redirect back to systems page
+		flash("System added", "alert-success")
+		return redirect(url_for('systems'))
+			
 ################################################################################
 
 @app.route('/systems/new', methods=['GET', 'POST'])

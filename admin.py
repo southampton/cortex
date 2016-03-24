@@ -219,7 +219,7 @@ def admin_classes():
 				g.db.commit()
 
 				flash("System class created", "alert-success")
-				return redirect(url_for('admin_classes'))							
+				return redirect(url_for('admin_classes'))
 			
 
 			elif action == 'edit_class':
@@ -232,6 +232,41 @@ def admin_classes():
 
 				flash("System class updated", "alert-success")
 				return redirect(url_for('admin_classes'))
+
+		elif action == "create_default_classes":
+
+			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("srv"))
+			if curd.fetchone() is None:
+				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES ('srv', 5, 'Standard servers, physical and VMs', 0, 1, 'cmdb_ci_server')''')
+				g.db.commit()
+
+			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("play"))
+			if curd.fetchone() is None:
+				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES ('play', 5, 'Sandbox cluster VMs', 0, 1, 'cmdb_ci_server')''')
+				g.db.commit()
+
+			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("vhost"))
+			if curd.fetchone() is None:
+				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES ('vhost', 5, 'Virtualisation hosts', 0, 0, 'cmdb_ci_server')''')
+				g.db.commit()
+
+			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("stg"))
+			if curd.fetchone() is None:
+				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES ('stg', 5, 'Storage devices', 0, 0, 'cmdb_ci_msd')''')
+				g.db.commit()
+
+			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("ibs"))
+			if curd.fetchone() is None:
+				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES ('ibs', 5, 'Infiniband switches', 0, 0, 'cmdb_ci_netgear')''')
+				g.db.commit()
+
+			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("san"))
+			if curd.fetchone() is None:
+				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES ('san', 5, 'Fibre channel switches', 0, 0, 'cmdb_ci_netgear')''')
+				g.db.commit()
+
+			flash("System classes added", "alert-success")
+			return redirect(url_for('admin_classes'))
 
 		else:
 			abort(400)
