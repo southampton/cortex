@@ -134,9 +134,12 @@ def systems_add_existing():
 	# Get the list of enabled classes
 	classes = cortex.lib.classes.list(hide_disabled=True)
 
+	# Get the list of Puppet environments
+	puppet_envs = cortex.lib.core.get_puppet_environments()
+
 	# On GET requests, just show the form
 	if request.method == 'GET':
-		return render_template('systems-add-existing.html', classes=classes, active='systems', title="Add existing system")
+		return render_template('systems-add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
 
 	# On POST requests...
 	elif request.method == 'POST':
@@ -146,17 +149,23 @@ def systems_add_existing():
 		# Validate the class
 		if request.form['class'].strip() not in [c['name'] for c in classes]:
 			flash('You must choose a valid class', category='alert-danger')
-			return render_template('systems-add-existing.html', classes=classes, active='systems', title="Add existing system")
+			return render_template('systems-add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
 
 		# Validate the number
 		if len(request.form['number'].strip()) == 0:
 			flash('You must enter a server number', category='alert-danger')
-			return render_template('systems-add-existing.html', classes=classes, active='systems', title="Add existing system")
+			return render_template('systems-add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
+
+		# Validate the number
+		if len(request.form['env'].strip()) != 0 and request.form['env'].strip() not in [e['puppet'] for e in puppet_envs]:
+			flash('You must select either no Puppet environment or a valid Puppet environment (' + request.form['env'].strip() + ')', category='alert-danger')
+			return render_template('systems-add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
 
 		# Extract details
 		class_name = request.form['class'].strip()
 		number = int(request.form['number'].strip())
 		comment = request.form['comment'].strip()
+		puppet_env = request.form['env'].strip()
 
 		# Get a cursor to the database
 		curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -168,15 +177,19 @@ def systems_add_existing():
 		# Ensure we have a class
 		if class_data is None:
 			flash('Invalid class selected', category='alert-danger')
-			return render_template('systems-add-existing.html', classes=classes, active='systems', title="Add existing system")
+			return render_template('systems-add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
 
 		# Generate the name, padded out correctly
 		lib = NeoCortexLib.NeoCortexLib(g.db, app.config)
 		generated_name = lib.pad_system_name(class_name, number, class_data['digits'])
 
 		# Insert the system
-		curd.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`) VALUES (0, %s, %s, %s, NOW(), %s, %s)", (request.form['class'].strip(), request.form['number'].strip(), generated_name, session['username'], request.form['comment'].strip()))
-		
+		curd.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`) VALUES (0, %s, %s, %s, NOW(), %s, %s)", (request.form['class'].strip(), request.form['number'].strip(), generated_name, session['username'], request.form['comment'].strip()))		
+
+		# Insert the 
+		if len(puppet_env) > 0:
+			curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`, `include_default`, `classes`, `variables`) VALUES (%s, %s, %s, %s, %s, %s)", (curd.lastrowid, generated_name + ".soton.ac.uk", puppet_env, 1, "", ""))
+
 		# Commit
 		g.db.commit()
 		
