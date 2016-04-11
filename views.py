@@ -75,6 +75,10 @@ def render_task_status(id, template):
 	curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE id = %s", (id,))
 	task = curd.fetchone()
 
+	# Return a 404 if we've not found the task
+	if not task:
+		abort(404)
+
 	# Get the events for the task
 	curd.execute("SELECT `id`, `source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end` FROM `events` WHERE `related_id` = %s AND `source` = 'neocortex.task' ORDER BY `start`", (id,))
 	events = curd.fetchall()

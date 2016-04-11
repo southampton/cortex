@@ -381,7 +381,8 @@ class NeoCortexLib(object):
 			destfolder = datacenter.vmFolder
 
 		## VMware datastore
-		datastore = self.vmware_get_obj(content, [vim.Datastore], vm_datastore)
+		if vm_datastore:
+			datastore = self.vmware_get_obj(content, [vim.Datastore], vm_datastore)
 
 		## Get the VMware Cluster
 		cluster = self.vmware_get_obj(content, [vim.ClusterComputeResource], vm_cluster)
@@ -410,8 +411,9 @@ class NeoCortexLib(object):
 
 		## Create the relocation specification
 		relospec = vim.vm.RelocateSpec()
-		relospec.datastore = datastore
 		relospec.pool = rpool
+		if vm_datastore:
+			relospec.datastore = datastore
 
 		## Create the clone spec
 		clonespec = vim.vm.CloneSpec()
