@@ -315,8 +315,20 @@ def vmware_history():
 	curd.execute('SELECT `timestamp`, `value` FROM `stats_vm_count`')
 	stats_vms = curd.fetchall()
 
+	# Get Linux VM count history
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_linux_vm_count`')
+	stats_linux_vms = curd.fetchall()
+
+	# Get Windows VM count history
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_windows_vm_count`')
+	stats_windows_vms = curd.fetchall()
+
+	# Get Desktop VM count history
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_desktop_vm_count`')
+	stats_desktop_vms = curd.fetchall()
+
 	# Render
-	return render_template('vmware-history.html', active='vmware', stats_vms=stats_vms, title='VMware History')
+	return render_template('vmware-history.html', active='vmware', stats_vms=stats_vms, stats_linux_vms=stats_linux_vms, stats_windows_vms=stats_windows_vms, stats_desktop_vms=stats_desktop_vms, title='VMware History')
 
 ################################################################################
 
@@ -360,3 +372,21 @@ def vmware_download_csv():
 	# Return the response
 	return Response(vmware_csv_stream(curd), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="vmware.csv"'})
 
+################################################################################
+
+@app.route('/vmware/unlinked')
+@cortex.lib.user.login_required
+def vmware_data_unlinked():
+	"""Displays page containing a giant table of information of everything
+	we know about VMs which are not linked to Cortex system records. It is 
+	currently hard coded to exclude virtual machines on the ECS cluster."""
+
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get all the information about every VM
+	curd.execute('SELECT * FROM `vmware_cache_vm` WHERE `template` = 0 AND `cluster` != "ORANGE_ECS_TIDT" AND `uuid` NOT IN (SELECT `vmware_uuid` FROM `systems` WHERE `vmware_uuid` IS NOT NULL) ORDER BY `name`')
+	results = curd.fetchall()
+
+	# Render
+	return render_template('vmware-unlinked.html', active='vmware', data=results, title="Unlinked VMs")

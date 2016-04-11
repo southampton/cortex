@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="page-header">
+<h3><i class="fa fa-th fa-fw"></i> VMware - Unlinked VMs
+	<small><strong>&nbsp;Legend:</strong>
+		<i title='VM Powered On' class='fa fa-fw fa-play icon-state icon-legend icon-on'></i>On
+		<i title='VM Powered Off' class='fa fa-fw fa-stop icon-state icon-legend icon-off'></i>Off
+		<i title='VM Suspended' class='fa fa-fw fa-pause icon-state icon-legend icon-pause'></i>Suspended
+		<i title='Unknown State' class='fa fa-fw fa-question icon-state icon-legend icon-unknown'></i>Unknown
+	</small>
+</h3>
+<p>Virtual machines listed below are not linked to a system record in Cortex. Please link them to a system record if one exists, otherwise determine if the virtual machine should exist at all or create a system record.</p>
+</div>
+<table class="table table-condensed table-striped" id="data">
+	<thead>
+		<tr>
+			<th style="width:0.3em"></th>
+			<th>Name</th>
+			<th>Cluster / Host</th>
+			<th>IP Address</th>
+			<th>OS</th>
+			<th>vCPU</th>
+			<th>RAM</th>
+			<th>H/W</th>
+			<th>Tools State</th>
+			<th>Tools Version</th>
+		</tr>
+	</thead>
+	<tbody>
+{% for vm in data -%}
+		<tr>
+			<td>{%    if vm.powerState == "poweredOn"  %}<i class='fa fa-fw fa-play icon-state icon-on' />
+			    {%- elif vm.powerState == "poweredOff" %}<i class='fa fa-fw fa-stop icon-state icon-off' />
+			    {%- elif vm.powerState == "suspended"  %}<i class='fa fa-fw fa-pause icon-state icon-pause' />
+			    {%- else                               %}<i class='fa fa-fw fa-question icon-state icon-unknown' />{% endif %}</td>
+			<td>{{ vm.name }}</td>
+			<td>{{ vm.cluster }}</td>
+			<td>{{ vm.ipaddr }}</td>
+			<td>{{ vm.guestFullName | replace('Microsoft', '') | replace(' (64-bit)', '') | replace(' (32-bit)', '') | replace('Red Hat Enterprise Linux', 'RHEL') }}</td>
+			<td>{{ vm.numCPU }}</td>
+			<td>{{ vm.memoryMB }}</td>
+			<td>{{ vm.hwVersion | replace('vmx-', '') }}</td>
+			<td>{{ vm.toolsRunningStatus | replace('guestTools', '') }}</td>
+			<td>{{ vm.toolsVersionStatus | replace('guestTools', '') }}</td>
+		</tr>
+{%- endfor %}
+	</tbody>
+</table>
+<script type="text/javascript">
+	dataTable = $('#data').DataTable({
+		"lengthMenu": [[10,15,20,50,100,-1], [10,15,20,50,100,'All']],
+		"pageLength": 20,
+		"order": [[1, 'asc']],
+		"columns": [{ "orderable": false, "targets": 0 }, null, null, null, null, null, null, null, null, null],
+		"searching": true,
+	});
+	$(window).resize(function() {
+		$('#data').css('width', '100%');
+		dataTable.columns.adjust();
+	});
+</script>
+{% endblock %}

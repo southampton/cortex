@@ -66,6 +66,8 @@
 								<li><a href="{{ url_for('vmware_tools') }}"><i class="fa fa-pie-chart fa-fw"></i> VM Tools</a></li>
 								<li><a href="{{ url_for('vmware_clusters') }}"><i class="fa fa-cubes fa-fw"></i> Clusters</a></li>
 								<li><a href="{{ url_for('vmware_data') }}"><i class="fa fa-th fa-fw"></i> VM Data</a></li>
+								<li><a href="{{ url_for('vmware_data_unlinked') }}"><i class="fa fa-frown-o fa-fw"></i> Unlinked VMs</a></li>
+								<li><a href="{{ url_for('vmware_history') }}"><i class="fa fa-line-chart fa-fw"></i> History</a></li>
 							</ul>
 						</li>
 						<li class="visible-xs dropdown{%if active == 'puppet'%} active{%endif%}">
@@ -152,6 +154,8 @@
 									<li><a href="{{ url_for('vmware_tools') }}"><i class="fa fa-pie-chart fa-fw"></i>VM Tools</a></li>
 									<li><a href="{{ url_for('vmware_clusters') }}"><i class="fa fa-cubes fa-fw"></i>Clusters</a></li>
 									<li><a href="{{ url_for('vmware_data') }}"><i class="fa fa-th fa-fw"></i>VM Data</a></li>
+									<li><a href="{{ url_for('vmware_data_unlinked') }}"><i class="fa fa-frown-o fa-fw"></i>Unlinked VMs</a></li>
+									<li><a href="{{ url_for('vmware_history') }}"><i class="fa fa-line-chart fa-fw"></i>History</a></li>
 								</ul>
 							</div>
 						</div>
