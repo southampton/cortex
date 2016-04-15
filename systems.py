@@ -358,6 +358,7 @@ def systems_edit(id):
 				task_data['description'] = 'Please review the necessity of the virtual machine ' + system['name'] + ' to determine whether we need to keep it or whether it can be decommissioned. Information about the VM and links to ServiceNow can be found on Cortex at https://' + app.config['CORTEX_DOMAIN'] + url_for('systems_edit', id=id) + "\n\nOnce reviewed, please edit the system in Cortex using the link above and set it's 'Review Status' to either 'Required' or 'Not Required' and then close the associated project task."
 				task_data['opened_by'] = app.config['REVIEW_TASK_OPENER_SYS_ID']
 				task_data['assignment_group'] = app.config['REVIEW_TASK_TEAM']
+				task_data['parent'] = app.config['REVIEW_TASK_PARENT_SYS_ID']
 
 				# Make a post request to ServiceNow to create the task
 				r = requests.post('https://' + app.config['SN_HOST'] + '/api/now/v1/table/pm_project_task', auth=(app.config['SN_USER'], app.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=task_data)
