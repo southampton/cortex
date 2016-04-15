@@ -12,6 +12,7 @@ import sys
 import requests
 import json
 import time
+from setproctitle import setproctitle #pip install setproctitle
 
 from NeoCortexLib import NeoCortexLib
 from TaskHelper import TaskHelper
@@ -30,6 +31,9 @@ class NeoCortex(object):
 
 	def __init__(self, pyro):
 		syslog.openlog("neocortex", syslog.LOG_PID)
+
+		## rename the process title
+		setproctitle("neocortex")
 
 		## Load the config and drop privs
 		self._load_config(CONFIG_FILE)

@@ -27,6 +27,7 @@ def get_os_stats():
 	types['windows'] = 0
 	types['linux']   = 0
 	types['bsd']     = 0
+	types['other']   = 0
 
 	types['windows_desktop'] = 0
 	types['windows_server']  = 0
@@ -107,6 +108,9 @@ def get_os_stats():
 
 		elif "freebsd" in ostr:
 			types['bsd'] += 1
+
+		else:
+			types['other'] += 1
 
 	return types
 

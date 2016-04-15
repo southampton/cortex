@@ -50,7 +50,22 @@
 			<div class="help-block">This is the unique identifier of the CMDB entry in ServiceNow, known as the 'sys_id'. This can be found in the URL for a CMDB entry, which is accessible from a CMDB page, by right-clicking the header and selecting Copy URL.</div></div>
 		</div>
 {%- endif %}
-
+		<div class="form-group">
+			<label class="col-sm-2 control-label" for="review_status">Review Status:</label>
+			<div class="col-sm-4">
+				<select class="form-control" name="review_status" id="review_status">
+					<option value="0"{% if system.review_status == 0 %} selected="selected"{% endif %}>Not reviewed</option>
+					<option value="1"{% if system.review_status == 1 %} selected="selected"{% endif %}>Required</option>
+					<option value="3"{% if system.review_status == 3 %} selected="selected"{% endif %}>Not required</option>
+					<option value="2"{% if system.review_status == 2 %} selected="selected"{% endif %}>Under review</option>
+				</select>
+			</div>
+			<label class="col-sm-2 control-label" for="review_ticket">Review Task:</label>
+			<div class="col-sm-4">
+				<input class="form-control" type="text" name="review_task" id="review_task"{% if system.review_status != 2 %} readonly="readonly"{%endif%} placeholder="e.g. PRJTASK012345" value="{{ system.review_task or '' }}" />
+			</div>
+			<label class="col-sm-2 control-label"></label><div style="margin-bottom:0px" class="col-sm-10 help-block">When reviewing current VMs, these fields can be used to state whether a VM is required or can be deleted. If a review status of 'Under review' is selected, a ServiceNow project task can be added. If left blank, one will be created for you.</div>
+		</div>
 				</div>				
 
 				<div class="modal-footer">
@@ -145,6 +160,11 @@
 					<div class="form-group">
 						<label class="col-sm-3 control-label" for="allocation_date">Allocation Date:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_date or '' }}</p></div>
 					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="allocation_date">Review Status:</label><div class="col-sm-9"><p class="form-control-static">
+{% if system.review_status == 0 %}<span class="label label-danger">{% elif system.review_status == 1 %}<span class="label label-success">{% elif system.review_status == 2 %}<span class="label label-info">{% elif system.review_status == 3 %}<span class="label label-warning">{% endif %}
+{{ system.review_status_text or 'Unknown' }}</span>{% if system.review_status == 2 %} &ndash; See ServiceNow task <a href="{{ config['PRJTASK_URL_FORMAT'] % system.review_task }}">{{ system.review_task }}</a>{% endif %}</p></div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -186,7 +206,7 @@
 					</div>
 					<div class="form-group">
 						<label class="col-sm-3 control-label" for="cmdb_u_number">ID:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_u_number or 'Unknown' }}</p></div>
+						<div class="col-sm-9"><p class="form-control-static"><a href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}">{{ system.cmdb_u_number or 'Unknown' }}</a></p></div>
 					</div>
 					<div class="form-group">
 						<label class="col-sm-3 control-label" for="cmdb_operational_status">Status:</label>
@@ -349,6 +369,18 @@ $(document).ready(function()
 	{
 		$('#search_vmware').modal('hide');
 		$('#edit').modal('show');
+	});
+
+	$('#review_status').change(function (event)
+	{
+		if ($('#review_status').val() == 2)
+		{
+			$('#review_task').removeAttr('readonly');
+		}
+		else
+		{
+			$('#review_task').attr('readonly', 'readonly');
+		}
 	});
 });
 </script>

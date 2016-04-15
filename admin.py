@@ -79,7 +79,7 @@ def admin_tasks_json(tasktype):
 	filtered_task_count = curd.fetchone()['count']
 
 	# Get the list of tasks
-	curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, (`end` - `start`) AS `elapsed`, `description` FROM `tasks` WHERE " + where_clause + " ORDER BY `" + order_by + "` " + order_dir + " LIMIT " + str(start) + "," + str(length), params)
+	curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE " + where_clause + " ORDER BY `" + order_by + "` " + order_dir + " LIMIT " + str(start) + "," + str(length), params)
 	tasks = curd.fetchall()
 
 	# Build an array of tasks
@@ -88,6 +88,8 @@ def admin_tasks_json(tasktype):
 		# Format elapsed string nicely rather than just seconds which is what comes back from MySQL
 		if task['start'] and task['end']:
 			task['elapsed'] = str(task['end'] - task['start'])
+		else:
+			task['elapsed'] = ''
 
 		# Format start time string
 		if task['start']:
@@ -98,7 +100,7 @@ def admin_tasks_json(tasktype):
 			task['end'] = task['end'].strftime('%Y-%m-%d %H:%M:%S')
 
 		# Add row to results
-		task_data.append([task['id'], task['module'], task['start'], task['end'], str(task['elapsed']), task['username'], task['status'], task['description']])
+		task_data.append([task['id'], task['module'], task['start'], task['end'], task['elapsed'], task['username'], task['status'], task['description']])
 
 	return jsonify(draw=draw, recordsTotal=task_count, recordsFiltered=filtered_task_count, data=task_data)
 

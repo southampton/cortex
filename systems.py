@@ -17,6 +17,7 @@ import MySQLdb as mysql
 import yaml
 import csv
 import io
+import requests
 
 ################################################################################
 
@@ -302,10 +303,17 @@ def systems_bulk_view(start, finish):
 @app.route('/systems/view/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def systems_edit(id):
+	# Get the system
+	system = cortex.lib.systems.get_system_by_id(id)
+
+	# Ensure that the system actually exists, and return a 404 if it doesn't
+	if system is None:
+		abort(404)
+
 	if request.method == 'GET' or request.method == 'HEAD':
 		# Get the system out of the database
-		system = cortex.lib.systems.get_system_by_id(id)
 		system_class = cortex.lib.classes.get(system['class'])
+		system['review_status_text'] = cortex.lib.systems.REVIEW_STATUS_BY_ID[system['review_status']]
 
 		if system['puppet_certname']:
 			system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
@@ -317,17 +325,55 @@ def systems_edit(id):
 			curd = g.db.cursor(mysql.cursors.DictCursor)
 
 			# Extract CMDB ID from form
-			cmdb_id = request.form['cmdb_id'].strip()
-			if len(cmdb_id) == 0:
-				cmdb_id = None
+			cmdb_id = request.form.get('cmdb_id',None)
+			if cmdb_id is not None:			
+				cmdb_id = cmdb_id.strip()
+				if len(cmdb_id) == 0:
+					cmdb_id = None
 
 			# Extract VMware UUID from form
-			vmware_uuid = request.form['vmware_uuid'].strip()
-			if len(vmware_uuid) == 0:
-				vmware_uuid = None
+			vmware_uuid = request.form.get('vmware_uuid',None)
+			if vmware_uuid is not None:			
+				vmware_uuid = vmware_uuid.strip()
+				if len(vmware_uuid) == 0:
+					vmware_uuid = None
+
+			# Extract Review Status from form
+			review_status = request.form.get('review_status', 0)
+			
+			# Extract Review Ticket from form
+			review_task = request.form.get('review_task', None)
+			if review_task is not None:
+				review_task = review_task.strip()
+				if len(review_task) == 0:
+					review_task = None
+
+			# If the review status is "Under review" and a task hasn't been specified,
+			# then we should create one.
+			if int(review_status) == cortex.lib.systems.REVIEW_STATUS_BY_NAME['REVIEW'] and review_task is None:
+				# Build some JSON
+				task_data = {}
+				task_data['time_constraint'] = 'asap'
+				task_data['short_description'] = 'Review necessity of virtual machine ' + system['name']
+				task_data['description'] = 'Please review the necessity of the virtual machine ' + system['name'] + ' to determine whether we need to keep it or whether it can be decommissioned. Information about the VM and links to ServiceNow can be found on Cortex at https://' + app.config['CORTEX_DOMAIN'] + url_for('systems_edit', id=id) + "\n\nOnce reviewed, please edit the system in Cortex using the link above and set it's 'Review Status' to either 'Required' or 'Not Required' and then close the associated project task."
+				task_data['opened_by'] = app.config['REVIEW_TASK_OPENER_SYS_ID']
+				task_data['assignment_group'] = app.config['REVIEW_TASK_TEAM']
+
+				# Make a post request to ServiceNow to create the task
+				r = requests.post('https://' + app.config['SN_HOST'] + '/api/now/v1/table/pm_project_task', auth=(app.config['SN_USER'], app.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=task_data)
+
+				# If we succeeded, get the task number
+				if r is not None and r.status_code >= 200 and r.status_code <= 299:
+					response_json = r.json()
+					review_task = response_json['result']['number']
+				else:
+					error = "Failed to link ServiceNow task and CI."
+					if r is not None:
+						error = error + " HTTP Response code: " + str(r.status_code)
+					raise Exception(error)
 
 			# Update the system
-			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, id))
+			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, id))
 			g.db.commit();
 
 			flash('System updated', "alert-success") 

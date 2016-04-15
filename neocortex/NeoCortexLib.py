@@ -1008,7 +1008,7 @@ class NeoCortexLib(object):
 		  Nothing."""
 
 		if self._get_winrpc_proxy(environment).move_to_default_ou(hostname) != 0:
-			raise Exception('Remote call returned failure response')
+			raise Exception('Remote call returned failure response - check the Cortex Windows RPC log file')
 
 		# Performing other Windows tasks too quickly can result in them
 		# silently failing, so give AD some time to catch up
@@ -1023,8 +1023,8 @@ class NeoCortexLib(object):
 		Returns:
 		  Nothing."""
 
-		if self._get_winrpc_proxy(environment).join_groups(hostname) < 0:
-			raise Exception('Remote call returned failure response')
+		if self._get_winrpc_proxy(environment).join_groups(hostname) != 0:
+			raise Exception('Remote call returned failure response - check the Cortex Windows RPC log file')
 
 		# Performing other Windows tasks too quickly can result in them
 		# silently failing, so give AD some time to catch up
@@ -1042,7 +1042,7 @@ class NeoCortexLib(object):
 		  Nothing."""
 
 		if self._get_winrpc_proxy(environment).set_information(hostname, description, location) != 0:
-			raise Exception('Remote call returned failure response')
+			raise Exception('Remote call returned failure response - check the Cortex Windows RPC log file')
 
 		# Performing other Windows tasks too quickly can result in them
 		# silently failing, so give AD some time to catch up

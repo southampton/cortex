@@ -458,6 +458,8 @@ Username:             %s
 		  `allocation_comment` text NOT NULL,
 		  `cmdb_id` varchar(128) DEFAULT NULL,
 		  `vmware_uuid` varchar(36) DEFAULT NULL,
+		  `review_status` tinyint(4) NOT NULL DEFAULT 0,
+		  `review_task` varchar(16) DEFAULT NULL,
 		  PRIMARY KEY (`id`),
 		  KEY `class` (`class`),
 		  KEY `name` (`name`(255)),
