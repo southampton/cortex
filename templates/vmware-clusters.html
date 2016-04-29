@@ -54,7 +54,7 @@
 			<tbody>
 				{%- for cluster in clusters %}
 				<tr>
-					<td>{{ cluster.cluster }}</td>
+					<td>{{ cluster.name }}</td>
 					<td>{{ cluster.hosts }}</td>
 					<td>{{ cluster.vm_count }}</td>
 					<td data-order="{{cluster.total_ram}}">{{ cluster.total_ram | filesizeformat }}</td>

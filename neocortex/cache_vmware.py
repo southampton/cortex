@@ -144,12 +144,20 @@ def run(helper, options):
 			total_hz    = 0
 			total_cpu_usage = 0
 			total_ram_usage = 0
+
+			# We check for Nones here for hosts that are in maintenance mode, which return
+			# None rather than 0.
 			for host in cluster.host:
-				total_ram = total_ram + host.hardware.memorySize
-				total_cores = total_cores + host.hardware.cpuInfo.numCpuCores
-				total_hz = total_hz + host.hardware.cpuInfo.hz
-				total_cpu_usage = total_cpu_usage + host.summary.quickStats.overallCpuUsage
-				total_ram_usage = total_ram_usage + host.summary.quickStats.overallMemoryUsage
+				if host.hardware.memorySize is not None:
+					total_ram = total_ram + host.hardware.memorySize
+				if host.hardware.cpuInfo.numCpuCores is not None:
+					total_cores = total_cores + host.hardware.cpuInfo.numCpuCores
+				if host.hardware.cpuInfo.hz is not None:
+					total_hz = total_hz + host.hardware.cpuInfo.hz
+				if host.summary.quickStats.overallCpuUsage is not None:
+					total_cpu_usage = total_cpu_usage + host.summary.quickStats.overallCpuUsage
+				if host.summary.quickStats.overallMemoryUsage is not None:
+					total_ram_usage = total_ram_usage + host.summary.quickStats.overallMemoryUsage
 
 			# Put in our data
 			clusters[key][moId]['_moId'] = moId
