@@ -118,8 +118,20 @@ def api_register_system():
 		create_entry = True
 
 	if create_entry:
+		## A system record exists but no puppet_nodes entry. We'll create one!
+		## However what do we set the puppet environment to? We could default to production
+		## but that sucks. So we'll see if the system is linked to ServiceNow and we'll
+		## use that. If it isn't linked then we can't do much.
+
+		if 'cmdb_environment' in system:
+			## We'll use this instead on 'production'
+			cmdb_envs = cortex.lib.core.get_cmdb_environments()
+			for cmdbenv in cmdb_envs:
+				if cmdbenv['name'] == system['cmdb_environment']:
+					cdata['environment'] = cmdbenv['puppet']
+
 		curd = g.db.cursor(mysql.cursors.DictCursor)
-		curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`) VALUES (%s, %s, 'production')", (system['id'], fqdn))
+		curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`) VALUES (%s, %s, %s)", (system['id'], fqdn, cdata['environment']))
 		g.db.commit()
 		app.logger.info('Created Puppet ENC entry for certname "' + fqdn + '"')
 	else:
