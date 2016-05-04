@@ -188,7 +188,6 @@ class NeoCortex(object):
 			proc_data = json.loads(proc.name)
 			if proc_data['name'] == task_name:
 				raise Exception("That task is already running, refusing to start another instance")
-		
 
 		if not os.path.isdir(self.config['NEOCORTEX_TASKS_DIR']):
 			raise IOError("The config option NEOCORTEX_TASKS_DIR is not a directory")

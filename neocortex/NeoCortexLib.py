@@ -22,6 +22,10 @@ from pyVmomi import vim
 from pyVmomi import vmodl
 from pyVim.connect import SmartConnect, Disconnect
 
+# For checking if a cache_vm task is currently running
+# we talk about to neocortex via RPC
+import Pyro4
+
 class NeoCortexLib(object):
 	"""Library functions used in both neocortex itself and the neocortex tasks, hence a seperate object"""
 
@@ -45,8 +49,9 @@ class NeoCortexLib(object):
 			return self.message
 
 	def __init__(self, db, config):
-		self.db = db
+		self.db     = db
 		self.config = config
+		self.rdb    = self._connect_redis()
 
 	################################################################################
 
@@ -431,38 +436,46 @@ class NeoCortexLib(object):
 	def update_vm_cache(self, vm, tag):
 		"""Updates the VMware cache data with the information about the VM."""
 
-		# Get a cursor to the database
-		cur = self.db.cursor(mysql.cursors.DictCursor)
+		## Get a lock so that we're sure that the update vmware cache task (which updates
+		## data for ALL vms) is not running. If it had been running our changes would be 
+		## overwritten, so this way we wait for that to end before we try to update the cache.
+		## The timeout is there in case this process dies or the server restarts or similar
+		## and then the lock is never ever unlocked - the timeout ensures that eventually it is
+		## and cortex might recover itself. maybe. the sleep is set to 1, up from the insane default of 0.1
+		with self.rdb.lock('lock/update_vmware_cache',timeout=1800,sleep=1):
+
+			# Get a cursor to the database
+			cur = self.db.cursor(mysql.cursors.DictCursor)
 		
-		# Get the instance details of the vCenter given by tag
-		instance = self.config['VMWARE'][tag]
+			# Get the instance details of the vCenter given by tag
+			instance = self.config['VMWARE'][tag]
 
-		if vm.guest.hostName is not None:
-			hostName = vm.guest.hostName
-		else:
-			hostName = ""
+			if vm.guest.hostName is not None:
+				hostName = vm.guest.hostName
+			else:
+				hostName = ""
 
-		if vm.guest.ipAddress is not None:
-			ipAddress = vm.guest.ipAddress
-		else:
-			ipAddress = ""
+			if vm.guest.ipAddress is not None:
+				ipAddress = vm.guest.ipAddress
+			else:
+				ipAddress = ""
 
-		if vm.config.annotation is not None:
-			annotation = vm.config.annotation
-		else:
-			annotation = ""
+			if vm.config.annotation is not None:
+				annotation = vm.config.annotation
+			else:
+				annotation = ""
 
-		# Put in the resource pool name rather than a Managed Object
-		if vm.resourcePool is not None:
-			cluster = vm.resourcePool.owner.name
-		else:
-			cluster = "None"
+			# Put in the resource pool name rather than a Managed Object
+			if vm.resourcePool is not None:
+				cluster = vm.resourcePool.owner.name
+			else:
+				cluster = "None"
 
-		# Put the VM in the database
-		cur.execute("REPLACE INTO `vmware_cache_vm` (`id`, `vcenter`, `name`, `uuid`, `numCPU`, `memoryMB`, `powerState`, `guestFullName`, `guestId`, `hwVersion`, `hostname`, `ipaddr`, `annotation`, `cluster`, `toolsRunningStatus`, `toolsVersionStatus`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (vm._moId, instance['hostname'], vm.name, vm.config.uuid, vm.config.hardware.numCPU, vm.config.hardware.memoryMB, vm.runtime.powerState, vm.config.guestFullName, vm.config.guestId, vm.config.version, hostName, ipAddress, annotation, cluster, vm.guest.toolsRunningStatus, vm.guest.toolsVersionStatus2))
+			# Put the VM in the database
+			cur.execute("REPLACE INTO `vmware_cache_vm` (`id`, `vcenter`, `name`, `uuid`, `numCPU`, `memoryMB`, `powerState`, `guestFullName`, `guestId`, `hwVersion`, `hostname`, `ipaddr`, `annotation`, `cluster`, `toolsRunningStatus`, `toolsVersionStatus`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (vm._moId, instance['hostname'], vm.name, vm.config.uuid, vm.config.hardware.numCPU, vm.config.hardware.memoryMB, vm.runtime.powerState, vm.config.guestFullName, vm.config.guestId, vm.config.version, hostName, ipAddress, annotation, cluster, vm.guest.toolsRunningStatus, vm.guest.toolsVersionStatus2))
 
-		# Commit
-		self.db.commit()
+			# Commit
+			self.db.commit()
 
 	############################################################################
 	
@@ -912,21 +925,19 @@ class NeoCortexLib(object):
 	def redis_set_vm_data(self, vm, key, value, expire=28800):
 		"""Sets a value in Redis relating to a VM."""
 
-		r = self._connect_redis()
-
 		if expire is not None:
-			r.setex("vm/" + vm.config.uuid + "/" + key, expire, value)
+			self.rdb.setex("vm/" + vm.config.uuid + "/" + key, expire, value)
 		else:
-			r.set("vm/" + vm.config.uuid + "/" + key, value)
+			self.rdb.set("vm/" + vm.config.uuid + "/" + key, value)
 
 	################################################################################
 
 	def redis_get_vm_data(self, vm, key):
 		"""Gets a value in Redis relating to a VM."""
 
-		return self._connect_redis().get("vm/" + vm.config.uuid + "/" + key)
+		return self.rdb.get("vm/" + vm.config.uuid + "/" + key)
 
-	###############################################################################
+	################################################################################
 
 	def wait_for_guest_notify(self, vm, states, timeout=28800):
 		"""Waits for the in-guest customisations to become one of the listed states."""

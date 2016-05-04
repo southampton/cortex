@@ -51,7 +51,7 @@ def api_register_system():
 		system = cortex.lib.systems.get_system_by_vmware_uuid(request.form['uuid'])
 
 		if not system:
-			app.logger.warn('Could not match vmware uuid to a system for the register API (UUID: ' + uuid + ')')
+			app.logger.warn('Could not match VMware UUID to a system for the register API (UUID given: ' + request.form['uuid'].lower() + ')')
 			abort(404)
 
 		hostname = system['name']
@@ -163,7 +163,7 @@ def api_installer_notify():
 		system = cortex.lib.systems.get_system_by_vmware_uuid(request.form['uuid'].lower())
 
 		if not system:
-			app.logger.warn('Could not match VMware UUID to a system for the installer notify API (UUID: ' + request.form['uuid'].lower() + ')')
+			app.logger.warn('Could not match VMware UUID to a system for the installer notify API (UUID given: ' + request.form['uuid'].lower() + ')')
 			abort(404)
 
 		# Mark as done

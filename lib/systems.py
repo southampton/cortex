@@ -193,8 +193,8 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 
 	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
 	query_where = _build_systems_query(class_name, search, order, order_asc, limit_start, limit_length, hide_inactive, only_other)
-	query = query + query_where[0]
-	params = params + query_where[1]
+	query       = query + query_where[0]
+	params      = params + query_where[1]
 
 	# Query the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
