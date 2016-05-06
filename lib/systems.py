@@ -115,11 +115,11 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 
 		# Allow the search to match on name, allocation_comment or 
 		# allocation_who
-		query = query + "(`systems`.`name` LIKE %s OR `systems`.`allocation_comment` LIKE %s OR `systems`.`allocation_who` LIKE %s)"
+		query = query + "(`systems`.`name` LIKE %s OR `systems`.`allocation_comment` LIKE %s OR `systems`.`allocation_who` LIKE %s OR `sncache_cmdb_ci`.`u_environment` LIKE %s)"
 
 		# Add the filter string to the parameters of the query. Add it 
 		# three times as there are three columns to match on.
-		params = params + (like_string, like_string, like_string)
+		params = params + (like_string, like_string, like_string, like_string)
 
 	# If hide_inactive is set to false, then exclude systems that are no longer In Service
 	if hide_inactive == True:
@@ -152,6 +152,8 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 		query = query + "`systems`.`" + order + "`"
 	elif order == "cmdb_operational_status":
 		query = query + "`sncache_cmdb_ci`.`operational_status`"
+	elif order == "cmdb_environment":
+		query = query + "`sncache_cmdb_ci`.`u_environment`"
 
 	# Determine which direction to order in, and add that on
 	if order_asc:

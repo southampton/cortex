@@ -516,10 +516,12 @@ def systems_json():
 	elif order_column == 1:
 		order_column = 'allocation_comment'
 	elif order_column == 2:
-		order_column = 'allocation_who'
+		order_column = 'cmdb_environment'
 	elif order_column == 3:
-		order_column = 'allocation_date'
+		order_column = 'allocation_who'
 	elif order_column == 4:
+		order_column = 'allocation_date'
+	elif order_column == 5:
 		order_column = 'cmdb_operational_status'
 	else:
 		app.logger.warn('Invalid ordering column parameter in DataTables request')
@@ -569,7 +571,7 @@ def systems_json():
 			row['allocation_date'] = row['allocation_date'].strftime('%Y-%m-%d %H:%M:%S')
 		else:
 			row['allocation_date'] = "Unknown"
-		system_data.append([row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_id, row['id'], row['vmware_guest_state'], row['puppet_certname']])
+		system_data.append([row['name'], row['allocation_comment'], row['cmdb_environment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_id, row['id'], row['vmware_guest_state'], row['puppet_certname']])
 
 	# Return JSON data in the format DataTables wants
 	return jsonify(draw=draw, recordsTotal=system_count, recordsFiltered=filtered_count, data=system_data)

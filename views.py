@@ -83,7 +83,7 @@ def render_task_status(id, template):
 	curd.execute("SELECT `id`, `source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end` FROM `events` WHERE `related_id` = %s AND `source` = 'neocortex.task' ORDER BY `start`", (id,))
 	events = curd.fetchall()
 
-	return render_template(template, id=id, task=task, events=events, title="Task Status")
+	return make_response((render_template(template, id=id, task=task, events=events, title="Task Status"), 200, {'Cache-Control': 'no-cache'}))
 
 ################################################################################
 
