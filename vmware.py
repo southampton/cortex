@@ -360,8 +360,23 @@ def vmware_csv_stream(cursor):
 		output = io.BytesIO()
 		writer = csv.writer(output)
 
-		# Write a row to the CSV output
-		writer.writerow([row['name'], row['cluster'], row['annotation'], row['powerState'], row['ipaddr'], row['guestFullName'], row['numCPU'], row['memoryMB'], row['hwVersion'], row['toolsRunningStatus'], row['toolsVersionStatus']])
+		# Generate output row
+		outrow = [row['name'], row['cluster'], row['annotation'], row['powerState'], row['ipaddr'], row['guestFullName'], row['numCPU'], row['memoryMB'], row['hwVersion'], row['toolsRunningStatus'], row['toolsVersionStatus']]
+
+		# For each element in the output row...
+		for i in range(0, len(outrow)):
+			# ...if it's not None...
+			if outrow[i]:
+				# ...if the element is unicode...
+				if type(outrow[i]) == unicode:
+					# ...decode from utf-8 into a ASCII-compatible byte string
+					outrow[i] = outrow[i].encode('utf-8')
+				else:
+					# ...otherwise just chuck it out as a string
+					outrow[i] = str(outrow[i])
+
+		# Write the output row to the stream
+		writer.writerow(outrow)
 		yield output.getvalue()
 
 		# Iterate
