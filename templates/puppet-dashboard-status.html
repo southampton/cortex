@@ -17,7 +17,7 @@
 		<tr>
 			<td>{{ node.name }}</td>
 			<td>{{ node.report_environment }}</td>
-			<td>{{ node.report_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+			<td>{% if node.report_timestamp %}{{ node.report_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}{% else %}Never run{% endif %}</td>
 			<td><a href="{{url_for('puppet_enc_edit',node=node.name) }}" class="btn btn-default btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a> <a href="{{url_for('puppet_report',report_hash=node.latest_report_hash) }}" class="btn btn-primary btn-xs"><i class="fa fa-fw fa-file-text-o"></i> Report</a></td>
 		</tr>
 {%- endfor %}

@@ -18,7 +18,6 @@ def api_register_system():
        is checked against LDAP, or via the VMware virtual machine UUID, which
        is checked against the VMware systems cache."""
 
-
 	# Clients can send hostname, username and password (interactive installation)
 	if 'hostname' in request.form and 'username' in request.form and 'password' in request.form:
 
