@@ -351,46 +351,54 @@ class NeoCortexLib(object):
 		instance = self.config['VMWARE'][tag]
 
 		sslContext = ssl.create_default_context()
-		sslContext.check_hostname = False
-		sslContext.verify_mode = ssl.CERT_NONE
+		
+		if instance['verify'] == False:
+			sslContext.check_hostname = False
+			sslContext.verify_mode = ssl.CERT_NONE
 
 		return SmartConnect(host=instance['hostname'], user=instance['user'], pwd=instance['pass'], port=instance['port'], sslContext=sslContext)
 
 	################################################################################
 	
-	def vmware_clone_vm(self, service_instance, vm_template, vm_name, vm_datacenter=None, vm_datastore=None, vm_folder=None, vm_cluster=None, vm_rpool=None, vm_network=None, vm_poweron=False, custspec=None):
+	def vmware_clone_vm(self, service_instance, vm_template, vm_name, vm_datacenter=None, vm_datastore=None, vm_folder=None, vm_cluster=None, vm_rpool=None, vm_network=None, vm_poweron=False, custspec=None, vm_datastore_cluster=None):
 		"""This function connects to vcenter and clones a virtual machine. Only vm_template and
 		   vm_name are required parameters although this is unlikely what you'd want - please
 		   read the parameters and check if you want to use them.
 
 		   If you want to customise the VM after cloning attach a customisation spec via the 
 		   custspec optional parameter.
-
-		   TODO: vm_network currently does not work.
-		   TODO: exception throwing when objects are not found...
-
 		"""
 
+		need_config_spec = False
+		config_spec = vim.vm.ConfigSpec()
 		content = service_instance.RetrieveContent()
 
 		## Get the template
 		template = self.vmware_get_obj(content, [vim.VirtualMachine], vm_template)
 
+		if template is None:
+			raise RuntimeError("Failed to locate template, '" + vm_template + "'")
+
 		## VMware datacenter - this is only used to get the folder
 		datacenter = self.vmware_get_obj(content, [vim.Datacenter], vm_datacenter)
+
+		if datacenter is None:
+			raise RuntimeError("Failed to locate datacenter object")
 
 		## VMware folder
 		if vm_folder:
 			destfolder = self.vmware_get_obj(content, [vim.Folder], vm_folder)
+
+			if destfolder is None:
+				raise RuntimeError("Failed to locate destination folder, '" + vm_folder + "'")
 		else:
 			destfolder = datacenter.vmFolder
 
-		## VMware datastore
-		if vm_datastore:
-			datastore = self.vmware_get_obj(content, [vim.Datastore], vm_datastore)
-
 		## Get the VMware Cluster
 		cluster = self.vmware_get_obj(content, [vim.ClusterComputeResource], vm_cluster)
+
+		if cluster is None:
+			raise RuntimeError("Failed to locate destination cluster, '" + vm_cluster + "'")
 
 		## You can't specify a cluster for a VM to be created on, instead you specify either a host or a resource pool.
 		## We will thus create within a resource pool. 
@@ -400,7 +408,6 @@ class NeoCortexLib(object):
 			rpool = cluster.resourcePool
 
 		else:
-
 			## But if we are given a specific resource pool...
 			## ...but we werent given a specific cluster, then just search for the resource pool name anywhere on the vCenter:
 			if vm_cluster == None:
@@ -414,16 +421,122 @@ class NeoCortexLib(object):
 			if rpool == None:
 				rpool = cluster.resourcePool
 
-		## Create the relocation specification
+		# If we're passed a new network:
+		if vm_network is not None:
+			need_config_spec = True
+
+			# Search for the new network by name
+			network = self.vmware_get_obj(content, [vim.DistributedVirtualPortgroup], vm_network)
+
+			if network is None:
+				raise RuntimeError("Failed to locate destination network, '" + vm_network + "'")
+
+			# Iterate through the devices on the existing template
+			network_device_found = False
+			for device in template.config.hardware.device:
+				# If we've found the network card (assumption: that there is only one!)
+				if isinstance(device, vim.vm.device.VirtualEthernetCard):
+					# For error detection
+					network_device_found = True
+
+					# Build a new NIC specification for the modified device, based on the one in the template
+					nicspec = vim.vm.device.VirtualDeviceSpec()
+					nicspec.operation = vim.vm.device.VirtualDeviceSpec.Operation.edit
+					nicspec.device = device
+
+					# Create a new connection to a port on the dvSwitch
+					dvs_port_connection = vim.dvs.PortConnection()
+					dvs_port_connection.portgroupKey = network.key
+					dvs_port_connection.switchUuid = network.config.distributedVirtualSwitch.uuid
+
+					# Create a new device backing, changing it to the given vm_network
+					nicspec.device.backing = vim.vm.device.VirtualEthernetCard.DistributedVirtualPortBackingInfo()
+					nicspec.device.backing.port = dvs_port_connection
+
+			# Error checking
+			if not network_device_found:
+				raise RuntimeError("Failed to locate NIC on template")
+
+			# Update the config spec
+			config_spec.deviceChange.append(nicspec)
+
+		## Start the clone and relocation specification creation (searching for a 
+		## datastore cluster needs this information)
 		relospec = vim.vm.RelocateSpec()
 		relospec.pool = rpool
+		clonespec = vim.vm.CloneSpec()
+		clonespec.location = relospec
+		clonespec.powerOn  = vm_poweron
+		clonespec.template = False
+
+		## VMware datastore
+		datastore = None
 		if vm_datastore:
+			# Don't allow both datastore and datastore cluster to be provided
+			if vm_datastore_cluster:
+				raise RuntimeError("Only one of vm_datastore and vm_datastore_cluster should be set.")
+
+			datastore = self.vmware_get_obj(content, [vim.Datastore], vm_datastore)
+
+			if datastore is None:
+				raise RuntimeError("Failed to locate destination datastore, '" + str(vm_datastore) + "'")
+
+		## VMware datastore cluster
+		if vm_datastore_cluster:
+			# Don't need to check if vm_datastore is set here...
+
+			# If we have a list of datastore clusters, choose one based on the name
+			if type(vm_datastore_cluster) is list:
+				# Sum up the codepoints of the string to give us a number
+				name_value = 0
+				for c in vm_name:
+					name_value += ord(c)
+
+				# Pick a number between 0 and the number of provided 
+				# datastores clusters, and choose that datstore cluster
+				vm_datastore_cluster = vm_datastore_cluster[name_value % len(vm_datastore_cluster)]
+
+			# We now have a single datastore cluster (either provided or
+			# chosen by the algorithm above. Now ask VMware to search for a
+			# volume within that datastore that is "recommended"
+
+			# Get the datastore cluster and ensure it exists
+			storage_pod = self.vmware_get_obj(content, [vim.StoragePod], vm_datastore_cluster)
+
+			if storage_pod is None:
+				raise RuntimeError("Failed to locate destination datastore cluster, '" + str(vm_datastore_cluster) + "'")
+
+			# Build some selection specifications
+			pod_spec = vim.storageDrs.PodSelectionSpec()
+			pod_spec.storagePod = storage_pod
+			storage_spec = vim.storageDrs.StoragePlacementSpec()
+			storage_spec.type = vim.storageDrs.StoragePlacementSpec.PlacementType.clone
+			storage_spec.folder = destfolder	# Not sure why it needs to know this, but it's required
+			storage_spec.podSelectionSpec = pod_spec
+			storage_spec.vm = template
+			storage_spec.cloneSpec = clonespec
+			storage_spec.cloneName = vm_name	# Not sure why it needs to know this, but it's required
+
+			# Get VMware to make a recommendation
+			result = content.storageResourceManager.RecommendDatastores(storage_spec)
+
+			if result is None:
+				raise RuntimeError("Failed to get a storage recommendation from VMware for storage cluster '" + str(vm_datastore_cluster) + "'")
+
+			# If we have a recommendation, use it, otherwise throw an error
+			if len(result.recommendations) > 0 and len(result.recommendations[0].action) and result.recommendations[0].action[0].destination is not None:
+				datastore = result.recommendations[0].action[0].destination
+			else:
+				raise RuntimeError("VMware did not return any storage recommendations for storage cluster '" + str(vm_datastore_cluster) + "'")
+
+		## Populate relocation specification
+		if datastore is not None:
 			relospec.datastore = datastore
 
-		## Create the clone spec
-		clonespec = vim.vm.CloneSpec()
-		clonespec.powerOn  = vm_poweron
+		## Finish off the clone spec
 		clonespec.location = relospec
+		if need_config_spec == True:
+			clonespec.config = config_spec
 
 		## If the user wants to customise the VM after creation...
 		if not custspec == False:
