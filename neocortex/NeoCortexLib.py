@@ -352,9 +352,10 @@ class NeoCortexLib(object):
 
 		sslContext = ssl.create_default_context()
 		
-		if instance['verify'] == False:
-			sslContext.check_hostname = False
-			sslContext.verify_mode = ssl.CERT_NONE
+		if 'verify' in instance:
+			if instance['verify'] == False:
+				sslContext.check_hostname = False
+				sslContext.verify_mode = ssl.CERT_NONE
 
 		return SmartConnect(host=instance['hostname'], user=instance['user'], pwd=instance['pass'], port=instance['port'], sslContext=sslContext)
 
