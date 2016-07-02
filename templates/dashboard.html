@@ -33,25 +33,25 @@
 
 <div class="row">
 	<div class="col-md-3">
-		<div class="admin-block bg-primary">
+		<div class="admin-block bg-dorange">
 			<h1><i class="fa fa-fw fa-server"></i> {{ vm_count }}</h1>
 			<h2>Virtual machines</h2>
 		</div>
 	</div>
 	<div class="col-md-3">
-		<div class="admin-block bg-success">
+		<div class="admin-block bg-primary">
 			<h1><i class="fa fa-fw fa-book"></i> {{ ci_count }}</h1>
 			<h2>ServiceNow CIs</h2>
 		</div>
 	</div>
 	<div class="col-md-3">
-		<div class="admin-block bg-warning">
+		<div class="admin-block bg-green">
 			<h1><i class="fa fa-fw fa-cog"></i> {{ task_progress_count }}</h1>
 			<h2>Tasks in progress</h2>
 		</div>
 	</div>
 	<div class="col-md-3">
-		<div class="admin-block bg-danger">
+		<div class="admin-block bg-warning">
 			<h1><i class="fa fa-fw fa-exclamation-triangle"></i> {{ task_failed_count }}</h1>
 			<h2>Recent failed tasks</h2>
 		</div>
@@ -59,25 +59,25 @@
 </div>
 <div class="row">
 	<div class="col-md-3">
-		<div class="admin-block bg-primary">
+		<div class="admin-block bg-lblue">
 			<h1><i class="fa fa-fw fa-linux"></i> {{ types['linux'] }}</h1>
 			<h2>Linux VMs</h2>
 		</div>
 	</div>
 	<div class="col-md-3">
-		<div class="admin-block bg-success">
+		<div class="admin-block bg-lorange">
 			<h1><i class="fa fa-fw fa-windows"></i> {{ types['windows_server'] }}</h1>
 			<h2>Windows VMs</h2>
 		</div>
 	</div>
 	<div class="col-md-3">
-		<div class="admin-block bg-warning">
+		<div class="admin-block bg-teal">
 			<h1><i class="fa fa-fw fa-desktop"></i> {{ types['windows_desktop'] }}</h1>
 			<h2>Desktop VMs</h2>
 		</div>
 	</div>
 	<div class="col-md-3">
-		<div class="admin-block bg-danger">
+		<div class="admin-block bg-purple">
 			<h1><i class="fa fa-fw fa-th"></i> {{ vm_count - types['linux'] - types['windows_server'] - types['windows_desktop'] }}</h1>
 			<h2>Other VMs</h2>
 		</div>
