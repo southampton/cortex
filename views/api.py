@@ -1,7 +1,6 @@
 from cortex import app
 import cortex.lib.core
 import cortex.lib.systems
-from cortex.systems import systems_csv_stream
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, jsonify, Response
 import os 
 import re
@@ -28,7 +27,7 @@ def api_systems_csv():
 	cur = cortex.lib.systems.get_systems(return_cursor=True)
 
 	# Return the response as a downloadable CSV
-	return Response(systems_csv_stream(cur), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
+	return Response(cortex.lib.systems.csv_stream(cur), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
 	
 ################################################################################
 

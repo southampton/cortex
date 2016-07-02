@@ -1,12 +1,60 @@
 #!/usr/bin/python
 
 from cortex import app
-import cortex.errors
 import MySQLdb as mysql
 from flask import Flask, request, redirect, session, url_for, abort, render_template, flash, g
 
 REVIEW_STATUS_BY_NAME = {'NONE': 0, 'REQUIRED': 1, 'REVIEW': 2, 'NOT_REQUIRED': 3}
 REVIEW_STATUS_BY_ID   = {0: 'Not reviewed', 1: 'Required', 2: 'Under review', 3: 'Not required' }
+
+################################################################################
+
+def csv_stream(cursor):
+	"""Streams a CSV response of systems data from the database using the
+	given cursor"""
+
+	# Get the first row
+	row = cursor.fetchone()
+
+	# Write CSV header
+	output = io.BytesIO()
+	writer = csv.writer(output)
+	writer.writerow(['Name', 'Comment', 'Allocated by', 'Allocation date', 'CI Operational Status', 'CMDB Link'])
+	yield output.getvalue()
+
+	# Write data
+	while row is not None:
+		# There's no way to flush (and empty) a CSV writer, so we create
+		# a new one each time
+		output = io.BytesIO()
+		writer = csv.writer(output)
+
+		# Generate link to CMDB
+		cmdb_url = ""
+		if row['cmdb_id'] is not None and row['cmdb_id'] != "":
+			cmdb_url = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
+
+		# Write a row to the CSV output
+		outrow = [row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_url]
+
+		# For each element in the output row...
+		for i in range(0, len(outrow)):
+			# ...if it's not None...
+			if outrow[i]:
+				# ...if the element is unicode...
+				if type(outrow[i]) == unicode:
+					# ...decode from utf-8 into a ASCII-compatible byte string
+					outrow[i] = outrow[i].encode('utf-8')
+				else:
+					# ...otherwise just chuck it out as a string
+					outrow[i] = str(outrow[i])
+
+		# Write the output row to the stream
+		writer.writerow(outrow)
+		yield output.getvalue()
+
+		# Iterate
+		row = cursor.fetchone()
 
 ################################################################################
 

@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 from cortex import app
-import cortex.errors
 from flask import Flask, request, g
 import MySQLdb as mysql
 

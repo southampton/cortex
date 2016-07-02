@@ -2,6 +2,7 @@
 
 from cortex import app
 import cortex.lib.user
+import cortex.lib.vmware
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
 import MySQLdb as mysql
@@ -57,7 +58,7 @@ def dashboard():
 	tasks = curd.fetchall()
 
 	# OS VM stats
-	types = cortex.vmware.get_os_stats()
+	types = cortex.lib.vmware.get_os_stats()
 
 	return render_template('dashboard.html', vm_count=vm_count, ci_count=ci_count, task_progress_count=task_progress_count, task_failed_count=task_failed_count, tasks=tasks, types=types, title="Dashboard")
 

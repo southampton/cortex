@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 
-from cortex import app, admin
+from cortex import app
 import cortex.lib.core
 import cortex.lib.systems
 import cortex.lib.cmdb
@@ -40,55 +40,6 @@ def systems():
 
 ################################################################################
 
-def systems_csv_stream(cursor):
-	"""Streams a CSV response of systems data from the database using the
-	given cursor"""
-
-	# Get the first row
-	row = cursor.fetchone()
-
-	# Write CSV header
-	output = io.BytesIO()
-	writer = csv.writer(output)
-	writer.writerow(['Name', 'Comment', 'Allocated by', 'Allocation date', 'CI Operational Status', 'CMDB Link'])
-	yield output.getvalue()
-
-	# Write data
-	while row is not None:
-		# There's no way to flush (and empty) a CSV writer, so we create
-		# a new one each time
-		output = io.BytesIO()
-		writer = csv.writer(output)
-
-		# Generate link to CMDB
-		cmdb_url = ""
-		if row['cmdb_id'] is not None and row['cmdb_id'] != "":
-			cmdb_url = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
-
-		# Write a row to the CSV output
-		outrow = [row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_url]
-
-		# For each element in the output row...
-		for i in range(0, len(outrow)):
-			# ...if it's not None...
-			if outrow[i]:
-				# ...if the element is unicode...
-				if type(outrow[i]) == unicode:
-					# ...decode from utf-8 into a ASCII-compatible byte string
-					outrow[i] = outrow[i].encode('utf-8')
-				else:
-					# ...otherwise just chuck it out as a string
-					outrow[i] = str(outrow[i])
-
-		# Write the output row to the stream
-		writer.writerow(outrow)
-		yield output.getvalue()
-
-		# Iterate
-		row = cursor.fetchone()
-
-################################################################################
-
 @app.route('/systems/search')
 @cortex.lib.user.login_required
 def systems_search():
@@ -122,7 +73,7 @@ def systems_download_csv():
 	curd = cortex.lib.systems.get_systems(return_cursor=True, hide_inactive=False)
 
 	# Return the response
-	return Response(systems_csv_stream(curd), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
+	return Response(cortex.lib.systems.csv_stream(curd), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
 
 ################################################################################
 
