@@ -13,7 +13,7 @@ import MySQLdb as mysql
 def about():
 	"""Renders the about page"""
 
-	return render_template('about.html', active='help', title="About")
+	return render_template('about.html', active='about', title="About")
 
 ################################################################################
 
@@ -60,7 +60,7 @@ def dashboard():
 	# OS VM stats
 	types = cortex.lib.vmware.get_os_stats()
 
-	return render_template('dashboard.html', vm_count=vm_count, ci_count=ci_count, task_progress_count=task_progress_count, task_failed_count=task_failed_count, tasks=tasks, types=types, title="Dashboard")
+	return render_template('dashboard.html', active="dashboard", vm_count=vm_count, ci_count=ci_count, task_progress_count=task_progress_count, task_failed_count=task_failed_count, tasks=tasks, types=types, title="Dashboard")
 
 ################################################################################
 

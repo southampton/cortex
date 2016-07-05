@@ -11,12 +11,20 @@
 	top: 3px;
 }
 
-.main
+#main
 {
 	padding-right: 40px;
 	padding-left: 40px;
 	padding-top: 20px;
 	padding-bottom: 20px;
+}
+
+@media (min-width: 768px)
+{
+	#main
+	{
+		margin-left: 55px;
+	}
 }
 
 span.arrow {
@@ -32,7 +40,7 @@ span.arrow {
 	.sidebar
 	{
 		position: fixed;
-		top: 54px;
+		top: 0;
 		bottom: 0;
 		left: 0;
 		z-index: 1000;
@@ -47,7 +55,6 @@ span.arrow {
 
 body
 {
-	padding-top: 50px;
 	padding-bottom: 0px;
 }
 
@@ -82,11 +89,11 @@ table#classes td:last-child
 	margin-top: 5px;
 }
 
-@media (min-width: 768px)
+@media (max-width: 768px)
 {
 	body
 	{
-		padding-top: 60px;
+		padding-top: 50px;
 	}
 }
 
@@ -349,3 +356,42 @@ i.icon-unknown
 	background-color: #47bbb3;
 }
 
+/* Popover menu stuff */
+.popover-content-nopad
+{
+	padding: 0px;
+}
+.list-group-popover
+{
+	margin-bottom: 0px;
+}
+
+.list-group-bottom
+{
+	position: fixed;
+	bottom: 0; 
+	width: 50px;
+	margin-bottom: 0px;
+}
+
+.list-group-menu > a
+{
+	padding-left: 6px;
+	padding-right: 0px;
+}
+
+@media (max-width: 767px)
+{
+	.menu-active
+	{
+		border-bottom: 5px solid #158cba;
+	}
+}
+
+@media (min-width: 768px)
+{
+	.menu-active
+	{
+		border-right: 5px solid #158cba;
+	}
+}

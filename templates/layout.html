@@ -8,14 +8,13 @@
 		<link rel="icon" href="../../favicon.ico">
 		<link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}">
 		{#- CSS #}
-		<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+		<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/font-awesome/4.6.0/css/font-awesome.min.css">
 		<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootswatch/3.3.6/lumen/bootstrap.min.css">
 		<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.9/css/dataTables.bootstrap.min.css">
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}">
 		{#- JavaScript #}
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 		<script src="//netdna.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-		<script src="{{ url_for('static', filename='js/jquery.tablesorter.min.js') }}"></script>
 		{#- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries #}
 		<!--[if lt IE 9]>
 			<script src="{{ url_for('static', filename='https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js') }}"></script>
@@ -26,17 +25,46 @@
 		{%- block head %}{% endblock %}
 	</head>
 	<body>
-		<div class="navbar navbar-fixed-top navbar-default" role="navigation">
+		<div id="search" class="modal" tabindex="-1" role="dialog">
+		  <div class="modal-dialog">
+			<div class="modal-content">
+			  <form role="search" method="GET" action="{{url_for('systems_search')}}">
+			  <div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Search for systems</h4>
+			  </div>
+			  <div class="modal-body">
+					<div class="form-group">
+						<input id="searchinput" type="text" class="form-control" placeholder="Search for systems..." name="query">
+					</div>
+			  </div>
+			  <div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="submit" class="btn btn-primary">Search</button>
+			  </div>
+			</form>
+			</div><!-- /.modal-content -->
+		  </div><!-- /.modal-dialog -->
+		</div><!-- /.modal -->
+
+
+		<div class="navbar navbar-fixed-top navbar-default visible-xs" role="navigation">
 			<div class="container-fluid">
-				<div class="navbar-header">
-					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
-						<span class="sr-only">Toggle navigation</span>
-						<span class="icon-bar"></span>
-						<span class="icon-bar"></span>
-						<span class="icon-bar"></span>
-					</button>
-					<a href="{{ url_for('dashboard') }}" class="navbar-brand">cortex systems manager</a>
-				</div>
+				<div class="btn-group" role="group">
+					  <a href="{{ url_for('dashboard') }}" title="Dashboard" class="navbar-btn btn btn-default{%if active == 'dashboard'%} menu-active{%endif%}"><i class="fa fa-fw fa-dashboard fa-2x"></i></a>
+					  <a tabindex="0" role="button" title="Search" data-toggle="modal" data-target="#search" class="navbar-btn btn btn-default">
+						<i class="fa fa-fw fa-search fa-2x"></i>
+					  </a>
+					  <a tabindex="0" role="button" data-mpop="systems-menu" title="Systems" data-container="body" class="navbar-btn btn btn-default mobilepop{%if active == 'systems'%} menu-active{%endif%}">
+						<i class="fa fa-fw fa-server fa-2x"></i>
+					  </a>
+					  <a tabindex="0" role="button" data-mpop="workflows-menu" title="Workflows" data-container="body" class="navbar-btn btn btn-default mobilepop{%if active == 'workflows'%} menu-active{%endif%}"><i class="fa fa-fw fa-plus-circle fa-2x"></i></a>
+					  <a tabindex="0" role="button" data-mpop="vmware-menu" title="VMware" data-container="body" class="navbar-btn btn btn-default mobilepop{%if active == 'vmware'%} menu-active{%endif%}"><i class="fa fa-fw fa-line-chart fa-2x"></i></a>
+					  <a tabindex="0" role="button" data-mpop="puppet-menu" title="Puppet" data-container="body" class="navbar-btn btn btn-default mobilepop{%if active == 'puppet'%} menu-active{%endif%}"><i class="fa fa-fw fa-linux fa-2x"></i></a>
+					  <a tabindex="0" role="button" data-mpop="settings-menu" title="Settings" data-container="body" type="button" class="navbar-btn btn btn-default mobilepop{%if active == 'admin'%} menu-active{%endif%}"><i class="fa fa-fw fa-sliders fa-2x"></i></a>
+					  <a href="{{ url_for('about') }}" title="About" class="navbar-btn btn btn-default{%if active == 'about'%} menu-active{%endif%}"><i class="fa fa-fw fa-info-circle fa-2x"></i></a>
+					  <a tabindex="0" role="button" data-mpop="user-menu" title="{{ session.username }}" data-container="body" type="button" class="navbar-btn btn btn-default mobilepop{%if active == 'user'%} menu-active{%endif%}"><i class="fa fa-fw fa-user fa-2x"></i></a>
+					</div>
 			
 				{%- if session.logged_in %}
 				<div class="navbar-collapse collapse" id="navbar-collapse-1">	
@@ -89,112 +117,33 @@
 							</ul>
 						</li>
 					</ul>
-					<ul class="nav navbar-nav navbar-right">
-						<li class="hidden-xs"><a href="{{ url_for('dashboard') }}"><i class="fa fa-fw fa-dashboard"></i> Dashboard</a></li>						
-						<li class="dropdown{%if active == 'user'%} active{%endif%}">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-fw fa-user"></i> {{ session.username }} <b class="caret"></b></a>
-							<ul class="dropdown-menu">
-								<li><a href="{{ url_for('user_groups') }}"><i class="fa fa-users fa-fw"></i> AD Groups</a></li>
-								<li><a href="{{ url_for('logout') }}"><i class="fa fa-sign-out fa-fw"></i> Sign Out</a></li>
-							</ul>
-						</li>
-					</ul>
-					<form class="navbar-form navbar-right hidden-xs hidden-sm navbar-search" role="search" method="GET" action="{{url_for('systems_search')}}">
-						<div class="form-group">
-							<input type="text" class="form-control" placeholder="Search for systems..." name="query">
-						</div>
-					</form>
 				</div>
 				{%- endif %}
 			</div>
 		</div>
 		<div class="container-fluid">
 			<div class="row">
-				<div class="col-sm-3 col-md-2 sidebar">
-					<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-						<div class="panel panel-default">
-							<div class="panel-heading panel-heading-sidebar" role="tab" id="headingOne">
-								<h4 class="panel-title">
-									<a {% if active != 'systems' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%} role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-controls="collapseOne">Systems <span class="caret arrow"></span></a>
-								  </h4>
-							</div>
-							<div id="collapseOne" class="panel-collapse collapse{% if active == 'systems' %} in{%endif%}" role="tabpanel" aria-labelledby="headingOne" {% if active != 'systems' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%}>
-								<ul class="list-group list-group-sidebar">
-									<li><a href="{{ url_for('systems') }}"><i class="fa fa-fw fa-list"></i>Systems</a></li>
-									<li><a href="{{ url_for('systems_new') }}"><i class="fa fa-fw fa-plus"></i>Allocate system name</a></li>
-								</ul>
-							</div>
-						</div>
-						<div class="panel panel-default">
-							<div class="panel-heading panel-heading-sidebar" role="tab" id="headingTwo">
-								<h4 class="panel-title">
-									<a {% if active != 'workflows' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%} role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" aria-controls="collapseTwo">Workflows <span class="caret arrow"></span></a>
-								</h4>
-							</div>
-							<div id="collapseTwo" class="panel-collapse collapse{% if active == 'workflows' %} in{%endif%}" role="tabpanel" aria-labelledby="headingTwo" {% if active != 'workflows' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%}>
-								<ul class="list-group list-group-sidebar">
-{%- for workflow in workflows|sort(attribute='order') %}
-									<li><a href="{{ url_for(workflow.view_func)}}"><i class="fa fa-plus-circle fa-fw"></i>{{ workflow.display }}</a></li>
-{%- endfor %}
-								</ul>
-							</div>
-						</div>
-						<div class="panel panel-default">
-							<div class="panel-heading panel-heading-sidebar" role="tab" id="headingThree">
-								<h4 class="panel-title">
-									<a {% if active != 'vmware' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%} role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-controls="collapseThree">VMware <span class="caret arrow"></span></a>
-								</h4>
-							</div>
-							<div id="collapseThree" class="panel-collapse collapse{% if active == 'vmware' %} in{%endif%}" role="tabpanel" aria-labelledby="headingThree" {% if active != 'vmware' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%}>
-								<ul class="list-group list-group-sidebar">
-									<li><a href="{{ url_for('vmware_os') }}"><i class="fa fa-pie-chart fa-fw"></i>Operating Systems</a></li>
-									<li><a href="{{ url_for('vmware_hw') }}"><i class="fa fa-pie-chart fa-fw"></i>Hardware Version</a></li>
-									<li><a href="{{ url_for('vmware_power') }}"><i class="fa fa-pie-chart fa-fw"></i>Power State</a></li>
-									<li><a href="{{ url_for('vmware_specs') }}"><i class="fa fa-bar-chart fa-fw"></i>RAM & CPU</a></li>
-									<li><a href="{{ url_for('vmware_tools') }}"><i class="fa fa-pie-chart fa-fw"></i>VM Tools</a></li>
-									<li><a href="{{ url_for('vmware_clusters') }}"><i class="fa fa-cubes fa-fw"></i>Clusters</a></li>
-									<li><a href="{{ url_for('vmware_data') }}"><i class="fa fa-th fa-fw"></i>VM Data</a></li>
-									<li><a href="{{ url_for('vmware_data_unlinked') }}"><i class="fa fa-frown-o fa-fw"></i>Unlinked VMs</a></li>
-									<li><a href="{{ url_for('vmware_history') }}"><i class="fa fa-line-chart fa-fw"></i>History</a></li>
-								</ul>
-							</div>
-						</div>
-						<div class="panel panel-default">
-							<div class="panel-heading panel-heading-sidebar" role="tab" id="headingFour">
-								<h4 class="panel-title">
-									<a {% if active != 'puppet' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%} role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseFour" aria-controls="collapseFour">Puppet <span class="caret arrow"></span></a>
-								</h4>
-							</div>
-							<div id="collapseFour" class="panel-collapse collapse{% if active == 'puppet' %} in{%endif%}" role="tabpanel" aria-labelledby="headingFour" {% if active != 'puppet' %}aria-expanded="false"{%else%}aria-expanded="true"{%endif%}>
-								<ul class="list-group list-group-sidebar">
-									<li><a href="{{ url_for('puppet_dashboard') }}"><i class="fa fa-dashboard fa-fw"></i>Dashboard</a></li>
-									<li><a href="{{ url_for('puppet_nodes') }}"><i class="fa fa-server fa-fw"></i>Nodes</a></li>
-									<li><a href="{{ url_for('puppet_groups') }}"><i class="fa fa-object-group fa-fw"></i>Groups</a></li>
-									<li><a href="{{ url_for('puppet_enc_default') }}"><i class="fa fa-globe fa-fw"></i>Default classes</a></li>
-								<li><a href="{{ url_for('puppet_radiator') }}" target="_blank"><i class="fa fa-desktop fa-fw"></i>Radiator view</a></li>
-								</ul>		
-							</div>
-						</div>
-						<div class="panel panel-default">
-							<div class="panel-heading panel-heading-sidebar" role="tab" id="headingFive">
-								<h4 class="panel-title">
-									<a {% if active != 'admin' %}class="collapsed" aria-expanded="false"{%else%}aria-expanded="true"{%endif%} role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseFive" aria-controls="collapseFive">Administration <span class="caret arrow"></span></a>
-								</h4>
-							</div>
-							<div id="collapseFive" class="panel-collapse collapse{% if active == 'admin' %} in{% else %} collapsed{%endif%}" role="tabpanel" aria-labelledby="headingFive" {% if active != 'admin' %} aria-expanded="false"{%else%}aria-expanded="true"{%endif%}>
-								<ul class="list-group list-group-sidebar">
-									<li><a href="{{ url_for('admin_classes') }}"><i class="fa fa-fw fa-table"></i>Classes</a></li>
-									<li><a href="{{ url_for('admin_tasks') }}"><i class="fa fa-fw fa-tasks"></i>Tasks</a></li>
-									<li><a href="{{ url_for('admin_maint') }}"><i class="fa fa-fw fa-gears"></i>Maintenance</a></li>
-								</ul>
-							</div>
-						</div>
+				<div id="sidebar-small" class="sidebar" style="width: 55px" >
+					<div class="list-group list-group-menu">
+					  <a href="{{ url_for('dashboard') }}" title="Dashboard" class="list-group-item{%if active == 'dashboard'%} menu-active{%endif%}"><i class="fa fa-fw fa-dashboard fa-2x"></i></a>
+					  <a tabindex="0" role="button" title="Search" data-toggle="modal" data-target="#search" class="list-group-item">
+						<i class="fa fa-fw fa-search fa-2x"></i>
+					  </a>
+					  <a tabindex="0" role="button" data-mpop="systems-menu" title="Systems" data-container="body" class="list-group-item enable-menu-popover{%if active == 'systems'%} menu-active{%endif%}">
+						<i class="fa fa-fw fa-server fa-2x"></i>
+					  </a>
+					  <a tabindex="0" role="button" data-mpop="workflows-menu" title="Workflows" data-container="body" class="list-group-item enable-menu-popover{%if active == 'workflows'%} menu-active{%endif%}"><i class="fa fa-fw fa-plus-circle fa-2x"></i></a>
+					  <a tabindex="0" role="button" data-mpop="vmware-menu" title="VMware" data-container="body" class="list-group-item enable-menu-popover{%if active == 'vmware'%} menu-active{%endif%}"><i class="fa fa-fw fa-line-chart fa-2x"></i></a>
+					  <a tabindex="0" role="button" data-mpop="puppet-menu" title="Puppet" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%}"><i class="fa fa-fw fa-linux fa-2x"></i></a>
+					  <a tabindex="0" role="button" data-mpop="settings-menu" title="Settings" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%}"><i class="fa fa-fw fa-sliders fa-2x"></i></a>
+					  <a href="{{ url_for('about') }}" title="About" class="list-group-item {%if active == 'about'%} menu-active{%endif%}"><i class="fa fa-fw fa-info-circle fa-2x"></i></a>
 					</div>
-					<div class="sidebar-footer">
-						Cortex {{config.VERSION_MAJOR}} r{{config.VERSION_MINOR}}
+					<div class="list-group list-group-bottom list-group-menu">
+						<a tabindex="0" role="button" data-mpop="user-menu" title="{{ session.username }}" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'user'%} menu-active{%endif%}"><i class="fa fa-fw fa-user fa-2x"></i></a>
 					</div>
 				</div>
-				<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+
+				<div id="main" class="main">
 {%- for category, message in get_flashed_messages(with_categories=true) %}
 					<div class="alert alert-dismissable {{category}}"><button type="button" class="close" data-dismiss="alert">×</button>{{message}}</div>
 {%- endfor -%}
@@ -202,5 +151,61 @@
 				</div>
 			</div>
 		</div>
+
+	{#- Popup menus (popover content is loaded via the id) #}
+
+	<div id="systems-menu" class="hidden">
+	<ul class="list-group list-group-popover">
+		<a class="list-group-item" href="{{ url_for('systems') }}">Systems list</a>
+		<a class="list-group-item" href="{{ url_for('systems_new') }}">Allocate system name</a>
+	</ul>
+	</div>
+
+	<div id="workflows-menu" class="hidden">
+	<div class="list-group list-group-popover">
+		{% for workflow in workflows|sort(attribute='order') -%}
+		<a class="list-group-item" href="{{ url_for(workflow.view_func)}}"><i class="fa fa-plus-circle fa-fw"></i> {{ workflow.display }}</a>
+		{%- endfor %}
+	</ul>
+	</div>
+
+	<div id="vmware-menu" class="hidden">
+	<div class="list-group list-group-popover">
+		<a class="list-group-item" href="{{ url_for('vmware_os') }}"><i class="fa fa-pie-chart fa-fw"></i> Operating Systems</a>
+		<a class="list-group-item" href="{{ url_for('vmware_hw') }}"><i class="fa fa-pie-chart fa-fw"></i> Hardware Version</a>
+		<a class="list-group-item" href="{{ url_for('vmware_power') }}"><i class="fa fa-pie-chart fa-fw"></i> Power State</a>
+		<a class="list-group-item" href="{{ url_for('vmware_specs') }}"><i class="fa fa-bar-chart fa-fw"></i> RAM & CPU</a>
+		<a class="list-group-item" href="{{ url_for('vmware_tools') }}"><i class="fa fa-pie-chart fa-fw"></i> VM Tools</a>
+		<a class="list-group-item" href="{{ url_for('vmware_clusters') }}"><i class="fa fa-cubes fa-fw"></i> Clusters</a>
+		<a class="list-group-item" href="{{ url_for('vmware_data') }}"><i class="fa fa-th fa-fw"></i> VM Data</a>
+		<a class="list-group-item" href="{{ url_for('vmware_data_unlinked') }}"><i class="fa fa-frown-o fa-fw"></i> Unlinked VMs</a>
+		<a class="list-group-item" href="{{ url_for('vmware_history') }}"><i class="fa fa-line-chart fa-fw"></i> History</a>
+	</ul>
+	</div>
+
+	<div id="puppet-menu" class="hidden">
+	<ul class="list-group list-group-popover">
+		<a class="list-group-item" href="{{ url_for('puppet_dashboard') }}"><i class="fa fa-dashboard fa-fw"></i> Dashboard</a>
+		<a class="list-group-item" href="{{ url_for('puppet_nodes') }}"><i class="fa fa-server fa-fw"></i> Nodes</a>
+		<a class="list-group-item" href="{{ url_for('puppet_groups') }}"><i class="fa fa-object-group fa-fw"></i> Groups</a>
+		<a class="list-group-item" href="{{ url_for('puppet_enc_default') }}"><i class="fa fa-globe fa-fw"></i> Default classes</a>
+		<a class="list-group-item" href="{{ url_for('puppet_radiator') }}" target="_blank"><i class="fa fa-desktop fa-fw"></i> Radiator view</a>
+	</ul>
+	</div>
+
+	<div id="settings-menu" class="hidden">
+	<ul class="list-group list-group-popover">
+		<a class="list-group-item" href="{{ url_for('admin_classes') }}"><i class="fa fa-fw fa-table"></i> Classes</a>
+		<a class="list-group-item" href="{{ url_for('admin_tasks') }}"><i class="fa fa-fw fa-tasks"></i> Tasks</a>
+		<a class="list-group-item" href="{{ url_for('admin_maint') }}"><i class="fa fa-fw fa-gears"></i> Maintenance</a>
+	</ul>
+	</div>
+
+	<div id="user-menu" class="hidden">
+	<ul class="list-group list-group-popover">
+		<a class="list-group-item" href="{{ url_for('user_groups') }}"><i class="fa fa-users fa-fw"></i> AD Groups</a>
+		<a class="list-group-item" href="{{ url_for('logout') }}"><i class="fa fa-sign-out fa-fw"></i> Sign Out</a>
+	</ul>
+	</div>
 	</body>
 </html>

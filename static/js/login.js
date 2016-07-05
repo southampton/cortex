@@ -1,5 +1,3 @@
-/* BARGATE LOGIN JAVASCRIPT */
-
 window.onload = function()
 {
   var text_input = document.getElementById ('loginUsername');
