@@ -1,8 +1,17 @@
+function enableMenuTooltip(selector){
+	$(selector).tooltip(
+	{
+		trigger: 'hover',
+		placement: 'right',
+		container: 'body'
+	});
+}
+	
 /* Tooltips and Popovers */
 $(document).ready(function ()
 {
-	$("[rel=tooltip]").tooltip(); /* TODO: remove this monstrosity when sure its not in use anymore */
-	$(".enable-tooltip").tooltip();
+	//$("[rel=tooltip]").tooltip(); /* TODO: remove this monstrosity when sure its not in use anymore */
+	enableMenuTooltip('.enable-tooltip');	
 	$(".enable-popover").popover();
 
 	$('.enable-menu-popover').each(function()
@@ -31,16 +40,21 @@ $(document).ready(function ()
 		});
 	});
 
-	$('.enable-menu-popover').click(function()
+	$('.enable-menu-popover').on('show.bs.popover', function()
 	{
-		$(this).tooltip('hide');
+		$(this).tooltip('destroy');
 	});
+
+	$('.enable-menu-popover').on('hide.bs.popover', function()
+	{
+		enableMenuTooltip(this);
+	});
+
 
 	$("#search").on('shown.bs.modal', function()
 	{
 		$("#searchinput").focus();
 	});
-
 });
 
 

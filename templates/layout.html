@@ -125,21 +125,21 @@
 			<div class="row">
 				<div id="sidebar-small" class="sidebar" style="width: 55px" >
 					<div class="list-group list-group-menu">
-					  <a href="{{ url_for('dashboard') }}" title="Dashboard" class="list-group-item{%if active == 'dashboard'%} menu-active{%endif%}"><i class="fa fa-fw fa-dashboard fa-2x"></i></a>
-					  <a tabindex="0" role="button" title="Search" data-toggle="modal" data-target="#search" class="list-group-item">
+					  <a href="{{ url_for('dashboard') }}" title="Dashboard" class="list-group-item{%if active == 'dashboard'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-dashboard fa-2x"></i></a>
+					  <a tabindex="0" role="button" title="Search" data-toggle="modal" data-target="#search" class="list-group-item enable-tooltip" data-placement="right">
 						<i class="fa fa-fw fa-search fa-2x"></i>
 					  </a>
-					  <a tabindex="0" role="button" data-mpop="systems-menu" title="Systems" data-container="body" class="list-group-item enable-menu-popover{%if active == 'systems'%} menu-active{%endif%}">
+					  <a tabindex="0" role="button" data-mpop="systems-menu" title="Systems" data-container="body" class="list-group-item enable-menu-popover{%if active == 'systems'%} menu-active{%endif%} enable-tooltip">
 						<i class="fa fa-fw fa-server fa-2x"></i>
 					  </a>
-					  <a tabindex="0" role="button" data-mpop="workflows-menu" title="Workflows" data-container="body" class="list-group-item enable-menu-popover{%if active == 'workflows'%} menu-active{%endif%}"><i class="fa fa-fw fa-plus-circle fa-2x"></i></a>
-					  <a tabindex="0" role="button" data-mpop="vmware-menu" title="VMware" data-container="body" class="list-group-item enable-menu-popover{%if active == 'vmware'%} menu-active{%endif%}"><i class="fa fa-fw fa-line-chart fa-2x"></i></a>
-					  <a tabindex="0" role="button" data-mpop="puppet-menu" title="Puppet" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%}"><i class="fa fa-fw fa-linux fa-2x"></i></a>
-					  <a tabindex="0" role="button" data-mpop="settings-menu" title="Settings" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%}"><i class="fa fa-fw fa-sliders fa-2x"></i></a>
-					  <a href="{{ url_for('about') }}" title="About" class="list-group-item {%if active == 'about'%} menu-active{%endif%}"><i class="fa fa-fw fa-info-circle fa-2x"></i></a>
+					  <a tabindex="0" role="button" data-mpop="workflows-menu" title="Workflows" data-container="body" class="list-group-item enable-menu-popover{%if active == 'workflows'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-plus-circle fa-2x"></i></a>
+					  <a tabindex="0" role="button" data-mpop="vmware-menu" title="VMware" data-container="body" class="list-group-item enable-menu-popover{%if active == 'vmware'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-line-chart fa-2x"></i></a>
+					  <a tabindex="0" role="button" data-mpop="puppet-menu" title="Puppet" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-linux fa-2x"></i></a>
+					  <a tabindex="0" role="button" data-mpop="settings-menu" title="Settings" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-sliders fa-2x"></i></a>
+					  <a href="{{ url_for('about') }}" title="About" class="list-group-item {%if active == 'about'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-info-circle fa-2x"></i></a>
 					</div>
 					<div class="list-group list-group-bottom list-group-menu">
-						<a tabindex="0" role="button" data-mpop="user-menu" title="{{ session.username }}" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'user'%} menu-active{%endif%}"><i class="fa fa-fw fa-user fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="user-menu" title="{{ session.username }}" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'user'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-user fa-2x"></i></a>
 					</div>
 				</div>
 
