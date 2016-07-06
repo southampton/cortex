@@ -36,7 +36,8 @@ def systems():
 	q = request.args.get('q', None)
 	
 	# Strip any leading and or trailing spaces
-	q = q.strip()
+	if q is not None:
+		q = q.strip()
 
 	# Render
 	return render_template('systems.html', systems=systems, classes=classes, active='systems', title="Systems", q=q)
