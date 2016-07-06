@@ -34,6 +34,9 @@ def systems():
 
 	# Get the search string, if any
 	q = request.args.get('q', None)
+	
+	# Strip any leading and or trailing spaces
+	q = q.strip()
 
 	# Render
 	return render_template('systems.html', systems=systems, classes=classes, active='systems', title="Systems", q=q)
