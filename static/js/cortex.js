@@ -13,18 +13,24 @@ $(document).ready(function ()
 	//$("[rel=tooltip]").tooltip(); /* TODO: remove this monstrosity when sure its not in use anymore */
 	enableMenuTooltip('.enable-tooltip');	
 	$(".enable-popover").popover();
-
+	
+	var togglePopover = function () {
+		$(this).popover('toggle');
+	};
+	var hidePopover = function () {
+		$(this).popover('hide');
+	};
 	$('.enable-menu-popover').each(function()
 	{
 		$(this).popover(
 		{
-			trigger: 'focus',
+			trigger: 'manual',
 			placement: 'right',
 			html: true,
 			container: 'body',
 			content: $("#" + $(this).data("mpop")).html(),
 			template: '<div class="popover" role="tooltip"><div class="arrow"></div><div class="popover-content popover-content-nopad"></div></div>'
-		});
+		}).click(togglePopover).blur(hidePopover);
 	});
 
 	$('.mobilepop').each(function()
