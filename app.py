@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from flask import Flask, request, session, abort, g, render_template
+from flask import Flask, request, session, abort, g, render_template, url_for
 import jinja2 
 import os.path
 from os import walk
@@ -366,11 +366,48 @@ Username:             %s
 	def inject_template_data(self):
 		"""This function is called on every page load. It injects a 'workflows'
 		variable in to every render_template call, which is used to populate the
-		Workflows menu on the page."""
+		Workflows menu on the page. It also injects the list of menu items
+		and the items in the menus."""
 
-		# Inject in our list of workflows, so each page will see a 'workflows'
-		# variable
-		injectdata = dict(workflows=self.workflows)
+		# We return a dictionary with each key being a variable to set
+		# within the template.
+		injectdata = dict()
+
+		# Inject the workflows variable which is a list of loaded workflows
+		injectdata['workflows'] =self.workflows
+
+		# Inject the menu items 
+		# systems, workflows, vmware, puppet, admin
+		# Define the 'systems' menu
+		systems = [
+			{'link': url_for('systems'), 'title': 'Systems list', 'icon': 'fa-list'},
+			{'link': url_for('systems_new'), 'title': 'Allocate system name', 'icon': 'fa-plus'}
+		]
+		vmware = [
+			{'link': url_for('vmware_os'), 'title': 'Operating systems', 'icon': 'fa-pie-chart'},
+			{'link': url_for('vmware_hw'), 'title': 'Hardware version', 'icon': 'fa-pie-chart'},
+			{'link': url_for('vmware_power'), 'title': 'Power state', 'icon': 'fa-pie-chart'},
+			{'link': url_for('vmware_specs'), 'title': 'RAM & CPU', 'icon': 'fa-pie-chart'},
+			{'link': url_for('vmware_tools'), 'title': 'VM tools', 'icon': 'fa-pie-chart'},
+			{'link': url_for('vmware_clusters'), 'title': 'Clusters', 'icon': 'fa-cubes'},
+			{'link': url_for('vmware_data'), 'title': 'VM data', 'icon': 'fa-th'},
+			{'link': url_for('vmware_data_unlinked'), 'title': 'Unlinked VMs', 'icon': 'fa-frown-o'},
+			{'link': url_for('vmware_history'), 'title': 'History', 'icon': 'fa-line-chart'}
+		]
+		puppet = [
+			{'link': url_for('puppet_dashboard'), 'title': 'Dashboard', 'icon': 'fa-dashboard'},
+			{'link': url_for('puppet_nodes'), 'title': 'Nodes', 'icon': 'fa-server'},
+			{'link': url_for('puppet_groups'), 'title': 'Groups', 'icon': 'fa-object-group'},
+			{'link': url_for('puppet_enc_default'), 'title': 'Default classes', 'icon': 'fa-globe'},
+			{'link': url_for('puppet_radiator'), 'title': 'Radiator view', 'icon': 'fa-desktop'},
+		]
+		admin = [
+			{'link': url_for('admin_classes'), 'title': 'Classes', 'icon': 'fa-table'},	
+			{'link': url_for('admin_tasks'), 'title': 'Tasks', 'icon': 'fa-tasks'},
+			{'link': url_for('admin_maint'), 'title': 'Maintenance', 'icon': 'fa-gears'}
+		]
+
+		injectdata['menu'] = { 'systems': systems, 'vmware': vmware, 'puppet': puppet, 'admin': admin }
 
 		# If the current request is for a page that is a workflow, set the
 		# value of the 'active' variable that's passed to the page templates
