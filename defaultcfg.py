@@ -59,7 +59,7 @@ LDAP_ADMIN_GROUP    = "CN=groupname,OU=localhost,DC=localdomain"
 
 # Number of seconds, into the future, to cache user's group memberships for.
 LDAP_GROUPS_CACHE_EXPIRE = '900'
-
+LDAP_REALNAME_CACHE_EXPIRE = '2419200' #28 days
 # Infoblox server
 INFOBLOX_HOST = "" 
 INFOBLOX_USER = ""

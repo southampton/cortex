@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from cortex import app
+import cortex.lib.core
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
 import re
@@ -8,6 +9,7 @@ import MySQLdb as mysql
 from functools import wraps
 import ldap
 from werkzeug.urls import url_encode
+
 
 ################################################################################
 
@@ -128,20 +130,8 @@ def authenticate(username, password):
 	if len(password) == 0:
 		return False
 
-	# Connect to LDAP and turn off referals
-	l = ldap.initialize(app.config['LDAP_URI'])
-	l.set_option(ldap.OPT_REFERRALS, 0)
-
-	# Bind to the server with a username/password if needed in order to search for the full DN for the user who is logging in.
-	try:
-		if app.config['LDAP_ANON_BIND']:
-			l.simple_bind_s()
-		else:
-			l.simple_bind_s( (app.config['LDAP_BIND_USER']), (app.config['LDAP_BIND_PW']) )
-	except ldap.LDAPError as e:
-		flash('Internal Error - Could not connect to LDAP directory: ' + str(e), 'alert-danger')
-		app.logger.error("Could not bind to LDAP: " + str(e))
-		abort(500)
+	# Connect to the LDAP server
+	l = cortex.lib.core.connect()
 
 	# Now search for the user object to bind as
 	try:
@@ -211,20 +201,9 @@ def get_users_groups_from_ldap(username):
 	information is then stored in Redis so that it can be accessed 
 	quickly."""
 
-	# Connect to LDAP and turn off referals
-	l = ldap.initialize(app.config['LDAP_URI'])
-	l.set_option(ldap.OPT_REFERRALS, 0)
 
-	# Bind to the server with a username/password if needed in order to search for the full DN for the user who is logging in.
-	try:
-		if app.config['LDAP_ANON_BIND']:
-			l.simple_bind_s()
-		else:
-			l.simple_bind_s( (app.config['LDAP_BIND_USER']), (app.config['LDAP_BIND_PW']) )
-	except ldap.LDAPError as e:
-		flash('Internal Error - Could not connect to LDAP directory: ' + str(e), 'alert-danger')
-		app.logger.error("Could not bind to LDAP: " + str(e))
-		abort(500)
+	# Connect to the LDAP server
+	l = cortex.lib.core.connect()
 
 	# Now search for the user object
 	try:
@@ -254,3 +233,71 @@ def get_users_groups_from_ldap(username):
 
 	return None
 
+##############################################################################
+
+def get_user_realname_from_ldap(username):
+	"""Talks to LDAP and retrieves the real name of the username passed."""
+
+	# The name we've picked
+	name = username
+	sn = ""
+	fn = ""
+
+	# Connect to LDAP
+	l = cortex.lib.core.connect()
+	
+	# Now search for the user object
+	try:
+		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
+	except ldap.LDAPError as e:
+		return name
+
+	# Handle the search results
+	for result in results:
+		dn	= result[0]
+		attrs	= result[1]
+
+		if dn == None:
+			return None
+		else:
+			if 'givenName' in attrs:
+				if len(attrs['givenName']) > 0:
+					fn = attrs['givenName'][0]
+					#return attrs['givenName']
+			if 'sn' in attrs:
+				if len(attrs['sn']) > 0:
+					sn = attrs['sn'][0]
+
+	if len(sn) > 0 and len(fn) > 0:
+		name = fn + " " + sn
+		g.redis.setex("ldap/user/realname/" + username, app.config['LDAP_REALNAME_CACHE_EXPIRE'], name)
+
+	return name
+
+#############################################################################
+
+def get_user_realname(username, from_cache=True):
+	"""Returns the real name of the passed username . The result is 
+	cached to improve performance and to lessen the impact on the LDAP server. The 
+	results are returned from the cache unless you set "from_cache" to be 
+	False. 
+
+	This function will return the username  in all cases where the user was not found
+	or where there is no associated real name.
+	"""
+
+	# This uses REDIS to cache the LDAP response
+	# because Active Directory is dog slow and takes forever to respond
+	# with a list of groups, making pages load really slowly. 
+
+	if from_cache == False:
+		return get_user_realname_from_ldap(username)
+	else:
+		# Check the cache to see if it already has entries for the user
+		# we use a key to set whether we /have/ cached the users 
+		realname = g.redis.get("ldap/user/realname/" + username)
+
+		if (realname == None) or (not len(realname) > 0):
+			return get_user_realname_from_ldap(username)
+		else:
+			return realname

@@ -29,6 +29,7 @@ def systems():
 	# Get the list of systems
 	systems = cortex.lib.systems.get_systems()
 
+
 	# Get the list of active classes (used to populate the tab bar)
 	classes = cortex.lib.classes.list()
 
@@ -44,6 +45,7 @@ def systems():
 
 ################################################################################
 
+## TODO: this function is not used anymore? Check and remove
 @app.route('/systems/search')
 @cortex.lib.user.login_required
 def systems_search():
@@ -526,6 +528,9 @@ def systems_json():
 			row['allocation_date'] = row['allocation_date'].strftime('%Y-%m-%d %H:%M:%S')
 		else:
 			row['allocation_date'] = "Unknown"
+		if row['allocation_who'] is not None:	
+			row['allocation_who'] = cortex.lib.user.get_user_realname(row['allocation_who'])
+
 		system_data.append([row['name'], row['allocation_comment'], row['cmdb_environment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_id, row['id'], row['vmware_guest_state'], row['puppet_certname']])
 
 	# Return JSON data in the format DataTables wants
