@@ -268,13 +268,15 @@ def systems_edit(id):
 		abort(404)
 
 	if request.method == 'GET' or request.method == 'HEAD':
-		# Get the system out of the database
 		system_class = cortex.lib.classes.get(system['class'])
 		system['review_status_text'] = cortex.lib.systems.REVIEW_STATUS_BY_ID[system['review_status']]
-
+		
 		if system['puppet_certname']:
 			system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
-			
+		
+		if system['allocation_who'] is not None:	
+			system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
+
 		return render_template('systems-edit.html', system=system, system_class=system_class, active='systems', title=system['name'])
 	elif request.method == 'POST':
 		try:
@@ -313,7 +315,8 @@ def systems_edit(id):
 				task_data['time_constraint'] = 'asap'
 				task_data['short_description'] = 'Review necessity of virtual machine ' + system['name']
 				task_data['description'] = 'Please review the necessity of the virtual machine ' + system['name'] + ' to determine whether we need to keep it or whether it can be decommissioned. Information about the VM and links to ServiceNow can be found on Cortex at https://' + app.config['CORTEX_DOMAIN'] + url_for('systems_edit', id=id) + "\n\nOnce reviewed, please edit the system in Cortex using the link above and set it's 'Review Status' to either 'Required' or 'Not Required' and then close the associated project task."
-				task_data['opened_by'] = app.config['REVIEW_TASK_OPENER_SYS_ID']
+				#task_data['opened_by'] = app.config['REVIEW_TASK_OPENER_SYS_ID']
+				task_data['opened_by'] = 'example'
 				task_data['assignment_group'] = app.config['REVIEW_TASK_TEAM']
 				task_data['parent'] = app.config['REVIEW_TASK_PARENT_SYS_ID']
 
