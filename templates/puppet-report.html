@@ -64,19 +64,19 @@
 	<div class="col-md-1">
 		Total
 		<div class="admin-block bg-primary" title="Total">
-			<h2><span>{{ metrics.events.total }}</span></h2>
+			<h2><span>{% if metrics.events and metrics.events.total %} {{ metrics.events.total }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
 	<div class="col-md-1">
 		Success
 		<div class=" admin-block bg-success" title="Success">
-			<h2><span>{{ metrics.events.success }}</span></h2>
+			<h2><span>{% if metrics.events and metrics.events.success %} {{ metrics.events.success }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
 	<div class="col-md-1">
 		Failed
 		<div class=" admin-block bg-danger" title="Failure">
-			<h2><span>{{ metrics.events.failure }}</span></h2>
+			<h2><span>{% if metrics.events and metrics.events.failure %} {{ metrics.events.failure }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
 	<div class="col-md-1"></div>
@@ -88,19 +88,19 @@
 	<div class="col-md-1">
 		Total
 		<div class="admin-block bg-primary" title="Total">
-			<h2><span>{{ metrics.resources.total }}</span></h2>
+			<h2><span>{% if metrics.resources and metrics.resources.total %} {{ metrics.resources.total }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
 	<div class="col-md-1">
 		Unchanged
 		<div class="admin-block bg-success" title="Unchanged">
-			<h2><span>{{ metrics.resources.total - metrics.resources.changed }}</span></h2>
+			<h2><span>{% if metrics.resources and metrics.resources.total and metrics.resources.changed %} {{ metrics.resources.total - metrics.resources.changed }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
 	<div class="col-md-1">
 		Changed
 		<div class="admin-block bg-warning" title="Changed">
-			<h2><span>{{ metrics.resources.changed }}</span></h2>
+			<h2><span>{% if metrics.resources and metrics.resources.changed %} {{ metrics.resources.changed }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
 </div>
