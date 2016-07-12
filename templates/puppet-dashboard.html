@@ -54,8 +54,8 @@
 </div>
 <div class="row">
 	<div class="col-md-4">
-		<a href="{{ url_for('puppet_nodes') }}">
-		<div class="admin-block bg-info">
+		<a href="{{ url_for('puppet_dashboard_status', status='all') }}">
+		<div class="admin-block bg-purple">
 			<h1><i class="fa fa-fw fa-server"></i> {{ stats['count'] }}</h1>
 			<h2>Registered nodes</h2>
 		</div>

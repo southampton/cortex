@@ -351,7 +351,7 @@ def puppet_dashboard_status(status):
 		status = 'unknown'
 
 	# Page Titles to use
-	page_title_map = {'unchanged': 'Normal', 'changed': 'Changed', 'noop': 'Disabled', 'failed': 'Failed', 'unknown': 'Unknown/Unreported'}
+	page_title_map = {'unchanged': 'Normal', 'changed': 'Changed', 'noop': 'Disabled', 'failed': 'Failed', 'unknown': 'Unknown/Unreported', 'all': 'Registered'}
 
 	# If we have an invalid status, return 404
 	if status not in page_title_map:
@@ -367,13 +367,16 @@ def puppet_dashboard_status(status):
 	nodes_of_type = []
 
 	# Iterate over nodes and do the filtering
-	for node in nodes:
-		# If the status matches...
-		if node.status == status:
-			nodes_of_type.append(node)
-		# Or if the required status is 'unknown' and it's not one of the normal statii
-		elif status == 'unknown' and node.status not in ['unchanged', 'changed', 'noop', 'failed']:
-			nodes_of_type.append(node)
+	if status != 'all':
+		for node in nodes:
+			# If the status matches...
+			if node.status == status:
+				nodes_of_type.append(node)
+			# Or if the required status is 'unknown' and it's not one of the normal statii
+			elif status == 'unknown' and node.status not in ['unchanged', 'changed', 'noop', 'failed']:
+				nodes_of_type.append(node)
+	else:
+		nodes_of_type=nodes
 
 	return render_template('puppet-dashboard-status.html', active='puppet', title="Puppet Dashboard", nodes=nodes_of_type, status=page_title_map[status])
 
