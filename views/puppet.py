@@ -321,8 +321,10 @@ def puppet_facts(node):
 
 	# Turn the facts generator in to a dictionary
 	facts_dict = {}
-	for fact in facts:
-		facts_dict[fact.name] = fact.value
+
+	if facts != None:
+		for fact in facts:
+			facts_dict[fact.name] = fact.value
 
 	# Load the system data - we don't care if it fails (i.e its not in the systems table)
 	system = cortex.lib.systems.get_system_by_puppet_certname(node)
