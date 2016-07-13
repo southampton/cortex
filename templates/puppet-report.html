@@ -51,7 +51,7 @@
 <div class="page-header">
 <a href="{{ url_for('puppet_reports', node=report.node) }}" class="pull-right btn btn-sm btn-primary"><i class="fa fa-fw fa-files-o"></i> Node Reports</a>
 <h3><i class="fa fa-fw fa-file-text-o"></i> {{ report.node }} - Puppet Report</h3>
-<p class="text-muted">Received: {{ report.received.strftime('%Y-%m-%d %H:%M:%S') }}. Run time: {{ report.run_time }}</p>
+<p class="text-muted">Received: <span class="date">{{ report.received.strftime('%Y-%m-%d %H:%M:%S') }}</span>. Run time: {{ report.run_time }}</p>
 </div>
 <div class="row">
 </div>
@@ -123,4 +123,10 @@
 {%-     endfor %}
 	</tbody>
 </table>
+<script>
+$('.date').text(function() { 
+	var date = new Date(new Date($(this).text() + ' UTC').toString());
+	return date.getFullYear() + '-' + ('0' + (date.getMonth()+1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2) + ' ' + ('0' + date.getHours()).slice(-2) + ':' + ('0' + date.getMinutes()).slice(-2) + ':' + ('0' + date.getSeconds()).slice(-2);
+});
+</script>
 {% endblock %}
