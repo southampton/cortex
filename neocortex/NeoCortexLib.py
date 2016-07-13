@@ -744,6 +744,13 @@ class NeoCortexLib(object):
 
 	############################################################################
 
+	def vmware_vm_restart_guest(self, vm):
+		"""Tells a virtual machine guest to restart."""
+
+		return vm.RebootGuest()
+
+	############################################################################
+
 	def vmware_collect_properties(self, service_instance, view_ref, obj_type, path_set=None, include_mors=False):
 		"""
 		Collect properties for managed objects from a view ref
