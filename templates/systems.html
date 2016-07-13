@@ -51,6 +51,20 @@ $(function() {
 		"columns": [null, null, null, null, null, null, { "orderable": false, "targets": 0 }],
 		"serverSide": true,
 		"searchDelay": 500,
+		"stateSave": true,
+		"stateLoadCallback": function (settings) {
+			if (window.history.state != undefined)
+			{
+				$('#class-tabs li').removeClass('active');
+				$('#class-tabs li a[data-class=' + window.history.state['tab'] + ']').closest('li').addClass('active');
+				return window.history.state['dtState'];
+			}
+			return {}
+		},
+		"stateSaveCallback": function (settings, data) {
+			var classname = $('#class-tabs li.active a').attr('data-class');
+			window.history.replaceState({dtState: data, tab: classname}, "SystemsListState");
+		},
 		"ajax": {
 			"url": "{{ url_for('systems_json') }}",
 			"type": "POST",
