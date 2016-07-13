@@ -454,3 +454,26 @@ def puppet_report(report_hash):
 
 	# Render
 	return render_template('puppet-report.html', report=report, metrics=metrics, active='puppet', title=report.node + " - Puppet Report")
+
+##############################################################################
+
+@app.route('/puppet/search')
+@cortex.lib.user.login_required
+def puppet_search():
+	"""Provides search functionality for puppet classes and environment
+	variables"""
+
+
+	q = request.args.get('q')
+	if q is None:
+		app.logger.warn('Missing \'query\' parameter in puppet search request')
+		return abort(400)
+
+	q.strip();
+	
+	#Search for the text
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT DISTINCT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`  FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` WHERE `puppet_nodes`.`classes` LIKE %s OR `puppet_nodes`.`variables` LIKE %s ORDER BY `puppet_nodes`.`certname`', ('%' + q + '%', '%' + q + '%'))
+	results = curd.fetchall()
+	
+	return render_template('puppet-search.html', active='puppet', data=results, title="Puppet search")

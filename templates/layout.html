@@ -47,6 +47,28 @@
 		  </div><!-- /.modal-dialog -->
 		</div><!-- /.modal -->
 
+		<div id="puppet-search" class="modal" tabindex="-1" role="dialog">
+		  <div class="modal-dialog">
+			<div class="modal-content">
+			  <form role="search" method="GET" action="{{url_for('puppet_search')}}">
+			  <div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Search for a Puppet configuration</h4>
+			  </div>
+			  <div class="modal-body">
+					<p>You can search for classes such as 'uos_common_dns' or variables such as '$content'.</p>
+					<div class="form-group">
+						<input id="searchinput" type="text" class="form-control" placeholder="Search for nodes..." name="q">
+					</div>
+			  </div>
+			  <div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="submit" class="btn btn-primary">Search</button>
+			  </div>
+			</form>
+			</div><!-- /.modal-content -->
+		  </div><!-- /.modal-dialog -->
+		</div><!-- /.modal -->
 
 		<div class="navbar navbar-fixed-top navbar-default visible-xs" role="navigation">
 			<div class="container-fluid">
@@ -186,6 +208,8 @@
 		{% for item in menu.puppet -%}
 		<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 		{%- endfor %}
+		<a tabindex="0" role="button" title="Search" data-toggle="modal" data-target="#puppet-search" class="list-group-item enable-tooltip" data-placement="right">
+			<i class="fa fa-fw fa-search"></i> Configuration Search</a>
 	</ul>
 	</div>
 
