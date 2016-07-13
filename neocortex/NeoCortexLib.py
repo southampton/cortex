@@ -486,49 +486,66 @@ class NeoCortexLib(object):
 		if vm_datastore_cluster:
 			# Don't need to check if vm_datastore is set here...
 
-			# If we have a list of datastore clusters, choose one based on the name
+			# If we have a list of datastore clusters, re-order the list so that we don't
+			# always choose the same one. We decide on where in the list to look based on 
+			# the name of the VM
 			if type(vm_datastore_cluster) is list:
 				# Sum up the codepoints of the string to give us a number
 				name_value = 0
 				for c in vm_name:
 					name_value += ord(c)
+				name_value = name_value % len(vm_datastore_cluster)
 
 				# Pick a number between 0 and the number of provided 
 				# datastores clusters, and choose that datstore cluster
-				vm_datastore_cluster = vm_datastore_cluster[name_value % len(vm_datastore_cluster)]
-
-			# We now have a single datastore cluster (either provided or
-			# chosen by the algorithm above. Now ask VMware to search for a
-			# volume within that datastore that is "recommended"
-
-			# Get the datastore cluster and ensure it exists
-			storage_pod = self.vmware_get_obj(content, [vim.StoragePod], vm_datastore_cluster)
-
-			if storage_pod is None:
-				raise RuntimeError("Failed to locate destination datastore cluster, '" + str(vm_datastore_cluster) + "'")
-
-			# Build some selection specifications
-			pod_spec = vim.storageDrs.PodSelectionSpec()
-			pod_spec.storagePod = storage_pod
-			storage_spec = vim.storageDrs.StoragePlacementSpec()
-			storage_spec.type = vim.storageDrs.StoragePlacementSpec.PlacementType.clone
-			storage_spec.folder = destfolder	# Not sure why it needs to know this, but it's required
-			storage_spec.podSelectionSpec = pod_spec
-			storage_spec.vm = template
-			storage_spec.cloneSpec = clonespec
-			storage_spec.cloneName = vm_name	# Not sure why it needs to know this, but it's required
-
-			# Get VMware to make a recommendation
-			result = content.storageResourceManager.RecommendDatastores(storage_spec)
-
-			if result is None:
-				raise RuntimeError("Failed to get a storage recommendation from VMware for storage cluster '" + str(vm_datastore_cluster) + "'")
-
-			# If we have a recommendation, use it, otherwise throw an error
-			if len(result.recommendations) > 0 and len(result.recommendations[0].action) and result.recommendations[0].action[0].destination is not None:
-				datastore = result.recommendations[0].action[0].destination
+				ds_cluster_order = vm_datastore_cluster[name_value:] + vm_datastore_cluster[:name_value]
 			else:
-				raise RuntimeError("VMware did not return any storage recommendations for storage cluster '" + str(vm_datastore_cluster) + "'")
+				ds_cluster_order = [vm_datastore_cluster]
+
+			# We now have an array of possible clusters (either a single-element list or
+			# a correctly ordered-list). Iterate over them one at a time until one of them
+			# succeeds in giving us a recommendation.
+			datastore = None
+			for ds_cluster in ds_cluster_order:
+				# Ask VMware to search for a volume within that cluster that is "recommended"
+
+				# Get the datastore cluster and ensure it exists
+				storage_pod = self.vmware_get_obj(content, [vim.StoragePod], ds_cluster)
+
+				if storage_pod is None:
+					raise RuntimeError("Failed to locate destination datastore cluster, '" + str(ds_cluster) + "' - check the workflow configuration and VMware to ensure the configured datastore cluster names match")
+
+				# Build some selection specifications
+				pod_spec = vim.storageDrs.PodSelectionSpec()
+				pod_spec.storagePod = storage_pod
+				storage_spec = vim.storageDrs.StoragePlacementSpec()
+				storage_spec.type = vim.storageDrs.StoragePlacementSpec.PlacementType.clone
+				storage_spec.folder = destfolder	# Not sure why it needs to know this, but it's required
+				storage_spec.podSelectionSpec = pod_spec
+				storage_spec.vm = template
+				storage_spec.cloneSpec = clonespec
+				storage_spec.cloneName = vm_name	# Not sure why it needs to know this, but it's required
+
+				# Get VMware to make a recommendation
+				result = content.storageResourceManager.RecommendDatastores(storage_spec)
+
+				# If we don't get a result...
+				if result is None:
+					# Iterate to the next cluster
+					continue
+
+				# If we have a recommendation...
+				if len(result.recommendations) > 0 and len(result.recommendations[0].action) and result.recommendations[0].action[0].destination is not None:
+					# ...use the datastore and stop searching
+					datastore = result.recommendations[0].action[0].destination
+					break
+				else:
+					# Iterate to the next cluster
+					continue
+
+			# If VMware failed to return any recommendations on any cluster, then throw an error
+			if datastore is None:
+				raise RuntimeError("VMware did not return any storage recommendations on any of the configured storage clusters - check VMware and ensure there is capacity available within VMware's thresholds")
 
 		## Populate relocation specification
 		if datastore is not None:
