@@ -497,6 +497,7 @@ Username:             %s
 		  `vmware_uuid` varchar(36) DEFAULT NULL,
 		  `review_status` tinyint(4) NOT NULL DEFAULT 0,
 		  `review_task` varchar(16) DEFAULT NULL,
+		  `expiry_date` datetime DEFAULT NULL,
 		  PRIMARY KEY (`id`),
 		  KEY `class` (`class`),
 		  KEY `name` (`name`(255)),
@@ -629,6 +630,11 @@ Username:             %s
 		  `value` mediumint(11) NOT NULL,
 		  PRIMARY KEY (`timestamp`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		try:
+			cursor.execute("""ALTER TABLE `systems` ADD `expiry_date` datetime DEFAULT NULL""")
+		except Exception, e:
+			pass
 
 		## Close database connection
 		temp_db.close()

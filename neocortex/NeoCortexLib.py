@@ -1,4 +1,4 @@
-#!/usr/bin/python
+
 
 import Pyro4
 import os
@@ -55,7 +55,7 @@ class NeoCortexLib(object):
 
 	################################################################################
 
-	def allocate_name(self, class_name, comment, username, num=1):
+	def allocate_name(self, class_name, comment, username, num=1, expiry=None):
 		"""Allocates 'num' systems, of type 'class_name' each with the given
 		comment. Returns a dictionary with mappings between each new name
 		and the corresponding row ID in the database table."""
@@ -112,8 +112,8 @@ class NeoCortexLib(object):
 				new_number = int(class_data['lastid']) + i
 				new_name   = self.pad_system_name(class_name, new_number, class_data['digits'])
 
-				cur.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`) VALUES (%s, %s, %s, %s, NOW(), %s, %s)",
-					(self.SYSTEM_TYPE_BY_NAME['System'], class_name, new_number, new_name, username, comment))
+				cur.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `expiry_date`) VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s)",
+					(self.SYSTEM_TYPE_BY_NAME['System'], class_name, new_number, new_name, username, comment, expiry))
 
 				# store a record of the new system so we can give this back to the browser in a minute
 				new_systems[new_name] = cur.lastrowid
@@ -727,6 +727,13 @@ class NeoCortexLib(object):
 
 	############################################################################
 
+	def vmware_vm_poweroff(self, vm):
+		"""Powers off a virtual machine - does not do a guest shutdown (see vmware_vm_shutdown_guest)."""
+
+		return vm.PowerOffVM_Task()
+
+	############################################################################
+
 	def vmware_wait_for_poweron(self, vm, timeout=30):
 		"""Waits for a virtual machine to be marked as powered up by VMware."""
 
@@ -748,6 +755,13 @@ class NeoCortexLib(object):
 		"""Tells a virtual machine guest to restart."""
 
 		return vm.RebootGuest()
+
+	############################################################################
+
+	def vmware_vm_shutdown_guest(self, vm):
+		"""Tells a virtual machine guest to shutdown."""
+
+		return vm.ShutdownGuest()
 
 	############################################################################
 
@@ -1197,3 +1211,28 @@ class NeoCortexLib(object):
 		# silently failing, so give AD some time to catch up
 		time.sleep(5)
 
+	#######################################################################
+
+	def get_by_uuid(self, uuid, vcenter):
+		"""Get a VM by UUID
+		Args:
+		  uuid (string): UUID to find
+		  vcenter (string): vcenter to search in
+		Returns:
+		  VM if found or None otherwise"""
+
+		# Connect to the correct vCenter
+		instance = None
+		for key in self.config['VMWARE']:
+		        if self.config['VMWARE'][key]['hostname'] == vcenter: 
+		                instance = key
+		
+		# If we've found the right vCenter
+		if instance is not None:
+			# Connect
+			si = self.vmware_smartconnect(instance)
+			content = si.RetrieveContent()
+			# Search for the VM by UUID
+			return content.searchIndex.FindByUuid(None, uuid, True, False)
+		else:
+			return None
