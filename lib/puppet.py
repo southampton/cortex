@@ -124,7 +124,21 @@ def get_node_hiera(certname):
 	if node is None:
 		return None
 
-	return node['hiera']
+	# If the YAML is empty (except for comments), return nothing
+	try:
+		# to determine that we parse the data as yaml
+		hiera_data = yaml.load(node['hiera'])
+
+		if hiera_data is None:
+			return None
+
+		if len(hiera_data) == 0:
+			return None
+		else:
+			return node['hiera']
+
+	except Exception as ex:
+		return None
 
 ################################################################################
 
@@ -142,7 +156,21 @@ def get_role_hiera(rolename):
 	if role is None:
 		return None
 
-	return role['hiera']
+	# If the YAML is empty (except for comments), return nothing
+	try:
+		# to determine that we parse the data as yaml
+		hiera_data = yaml.load(role['hiera'])
+
+		if hiera_data is None:
+			return None
+
+		if len(hiera_data) == 0:
+			return None
+		else:
+			return role['hiera']
+
+	except Exception as ex:
+		return None
 
 ################################################################################
 

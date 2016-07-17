@@ -85,6 +85,8 @@ def api_puppet_hiera_pernode(certname):
 	yaml = cortex.lib.puppet.get_node_hiera(certname)
 
 	# If we don't get any configuration, return 404
+	# if we return a blank document then hiera-http on the puppet master
+	# explodes with a hilarious nonsensical error.
 	if yaml is None:
 		return abort(404)
 
@@ -112,6 +114,8 @@ def api_puppet_hiera_perrole(certname):
 	yaml = cortex.lib.puppet.get_role_hiera(rolename)
 
 	# If we don't get any configuration, return 404
+	# if we return a blank document then hiera-http on the puppet master
+	# explodes with a hilarious nonsensical error.
 	if yaml is None:
 		return abort(404)
 
