@@ -3,6 +3,15 @@
 {% block body %}
 <script>
 $(document).ready(function() {
+	var hiera_editor = CodeMirror.fromTextArea(document.getElementById('hiera'), 
+	{
+		mode: 'yaml',
+		gutters: ["CodeMirror-lint-markers"],
+		lint: true,
+		indentUnit: 2,
+		viewportMargin: Infinity
+	});
+
 	var classes_editor = CodeMirror.fromTextArea(document.getElementById('classes'), 
 	{
 		mode: 'yaml',
@@ -19,6 +28,14 @@ $(document).ready(function() {
 		lint: true,
 		indentUnit: 2,
 		viewportMargin: Infinity
+	});
+
+	hiera_editor.setOption("extraKeys", 
+	{
+		Tab: function(cm) {
+			var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
+			cm.replaceSelection(spaces);
+		}
 	});
 
 	classes_editor.setOption("extraKeys", 
@@ -65,6 +82,10 @@ $(document).ready(function() {
 				</select></div>
 			</div>
 			<div class="form-group">
+				<label title="The Role that is assigned to this puppet node" class="col-sm-2 control-label" for="role">Role:</label>
+				<div class="col-sm-10"> <p class="form-control-static text-muted">Not yet implemented</p></div>
+			</div>
+			<div class="form-group">
 				<div class="col-sm-offset-2 col-sm-10">
 					<div class="checkbox" style="padding-top:0em">
 						<label title="Check to include the default classes that deploy are standard build" for="include_default"><input type="checkbox" id="include_default" name="include_default"{% if system.puppet_include_default %} checked="checked"{% endif %}/>Include the <a href="{{url_for('puppet_enc_default')}}">default classes</a></label>
@@ -75,6 +96,13 @@ $(document).ready(function() {
 	</div>
 <div class="row">
 	<div class="col-md-9">
+		<div class="panel panel-default">
+			<div class="panel-heading">Editor: Hiera Variables</div>
+			<div class="panel-body" style="padding:0px">
+				<textarea id="hiera" name="hiera">{{ system.puppet_hiera }}</textarea>
+			</div>
+		</div>
+
 		<div class="panel panel-default">
 			<div class="panel-heading">Editor: Classes</div>
 			<div class="panel-body" style="padding:0px">
@@ -95,6 +123,8 @@ $(document).ready(function() {
 		<div class="panel panel-default">
 			<div class="panel-heading">Help</div>
 			<div class="panel-body">
+				<p>Use the <strong>Hiera Variables</strong> field to define values for hiera variables for this node. Note that the Role this system has can 
+also set hiera variables, but variables set here have precedence.</p>
 				<p>Use the <strong>Classes</strong> field to define the classes that this node will import. You can also
 				define parameters for the classes. Nodes will also import classes configured in groups and the default node configuration.</p>
 				<p>Use the <strong>Global Variables</strong> field to define the global puppet variables that will be sent to all the

@@ -542,7 +542,7 @@ Username:             %s
 		  `hiera` text NOT NULL,
 		  PRIMARY KEY (`id`),
 		  CONSTRAINT `puppet_nodes_ibfk_1` FOREIGN KEY (`id`) REFERENCES `systems` (`id`) ON DELETE CASCADE,
-		  CONSTRAINT `puppet_nodes_ibfk_2` FOREIGN KEY (`role`) REFERENCES `puppet_roles` (`name`) ON DELETE SET NULL ON UPDATE CASCADE,
+		  CONSTRAINT `puppet_nodes_ibfk_2` FOREIGN KEY (`role`) REFERENCES `puppet_roles` (`name`) ON DELETE SET NULL ON UPDATE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
 		# from cortex 1x to 2x: ALTER TABLE puppet_nodes ADD `role` varchar(255), ADD `hiera` text NOT NULL, ADD CONSTRAINT `puppet_nodes_ibfk_2` FOREIGN KEY (`role`) REFERENCES `puppet_roles` (`name`) ON DELETE SET NULL ON UPDATE CASCADE;

@@ -40,10 +40,15 @@ def puppet_enc_edit(node):
 		abort(404)
 
 	# If we've got a new node, then don't show "None"
+	if system['puppet_hiera'] is None or system['puppet_hiera'] == '':
+		system['puppet_hiera'] = "# Hiera variables can be entered here\n"
+
 	if system['puppet_classes'] is None or system['puppet_classes'] == '':
 		system['puppet_classes'] = "# Classes to include can be entered here\n"
+
 	if system['puppet_variables'] is None or system['puppet_variables'] == '':
 		system['puppet_variables'] = "# Global variables to include can be entered here\n"
+
 	if system['puppet_certname'] is None:
 		system['puppet_certname'] = ""
 
@@ -55,17 +60,27 @@ def puppet_enc_edit(node):
 	elif request.method == 'POST':
 		# Extract data from form
 		environment = request.form.get('environment', '')
-		classes = request.form.get('classes', '')
-		variables = request.form.get('variables', '')
+		classes     = request.form.get('classes', '')
+		variables   = request.form.get('variables', '')
+		hiera       = request.form.get('hiera', '')
+
 		if 'include_default' in request.form:
 			include_default = True
 		else:
 			include_default = False
+
 		error = False
 
 		# Validate environement:
 		if environment not in [e['id'] for e in environments]:
 			flash('Invalid environment', 'alert-danger')
+			error = True
+
+		# Validate hiera YAML
+		try:
+			yaml.load(hiera)
+		except Exception, e:
+			flash('Invalid YAML syntax for hiera: ' + str(e), 'alert-danger')
 			error = True
 
 		# Validate classes YAML
@@ -82,24 +97,27 @@ def puppet_enc_edit(node):
 			flash('Invalid YAML syntax for variables: ' + str(e), 'alert-danger')
 			error = True
 
+
 		# On error, overwrite what is in the system object with our form variables
 		# and return the page back to the user for fixing
 		if error:
-			system['puppet_env'] = environment
-			system['puppet_classes'] = classes
-			system['puppet_variables'] = variables
+			system['puppet_env']             = environment
+			system['puppet_hiera']           = hiera
+			system['puppet_classes']         = classes
+			system['puppet_variables']       = variables
 			system['puppet_include_default'] = include_default
+
 			return render_template('puppet-enc.html', system=system, active='puppet', environments=environments, title=system.name)
 
 		# Get a cursor to the database
 		curd = g.db.cursor(mysql.cursors.DictCursor)
 
 		# Update the system
-		curd.execute('UPDATE `puppet_nodes` SET `env` = %s, `classes` = %s, `variables` = %s, `include_default` = %s WHERE `certname` = %s', (env_dict[environment]['puppet'], classes, variables, include_default, system['puppet_certname']))
+		curd.execute('UPDATE `puppet_nodes` SET `env` = %s, `hiera` = %s, `classes` = %s, `variables` = %s, `include_default` = %s WHERE `certname` = %s', (env_dict[environment]['puppet'], hiera, classes, variables, include_default, system['puppet_certname']))
 		g.db.commit()
 
-		# Redirect back to the systems page
-		flash('Puppet ENC for host ' + system['name'] + ' updated', 'alert-success')
+		# Redirect back
+		flash('Puppet configuration for ' + system['name'] + ' updated', 'alert-success')
 
 		return redirect(url_for('puppet_enc_edit', node=node))
 
@@ -466,7 +484,7 @@ def puppet_search():
 
 	q = request.args.get('q')
 	if q is None:
-		app.logger.warn('Missing \'query\' parameter in puppet search request')
+		app.logger.warn("Missing 'query' parameter in puppet search request")
 		return abort(400)
 
 	q.strip();

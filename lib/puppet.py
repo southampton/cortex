@@ -110,6 +110,42 @@ def generate_node_config(certname):
 
 ################################################################################
 
+def get_node_hiera(certname):
+	"""Gets the Hiera YAML document for the specified node"""
+
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get the Puppet node from the database
+	curd.execute("SELECT `hiera` FROM `puppet_nodes` WHERE `certname` = %s", (certname,))
+	node = curd.fetchone()
+
+	# If we don't find the node, return nothing
+	if node is None:
+		return None
+
+	return node['hiera']
+
+################################################################################
+
+def get_role_hiera(rolename):
+	"""Gets the Hiera YAML document for the specified role"""
+
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get the Puppet node from the database
+	curd.execute("SELECT `hiera` FROM `puppet_roles` WHERE `name` = %s", (rolename,))
+	role = curd.fetchone()
+
+	# If we don't find the role, return nothing
+	if role is None:
+		return None
+
+	return role['hiera']
+
+################################################################################
+
 def puppetdb_connect():
 	"""Connects to PuppetDB using the parameters specified in the 
 	application configuration."""
