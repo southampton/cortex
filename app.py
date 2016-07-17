@@ -398,6 +398,8 @@ Username:             %s
 			{'link': url_for('puppet_dashboard'), 'title': 'Dashboard', 'icon': 'fa-dashboard'},
 			{'link': url_for('puppet_nodes'), 'title': 'Nodes', 'icon': 'fa-server'},
 			{'link': url_for('puppet_groups'), 'title': 'Groups', 'icon': 'fa-object-group'},
+			{'link': url_for('puppet_nodes'), 'title': 'Roles', 'icon': 'fa-sliders'},
+			{'link': url_for('puppet_nodes'), 'title': 'Modules', 'icon': 'fa-puzzle-piece'},
 			{'link': url_for('puppet_enc_default'), 'title': 'Default classes', 'icon': 'fa-globe'},
 			{'link': url_for('puppet_radiator'), 'title': 'Radiator view', 'icon': 'fa-desktop'},
 		]
