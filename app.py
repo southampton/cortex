@@ -398,6 +398,8 @@ Username:             %s
 			{'link': url_for('puppet_dashboard'), 'title': 'Dashboard', 'icon': 'fa-dashboard'},
 			{'link': url_for('puppet_nodes'), 'title': 'Nodes', 'icon': 'fa-server'},
 			{'link': url_for('puppet_groups'), 'title': 'Groups', 'icon': 'fa-object-group'},
+			{'link': url_for('puppet_nodes'), 'title': 'Roles', 'icon': 'fa-sliders'},
+			{'link': url_for('puppet_nodes'), 'title': 'Modules', 'icon': 'fa-puzzle-piece'},
 			{'link': url_for('puppet_enc_default'), 'title': 'Default classes', 'icon': 'fa-globe'},
 			{'link': url_for('puppet_radiator'), 'title': 'Radiator view', 'icon': 'fa-desktop'},
 		]
@@ -522,16 +524,29 @@ Username:             %s
 		  PRIMARY KEY (`name`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_roles` (
+		  `name` varchar(255) NOT NULL,
+		  `description` varchar(255) NOT NULL DEFAULT 'N/A',
+		  `classes` text NOT NULL,
+		  `hiera` text NOT NULL,
+		  PRIMARY KEY (`name`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_nodes` (
 		  `id` mediumint(11) NOT NULL,
 		  `certname` varchar(255) NOT NULL,
 		  `env` varchar(255) NOT NULL DEFAULT 'production',
+		  `role` varchar(255),
 		  `include_default` tinyint(1) NOT NULL DEFAULT '1',
 		  `classes` text NOT NULL,
 		  `variables` text NOT NULL,
+		  `hiera` text NOT NULL,
 		  PRIMARY KEY (`id`),
-		  CONSTRAINT `puppet_nodes_ibfk_1` FOREIGN KEY (`id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
+		  CONSTRAINT `puppet_nodes_ibfk_1` FOREIGN KEY (`id`) REFERENCES `systems` (`id`) ON DELETE CASCADE,
+		  CONSTRAINT `puppet_nodes_ibfk_2` FOREIGN KEY (`role`) REFERENCES `puppet_roles` (`name`) ON DELETE SET NULL ON UPDATE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		# from cortex 1x to 2x: ALTER TABLE puppet_nodes ADD `role` varchar(255), ADD `hiera` text NOT NULL, ADD CONSTRAINT `puppet_nodes_ibfk_2` FOREIGN KEY (`role`) REFERENCES `puppet_roles` (`name`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `sncache_cmdb_ci` (
 		  `sys_id` varchar(32) NOT NULL,

@@ -110,6 +110,70 @@ def generate_node_config(certname):
 
 ################################################################################
 
+def get_node_hiera(certname):
+	"""Gets the Hiera YAML document for the specified node"""
+
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get the Puppet node from the database
+	curd.execute("SELECT `hiera` FROM `puppet_nodes` WHERE `certname` = %s", (certname,))
+	node = curd.fetchone()
+
+	# If we don't find the node, return nothing
+	if node is None:
+		return None
+
+	# If the YAML is empty (except for comments), return nothing
+	try:
+		# to determine that we parse the data as yaml
+		hiera_data = yaml.load(node['hiera'])
+
+		if hiera_data is None:
+			return None
+
+		if len(hiera_data) == 0:
+			return None
+		else:
+			return node['hiera']
+
+	except Exception as ex:
+		return None
+
+################################################################################
+
+def get_role_hiera(rolename):
+	"""Gets the Hiera YAML document for the specified role"""
+
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get the Puppet node from the database
+	curd.execute("SELECT `hiera` FROM `puppet_roles` WHERE `name` = %s", (rolename,))
+	role = curd.fetchone()
+
+	# If we don't find the role, return nothing
+	if role is None:
+		return None
+
+	# If the YAML is empty (except for comments), return nothing
+	try:
+		# to determine that we parse the data as yaml
+		hiera_data = yaml.load(role['hiera'])
+
+		if hiera_data is None:
+			return None
+
+		if len(hiera_data) == 0:
+			return None
+		else:
+			return role['hiera']
+
+	except Exception as ex:
+		return None
+
+################################################################################
+
 def puppetdb_connect():
 	"""Connects to PuppetDB using the parameters specified in the 
 	application configuration."""
