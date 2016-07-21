@@ -10,6 +10,7 @@ from cortex.neocortex import NeoCortexLib
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
 import os 
 import time
+import datetime
 import json
 import re
 import werkzeug
@@ -297,6 +298,16 @@ def systems_edit(id):
 				if len(vmware_uuid) == 0:
 					vmware_uuid = None
 
+			# Process the expiry date
+			if 'expiry_date' in request.form and request.form['expiry_date'] is not None and len(request.form['expiry_date'].strip()) > 0:
+				expiry_date = request.form['expiry_date']
+				try:
+					expiry_date = datetime.datetime.strptime(expiry_date, '%Y-%m-%d')
+				except Exception, e:
+					abort(400)
+			else:
+				expiry_date = None
+
 			# Extract Review Status from form
 			review_status = request.form.get('review_status', 0)
 			
@@ -334,7 +345,7 @@ def systems_edit(id):
 					raise Exception(error)
 
 			# Update the system
-			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, id))
+			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, expiry_date, id))
 			g.db.commit();
 
 			flash('System updated', "alert-success") 
