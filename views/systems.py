@@ -289,27 +289,36 @@ def systems_edit(id):
 				cmdb_id = cmdb_id.strip()
 				if len(cmdb_id) == 0:
 					cmdb_id = None
-
+				else:
+					if not re.match('^[0-9a-f]+$', cmdb_id.lower()):
+						raise ValueError()
 			# Extract VMware UUID from form
 			vmware_uuid = request.form.get('vmware_uuid',None)
 			if vmware_uuid is not None:			
 				vmware_uuid = vmware_uuid.strip()
 				if len(vmware_uuid) == 0:
 					vmware_uuid = None
-
+				else:
+					if not re.match('^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$', vmware_uuid.lower()):
+						raise ValueError()
 			# Extract Review Status from form
-			review_status = request.form.get('review_status', 0)
-			
+			review_status = int(request.form.get('review_status', 0))
+			if not review_status in cortex.lib.systems.REVIEW_STATUS_BY_ID:
+				raise ValueError()
+
 			# Extract Review Ticket from form
 			review_task = request.form.get('review_task', None)
 			if review_task is not None:
 				review_task = review_task.strip()
 				if len(review_task) == 0:
 					review_task = None
+				else:
+					if not re.match('^[A-Z]+TASK[0-9]+$', review_task):
+						raise ValueError()
 
 			# If the review status is "Under review" and a task hasn't been specified,
 			# then we should create one.
-			if int(review_status) == cortex.lib.systems.REVIEW_STATUS_BY_NAME['REVIEW'] and review_task is None:
+			if review_status == cortex.lib.systems.REVIEW_STATUS_BY_NAME['REVIEW'] and review_task is None:
 				# Build some JSON
 				task_data = {}
 				task_data['time_constraint'] = 'asap'
@@ -331,16 +340,20 @@ def systems_edit(id):
 					error = "Failed to link ServiceNow task and CI."
 					if r is not None:
 						error = error + " HTTP Response code: " + str(r.status_code)
-					raise Exception(error)
+					app.logger.error(error)
+					raise Exception()
 
 			# Update the system
 			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, id))
 			g.db.commit();
 
 			flash('System updated', "alert-success") 
+		except ValueError as ex:
+			flash('Failed to update system: 400 Bad request', 'alert-danger')
+			return redirect(url_for('systems_edit', id=id))
 		except Exception as ex:
-			# On error, notify the user
-			flash('Failed to update system: ' + str(ex), 'alert-danger')
+			flash('Failed to update system: 500 Internal server error' + str(ex), 'alert-danger')
+			return redirect(url_for('systems_edit', id=id))
 
 		# Regardless of success or error, redirect to the systems page
 		return redirect(url_for('systems_edit', id=id))
