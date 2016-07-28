@@ -1,4 +1,10 @@
 {% extends "layout.html" %}
+{% block head %}
+                <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css">
+                <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js"></script>        
+                <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/locale/en-gb.js"></script>                
+                <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
+{% endblock %}
 {% block body %}
 
 <style type="text/css">
@@ -50,6 +56,30 @@
 			<div class="help-block">This is the unique identifier of the CMDB entry in ServiceNow, known as the 'sys_id'. This can be found in the URL for a CMDB entry, which is accessible from a CMDB page, by right-clicking the header and selecting Copy URL.</div></div>
 		</div>
 {%- endif %}
+
+		<div class="form-group">
+			<label class="col-sm-2 control-label" for="expiry_date">Exipry date:</label>
+			<div class="col-sm-10">
+                                <div class='input-group date' id='expirypicker'>
+                                        <input type='text' class="form-control" id="expiry_date" name="expiry_date" />
+                                        <span class="input-group-addon">
+                                                <span class="glyphicon glyphicon-calendar"></span>
+                                        </span>
+                                </div>
+				<div class="help-block">Set the date for when the system should be expired. Leave field blank for no expiration date.</div>
+                                <script>
+                                        $(function () {
+                                                $('#expirypicker').datetimepicker({
+                                                        viewMode: 'days',
+                                                        format: 'YYYY-MM-DD',
+							useCurrent: false,
+							defaultDate: '{{ system.expiry_date or '' }}'
+                                                });
+                                        });
+                                </script>
+                        </div>
+		</div>
+	
 		<div class="form-group">
 			<label class="col-sm-2 control-label" for="review_status">Review Status:</label>
 			<div class="col-sm-4">
@@ -164,6 +194,9 @@
 						<label class="col-sm-3 control-label" for="allocation_date">Review Status:</label><div class="col-sm-9"><p class="form-control-static">
 {% if system.review_status == 0 %}<span class="label label-danger">{% elif system.review_status == 1 %}<span class="label label-success">{% elif system.review_status == 2 %}<span class="label label-info">{% elif system.review_status == 3 %}<span class="label label-warning">{% endif %}
 {{ system.review_status_text or 'Unknown' }}</span>{% if system.review_status == 2 %} &ndash; See ServiceNow task <a href="{{ config['PRJTASK_URL_FORMAT'] % system.review_task }}">{{ system.review_task }}</a>{% endif %}</p></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="expiry_date">Expiry Date:</label><div class="col-sm-9"><p class="form-control-static">{{ system.expiry_date or 'Not set' }}</p></div>
 					</div>
 				</div>
 			</div>
