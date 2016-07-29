@@ -1,86 +1,82 @@
 {% extends "layout.html" %}
 {% block body %}
 
+<script type="text/javascript">
+$(document).ready(function ()
+{
+	var ctx = canvas.getContext('2d');
+	var columns = [];
+	var chars = [];
+
+	canvas.height = window.screen.height;
+	canvas.width = window.screen.width;
+
+	ctx.translate(canvas.width, 0);
+	ctx.scale(-1, 1);
+	ctx.font = "18px sans-serif";
+	fontsize = 18;
+
+	for (i = 0; i < 256; columns[i] = 1, chars[i++] = '゠'); // aka 12448
+
+	ctx.shadowBlur = 1;
+
+	function step() {
+		ctx.fillStyle = 'rgba(0,0,0,0.05)';
+		ctx.shadowColor = '#000';
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+		columns.map(function (value, index) {
+		    // overwrites the previous light-green char with a green one
+		    ctx.fillStyle = ctx.shadowColor = '#000';
+		    ctx.fillRect(index * fontsize, value - fontsize, fontsize, fontsize);
+		    ctx.fillStyle = ctx.shadowColor = '#08F';
+		    ctx.fillText(chars[index], index * fontsize, value - fontsize);
+
+		    columns[index] = value > 758 + Math.random() * 1e4 ? 0 : value + fontsize;
+		    chars[index] = String.fromCharCode(12448 + Math.random() * 96);
+
+		    ctx.fillStyle = ctx.shadowColor = '#AAF';
+		    ctx.fillText(chars[index], index * fontsize, value);
+		});
+	}
+
+	//1000/33 = ~30 times a second
+	setInterval(step, 40);
+
+
+/*	for(s=window.screen,w=q.width=s.width,h=q.height=s.height,m=Math.random,p=[],i=0;i<256;p[i++]=1);setInterval('9Style=\'rgba(0,0,0,.05)\'9Rect(0,0,w,h)9Style=\'#08F\';p.map(function(v,i){9Text(String.fromCharCode(3e4+m()*33),i*10,v);p[i]=v>758+m()*1e4?0:v+10})'.split(9).join(';q.getContext(\'2d\').fill'),33)*/
+});
+</script>
+
+
+
 <div class="loader">
 	<div class="circle one"></div>
 	<div class="circle two"></div>
 	<div class="circle three"></div>
 </div>
 
-<style type="text/css">
-.circle {
-	position: absolute;
-	border: 8px solid transparent;
-	border-top-color: #e94925;
-	border-radius: 50%;
-	-webkit-animation: rotate linear infinite;
-	        animation: rotate linear infinite;
-}
-.circle.one {
-	height: 100px;
-	width: 100px;
-	left: 100px;
-	top: 100px;
-	-webkit-animation-duration: 0.85s;
-	        animation-duration: 0.85s;
-}
-.circle.two {
-	height: 150px;
-	width: 150px;
-	top: 76px;
-	left: 76px;
-	-webkit-animation-duration: 0.95s;
-	        animation-duration: 0.95s;
-}
-.circle.three {
-	height: 200px;
-	width: 200px;
-	top: 50px;
-	left: 50px;
-	-webkit-animation-duration: 1.05s;
-	        animation-duration: 1.05s;
-}
-.loader {
-	position: absolute;
-	top: 25%;
-	left: 50%;
-	margin: -90px 0 0 -90px;
-}
+<style>
 body {
 	background-color: #1a1a1a;
+	overflow: hidden;
 }
-@-webkit-keyframes rotate {
-	from {
-	  -webkit-transform: rotateZ(360deg);
-	          transform: rotateZ(360deg);
-	}
-	to {
-	  -webkit-transform: rotateZ(0deg);
-	          transform: rotateZ(0deg);
-	}
+#main
+{
+	padding: 0px;
 }
-@keyframes rotate {
-	from {
-	  -webkit-transform: rotateZ(360deg);
-	          transform: rotateZ(360deg);
-	}
-	to {
-	  -webkit-transform: rotateZ(0deg);
-	          transform: rotateZ(0deg);
-	}
-}
-
 </style>
 
-<div style="position: relative; top: 3px; text-align: center; padding-top: 30px; padding-top: 15%">
+<canvas id="canvas" width="100%" height="100%">
+</canvas>
+
+<div style="position: absolute; top: 3px; width: 100%; text-align: center; padding-top: 15%;">
 <span style="font-family: 'Orbitron', cursive;
 font-weight: 600;
-font-size: 180px;
+font-size: 15em;
 text-shadow: 0px 0px 30px rgba(150, 150, 150, 1);
 color: #999999 !important;">cortex</span>
-<p style="font-size: 30px; font-family: 'Orbitron', cursive;">"You can't stop the signal, Mal. Everything goes somewhere, and I go everywhere."</p>
-<p style="font-size: 30px; font-family: 'Orbitron', cursive;">Version {{config.VERSION_MAJOR}} - r{{config.VERSION_MINOR}}</p>
-<p style="font-size: 20px; font-family: 'Orbitron', cursive;"><a href="http://github.com/southampton/cortex">view on github</a></p>
+<p style="font-size: 50px; font-family: 'Orbitron', cursive; text-shadow: 0px 0px 30px rgba(0, 0, 0, 1);">v{{config.VERSION_MAJOR}}</p>
 </div>
 
 {% endblock %}

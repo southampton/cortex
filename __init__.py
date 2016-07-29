@@ -8,6 +8,9 @@ app = CortexFlask(__name__)
 # load user lib because some decorators are defined there
 import cortex.lib.user
 
+# load per-request functions (set via decorators)
+import cortex.request
+
 # load cortex views modules so the decorators are processed
 import cortex.views.errors
 import cortex.views.admin
