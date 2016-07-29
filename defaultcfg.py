@@ -107,3 +107,4 @@ SATELLITE_KEYS = {
 		'development': 'changeme'
 	}
 }
+NOTIFY_EMAILS = []
