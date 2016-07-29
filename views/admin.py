@@ -15,7 +15,7 @@ def admin_tasks():
 	"""Displays the list of tasks to the user."""
 
 	# Render the page
-	return render_template('admin-tasks.html', active='admin', title="Tasks", tasktype='all', json_source=url_for('admin_tasks_json', tasktype='all'))
+	return render_template('admin/tasks.html', active='admin', title="Tasks", tasktype='all', json_source=url_for('admin_tasks_json', tasktype='all'))
 
 ################################################################################
 
@@ -125,7 +125,7 @@ def admin_tasks_active():
 			tasks.append(task)
 
 	# Render the page
-	return render_template('admin-tasks.html', tasks=tasks, active='admin', title="Active Tasks", tasktype='active')
+	return render_template('admin/tasks.html', tasks=tasks, active='admin', title="Active Tasks", tasktype='active')
 
 ################################################################################
 
@@ -135,7 +135,7 @@ def admin_tasks_user():
 	"""Displays the list of tasks, excluding any system tasks"""
 
 	# Render the page
-	return render_template('admin-tasks.html', active='admin', title="User Tasks", tasktype='user', json_source=url_for('admin_tasks_json', tasktype='user'))
+	return render_template('admin/tasks.html', active='admin', title="User Tasks", tasktype='user', json_source=url_for('admin_tasks_json', tasktype='user'))
 
 ################################################################################
 
@@ -145,7 +145,7 @@ def admin_tasks_system():
 	"""Displays the list of tasks started by the system"""
 
 	# Render the page
-	return render_template('admin-tasks.html', active='admin', title="System Tasks", tasktype='system', json_source=url_for('admin_tasks_json', tasktype='system'))
+	return render_template('admin/tasks.html', active='admin', title="System Tasks", tasktype='system', json_source=url_for('admin_tasks_json', tasktype='system'))
 
 ################################################################################
 
@@ -157,7 +157,7 @@ def admin_classes():
 	# On a GET request, display the list of classes page
 	if request.method == 'GET':
 		classes = cortex.lib.classes.list(hide_disabled=False)
-		return render_template('admin-classes.html', classes=classes, active='admin', cmdb_types=app.config['CMDB_CACHED_CLASSES'], title="Classes")
+		return render_template('admin/classes.html', classes=classes, active='admin', cmdb_types=app.config['CMDB_CACHED_CLASSES'], title="Classes")
 
 	elif request.method == 'POST':
 		action = request.form['action']
@@ -300,7 +300,7 @@ def admin_maint():
 				sncache_task_id = task['id']
 
 		# Render the page
-		return render_template('admin-maint.html', active='admin', sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id, title="Maintenance Tasks")
+		return render_template('admin/maint.html', active='admin', sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id, title="Maintenance Tasks")
 
 	else:
 		# Find out what task to start

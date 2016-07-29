@@ -40,7 +40,9 @@
 		<noscript>
 			<meta http-equiv="refresh" content="0; url={{ url_for('nojs')}}" />
 		</noscript>
-		{% include 'javascript.html' %}
+
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+		<script src="//netdna.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
 		<script type="text/javascript" src="{{ url_for('static', filename='js/login.js') }}"></script>
 		<script type="text/javascript">
 		$( document ).ready(function() {

@@ -23,7 +23,7 @@ def vmware_os():
 	types = cortex.lib.vmware.get_os_stats()
 
 	# Render
-	return render_template('vmware-os.html', active='vmware', types=types, title="Statistics - Operating Systems")
+	return render_template('vmware/os.html', active='vmware', types=types, title="Statistics - Operating Systems")
 
 ################################################################################
 
@@ -40,7 +40,7 @@ def vmware_hw():
 	results = curd.fetchall()
 
 	# Render
-	return render_template('vmware-hw.html', active='vmware', stats_hw=results, title="Statistics - Hardware Version")
+	return render_template('vmware/hw.html', active='vmware', stats_hw=results, title="Statistics - Hardware Version")
 
 ################################################################################
 
@@ -57,7 +57,7 @@ def vmware_power():
 	results = curd.fetchall()
 
 	# Render
-	return render_template('vmware-power.html', active='vmware', stats_power=results, title="Statistics - VM Power State")
+	return render_template('vmware/power.html', active='vmware', stats_power=results, title="Statistics - VM Power State")
 
 ################################################################################
 
@@ -76,7 +76,7 @@ def vmware_tools():
 	stats_version = curd.fetchall()
 
 	# Render
-	return render_template('vmware-tools.html', active='vmware', stats_status=stats_status, stats_version=stats_version, title="Statistics - VMware Tools")
+	return render_template('vmware/tools.html', active='vmware', stats_status=stats_status, stats_version=stats_version, title="Statistics - VMware Tools")
 
 ################################################################################
 
@@ -159,7 +159,7 @@ def vmware_specs():
 		except KeyError as ex:
 			data_cpu['Other'] += 1
 			
-	return render_template('vmware-specs.html', active='vmware', stats_ram=data_ram, stats_cpu=data_cpu, title="Statistics - VM Specs")
+	return render_template('vmware/specs.html', active='vmware', stats_ram=data_ram, stats_cpu=data_cpu, title="Statistics - VM Specs")
 
 ################################################################################
 
@@ -177,7 +177,7 @@ def vmware_data():
 	results = curd.fetchall()
 
 	# Render
-	return render_template('vmware-data.html', active='vmware', data=results, title="VMware Data")
+	return render_template('vmware/data.html', active='vmware', data=results, title="VMware Data")
 
 ################################################################################
 
@@ -210,7 +210,7 @@ def vmware_clusters():
 		row = curd.fetchone()
 
 	# Render
-	return render_template('vmware-clusters.html', active='vmware', vcenters=vcenters, title="VMware Clusters")
+	return render_template('vmware/clusters.html', active='vmware', vcenters=vcenters, title="VMware Clusters")
 
 ################################################################################
 
@@ -237,7 +237,7 @@ def vmware_history():
 	stats_desktop_vms = curd.fetchall()
 
 	# Render
-	return render_template('vmware-history.html', active='vmware', stats_vms=stats_vms, stats_linux_vms=stats_linux_vms, stats_windows_vms=stats_windows_vms, stats_desktop_vms=stats_desktop_vms, title='VMware History')
+	return render_template('vmware/history.html', active='vmware', stats_vms=stats_vms, stats_linux_vms=stats_linux_vms, stats_windows_vms=stats_windows_vms, stats_desktop_vms=stats_desktop_vms, title='VMware History')
 
 ################################################################################
 
@@ -313,4 +313,4 @@ def vmware_data_unlinked():
 	results = curd.fetchall()
 
 	# Render
-	return render_template('vmware-unlinked.html', active='vmware', data=results, title="Unlinked VMs")
+	return render_template('vmware/unlinked.html', active='vmware', data=results, title="Unlinked VMs")

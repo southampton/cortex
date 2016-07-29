@@ -93,7 +93,7 @@ def render_task_status(id, template):
 def task_status(id):
 	"""Handles the Task Status page for a individual task."""
 
-	return render_task_status(id, "task-status.html")
+	return render_task_status(id, "tasks/status.html")
 
 ################################################################################
 
@@ -103,4 +103,4 @@ def task_status_log(id):
 	"""Much like task_status, but only returns the event log. This is used by 
 	an AJAX routine on the page to refresh the log every 10 seconds."""
 
-	return render_task_status(id, "task-status-log.html")
+	return render_task_status(id, "tasks/status-log.html")

@@ -61,6 +61,14 @@ $(document).ready(function ()
 	{
 		$("#searchinput").focus();
 	});
+
+	/* Searching for systems */
+	Mousetrap.bind('alt+s', function(e)
+	{
+		$("#search").modal('show');
+		$("#searchinput").focus();
+		e.preventDefault();
+	});	
 });
 
 

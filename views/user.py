@@ -85,4 +85,4 @@ def user_groups():
 	
 
 	# Display the page
-	return render_template('user-groups.html', active='user', groups=groups, title="AD Groups")
+	return render_template('user/groups.html', active='user', groups=groups, title="AD Groups")

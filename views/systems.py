@@ -42,7 +42,7 @@ def systems():
 		q = q.strip()
 
 	# Render
-	return render_template('systems.html', systems=systems, classes=classes, active='systems', title="Systems", q=q)
+	return render_template('systems/list.html', systems=systems, classes=classes, active='systems', title="Systems", q=q)
 
 ################################################################################
 
@@ -98,7 +98,7 @@ def systems_add_existing():
 
 	# On GET requests, just show the form
 	if request.method == 'GET':
-		return render_template('systems-add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
+		return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
 
 	# On POST requests...
 	elif request.method == 'POST':
@@ -108,17 +108,17 @@ def systems_add_existing():
 		# Validate the class
 		if request.form['class'].strip() not in [c['name'] for c in classes]:
 			flash('You must choose a valid class', category='alert-danger')
-			return render_template('systems-add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
+			return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
 
 		# Validate the number
 		if len(request.form['number'].strip()) == 0:
 			flash('You must enter a server number', category='alert-danger')
-			return render_template('systems-add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
+			return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
 
 		# Validate the number
 		if len(request.form['env'].strip()) != 0 and request.form['env'].strip() not in [e['puppet'] for e in puppet_envs]:
 			flash('You must select either no Puppet environment or a valid Puppet environment (' + request.form['env'].strip() + ')', category='alert-danger')
-			return render_template('systems-add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
+			return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
 
 		# Extract details
 		class_name = request.form['class'].strip()
@@ -136,7 +136,7 @@ def systems_add_existing():
 		# Ensure we have a class
 		if class_data is None:
 			flash('Invalid class selected', category='alert-danger')
-			return render_template('systems-add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
+			return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
 
 		# Generate the name, padded out correctly
 		lib = NeoCortexLib.NeoCortexLib(g.db, app.config)
@@ -166,7 +166,7 @@ def systems_new():
 	# On GET requests, just show big buttons for all the classes
 	if request.method == 'GET':
 		classes = cortex.lib.classes.list(hide_disabled=True)
-		return render_template('systems-new.html', classes=classes, active='systems', title="Allocate new system names")
+		return render_template('systems/new.html', classes=classes, active='systems', title="Allocate new system names")
 
 	# On POST requests...
 	elif request.method == 'POST':
@@ -212,7 +212,7 @@ def systems_new():
 			flash("System name allocated successfully", "alert-success")
 			return redirect(url_for('systems_edit', id=new_systems[new_systems.keys()[0]]))
 		else:
-			return render_template('systems-new-bulk.html', systems=new_systems, comment=system_comment, title="Systems")
+			return render_template('systems/new-bulk.html', systems=new_systems, comment=system_comment, title="Systems")
 
 ################################################################################
 
@@ -253,7 +253,7 @@ def systems_bulk_view(start, finish):
 	curd.execute("SELECT `id`, `name`, `allocation_comment` AS `comment` FROM `systems` WHERE `id` >= %s AND `id` <= %s", (start, finish))
 	systems = curd.fetchall()
 
-	return render_template('systems-new-bulk-done.html', systems=systems, title="Systems")
+	return render_template('systems/new-bulk-done.html', systems=systems, title="Systems")
 
 
 ################################################################################
@@ -278,7 +278,7 @@ def systems_edit(id):
 		if system['allocation_who'] is not None:	
 			system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
 
-		return render_template('systems-edit.html', system=system, system_class=system_class, active='systems', title=system['name'])
+		return render_template('systems/edit.html', system=system, system_class=system_class, active='systems', title=system['name'])
 	elif request.method == 'POST':
 		try:
 			# Get a cursor to the database

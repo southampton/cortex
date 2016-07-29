@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block head %}
-{% include 'codemirror.html' %}
+{% include 'puppet/codemirror.html' %}
 {#- Override CodeMirror style - must come after CodeMirror style imports -#}
 <style type="text/css">
 .CodeMirror {
@@ -26,7 +26,7 @@ $(document).ready(function() {
 });
 </script>
 	<div class="page-header">
-		{% include 'puppet-node-header.html' %}
+		{% include 'puppet/node-header.html' %}
 		<h3><i class="fa fa-fw fa-server"></i> Puppet configuration for {{node.certname}}</h3>
 		<p class="text-muted">This is the configuration for the node taking into account its group memberships and global default classes. Additional system global variables are also visible here.</p>
 	</div>

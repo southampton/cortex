@@ -22,7 +22,7 @@ from requests.exceptions import HTTPError
 def puppet_help():
 	"""Displays the Puppet ENC help page."""
 
-	return render_template('puppet-help.html', active='puppet', title="Puppet Help")
+	return render_template('puppet/help.html', active='puppet', title="Puppet Help")
 
 ################################################################################
 
@@ -49,7 +49,7 @@ def puppet_enc_edit(node):
 
 	# On any GET request, just display the information
 	if request.method == 'GET':
-		return render_template('puppet-enc.html', system=system, active='puppet', environments=environments, title=system['name'], nodename=node, pactive="edit")
+		return render_template('puppet/enc.html', system=system, active='puppet', environments=environments, title=system['name'], nodename=node, pactive="edit")
 
 	# On any POST request, validate the input and then save
 	elif request.method == 'POST':
@@ -89,7 +89,7 @@ def puppet_enc_edit(node):
 			system['puppet_classes'] = classes
 			system['puppet_variables'] = variables
 			system['puppet_include_default'] = include_default
-			return render_template('puppet-enc.html', system=system, active='puppet', environments=environments, title=system.name)
+			return render_template('puppet/enc.html', system=system, active='puppet', environments=environments, title=system.name)
 
 		# Get a cursor to the database
 		curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -121,7 +121,7 @@ def puppet_enc_default():
 
 	# On any GET request, just display the information
 	if request.method == 'GET':
-		return render_template('puppet-default.html', classes=classes, active='puppet', title="Default Classes")
+		return render_template('puppet/default.html', classes=classes, active='puppet', title="Default Classes")
 
 	# On any POST request, validate the input and then save
 	elif request.method == 'POST':
@@ -133,7 +133,7 @@ def puppet_enc_default():
 			yaml.load(classes)
 		except Exception, e:
 			flash('Invalid YAML syntax: ' + str(e), 'alert-danger')
-			return render_template('puppet-default.html', classes=classes, active='puppet', title="Default Classes")
+			return render_template('puppet/default.html', classes=classes, active='puppet', title="Default Classes")
 
 		# Get a cursor to the database
 		# Update the system
@@ -169,7 +169,7 @@ def puppet_nodes():
 			row['status'] = 'unknown'
 
 	# Render
-	return render_template('puppet-nodes.html', active='puppet', data=results, title="Puppet Nodes")
+	return render_template('puppet/nodes.html', active='puppet', data=results, title="Puppet Nodes")
 
 ################################################################################
 
@@ -186,7 +186,7 @@ def puppet_groups():
 		curd.execute('SELECT * FROM `puppet_groups`')
 		results = curd.fetchall()
 
-		return render_template('puppet-groups.html', active='puppet', data=results, title="Puppet Groups")
+		return render_template('puppet/groups.html', active='puppet', data=results, title="Puppet Groups")
 	else:
 		if request.form['action'] == 'add':
 			netgroup_name = request.form['netgroup_name']
@@ -245,7 +245,7 @@ def puppet_group_edit(name):
 
 	# On any GET request, just display the information
 	if request.method == 'GET':
-		return render_template('puppet-group.html', group=group, active='puppet', title=group['name'])
+		return render_template('puppet/group.html', group=group, active='puppet', title=group['name'])
 
 	# On any POST request, validate the input and then save
 	elif request.method == 'POST':
@@ -257,7 +257,7 @@ def puppet_group_edit(name):
 			yaml.load(classes)
 		except Exception, e:
 			flash('Invalid YAML syntax for classes: ' + str(e), 'alert-danger')
-			return render_template('puppet-group.html', group=group, classes=classes, active='puppet', title=group['name'])
+			return render_template('puppet/group.html', group=group, classes=classes, active='puppet', title=group['name'])
 
 		# Update the system
 		curd.execute('UPDATE `puppet_groups` SET `classes` = %s WHERE `name` = %s', (classes, name))
@@ -293,7 +293,7 @@ def puppet_node_yaml(node):
 		abort(404)
 
 	# Render the page
-	return render_template('puppet-node-yaml.html', raw=cortex.lib.puppet.generate_node_config(node['certname']), system=system, node=node, active='puppet', title="Puppet Configuration", nodename=node['certname'], pactive="view")
+	return render_template('puppet/node-yaml.html', raw=cortex.lib.puppet.generate_node_config(node['certname']), system=system, node=node, active='puppet', title="Puppet Configuration", nodename=node['certname'], pactive="view")
 
 ################################################################################
 
@@ -330,7 +330,7 @@ def puppet_facts(node):
 	system = cortex.lib.systems.get_system_by_puppet_certname(node)
 
 	# Render
-	return render_template('puppet-facts.html', facts=facts_dict, node=dbnode, active='puppet', title=node + " - Puppet Facts", nodename=node, pactive="facts", system=system)
+	return render_template('puppet/facts.html', facts=facts_dict, node=dbnode, active='puppet', title=node + " - Puppet Facts", nodename=node, pactive="facts", system=system)
 
 ################################################################################
 
@@ -339,7 +339,7 @@ def puppet_facts(node):
 def puppet_dashboard():
 	"""Handles the Puppet dashboard page."""
 
-	return render_template('puppet-dashboard.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet', title="Puppet Dashboard")
+	return render_template('puppet/dashboard.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet', title="Puppet Dashboard")
 
 ################################################################################
 
@@ -378,7 +378,7 @@ def puppet_dashboard_status(status):
 	else:
 		nodes_of_type=nodes
 
-	return render_template('puppet-dashboard-status.html', active='puppet', title="Puppet Dashboard", nodes=nodes_of_type, status=page_title_map[status])
+	return render_template('puppet/dashboard-status.html', active='puppet', title="Puppet Dashboard", nodes=nodes_of_type, status=page_title_map[status])
 
 ################################################################################
 
@@ -386,7 +386,7 @@ def puppet_dashboard_status(status):
 def puppet_radiator():
 	"""Handles the Puppet radiator view page. Similar to the dashboard."""
 
-	return render_template('puppet-radiator.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet')
+	return render_template('puppet/radiator.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet')
 
 ################################################################################
 
@@ -396,7 +396,7 @@ def puppet_radiator_body():
 	calls this function to update the content using AJAX rather than a
 	iffy page refresh."""
 
-	return render_template('puppet-radiator-body.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet')
+	return render_template('puppet/radiator-body.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet')
 
 ################################################################################
 
@@ -422,7 +422,7 @@ def puppet_reports(node):
 	# Load the system data - we don't care if it fails (i.e its not in the systems table)
 	system = cortex.lib.systems.get_system_by_puppet_certname(node)
 
-	return render_template('puppet-reports.html', reports=reports, active='puppet', title=node + " - Puppet Reports", nodename=node, pactive="reports", system=system)
+	return render_template('puppet/reports.html', reports=reports, active='puppet', title=node + " - Puppet Reports", nodename=node, pactive="reports", system=system)
 
 ################################################################################
 
@@ -453,7 +453,7 @@ def puppet_report(report_hash):
 		metrics[metric['category']][metric['name']] = metric['value']
 
 	# Render
-	return render_template('puppet-report.html', report=report, metrics=metrics, active='puppet', title=report.node + " - Puppet Report")
+	return render_template('puppet/report.html', report=report, metrics=metrics, active='puppet', title=report.node + " - Puppet Report")
 
 ##############################################################################
 
@@ -476,4 +476,4 @@ def puppet_search():
 	curd.execute('SELECT DISTINCT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`  FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` WHERE `puppet_nodes`.`classes` LIKE %s OR `puppet_nodes`.`variables` LIKE %s ORDER BY `puppet_nodes`.`certname`', ('%' + q + '%', '%' + q + '%'))
 	results = curd.fetchall()
 	
-	return render_template('puppet-search.html', active='puppet', data=results, title="Puppet search")
+	return render_template('puppet/search.html', active='puppet', data=results, title="Puppet search")

@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block head %}{% include 'codemirror.html' %}{% endblock %}
+{% block head %}{% include 'puppet/codemirror.html' %}{% endblock %}
 {% block body %}
 <script>
 $(document).ready(function() {
@@ -41,7 +41,7 @@ $(document).ready(function() {
 <form class="form-horizontal" method="POST" role="form">
 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 	<div class="page-header">
-		{% include 'puppet-node-header.html' %}
+		{% include 'puppet/node-header.html' %}
 		<h3><i class="fa fa-fw fa-server"></i> {{ system.name }}</h3>
 		<p class="text-muted">Classes, variables and the environment for the node can be customised below</p>
 	</div>
