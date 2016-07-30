@@ -1,6 +1,6 @@
 <div class="pull-right">
 	{% if system %}
-		<a href="{{url_for('systems_edit',id=system.id)}}" class="btn btn-sm btn-default"><i class="fa fa-fw fa-arrow-left"></i> View System</a>
+		<a href="{{url_for('system',id=system.id)}}" class="btn btn-sm btn-default"><i class="fa fa-fw fa-arrow-left"></i> View System</a>
 
 	<a href="{{url_for('puppet_enc_edit',node=nodename)}}" class="btn btn-sm {% if pactive == 'edit'%}btn-success{%else%}btn-default{%endif%}"><i class="fa fa-fw fa-edit"></i> Classify</a>
 	<a href="{{url_for('puppet_node_yaml',node=nodename)}}" class="btn btn-sm {% if pactive == 'view'%}btn-success{%else%}btn-default{%endif%}"><i class="fa fa-fw fa-code"></i> View YAML</a>

@@ -1,111 +1,12 @@
 {% extends "layout.html" %}
 {% block head %}
-                <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css">
-                <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js"></script>        
-                <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/locale/en-gb.js"></script>                
-                <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js"></script>        
+<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/locale/en-gb.js"></script>                
+<script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
 {% endblock %}
 {% block body %}
-
-<style type="text/css">
-@media (min-width: 992px)
-{
-	.equal, .equal > div[class*='col-']
-	{
-		display: -webkit-flex;
-		display: flex;
-		flex: 1 1 auto;
-	}
-
-	.equal .panel
-	{
-		width: 100%;
-	}
-
-	.equal .panel
-	{
-		min-height: 15em;
-	}
-}
-</style>
-
-<div class="modal" id="edit" role="dialog">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<form role="form" class="form-horizontal" method="POST">
-			<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-					<h4 class="modal-title">Edit system</h4>
-				</div>
-
-				<div class="modal-body">
-					<div class="form-group">
-					<label class="col-sm-2 control-label" for="allocation_comment">Comment:</label><div class="col-sm-10"><input class="form-control" type="text" name="allocation_comment" id="allocation_comment" value="{{ system.allocation_comment or '' }}" /></div>
-					</div>
-
-{%- if not system_class or system_class.link_vmware %}
-		<div class="form-group">
-			<label class="col-sm-2 control-label" for="vmware_uuid">VMware UUID:</label><div class="col-sm-10"><div class="input-group"><input class="form-control" type="text" name="vmware_uuid" id="vmware_uuid" pattern="^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$" value="{{ system.vmware_uuid or '' }}" /> <div class="input-group-addon" style="padding:1px"><a id="btn_vmware_search" data-toggle="modal" data-target="#search" class="btn btn-sm">Search</a></div></div></div>
-			<label class="col-sm-2 control-label"></label><div style="margin-bottom:0px" class="col-sm-10 help-block">This is the UUID of the VM within VMware.</div>
-		</div>
-{%- endif %}
-{%- if not system_class or system_class.cmdb_type %}
-		<div class="form-group">
-			<label class="col-sm-2 control-label" for="cmdb_id">CMDB System ID:</label><div class="col-sm-10"><div class="input-group"><input class="form-control" type="text" name="cmdb_id" id="cmdb_id" pattern="^[0-9a-f]+$" value="{{ system.cmdb_id or '' }}" /><div class="input-group-addon" style="padding:1px"><a id="btn_cmdb_search" data-toggle="modal" data-target="#search" class="btn btn-sm">Search</a></div></div>
-			<div class="help-block">This is the unique identifier of the CMDB entry in ServiceNow, known as the 'sys_id'. This can be found in the URL for a CMDB entry, which is accessible from a CMDB page, by right-clicking the header and selecting Copy URL.</div></div>
-		</div>
-{%- endif %}
-
-		<div class="form-group">
-			<label class="col-sm-2 control-label" for="expiry_date">Exipry date:</label>
-			<div class="col-sm-10">
-                                <div class='input-group date' id='expirypicker'>
-                                        <input type='text' class="form-control" id="expiry_date" name="expiry_date" />
-                                        <span class="input-group-addon">
-                                                <span class="glyphicon glyphicon-calendar"></span>
-                                        </span>
-                                </div>
-				<div class="help-block">Set the date for when the system should be expired. Leave field blank for no expiration date.</div>
-                                <script>
-                                        $(function () {
-                                                $('#expirypicker').datetimepicker({
-                                                        viewMode: 'days',
-                                                        format: 'YYYY-MM-DD',
-							useCurrent: false,
-							defaultDate: '{{ system.expiry_date or '' }}'
-                                                });
-                                        });
-                                </script>
-                        </div>
-		</div>
-	
-		<div class="form-group">
-			<label class="col-sm-2 control-label" for="review_status">Review Status:</label>
-			<div class="col-sm-4">
-				<select class="form-control" name="review_status" id="review_status">
-					<option value="0"{% if system.review_status == 0 %} selected="selected"{% endif %}>Not reviewed</option>
-					<option value="1"{% if system.review_status == 1 %} selected="selected"{% endif %}>Required</option>
-					<option value="3"{% if system.review_status == 3 %} selected="selected"{% endif %}>Not required</option>
-					<option value="2"{% if system.review_status == 2 %} selected="selected"{% endif %}>Under review</option>
-				</select>
-			</div>
-			<label class="col-sm-2 control-label" for="review_ticket">Review Task:</label>
-			<div class="col-sm-4">
-				<input class="form-control" type="text" name="review_task" id="review_task" pattern="^[A-Z]+TASK[0-9]+$" {% if system.review_status != 2 %} readonly="readonly"{%endif%} placeholder="e.g. PRJTASK012345" value="{{ system.review_task or '' }}" />
-			</div>
-			<label class="col-sm-2 control-label"></label><div style="margin-bottom:0px" class="col-sm-10 help-block">When reviewing current VMs, these fields can be used to state whether a VM is required or can be deleted. If a review status of 'Under review' is selected, a ServiceNow project task can be added. If left blank, one will be created for you.</div>
-		</div>
-				</div>				
-
-				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-					<button type="submit" class="btn btn-primary">Save</button>
-				</div>
-			</form>
-		</div>
-	</div>
-</div>
+{% import 'node-header.html' as node %}
 
 <div class="modal" id="search_cmdb" role="dialog">
 	<div class="modal-dialog modal-lg">
@@ -130,11 +31,13 @@
 			</div>
 
 			<div class="modal-footer">
-				<button id="btn_cmdb_search_cancel" type="button" class="btn btn-default">Cancel</button>
+				<button data-dismiss="modal" type="button" class="btn btn-default">Cancel</button>
 			</div>
 		</div>
 	</div>
 </div>
+
+<!----------------------------------------------------------------------------->
 
 <div class="modal" id="search_vmware" role="dialog">
 	<div class="modal-dialog modal-lg">
@@ -165,151 +68,98 @@
 	</div>
 </div>
 
-<form role="form" class="form-horizontal">
-	<div class="page-header">
-		<div class="pull-right">
-			{%- if system.cmdb_id %}<a class="btn btn-sm btn-primary" href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank"><i class="fa fa-sm fa-cloud"></i> ServiceNow</a>{%endif%} 
-			{%- if system.puppet_certname %} <a class="btn btn-sm btn-success" href="{{ url_for('puppet_enc_edit',node=system.puppet_certname) }}"><i class="fa fa-sm fa-book"></i> Puppet</a>{%endif%}
-			<button class="btn btn-sm btn-warning" type="button" data-toggle="modal" data-target="#edit"><i class="fa fa-edit fa-fw"></i> Edit system</button>
-		</div>
-		<h3><i class="fa fa-fw fa-server"></i> {{ system.name }}</h3>
-	</div>
-	<div class="row equal">
-		<div class="col-md-6">
-			<div class="panel panel-primary">
-				<div class="panel-heading">
-					<h3 class="panel-title">System Record</h3> 
-				</div>
-				<div class="panel-body">
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="allocation_comment">Comment:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_comment or '' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="allocation_who">Allocated by:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_who or '' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="allocation_date">Allocation Date:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_date or '' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="allocation_date">Review Status:</label><div class="col-sm-9"><p class="form-control-static">
-{% if system.review_status == 0 %}<span class="label label-danger">{% elif system.review_status == 1 %}<span class="label label-success">{% elif system.review_status == 2 %}<span class="label label-info">{% elif system.review_status == 3 %}<span class="label label-warning">{% endif %}
-{{ system.review_status_text or 'Unknown' }}</span>{% if system.review_status == 2 %} &ndash; See ServiceNow task <a href="{{ config['PRJTASK_URL_FORMAT'] % system.review_task }}">{{ system.review_task }}</a>{% endif %}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="expiry_date">Expiry Date:</label><div class="col-sm-9"><p class="form-control-static">{{ system.expiry_date or 'Not set' }}</p></div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="col-md-6">
-			<div class="panel {% if system.puppet_certname %} panel-primary{%else%}panel-default{%endif%}">
-				<div class="panel-heading">
-					<h3 class="panel-title">Puppet</h3>
-				</div>
-				<div class="panel-body">
-					{%- if system.puppet_certname %} 
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="allocation_comment">Certname:</label><div class="col-sm-9"><p class="form-control-static">{{ system.puppet_certname or '' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="allocation_who">Environment:</label><div class="col-sm-9"><p class="form-control-static">{{ system.puppet_env or '' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="allocation_date">Status:</label><div class="col-sm-9"><p class="form-control-static"><span class="{% if system.puppet_node_status %}status-{{system.puppet_node_status}}{%endif%}">{{ system.puppet_node_status or '' }}</span></p></div>
-					</div>
-					{%else%}
-					<p class="text-muted"><em>This system has not been linked to Puppet.</em></p>
-					{%endif%}
-				</div>
-			</div>
+<!----------------------------------------------------------------------------->
+
+
+{{ node.header(system['id'],system['name'],system['allocation_comment'],active="edit" ) }}
+
+	<form role="form" class="form-horizontal" method="POST">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+
+	<div class="form-group">
+		<label class="col-sm-2 control-label" for="allocation_comment">Comment:</label>
+		<div class="col-sm-10 col-md-9">
+			<input class="form-control" type="text" name="allocation_comment" id="allocation_comment" value="{{ system.allocation_comment or '' }}" />
 		</div>
 	</div>
 
-	<div class="row equal">
-		<div class="col-md-6">
-			<div class="panel {% if system.cmdb_id %}panel-primary{%else%}panel-default{%endif%}">
-				<div class="panel-heading">
-					<h3 class="panel-title">ServiceNow CMDB</h3> 
-				</div>
-				<div class="panel-body">
-					{%- if system.cmdb_id %}
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="cmdb_name">Type:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_sys_class_name or 'Unknown' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="cmdb_u_number">ID:</label>
-						<div class="col-sm-9"><p class="form-control-static"><a href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}">{{ system.cmdb_u_number or 'Unknown' }}</a></p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="cmdb_operational_status">Status:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_operational_status or 'Unknown' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="cmdb_operational_status">Environment:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_environment or 'Unknown' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="cmdb_short_description">OS:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_os or 'N/A' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="cmdb_short_description">Description:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.cmdb_short_description or 'N/A' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="cmdb_short_description">Comments:</label>
-						<div class="col-sm-9"><p class="form-control-static">{% if system.cmdb_comments %}{% for line in system.cmdb_comments.splitlines() %}{{ line }}<br/>{% endfor %}{% else %}N/A{% endif %}</p></div>
-					</div>
-					{%else%}
-					<p class="text-muted"><em>This system record has not been linked to ServiceNow. To do so click Edit System.</em></p>
-					{%endif%}
+{%- if not system_class or system_class.link_vmware %}
+	<div class="form-group">
+		<label class="col-sm-2 control-label" for="vmware_uuid">VMware UUID:</label>
+		<div class="col-sm-10 col-md-9">
+			<div class="input-group">
+				<input class="form-control" type="text" name="vmware_uuid" id="vmware_uuid" pattern="^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$" value="{{ system.vmware_uuid or '' }}" />
+				<div class="input-group-addon" style="padding:1px">
+					<a data-toggle="modal" data-target="#search_vmware" class="btn btn-sm">Search</a>
 				</div>
 			</div>
-		</div>
-		<div class="col-md-6">
-			<div class="panel {% if system.vmware_uuid %}panel-primary{%else%}panel-default{%endif%}">
-				<div class="panel-heading">
-					<h3 class="panel-title">VMware</h3> 
-				</div>
-				<div class="panel-body">
-					{% if system.vmware_uuid %}
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="vm_vcenter">vCenter:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_vcenter or '' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="vm_state">Power State:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_guest_state or '' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="vm_tools">VMware Tools:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_tools_version_status or '' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="vm_cpus">Spec:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_cpus or 'Unknown' }} vCPU, {{ system.vmware_ram or '' }} MB RAM</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="vm_os">OS:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_os or '' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="vm_cpus">Hostname:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_hostname or 'Unknown' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="vm_ipaddr">IP Address:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_ipaddr or 'Unknown' }}</p></div>
-					</div>
-					{%else%}
-					<p class="text-muted"><em>This system record has not been linked to VMWare. To do so click Edit System.</em></p>
-					{%endif%}
-				</div>
-			</div>
+			<div class="help-block">This is the UUID of the VM within VMware.</div>
 		</div>
 	</div>
-</form>
+
+{%- endif %}
+{%- if not system_class or system_class.cmdb_type %}
+	<div class="form-group">
+		<label class="col-sm-2 control-label" for="cmdb_id">CMDB System ID:</label>
+		<div class="col-sm-10 col-md-9">
+			<div class="input-group">
+				<input class="form-control" type="text" name="cmdb_id" id="cmdb_id" pattern="^[0-9a-f]+$" value="{{ system.cmdb_id or '' }}" />
+				<div class="input-group-addon" style="padding:1px">
+					<a data-toggle="modal" data-target="#search_cmdb" class="btn btn-sm">Search</a>
+				</div>
+			</div>
+			<div class="help-block">This is the unique identifier of the CMDB entry in ServiceNow, known as the 'sys_id'. This can be found in the URL for a CMDB entry, which is accessible from a CMDB page, by right-clicking the header and selecting Copy URL.</div>
+		</div>
+	</div>
+{%- endif %}
+
+		<div class="form-group">
+			<label class="col-sm-2 control-label" for="expiry_date">Expiry date:</label>
+			<div class="col-sm-10 col-md-9">
+                                <div class='input-group date' id='expirypicker'>
+                                        <input type='text' class="form-control" id="expiry_date" name="expiry_date" />
+                                        <span class="input-group-addon">
+                                                <span class="glyphicon glyphicon-calendar"></span>
+                                        </span>
+                                </div>
+				<div class="help-block">Set the date for when the system should be expired. Leave field blank for no expiration date.</div>
+                                <script>
+                                        $(function ()
+										{
+                                                $('#expirypicker').datetimepicker({
+                                                        viewMode: 'days',
+                                                        format: 'YYYY-MM-DD',
+							useCurrent: false,
+							defaultDate: '{{ system.expiry_date or '' }}'
+                                                });
+                                        });
+                                </script>
+                        </div>
+		</div>
+	
+		<div class="form-group">
+			<label class="col-sm-2 control-label" for="review_status">Review Status:</label>
+			<div class="col-sm-3">
+				<select class="form-control" name="review_status" id="review_status">
+					<option value="0"{% if system.review_status == 0 %} selected="selected"{% endif %}>Not reviewed</option>
+					<option value="1"{% if system.review_status == 1 %} selected="selected"{% endif %}>Required</option>
+					<option value="3"{% if system.review_status == 3 %} selected="selected"{% endif %}>Not required</option>
+					<option value="2"{% if system.review_status == 2 %} selected="selected"{% endif %}>Under review</option>
+				</select>
+			</div>
+			<label class="col-sm-2 control-label" for="review_ticket">Review Task:</label>
+			<div class="col-sm-3">
+				<input class="form-control" type="text" name="review_task" id="review_task" pattern="^[A-Z]+TASK[0-9]+$" {% if system.review_status != 2 %} readonly="readonly"{%endif%} placeholder="e.g. PRJTASK012345" value="{{ system.review_task or '' }}" />
+			</div>
+			
+			<div style="margin-bottom:0px" class="col-sm-offset-2 col-sm-10 col-md-9 help-block">When reviewing current VMs, these fields can be used to state whether a VM is required or can be deleted. If a review status of 'Under review' is selected, a ServiceNow project task can be added. If left blank, one will be created for you.</div>
+		</div>
+
+			<div class="text-center">
+				<button type="submit" class="btn btn-primary btn-lg">Save</button>
+			</div>
+			</form>
+
 
 <script type="text/javascript">
 var dataTableCMDB = undefined;
@@ -380,30 +230,6 @@ $(document).ready(function()
 		});
 	});
 
-	$('#btn_cmdb_search').click(function (event)
-	{
-		$('#edit').modal('hide');
-		$('#search_cmdb').modal('show');
-	});
-
-	$('#btn_cmdb_search_cancel').click(function (event)
-	{
-		$('#search_cmdb').modal('hide');
-		$('#edit').modal('show');
-	});
-
-	$('#btn_vmware_search').click(function (event)
-	{
-		$('#edit').modal('hide');
-		$('#search_vmware').modal('show');
-	});
-
-	$('#btn_vmware_search_cancel').click(function (event)
-	{
-		$('#search_vmware').modal('hide');
-		$('#edit').modal('show');
-	});
-
 	$('#review_status').change(function (event)
 	{
 		if ($('#review_status').val() == 2)
@@ -418,30 +244,3 @@ $(document).ready(function()
 });
 </script>
 {% endblock %}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

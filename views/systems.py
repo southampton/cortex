@@ -63,8 +63,8 @@ def systems_search():
 	system = cortex.lib.systems.get_system_by_name(query)
 
 	if system is not None:
-		# If we found the system, redirect to the system's edit page
-		return redirect(url_for('systems_edit', id=system['id']))
+		# If we found the system, redirect to the system page
+		return redirect(url_for('system', id=system['id']))
 	else:
 		# If we didn't find the system, search for it instead
 		return redirect(url_for('systems',q=query))
@@ -210,7 +210,7 @@ def systems_new():
 		# change the comments on all of the systems.
 		if len(new_systems) == 1: 
 			flash("System name allocated successfully", "alert-success")
-			return redirect(url_for('systems_edit', id=new_systems[new_systems.keys()[0]]))
+			return redirect(url_for('system', id=new_systems[new_systems.keys()[0]]))
 		else:
 			return render_template('systems/new-bulk.html', systems=new_systems, comment=system_comment, title="Systems")
 
@@ -255,10 +255,32 @@ def systems_bulk_view(start, finish):
 
 	return render_template('systems/new-bulk-done.html', systems=systems, title="Systems")
 
-
 ################################################################################
 
 @app.route('/systems/view/<int:id>', methods=['GET', 'POST'])
+@cortex.lib.user.login_required
+def system(id):
+	# Get the system
+	system = cortex.lib.systems.get_system_by_id(id)
+
+	# Ensure that the system actually exists, and return a 404 if it doesn't
+	if system is None:
+		abort(404)
+
+	system_class = cortex.lib.classes.get(system['class'])
+	system['review_status_text'] = cortex.lib.systems.REVIEW_STATUS_BY_ID[system['review_status']]
+		
+	if system['puppet_certname']:
+		system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
+		
+	if system['allocation_who'] is not None:	
+		system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
+
+	return render_template('systems/view.html', system=system, system_class=system_class, active='systems', title=system['name'])
+
+################################################################################
+
+@app.route('/systems/edit/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def systems_edit(id):
 	# Get the system
@@ -275,10 +297,11 @@ def systems_edit(id):
 		if system['puppet_certname']:
 			system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
 		
-		if system['allocation_who'] is not None:	
+		if system['allocation_who'] is not None:
 			system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
 
 		return render_template('systems/edit.html', system=system, system_class=system_class, active='systems', title=system['name'])
+
 	elif request.method == 'POST':
 		try:
 			# Get a cursor to the database

@@ -1,8 +1,12 @@
 {% extends "layout.html" %}
-{% block head %}{% include 'puppet/codemirror.html' %}{% endblock %}
+{% block head %}
+{% include 'puppet/codemirror.html' %}
+{% endblock %}
 {% block body %}
+{% import 'node-header.html' as node %}
 <script>
-$(document).ready(function() {
+$(document).ready(function() 
+{
 	var classes_editor = CodeMirror.fromTextArea(document.getElementById('classes'), 
 	{
 		mode: 'yaml',
@@ -38,13 +42,16 @@ $(document).ready(function() {
 	});
 });
 </script>
+
+{{ node.header(system['id'],system['name'],system['allocation_comment'],active="puppet_classify" ) }}
+
 <form class="form-horizontal" method="POST" role="form">
 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-	<div class="page-header">
+	<!--<div class="page-header">
 		{% include 'puppet/node-header.html' %}
 		<h3><i class="fa fa-fw fa-server"></i> {{ system.name }}</h3>
 		<p class="text-muted">Classes, variables and the environment for the node can be customised below</p>
-	</div>
+	</div>-->
 	<div class="panel panel-default">
 		<div class="panel-heading">Node Options</div>
 		<div class="panel-body" style="padding-bottom:0em">

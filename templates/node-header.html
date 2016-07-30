@@ -1,0 +1,16 @@
+{% macro header(id,name,desc="",active="overview") -%}
+
+<div style="margin-bottom: 20px">
+	<ul class="nav nav-tabs">
+		<li style="padding: 2px 15px; font-size: 28px;"><i class="fa fa-fw fa-server"></i> {{ name }}</li>
+		<li role="presentation"{% if active == "view" %}class="active"{%endif%}><a href="{{url_for('system',id=id)}}">Overview</a></li>
+		<li role="presentation"{% if active == "edit" %}class="active"{%endif%}><a href="{{url_for('systems_edit',id=id)}}">Settings</a></li>
+		<li role="presentation"{% if active == "puppet_classify" %}class="active"{%endif%}><a href="{{url_for('puppet_enc_edit',node=name + ".soton.ac.uk")}}">Classify</a></li>
+		<li role="presentation"{% if active == "puppet_yaml" %}class="active"{%endif%}><a href="{{url_for('puppet_node_yaml',node=name + ".soton.ac.uk")}}">YAML</a></li>
+		<li role="presentation"{% if active == "puppet_reports" %}class="active"{%endif%}><a href="{{url_for('puppet_reports',node=name + ".soton.ac.uk")}}">Reports</a></li>
+		<li role="presentation"{% if active == "puppet_facts" %}class="active"{%endif%}><a href="{{url_for('puppet_facts',node=name + ".soton.ac.uk")}}">Facts</a></li>
+<!--		<li role="presentation"{% if active == "satellite" %}class="active"{%endif%}><a href="#profile">Satellite</a></li>-->
+		<li role="presentation"><a href="#profile">ServiceNow</a></li>
+	</ul>
+</div>
+{%- endmacro %}
