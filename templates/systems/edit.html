@@ -71,7 +71,7 @@
 <!----------------------------------------------------------------------------->
 
 
-{{ node.header(system['id'],system['name'],system['allocation_comment'],active="edit" ) }}
+{{ node.header(system,active="edit" ) }}
 
 	<form role="form" class="form-horizontal" method="POST">
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />

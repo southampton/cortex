@@ -49,7 +49,8 @@ def puppet_enc_edit(node):
 
 	# On any GET request, just display the information
 	if request.method == 'GET':
-		return render_template('puppet/enc.html', system=system, active='puppet', environments=environments, title=system['name'], nodename=node, pactive="edit")
+
+		return render_template('puppet/enc.html', system=system, active='puppet', environments=environments, title=system['name'], nodename=node, pactive="edit", yaml=cortex.lib.puppet.generate_node_config(system['puppet_certname']))
 
 	# On any POST request, validate the input and then save
 	elif request.method == 'POST':
@@ -269,34 +270,6 @@ def puppet_group_edit(name):
 
 ################################################################################
 
-@app.route('/puppet/yaml/<node>')
-@cortex.lib.user.login_required
-def puppet_node_yaml(node):
-	"""Handles the Puppet node YAML preview page."""
-
-	# Get the system
-	system = cortex.lib.systems.get_system_by_puppet_certname(node)
-
-	# 404 if the system doesn't exist
-	if system == None:
-		abort(404)
-
-	# Get a cursor to the database
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-
-	# Get the group from the DB
-	curd.execute('SELECT * FROM `puppet_nodes` WHERE `id` = %s', system['id'])
-	node = curd.fetchone()
-
-	# 404 if the node isn't in Puppet (can this actually trigger given the above checks?)
-	if node == None:
-		abort(404)
-
-	# Render the page
-	return render_template('puppet/node-yaml.html', raw=cortex.lib.puppet.generate_node_config(node['certname']), system=system, node=node, active='puppet', title="Puppet Configuration", nodename=node['certname'], pactive="view")
-
-################################################################################
-
 @app.route('/puppet/facts/<node>')
 @cortex.lib.user.login_required
 def puppet_facts(node):
@@ -451,6 +424,8 @@ def puppet_report(report_hash):
 			metrics[metric['category']] = {}
 
 		metrics[metric['category']][metric['name']] = metric['value']
+
+	## TODO...find out the system from the report_hash so we can load a node header
 
 	# Render
 	return render_template('puppet/report.html', report=report, metrics=metrics, active='puppet', title=report.node + " - Puppet Report")

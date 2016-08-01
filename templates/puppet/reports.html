@@ -2,10 +2,9 @@
 {% block body %}
 {% import 'node-header.html' as node %}
 <!--<div class="page-header">
-{% include 'puppet/node-header.html' %}
 <h3><i class="fa fa-fw fa-files-o"></i> Puppet Reports</h3>
 </div>-->
-{{ node.header(system['id'],system['name'],system['allocation_comment'],active="puppet_reports" ) }}
+{{ node.header(system,active="puppet_reports" ) }}
 
 <table class="table table-condensed table-striped" id="data">
 	<thead>

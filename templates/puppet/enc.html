@@ -4,6 +4,24 @@
 {% endblock %}
 {% block body %}
 {% import 'node-header.html' as node %}
+<div class="modal fade" id="modalyaml" tabindex="-1" role="dialog">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title" id="myModalLabel">Classification YAML</h4>
+			</div>
+			<div class="modal-body">
+				<p class="text-muted">This is the configuration for the node taking into account its group memberships and global default classes. Additional system global variables are also visible here.</p>
+				<textarea id="encyaml" name="classes">{{ yaml }}</textarea>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <script>
 $(document).ready(function() 
 {
@@ -40,20 +58,32 @@ $(document).ready(function()
 			cm.replaceSelection(spaces);
 		}
 	});
+
+	var encyaml = CodeMirror.fromTextArea(document.getElementById('encyaml'), 
+	{
+		mode: 'yaml',
+		lint: true,
+		indentUnit: 2,
+		viewportMargin: Infinity,
+		readOnly: true,
+	});
+
+	$("#modalyaml").on('shown.bs.modal', function () {
+		encyaml.refresh();
+	});
+
 });
 </script>
 
-{{ node.header(system['id'],system['name'],system['allocation_comment'],active="puppet_classify" ) }}
+{{ node.header(system,active="puppet_classify" ) }}
 
 <form class="form-horizontal" method="POST" role="form">
 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-	<!--<div class="page-header">
-		{% include 'puppet/node-header.html' %}
-		<h3><i class="fa fa-fw fa-server"></i> {{ system.name }}</h3>
-		<p class="text-muted">Classes, variables and the environment for the node can be customised below</p>
-	</div>-->
 	<div class="panel panel-default">
-		<div class="panel-heading">Node Options</div>
+		<div class="panel-heading">Puppet Classification
+					<div class="pull-right">
+						<a href="#" class="btn btn-info btn-xs" data-toggle="modal" data-target="#modalyaml">View raw YAML</a>		
+					</div></div>
 		<div class="panel-body" style="padding-bottom:0em">
 			<div class="form-group">
 				<label title="The Common Name (CN) of the certificate registered with the Puppet Master" class="col-sm-2 control-label" for="certname">Cert Name:</label>
@@ -63,7 +93,7 @@ $(document).ready(function()
 			</div>
 			<div class="form-group">
 				<label title="The Puppet environment that this node sits in (the actual name within Puppet is given in brackets)" class="col-sm-2 control-label" for="environment">Environment:</label>
-				<div class="col-sm-10"> <select class="form-control" id="environment" name="environment">
+				<div class="col-sm-8 col-md-6 col-lg-4"> <select class="form-control" id="environment" name="environment">
 {%- for environment in environments -%}
 {%- if environment.puppet %}
 					<option value="{{ environment.id }}"{% if system.puppet_env == environment.puppet %} selected="selected"{% endif %}>{{ environment.name }} ({{ environment.puppet }})</option>
@@ -83,20 +113,22 @@ $(document).ready(function()
 <div class="row">
 	<div class="col-md-9">
 		<div class="panel panel-default">
-			<div class="panel-heading">Editor: Classes</div>
+			<div class="panel-heading">Puppet Classes</div>
 			<div class="panel-body" style="padding:0px">
 				<textarea id="classes" name="classes">{{ system.puppet_classes }}</textarea>
 			</div>
 		</div>
 
 		<div class="panel panel-default">
-			<div class="panel-heading">Editor: Global Variables</div>
+			<div class="panel-heading">Puppet Global Variables</div>
 			<div class="panel-body" style="padding:0px">
 				<textarea id="variables" name="variables">{{ system.puppet_variables }}</textarea>
 			</div>
 		</div>
-		
-		<button class="btn btn-primary" type="submit">Save Changes</button>
+
+		<div class="text-center">
+			<button class="btn btn-primary btn-lg" type="submit">Save Changes</button>
+		</div>
 	</div>
 	<div class="col-md-3">
 		<div class="panel panel-default">
@@ -109,7 +141,7 @@ $(document).ready(function()
 				<p>The format of this field is <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a>. Use two spaces for indentation. Do not use tabs, but you can safely
 					press the tab key within the editor (it will enter 2 spaces for you).</p>
 				<div class="text-center">
-					<a href="{{url_for('puppet_help')}}" target="_blank" class="btn btn-success btn-lg">Find out more</a>
+					<a href="{{url_for('puppet_help')}}" target="_blank" class="btn btn-success">Find out more</a>
 				</div>
 			</div>
 		</div>

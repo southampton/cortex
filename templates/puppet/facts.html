@@ -41,14 +41,13 @@
 </style>
 
 <!--<div class="page-header">
-{% include 'puppet/node-header.html' %}
 <h3><i class="fa fa-fw fa-puzzle-piece"></i> Facts{% if node %} - {{ node.name }}{% endif %}</h3>
 {%- if node %}
 <p class="text-muted"><strong>Environment:</strong> {{ node.facts_environment }}, <strong>Facts generated at:</strong> {{ node.facts_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</p>
 {%- endif %}
 </div>-->
 
-{{ nodeh.header(system['id'],system['name'],system['allocation_comment'],active="puppet_facts" ) }}
+{{ nodeh.header(system,active="puppet_facts" ) }}
 
 {%- if facts %}
 <div style="overflow-x: scroll">

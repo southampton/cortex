@@ -1,16 +1,26 @@
-{% macro header(id,name,desc="",active="overview") -%}
+{% macro header(system,active="overview") -%}
 
 <div style="margin-bottom: 20px">
 	<ul class="nav nav-tabs">
-		<li style="padding: 2px 15px; font-size: 28px;"><i class="fa fa-fw fa-server"></i> {{ name }}</li>
-		<li role="presentation"{% if active == "view" %}class="active"{%endif%}><a href="{{url_for('system',id=id)}}">Overview</a></li>
-		<li role="presentation"{% if active == "edit" %}class="active"{%endif%}><a href="{{url_for('systems_edit',id=id)}}">Settings</a></li>
-		<li role="presentation"{% if active == "puppet_classify" %}class="active"{%endif%}><a href="{{url_for('puppet_enc_edit',node=name + ".soton.ac.uk")}}">Classify</a></li>
-		<li role="presentation"{% if active == "puppet_yaml" %}class="active"{%endif%}><a href="{{url_for('puppet_node_yaml',node=name + ".soton.ac.uk")}}">YAML</a></li>
-		<li role="presentation"{% if active == "puppet_reports" %}class="active"{%endif%}><a href="{{url_for('puppet_reports',node=name + ".soton.ac.uk")}}">Reports</a></li>
-		<li role="presentation"{% if active == "puppet_facts" %}class="active"{%endif%}><a href="{{url_for('puppet_facts',node=name + ".soton.ac.uk")}}">Facts</a></li>
+		<li style="padding: 2px 15px; font-size: 28px;"><i class="fa fa-fw fa-server"></i> {{ system.name }}</li>
+		<li role="presentation"{% if active == "view" %}class="active"{%endif%}><a href="{{url_for('system',id=system.id)}}">Overview</a></li>
+		<li role="presentation"{% if active == "edit" %}class="active"{%endif%}><a href="{{url_for('systems_edit',id=system.id)}}">Settings</a></li>
+
+		{% if system.puppet_certname %}
+		<li role="presentation"{% if active == "puppet_classify" %}class="active"{%endif%}><a href="{{url_for('puppet_enc_edit',node=system.puppet_certname)}}">Classify</a></li>
+		<li role="presentation"{% if active == "puppet_reports" %}class="active"{%endif%}><a href="{{url_for('puppet_reports',node=system.puppet_certname)}}">Reports</a></li>
+		<li role="presentation"{% if active == "puppet_facts" %}class="active"{%endif%}><a href="{{url_for('puppet_facts',node=system.puppet_certname)}}">Facts</a></li>
+		{% else %}
+		<li role="presentation" class="disabled"><a href="#">Classify</a></li>
+		<li role="presentation" class="disabled"><a href="#">Reports</a></li>
+		<li role="presentation" class="disabled"><a href="#">Facts</a></li>
+		{% endif %}
+
 <!--		<li role="presentation"{% if active == "satellite" %}class="active"{%endif%}><a href="#profile">Satellite</a></li>-->
-		<li role="presentation"><a href="#profile">ServiceNow</a></li>
+		
+
+		{%- if system.cmdb_id %}<li role="presentation"><a href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank">ServiceNow</a></li>{%endif%} 
+
 	</ul>
 </div>
 {%- endmacro %}
