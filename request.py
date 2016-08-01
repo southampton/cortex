@@ -53,7 +53,9 @@ def context_processor():
 	# Inject the menu items 
 	# systems, workflows, vmware, puppet, admin
 	# Define the 'systems' menu
-	systems = {'link': url_for('systems'), 'title': 'Systems', 'icon': 'fa-list'}
+	systems = [
+		{'link': url_for('systems'), 'title': 'Systems list', 'icon': 'fa-list'}
+	]
 	vmware = [
 		{'link': url_for('vmware_os'), 'title': 'Operating systems', 'icon': 'fa-pie-chart'},
 		{'link': url_for('vmware_hw'), 'title': 'Hardware version', 'icon': 'fa-pie-chart'},
