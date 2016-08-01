@@ -282,7 +282,7 @@ def system(id):
 
 @app.route('/systems/edit/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
-def systems_edit(id):
+def system_edit(id):
 	# Get the system
 	system = cortex.lib.systems.get_system_by_id(id)
 
@@ -395,6 +395,23 @@ def systems_edit(id):
 		return redirect(url_for('systems_edit', id=id))
 	else:
 		abort(400)
+
+################################################################################
+
+@app.route('/systems/actions/<int:id>', methods=['GET', 'POST'])
+@cortex.lib.user.login_required
+def system_actions(id):
+	# Get the system
+	system = cortex.lib.systems.get_system_by_id(id)
+
+	# Ensure that the system actually exists, and return a 404 if it doesn't
+	if system is None:
+		abort(404)
+
+	# Get the list of actions we can perform
+	actions = app.system_actions
+
+	return render_template('systems/actions.html', system=system, active='systems', actions=actions, title=system['name'])
 
 ################################################################################
 
