@@ -54,8 +54,7 @@ def context_processor():
 	# systems, workflows, vmware, puppet, admin
 	# Define the 'systems' menu
 	systems = [
-		{'link': url_for('systems'), 'title': 'Systems list', 'icon': 'fa-list'},
-		{'link': url_for('systems_new'), 'title': 'Allocate system name', 'icon': 'fa-plus'}
+		{'link': url_for('systems'), 'title': 'Systems list', 'icon': 'fa-list'}
 	]
 	vmware = [
 		{'link': url_for('vmware_os'), 'title': 'Operating systems', 'icon': 'fa-pie-chart'},
@@ -78,7 +77,8 @@ def context_processor():
 	admin = [
 		{'link': url_for('admin_classes'), 'title': 'Classes', 'icon': 'fa-table'},	
 		{'link': url_for('admin_tasks'), 'title': 'Tasks', 'icon': 'fa-tasks'},
-		{'link': url_for('admin_maint'), 'title': 'Maintenance', 'icon': 'fa-gears'}
+		{'link': url_for('admin_maint'), 'title': 'Maintenance', 'icon': 'fa-gears'},
+		{'link': url_for('systems_new'), 'title': 'Allocate system name', 'icon': 'fa-plus'}
 	]
 
 	injectdata['menu'] = { 'systems': systems, 'vmware': vmware, 'puppet': puppet, 'admin': admin }
