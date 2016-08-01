@@ -58,7 +58,7 @@ def csv_stream(cursor):
 
 ################################################################################
 
-def get_system_count(class_name = None, search = None, hide_inactive = True, only_other = False):
+def get_system_count(class_name = None, search = None, hide_inactive = True, only_other = False, show_expired = False):
 	"""Returns the number of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost)"""
 
 	## BUILD THE QUERY
@@ -68,7 +68,7 @@ def get_system_count(class_name = None, search = None, hide_inactive = True, onl
 	query = 'SELECT COUNT(*) AS `count` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`'
 
 	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
-	query_where = _build_systems_query(class_name, search, None, None, None, None, hide_inactive, only_other)
+	query_where = _build_systems_query(class_name, search, None, None, None, None, hide_inactive, only_other, show_expired)
 	query = query + query_where[0]
 	params = params + query_where[1]
 
@@ -139,7 +139,7 @@ def get_system_by_vmware_uuid(name):
 
 ################################################################################
 
-def _build_systems_query(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False):
+def _build_systems_query(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False):
 	params = ()
 
 	query = ""
@@ -186,6 +186,13 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 			query = query + "WHERE "
 		query = query + ' `systems`.`type` != 0'
 
+	if show_expired:
+		if class_name is not None or search is not None or hide_inactive == True or only_other:
+			query = query + " AND "
+		else:
+			query = query + "WHERE "
+		query = query + ' (`systems`.`expiry_date` < NOW())'
+			
 	# Handle the ordering of the rows
 	query = query + " ORDER BY ";
 
@@ -232,7 +239,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 
 ################################################################################
 
-def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, return_cursor = False):
+def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, return_cursor = False):
 	"""Returns the list of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost), and ordered (defaults to "name")"""
 
 	## BUILD THE QUERY
@@ -242,7 +249,7 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 	query = "SELECT `systems`.`id` AS `id`, `systems`.`type` AS `type`, `systems`.`class` AS `class`, `systems`.`number` AS `number`, `systems`.`name` AS `name`, `systems`.`allocation_date` AS `allocation_date`, `systems`.`allocation_who` AS `allocation_who`, `systems`.`allocation_comment` AS `allocation_comment`, `systems`.`cmdb_id` AS `cmdb_id`, `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status`, `vmware_cache_vm`.`powerState` AS `vmware_guest_state`, `puppet_nodes`.`certname` AS `puppet_certname`, `sncache_cmdb_ci`.`u_environment` AS `cmdb_environment`, `sncache_cmdb_ci`.`short_description` AS `cmdb_description`, `systems`.`vmware_uuid` AS `vmware_uuid` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid` LEFT JOIN `puppet_nodes` ON `puppet_nodes`.`id` = `systems`.`id` "
 
 	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
-	query_where = _build_systems_query(class_name, search, order, order_asc, limit_start, limit_length, hide_inactive, only_other)
+	query_where = _build_systems_query(class_name, search, order, order_asc, limit_start, limit_length, hide_inactive, only_other, show_expired)
 	query       = query + query_where[0]
 	params      = params + query_where[1]
 

@@ -556,13 +556,17 @@ def systems_json():
 		if str(request.form['hide_inactive']) == '0':
 			hide_inactive = False
 
+	show_expired = False
+	if 'show_expired' in request.form:
+		if str(request.form['show_expired']) != '0':
+			show_expired = True
 	# Get number of systems that match the query, and the number of systems
 	# within the filter group
-	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other)
-	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other)
+	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired)
+	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other, show_expired=show_expired)
 
 	# Get results of query
-	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other)
+	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired)
 
 	# DataTables wants an array in JSON, so we build this here, returning
 	# only the columns we want. We format the date as a string as
