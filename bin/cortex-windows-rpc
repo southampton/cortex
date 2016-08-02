@@ -64,11 +64,16 @@ class CortexWindowsRPC(object):
 
 	################################################################################
 
-	def join_groups(self, hostname):
+	def join_groups(self, hostname, groups = None):
 		self._log('INFO', 'Joining hostname ' + str(hostname) + ' to default groups')
 
 		returncode = 0
-		for group in self.config['GROUPS']:
+
+		# Use the list of groups if supplied, otherwise use configured groups
+		if groups is None:
+			groups = self.config['GROUPS']
+
+		for group in groups:
 			self._log('INFO', 'Joining hostname to ' + str(hostname) + ' to ' + str(group))
 			try:
 				subprocess.check_output([self.config['POWERSHELL_PATH'], '-Command', 'Add-ADGroupMember -Identity "' + psescape(group) + '" -Members "' + psescape(hostname + '$') + '"'], stderr=subprocess.STDOUT)
@@ -78,6 +83,32 @@ class CortexWindowsRPC(object):
 				returncode = e.returncode
 
 		return returncode
+
+	################################################################################
+
+	def find_computer_object(self, hostname):
+		self._log('INFO', 'Checking for computer object, ' + str(hostname))
+
+		try:
+			subprocess.check_output([self.config['POWERSHELL_PATH'], '-Command', 'Get-ADComputer "' + psescape(hostname + '$') + '"'], stderr=subprocess.STDOUT)
+			return True
+		except subprocess.CalledProcessError, e:
+			self._log('ERROR', 'PowerShell call to find computer object ' + str(hostname) + ' returned ' + str(e.returncode))
+			self._log('DEBUG', 'PowerShell output: ' + str(e.output))
+			return False
+
+	################################################################################
+
+	def delete_computer_object(self, hostname):
+		self._log('INFO', 'Removing computer object, ' + str(hostname))
+
+		try:
+			subprocess.check_output([self.config['POWERSHELL_PATH'], '-Command', 'Get-ADComputer "' + psescape(hostname + '$') + '" | Remove-ADComputer -confirm:$false'], stderr=subprocess.STDOUT)
+			return 0
+		except subprocess.CalledProcessError, e:
+			self._log('ERROR', 'PowerShell call to delete computer object on ' + str(hostname) + ' returned ' + str(e.returncode))
+			self._log('DEBUG', 'PowerShell output: ' + str(e.output))
+			return e.returncode
 
 	################################################################################
 

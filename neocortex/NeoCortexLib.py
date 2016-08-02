@@ -1179,14 +1179,16 @@ class NeoCortexLib(object):
 
 	########################################################################
 
-	def windows_join_default_groups(self, hostname, environment):
+	def windows_join_groups(self, hostname, environment, groups):
 		"""Adds a Computer object in Active Directory to the default list of groups.
 		Args:
 		  hostname (string): The hostname of the computer object to put in to groups
+		  environment (string): The key-name of the environment (e.g. prod, dev)
+		  groups (list): The list of groups to join. Just names, not DNs.
 		Returns:
 		  Nothing."""
 
-		if self._get_winrpc_proxy(environment).join_groups(hostname) != 0:
+		if self._get_winrpc_proxy(environment).join_groups(hostname, groups) != 0:
 			raise Exception('Remote call returned failure response - check the Cortex Windows RPC log file')
 
 		# Performing other Windows tasks too quickly can result in them
