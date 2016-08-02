@@ -281,7 +281,7 @@ def puppet_facts(node):
 		# Connect to PuppetDB, get the node information and then it's related facts
 		db     = cortex.lib.puppet.puppetdb_connect()
 		dbnode = db.node(node)
-		facts  = db.node(dbnode).facts()
+		facts  = dbnode.facts()
 	except HTTPError, he:
 		# If we get a 404 from the PuppetDB API
 		if he.response.status_code == 404:

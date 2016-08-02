@@ -246,7 +246,7 @@ def get_user_realname_from_ldap(username):
 	try:
 		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
 	except ldap.LDAPError as e:
-		return user
+		return username
 
 	# Handle the search results
 	for result in results:

@@ -602,7 +602,10 @@ def systems_json():
 		else:
 			row['allocation_date'] = "Unknown"
 		if row['allocation_who'] is not None:	
-			row['allocation_who'] = cortex.lib.user.get_user_realname(row['allocation_who'])
+			if row['allocation_who_realname'] is not None:
+				row['allocation_who'] = row['allocation_who_realname']
+			else:
+				row['allocation_who'] = cortex.lib.user.get_user_realname(row['allocation_who'])
 
 		system_data.append([row['name'], row['allocation_comment'], row['cmdb_environment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_id, row['id'], row['vmware_guest_state'], row['puppet_certname']])
 

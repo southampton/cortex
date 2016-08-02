@@ -20,7 +20,7 @@
 <!--		<li role="presentation"{% if active == "satellite" %}class="active"{%endif%}><a href="#profile">Satellite</a></li>-->
 		
 
-		{%- if system.cmdb_id %}<li role="presentation"><a href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank">ServiceNow</a></li>{%endif%} 
+		{%- if system.cmdb_id %}<li role="presentation"><a href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank">ServiceNow <i class="fa fa-fw fa-external-link"></i></a></li>{%endif%} 
 
 	</ul>
 </div>

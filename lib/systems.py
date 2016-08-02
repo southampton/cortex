@@ -65,7 +65,7 @@ def get_system_count(class_name = None, search = None, hide_inactive = True, onl
 
 	# Start with no parameters, and a generic SELECT COUNT(*) from the appropriate table
 	params = ()
-	query = 'SELECT COUNT(*) AS `count` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`'
+	query = 'SELECT COUNT(*) AS `count` FROM `systems_info_view` '
 
 	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
 	query_where = _build_systems_query(class_name, search, None, None, None, None, hide_inactive, only_other, show_expired)
@@ -82,12 +82,6 @@ def get_system_count(class_name = None, search = None, hide_inactive = True, onl
 	# Return the count
 	return row['count']
 
-
-################################################################################
-
-def systems_select_query():
-	return "SELECT `systems`.`id` AS `id`, `type`, `class`, `number`, `systems`.`name` AS `name`, `allocation_date`, `expiry_date`, `allocation_who`, `allocation_comment`, `cmdb_id`, `sys_class_name` AS `cmdb_sys_class_name`, `sncache_cmdb_ci`.`name` AS `cmdb_name`, `operational_status` AS `cmdb_operational_status`, `u_number` AS `cmdb_u_number`, `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description`, `vmware_cache_vm`.`name` AS `vmware_name`, `vmware_cache_vm`.`vcenter` AS `vmware_vcenter`, `vmware_cache_vm`.`uuid` AS `vmware_uuid`, `vmware_cache_vm`.`numCPU` AS `vmware_cpus`, `vmware_cache_vm`.`memoryMB` AS `vmware_ram`, `vmware_cache_vm`.`powerState` AS `vmware_guest_state`, `vmware_cache_vm`.`guestFullName` AS `vmware_os`, `vmware_cache_vm`.`hwVersion` AS `vmware_hwversion`, `vmware_cache_vm`.`ipaddr` AS `vmware_ipaddr`, `vmware_cache_vm`.`toolsVersionStatus` AS `vmware_tools_version_status`, `puppet_nodes`.`certname` AS `puppet_certname`, `puppet_nodes`.`env` AS `puppet_env`, `puppet_nodes`.`include_default` AS `puppet_include_default`, `puppet_nodes`.`classes` AS `puppet_classes`, `puppet_nodes`.`variables` AS `puppet_variables`, `sncache_cmdb_ci`.`u_environment` AS `cmdb_environment`, `sncache_cmdb_ci`.`short_description` AS `cmdb_description`, `sncache_cmdb_ci`.`comments` AS `cmdb_comments`, `sncache_cmdb_ci`.`os` AS `cmdb_os`, `vmware_cache_vm`.`hostname` AS `vmware_hostname`, `systems`.`review_status` AS `review_status`, `systems`.`review_task` AS `review_task` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid` LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` "
-
 ################################################################################
 
 def get_system_by_id(id):
@@ -95,7 +89,7 @@ def get_system_by_id(id):
 
 	# Query the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute(systems_select_query() + "WHERE `systems`.`id` = %s", (id,))
+	curd.execute("SELECT * FROM `systems_info_view` WHERE `id` = %s", (id,))
 
 	# Return the result
 	return curd.fetchone()
@@ -107,7 +101,7 @@ def get_system_by_name(name):
 
 	# Query the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute(systems_select_query() + "WHERE `systems`.`name` = %s", (name,))
+	curd.execute("SELECT * FROM `systems_info_view` WHERE `name` = %s", (name,))
 
 	# Return the result
 	return curd.fetchone()
@@ -120,7 +114,7 @@ def get_system_by_puppet_certname(name):
 
 	# Query the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute(systems_select_query() + "WHERE `puppet_nodes`.`certname` = %s", (name,))
+	curd.execute("SELECT * FROM `systems_info_view` WHERE `puppet_certname` = %s", (name,))
 
 	# Return the result
 	return curd.fetchone()
@@ -132,7 +126,7 @@ def get_system_by_vmware_uuid(name):
 
 	# Query the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute(systems_select_query() + "WHERE `systems`.`vmware_uuid` = %s", (name,))
+	curd.execute("SELECT * FROM `systems_info_view` WHERE `vmware_uuid` = %s", (name,))
 
 	# Return the result
 	return curd.fetchone()
@@ -163,11 +157,11 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 
 		# Allow the search to match on name, allocation_comment or 
 		# allocation_who
-		query = query + "(`systems`.`name` LIKE %s OR `systems`.`allocation_comment` LIKE %s OR `systems`.`allocation_who` LIKE %s OR `sncache_cmdb_ci`.`u_environment` LIKE %s)"
+		query = query + "(`name` LIKE %s OR `allocation_comment` LIKE %s OR `allocation_who` LIKE %s OR `cmdb_environment` LIKE %s OR `allocation_who_realname` LIKE %s)"
 
 		# Add the filter string to the parameters of the query. Add it 
 		# three times as there are three columns to match on.
-		params = params + (like_string, like_string, like_string, like_string)
+		params = params + (like_string, like_string, like_string, like_string, like_string)
 
 	# If hide_inactive is set to false, then exclude systems that are no longer In Service
 	if hide_inactive == True:
@@ -176,7 +170,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 		else:
 			query = query + "WHERE "
 
-		query = query + ' ((`systems`.`cmdb_id` IS NOT NULL AND `sncache_cmdb_ci`.`operational_status` = "In Service") OR (`systems`.`cmdb_id` IS NULL AND `systems`.`vmware_uuid` IS NOT NULL))'
+		query = query + ' ((`cmdb_id` IS NOT NULL AND `cmdb_operational_status` = "In Service") OR (`cmdb_id` IS NULL AND `vmware_uuid` IS NOT NULL))'
 
 	# Restrict to other/legacy types
 	if only_other:
@@ -184,31 +178,31 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 			query = query + " AND "
 		else:
 			query = query + "WHERE "
-		query = query + ' `systems`.`type` != 0'
+		query = query + ' `type` != 0'
 
 	if show_expired:
 		if class_name is not None or search is not None or hide_inactive == True or only_other:
 			query = query + " AND "
 		else:
 			query = query + "WHERE "
-		query = query + ' (`systems`.`expiry_date` < NOW())'
+		query = query + ' (`expiry_date` < NOW())'
 			
 	# Handle the ordering of the rows
 	query = query + " ORDER BY ";
 
 	# By default, if order is not specified, we order by name
 	if order is None:
-		query = query + "`systems`.`name`"
+		query = query + "`name`"
 
 	# Validate the name of the column to sort by (this prevents errors and
 	# also prevents SQL from accidentally being injected). Add the column
 	# name on to the query
 	if order in ["name", "number", "allocation_comment", "allocation_date", "allocation_who"]:
-		query = query + "`systems`.`" + order + "`"
+		query = query + "`" + order + "`"
 	elif order == "cmdb_operational_status":
-		query = query + "`sncache_cmdb_ci`.`operational_status`"
+		query = query + "`cmdb_operational_status`"
 	elif order == "cmdb_environment":
-		query = query + "`sncache_cmdb_ci`.`u_environment`"
+		query = query + "`cmdb_environment`"
 
 	# Determine which direction to order in, and add that on
 	if order_asc:
@@ -246,7 +240,8 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 
 	# Start with no parameters, and a generic SELECT from the appropriate table
 	params = ()
-	query = "SELECT `systems`.`id` AS `id`, `systems`.`type` AS `type`, `systems`.`class` AS `class`, `systems`.`number` AS `number`, `systems`.`name` AS `name`, `systems`.`allocation_date` AS `allocation_date`, `systems`.`allocation_who` AS `allocation_who`, `systems`.`allocation_comment` AS `allocation_comment`, `systems`.`cmdb_id` AS `cmdb_id`, `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status`, `vmware_cache_vm`.`powerState` AS `vmware_guest_state`, `puppet_nodes`.`certname` AS `puppet_certname`, `sncache_cmdb_ci`.`u_environment` AS `cmdb_environment`, `sncache_cmdb_ci`.`short_description` AS `cmdb_description`, `systems`.`vmware_uuid` AS `vmware_uuid` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid` LEFT JOIN `puppet_nodes` ON `puppet_nodes`.`id` = `systems`.`id` "
+	#query = "SELECT `systems`.`id` AS `id`, `systems`.`type` AS `type`, `systems`.`class` AS `class`, `systems`.`number` AS `number`, `systems`.`name` AS `name`, `systems`.`allocation_date` AS `allocation_date`, `systems`.`allocation_who` AS `allocation_who`, `systems`.`allocation_comment` AS `allocation_comment`, `systems`.`cmdb_id` AS `cmdb_id`, `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status`, `vmware_cache_vm`.`powerState` AS `vmware_guest_state`, `puppet_nodes`.`certname` AS `puppet_certname`, `sncache_cmdb_ci`.`u_environment` AS `cmdb_environment`, `sncache_cmdb_ci`.`short_description` AS `cmdb_description`, `systems`.`vmware_uuid` AS `vmware_uuid` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid` LEFT JOIN `puppet_nodes` ON `puppet_nodes`.`id` = `systems`.`id` "
+	query = "SELECT * FROM `systems_info_view` "
 
 	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
 	query_where = _build_systems_query(class_name, search, order, order_asc, limit_start, limit_length, hide_inactive, only_other, show_expired)
