@@ -46,6 +46,23 @@ def systems():
 
 ################################################################################
 
+@app.route('/systems/expired')
+@cortex.lib.user.login_required
+def systems_expired():
+	"""Shows the list of expired systems to the user."""
+
+	# Get the list of systems
+	systems = cortex.lib.systems.get_systems()
+
+
+	# Get the list of active classes (used to populate the tab bar)
+	classes = cortex.lib.classes.list()
+
+	# Render
+	return render_template('systems/list.html', systems=systems, classes=classes, active='systems', title="Expired systems", expired=True)
+
+################################################################################
+
 ## TODO: this function is not used anymore? Check and remove
 @app.route('/systems/search')
 @cortex.lib.user.login_required

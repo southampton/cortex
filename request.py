@@ -54,7 +54,8 @@ def context_processor():
 	# systems, workflows, vmware, puppet, admin
 	# Define the 'systems' menu
 	systems = [
-		{'link': url_for('systems'), 'title': 'Systems list', 'icon': 'fa-list'}
+		{'link': url_for('systems'), 'title': 'Systems list', 'icon': 'fa-list'},
+		{'link': url_for('systems_expired'), 'title': 'Expired systems list', 'icon': 'fa-list'}
 	]
 	vmware = [
 		{'link': url_for('vmware_os'), 'title': 'Operating systems', 'icon': 'fa-pie-chart'},
