@@ -4,7 +4,8 @@
 	<ul class="nav nav-tabs">
 		<li style="padding: 2px 15px; font-size: 28px;"><i class="fa fa-fw fa-server"></i> {{ system.name }}</li>
 		<li role="presentation"{% if active == "view" %}class="active"{%endif%}><a href="{{url_for('system',id=system.id)}}">Overview</a></li>
-		<li role="presentation"{% if active == "edit" %}class="active"{%endif%}><a href="{{url_for('systems_edit',id=system.id)}}">Settings</a></li>
+		<li role="presentation"{% if active == "edit" %}class="active"{%endif%}><a href="{{url_for('system_edit',id=system.id)}}">Settings</a></li>
+		<li role="presentation"{% if active == "actions" %}class="active"{%endif%}><a href="{{url_for('system_actions',id=system.id)}}">Actions</a></li>
 
 		{% if system.puppet_certname %}
 		<li role="presentation"{% if active == "puppet_classify" %}class="active"{%endif%}><a href="{{url_for('puppet_enc_edit',node=system.puppet_certname)}}">Classify</a></li>

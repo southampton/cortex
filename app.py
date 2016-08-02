@@ -17,7 +17,15 @@ import MySQLdb as mysql
 
 class CortexFlask(Flask):
 
+	# type of workflows
+	WF_CREATE        = 1 # create new things
+	WF_SYSTEM_ACTION = 2 # perform actions on systems
+
+	# store the list of 'CREATE' workflows
 	workflows = []
+
+	# store the list of 'SYSTEM ACTION' workflows
+	system_actions = []
 
 	################################################################################
 
@@ -257,16 +265,22 @@ Further Details:
 
 	################################################################################
 		
-	def workflow_handler(self, workflow_name, workflow_title, workflow_order, **options):
-		"""This is a decorator function that is used in workflows to add the principal view function
-		into the app. It performs the function of Flask's @app.route but also adds the view function
-		to a menu on the website to allow the workflow to be activated by the user.
+	def workflow_handler(self, workflow_name, workflow_title, workflow_order=999, workflow_type=WF_CREATE, workflow_desc=None, **options):
+		"""This is a decorator function that is used in workflows to add a view
+		function into Cortex for creating new 'things'. It performs the 
+		function of Flask's @app.route but also adds the view function
+		to a menu on the website to allow the workflow to be activated by the 
+		user.
 
-		Usage is as such: @app.workflow_handler(__name__,"Title on menu", methods=['GET','POST'])
+		Usage is as follows:
+
+		@app.workflow_handler(__name__,"Title on menu", methods=['GET','POST'])
 
 		:param workflow_name: the name of the workflow. This should always be __name__.
 		:param workflow_title: the title of the workflow, as it appears in the list
-		:param workflow_order: an integer hint as to the ordering of the workflow within the list.
+		:param workflow_order: an integer hint as to the ordering of the workflow within the list. Defaults to 999.
+		:param workflow_type: the type of workflow task. either app.WF_CREATE or app.WF_SYSTEM_ACTION. Defaults to WF_CREATE.
+		:param workflow_desc: a description of what this workflow view does. This is currently only used for WF_SYSTEM_ACTION. Defaults to None.
 		:param options: the options to be forwarded to the underlying
 			     :class:`~werkzeug.routing.Rule` object.  A change
 			     to Werkzeug is handling of method options.  methods
@@ -278,8 +292,15 @@ Further Details:
 		"""
 
 		def decorator(f):
-			# Build the path that the workflow handler will be displayed on
-			rule = "/workflows/" + workflow_name
+
+			if workflow_type == self.WF_CREATE:
+				rule = "/workflows/" + f.__name__
+			elif workflow_type == self.WF_SYSTEM_ACTION:
+				rule = "/workflows/" + f.__name__ + "/<int:id>"
+			else:
+				app.logger.warn("Workflow '" + workflow_name + " could not be loaded because the workflow_type is invalid")
+				return
+
 
 			# Get the endpoint
 			endpoint = options.pop('endpoint', None)
@@ -288,8 +309,16 @@ Further Details:
 			# page to be accessible
 			self.add_url_rule(rule, endpoint, f, **options)
 
-			# Collect information about the workflow and store it in our workflows list
-			self.workflows.append({'display': workflow_title, 'name': workflow_name, 'order': workflow_order, 'view_func': f.__name__ })
+			# Store the workflow details in a hash
+			wfdata = {'display': workflow_title, 'name': workflow_name, 'order': workflow_order, 'view_func': f.__name__, 'description': workflow_desc }
+
+			if workflow_type == self.WF_CREATE:
+				self.logger.info("Registered workflow creation view '" + f.__name__ + "'")
+				self.workflows.append(wfdata)
+			elif workflow_type == self.WF_SYSTEM_ACTION:
+				self.logger.info("Registered workflow system action view '" + f.__name__ + "'")
+				self.system_actions.append(wfdata)
+
 			return f
 
 		return decorator
