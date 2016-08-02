@@ -239,10 +239,6 @@ def get_user_realname_from_ldap(username):
 	"""Talks to LDAP and retrieves the real name of the username passed."""
 
 	# The name we've picked
-	name = username
-	sn = ""
-	fn = ""
-
 	# Connect to LDAP
 	l = cortex.lib.core.connect()
 	
@@ -250,7 +246,7 @@ def get_user_realname_from_ldap(username):
 	try:
 		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
 	except ldap.LDAPError as e:
-		return name
+		return user
 
 	# Handle the search results
 	for result in results:
@@ -262,16 +258,28 @@ def get_user_realname_from_ldap(username):
 		else:
 			if 'givenName' in attrs:
 				if len(attrs['givenName']) > 0:
-					fn = attrs['givenName'][0]
-					#return attrs['givenName']
+					firstname = attrs['givenName'][0]
 			if 'sn' in attrs:
 				if len(attrs['sn']) > 0:
-					sn = attrs['sn'][0]
+					lastname = attrs['sn'][0]
 
-	if len(sn) > 0 and len(fn) > 0:
-		name = fn + " " + sn
-		g.redis.setex("ldap/user/realname/" + username, app.config['LDAP_REALNAME_CACHE_EXPIRE'], name)
-
+	try:
+		if len(firstname) > 0 and len(lastname) > 0:
+			name = firstname + ' ' + lastname
+		elif len(firstname) > 0:
+			name = firstname
+		elif len(lastname) > 0:
+			name = lastname
+		else:
+			name = username
+	except Exception as ex:
+		name = username
+	try:
+		curd = g.db.cursor(mysql.cursors.DictCursor)
+		curd.execute('REPLACE INTO `realname_cache` (`username`, `realname`) VALUES (%s,%s)', (username, name))
+		g.db.commit()
+	except Exception as ex:
+		app.logger.warning('Failed to cache user name: ' + str(ex))
 	return name
 
 #############################################################################
@@ -295,9 +303,15 @@ def get_user_realname(username, from_cache=True):
 	else:
 		# Check the cache to see if it already has entries for the user
 		# we use a key to set whether we /have/ cached the users 
-		realname = g.redis.get("ldap/user/realname/" + username)
-
-		if (realname == None) or (not len(realname) > 0):
+		try:
+			curd = g.db.cursor(mysql.cursors.DictCursor)
+			curd.execute('SELECT `realname` AS `name` FROM `realname_cache` WHERE `username` = %s', (username))
+			user = curd.fetchone()
+			curd.close()
+		except Exception as ex:
+			app.logger.warning('Failed to retrieve user from cache: ' + str(ex) + 'Falling back to LDAP lookup')
 			return get_user_realname_from_ldap(username)
-		else:
-			return realname
+
+		if user is None:
+			return get_user_realname_from_ldap(username)
+		return user['name']

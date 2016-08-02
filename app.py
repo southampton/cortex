@@ -533,6 +533,12 @@ Username:             %s
 		  PRIMARY KEY (`timestamp`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `realname_cache` (
+		 `username` varchar(64) NOT NULL,
+		 `realname` varchar(255),
+		 PRIMARY KEY (`username`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `expiry_date` datetime DEFAULT NULL""")
 		except Exception, e:
