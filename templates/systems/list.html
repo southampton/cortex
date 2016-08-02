@@ -7,7 +7,7 @@ a.server-link:hover { text-decoration: underline !important; }
 </style>
 
 <div class="page-header">
-	<button id="hide_inactive" type="button" class="btn btn-sm pull-right btn-danger" style="margin-left:4px" data-toggle="popover" data-trigger="hover" data-placement="left" title="Hide Inactive Systems" data-content="When ticked, systems that are not in ServiceNow or VMware will not be shown, nor will systems that are not marked as 'In Service' in ServiceNow."><i class="fa fa-fw fa-square-o"></i> Hide Inactive Systems</button>
+	<button id="hide_inactive" type="button" class="btn btn-sm pull-right btn-success active" style="margin-left:4px" data-toggle="popover" data-trigger="hover" data-placement="left" title="Hide Inactive Systems" data-content="When ticked, systems that are not in ServiceNow or VMware will not be shown, nor will systems that are not marked as 'In Service' in ServiceNow."><i class="fa fa-fw fa-check-square-o"></i> Hide Inactive Systems</button>
 <h3><i class="fa fa-server fa-fw"></i> Systems<a class="btn btn-primary btn-sm pull-right" href="{{ url_for('systems_download_csv') }}"><i class="fa fa-fw fa-download"></i> Download CSV</a>
 	<small><strong>&nbsp;Legend:</strong>
 		<i title='System is linked to VMware and the VM is powered on' class='fa fa-fw fa-play icon-state icon-legend icon-on'></i>On
