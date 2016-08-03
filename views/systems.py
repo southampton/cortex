@@ -290,7 +290,9 @@ def system(id):
 	if system['puppet_certname']:
 		system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
 		
-	if system['allocation_who'] is not None:	
+	if system['allocation_who_realname'] is not None:	
+		system['allocation_who'] = system['allocation_who_realname'] + ' (' + system['allocation_who'] + ')'
+	else:
 		system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
 
 	return render_template('systems/view.html', system=system, system_class=system_class, active='systems', title=system['name'])
@@ -314,9 +316,6 @@ def system_edit(id):
 		if system['puppet_certname']:
 			system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
 		
-		if system['allocation_who'] is not None:
-			system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
-
 		return render_template('systems/edit.html', system=system, system_class=system_class, active='systems', title=system['name'])
 
 	elif request.method == 'POST':
@@ -618,6 +617,7 @@ def systems_json():
 			row['allocation_date'] = row['allocation_date'].strftime('%Y-%m-%d %H:%M:%S')
 		else:
 			row['allocation_date'] = "Unknown"
+
 		if row['allocation_who'] is not None:	
 			if row['allocation_who_realname'] is not None:
 				row['allocation_who'] = row['allocation_who_realname']

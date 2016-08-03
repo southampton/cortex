@@ -294,9 +294,10 @@ def get_user_realname(username, from_cache=True):
 	or where there is no associated real name.
 	"""
 
-	# This uses REDIS to cache the LDAP response
-	# because Active Directory is dog slow and takes forever to respond
-	# with a list of groups, making pages load really slowly. 
+	# We cache the real names in MySQL because Active Directory is 
+	# dog slow and takes forever to respond with a list of groups, 
+	# making pages load really slowly. We don't use REDIS because we have a
+	# MySQL view which needs to include the real name data.
 
 	if from_cache == False:
 		return get_user_realname_from_ldap(username)
