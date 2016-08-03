@@ -601,7 +601,51 @@ Username:             %s
 		except Exception, e:
 			pass
 
-		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT `systems`.`id` AS `id`, `type`, `class`, `number`, `systems`.`name` AS `name`, `allocation_date`, `expiry_date`, `allocation_who`, `allocation_comment`, `cmdb_id`, `sys_class_name` AS `cmdb_sys_class_name`, `sncache_cmdb_ci`.`name` AS `cmdb_name`, `operational_status` AS `cmdb_operational_status`, `u_number` AS `cmdb_u_number`, `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description`, `vmware_cache_vm`.`name` AS `vmware_name`, `vmware_cache_vm`.`vcenter` AS `vmware_vcenter`, `vmware_cache_vm`.`uuid` AS `vmware_uuid`, `vmware_cache_vm`.`numCPU` AS `vmware_cpus`, `vmware_cache_vm`.`memoryMB` AS `vmware_ram`, `vmware_cache_vm`.`powerState` AS `vmware_guest_state`, `vmware_cache_vm`.`guestFullName` AS `vmware_os`, `vmware_cache_vm`.`hwVersion` AS `vmware_hwversion`, `vmware_cache_vm`.`ipaddr` AS `vmware_ipaddr`, `vmware_cache_vm`.`toolsVersionStatus` AS `vmware_tools_version_status`, `puppet_nodes`.`certname` AS `puppet_certname`, `puppet_nodes`.`env` AS `puppet_env`, `puppet_nodes`.`include_default` AS `puppet_include_default`, `puppet_nodes`.`classes` AS `puppet_classes`, `puppet_nodes`.`variables` AS `puppet_variables`, `sncache_cmdb_ci`.`u_environment` AS `cmdb_environment`, `sncache_cmdb_ci`.`short_description` AS `cmdb_description`, `sncache_cmdb_ci`.`comments` AS `cmdb_comments`, `sncache_cmdb_ci`.`os` AS `cmdb_os`, `vmware_cache_vm`.`hostname` AS `vmware_hostname`, `systems`.`review_status` AS `review_status`, `systems`.`review_task` AS `review_task`, `realname_cache`.`realname` AS `allocation_who_realname` FROM `systems` LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id` LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid` LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` LEFT JOIN `realname_cache` ON `systems`.`allocation_who` = `realname_cache`.`username`""")
+		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT 
+		 `systems`.`id` AS `id`,
+		 `systems`.`type` AS `type`,
+		 `systems`.`class` AS `class`,
+		 `systems`.`number` AS `number`,
+		 `systems`.`name` AS `name`,
+		 `systems`.`allocation_date` AS `allocation_date`,
+		 `systems`.`expiry_date` AS `expiry_date`,
+		 `systems`.`allocation_who` AS `allocation_who`,
+		 `realname_cache`.`realname` AS `allocation_who_realname`,
+		 `systems`.`allocation_comment` AS `allocation_comment`,
+		 `systems`.`review_status` AS `review_status`,
+		 `systems`.`review_task` AS `review_task`,
+		 `systems`.`cmdb_id` AS `cmdb_id`,
+		 `sncache_cmdb_ci`.`sys_class_name` AS `cmdb_sys_class_name`,
+		 `sncache_cmdb_ci`.`name` AS `cmdb_name`,
+		 `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status`,
+		 `sncache_cmdb_ci`.`u_number` AS `cmdb_u_number`,
+		 `sncache_cmdb_ci`.`u_environment` AS `cmdb_environment`,
+		 `sncache_cmdb_ci`.`short_description` AS `cmdb_description`,
+		 `sncache_cmdb_ci`.`comments` AS `cmdb_comments`,
+		 `sncache_cmdb_ci`.`os` AS `cmdb_os`,
+		 `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description`,
+		 `sncache_cmdb_ci`.`virtual` AS `cmdb_is_virtual`,
+		 `vmware_cache_vm`.`name` AS `vmware_name`,
+		 `vmware_cache_vm`.`vcenter` AS `vmware_vcenter`,
+		 `vmware_cache_vm`.`uuid` AS `vmware_uuid`,
+		 `vmware_cache_vm`.`numCPU` AS `vmware_cpus`,
+		 `vmware_cache_vm`.`memoryMB` AS `vmware_ram`,
+		 `vmware_cache_vm`.`powerState` AS `vmware_guest_state`,
+		 `vmware_cache_vm`.`guestFullName` AS `vmware_os`,
+		 `vmware_cache_vm`.`hwVersion` AS `vmware_hwversion`,
+		 `vmware_cache_vm`.`ipaddr` AS `vmware_ipaddr`,
+		 `vmware_cache_vm`.`toolsVersionStatus` AS `vmware_tools_version_status`,
+		 `vmware_cache_vm`.`hostname` AS `vmware_hostname`,
+		 `puppet_nodes`.`certname` AS `puppet_certname`,
+		 `puppet_nodes`.`env` AS `puppet_env`,
+		 `puppet_nodes`.`include_default` AS `puppet_include_default`,
+		 `puppet_nodes`.`classes` AS `puppet_classes`,
+		 `puppet_nodes`.`variables` AS `puppet_variables`
+                FROM `systems` 
+		LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`
+		LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid`
+		LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` 
+		LEFT JOIN `realname_cache` ON `systems`.`allocation_who` = `realname_cache`.`username`""")
        	
 		## Close database connection
 		temp_db.close()
