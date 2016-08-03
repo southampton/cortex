@@ -249,7 +249,8 @@ Further Details:
 		# Set up template loading. Firstly build a list of FileSystemLoaders
 		# that will process templates in each workflows' templates directory
 		loader_data = {}
-		for workflow in self.workflows:
+		wflist = self.workflows + self.system_actions
+		for workflow in wflist:
 			template_dir = os.path.join(self.config['WORKFLOWS_DIR'], workflow['name'], 'templates')
 			loader_data[workflow['name']] = jinja2.FileSystemLoader(template_dir)
 
