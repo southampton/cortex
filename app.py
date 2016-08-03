@@ -327,11 +327,9 @@ Further Details:
 	################################################################################
 		
 	def workflow_route(self, rule="", **options):
-		"""This is a decorator function that is used in workflows to add a view
-		function into Cortex for creating new 'things'. It performs the 
-		function of Flask's @app.route but also adds the view function
-		to a menu on the website to allow the workflow to be activated by the 
-		user.
+		"""This is a decorator function that is used by workflows to construct
+		additional routes as needed which are triggered from their own pages
+		rather than hooks into the 'create' or 'system action' lists.
 
 		Usage is as follows:
 
