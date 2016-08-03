@@ -335,6 +335,7 @@ Further Details:
 
 		@app.workflow_route()
 
+		:param rule: additional part of the URL, e.g. /<int:id>
 		:param options: the options to be forwarded to the underlying
 			     :class:`~werkzeug.routing.Rule` object.  A change
 			     to Werkzeug is handling of method options.  methods
