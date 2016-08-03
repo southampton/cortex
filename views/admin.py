@@ -285,9 +285,9 @@ def admin_maint():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Initial setup
-	vmcache_task_id = None
-	vmcache_novm_task_id = None
-	sncache_task_id = None
+	vmcache_task_id  = None
+	sncache_task_id  = None
+	vmexpire_task_id = None
 
 	if request.method == 'GET':
 		# See which tasks are already running
@@ -298,9 +298,11 @@ def admin_maint():
 				vmcache_task_id = task['id']
 			elif task['name'] == '_cache_servicenow':
 				sncache_task_id = task['id']
+			elif task['name'] == '_vm_expire':
+				sncache_task_id = task['id']
 
 		# Render the page
-		return render_template('admin/maint.html', active='admin', sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id, title="Maintenance Tasks")
+		return render_template('admin/maint.html', active='admin', sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id, vmexpire_task_id=vmexpire_task_id, title="Maintenance Tasks")
 
 	else:
 		# Find out what task to start
@@ -311,6 +313,8 @@ def admin_maint():
 			task_id = neocortex.start_internal_task(session['username'], 'cache_vmware.py', '_cache_vmware', description="Caches information about virtual machines, datacenters and clusters from VMware")
 		elif module == 'sncache':
 			task_id = neocortex.start_internal_task(session['username'], 'cache_servicenow.py', '_cache_servicenow', description="Caches server CIs from the ServiceNow CMDB")
+		elif module == 'vmexpire':
+			task_id = neocortex.start_internal_task(session['username'], 'vm_expire.py', '_vm_expire', description="Turns off VMs which have expired")
 		else:
 			app.logger.warn('Unknown module name specified when starting task')
 			abort(400)

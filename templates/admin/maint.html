@@ -48,5 +48,20 @@
 			</form>
 		</div>
 	</div>
+	<div class="col-md-3">
+		<div class="well mtask">
+			<h3><i class="fa fa-fa fa-cloud-download"></i> Turn off expired VMs</h3>
+			<p>Finds all virtual machines which have expired and ensures they are switched off.</p>
+			<form method="POST">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input type="hidden" name="task_name" value="vmexpire"/>
+			{%- if vmexpire_task_id %}
+				<a href="{{url_for('task_status',id=vmexpire_task_id)}}" class="btn btn-primary form-control"><i class="fa fa-fw fa-cog fa-spin"></i> View in progress task</a>
+			{%- else %}
+			<button class="form-control btn btn-success" type="submit"><i class="fa fa-fw fa-play"></i> Start</button>
+			{%- endif %}
+			</form>
+		</div>
+	</div>
 </div>
 {% endblock %}

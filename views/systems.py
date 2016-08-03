@@ -376,7 +376,7 @@ def system_edit(id):
 				task_data = {}
 				task_data['time_constraint'] = 'asap'
 				task_data['short_description'] = 'Review necessity of virtual machine ' + system['name']
-				task_data['description'] = 'Please review the necessity of the virtual machine ' + system['name'] + ' to determine whether we need to keep it or whether it can be decommissioned. Information about the VM and links to ServiceNow can be found on Cortex at https://' + app.config['CORTEX_DOMAIN'] + url_for('systems_edit', id=id) + "\n\nOnce reviewed, please edit the system in Cortex using the link above and set it's 'Review Status' to either 'Required' or 'Not Required' and then close the associated project task."
+				task_data['description'] = 'Please review the necessity of the virtual machine ' + system['name'] + ' to determine whether we need to keep it or whether it can be decommissioned. Information about the VM and links to ServiceNow can be found on Cortex at https://' + app.config['CORTEX_DOMAIN'] + url_for('system_view', id=id) + "\n\nOnce reviewed, please edit the system in Cortex using the link above and set it's 'Review Status' to either 'Required' or 'Not Required' and then close the associated project task."
 				#task_data['opened_by'] = app.config['REVIEW_TASK_OPENER_SYS_ID']
 				task_data['opened_by'] = 'example'
 				task_data['assignment_group'] = app.config['REVIEW_TASK_TEAM']
@@ -403,13 +403,13 @@ def system_edit(id):
 			flash('System updated', "alert-success") 
 		except ValueError as ex:
 			flash('Failed to update system: 400 Bad request', 'alert-danger')
-			return redirect(url_for('systems_edit', id=id))
+			return redirect(url_for('system_edit', id=id))
 		except Exception as ex:
 			flash('Failed to update system: 500 Internal server error' + str(ex), 'alert-danger')
-			return redirect(url_for('systems_edit', id=id))
+			return redirect(url_for('system_edit', id=id))
 
 		# Regardless of success or error, redirect to the systems page
-		return redirect(url_for('systems_edit', id=id))
+		return redirect(url_for('system_edit', id=id))
 	else:
 		abort(400)
 
