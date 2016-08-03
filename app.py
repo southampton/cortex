@@ -325,6 +325,35 @@ Further Details:
 		return decorator
 
 	################################################################################
+		
+	def workflow_route(self, rule="", **options):
+		"""This is a decorator function that is used in workflows to add a view
+		function into Cortex for creating new 'things'. It performs the 
+		function of Flask's @app.route but also adds the view function
+		to a menu on the website to allow the workflow to be activated by the 
+		user.
+
+		Usage is as follows:
+
+		@app.workflow_route()
+
+		:param options: the options to be forwarded to the underlying
+			     :class:`~werkzeug.routing.Rule` object.  A change
+			     to Werkzeug is handling of method options.  methods
+			     is a list of methods this rule should be limited
+			     to (``GET``, ``POST`` etc.).  By default a rule
+			     just listens for ``GET`` (and implicitly ``HEAD``).
+			     Starting with Flask 0.6, ``OPTIONS`` is implicitly
+			     added and handled by the standard request handling.
+		"""
+
+		def decorator(f):
+			endpoint = options.pop('endpoint', None)
+			self.add_url_rule("/workflows/" + f.__name__ + rule, endpoint, f, **options)
+			return f
+		return decorator
+
+	################################################################################
 
 	def log_exception(self, exc_info):
 		"""Logs an exception.  This is called by :meth:`handle_exception`
