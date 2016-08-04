@@ -13,6 +13,7 @@ import werkzeug
 import csv
 import io
 import MySQLdb as mysql
+from collections import OrderedDict
 
 ################################################################################
 
@@ -27,44 +28,29 @@ def vmware_os():
 
 ################################################################################
 
-@app.route('/vmware/hardware')
+@app.route('/vmware/hw-tools')
 @cortex.lib.user.login_required
-def vmware_hw():
-	"""Shows VM hardware version statistics."""
+def vmware_hwtools():
+	"""Shows VM related graphs"""
+	#Shows VM hardware version statistics.
 
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get OS statistics
 	curd.execute('SELECT `hwVersion`, COUNT(*) AS `count` FROM `vmware_cache_vm` GROUP BY `hwVersion` ORDER BY `hwVersion`')
-	results = curd.fetchall()
+	stats_hw = curd.fetchall()
 
-	# Render
-	return render_template('vmware/hw.html', active='vmware', stats_hw=results, title="Statistics - Hardware Version")
-
-################################################################################
-
-@app.route('/vmware/power')
-@cortex.lib.user.login_required
-def vmware_power():
-	"""Shows VM hardware power state statistics."""
+	# Shows VM hardware power state statistics.
 
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get the power statistics
 	curd.execute('SELECT `powerState`, COUNT(*) AS `count` FROM `vmware_cache_vm` GROUP BY `powerState` ORDER BY `powerState`')
-	results = curd.fetchall()
+	stats_power = curd.fetchall()
 
-	# Render
-	return render_template('vmware/power.html', active='vmware', stats_power=results, title="Statistics - VM Power State")
-
-################################################################################
-
-@app.route('/vmware/tools')
-@cortex.lib.user.login_required
-def vmware_tools():
-	"""Shows VM tools statistics."""
+	#Shows VM tools statistics.
 
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -76,7 +62,7 @@ def vmware_tools():
 	stats_version = curd.fetchall()
 
 	# Render
-	return render_template('vmware/tools.html', active='vmware', stats_status=stats_status, stats_version=stats_version, title="Statistics - VMware Tools")
+	return render_template('vmware/hwtools.html', active='vmware', stats_hw=stats_hw, stats_power=stats_power,stats_status=stats_status, stats_version=stats_version, title="Statistics")
 
 ################################################################################
 
@@ -93,22 +79,22 @@ def vmware_specs():
 	results = curd.fetchall()
 
 	# The list of entries for our RAM histogram
-	data_ram = {
-		'Less than 1GB': 0,
-		'1GB': 0,
-		'2GB': 0,
-		'3GB': 0,
-		'4GB': 0,
-		'6GB': 0,
-		'8GB': 0,
-		'12GB': 0,
-		'16GB': 0,
-		'24GB': 0,
-		'32GB': 0,
-		'48GB': 0,
-		'64GB': 0,
-		'Other': 0,
-	}
+	data_ram = OrderedDict([
+		('Less than 1GB', 0),
+		('1GB', 0),
+		('2GB', 0),
+		('3GB', 0),
+		('4GB', 0),
+		('6GB', 0),
+		('8GB', 0),
+		('12GB', 0),
+		('16GB', 0),
+		('24GB', 0),
+		('32GB', 0),
+		('48GB', 0),
+		('64GB', 0),
+		('Other', 0),
+	])
 
 	# The list of entries for our CPU histogram
 	data_cpu = {
@@ -158,7 +144,6 @@ def vmware_specs():
 			data_cpu[int(vm['numCPU'])] += 1
 		except KeyError as ex:
 			data_cpu['Other'] += 1
-			
 	return render_template('vmware/specs.html', active='vmware', stats_ram=data_ram, stats_cpu=data_cpu, title="Statistics - VM Specs")
 
 ################################################################################
@@ -220,20 +205,23 @@ def vmware_history():
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
+
+	# grouping by to only take the last value per day
+
 	# Get VM count history
-	curd.execute('SELECT `timestamp`, `value` FROM `stats_vm_count`')
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_vm_count` WHERE `timestamp` IN (SELECT MAX(`timestamp`) FROM `stats_vm_count` GROUP BY DATE(`timestamp`)) ORDER BY `timestamp` DESC LIMIT 365')
 	stats_vms = curd.fetchall()
 
 	# Get Linux VM count history
-	curd.execute('SELECT `timestamp`, `value` FROM `stats_linux_vm_count`')
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_linux_vm_count` WHERE `timestamp` IN (SELECT MAX(`timestamp`) FROM `stats_linux_vm_count` GROUP BY DATE(`timestamp`)) ORDER BY `timestamp` DESC LIMIT 365')
 	stats_linux_vms = curd.fetchall()
 
 	# Get Windows VM count history
-	curd.execute('SELECT `timestamp`, `value` FROM `stats_windows_vm_count`')
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_windows_vm_count` WHERE `timestamp` IN (SELECT MAX(`timestamp`) FROM `stats_windows_vm_count` GROUP BY DATE(`timestamp`)) ORDER BY `timestamp` DESC LIMIT 365')
 	stats_windows_vms = curd.fetchall()
 
 	# Get Desktop VM count history
-	curd.execute('SELECT `timestamp`, `value` FROM `stats_desktop_vm_count`')
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_desktop_vm_count` WHERE `timestamp` IN (SELECT MAX(`timestamp`) FROM `stats_desktop_vm_count` GROUP BY DATE(`timestamp`)) ORDER BY `timestamp` DESC LIMIT 365')
 	stats_desktop_vms = curd.fetchall()
 
 	# Render

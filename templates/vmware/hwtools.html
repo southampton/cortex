@@ -4,62 +4,60 @@
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
 <div class="page-header">
-<h3><i class="fa fa-pie-chart fa-fw"></i> Statistics - Operating Systems</h3>
+<h3><i class="fa fa-pie-chart fa-fw"></i> Hardware and VMware Tools Statistics</h3>
 </div>
 <div class="container" role="main">
 	<div class="col-md-6">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title">OS estate</h3>
+				<h3 class="panel-title">Hardware</h3>
 			</div>
 			<div class="panel-body">
-				<div id="chart_os"></div>
+				<div id="chart_hw"></div>
 			</div>
 		</div>
 	</div>
 	<div class="col-md-6">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title">Linux systems</h3>
+				<h3 class="panel-title">Power States</h3>
 			</div>
 			<div class="panel-body">
-				<div id="chart_linux"></div>
+				<div id="chart_pwr"></div>
 			</div>
 		</div>
 	</div>
 	<div class="col-md-6">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title">Windows servers</h3>
+				<h3 class="panel-title">VMware Tools Status</h3>
 			</div>
 			<div class="panel-body">
-				<div id="chart_windows"></div>
+				<div id="chart_status"></div>
 			</div>
 		</div>
 	</div>
 	<div class="col-md-6">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title">Windows desktops</h3>
+				<h3 class="panel-title">VMware Tools Versions</h3>
 			</div>
 			<div class="panel-body">
-				<div id="chart_windows_desktops"></div>
+				<div id="chart_versions"></div>
 			</div>
 		</div>
 	</div>
 </div>
 <script>
-	var chart_os = c3.generate({
-		bindto: '#chart_os',
+	var chart_hw = c3.generate({
+		bindto: '#chart_hw',
 		data: {
 			columns: [
-				['Linux Servers', {{types['linux']}}],
-				['Windows Servers', {{types['windows_server']}}],
-				['Desktops', {{types['windows_desktop']}}],
-				['BSD Servers', {{types['bsd']}}],
-				['Other', {{types['other']}}]
+				{%- for row in stats_hw -%}
+				['{{ row.hwVersion }}', {{ row.count }}],
+				{%- endfor -%}
 			],
-			type: 'pie'
+			type: 'pie',
 		},
 		tooltip: {
 			format: {
@@ -68,21 +66,17 @@
 				}
 			}
 		}
+		
 	});
-	var chart_linux = c3.generate({
-		bindto: '#chart_linux',
+	var chart_pwr = c3.generate({
+		bindto: '#chart_pwr',
 		data: {
 			columns: [
-				['RHEL3',{{types['rhel3']}}],
-				['RHEL4', {{types['rhel4']}}],
-				['RHEL5', {{types['rhel5']}}],
-				['RHEL6', {{types['rhel6']}}],
-				['RHEL7', {{types['rhel7']}}],
-				['Ubuntu', {{types['ubuntu']}}],
-				['Debian', {{types['debian']}}],
-				['Other', {{types['linux_other']}}]
+				{%- for row in stats_power -%}
+				['{{ row.powerState }}', {{ row.count }}],
+				{%- endfor -%}
 			],
-			type: 'pie'
+			type: 'pie',
 		},
 		tooltip: {
 			format: {
@@ -91,16 +85,17 @@
 				}
 			}
 		}
+		
 	});
-	var chart_windows = c3.generate({
-		bindto: '#chart_windows',
+	var chart_status = c3.generate({
+		bindto: '#chart_status',
 		data: {
 			columns: [
-				['Server 2003', {{types['ws2003']}}],
-				['Server 2008', {{types['ws2008']}}],
-				['Server 2012', {{types['ws2012']}}]
+				{%- for row in stats_status -%}
+				['{{ row.toolsRunningStatus }}', {{ row.count }}],
+				{%- endfor -%}
 			],
-			type: 'pie'
+			type: 'pie',
 		},
 		tooltip: {
 			format: {
@@ -109,16 +104,17 @@
 				}
 			}
 		}
+		
 	});
-	var chart_windows_deksktops = c3.generate({
-		bindto: '#chart_windows_desktops',
+	var chart_versions = c3.generate({
+		bindto: '#chart_versions',
 		data: {
 			columns: [
-				['Windows 7', {{types['wd7']}}],
-				['Windows 8', {{types['wd8']}}],
-				['Windows 10', {{types['wd10']}}]
+				{%- for row in stats_version -%}
+				['{{ row.toolsVersionStatus }}', {{ row.count }}],
+				{%- endfor -%}
 			],
-			type: 'pie'
+			type: 'pie',
 		},
 		tooltip: {
 			format: {
@@ -127,6 +123,7 @@
 				}
 			}
 		}
+		
 	});
 </script>
 {% endblock %}
