@@ -1,52 +1,90 @@
 {% extends "layout.html" %}
 {% block body %}
-<script type="text/javascript" src="//www.google.com/jsapi"></script>
-<script type="text/javascript">
-	google.load("visualization", "1", {packages:["corechart"]});
-	google.setOnLoadCallback(prepDataAndDrawChart);
-
-	var specData;
-	var cpuData;
-
-	function prepDataAndDrawChart()
-	{
-		specData = new google.visualization.DataTable();
-		specData.addColumn('string', 'VMware Specs');
-		specData.addColumn('number', 'Count');
-		specData.addRows([
-{%- for key, value in stats_ram|dictsort(false, 'value') -%}
-	['{{ key }}', {{ value }}],
-{%- endfor -%}
-		]);
-
-		cpuData = new google.visualization.DataTable();
-		cpuData.addColumn('string', 'VMware Specs');
-		cpuData.addColumn('number', 'Count');
-		cpuData.addRows([
-{%- for key, value in stats_cpu|dictsort(false, 'value') -%}
-	['{{ key }}', {{ value }}],
-{%- endfor -%}
-		]);
-
-		drawChart()
-	}
-
-	function drawChart()
-	{
-		var chart_specs = new google.visualization.BarChart(document.getElementById('chart_specs'));
-		chart_specs.draw(specData, {title: 'RAM Specs', pieSliceText: 'label'});
-
-		var chart_cpu = new google.visualization.BarChart(document.getElementById('chart_cpu'));
-		chart_cpu.draw(cpuData, {title: 'CPU Specs', pieSliceText: 'label'});
-	}
-</script>
+<link href="//cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.css" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
 <div class="page-header">
-<h3><i class="fa fa-bar-chart fa-fw"></i> Statistics - VM Specs</h3>
+<h3><i class="fa fa-pie-chart fa-fw"></i> Statistics - VM Specs</h3>
 </div>
 <div class="container" role="main">
-	<div id="chart_specs" style="width:100%; height: 600px"></div>
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Memory</h3>
+			</div>
+			<div class="panel-body">
+				<div id="chart_ram"></div>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Processors</h3>
+			</div>
+			<div class="panel-body">
+				<div id="chart_cpu"></div>
+			</div>
+		</div>
+	</div>
 </div>
-<div class="container" role="main">
-	<div id="chart_cpu" style="width:100%; height: 600px"></div>
-</div>
+<script>
+	var chart_ram = c3.generate({
+		bindto: '#chart_ram',
+		data: {
+			columns: [
+				['memory', {%- for key, value in stats_ram.iteritems() -%}{{ value }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
+			],
+			//columns: [
+			//	{%- for key, value in stats_ram|dictsort(false, 'value') -%}
+			//	['{{ key }}', {{ value }}],
+			//	{%- endfor -%}
+			//],
+			type: 'bar',
+		},
+		axis: {
+			x: {
+				label: {
+					text: 'memory',
+					position: 'outer-center',
+				},
+				type: 'category',
+				categories: [{%- for key, value in stats_ram.iteritems() -%}'{{ key }}'{%- if not loop.last -%},{%- endif -%}{%- endfor -%}]
+			},
+			y: {
+				label: 'VMs',
+			}
+		},
+		legend: {
+			show: false
+		}
+		
+	});
+	var chart_cpu = c3.generate({
+		bindto: '#chart_cpu',
+		data: {
+			columns: [
+				['cores', {%- for key, value in stats_cpu|dictsort(False) -%}{{ value }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
+			],
+			type: 'bar',
+		},
+		axis: {
+			x: {
+				label: {
+					text: 'cores',
+					position: 'outer-center',
+				},
+				type: 'category',
+				categories: [{%- for key, value in stats_cpu|dictsort(False) -%}'{{ key }}'{%- if not loop.last -%},{%- endif -%}{%- endfor -%}]
+			},
+			y: {
+				label: 'VMs',
+			}
+		},
+		legend: {
+			show: false
+		}
+		
+	});
+</script>
 {% endblock %}

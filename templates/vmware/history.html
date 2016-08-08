@@ -1,93 +1,47 @@
 {% extends "layout.html" %}
 {% block body %}
-<script type="text/javascript" src="//www.google.com/jsapi"></script>
-<script type="text/javascript">
-	google.load("visualization", "1", {packages:["corechart"]});
-	google.setOnLoadCallback(prepDataAndDrawChart);
-
-	var data_total;
-	var data_linux;
-	var data_windows;
-
-	function d(s) { return new Date(s); }
-	function prepDataAndDrawChart()
-	{
-		data_total = new google.visualization.DataTable();
-		data_total.addColumn('datetime', 'Time');
-		data_total.addColumn('number', 'Total VMs');
-		data_total.addRows([
-{%- for row in stats_vms -%}
-		[d('{{ row.timestamp.strftime("%Y/%m/%d %H:%M:%S") }}'),{{ row.value }}]
-{%- if not loop.last -%},{%- endif -%}
-{%- endfor -%}
-		]);
-
-		data_linux = new google.visualization.DataTable();
-		data_linux.addColumn('datetime', 'Time');
-		data_linux.addColumn('number', 'Linux VMs');
-		data_linux.addRows([
-{%- for row in stats_linux_vms -%}
-		[d('{{ row.timestamp.strftime("%Y/%m/%d %H:%M:%S") }}'),{{ row.value }}]
-{%- if not loop.last -%},{%- endif -%}
-{%- endfor -%}
-		]);
-
-		data_windows = new google.visualization.DataTable();
-		data_windows.addColumn('datetime', 'Time');
-		data_windows.addColumn('number', 'Windows VMs');
-		data_windows.addRows([
-{%- for row in stats_windows_vms -%}
-		[d('{{ row.timestamp.strftime("%Y/%m/%d %H:%M:%S") }}'),{{ row.value }}]
-{%- if not loop.last -%},{%- endif -%}
-{%- endfor -%}
-		]);
-
-		drawChart();
-	}
-
-	function drawChart()
-	{
-		var now = new Date();
-		var lastCount = parseInt($('#lastCount').val());
-		var lastType = parseInt($('#lastType').val());
-
-		var options = {
-			hAxis: { 
-				viewWindow: { 
-					min: new Date(now.valueOf() - (lastCount * lastType * 1000))
-				}
-			}, 
-			chartArea: {
-				left: '10%',
-				top: '10%',
-				width: '80%',
-				height: '80%'
-			},
-			legend: {'position': 'bottom'},
-		};
-		var chart1 = new google.visualization.LineChart(document.getElementById('chart_total'));
-		var options1 = $.extend({'colors': ['#ff851b']}, options);
-		chart1.draw(data_total, options1);
-		var chart2 = new google.visualization.LineChart(document.getElementById('chart_linux'));
-		var options2 = $.extend({'colors': ['#158cba']}, options);
-		chart2.draw(data_linux, options2);
-		var chart3 = new google.visualization.LineChart(document.getElementById('chart_windows'));
-		var options3 = $.extend({'colors': ['#28b62c']}, options);
-		chart3.draw(data_windows, options3);
-	}
-
-</script>
+<link href="//cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.css" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
 <div class="page-header">
 <h3><i class="fa fa-pie-chart fa-fw"></i> Statistics - VMware History</h3>
 </div>
 <div class="container" role="main">
-	<div id="chart_total" style="width:100%; height: 300px"></div>
-	<div id="chart_linux" style="width:100%; height: 300px"></div>
-	<div id="chart_windows" style="width:100%; height: 300px"></div>
-	<div class="row pull-right">Show last <input id="lastCount" type="number" value="14" /> <select id="lastType"><option value="3600">hours</option><option value="86400" selected>days</option><option value="604800">weeks</option></select></div>
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">History</h3>
+			</div>
+			<div class="panel-body">
+				<div id="chart_history"></div>
+			</div>
+		</div>
+	</div>
 </div>
-<script type="text/javascript">
-	$('#lastCount').change(drawChart);
-	$('#lastType').change(drawChart);
+<script>
+	var chart_history = c3.generate({
+		bindto: '#chart_history',
+		data: {
+			x: 'x',
+			xFormat: '%Y-%m-%dT%H:%M:%S',
+			columns: [
+				['x', {%- for row in stats_vms -%}'{{ row.timestamp.strftime("%Y-%m-%dT%H:%M:%S") }}'{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
+				['Total VMs', {%- for row in stats_vms-%}{{ row.value }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
+				['Linux VMs', {%- for row in stats_linux_vms -%}{{ row.value }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
+				['Windows VMs', {%- for row in stats_windows_vms -%}{{ row.value }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
+			],
+		},
+		axis: {
+			x: {
+				type: 'timeseries',
+				tick: {
+					format: '%Y-%m-%d'
+				}
+			},
+		},
+		zoom: {
+			enabled: true
+		}
+	});
 </script>
 {% endblock %}

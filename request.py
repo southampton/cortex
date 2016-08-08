@@ -59,10 +59,8 @@ def context_processor():
 	]
 	vmware = [
 		{'link': url_for('vmware_os'), 'title': 'Operating systems', 'icon': 'fa-pie-chart'},
-		{'link': url_for('vmware_hw'), 'title': 'Hardware version', 'icon': 'fa-pie-chart'},
-		{'link': url_for('vmware_power'), 'title': 'Power state', 'icon': 'fa-pie-chart'},
+		{'link': url_for('vmware_hwtools'), 'title': 'Hardware & tools', 'icon': 'fa-pie-chart'},
 		{'link': url_for('vmware_specs'), 'title': 'RAM & CPU', 'icon': 'fa-pie-chart'},
-		{'link': url_for('vmware_tools'), 'title': 'VM tools', 'icon': 'fa-pie-chart'},
 		{'link': url_for('vmware_clusters'), 'title': 'Clusters', 'icon': 'fa-cubes'},
 		{'link': url_for('vmware_data'), 'title': 'VM data', 'icon': 'fa-th'},
 		{'link': url_for('vmware_data_unlinked'), 'title': 'Unlinked VMs', 'icon': 'fa-frown-o'},
