@@ -1,5 +1,3 @@
-
-
 import Pyro4
 import os
 import MySQLdb as mysql
