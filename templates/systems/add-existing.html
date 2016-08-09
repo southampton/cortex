@@ -4,47 +4,62 @@
 		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/js/bootstrap-select.min.js"></script>
 {% endblock %}
 {% block body %}
-<div class="alert alert-danger"><strong>Warning!</strong> This is an advanced feature recommended for administrators only. In certain cirumstances can cause future name allocations to fail and will allow you to create duplicate hostnames!</div>
 <div class="page-header">
 <h3>Add existing system</h3>
 </div>
-<p>This function exists to allow you to add existing names in to Cortex that have already been used/allocated but are unknown to Cortex. You can use this tool if an old system is missing from the list of system or if bootstrapping a Puppet master install.</p>
+<div class="alert alert-danger"><strong>Warning!</strong> This is an advanced feature recommended for administrators only. In certain cirumstances, this can cause future name allocations to fail and will allow you to create duplicate hostnames!</div>
+<p>This function exists to allow you to add existing names in to Cortex that have already been used/allocated but are unknown to Cortex. You can use this tool if an old system is missing from the list of systems or if bootstrapping a Puppet master install. If you are adding in a system that doesn't match an existing scheme (e.g. legacy server names), choose Legacy System from the class dropdown.</p>
 
 <form class="form-horizontal" method="POST" action="{{ url_for('systems_add_existing') }}">
 	<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 	<div class="form-group">
-		<label for="comment" class="col-sm-2 control-label">Comment</label>
+		<label for="comment" class="col-sm-2 control-label">Comment:</label>
 		<div class="col-sm-8">
 			<input name="comment" type="text" class="form-control" value="" placeholder="A brief description of what the system is" autofocus />
 		</div>
 	</div>
 
 	<div class="form-group">
-		<label for="class" class="col-sm-2 control-label">Class</label>
+		<label for="class" class="col-sm-2 control-label">Class:</label>
 		<div class="col-sm-2">
-			<select name="class" class="selectpicker">
+			<select name="class" class="selectpicker" id="class">
 				<option></option>
+				<option value="_LEGACY">Legacy System</option>
 {%- for class in classes %}
 				<option value="{{ class.name }}">{{ class.name }}</option>
 {%- endfor %}
 			</select>
 		</div>
-		<label for="number" class="col-sm-1 control-label">Number</label>
+		<label for="number" class="col-sm-1 control-label">Number:</label>
 		<div class="col-sm-2">
-			<input name="number" type="text" class="form-control" value="" placeholder="e.g. 123" />
+			<input name="number" id="number" type="text" class="form-control" value="" placeholder="e.g. 123" />
+		</div>
+		<label for="hostname" class="col-sm-1 control-label">Hostname:</label>
+		<div class="col-sm-2">
+			<input readonly="readonly" name="hostname" id="hostname" type="text" class="form-control" value="" placeholder="e.g. srv00123" />
 		</div>
 
 	</div>
 
 	<div class="form-group">
-		<label class="col-sm-2 control-label">Puppet Environment</label>
-		<div class="col-sm-8">
+		<label class="col-sm-2 control-label">Automatic Linking:</label>
+		<div class="col-sm-10" style="padding-top:6px">
+			<input checked="checked" type="checkbox" name="link_vmware" id="link_vmware" /> <label for="link_vmware" style="margin-right:2.0em">Link to VMware</label>
+			<input checked="checked" type="checkbox" name="link_servicenow" id="link_servicenow" /> <label for="link_servicenow">Link to ServiceNow</label>
+			<p class="help-block">Use the checkboxes above to have Cortex attempt to automatically find the VMware Virtual Machine and ServiceNow CI that belong to the given hostname. When using this, you should check afterwards that the system has been linked correctly.</p>
+		</div>
+	</div>
+
+	<div class="form-group">
+		<label for="env" class="col-sm-2 control-label">Puppet Environment:</label>
+		<div class="col-sm-10">
 			<select name="env" class="selectpicker" data-width="auto">
 				<option value="" selected="selected">Don't create a Puppet node</option>
 {%- for env in puppet_envs %}
 				<option value="{{ env.puppet }}">{{ env.name }} ({{ env.puppet }})</option>
 {%- endfor %}
 			</select>
+			<p class="help-block">Use the dropdown above to have Cortex create an entry in Cortex's Puppet ENC so that this box can be configured from Cortex. Note that this does not register the system with the Puppet master as this requires access to the system, so that step should still be performed manually.</p>
 		</div>
 	</div>
 
@@ -54,4 +69,21 @@
 		</div>
 	</div>
 </form>
+<script type="text/javascript">
+$('#class').change(function () {
+	console.log($('#class').val());
+	if ($('#class').val() == "_LEGACY")
+	{
+		$('#number').attr('readonly', 'readonly');
+		$('#hostname').removeAttr('readonly');
+	}
+	else
+	{
+		$('#number').removeAttr('readonly');
+		$('#hostname').attr('readonly', 'readonly');
+	}
+	$('#number').val('');
+	$('#hostname').val('');
+});
+</script>
 {% endblock %}

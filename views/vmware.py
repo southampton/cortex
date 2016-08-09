@@ -205,27 +205,30 @@ def vmware_history():
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-
-	# grouping by to only take the last value per day
+	# Figure out how many days to show
+	if 'd' in request.args:
+		d = int(request.args['d'])
+	else:
+		d = 14
 
 	# Get VM count history
-	curd.execute('SELECT `timestamp`, `value` FROM `stats_vm_count` WHERE `timestamp` IN (SELECT MAX(`timestamp`) FROM `stats_vm_count` GROUP BY DATE(`timestamp`)) ORDER BY `timestamp` DESC LIMIT 365')
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_vm_count` WHERE `timestamp` > DATE_SUB(NOW(), INTERVAL ' + str(d) + ' DAY) ORDER BY `timestamp` DESC')
 	stats_vms = curd.fetchall()
 
 	# Get Linux VM count history
-	curd.execute('SELECT `timestamp`, `value` FROM `stats_linux_vm_count` WHERE `timestamp` IN (SELECT MAX(`timestamp`) FROM `stats_linux_vm_count` GROUP BY DATE(`timestamp`)) ORDER BY `timestamp` DESC LIMIT 365')
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_linux_vm_count` WHERE `timestamp` > DATE_SUB(NOW(), INTERVAL ' + str(d) + ' DAY) ORDER BY `timestamp` DESC')
 	stats_linux_vms = curd.fetchall()
 
 	# Get Windows VM count history
-	curd.execute('SELECT `timestamp`, `value` FROM `stats_windows_vm_count` WHERE `timestamp` IN (SELECT MAX(`timestamp`) FROM `stats_windows_vm_count` GROUP BY DATE(`timestamp`)) ORDER BY `timestamp` DESC LIMIT 365')
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_windows_vm_count` WHERE `timestamp` > DATE_SUB(NOW(), INTERVAL ' + str(d) + ' DAY) ORDER BY `timestamp` DESC')
 	stats_windows_vms = curd.fetchall()
 
 	# Get Desktop VM count history
-	curd.execute('SELECT `timestamp`, `value` FROM `stats_desktop_vm_count` WHERE `timestamp` IN (SELECT MAX(`timestamp`) FROM `stats_desktop_vm_count` GROUP BY DATE(`timestamp`)) ORDER BY `timestamp` DESC LIMIT 365')
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_desktop_vm_count` WHERE `timestamp` > DATE_SUB(NOW(), INTERVAL ' + str(d) + ' DAY) ORDER BY `timestamp` DESC')
 	stats_desktop_vms = curd.fetchall()
 
 	# Render
-	return render_template('vmware/history.html', active='vmware', stats_vms=stats_vms, stats_linux_vms=stats_linux_vms, stats_windows_vms=stats_windows_vms, stats_desktop_vms=stats_desktop_vms, title='VMware History')
+	return render_template('vmware/history.html', active='vmware', stats_vms=stats_vms, stats_linux_vms=stats_linux_vms, stats_windows_vms=stats_windows_vms, stats_desktop_vms=stats_desktop_vms, title='VMware History', d=d)
 
 ################################################################################
 

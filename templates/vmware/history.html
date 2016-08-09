@@ -3,44 +3,171 @@
 <link href="//cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.css" rel="stylesheet" type="text/css">
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+<style type="text/css">
+.c3-chart-lines .c3-circles .c3-circle {
+	display: none;
+}
+</style>
 <div class="page-header">
 <h3><i class="fa fa-pie-chart fa-fw"></i> Statistics - VMware History</h3>
 </div>
 <div class="container" role="main">
+	<form method="GET" action="">
+		<p>These graphs show how then number of VMs have changed over time. Showing the last <input type="number" name="d" value="{{ d }}" /> days. <button type="submit">Update</button></p>
+	</form>
 	<div class="col-md-12">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title">History</h3>
+				<h3 class="panel-title">Total VMs</h3>
 			</div>
 			<div class="panel-body">
-				<div id="chart_history"></div>
+				<div id="chart_history_1"></div>
 			</div>
 		</div>
 	</div>
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Linux VMs</h3>
+			</div>
+			<div class="panel-body">
+				<div id="chart_history_2"></div>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Windows VMs</h3>
+			</div>
+			<div class="panel-body">
+				<div id="chart_history_3"></div>
+			</div>
+		</div>
+	</div>
+
 </div>
 <script>
-	var chart_history = c3.generate({
-		bindto: '#chart_history',
+	var chart_history_1 = c3.generate({
+		bindto: '#chart_history_1',
 		data: {
 			x: 'x',
 			xFormat: '%Y-%m-%dT%H:%M:%S',
 			columns: [
 				['x', {%- for row in stats_vms -%}'{{ row.timestamp.strftime("%Y-%m-%dT%H:%M:%S") }}'{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
-				['Total VMs', {%- for row in stats_vms-%}{{ row.value }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
-				['Linux VMs', {%- for row in stats_linux_vms -%}{{ row.value }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
-				['Windows VMs', {%- for row in stats_windows_vms -%}{{ row.value }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
-			],
+				['Total VMs', {%- for row in stats_vms-%}{{ row.value }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}]
+			]
+		},
+		transition: {
+			duration: 0
+		},
+		tooltip: {
+			format: {
+				title: function (x) { return x.toISOString().replace(/[TZ]/g, ' ').replace(/.000 *$/, ''); }
+			}
+		},
+		legend: {
+			show: false
 		},
 		axis: {
 			x: {
 				type: 'timeseries',
+				fit: true,
 				tick: {
-					format: '%Y-%m-%d'
+					format: '%Y-%m-%d',
+					count: 60,
+					culling: {
+						max: 12
+					}
 				}
 			},
+			y: {
+				tick: {
+					format: function(d) { return parseInt(d); } // Prevent float rounding errors
+				}
+			}
+		}
+	});
+
+	var chart_history_2 = c3.generate({
+		bindto: '#chart_history_2',
+		data: {
+			x: 'x',
+			xFormat: '%Y-%m-%dT%H:%M:%S',
+			columns: [
+				['x', {%- for row in stats_linux_vms -%}'{{ row.timestamp.strftime("%Y-%m-%dT%H:%M:%S") }}'{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
+				['Linux VMs', {%- for row in stats_linux_vms -%}{{ row.value }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}]
+			]
 		},
-		zoom: {
-			enabled: true
+		transition: {
+			duration: 0
+		},
+		tooltip: {
+			format: {
+				title: function (x) { return x.toISOString().replace(/[TZ]/g, ' ').replace(/.000 *$/, ''); }
+			}
+		},
+		legend: {
+			show: false
+		},
+		axis: {
+			x: {
+				type: 'timeseries',
+				fit: true,
+				tick: {
+					format: '%Y-%m-%d',
+					count: 60,
+					culling: {
+						max: 12
+					}
+				}
+			},
+			y: {
+				tick: {
+					format: function(d) { return parseInt(d); } // Prevent float rounding errors
+				}
+			}
+		}
+	});
+
+	var chart_history_3 = c3.generate({
+		bindto: '#chart_history_3',
+		data: {
+			x: 'x',
+			xFormat: '%Y-%m-%dT%H:%M:%S',
+			columns: [
+				['x', {%- for row in stats_windows_vms -%}'{{ row.timestamp.strftime("%Y-%m-%dT%H:%M:%S") }}'{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
+				['Windows VMs', {%- for row in stats_windows_vms -%}{{ row.value }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}]
+			]
+		},
+		transition: {
+			duration: 0
+		},
+		tooltip: {
+			format: {
+				title: function (x) { return x.toISOString().replace(/[TZ]/g, ' ').replace(/.000 *$/, ''); }
+			}
+		},
+		legend: {
+			show: false
+		},
+		axis: {
+			x: {
+				type: 'timeseries',
+				fit: true,
+				tick: {
+					format: '%Y-%m-%d',
+					count: 60,
+					culling: {
+						max: 12
+					}
+				}
+			},
+			y: {
+				tick: {
+					format: function(d) { return parseInt(d); } // Prevent float rounding errors
+				}
+			}
 		}
 	});
 </script>

@@ -119,59 +119,122 @@ def systems_add_existing():
 
 	# On POST requests...
 	elif request.method == 'POST':
-		if 'class' not in request.form or 'number' not in request.form or 'comment' not in request.form:
-			abort(401)
+		# Pull out information we always need
+		if 'class' not in request.form or 'comment' not in request.form or 'env' not in request.form:
+			flash('You must enter all the required information', category='alert-danger')
+			return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
+
+		class_name = request.form['class'].strip()
+		comment = request.form['comment'].strip()
+		puppet_env = request.form['env'].strip()
 
 		# Validate the class
-		if request.form['class'].strip() not in [c['name'] for c in classes]:
+		if class_name != '_LEGACY' and class_name not in [c['name'] for c in classes]:
 			flash('You must choose a valid class', category='alert-danger')
 			return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
 
-		# Validate the number
-		if len(request.form['number'].strip()) == 0:
-			flash('You must enter a server number', category='alert-danger')
+		# Validate the Puppet environment
+		if len(puppet_env) != 0 and puppet_env not in [e['puppet'] for e in puppet_envs]:
+			flash('You must select either no Puppet environment or a valid Puppet environment', category='alert-danger')
 			return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
 
-		# Validate the number
-		if len(request.form['env'].strip()) != 0 and request.form['env'].strip() not in [e['puppet'] for e in puppet_envs]:
-			flash('You must select either no Puppet environment or a valid Puppet environment (' + request.form['env'].strip() + ')', category='alert-danger')
-			return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
+		# Pull out potentially optional information
+		if class_name == '_LEGACY':
+			if 'hostname' not in request.form:
+				flash('You must enter a hostname', category='alert-danger')
+				return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
 
-		# Extract details
-		class_name = request.form['class'].strip()
-		number = int(request.form['number'].strip())
-		comment = request.form['comment'].strip()
-		puppet_env = request.form['env'].strip()
+			hostname = request.form['hostname'].strip()
+
+			if len(hostname) == 0:
+				flash('You must enter a hostname', category='alert-danger')
+				return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
+		else:
+			if 'number' not in request.form:
+				flash('You must enter a server number', category='alert-danger')
+				return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
+				
+			number = request.form['number'].strip()
+
+			# Validate that we have a number
+			if len(number) == 0:
+				flash('You must enter a server number', category='alert-danger')
+				return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
+
+			number = int(number)
 
 		# Get a cursor to the database
 		curd = g.db.cursor(mysql.cursors.DictCursor)
 
-		# Get the class
-		curd.execute("SELECT * FROM `classes` WHERE `name` = %s", (class_name,))
-		class_data = curd.fetchone()
+		# For standard, non-legacy names...
+		if class_name != '_LEGACY':
+			# Get the class
+			curd.execute("SELECT * FROM `classes` WHERE `name` = %s", (class_name,))
+			class_data = curd.fetchone()
 
-		# Ensure we have a class
-		if class_data is None:
-			flash('Invalid class selected', category='alert-danger')
-			return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
+			# Ensure we have a class
+			if class_data is None:
+				flash('Invalid class selected', category='alert-danger')
+				return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
 
-		# Generate the name, padded out correctly
-		lib = NeoCortexLib.NeoCortexLib(g.db, app.config)
-		generated_name = lib.pad_system_name(class_name, number, class_data['digits'])
+			# Generate the name, padded out correctly
+			lib = NeoCortexLib.NeoCortexLib(g.db, app.config)
+			hostname = lib.pad_system_name(class_name, number, class_data['digits'])
 
+			# Type 0 (in the database) is a normal class-assigned system
+			system_type = 0
+		else:
+			# We want NULLs in the database for these for legacy names
+			number = None
+			class_name = None
+
+			# Type 1 (in the database) is a legacy system
+			system_type = 1
+		
 		# Insert the system
-		curd.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`) VALUES (0, %s, %s, %s, NOW(), %s, %s)", (request.form['class'].strip(), request.form['number'].strip(), generated_name, session['username'], request.form['comment'].strip()))		
+		curd.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`) VALUES (%s, %s, %s, %s, NOW(), %s, %s)", (system_type, class_name, number, hostname, session['username'], comment))
+		system_id = curd.lastrowid
 
-		# Insert the 
+		# Insert a Puppet Node
 		if len(puppet_env) > 0:
-			curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`, `include_default`, `classes`, `variables`) VALUES (%s, %s, %s, %s, %s, %s)", (curd.lastrowid, generated_name + ".soton.ac.uk", puppet_env, 1, "", ""))
+			curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`, `include_default`, `classes`, `variables`) VALUES (%s, %s, %s, %s, %s, %s)", (curd.lastrowid, hostname + ".soton.ac.uk", puppet_env, 1, "", ""))
 
 		# Commit
 		g.db.commit()
-		
-		# Redirect back to systems page
+
+		# If we're linking to VMware
+		if 'link_vmware' in request.form:
+			# Search for a VM with the correct name		
+			curd.execute("SELECT `uuid` FROM `vmware_cache_vm` WHERE `name` = %s", (hostname,))
+			print curd._last_executed
+			vm_results = curd.fetchall()
+
+			if len(vm_results) == 0:
+				flash("System not linked to VMware: Couldn't find a VM to link the system to", "alert-warning")
+			elif len(vm_results) > 1:
+				flash("System not linked to VMware: Found more than one VM matching the name", "alert-warning")
+			else:
+				curd.execute("UPDATE `systems` SET `vmware_uuid` = %s WHERE `id` = %s", (vm_results[0]['uuid'], system_id))
+				g.db.commit()
+
+		# If we're linking to ServiceNow
+		if 'link_servicenow' in request.form:
+			# Search for a CI with the correct name
+			curd.execute("SELECT `sys_id` FROM `sncache_cmdb_ci` WHERE `name` = %s", (hostname,))
+			print curd._last_executed
+			ci_results = curd.fetchall()
+
+			if len(ci_results) == 0:
+				flash("System not linked to ServiceNow: Couldn't find a CI to link the system to", "alert-warning")
+			elif len(ci_results) > 1:
+				flash("System not linked to ServiceNow: Found more than one CI matching the name", "alert-warning")
+			else:
+				curd.execute("UPDATE `systems` SET `cmdb_id` = %s WHERE `id` = %s", (ci_results[0]['sys_id'], system_id))
+				g.db.commit()
+
+		# Redirect to the system page for the system we just added
 		flash("System added", "alert-success")
-		return redirect(url_for('systems'))
+		return redirect(url_for('system', id=system_id))
 			
 ################################################################################
 
