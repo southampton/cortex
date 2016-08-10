@@ -77,7 +77,8 @@ def context_processor():
 		{'link': url_for('admin_classes'), 'title': 'Classes', 'icon': 'fa-table'},	
 		{'link': url_for('admin_tasks'), 'title': 'Tasks', 'icon': 'fa-tasks'},
 		{'link': url_for('admin_maint'), 'title': 'Maintenance', 'icon': 'fa-gears'},
-		{'link': url_for('systems_new'), 'title': 'Allocate system name', 'icon': 'fa-plus'}
+		{'link': url_for('systems_new'), 'title': 'Allocate system name', 'icon': 'fa-plus'},
+		{'link': url_for('systems_add_existing'), 'title': 'Add existing system', 'icon': 'fa-plus'}
 	]
 
 	injectdata['menu'] = { 'systems': systems, 'vmware': vmware, 'puppet': puppet, 'admin': admin }
