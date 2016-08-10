@@ -14,8 +14,8 @@ import json
 import time
 from setproctitle import setproctitle #pip install setproctitle
 
-from NeoCortexLib import NeoCortexLib
-from TaskHelper import TaskHelper
+from corpus import Corpus
+from neocortex.TaskHelper import TaskHelper
 
 CONFIG_FILE = '/data/cortex/cortex.conf'
 Pyro4.config.SERVERTYPE = "multiplex"
@@ -213,7 +213,7 @@ class NeoCortex(object):
 
 	## This function allows the Flask web app to allocate names (as well as tasks)
 	def allocate_name(self, class_name, system_comment, username, num):
-		lib = NeoCortexLib(self._get_db(), self.config)
+		lib = Corpus(self._get_db(), self.config)
 		return lib.allocate_name(class_name, system_comment, username, num)
 
 	## List active tasks - returns a list of task ids

@@ -24,8 +24,8 @@ from pyVim.connect import SmartConnect, Disconnect
 # we talk about to neocortex via RPC
 import Pyro4
 
-class NeoCortexLib(object):
-	"""Library functions used in both neocortex itself and the neocortex tasks, hence a seperate object"""
+class Corpus(object):
+	"""Library functions used in both cortex and neocortex and workflow tasks"""
 
 	OS_TYPE_BY_ID   = {0: "None", 1: "Linux", 2: "Windows", 3: "ESXi", 4: "Solaris" }
 	OS_TYPE_BY_NAME = {"None": 0, "Linux": 1, "Windows": 2, "ESXi": 3, "Solaris": 4 }
@@ -158,6 +158,35 @@ class NeoCortexLib(object):
 				raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
 		else:
 			raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
+
+	################################################################################
+
+	def infoblox_get_host_refs(self,fqdn):
+		"""Returns a list of host references (Infoblox record IDs) from Infoblox
+		matching exactly the specified fully qualified domain name (FQDN). If no
+		records are found None is returned. If an error occurs LookupError is raised"""
+
+		payload = {'name:': fqdn}
+		r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/record:host", data=json.dumps(payload), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+		results = []
+
+		if r.status_code == 200:
+			response = r.json()
+
+			if isinstance(response, list):
+				if len(response) == 0:
+					return None
+				else:
+					for record in response:
+						if '_ref' in record:
+							results.append(record['_ref'])
+				
+				return results
+			else:
+				raise LookupError("Invalid data returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)			
+		else:
+			raise LookupError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
 
 	################################################################################
 
@@ -1211,9 +1240,23 @@ class NeoCortexLib(object):
 		# silently failing, so give AD some time to catch up
 		time.sleep(5)
 
+	################################################################################
+
+	## Return a boolean indicating whether a computer object exists in AD in the
+	## specified environment with the given hostname
+	def windows_computer_object_exists(self, env, hostname):
+		return self._get_winrpc_proxy(env).find_computer_object(hostname)
+
+	################################################################################
+
+	## Deletes a computer object exists in AD in the specified environment with the 
+	## given hostname
+	def windows_delete_computer_object(self, env, hostname):
+		return self._get_winrpc_proxy(env).delete_computer_object(hostname)
+
 	#######################################################################
 
-	def get_by_uuid(self, uuid, vcenter):
+	def vmware_get_vm_by_uuid(self, uuid, vcenter):
 		"""Get a VM by UUID
 		Args:
 		  uuid (string): UUID to find
@@ -1235,4 +1278,5 @@ class NeoCortexLib(object):
 			# Search for the VM by UUID
 			return content.searchIndex.FindByUuid(None, uuid, True, False)
 		else:
+			## TODO shouldn't this raise an exception?!
 			return None

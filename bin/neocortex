@@ -12,11 +12,10 @@ import requests
 import json
 import time
 
-from NeoCortexLib import NeoCortexLib
-from NeoCortex import NeoCortex
-from TaskHelper import TaskHelper
+sys.path.append('/data/cortex/cortex')
+from neocortex.NeoCortex import NeoCortex
+from neocortex.TaskHelper import TaskHelper
 
-#CONFIG_FILE = '/data/cortex/cortex.conf'
 Pyro4.config.SERVERTYPE = "multiplex"
 Pyro4.config.SOCK_REUSE = True
 

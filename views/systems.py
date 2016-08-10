@@ -6,7 +6,7 @@ import cortex.lib.core
 import cortex.lib.systems
 import cortex.lib.cmdb
 import cortex.lib.classes
-from cortex.neocortex import NeoCortexLib
+from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
 import os 
 import time
@@ -156,8 +156,8 @@ def systems_add_existing():
 			return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
 
 		# Generate the name, padded out correctly
-		lib = NeoCortexLib.NeoCortexLib(g.db, app.config)
-		generated_name = lib.pad_system_name(class_name, number, class_data['digits'])
+		corpus = Corpus(g.db, app.config)
+		generated_name = corpus.pad_system_name(class_name, number, class_data['digits'])
 
 		# Insert the system
 		curd.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`) VALUES (0, %s, %s, %s, NOW(), %s, %s)", (request.form['class'].strip(), request.form['number'].strip(), generated_name, session['username'], request.form['comment'].strip()))		

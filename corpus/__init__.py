@@ -1,1 +1,1 @@
-
+from corpus import Corpus

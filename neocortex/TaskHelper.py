@@ -11,7 +11,7 @@ import requests
 import json
 import time
 from setproctitle import setproctitle #pip install setproctitle
-from NeoCortexLib import NeoCortexLib
+from corpus import Corpus
 
 class TaskHelper(object):
 
@@ -40,7 +40,7 @@ class TaskHelper(object):
 
 		self.db   = self.db_connect()
 		self.curd = self.db.cursor(mysql.cursors.DictCursor)
-		self.lib  = NeoCortexLib(self.db, self.config)
+		self.lib  = Corpus(self.db, self.config)
 
 		## Set the process name
 		setproctitle("neocortex task ID " + str(self.task_id) + " " + self.workflow_name)

@@ -20,7 +20,7 @@ def run(helper, options):
 	shutdowncount = 0
 
 	for row in curd:
-		vm=helper.lib.get_by_uuid(row['uuid'], row['vcenter'])
+		vm=helper.lib.vmware_get_vm_by_uuid(row['uuid'], row['vcenter'])
 		if vm.runtime.powerState == vim.VirtualMachine.PowerState.poweredOn:
 			try:
 				helper.lib.vmware_vm_shutdown_guest(vm)
