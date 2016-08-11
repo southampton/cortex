@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
 from cortex import app
-from flask import g
+from cortex.lib.errors import fatalerr
+from flask import g, abort
 import MySQLdb as mysql
 import Pyro4
 import re
@@ -48,7 +49,7 @@ def neocortex_connect():
 	try:
 		proxy.ping()
 	except Pyro4.errors.PyroError as ex:
-		app.fatal_error("task engine error","An error occured when connecting to the neocortex task engine: " + str(ex))
+		abort(fatalerr(message="An error occured when connecting to the neocortex task engine: " + str(ex)))
 
 	return proxy
 
