@@ -346,26 +346,43 @@ def does_user_have_permission(perm, user=None):
 	else:
 		perm = [perm.lower()]
 
-	print "Checking permissions: " + str(perm) + " for user " + str(user)
+	# If we've already cached this users groups
+	if 'user_perms' in g:
+		app.logger.debug("Checking request-cached permissions for user " + str(user) + ": " + str(perm))
+
+		# Check if any of the permissions in perm are in the users
+		# cached permissions list
+		for p in perm:
+			if p in g.user_perms:
+				return True
+
+		# Didn't match any permissions, return False
+		app.logger.info("User " + str(user) + " did not have permission(s) " + str(perm))
+		return False
+
+	app.logger.debug("Calculating permissions for user " + str(user) + ": " + str(perm))
 
 	# Query role_who joined to role_perms to see which permissions a user
-	# has explicitly assigned to their username
+	# has explicitly assigned to their username attached to a role
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT LOWER(`role_perms`.`perm`) AS `perm` FROM `role_who` JOIN `role_perms` ON `role_who`.`role_id` = `role_perms`.`role_id` JOIN `roles` ON `roles`.`id` = `role_perms`.`role_id` WHERE `role_who`.`who` = %s AND `role_who`.`type` = %s', (user, ROLE_WHO_USER))
 
-	# Iterate through these permissions
-	for row in curd:
-		# If this row matches any of the permissions we're searching
-		# for then return True - the user has the permission
-		if row['perm'] in perm:
-			return True
+	# Start a set to build the users permissions
+	user_perms = set()
+
+	# Iterate through these permissions, adding them to the set
+	user_perms.update([row['perm'] for row in curd])
 
 	# Get the (possibly cached) list of groups for the user
 	ldap_groups = get_users_groups(user)
 
-	# Iterate over the groups, getting the permissions for that group
+	# Regex for extracting just the CN from the DN in the cached group names
 	cn_regex = re.compile("^(cn|CN)=([^,;]+),")
+
+	# Iterate over the groups, getting the roles (and thus permissions) for
+	# that group
 	for group in ldap_groups:
+		# Extract the CN from the DN using the compiled regex
 		matched = cn_regex.match(group)
 		if matched:
 			group = matched.group(2)
@@ -374,12 +391,18 @@ def does_user_have_permission(perm, user=None):
 
 		curd.execute('SELECT LOWER(`role_perms`.`perm`) AS `perm` FROM `role_who` JOIN `role_perms` ON `role_who`.`role_id` = `role_perms`.`role_id` JOIN `roles` ON `roles`.`id` = `role_perms`.`role_id` WHERE `role_who`.`who` = %s AND `role_who`.`type` = %s', (group, ROLE_WHO_LDAP_GROUP))
 
-		# Iterate through the permissions that users in this group has
-		for row in curd:
-			# If this row matches any of the permissions we're searching
-			# for then return True - the user has the permission
-			if row['perm'] in perm:
-				return True
+		# Add all the user permissions to the set
+		user_perms.update([row['perm'] for row in curd])
 
+	# Store these calculated permissions in the context
+	app.logger.debug("Calculated user permissions for " + str(user) + " as " + str(user_perms))
+	g.user_perms = user_perms
+
+	# Check whether the user has any of the permissions
+	for p in perm:
+		if p in g.user_perms:
+			return True
+	
 	# We've not found the permission, return False to indicate that
+	app.logger.info("User " + str(user) + " did not have permission(s) " + str(perm))
 	return False
