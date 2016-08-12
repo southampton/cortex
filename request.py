@@ -1,5 +1,6 @@
 from cortex import app
 from cortex.lib.errors import logerr, fatalerr
+from cortex.lib.user import does_user_have_permission
 from flask import Flask, request, session, g, abort, render_template, url_for
 import redis
 import time
@@ -34,6 +35,10 @@ def before_request():
 		logerr()
 		return fatalerr(message='Cortex could not connect to the MariaDB server')
 
+	# This would ideally go in app.py, but it can't as it depends on 
+	# cortex.lib.user which it can't import due to a cyclic dependency
+	app.jinja_env.globals['does_user_have_permission'] = does_user_have_permission
+
 ################################################################################
 
 @app.context_processor
@@ -52,34 +57,53 @@ def context_processor():
 
 	# Inject the menu items 
 	# systems, workflows, vmware, puppet, admin
-	# Define the 'systems' menu
-	systems = [
-		{'link': url_for('systems'), 'title': 'Systems list', 'icon': 'fa-list'},
-		{'link': url_for('systems_expired'), 'title': 'Expired systems list', 'icon': 'fa-list'}
-	]
-	vmware = [
-		{'link': url_for('vmware_os'), 'title': 'Operating systems', 'icon': 'fa-pie-chart'},
-		{'link': url_for('vmware_hwtools'), 'title': 'Hardware & tools', 'icon': 'fa-pie-chart'},
-		{'link': url_for('vmware_specs'), 'title': 'RAM & CPU', 'icon': 'fa-pie-chart'},
-		{'link': url_for('vmware_clusters'), 'title': 'Clusters', 'icon': 'fa-cubes'},
-		{'link': url_for('vmware_data'), 'title': 'VM data', 'icon': 'fa-th'},
-		{'link': url_for('vmware_data_unlinked'), 'title': 'Unlinked VMs', 'icon': 'fa-frown-o'},
-		{'link': url_for('vmware_history'), 'title': 'History', 'icon': 'fa-line-chart'}
-	]
-	puppet = [
-		{'link': url_for('puppet_dashboard'), 'title': 'Dashboard', 'icon': 'fa-dashboard'},
-		{'link': url_for('puppet_nodes'), 'title': 'Nodes', 'icon': 'fa-server'},
-		{'link': url_for('puppet_groups'), 'title': 'Groups', 'icon': 'fa-object-group'},
-		{'link': url_for('puppet_enc_default'), 'title': 'Default classes', 'icon': 'fa-globe'},
-		{'link': url_for('puppet_radiator'), 'title': 'Radiator view', 'icon': 'fa-desktop'},
-	]
-	admin = [
-		{'link': url_for('admin_classes'), 'title': 'Classes', 'icon': 'fa-table'},	
-		{'link': url_for('admin_tasks'), 'title': 'Tasks', 'icon': 'fa-tasks'},
-		{'link': url_for('admin_maint'), 'title': 'Maintenance', 'icon': 'fa-gears'},
-		{'link': url_for('systems_new'), 'title': 'Allocate system name', 'icon': 'fa-plus'},
-		{'link': url_for('systems_add_existing'), 'title': 'Add existing system', 'icon': 'fa-plus'}
-	]
+
+	# Set up the Systems menu, based on a single permission
+	systems = []
+	if does_user_have_permission("systems.view"):
+		systems = [
+			{'link': url_for('systems'), 'title': 'Systems list', 'icon': 'fa-list'},
+			{'link': url_for('systems_expired'), 'title': 'Expired systems list', 'icon': 'fa-list'}
+		]
+
+	# Set up the VMware menu, based on a single permission
+	vmware = []
+	if does_user_have_permission("vmware.view"):
+		vmware = [
+			{'link': url_for('vmware_os'), 'title': 'Operating systems', 'icon': 'fa-pie-chart'},
+			{'link': url_for('vmware_hwtools'), 'title': 'Hardware & tools', 'icon': 'fa-pie-chart'},
+			{'link': url_for('vmware_specs'), 'title': 'RAM & CPU', 'icon': 'fa-pie-chart'},
+			{'link': url_for('vmware_clusters'), 'title': 'Clusters', 'icon': 'fa-cubes'},
+			{'link': url_for('vmware_data'), 'title': 'VM data', 'icon': 'fa-th'},
+			{'link': url_for('vmware_data_unlinked'), 'title': 'Unlinked VMs', 'icon': 'fa-frown-o'},
+			{'link': url_for('vmware_history'), 'title': 'History', 'icon': 'fa-line-chart'}
+		]
+
+	# Set up the Puppet menu, based on permissions
+	puppet = []
+	if does_user_have_permission("puppet.dashboard.view"):
+		puppet.append({'link': url_for('puppet_dashboard'), 'title': 'Dashboard', 'icon': 'fa-dashboard'})
+	if does_user_have_permission("puppet.nodes.view"):
+		puppet.append({'link': url_for('puppet_nodes'), 'title': 'Nodes', 'icon': 'fa-server'})
+	if does_user_have_permission("puppet.groups.view"):
+		puppet.append({'link': url_for('puppet_groups'), 'title': 'Groups', 'icon': 'fa-object-group'})
+	if does_user_have_permission("puppet.default_classes.view"):
+		puppet.append({'link': url_for('puppet_enc_default'), 'title': 'Default classes', 'icon': 'fa-globe'})
+	if does_user_have_permission("puppet.dashboard.view"):
+		puppet.append({'link': url_for('puppet_radiator'), 'title': 'Radiator view', 'icon': 'fa-desktop'})
+
+	# Set up the Admin menu, based on permissions
+	admin = []
+	if does_user_have_permission("classes.view"):
+		admin.append({'link': url_for('admin_classes'), 'title': 'Classes', 'icon': 'fa-table'})
+	if does_user_have_permission("tasks.view"):
+		admin.append({'link': url_for('admin_tasks'), 'title': 'Tasks', 'icon': 'fa-tasks'})
+	if does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm"]):
+		admin.append({'link': url_for('admin_maint'), 'title': 'Maintenance', 'icon': 'fa-gears'})
+	if does_user_have_permission("systems.allocate_name"):
+		admin.append({'link': url_for('systems_new'), 'title': 'Allocate system name', 'icon': 'fa-plus'})
+	if does_user_have_permission("systems.add_existing"):
+		admin.append({'link': url_for('systems_add_existing'), 'title': 'Add existing system', 'icon': 'fa-plus'})
 
 	injectdata['menu'] = { 'systems': systems, 'vmware': vmware, 'puppet': puppet, 'admin': admin }
 

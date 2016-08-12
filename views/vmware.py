@@ -2,9 +2,9 @@
 #
 
 from cortex import app
-import cortex.lib.user
+from cortex.lib.user import does_user_have_permission, login_required
 import cortex.lib.vmware
-from flask import Flask, request, session, redirect, url_for, flash, g, render_template, jsonify, Response
+from flask import Flask, request, session, redirect, url_for, flash, g, render_template, jsonify, Response, abort
 import os 
 import time
 import json
@@ -18,9 +18,14 @@ from collections import OrderedDict
 ################################################################################
 
 @app.route('/vmware/os')
-@cortex.lib.user.login_required
+@login_required
 def vmware_os():
 	"""Shows VM operating system statistics."""
+
+	# Check user permissions
+	if not does_user_have_permission("vmware.view"):
+		abort(403)
+
 	types = cortex.lib.vmware.get_os_stats()
 
 	# Render
@@ -29,10 +34,13 @@ def vmware_os():
 ################################################################################
 
 @app.route('/vmware/hw-tools')
-@cortex.lib.user.login_required
+@login_required
 def vmware_hwtools():
 	"""Shows VM related graphs"""
-	#Shows VM hardware version statistics.
+
+	# Check user permissions
+	if not does_user_have_permission("vmware.view"):
+		abort(403)
 
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -67,9 +75,13 @@ def vmware_hwtools():
 ################################################################################
 
 @app.route('/vmware/specs')
-@cortex.lib.user.login_required
+@login_required
 def vmware_specs():
 	"""Shows VM hardware spec statistics."""
+
+	# Check user permissions
+	if not does_user_have_permission("vmware.view"):
+		abort(403)
 
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -149,10 +161,14 @@ def vmware_specs():
 ################################################################################
 
 @app.route('/vmware/data')
-@cortex.lib.user.login_required
+@login_required
 def vmware_data():
 	"""Displays page containing a giant table of information of everything
 	we know about all the VMs."""
+
+	# Check user permissions
+	if not does_user_have_permission("vmware.view"):
+		abort(403)
 
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -167,8 +183,12 @@ def vmware_data():
 ################################################################################
 
 @app.route('/vmware/clusters')
-@cortex.lib.user.login_required
+@login_required
 def vmware_clusters():
+	# Check user permissions
+	if not does_user_have_permission("vmware.view"):
+		abort(403)
+
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
@@ -200,8 +220,12 @@ def vmware_clusters():
 ################################################################################
 
 @app.route('/vmware/history')
-@cortex.lib.user.login_required
+@login_required
 def vmware_history():
+	# Check user permissions
+	if not does_user_have_permission("vmware.view"):
+		abort(403)
+
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
@@ -276,9 +300,13 @@ def vmware_csv_stream(cursor):
 ################################################################################
 
 @app.route('/vmware/download/csv')
-@cortex.lib.user.login_required
+@login_required
 def vmware_download_csv():
 	"""Downloads the VMware data as a CSV file."""
+
+	# Check user permissions
+	if not does_user_have_permission("vmware.view"):
+		abort(403)
 
 	# Get the list of systems
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -290,11 +318,15 @@ def vmware_download_csv():
 ################################################################################
 
 @app.route('/vmware/unlinked')
-@cortex.lib.user.login_required
+@login_required
 def vmware_data_unlinked():
 	"""Displays page containing a giant table of information of everything
 	we know about VMs which are not linked to Cortex system records. It is 
 	currently hard coded to exclude virtual machines on the ECS cluster."""
+
+	# Check user permissions
+	if not does_user_have_permission("vmware.view"):
+		abort(403)
 
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)

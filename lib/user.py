@@ -10,6 +10,9 @@ from functools import wraps
 import ldap
 from werkzeug.urls import url_encode
 
+ROLE_WHO_USER = 0
+ROLE_WHO_LDAP_GROUP = 1
+ROLE_WHO_NIS_GROUP = 2
 
 ################################################################################
 
@@ -316,3 +319,67 @@ def get_user_realname(username, from_cache=True):
 		if user is None:
 			return get_user_realname_from_ldap(username)
 		return user['name']
+
+#############################################################################
+
+def does_user_have_permission(perm, user=None):
+	"""Returns a boolean indicating if a user has a certain permission or
+	one of a list of permissions.
+	  perm: Either a string or a list of strings that contains the
+	        permission(s) to search for
+	  user: The user whose permissions should be checked. Defaults to
+	        None, which checks the currently logged in user."""
+
+	# Default to using the current user
+	if user is None:
+		if 'username' in session:
+			user = session['username']
+		else:
+			# User not logged in - they definitely don't have permission!
+			return False
+
+	# Turn the permission(s) in to a lowercase list of permissions so we 
+	# can check a number of permissions at once
+	if type(perm) is list:
+		for idx, val in enumerate(perm):
+			perm[idx] = val.lower()
+	else:
+		perm = [perm.lower()]
+
+	print "Checking permissions: " + str(perm) + " for user " + str(user)
+
+	# Query role_who joined to role_perms to see which permissions a user
+	# has explicitly assigned to their username
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT LOWER(`role_perms`.`perm`) AS `perm` FROM `role_who` JOIN `role_perms` ON `role_who`.`role_id` = `role_perms`.`role_id` JOIN `roles` ON `roles`.`id` = `role_perms`.`role_id` WHERE `role_who`.`who` = %s AND `role_who`.`type` = %s', (user, ROLE_WHO_USER))
+
+	# Iterate through these permissions
+	for row in curd:
+		# If this row matches any of the permissions we're searching
+		# for then return True - the user has the permission
+		if row['perm'] in perm:
+			return True
+
+	# Get the (possibly cached) list of groups for the user
+	ldap_groups = get_users_groups(user)
+
+	# Iterate over the groups, getting the permissions for that group
+	cn_regex = re.compile("^(cn|CN)=([^,;]+),")
+	for group in ldap_groups:
+		matched = cn_regex.match(group)
+		if matched:
+			group = matched.group(2)
+		else:
+			continue
+
+		curd.execute('SELECT LOWER(`role_perms`.`perm`) AS `perm` FROM `role_who` JOIN `role_perms` ON `role_who`.`role_id` = `role_perms`.`role_id` JOIN `roles` ON `roles`.`id` = `role_perms`.`role_id` WHERE `role_who`.`who` = %s AND `role_who`.`type` = %s', (group, ROLE_WHO_LDAP_GROUP))
+
+		# Iterate through the permissions that users in this group has
+		for row in curd:
+			# If this row matches any of the permissions we're searching
+			# for then return True - the user has the permission
+			if row['perm'] in perm:
+				return True
+
+	# We've not found the permission, return False to indicate that
+	return False

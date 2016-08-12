@@ -62,7 +62,7 @@
 			</div>
 
 			<div class="modal-footer">
-				<button id="btn_vmware_search_cancel" type="button" class="btn btn-default">Cancel</button>
+				<button data-dismiss="modal" type="button" class="btn btn-default">Cancel</button>
 			</div>
 		</div>
 	</div>
@@ -79,7 +79,7 @@
 	<div class="form-group">
 		<label class="col-sm-2 control-label" for="allocation_comment">Comment:</label>
 		<div class="col-sm-10 col-md-9">
-			<input class="form-control" type="text" name="allocation_comment" id="allocation_comment" value="{{ system.allocation_comment or '' }}" />
+			<input class="form-control" {% if not does_user_have_permission("systems.comments.edit") %}readonly="readonly" {% endif %}type="text" name="allocation_comment" id="allocation_comment" value="{{ system.allocation_comment or '' }}" />
 		</div>
 	</div>
 
@@ -88,9 +88,9 @@
 		<label class="col-sm-2 control-label" for="vmware_uuid">VMware UUID:</label>
 		<div class="col-sm-10 col-md-9">
 			<div class="input-group">
-				<input class="form-control" type="text" name="vmware_uuid" id="vmware_uuid" pattern="^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$" value="{{ system.vmware_uuid or '' }}" />
+				<input class="form-control" {% if not does_user_have_permission("systems.vmware.edit") %}readonly="readonly" {% endif %}type="text" name="vmware_uuid" id="vmware_uuid" pattern="^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$" value="{{ system.vmware_uuid or '' }}" />
 				<div class="input-group-addon" style="padding:1px">
-					<a data-toggle="modal" data-target="#search_vmware" class="btn btn-sm">Search</a>
+					<a {% if does_user_have_permission("systems.vmware.edit") %}data-toggle="modal" data-target="#search_vmware"{% endif %} class="btn btn-sm">Search</a>
 				</div>
 			</div>
 			<div class="help-block">This is the UUID of the VM within VMware.</div>
@@ -103,9 +103,9 @@
 		<label class="col-sm-2 control-label" for="cmdb_id">CMDB System ID:</label>
 		<div class="col-sm-10 col-md-9">
 			<div class="input-group">
-				<input class="form-control" type="text" name="cmdb_id" id="cmdb_id" pattern="^[0-9a-f]+$" value="{{ system.cmdb_id or '' }}" />
+				<input class="form-control" {% if not does_user_have_permission("systems.cmdb.edit") %}readonly="readonly" {% endif %}type="text" name="cmdb_id" id="cmdb_id" pattern="^[0-9a-f]+$" value="{{ system.cmdb_id or '' }}" />
 				<div class="input-group-addon" style="padding:1px">
-					<a data-toggle="modal" data-target="#search_cmdb" class="btn btn-sm">Search</a>
+					<a {% if does_user_have_permission("systems.cmdb.edit") %}data-toggle="modal" data-target="#search_cmdb"{% endif %} class="btn btn-sm">Search</a>
 				</div>
 			</div>
 			<div class="help-block">This is the unique identifier of the CMDB entry in ServiceNow, known as the 'sys_id'. This can be found in the URL for a CMDB entry, which is accessible from a CMDB page, by right-clicking the header and selecting Copy URL.</div>
@@ -116,8 +116,8 @@
 		<div class="form-group">
 			<label class="col-sm-2 control-label" for="expiry_date">Expiry date:</label>
 			<div class="col-sm-10 col-md-9">
-                                <div class='input-group date' id='expirypicker'>
-                                        <input type='text' class="form-control" id="expiry_date" name="expiry_date" />
+                                <div class="input-group date" id="expirypicker">
+                                        <input type="text" {% if not does_user_have_permission("systems.expiry.edit") %}readonly="readonly" {% endif %}class="form-control" id="expiry_date" name="expiry_date" />
                                         <span class="input-group-addon">
                                                 <span class="glyphicon glyphicon-calendar"></span>
                                         </span>
@@ -140,7 +140,7 @@
 		<div class="form-group">
 			<label class="col-sm-2 control-label" for="review_status">Review Status:</label>
 			<div class="col-sm-3">
-				<select class="form-control" name="review_status" id="review_status">
+				<select class="form-control" name="review_status" id="review_status"{% if not does_user_have_permission("systems.review.edit") %} disabled="disabled" {% endif %}>
 					<option value="0"{% if system.review_status == 0 %} selected="selected"{% endif %}>Not reviewed</option>
 					<option value="1"{% if system.review_status == 1 %} selected="selected"{% endif %}>Required</option>
 					<option value="3"{% if system.review_status == 3 %} selected="selected"{% endif %}>Not required</option>
@@ -149,7 +149,7 @@
 			</div>
 			<label class="col-sm-2 control-label" for="review_ticket">Review Task:</label>
 			<div class="col-sm-3">
-				<input class="form-control" type="text" name="review_task" id="review_task" pattern="^[A-Z]+TASK[0-9]+$" {% if system.review_status != 2 %} readonly="readonly"{%endif%} placeholder="e.g. PRJTASK012345" value="{{ system.review_task or '' }}" />
+				<input class="form-control" type="text" name="review_task" id="review_task" pattern="^[A-Z]+TASK[0-9]+$" {% if not does_user_have_permission("systems.review.edit") or system.review_status != 2 %} readonly="readonly"{%endif%} placeholder="e.g. PRJTASK012345" value="{{ system.review_task or '' }}" />
 			</div>
 			
 			<div style="margin-bottom:0px" class="col-sm-offset-2 col-sm-10 col-md-9 help-block">When reviewing current VMs, these fields can be used to state whether a VM is required or can be deleted. If a review status of 'Under review' is selected, a ServiceNow project task can be added. If left blank, one will be created for you.</div>

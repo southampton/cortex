@@ -6,6 +6,7 @@ import cortex.lib.core
 import cortex.lib.systems
 import cortex.lib.cmdb
 import cortex.lib.classes
+from cortex.lib.user import does_user_have_permission
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
 import os 
@@ -27,9 +28,12 @@ import requests
 def systems():
 	"""Shows the list of known systems to the user."""
 
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
+
 	# Get the list of systems
 	systems = cortex.lib.systems.get_systems()
-
 
 	# Get the list of active classes (used to populate the tab bar)
 	classes = cortex.lib.classes.list()
@@ -51,9 +55,12 @@ def systems():
 def systems_expired():
 	"""Shows the list of expired systems to the user."""
 
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
+
 	# Get the list of systems
 	systems = cortex.lib.systems.get_systems()
-
 
 	# Get the list of active classes (used to populate the tab bar)
 	classes = cortex.lib.classes.list()
@@ -69,6 +76,10 @@ def systems_expired():
 def systems_search():
 	"""Allows the user to search for a system by entering its name in the 
 	search box"""
+
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
 
 	# Get the query from the URL
 	query = request.args.get('query')
@@ -93,6 +104,10 @@ def systems_search():
 def systems_download_csv():
 	"""Downloads the list of allocated server names as a CSV file."""
 
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
+
 	# Get the list of systems
 	curd = cortex.lib.systems.get_systems(return_cursor=True, hide_inactive=False)
 
@@ -106,6 +121,10 @@ def systems_download_csv():
 def systems_add_existing():
 	"""Handles the Add Existing System page, which can be used to add missing
 	systems to Cortex"""
+
+	# Check user permissions
+	if not does_user_have_permission("systems.add_existing"):
+		abort(403)
 
 	# Get the list of enabled classes
 	classes = cortex.lib.classes.list(hide_disabled=True)
@@ -243,6 +262,10 @@ def systems_add_existing():
 def systems_new():
 	"""Handles the Allocate New System Name(s) page"""
 
+	# Check user permissions
+	if not does_user_have_permission("systems.allocate_name"):
+		abort(403)
+
 	# On GET requests, just show big buttons for all the classes
 	if request.method == 'GET':
 		classes = cortex.lib.classes.list(hide_disabled=True)
@@ -302,6 +325,10 @@ def systems_bulk_save():
 	"""This is a POST handler used to set comments for a series of existing 
 	systems which have been allocated already"""
 
+	# Check user permissions
+	if not does_user_have_permission("systems.allocate_name"):
+		abort(403)
+
 	found_keys = []
 
 	# Find a list of systems from the form. Each of the form input elements
@@ -326,6 +353,10 @@ def systems_bulk_save():
 def systems_bulk_view(start, finish):
 	"""This is a GET handler to view the list of assigned names"""
 
+	# Check user permissions
+	if not does_user_have_permission("systems.allocate_name"):
+		abort(403)
+
 	start  = int(start)
 	finish = int(finish)
 
@@ -337,9 +368,13 @@ def systems_bulk_view(start, finish):
 
 ################################################################################
 
-@app.route('/systems/view/<int:id>', methods=['GET', 'POST'])
+@app.route('/systems/view/<int:id>')
 @cortex.lib.user.login_required
 def system(id):
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
+
 	# Get the system
 	system = cortex.lib.systems.get_system_by_id(id)
 
@@ -365,6 +400,10 @@ def system(id):
 @app.route('/systems/edit/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_edit(id):
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
+
 	# Get the system
 	system = cortex.lib.systems.get_system_by_id(id)
 
@@ -501,6 +540,10 @@ def systems_vmware_json():
 	"""Used by DataTables to extract infromation from the VMware cache. The
 	parameters and return format are dictated by DataTables"""
 
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
+
 	# Extract information from DataTables
 	(draw, start, length, order_column, order_asc, search) = _systems_extract_datatables()
 
@@ -576,6 +619,10 @@ def systems_cmdb_json():
 	"""Used by DataTables to extract information from the ServiceNow CMDB CI
 	cache. The parameters and return format are as dictated by DataTables"""
 
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
+
 	# Extract information from DataTables
 	(draw, start, length, order_column, order_asc, search) = _systems_extract_datatables()
 
@@ -610,6 +657,10 @@ def systems_json():
 	"""Used by DataTables to extract information from the systems table in
 	the database. The parameters and return format are as dictated by 
 	DataTables"""
+
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
 
 	# Extract information from DataTables
 	(draw, start, length, order_column, order_asc, search) = _systems_extract_datatables()

@@ -648,6 +648,82 @@ Username:             %s
 		LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` 
 		LEFT JOIN `realname_cache` ON `systems`.`allocation_who` = `realname_cache`.`username`""")
        	
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `roles` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `name` varchar(64) NOT NULL,
+		  `description` text NOT NULL,
+		  PRIMARY KEY (`id`),
+		  KEY (`name`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=2""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `role_perms` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `role_id` mediumint(11) NOT NULL,
+		  `perm` varchar(64) NOT NULL,
+		  PRIMARY KEY (`id`),
+		  UNIQUE (`role_id`, `perm`),
+		  CONSTRAINT `role_perms_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `role_who` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `role_id` mediumint(11) NOT NULL,
+		  `who` varchar(128) NOT NULL,
+		  `type` tinyint(1) NOT NULL,
+		  PRIMARY KEY (`id`),
+		  UNIQUE (`role_id`, `who`, `type`),
+		  CONSTRAINT `role_who_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_perms` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `system_id` mediumint(11) NOT NULL,
+		  `who` varchar(128) NOT NULL,
+		  `type` tinyint(1) NOT NULL,
+		  PRIMARY KEY (`id`),
+		  UNIQUE (`system_id`, `who`, `type`),
+		  CONSTRAINT `system_perms_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `workflow_perms` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `workflow_name` varchar(128) NOT NULL,
+		  `who` varchar(128) NOT NULL,
+		  `type` tinyint(1) NOT NULL,
+		  PRIMARY KEY (`id`),
+		  UNIQUE (`workflow_name`, `who`, `type`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		# Ensure we have a default administrator role with appropriate permissions
+		cursor.execute("""INSERT IGNORE INTO `roles` (`id`, `name`, `description`) VALUES (1, "Administrator", "Has full access to everything")""")
+		cursor.execute("""INSERT IGNORE INTO `role_perms` (`role_id`, `perm`) VALUES 
+		  (1, "systems.view"), 
+		  (1, "systems.comments.edit"), 
+		  (1, "systems.vmware.edit"), 
+		  (1, "systems.cmdb.edit"), 
+		  (1, "systems.expiry.edit"), 
+		  (1, "systems.review.edit"), 
+		  (1, "systems.allocate_name"), 
+		  (1, "systems.add_existing"),
+		  (1, "vmware.view"), 
+		  (1, "puppet.dashboard.view"), 
+		  (1, "puppet.nodes.view"), 
+		  (1, "puppet.nodes.edit"), 
+		  (1, "puppet.reports.view"), 
+		  (1, "puppet.facts.view"), 
+		  (1, "puppet.default_classes.view"), 
+		  (1, "puppet.default_classes.edit"), 
+		  (1, "puppet.groups.view"), 
+		  (1, "puppet.groups.edit"), 
+		  (1, "classes.view"), 
+		  (1, "classes.edit"), 
+		  (1, "tasks.view"),
+		  (1, "maintenance.vmware"), 
+		  (1, "maintenance.cmdb"), 
+		  (1, "maintenance.expire_vm"),
+		  (1, "workflows.all"),
+		  (1, "systems.actions.all")""")
+
 		## Close database connection
 		temp_db.close()
 
