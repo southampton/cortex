@@ -6,7 +6,7 @@ import cortex.lib.core
 import cortex.lib.systems
 import cortex.lib.cmdb
 import cortex.lib.classes
-from cortex.lib.user import does_user_have_permission, can_user_access_workflow
+from cortex.lib.user import does_user_have_permission, can_user_access_workflow, can_user_access_system
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
 import os 
@@ -371,8 +371,9 @@ def systems_bulk_view(start, finish):
 @app.route('/systems/view/<int:id>')
 @cortex.lib.user.login_required
 def system(id):
-	# Check user permissions
-	if not does_user_have_permission("systems.view"):
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system
+	if not can_user_access_system(id):
 		abort(403)
 
 	# Get the system
@@ -400,8 +401,10 @@ def system(id):
 @app.route('/systems/edit/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_edit(id):
-	# Check user permissions
-	if not does_user_have_permission("systems.view"):
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system. When committing changes they must also have the
+	# specific systems.edit.* permission (see later in POST)
+	if not can_user_access_system(id):
 		abort(403)
 
 	# Get the system
@@ -532,6 +535,11 @@ def system_edit(id):
 @app.route('/systems/actions/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_actions(id):
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system
+	if not can_user_access_system(id):
+		abort(403)
+
 	# Get the system
 	system = cortex.lib.systems.get_system_by_id(id)
 

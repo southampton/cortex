@@ -4,7 +4,7 @@ from cortex import app
 import cortex.lib.puppet
 import cortex.lib.core
 import cortex.lib.systems
-from cortex.lib.user import does_user_have_permission
+from cortex.lib.user import does_user_have_permission, can_user_access_system
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
 import time
@@ -43,6 +43,11 @@ def puppet_enc_edit(node):
 
 	if system == None:
 		abort(404)
+
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system
+	if not can_user_access_system(system['id']):
+		abort(403)
 
 	# If we've got a new node, then don't show "None"
 	if system['puppet_classes'] is None or system['puppet_classes'] == '':
@@ -308,6 +313,16 @@ def puppet_facts(node):
 	if not does_user_have_permission("puppet.facts.view"):
 		abort(403)
 
+	# Get the system (we need to know the ID for permissions checking)
+	system = cortex.lib.systems.get_system_by_puppet_certname(node)
+	if system is None:
+		abort(404)
+
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system
+	if not can_user_access_system(system['id']):
+		abort(403)
+
 	dbnode = None
 	facts = None
 	try:
@@ -427,6 +442,16 @@ def puppet_reports(node):
 	if not does_user_have_permission("puppet.reports.view"):
 		abort(403)
 
+	# Get the system (we need to know the ID for permissions checking)
+	system = cortex.lib.systems.get_system_by_puppet_certname(node)
+	if system is None:
+		abort(404)
+
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system
+	if not can_user_access_system(system['id']):
+		abort(403)
+
 	try:
 		# Connect to PuppetDB and get the reports
 		db = cortex.lib.puppet.puppetdb_connect()
@@ -469,6 +494,16 @@ def puppet_report(report_hash):
 		# returned from the reports generator, so the report didn't
 		# exist, hence we should 404
 		return abort(404)
+
+	# Get the system (we need the ID for perms check, amongst other things)
+	system = cortex.lib.systems.get_system_by_puppet_certname(report.node)
+	if system is None:
+		return abort(404)
+
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system
+	if not can_user_access_system(system['id']):
+		return abort(403)
 
 	# Build metrics into a more useful dictionary
 	metrics = {}

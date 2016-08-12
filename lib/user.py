@@ -466,3 +466,64 @@ def can_user_access_workflow(workflow, user=None):
 
 	# Default: return False as the user shouldn't be able to access the workflow
 	return False
+
+#############################################################################
+
+def can_user_access_system(system_id, user=None):
+	"""Returns a boolean indicating if a user is allowed to modify the
+	specified system. This function takes into account the 
+	systems.all permission, which overrides this.
+	  system_id: The Cortex system id of the system (as found in the
+                     systems table)
+	  user: The user whose permissions should be checked. Defaults to
+	        None, which checks the currently logged in user."""
+
+	# Default to using the current user
+	if user is None:
+		if 'username' in session:
+			user = session['username']
+		else:
+			# User not logged in - they definitely don't have permission!
+			return False
+
+	# Check the overriding permission of "systems.all". If the user has
+	# this then they can access the system regardless
+	if does_user_have_permission("systems.all", user):
+		return True
+
+	app.logger.debug("Checking permissions for user " + str(user) + " on system " + str(system_id))
+
+	# Query the system_perms table to see if the user has the system
+	# explicitly given access to them
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT 1 FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s', (system_id, user, ROLE_WHO_USER))
+
+	# If a row is returned then they have access to the workflow
+	if len(curd.fetchall()) > 0:
+		return True
+
+	# Get the (possibly cached) list of groups for the user
+	ldap_groups = get_users_groups(user)
+
+	# Regex for extracting just the CN from the DN in the cached group names
+	cn_regex = re.compile("^(cn|CN)=([^,;]+),")
+
+	# Iterate over the groups, checking each group for the permission
+	for group in ldap_groups:
+		# Extract the CN from the DN using the compiled regex
+		matched = cn_regex.match(group)
+		if matched:
+			group = matched.group(2)
+		else:
+			continue
+
+		# Query the system_perms table to see if the system is 
+		# given access by group
+		curd.execute('SELECT 1 FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s', (system_id, group, ROLE_WHO_LDAP_GROUP))
+
+		# If a row is returned then they have access to the workflow
+		if len(curd.fetchall()) > 0:
+			return True
+
+	# Default: return False as the user shouldn't be able to access the system
+	return False

@@ -722,7 +722,7 @@ Username:             %s
 		  (1, "maintenance.cmdb"), 
 		  (1, "maintenance.expire_vm"),
 		  (1, "workflows.all"),
-		  (1, "systems.actions.all")""")
+		  (1, "systems.all")""")
 
 		## Close database connection
 		temp_db.close()
