@@ -18,6 +18,7 @@
 </div>
 
 <div class="row">
+{%- if does_user_have_permission("maintenance.vmware") %}
 	<div class="col-md-3">
 		<div class="well mtask">
 			<h3><i class="fa fa-fa fa-upload"></i> Update VMware Cache</h3>
@@ -33,6 +34,8 @@
 			</form>
 		</div>
 	</div>
+{%- endif %}
+{%- if does_user_have_permission("maintenance.cmdb") %}
 	<div class="col-md-3">
 		<div class="well mtask">
 			<h3><i class="fa fa-fa fa-cloud-download"></i> Update CMDB Cache</h3>
@@ -48,6 +51,8 @@
 			</form>
 		</div>
 	</div>
+{%- endif %}
+{%- if does_user_have_permission("maintenance.expire_vm") %}
 	<div class="col-md-3">
 		<div class="well mtask">
 			<h3><i class="fa fa-fa fa-cloud-download"></i> Turn off expired VMs</h3>
@@ -63,5 +68,6 @@
 			</form>
 		</div>
 	</div>
+{%- endif %}
 </div>
 {% endblock %}

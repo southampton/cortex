@@ -1,6 +1,6 @@
 from cortex import app
 from cortex.lib.errors import logerr, fatalerr
-from cortex.lib.user import does_user_have_permission
+from cortex.lib.user import does_user_have_permission, can_user_access_workflow
 from flask import Flask, request, session, g, abort, render_template, url_for
 import redis
 import time
@@ -38,6 +38,7 @@ def before_request():
 	# This would ideally go in app.py, but it can't as it depends on 
 	# cortex.lib.user which it can't import due to a cyclic dependency
 	app.jinja_env.globals['does_user_have_permission'] = does_user_have_permission
+	app.jinja_env.globals['can_user_access_workflow'] = can_user_access_workflow
 
 ################################################################################
 
@@ -52,8 +53,15 @@ def context_processor():
 	# within the template.
 	injectdata = dict()
 
-	# Inject the workflows variable which is a list of loaded workflows
-	injectdata['workflows'] = app.workflows
+	# Inject the workflows variable which is a list of loaded workflows. We
+	# filter this to just the ones the user is allowed to use. Note that we
+	# use 'view_func' rather than 'name' here as we can have many workflows
+	# inside a single workflow module, e.g. buildvm which does standard and
+	# sandbox VMs.
+	injectdata['workflows'] = []
+	for workflow in app.workflows:
+		if can_user_access_workflow(workflow['view_func']):
+			injectdata['workflows'].append(workflow)
 
 	# Inject the menu items 
 	# systems, workflows, vmware, puppet, admin

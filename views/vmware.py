@@ -2,7 +2,7 @@
 #
 
 from cortex import app
-from cortex.lib.user import does_user_have_permission, login_required
+from cortex.lib.user import does_user_have_permission
 import cortex.lib.vmware
 from flask import Flask, request, session, redirect, url_for, flash, g, render_template, jsonify, Response, abort
 import os 
@@ -18,7 +18,7 @@ from collections import OrderedDict
 ################################################################################
 
 @app.route('/vmware/os')
-@login_required
+@cortex.lib.user.login_required
 def vmware_os():
 	"""Shows VM operating system statistics."""
 
@@ -34,7 +34,7 @@ def vmware_os():
 ################################################################################
 
 @app.route('/vmware/hw-tools')
-@login_required
+@cortex.lib.user.login_required
 def vmware_hwtools():
 	"""Shows VM related graphs"""
 
@@ -75,7 +75,7 @@ def vmware_hwtools():
 ################################################################################
 
 @app.route('/vmware/specs')
-@login_required
+@cortex.lib.user.login_required
 def vmware_specs():
 	"""Shows VM hardware spec statistics."""
 
@@ -161,7 +161,7 @@ def vmware_specs():
 ################################################################################
 
 @app.route('/vmware/data')
-@login_required
+@cortex.lib.user.login_required
 def vmware_data():
 	"""Displays page containing a giant table of information of everything
 	we know about all the VMs."""
@@ -183,7 +183,7 @@ def vmware_data():
 ################################################################################
 
 @app.route('/vmware/clusters')
-@login_required
+@cortex.lib.user.login_required
 def vmware_clusters():
 	# Check user permissions
 	if not does_user_have_permission("vmware.view"):
@@ -220,7 +220,7 @@ def vmware_clusters():
 ################################################################################
 
 @app.route('/vmware/history')
-@login_required
+@cortex.lib.user.login_required
 def vmware_history():
 	# Check user permissions
 	if not does_user_have_permission("vmware.view"):
@@ -300,7 +300,7 @@ def vmware_csv_stream(cursor):
 ################################################################################
 
 @app.route('/vmware/download/csv')
-@login_required
+@cortex.lib.user.login_required
 def vmware_download_csv():
 	"""Downloads the VMware data as a CSV file."""
 
@@ -318,7 +318,7 @@ def vmware_download_csv():
 ################################################################################
 
 @app.route('/vmware/unlinked')
-@login_required
+@cortex.lib.user.login_required
 def vmware_data_unlinked():
 	"""Displays page containing a giant table of information of everything
 	we know about VMs which are not linked to Cortex system records. It is 

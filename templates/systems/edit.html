@@ -155,9 +155,11 @@
 			<div style="margin-bottom:0px" class="col-sm-offset-2 col-sm-10 col-md-9 help-block">When reviewing current VMs, these fields can be used to state whether a VM is required or can be deleted. If a review status of 'Under review' is selected, a ServiceNow project task can be added. If left blank, one will be created for you.</div>
 		</div>
 
+{%- if does_user_have_permission(["systems.comments.edit", "systems.vmware.edit", "systems.cmdb.edit", "systems.expiry.edit", "systems.review.edit"]) %}
 			<div class="text-center">
 				<button type="submit" class="btn btn-primary btn-lg">Save</button>
 			</div>
+{%- endif %}
 			</form>
 
 

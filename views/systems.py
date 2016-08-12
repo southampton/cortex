@@ -6,7 +6,7 @@ import cortex.lib.core
 import cortex.lib.systems
 import cortex.lib.cmdb
 import cortex.lib.classes
-from cortex.lib.user import does_user_have_permission
+from cortex.lib.user import does_user_have_permission, can_user_access_workflow
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
 import os 
@@ -426,76 +426,89 @@ def system_edit(id):
 			curd = g.db.cursor(mysql.cursors.DictCursor)
 
 			# Extract CMDB ID from form
-			cmdb_id = request.form.get('cmdb_id',None)
-			if cmdb_id is not None:			
-				cmdb_id = cmdb_id.strip()
-				if len(cmdb_id) == 0:
-					cmdb_id = None
-				else:
-					if not re.match('^[0-9a-f]+$', cmdb_id.lower()):
-						raise ValueError()
+			if does_user_have_permission("systems.cmdb.edit"):
+				cmdb_id = request.form.get('cmdb_id',None)
+				if cmdb_id is not None:			
+					cmdb_id = cmdb_id.strip()
+					if len(cmdb_id) == 0:
+						cmdb_id = None
+					else:
+						if not re.match('^[0-9a-f]+$', cmdb_id.lower()):
+							raise ValueError()
+			else:
+				cmdb_id = system['cmdb_id']
 
 			# Extract VMware UUID from form
-			vmware_uuid = request.form.get('vmware_uuid',None)
-			if vmware_uuid is not None:			
-				vmware_uuid = vmware_uuid.strip()
-				if len(vmware_uuid) == 0:
-					vmware_uuid = None
-				else:
-					if not re.match('^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$', vmware_uuid.lower()):
-						raise ValueError()
+			if does_user_have_permission("systems.vmware.edit"):
+				vmware_uuid = request.form.get('vmware_uuid',None)
+				if vmware_uuid is not None:			
+					vmware_uuid = vmware_uuid.strip()
+					if len(vmware_uuid) == 0:
+						vmware_uuid = None
+					else:
+						if not re.match('^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$', vmware_uuid.lower()):
+							raise ValueError()
+			else:
+				vmware_uuid = system['vmware_uuid']
 
 			# Process the expiry date
-			if 'expiry_date' in request.form and request.form['expiry_date'] is not None and len(request.form['expiry_date'].strip()) > 0:
-				expiry_date = request.form['expiry_date']
-				try:
-					expiry_date = datetime.datetime.strptime(expiry_date, '%Y-%m-%d')
-				except Exception, e:
-					abort(400)
+			if does_user_have_permission("systems.expiry.edit"):
+				if 'expiry_date' in request.form and request.form['expiry_date'] is not None and len(request.form['expiry_date'].strip()) > 0:
+					expiry_date = request.form['expiry_date']
+					try:
+						expiry_date = datetime.datetime.strptime(expiry_date, '%Y-%m-%d')
+					except Exception, e:
+						abort(400)
+				else:
+					expiry_date = None
 			else:
-				expiry_date = None
+				expiry_date = system['expiry_date']
 
 			# Extract Review Status from form
-			review_status = int(request.form.get('review_status', 0))
-			if not review_status in cortex.lib.systems.REVIEW_STATUS_BY_ID:
-				raise ValueError()
+			if does_user_have_permission("systems.review.edit"):
+				review_status = int(request.form.get('review_status', 0))
+				if not review_status in cortex.lib.systems.REVIEW_STATUS_BY_ID:
+					raise ValueError()
 
-			# Extract Review Ticket from form
-			review_task = request.form.get('review_task', None)
-			if review_task is not None:
-				review_task = review_task.strip()
-				if len(review_task) == 0:
-					review_task = None
-				else:
-					if not re.match('^[A-Z]+TASK[0-9]+$', review_task):
-						raise ValueError()
+				# Extract Review Ticket from form
+				review_task = request.form.get('review_task', None)
+				if review_task is not None:
+					review_task = review_task.strip()
+					if len(review_task) == 0:
+						review_task = None
+					else:
+						if not re.match('^[A-Z]+TASK[0-9]+$', review_task):
+							raise ValueError()
 
-			# If the review status is "Under review" and a task hasn't been specified,
-			# then we should create one.
-			if review_status == cortex.lib.systems.REVIEW_STATUS_BY_NAME['REVIEW'] and review_task is None:
-				# Build some JSON
-				task_data = {}
-				task_data['time_constraint'] = 'asap'
-				task_data['short_description'] = 'Review necessity of virtual machine ' + system['name']
-				task_data['description'] = 'Please review the necessity of the virtual machine ' + system['name'] + ' to determine whether we need to keep it or whether it can be decommissioned. Information about the VM and links to ServiceNow can be found on Cortex at https://' + app.config['CORTEX_DOMAIN'] + url_for('system_view', id=id) + "\n\nOnce reviewed, please edit the system in Cortex using the link above and set it's 'Review Status' to either 'Required' or 'Not Required' and then close the associated project task."
-				#task_data['opened_by'] = app.config['REVIEW_TASK_OPENER_SYS_ID']
-				task_data['opened_by'] = 'example'
-				task_data['assignment_group'] = app.config['REVIEW_TASK_TEAM']
-				task_data['parent'] = app.config['REVIEW_TASK_PARENT_SYS_ID']
+				# If the review status is "Under review" and a task hasn't been specified,
+				# then we should create one.
+				if review_status == cortex.lib.systems.REVIEW_STATUS_BY_NAME['REVIEW'] and review_task is None:
+					# Build some JSON
+					task_data = {}
+					task_data['time_constraint'] = 'asap'
+					task_data['short_description'] = 'Review necessity of virtual machine ' + system['name']
+					task_data['description'] = 'Please review the necessity of the virtual machine ' + system['name'] + ' to determine whether we need to keep it or whether it can be decommissioned. Information about the VM and links to ServiceNow can be found on Cortex at https://' + app.config['CORTEX_DOMAIN'] + url_for('system_view', id=id) + "\n\nOnce reviewed, please edit the system in Cortex using the link above and set it's 'Review Status' to either 'Required' or 'Not Required' and then close the associated project task."
+					#task_data['opened_by'] = app.config['REVIEW_TASK_OPENER_SYS_ID']
+					task_data['opened_by'] = 'example'
+					task_data['assignment_group'] = app.config['REVIEW_TASK_TEAM']
+					task_data['parent'] = app.config['REVIEW_TASK_PARENT_SYS_ID']
 
-				# Make a post request to ServiceNow to create the task
-				r = requests.post('https://' + app.config['SN_HOST'] + '/api/now/v1/table/pm_project_task', auth=(app.config['SN_USER'], app.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=task_data)
+					# Make a post request to ServiceNow to create the task
+					r = requests.post('https://' + app.config['SN_HOST'] + '/api/now/v1/table/pm_project_task', auth=(app.config['SN_USER'], app.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=task_data)
 
-				# If we succeeded, get the task number
-				if r is not None and r.status_code >= 200 and r.status_code <= 299:
-					response_json = r.json()
-					review_task = response_json['result']['number']
-				else:
-					error = "Failed to link ServiceNow task and CI."
-					if r is not None:
-						error = error + " HTTP Response code: " + str(r.status_code)
-					app.logger.error(error)
-					raise Exception()
+					# If we succeeded, get the task number
+					if r is not None and r.status_code >= 200 and r.status_code <= 299:
+						response_json = r.json()
+						review_task = response_json['result']['number']
+					else:
+						error = "Failed to link ServiceNow task and CI."
+						if r is not None:
+							error = error + " HTTP Response code: " + str(r.status_code)
+						app.logger.error(error)
+						raise Exception()
+			else:
+				review_status = system['review_status']
+				review_task = system['review_task']
 
 			# Update the system
 			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, expiry_date, id))
@@ -527,7 +540,10 @@ def system_actions(id):
 		abort(404)
 
 	# Get the list of actions we can perform
-	actions = app.system_actions
+	actions = []
+	for action in app.system_actions:
+		if can_user_access_workflow(action['view_func']):
+			actions.append(action)
 
 	return render_template('systems/actions.html', system=system, active='systems', actions=actions, title=system['name'])
 

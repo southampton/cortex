@@ -406,3 +406,63 @@ def does_user_have_permission(perm, user=None):
 	# We've not found the permission, return False to indicate that
 	app.logger.info("User " + str(user) + " did not have permission(s) " + str(perm))
 	return False
+
+#############################################################################
+
+def can_user_access_workflow(workflow, user=None):
+	"""Returns a boolean indicating if a user is allowed to use the
+	specified workflow. This function takes into account the 
+	workflows.all permission, which overrides this.
+	  workflow: The name of the workflow's view function.
+	  user: The user whose permissions should be checked. Defaults to
+	        None, which checks the currently logged in user."""
+
+	# Default to using the current user
+	if user is None:
+		if 'username' in session:
+			user = session['username']
+		else:
+			# User not logged in - they definitely don't have permission!
+			return False
+
+	# Check the overriding permission of "workflows.all". If the user has
+	# this then they can access the workflow regardless
+	if does_user_have_permission("workflows.all", user):
+		return True
+
+	app.logger.debug("Checking permissions for user " + str(user) + " on workflow " + str(workflow))
+
+	# Query the workflow_perms table to see if the user has the workflow
+	# explicitly given access to them
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT 1 FROM `workflow_perms` WHERE `workflow_name` = %s AND `who` = %s AND `type` = %s', (workflow, user, ROLE_WHO_USER))
+
+	# If a row is returned then they have access to the workflow
+	if len(curd.fetchall()) > 0:
+		return True
+
+	# Get the (possibly cached) list of groups for the user
+	ldap_groups = get_users_groups(user)
+
+	# Regex for extracting just the CN from the DN in the cached group names
+	cn_regex = re.compile("^(cn|CN)=([^,;]+),")
+
+	# Iterate over the groups, checking each group for the permission
+	for group in ldap_groups:
+		# Extract the CN from the DN using the compiled regex
+		matched = cn_regex.match(group)
+		if matched:
+			group = matched.group(2)
+		else:
+			continue
+
+		# Query the workflow_perms table to see if the workflow is 
+		# given access by group
+		curd.execute('SELECT 1 FROM `workflow_perms` WHERE `workflow_name` = %s AND `who` = %s AND `type` = %s', (workflow, group, ROLE_WHO_LDAP_GROUP))
+
+		# If a row is returned then they have access to the workflow
+		if len(curd.fetchall()) > 0:
+			return True
+
+	# Default: return False as the user shouldn't be able to access the workflow
+	return False
