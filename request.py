@@ -55,6 +55,7 @@ def context_processor():
 	# Define the 'systems' menu
 	systems = [
 		{'link': url_for('systems'), 'title': 'Systems list', 'icon': 'fa-list'},
+		{'link': url_for('systems_nocmdb'), 'title': 'VMs missing CMBD record', 'icon': 'fa-list'},
 		{'link': url_for('systems_expired'), 'title': 'Expired systems list', 'icon': 'fa-list'}
 	]
 	vmware = [

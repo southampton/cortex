@@ -27,10 +27,6 @@ import requests
 def systems():
 	"""Shows the list of known systems to the user."""
 
-	# Get the list of systems
-	systems = cortex.lib.systems.get_systems()
-
-
 	# Get the list of active classes (used to populate the tab bar)
 	classes = cortex.lib.classes.list()
 
@@ -42,7 +38,7 @@ def systems():
 		q = q.strip()
 
 	# Render
-	return render_template('systems/list.html', systems=systems, classes=classes, active='systems', title="Systems", q=q)
+	return render_template('systems/list.html', classes=classes, active='systems', title="Systems", q=q)
 
 ################################################################################
 
@@ -51,15 +47,24 @@ def systems():
 def systems_expired():
 	"""Shows the list of expired systems to the user."""
 
-	# Get the list of systems
-	systems = cortex.lib.systems.get_systems()
+	# Get the list of active classes (used to populate the tab bar)
+	classes = cortex.lib.classes.list()
 
+	# Render
+	return render_template('systems/list.html', classes=classes, active='systems', title="Expired systems", expired=True)
+
+################################################################################
+
+@app.route('/systems/nocmdb')
+@cortex.lib.user.login_required
+def systems_nocmdb():
+	"""Shows the list of systems missing CMDB reocords to the user."""
 
 	# Get the list of active classes (used to populate the tab bar)
 	classes = cortex.lib.classes.list()
 
 	# Render
-	return render_template('systems/list.html', systems=systems, classes=classes, active='systems', title="Expired systems", expired=True)
+	return render_template('systems/list.html', classes=classes, active='systems', title="Systems missing CMDB record", nocmdb=True)
 
 ################################################################################
 
@@ -656,13 +661,19 @@ def systems_json():
 	if 'show_expired' in request.form:
 		if str(request.form['show_expired']) != '0':
 			show_expired = True
+
+	show_nocmdb = False
+	if 'show_nocmdb' in request.form:
+		if str(request.form['show_nocmdb']) != '0':
+			show_nocmdb = True
+
 	# Get number of systems that match the query, and the number of systems
 	# within the filter group
-	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired)
-	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other, show_expired=show_expired)
+	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb)
+	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb)
 
 	# Get results of query
-	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired)
+	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired, show_nocmdb)
 
 	# DataTables wants an array in JSON, so we build this here, returning
 	# only the columns we want. We format the date as a string as
