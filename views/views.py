@@ -3,6 +3,7 @@
 from cortex import app
 import cortex.lib.user
 import cortex.lib.vmware
+from cortex.lib.user import does_user_have_permission
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
 import MySQLdb as mysql
