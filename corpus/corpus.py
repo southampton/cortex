@@ -1280,3 +1280,11 @@ class Corpus(object):
 		else:
 			## TODO shouldn't this raise an exception?!
 			return None
+
+	############################################################################
+
+	def vmware_vm_delete(self, vm):
+		"""Deletes off a virtual machine."""
+
+		return vm.Destroy_Task()
+
