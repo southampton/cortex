@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from cortex import app
+import cortex.lib.core
 import cortex.lib.user
 import cortex.lib.vmware
 from cortex.lib.user import does_user_have_permission
@@ -65,40 +66,24 @@ def dashboard():
 
 ################################################################################
 
-def render_task_status(id, template):
-	"""The task_status and task_status_log functions do /very/ similar
-	things. This function does that work, and is herely purely to reduce
-	code duplication."""
-
-	# Get a cursor to the database
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-
-	# Get the task
-	curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE id = %s", (id,))
-	task = curd.fetchone()
-
-	# Return a 404 if we've not found the task
-	if not task:
-		abort(404)
-
-	# Get the events for the task
-	curd.execute("SELECT `id`, `source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end` FROM `events` WHERE `related_id` = %s AND `source` = 'neocortex.task' ORDER BY `start`", (id,))
-	events = curd.fetchall()
-
-	return make_response((render_template(template, id=id, task=task, events=events, title="Task Status"), 200, {'Cache-Control': 'no-cache'}))
-
-################################################################################
-
 @app.route('/task/status/<int:id>', methods=['GET'])
 @cortex.lib.user.login_required
 def task_status(id):
 	"""Handles the Task Status page for a individual task."""
 
-	# Check user permissions
-	if not does_user_have_permission("tasks.view"):
-		abort(403)
+	## Get the task details
+	task = cortex.lib.core.task_get(id)
 
-	return render_task_status(id, "tasks/status.html")
+	# Return a 404 if we've not found the task
+	if not task:
+		abort(404)
+
+	# Check the user has the permission to view this task
+	if not task['username'] == session['username']:
+		if not does_user_have_permission("tasks.view"):
+			abort(403)
+
+	return cortex.lib.core.task_render_status(task, "tasks/status.html")
 
 ################################################################################
 
@@ -108,8 +93,16 @@ def task_status_log(id):
 	"""Much like task_status, but only returns the event log. This is used by 
 	an AJAX routine on the page to refresh the log every 10 seconds."""
 
-	# Check user permissions
-	if not does_user_have_permission("tasks.view"):
-		abort(403)
+	## Get the task details
+	task = cortex.lib.core.task_get(id)
 
-	return render_task_status(id, "tasks/status-log.html")
+	# Return a 404 if we've not found the task
+	if not task:
+		abort(404)
+
+	# Check the user has the permission to view this task
+	if not task['username'] == session['username']:
+		if not does_user_have_permission("tasks.view"):
+			abort(403)
+
+	return cortex.lib.core.task_render_status(task, "tasks/status-log.html")

@@ -697,6 +697,7 @@ Username:             %s
 		# Ensure we have a default administrator role with appropriate permissions
 		cursor.execute("""INSERT IGNORE INTO `roles` (`id`, `name`, `description`) VALUES (1, "Administrator", "Has full access to everything")""")
 		cursor.execute("""INSERT IGNORE INTO `role_perms` (`role_id`, `perm`) VALUES 
+		  (1, "admin.permissions"), 
 		  (1, "systems.view"), 
 		  (1, "systems.comments.edit"), 
 		  (1, "systems.vmware.edit"), 

@@ -2,7 +2,7 @@
 
 from cortex import app
 from cortex.lib.errors import fatalerr
-from flask import g, abort
+from flask import g, abort, make_response, render_template
 import MySQLdb as mysql
 import Pyro4
 import re
@@ -115,3 +115,24 @@ def connect():
 
 	return conn
 
+################################################################################
+
+def task_get(id):
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get the task
+	curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE id = %s", (id,))
+	task = curd.fetchone()
+
+	return task
+
+################################################################################
+
+def task_render_status(task, template):
+	# Get the events for the task
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute("SELECT `id`, `source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end` FROM `events` WHERE `related_id` = %s AND `source` = 'neocortex.task' ORDER BY `start`", (task['id'],))
+	events = curd.fetchall()
+
+	return make_response((render_template(template, id=task['id'], task=task, events=events, title="Task Status"), 200, {'Cache-Control': 'no-cache'}))
