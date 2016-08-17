@@ -143,6 +143,7 @@ class NeoCortex(object):
 
 	## RPC METHODS #############################################################
 
+	@Pyro4.expose
 	def ping(self):
 		return True
 
@@ -151,6 +152,7 @@ class NeoCortex(object):
 	## username - who submitted this task
 	## options - a dictionary of arguments for the method.
 	## description - an optional description of the task
+	@Pyro4.expose
 	def create_task(self, workflow_name, username, options, description=None):
 
 		if not os.path.isdir(self.config['WORKFLOWS_DIR']):
@@ -180,6 +182,7 @@ class NeoCortex(object):
 		return task_id
 
 	## This function allows arbitrary taks to be called
+	@Pyro4.expose
 	def start_internal_task(self, username, task_file, task_name, options=None, description=None):
 
 		## Ensure that task_name is not already running
@@ -212,11 +215,13 @@ class NeoCortex(object):
 		return task_id
 
 	## This function allows the Flask web app to allocate names (as well as tasks)
+	@Pyro4.expose
 	def allocate_name(self, class_name, system_comment, username, num):
 		lib = Corpus(self._get_db(), self.config)
 		return lib.allocate_name(class_name, system_comment, username, num)
 
 	## List active tasks - returns a list of task ids
+	@Pyro4.expose
 	def active_tasks(self):
 		active_processes = multiprocessing.active_children()
 		active_tasks = []

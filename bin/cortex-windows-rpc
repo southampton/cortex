@@ -51,6 +51,7 @@ class CortexWindowsRPC(object):
 
 	################################################################################
 
+	@Pyro4.expose
 	def move_to_default_ou(self, hostname):
 		self._log('INFO', 'Moving hostname ' + str(hostname) + ' to default OU')
 
@@ -64,6 +65,7 @@ class CortexWindowsRPC(object):
 
 	################################################################################
 
+	@Pyro4.expose
 	def join_groups(self, hostname, groups = None):
 		self._log('INFO', 'Joining hostname ' + str(hostname) + ' to default groups')
 
@@ -86,6 +88,7 @@ class CortexWindowsRPC(object):
 
 	################################################################################
 
+	@Pyro4.expose
 	def find_computer_object(self, hostname):
 		self._log('INFO', 'Checking for computer object, ' + str(hostname))
 
@@ -99,6 +102,7 @@ class CortexWindowsRPC(object):
 
 	################################################################################
 
+	@Pyro4.expose
 	def delete_computer_object(self, hostname):
 		self._log('INFO', 'Removing computer object, ' + str(hostname))
 
@@ -112,6 +116,7 @@ class CortexWindowsRPC(object):
 
 	################################################################################
 
+	@Pyro4.expose
 	def set_information(self, hostname, description, location):
 		self._log('INFO', 'Setting information for computer, ' + str(hostname))
 
@@ -125,6 +130,7 @@ class CortexWindowsRPC(object):
 
 	################################################################################
 
+	@Pyro4.expose
 	def ping(self):
 		"""A simple test function to indicate if the daemon is up"""
 		return True
