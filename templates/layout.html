@@ -182,8 +182,8 @@
 					  {%- endif %}
 					  {%- if menu.admin and menu.admin|length > 0 %}
 					  <a tabindex="0" role="button" data-mpop="settings-menu" title="Settings" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-sliders fa-2x"></i></a>
-					  <a href="{{ url_for('about') }}" title="About" class="list-group-item {%if active == 'about'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-info-circle fa-2x"></i></a>
 					  {%- endif %}
+					  <a href="{{ url_for('about') }}" title="About" class="list-group-item {%if active == 'about'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-info-circle fa-2x"></i></a>
 					</div>
 					<div class="list-group list-group-bottom list-group-menu">
 						<a tabindex="0" role="button" data-mpop="user-menu" title="{{ session.username }}" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'user'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-user fa-2x"></i></a>
