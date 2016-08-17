@@ -6,6 +6,7 @@ import cortex.lib.core
 import cortex.lib.systems
 import cortex.lib.cmdb
 import cortex.lib.classes
+from cortex.lib.user import does_user_have_permission, can_user_access_workflow, can_user_access_system
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
 import os 
@@ -26,6 +27,13 @@ import requests
 @cortex.lib.user.login_required
 def systems():
 	"""Shows the list of known systems to the user."""
+
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
+
+	# Get the list of systems
+	systems = cortex.lib.systems.get_systems()
 
 	# Get the list of active classes (used to populate the tab bar)
 	classes = cortex.lib.classes.list()
@@ -60,6 +68,13 @@ def systems_expired():
 def systems_nocmdb():
 	"""Shows the list of systems missing CMDB reocords to the user."""
 
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
+
+	# Get the list of systems
+	systems = cortex.lib.systems.get_systems()
+
 	# Get the list of active classes (used to populate the tab bar)
 	classes = cortex.lib.classes.list()
 
@@ -74,6 +89,10 @@ def systems_nocmdb():
 def systems_search():
 	"""Allows the user to search for a system by entering its name in the 
 	search box"""
+
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
 
 	# Get the query from the URL
 	query = request.args.get('query')
@@ -98,6 +117,10 @@ def systems_search():
 def systems_download_csv():
 	"""Downloads the list of allocated server names as a CSV file."""
 
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
+
 	# Get the list of systems
 	curd = cortex.lib.systems.get_systems(return_cursor=True, hide_inactive=False)
 
@@ -111,6 +134,10 @@ def systems_download_csv():
 def systems_add_existing():
 	"""Handles the Add Existing System page, which can be used to add missing
 	systems to Cortex"""
+
+	# Check user permissions
+	if not does_user_have_permission("systems.add_existing"):
+		abort(403)
 
 	# Get the list of enabled classes
 	classes = cortex.lib.classes.list(hide_disabled=True)
@@ -248,6 +275,10 @@ def systems_add_existing():
 def systems_new():
 	"""Handles the Allocate New System Name(s) page"""
 
+	# Check user permissions
+	if not does_user_have_permission("systems.allocate_name"):
+		abort(403)
+
 	# On GET requests, just show big buttons for all the classes
 	if request.method == 'GET':
 		classes = cortex.lib.classes.list(hide_disabled=True)
@@ -307,6 +338,10 @@ def systems_bulk_save():
 	"""This is a POST handler used to set comments for a series of existing 
 	systems which have been allocated already"""
 
+	# Check user permissions
+	if not does_user_have_permission("systems.allocate_name"):
+		abort(403)
+
 	found_keys = []
 
 	# Find a list of systems from the form. Each of the form input elements
@@ -331,6 +366,10 @@ def systems_bulk_save():
 def systems_bulk_view(start, finish):
 	"""This is a GET handler to view the list of assigned names"""
 
+	# Check user permissions
+	if not does_user_have_permission("systems.allocate_name"):
+		abort(403)
+
 	start  = int(start)
 	finish = int(finish)
 
@@ -342,9 +381,14 @@ def systems_bulk_view(start, finish):
 
 ################################################################################
 
-@app.route('/systems/view/<int:id>', methods=['GET', 'POST'])
+@app.route('/systems/view/<int:id>')
 @cortex.lib.user.login_required
 def system(id):
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system
+	if not can_user_access_system(id):
+		abort(403)
+
 	# Get the system
 	system = cortex.lib.systems.get_system_by_id(id)
 
@@ -370,6 +414,12 @@ def system(id):
 @app.route('/systems/edit/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_edit(id):
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system. When committing changes they must also have the
+	# specific systems.edit.* permission (see later in POST)
+	if not can_user_access_system(id):
+		abort(403)
+
 	# Get the system
 	system = cortex.lib.systems.get_system_by_id(id)
 
@@ -392,76 +442,89 @@ def system_edit(id):
 			curd = g.db.cursor(mysql.cursors.DictCursor)
 
 			# Extract CMDB ID from form
-			cmdb_id = request.form.get('cmdb_id',None)
-			if cmdb_id is not None:			
-				cmdb_id = cmdb_id.strip()
-				if len(cmdb_id) == 0:
-					cmdb_id = None
-				else:
-					if not re.match('^[0-9a-f]+$', cmdb_id.lower()):
-						raise ValueError()
+			if does_user_have_permission("systems.cmdb.edit"):
+				cmdb_id = request.form.get('cmdb_id',None)
+				if cmdb_id is not None:			
+					cmdb_id = cmdb_id.strip()
+					if len(cmdb_id) == 0:
+						cmdb_id = None
+					else:
+						if not re.match('^[0-9a-f]+$', cmdb_id.lower()):
+							raise ValueError()
+			else:
+				cmdb_id = system['cmdb_id']
 
 			# Extract VMware UUID from form
-			vmware_uuid = request.form.get('vmware_uuid',None)
-			if vmware_uuid is not None:			
-				vmware_uuid = vmware_uuid.strip()
-				if len(vmware_uuid) == 0:
-					vmware_uuid = None
-				else:
-					if not re.match('^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$', vmware_uuid.lower()):
-						raise ValueError()
+			if does_user_have_permission("systems.vmware.edit"):
+				vmware_uuid = request.form.get('vmware_uuid',None)
+				if vmware_uuid is not None:			
+					vmware_uuid = vmware_uuid.strip()
+					if len(vmware_uuid) == 0:
+						vmware_uuid = None
+					else:
+						if not re.match('^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$', vmware_uuid.lower()):
+							raise ValueError()
+			else:
+				vmware_uuid = system['vmware_uuid']
 
 			# Process the expiry date
-			if 'expiry_date' in request.form and request.form['expiry_date'] is not None and len(request.form['expiry_date'].strip()) > 0:
-				expiry_date = request.form['expiry_date']
-				try:
-					expiry_date = datetime.datetime.strptime(expiry_date, '%Y-%m-%d')
-				except Exception, e:
-					abort(400)
+			if does_user_have_permission("systems.expiry.edit"):
+				if 'expiry_date' in request.form and request.form['expiry_date'] is not None and len(request.form['expiry_date'].strip()) > 0:
+					expiry_date = request.form['expiry_date']
+					try:
+						expiry_date = datetime.datetime.strptime(expiry_date, '%Y-%m-%d')
+					except Exception, e:
+						abort(400)
+				else:
+					expiry_date = None
 			else:
-				expiry_date = None
+				expiry_date = system['expiry_date']
 
 			# Extract Review Status from form
-			review_status = int(request.form.get('review_status', 0))
-			if not review_status in cortex.lib.systems.REVIEW_STATUS_BY_ID:
-				raise ValueError()
+			if does_user_have_permission("systems.review.edit"):
+				review_status = int(request.form.get('review_status', 0))
+				if not review_status in cortex.lib.systems.REVIEW_STATUS_BY_ID:
+					raise ValueError()
 
-			# Extract Review Ticket from form
-			review_task = request.form.get('review_task', None)
-			if review_task is not None:
-				review_task = review_task.strip()
-				if len(review_task) == 0:
-					review_task = None
-				else:
-					if not re.match('^[A-Z]+TASK[0-9]+$', review_task):
-						raise ValueError()
+				# Extract Review Ticket from form
+				review_task = request.form.get('review_task', None)
+				if review_task is not None:
+					review_task = review_task.strip()
+					if len(review_task) == 0:
+						review_task = None
+					else:
+						if not re.match('^[A-Z]+TASK[0-9]+$', review_task):
+							raise ValueError()
 
-			# If the review status is "Under review" and a task hasn't been specified,
-			# then we should create one.
-			if review_status == cortex.lib.systems.REVIEW_STATUS_BY_NAME['REVIEW'] and review_task is None:
-				# Build some JSON
-				task_data = {}
-				task_data['time_constraint'] = 'asap'
-				task_data['short_description'] = 'Review necessity of virtual machine ' + system['name']
-				task_data['description'] = 'Please review the necessity of the virtual machine ' + system['name'] + ' to determine whether we need to keep it or whether it can be decommissioned. Information about the VM and links to ServiceNow can be found on Cortex at https://' + app.config['CORTEX_DOMAIN'] + url_for('system_view', id=id) + "\n\nOnce reviewed, please edit the system in Cortex using the link above and set it's 'Review Status' to either 'Required' or 'Not Required' and then close the associated project task."
-				#task_data['opened_by'] = app.config['REVIEW_TASK_OPENER_SYS_ID']
-				task_data['opened_by'] = 'example'
-				task_data['assignment_group'] = app.config['REVIEW_TASK_TEAM']
-				task_data['parent'] = app.config['REVIEW_TASK_PARENT_SYS_ID']
+				# If the review status is "Under review" and a task hasn't been specified,
+				# then we should create one.
+				if review_status == cortex.lib.systems.REVIEW_STATUS_BY_NAME['REVIEW'] and review_task is None:
+					# Build some JSON
+					task_data = {}
+					task_data['time_constraint'] = 'asap'
+					task_data['short_description'] = 'Review necessity of virtual machine ' + system['name']
+					task_data['description'] = 'Please review the necessity of the virtual machine ' + system['name'] + ' to determine whether we need to keep it or whether it can be decommissioned. Information about the VM and links to ServiceNow can be found on Cortex at https://' + app.config['CORTEX_DOMAIN'] + url_for('system_view', id=id) + "\n\nOnce reviewed, please edit the system in Cortex using the link above and set it's 'Review Status' to either 'Required' or 'Not Required' and then close the associated project task."
+					#task_data['opened_by'] = app.config['REVIEW_TASK_OPENER_SYS_ID']
+					task_data['opened_by'] = 'example'
+					task_data['assignment_group'] = app.config['REVIEW_TASK_TEAM']
+					task_data['parent'] = app.config['REVIEW_TASK_PARENT_SYS_ID']
 
-				# Make a post request to ServiceNow to create the task
-				r = requests.post('https://' + app.config['SN_HOST'] + '/api/now/v1/table/pm_project_task', auth=(app.config['SN_USER'], app.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=task_data)
+					# Make a post request to ServiceNow to create the task
+					r = requests.post('https://' + app.config['SN_HOST'] + '/api/now/v1/table/pm_project_task', auth=(app.config['SN_USER'], app.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=task_data)
 
-				# If we succeeded, get the task number
-				if r is not None and r.status_code >= 200 and r.status_code <= 299:
-					response_json = r.json()
-					review_task = response_json['result']['number']
-				else:
-					error = "Failed to link ServiceNow task and CI."
-					if r is not None:
-						error = error + " HTTP Response code: " + str(r.status_code)
-					app.logger.error(error)
-					raise Exception()
+					# If we succeeded, get the task number
+					if r is not None and r.status_code >= 200 and r.status_code <= 299:
+						response_json = r.json()
+						review_task = response_json['result']['number']
+					else:
+						error = "Failed to link ServiceNow task and CI."
+						if r is not None:
+							error = error + " HTTP Response code: " + str(r.status_code)
+						app.logger.error(error)
+						raise Exception()
+			else:
+				review_status = system['review_status']
+				review_task = system['review_task']
 
 			# Update the system
 			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, expiry_date, id))
@@ -485,6 +548,11 @@ def system_edit(id):
 @app.route('/systems/actions/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_actions(id):
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system
+	if not can_user_access_system(id):
+		abort(403)
+
 	# Get the system
 	system = cortex.lib.systems.get_system_by_id(id)
 
@@ -493,7 +561,10 @@ def system_actions(id):
 		abort(404)
 
 	# Get the list of actions we can perform
-	actions = app.system_actions
+	actions = []
+	for action in app.system_actions:
+		if can_user_access_workflow(action['view_func']):
+			actions.append(action)
 
 	return render_template('systems/actions.html', system=system, active='systems', actions=actions, title=system['name'])
 
@@ -505,6 +576,10 @@ def system_actions(id):
 def systems_vmware_json():
 	"""Used by DataTables to extract infromation from the VMware cache. The
 	parameters and return format are dictated by DataTables"""
+
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
 
 	# Extract information from DataTables
 	(draw, start, length, order_column, order_asc, search) = _systems_extract_datatables()
@@ -581,6 +656,10 @@ def systems_cmdb_json():
 	"""Used by DataTables to extract information from the ServiceNow CMDB CI
 	cache. The parameters and return format are as dictated by DataTables"""
 
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
+
 	# Extract information from DataTables
 	(draw, start, length, order_column, order_asc, search) = _systems_extract_datatables()
 
@@ -615,6 +694,10 @@ def systems_json():
 	"""Used by DataTables to extract information from the systems table in
 	the database. The parameters and return format are as dictated by 
 	DataTables"""
+
+	# Check user permissions
+	if not does_user_have_permission("systems.view"):
+		abort(403)
 
 	# Extract information from DataTables
 	(draw, start, length, order_column, order_asc, search) = _systems_extract_datatables()

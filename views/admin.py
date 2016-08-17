@@ -3,6 +3,7 @@
 
 from cortex import app
 import cortex.lib.core
+from cortex.lib.user import does_user_have_permission
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
 import re
 import MySQLdb as mysql
@@ -14,6 +15,10 @@ import MySQLdb as mysql
 def admin_tasks():
 	"""Displays the list of tasks to the user."""
 
+	# Check user permissions
+	if not does_user_have_permission("tasks.view"):
+		abort(403)
+
 	# Render the page
 	return render_template('admin/tasks.html', active='admin', title="Tasks", tasktype='all', json_source=url_for('admin_tasks_json', tasktype='all'))
 
@@ -23,6 +28,10 @@ def admin_tasks():
 @cortex.lib.user.login_required
 @app.disable_csrf_check
 def admin_tasks_json(tasktype):
+	# Check user permissions
+	if not does_user_have_permission("tasks.view"):
+		abort(403)
+
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
@@ -111,6 +120,10 @@ def admin_tasks_json(tasktype):
 def admin_tasks_active():
 	"""Displays the active tasks"""
 
+	# Check user permissions
+	if not does_user_have_permission("tasks.view"):
+		abort(403)
+
 	# Get the list of tasks from NeoCortex
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	neocortex = cortex.lib.core.neocortex_connect()
@@ -134,6 +147,10 @@ def admin_tasks_active():
 def admin_tasks_user():
 	"""Displays the list of tasks, excluding any system tasks"""
 
+	# Check user permissions
+	if not does_user_have_permission("tasks.view"):
+		abort(403)
+
 	# Render the page
 	return render_template('admin/tasks.html', active='admin', title="User Tasks", tasktype='user', json_source=url_for('admin_tasks_json', tasktype='user'))
 
@@ -143,6 +160,10 @@ def admin_tasks_user():
 @cortex.lib.user.login_required
 def admin_tasks_system():
 	"""Displays the list of tasks started by the system"""
+
+	# Check user permissions
+	if not does_user_have_permission("tasks.view"):
+		abort(403)
 
 	# Render the page
 	return render_template('admin/tasks.html', active='admin', title="System Tasks", tasktype='system', json_source=url_for('admin_tasks_json', tasktype='system'))
@@ -154,12 +175,20 @@ def admin_tasks_system():
 def admin_classes():
 	"""Handles the content of the Admin -> Classes page"""
 
+	# Check user permissions
+	if not does_user_have_permission("classes.view"):
+		abort(403)
+
 	# On a GET request, display the list of classes page
 	if request.method == 'GET':
 		classes = cortex.lib.classes.list(hide_disabled=False)
 		return render_template('admin/classes.html', classes=classes, active='admin', cmdb_types=app.config['CMDB_CACHED_CLASSES'], title="Classes")
 
 	elif request.method == 'POST':
+		# Check user permissions
+		if not does_user_have_permission("classes.edit"):
+			abort(403)
+
 		action = request.form['action']
 		curd   = g.db.cursor()
 
@@ -280,6 +309,10 @@ def admin_classes():
 def admin_maint():
 	"""Allows the user to kick off scheduled jobs on demand"""
 
+	# Check user permissions
+	if not does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm"]):
+		abort(403)
+
 	# Connect to NeoCortex and the database
 	neocortex = cortex.lib.core.neocortex_connect()
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -310,10 +343,22 @@ def admin_maint():
 
 		# Start the appropriate internal task
 		if module == 'vmcache':
+			# Check user permissions
+			if not does_user_have_permission("maintenance.vmware"):
+				abort(403)
+
 			task_id = neocortex.start_internal_task(session['username'], 'cache_vmware.py', '_cache_vmware', description="Caches information about virtual machines, datacenters and clusters from VMware")
 		elif module == 'sncache':
+			# Check user permissions
+			if not does_user_have_permission("maintenance.cmdb"):
+				abort(403)
+
 			task_id = neocortex.start_internal_task(session['username'], 'cache_servicenow.py', '_cache_servicenow', description="Caches server CIs from the ServiceNow CMDB")
 		elif module == 'vmexpire':
+			# Check user permissions
+			if not does_user_have_permission("maintenance.expire_vm"):
+				abort(403)
+
 			task_id = neocortex.start_internal_task(session['username'], 'vm_expire.py', '_vm_expire', description="Turns off VMs which have expired")
 		else:
 			app.logger.warn('Unknown module name specified when starting task')

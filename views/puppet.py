@@ -4,6 +4,7 @@ from cortex import app
 import cortex.lib.puppet
 import cortex.lib.core
 import cortex.lib.systems
+from cortex.lib.user import does_user_have_permission, can_user_access_system
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
 import time
@@ -31,6 +32,10 @@ def puppet_help():
 def puppet_enc_edit(node):
 	"""Handles the manage Puppet node page"""
 
+	# Check user permissions
+	if not does_user_have_permission("puppet.nodes.edit"):
+		abort(403)
+
 	# Get the system out of the database
 	system       = cortex.lib.systems.get_system_by_puppet_certname(node)
 	environments = cortex.lib.core.get_puppet_environments()
@@ -38,6 +43,11 @@ def puppet_enc_edit(node):
 
 	if system == None:
 		abort(404)
+
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system
+	if not can_user_access_system(system['id']):
+		abort(403)
 
 	# If we've got a new node, then don't show "None"
 	if system['puppet_classes'] is None or system['puppet_classes'] == '':
@@ -111,6 +121,10 @@ def puppet_enc_edit(node):
 def puppet_enc_default():
 	"""Handles the Puppet ENC Default Classes page"""
 
+	# Check user permissions
+	if not does_user_have_permission("puppet.default_classes.view"):
+		abort(403)
+
 	# Get the default YAML out of the kv table
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute("SELECT `value` FROM `kv_settings` WHERE `key` = 'puppet.enc.default'")
@@ -126,6 +140,10 @@ def puppet_enc_default():
 
 	# On any POST request, validate the input and then save
 	elif request.method == 'POST':
+		# Check user permissions
+		if not does_user_have_permission("puppet.default_classes.edit"):
+			abort(403)
+
 		# Extract data from form
 		classes = request.form.get('classes', '')
 
@@ -153,6 +171,10 @@ def puppet_enc_default():
 def puppet_nodes():
 	"""Handles the Puppet nodes list page"""
 
+	# Check user permissions
+	if not does_user_have_permission("puppet.nodes.view"):
+		abort(403)
+
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
@@ -178,6 +200,10 @@ def puppet_nodes():
 @cortex.lib.user.login_required
 def puppet_groups():
 	"""Handles the Puppet Groups page"""
+
+	# Check user permissions
+	if not does_user_have_permission("puppet.groups.view"):
+		abort(403)
 
 	# Get a cursor to the databaseo
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -231,6 +257,10 @@ def puppet_groups():
 def puppet_group_edit(name):
 	"""Handles the Puppet group editing page (for assigning classes to a group)"""
 
+	# Check user permissions
+	if not does_user_have_permission("puppet.groups.view"):
+		abort(403)
+
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
@@ -250,6 +280,10 @@ def puppet_group_edit(name):
 
 	# On any POST request, validate the input and then save
 	elif request.method == 'POST':
+		# Check user permissions
+		if not does_user_have_permission("puppet.groups.edit"):
+			abort(403)
+
 		# Extract data from form
 		classes = request.form.get('classes', '')
 
@@ -274,6 +308,20 @@ def puppet_group_edit(name):
 @cortex.lib.user.login_required
 def puppet_facts(node):
 	"""Handle the Puppet node facts page"""
+
+	# Check user permissions
+	if not does_user_have_permission("puppet.facts.view"):
+		abort(403)
+
+	# Get the system (we need to know the ID for permissions checking)
+	system = cortex.lib.systems.get_system_by_puppet_certname(node)
+	if system is None:
+		abort(404)
+
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system
+	if not can_user_access_system(system['id']):
+		abort(403)
 
 	dbnode = None
 	facts = None
@@ -312,6 +360,10 @@ def puppet_facts(node):
 def puppet_dashboard():
 	"""Handles the Puppet dashboard page."""
 
+	# Check user permissions
+	if not does_user_have_permission("puppet.dashboard.view"):
+		abort(403)
+
 	return render_template('puppet/dashboard.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet', title="Puppet Dashboard")
 
 ################################################################################
@@ -319,6 +371,10 @@ def puppet_dashboard():
 @app.route('/puppet/dashboard/status/<status>')
 @cortex.lib.user.login_required
 def puppet_dashboard_status(status):
+	# Check user permissions (note this is the nodes permission rather than dashboard)
+	if not does_user_have_permission("puppet.nodes.view"):
+		abort(403)
+
 	# For the purposes of the dashboard, unreported is the same as unknown
 	if status == 'unreported':
 		status = 'unknown'
@@ -359,6 +415,8 @@ def puppet_dashboard_status(status):
 def puppet_radiator():
 	"""Handles the Puppet radiator view page. Similar to the dashboard."""
 
+	## No permissions check: this is accessible without logging in
+
 	return render_template('puppet/radiator.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet')
 
 ################################################################################
@@ -369,6 +427,8 @@ def puppet_radiator_body():
 	calls this function to update the content using AJAX rather than a
 	iffy page refresh."""
 
+	## No permissions check: this is accessible without logging in
+
 	return render_template('puppet/radiator-body.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet')
 
 ################################################################################
@@ -377,6 +437,20 @@ def puppet_radiator_body():
 @cortex.lib.user.login_required
 def puppet_reports(node):
 	"""Handles the Puppet reports page for a node"""
+
+	# Check user permissions
+	if not does_user_have_permission("puppet.reports.view"):
+		abort(403)
+
+	# Get the system (we need to know the ID for permissions checking)
+	system = cortex.lib.systems.get_system_by_puppet_certname(node)
+	if system is None:
+		abort(404)
+
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system
+	if not can_user_access_system(system['id']):
+		abort(403)
 
 	try:
 		# Connect to PuppetDB and get the reports
@@ -404,6 +478,10 @@ def puppet_reports(node):
 def puppet_report(report_hash):
 	"""Displays an individual report for a Puppet node"""
 
+	# Check user permissions
+	if not does_user_have_permission("puppet.reports.view"):
+		abort(403)
+
 	# Connect to Puppet DB and query for a report with the given hash
 	db = cortex.lib.puppet.puppetdb_connect()
 	reports = db.reports(query='["=", "hash", "' + report_hash + '"]')
@@ -416,6 +494,16 @@ def puppet_report(report_hash):
 		# returned from the reports generator, so the report didn't
 		# exist, hence we should 404
 		return abort(404)
+
+	# Get the system (we need the ID for perms check, amongst other things)
+	system = cortex.lib.systems.get_system_by_puppet_certname(report.node)
+	if system is None:
+		return abort(404)
+
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system
+	if not can_user_access_system(system['id']):
+		return abort(403)
 
 	# Build metrics into a more useful dictionary
 	metrics = {}
@@ -438,6 +526,9 @@ def puppet_search():
 	"""Provides search functionality for puppet classes and environment
 	variables"""
 
+	# Check user permissions
+	if not does_user_have_permission("puppet.nodes.view"):
+		abort(403)
 
 	q = request.args.get('q')
 	if q is None:

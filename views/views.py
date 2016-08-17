@@ -3,6 +3,7 @@
 from cortex import app
 import cortex.lib.user
 import cortex.lib.vmware
+from cortex.lib.user import does_user_have_permission
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
 import MySQLdb as mysql
@@ -93,6 +94,10 @@ def render_task_status(id, template):
 def task_status(id):
 	"""Handles the Task Status page for a individual task."""
 
+	# Check user permissions
+	if not does_user_have_permission("tasks.view"):
+		abort(403)
+
 	return render_task_status(id, "tasks/status.html")
 
 ################################################################################
@@ -102,5 +107,9 @@ def task_status(id):
 def task_status_log(id):
 	"""Much like task_status, but only returns the event log. This is used by 
 	an AJAX routine on the page to refresh the log every 10 seconds."""
+
+	# Check user permissions
+	if not does_user_have_permission("tasks.view"):
+		abort(403)
 
 	return render_task_status(id, "tasks/status-log.html")
