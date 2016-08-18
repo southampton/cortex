@@ -161,7 +161,21 @@ class Corpus(object):
 
 	################################################################################
 
-	def infoblox_get_host_refs(self,fqdn):
+	def infoblox_delete_host_record_by_ref(self, ref):
+		"""Deletes a host record from Infoblox"""
+
+		# Perform the DELETE request on the given host record reference
+		r = requests.delete("https://" + self.config['INFOBLOX_HOST'] + "/wapi/2.0/record:host/" + str(ref), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+		if r is None:
+			raise Exception("Failed to delete host record: request failed")
+
+		if r.status_code != 200:
+			raise Exception("Failed to delete host record. Infoblox returned error code " + str(r.status_code))
+
+	################################################################################
+
+	def infoblox_get_host_refs(self, fqdn):
 		"""Returns a list of host references (Infoblox record IDs) from Infoblox
 		matching exactly the specified fully qualified domain name (FQDN). If no
 		records are found None is returned. If an error occurs LookupError is raised"""
@@ -656,6 +670,20 @@ class Corpus(object):
 		self.db.commit()
 
 	############################################################################
+	
+	def puppet_enc_remove(self, system_id):
+		"""Removes a Puppet node from the ENC, given a Cortex system ID"""
+
+		# Get a cursor to the database
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+
+		# Delete the relevant row
+		curd.execute("DELETE FROM `puppet_nodes` WHERE `id` = %s", (system_id,))
+
+		# Commit
+		self.db.commit()
+
+	############################################################################
 
 	def vmware_vmreconfig_notes(self, vm, notes):
 		"""Sets the notes annotation for the VM."""
@@ -1090,6 +1118,52 @@ class Corpus(object):
 		self.db.commit()
 
 		return retval
+
+	################################################################################
+
+	def servicenow_mark_ci_deleted(self, sys_id):
+		# Get the CI details. This checks that it exists and whether it's 
+		# virtual or not	
+		r = requests.get('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_ci_server/' + sys_id, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json'})
+
+		# Check we got a valid response
+		if r is not None:
+			if r.status_code >= 200 and r.status_code <= 299:
+				# Get the response
+				response_json = r.json()
+				
+				# Determine the value of the virtual flag
+				try:
+					virtual = response_json['result']['virtual']
+				except Exception as e:
+					# Handle JSON not containing 'result', a first element, or a 'virtual' parameter
+					raise Exception("Failed to query ServiceNow for task information. Invalid response from ServiceNow.")
+			else:
+				raise Exception("Could not locate CI in ServiceNow. ServiceNow returned error code " + str(r.status_code))
+		else:
+			raise Exception("Could not locate CI in ServiceNow. Request failed.")
+
+		# Determine the new status it needs to be, which depends on 
+		# whether it is virtual or not
+		if (type(virtual) is bool and virtual is True) or ((type(virtual) is str or type(virtual) is unicode) and virtual.lower() == "true"):
+			new_status = "Deleted"
+		else:
+			new_status = "Decommissioned"
+
+		# Update the operational_status field with the new status
+		r = requests.put('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_ci_server/' + sys_id, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json={'operational_status': new_status})
+		
+		if r is not None:
+			if not r.status_code >= 200 and r.status_code <= 299:
+				raise Exception("ServiceNow failed to update the CI. ServiceNow returned error code " + str(r.status_code))
+		else:
+			raise Exception("Failed to update the CI. Request failed.")
+
+		# Get a cursor to the database and update the ServiceNow cache
+		# table with the new status
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+		curd.execute('UPDATE `sncache_cmdb_ci` SET `operational_status` = %s WHERE `sys_id` = %s', (new_status, sys_id))
+		self.db.commit()
 
 	################################################################################
 	

@@ -211,7 +211,7 @@ def systems_add_existing():
 
 			# Generate the name, padded out correctly
 			corpus = Corpus(g.db, app.config)
-			generated_name = corpus.pad_system_name(class_name, number, class_data['digits'])
+			hostname = corpus.pad_system_name(class_name, number, class_data['digits'])
 
 			# Type 0 (in the database) is a normal class-assigned system
 			system_type = 0

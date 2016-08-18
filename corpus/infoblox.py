@@ -6,7 +6,7 @@ class CorpusInfoblox:
 	def __init__(self, config):
 		self.config = config
 
-	def get_host_refs(self,fqdn):
+	def get_host_refs(self, fqdn):
 		"""Returns a list of host references (Infoblox record IDs) from Infoblox
 		matching exactly the specified fully qualified domain name (FQDN). If no
 		records are found None is returned. If an error occurs LookupError is raised"""
