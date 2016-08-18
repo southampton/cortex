@@ -1288,3 +1288,27 @@ class Corpus(object):
 
 		return vm.Destroy_Task()
 
+	############################################################################
+
+	def raise_cmdb_ticket(self, short_description, description, opened_by, assignment_group):
+		"""Raises a ticket on the CMDB to notify of a decomissioned system"""
+
+		# Build some JSON
+		task_data = {}
+		task_data['short_description'] = short_descrtipton
+		task_data['description'] = description
+		task_data['opened_by'] = opened_by
+		task_data['assignment_group'] = assignment_group
+
+		# Make a post request to ServiceNow to create the task
+		r = requests.post('https://' + app.config['SN_HOST'] + '/api/now/v1/table/incident', auth=(app.config['SN_USER'], app.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=task_data)
+
+		# If we succeeded
+		if r is not None and r.status_code == 201:
+			return True
+		else:
+			error = "Failed to open a new CMDB ticket"
+			if r is not None:
+				error = error + " HTTP Response code: " + str(r.status_code)
+			app.logger.error(error)
+			raise Exception()
