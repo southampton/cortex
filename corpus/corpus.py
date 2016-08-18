@@ -1291,7 +1291,7 @@ class Corpus(object):
 	############################################################################
 
 	def raise_cmdb_ticket(self, short_description, description, opened_by, assignment_group):
-		"""Raises a ticket on the CMDB to notify of a decomissioned system"""
+		"""Raises a ticket on the CMDB"""
 
 		# Build some JSON
 		task_data = {}
