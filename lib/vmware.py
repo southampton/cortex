@@ -23,10 +23,10 @@ def get_os_stats():
 	types['windows_server']  = 0
 	types['ws2003']          = 0
 	types['ws2008']          = 0
+	types['ws2008r2']        = 0
 	types['ws2012']          = 0
 	types['ws2016']          = 0
 
-	types['wdvista'] = 0
 	types['wd7']     = 0
 	types['wd8']     = 0
 	types['wd10']    = 0
@@ -47,11 +47,7 @@ def get_os_stats():
 		if 'win' in ostr:
 			types['windows'] += 1
 
-			if 'winLonghornGuest' in ostr or 'winLonghorn64Guest' in ostr:
-				types['windows_desktop'] += 1
-				types['wdvista'] += 1
-
-			elif 'windows7Guest' in ostr or 'windows7_64Guest' in ostr:
+			if 'windows7Guest' in ostr or 'windows7_64Guest' in ostr:
 				types['windows_desktop'] += 1
 				types['wd7'] += 1
 
@@ -69,8 +65,11 @@ def get_os_stats():
 				if 'winNet' in ostr:
 					types['ws2003'] += 1
 
-				elif 'windows7Server' in ostr:        
+				elif 'winLonghornGuest' in ostr or 'winLonghorn64Guest' in ostr:
 					types['ws2008'] += 1
+
+				elif 'windows7Server' in ostr:        
+					types['ws2008r2'] += 1
 
 				elif 'windows8Server' in ostr:
 					types['ws2012'] += 1

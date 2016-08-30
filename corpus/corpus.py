@@ -165,7 +165,7 @@ class Corpus(object):
 		"""Deletes a host record from Infoblox"""
 
 		# Perform the DELETE request on the given host record reference
-		r = requests.delete("https://" + self.config['INFOBLOX_HOST'] + "/wapi/2.0/record:host/" + str(ref), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+		r = requests.delete("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
 
 		if r is None:
 			raise Exception("Failed to delete host record: request failed")
