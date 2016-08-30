@@ -1364,7 +1364,7 @@ class Corpus(object):
 
 	############################################################################
 
-	def raise_cmdb_ticket(self, short_description, description, opened_by, assignment_group):
+	def servicenow_create_ticket(self, short_description, description, opened_by, assignment_group):
 		"""Raises a ticket on the CMDB"""
 
 		# Build some JSON
