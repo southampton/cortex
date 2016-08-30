@@ -20,7 +20,7 @@ a.server-link:hover { text-decoration: underline !important; }
 
 <ul id="class-tabs" class="nav nav-tabs" style="margin-bottom:1em">
 	{%- for class in classes %}
-	<li {% if loop.index0 == 0 and not q and not expired %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="{{ class.name }}" data-vmware="{{ class.link_vmware }}" role="tab">{{ class.name }}</a></li>
+	<li {% if loop.index0 == 0 and not q and not expired and not nocmdb %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="{{ class.name }}" data-vmware="{{ class.link_vmware }}" role="tab">{{ class.name }}</a></li>
 	{%- endfor %}
 	<li role="presentation"><a style="cursor:pointer" data-class="*OTHER" data-vmware="1" role="tab">Other/Legacy</a></li>
 	<li {% if q or classes|length == 0 or expired or nocmdb %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="*ALL" data-vmware="1" role="tab">All</a></li>
