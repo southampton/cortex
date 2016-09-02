@@ -7,7 +7,7 @@ import os
 import re
 import MySQLdb as mysql
 from functools import wraps
-import ldap
+import ldap, ldap.filter
 from werkzeug.urls import url_encode
 
 ROLE_WHO_USER = 0
@@ -138,7 +138,7 @@ def authenticate(username, password):
 
 	# Now search for the user object to bind as
 	try:
-		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
+		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + ldap.filter.escape_filter_chars(username))
 	except ldap.LDAPError as e:
 		return False
 
