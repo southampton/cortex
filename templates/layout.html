@@ -136,6 +136,16 @@
 							</ul>
 						</li>
 						{%- endif %}
+						{%- if menu.perms and menu.perms|length > 0 %}
+						<li class="visible-xs dropdown{%if active == 'perms'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Permissions <b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								{% for item in menu.perms -%}
+								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i>{{item.title}}</a></li>
+								{%- endfor %}
+							</ul>
+						</li>
+						{%- endif %}
 					</ul>
 					<ul class="nav navbar-nav navbar-right">
 						<li class="hidden-xs"><a href="{{ url_for('dashboard') }}"><i class="fa fa-fw fa-dashboard"></i> Dashboard</a></li>						
@@ -182,6 +192,9 @@
 					  {%- endif %}
 					  {%- if menu.admin and menu.admin|length > 0 %}
 					  <a tabindex="0" role="button" data-mpop="settings-menu" title="Settings" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-sliders fa-2x"></i></a>
+					  {%- endif %}
+					  {%- if menu.perms and menu.perms|length > 0 %}
+					  <a tabindex="0" role="button" data-mpop="perms-menu" title="Permissions" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-lock fa-2x"></i></a>
 					  {%- endif %}
 					  <a href="{{ url_for('about') }}" title="About" class="list-group-item {%if active == 'about'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-info-circle fa-2x"></i></a>
 					</div>
@@ -247,6 +260,16 @@
 	<div id="settings-menu" class="hidden">
 	<ul class="list-group list-group-popover">
 		{% for item in menu.admin -%}
+		<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
+		{%- endfor %}
+	</ul>
+	</div>
+	{%- endif %}
+
+	{%- if menu.perms and menu.perms|length > 0 %}
+	<div id="perms-menu" class="hidden">
+	<ul class="list-group list-group-popover">
+		{% for item in menu.perms -%}
 		<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 		{%- endfor %}
 	</ul>
