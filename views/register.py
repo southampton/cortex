@@ -57,6 +57,8 @@ def api_register_system():
 		interactive = False
 
 	else:
+		app.logger.error('Neither UUID or host+username+password sent to authenticate')
+
 		abort(401)
 
 	# Build the node's fqdn
@@ -146,6 +148,12 @@ def api_register_system():
 			data = app.config['SATELLITE_KEYS'][ident]
 			if cdata['environment'] in data:
 				cdata['satellite_activation_key'] = data[cdata['environment']]
+			else:
+				app.logger.warn('No Satellite activation key configured for OS ident, ' + str(ident) + ' with environment ' + cdata['environment'])
+		else:
+			app.logger.warn('Unknown OS ident (' + str(ident) + ') provided - a Satellite activation key will not be returned')
+	else:
+		app.logger.warn('No OS ident provided - a Satellite activation key will not be returned')
 
 	return(jsonify(cdata))
 
