@@ -106,6 +106,9 @@ Further Details:
 		# check the database is up and is working
 		self.init_database()
 
+		# set up permissions
+		self.init_permissions()
+
 	################################################################################
 
 	def pwgen(self, length=16):
@@ -206,7 +209,7 @@ Further Details:
 
 		# Ensure that we have a directory
 		if not os.path.isdir(self.config['WORKFLOWS_DIR']):
-			self.logger.error("The config option WORKFLOWS_DIR is not a directory!")
+			self.logger.error("Workflows: The config option WORKFLOWS_DIR is not a directory!")
 			return
 
 		# List all entries in the directory and iterate over them
@@ -224,12 +227,14 @@ Further Details:
 			if os.path.isdir(fqp):
 				# This is or rather should be a workflow directory
 				found = True
+				self.logger.info("Workflows: Loading workflow '" + entry + "'")
+
 				views_file = os.path.join(fqp, "views.py")
 				try:
 					view_module = imp.load_source(entry, views_file)
-					self.logger.info("Loaded workflow '" + entry + "' views module")
+					self.logger.info("Workflows: Loaded view module from '" + entry + "'")
 				except Exception as ex:
-					self.logger.warn("Could not load workflow from file " + views_file + ": " + str(ex))
+					self.logger.warn("Workflows: Could not load from file " + views_file + ": " + str(ex))
 					continue
 
 				# Load settings for this workflow if they exist ( settings files are optional )
@@ -237,14 +242,48 @@ Further Details:
 				if os.path.isfile(settings_file):
 					try:
 						self.wfsettings[entry] = self._load_workflow_settings(settings_file)
-						self.logger.info("Loaded workflow '" + entry + "' config file")
+						self.logger.info("Workflows: Loaded config file for '" + entry + "'")
 					except Exception as ex:
-						self.logger.warn("Could not load workflow config file " + settings_file + ": " + str(ex))
+						self.logger.warn("Workflows: Could not load config file " + settings_file + ": " + str(ex))
 						continue
+				else:
+					self.logger.debug("Workflows: No config file found for '" + entry + "'")
+
+				# Try to run the workflow's init function (if any)
+				try:
+					view_module.init()
+				except AttributeError:
+					self.logger.debug("Workflows: No init() function defined in '" + entry + "'")
+				except Exception as ex:
+					self.logger.warn("Workflows: Exception occured during init() call in '" + entry + "': " + str(type(ex)) + " - " + str(ex))
+
+				wfperms    = []
+				wfsysperms = []
+
+				try:
+					wfperms = view_module.PERMISSIONS
+				except AttributeError:
+					self.logger.info("Workflows: No permissions are defined in '" + entry + "'")
+
+				try:
+					wfsysperms = view_module.SYSTEM_PERMISSIONS
+				except AttributeError:
+					self.logger.info("Workflows: No per-system permissions are defined in '" + entry + "'")
+
+				## Add standard permissions
+				for perm in wfperms:
+					if 'name' in perm and 'desc' in perm:
+						self.workflow_permissions.append(perm)
+						self.logger.info("Workflows: Added permission '" + perm['name'] + "'")
+
+				for perm in wfsysperms:
+					if 'name' in perm and 'desc' in perm:
+						self.system_permissions.append(perm)
+						self.logger.info("Workflows: Added per-system permission '" + perm['name'] + "'")
 
 		# Warn if we didn't find any workflows
 		if not found:
-			self.logger.warn("The WORKFLOWS_DIR directory is empty, no workflows could be loaded!")
+			self.logger.warn("Workflows: The WORKFLOWS_DIR directory is empty (no workflows exist)")
 
 		# Set up template loading. Firstly build a list of FileSystemLoaders
 		# that will process templates in each workflows' templates directory
@@ -314,10 +353,10 @@ Further Details:
 			wfdata = {'display': workflow_title, 'name': workflow_name, 'order': workflow_order, 'view_func': f.__name__, 'description': workflow_desc }
 
 			if workflow_type == self.WF_CREATE:
-				self.logger.info("Registered workflow creation view '" + f.__name__ + "'")
+				self.logger.info("Workflows: Registered creation view function '" + f.__name__ + "' in '" + workflow_name + "'")
 				self.workflows.append(wfdata)
 			elif workflow_type == self.WF_SYSTEM_ACTION:
-				self.logger.info("Registered workflow system action view '" + f.__name__ + "'")
+				self.logger.info("Workflows: Registered system action function '" + f.__name__ + "' in '" + workflow_name + "'")
 				self.system_actions.append(wfdata)
 
 			return f
@@ -670,6 +709,7 @@ Username:             %s
 		  `role_id` mediumint(11) NOT NULL,
 		  `who` varchar(128) NOT NULL,
 		  `type` tinyint(1) NOT NULL,
+		  `perm` varchar(64) NOT NULL,
 		  PRIMARY KEY (`id`),
 		  UNIQUE (`role_id`, `who`, `type`),
 		  CONSTRAINT `role_who_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
@@ -685,14 +725,7 @@ Username:             %s
 		  CONSTRAINT `system_perms_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
-		cursor.execute("""CREATE TABLE IF NOT EXISTS `workflow_perms` (
-		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
-		  `workflow_name` varchar(128) NOT NULL,
-		  `who` varchar(128) NOT NULL,
-		  `type` tinyint(1) NOT NULL,
-		  PRIMARY KEY (`id`),
-		  UNIQUE (`workflow_name`, `who`, `type`)
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+		cursor.execute("""DROP TABLE IF EXISTS `workflow_perms`""")
 
 		# Ensure we have a default administrator role with appropriate permissions
 		cursor.execute("""INSERT IGNORE INTO `roles` (`id`, `name`, `description`) VALUES (1, "Administrator", "Has full access to everything")""")
@@ -729,3 +762,51 @@ Username:             %s
 		temp_db.close()
 
 		self.logger.info("Database initialisation complete")
+
+################################################################################
+
+	def init_permissions(self):
+		"""Sets up the list of permissions that can be assigned, must be run
+		before workflows are run"""
+
+		## The ORDER MATTERS! It determines the order used on the Roles page
+		self.permissions        = [
+			{'name': 'systems.all.view',            'desc': 'View any system'},
+			{'name': 'systems.all.view.puppet',     'desc': 'View Puppet reports and facts on any system'},		
+			{'name': 'systems.all.edit.expiry',     'desc': 'Modify the expiry date of any system'},
+			{'name': 'systems.all.edit.review',     'desc': 'Modify the review status of any system'},
+			{'name': 'systems.all.edit.vmware',     'desc': 'Modify the vmware link on any system'},
+			{'name': 'systems.all.edit.cmdb',       'desc': 'Modify the CMDB link on any system'},
+			{'name': 'systems.all.edit.comment',    'desc': 'Modify the comment on any system'},
+			{'name': 'systems.all.edit.puppet',     'desc': 'Modify puppet settings on any system'},
+			{'name': 'vmware.view',                 'desc': 'View VMware data and statistics'},
+			{'name': 'puppet.dashboard.view',       'desc': 'View the Puppet dashboard'},
+			{'name': 'puppet.nodes.view',           'desc': 'View the list of Puppet nodes'},
+			{'name': 'puppet.default_classes.view', 'desc': 'View the list of Puppet default classes'},
+			{'name': 'puppet.default_classes.edit', 'desc': 'Modify the list of Puppet default classes'},
+			{'name': 'puppet.groups.view',          'desc': 'View the list of Puppet groups'},
+			{'name': 'puppet.groups.edit',          'desc': 'Modify Puppet groups'},
+			{'name': 'classes.view',                'desc': 'View the list of system class definitions'},
+			{'name': 'classes.edit',                'desc': 'Edit system class definitions'},
+			{'name': 'tasks.view',                  'desc': 'View the details of all tasks (not just your own)'},
+			{'name': 'maintenance.vmware',          'desc': 'Run VMware maintenance tasks'},
+			{'name': 'maintenance.cmdb',            'desc': 'Run CMDB maintenance tasks'},
+			{'name': 'maintenance.expire_vm',       'desc': 'Run the Expire VM maintenance task'},
+			{'name': 'admin.permissions',           'desc': 'Modify permissions'},
+		]
+
+		self.workflow_permissions = [
+			{'name': 'workflows.all',               'desc': 'Use any workflow'},
+		]			
+
+		self.system_permissions = [
+			{'name': 'view',                        'desc': 'View the system'},
+			{'name': 'view.puppet',                 'desc': 'View the system\'s Puppet reports and facts'},
+			{'name': 'edit.expiry',                 'desc': 'Change the expiry date of the system'},
+			{'name': 'edit.review',                 'desc': 'Change the review status of the system'},
+			{'name': 'edit.vmware',                 'desc': 'Change the VMware VM link'},
+			{'name': 'edit.cmdb',                   'desc': 'Change the CMDB link'},
+			{'name': 'edit.comment',                'desc': 'Change the comment'},
+			{'name': 'edit.puppet',                 'desc': 'Change Puppet settings'},
+		]
+
