@@ -114,7 +114,13 @@ def context_processor():
 	if does_user_have_permission("systems.add_existing"):
 		admin.append({'link': url_for('systems_add_existing'), 'title': 'Add existing system', 'icon': 'fa-plus'})
 
-	injectdata['menu'] = { 'systems': systems, 'vmware': vmware, 'puppet': puppet, 'admin': admin }
+	# Sets up the permissions menu
+	perms = []
+	if does_user_have_permission("admin.permissions"):
+		perms.append({'link': url_for('perms_roles'), 'title': 'Roles', 'icon': 'fa-user-secret'})
+		perms.append({'link': url_for('perms_roles'), 'title': 'Users', 'icon': 'fa-users'})
+
+	injectdata['menu'] = { 'systems': systems, 'vmware': vmware, 'puppet': puppet, 'admin': admin, 'perms': perms }
 
 	# If the current request is for a page that is a workflow, set the
 	# value of the 'active' variable that's passed to the page templates

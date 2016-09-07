@@ -39,13 +39,15 @@ def login():
 				session.permanent = True
 			else:
 				session.permanent = False
+
+			# Cache user real name
+			try:
+				cortex.lib.user.get_user_realname_from_ldap(session['username'])
+			except Exception as ex:
+				pass
 			
-			# Restrict all logons to admins
-			if cortex.lib.user.is_global_admin(session['username']):
-				return cortex.lib.user.logon_ok()
-			else:
-				flash('Permission denied', 'alert-danger')
-				return redirect(url_for('login'))
+			# Logon is OK to proceed
+			return cortex.lib.user.logon_ok()
 
 ################################################################################
 

@@ -21,6 +21,7 @@ import cortex.views.puppet
 import cortex.views.api
 import cortex.views.register
 import cortex.views.user
+import cortex.views.perms
 
 # load workflows - they have to be done here after app is created
 app.load_workflows()
