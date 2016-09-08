@@ -395,3 +395,13 @@ i.icon-unknown
 		border-right: 5px solid #158cba;
 	}
 }
+
+fieldset
+{
+	margin-bottom: 20px;
+}
+
+legend
+{
+	margin-bottom: 5px;
+}

@@ -38,7 +38,7 @@ def before_request():
 	# This would ideally go in app.py, but it can't as it depends on 
 	# cortex.lib.user which it can't import due to a cyclic dependency
 	app.jinja_env.globals['does_user_have_permission'] = does_user_have_permission
-	app.jinja_env.globals['can_user_access_workflow'] = can_user_access_workflow
+	#app.jinja_env.globals['can_user_access_workflow'] = can_user_access_workflow
 
 ################################################################################
 
@@ -60,8 +60,8 @@ def context_processor():
 	# sandbox VMs.
 	injectdata['workflows'] = []
 	for workflow in app.workflows:
-		if can_user_access_workflow(workflow['view_func']):
-			injectdata['workflows'].append(workflow)
+		#if can_user_access_workflow(workflow['view_func']):
+		injectdata['workflows'].append(workflow)
 
 	# Inject the menu items 
 	# systems, workflows, vmware, puppet, admin

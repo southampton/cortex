@@ -79,10 +79,16 @@ def perms_role(id):
 	if role == None:
 		abort(404)
 
+	# Build a simple list of all the permissions the role has, for calculating
+	# permissions during the view/GET or during updating in a POST
+	plist = []
+	for perm in role['perms']:
+		plist.append(perm['perm'])
+
 	## View list
 	if request.method == 'GET':
 		# Render the page
-		return render_template('perms/role.html', active='perms', title="Role", role=role)
+		return render_template('perms/role.html', active='perms', title="Role", role=role, perms=app.permissions, wfperms=app.workflow_permissions, rperms=plist)
 
 	## Edit role, delete role
 	elif request.method == 'POST':
@@ -90,11 +96,11 @@ def perms_role(id):
 
 		# delete  - delete the role
 		# edit    - change name/desc of the role
-		# grant   - Give the role an additional permission
-		# revoke  - Revoke a permission from this role
-		# enable  - Give a user this role
-		# disable - Revoke from a user this role
+		# update  - Update the list of permissions 
+		# add     - Give a user this role
+		# remove  - Revoke from a user this role
 
+		# Delete the role
 		if action == 'delete':
 			curd.execute('''DELETE FROM `roles` WHERE `id` = %s''', (id))
 			g.db.commit()
@@ -102,6 +108,7 @@ def perms_role(id):
 			flash("The role `" + role['name'] + "` has been deleted", "alert-success")
 			return redirect(url_for('perms_roles'))
 
+		# Change the name and/or description of the role
 		elif action == 'edit':
 			# Validate class name/prefix
 			name = request.form['name']
@@ -121,41 +128,44 @@ def perms_role(id):
 			flash("Role updated", "alert-success")
 			return redirect(url_for('perms_role',id=id))
 
-		elif action == 'grant':
-			permission_name = request.form['permission']
-			if not re.match(r'^[a-zA-Z0-9\.]{3,255}$', permission_name):
-				flash("The permission you entered was invalid. It must only contain letters, numbers or a full stop.", "alert-danger")
-				return redirect(url_for('perms_role',id=id))
+		elif action == 'update':
+			# Loop over all the permissions available, check if it is in the form
+			# if it isn't, make sure to delete from the table
+			# if it is, make sure it is in the table
+			perms = app.permissions + app.workflow_permissions
+			changes = 0
 
-			# Ensure the permission was not already granted
-			curd.execute('SELECT 1 FROM `role_perms` WHERE `role_id` = %s AND `perm` = %s', (id,permission_name))
-			if curd.fetchone() is not None:
-				flash('That permission is already granted to the role', 'alert-warning')
-				return redirect(url_for('perms_role',id=id))
+			for perm in perms:
+				## Check if the role already has this permission or not
+				curd.execute('SELECT 1 FROM `role_perms` WHERE `role_id` = %s AND `perm` = %s', (id,perm['name']))
+				if curd.fetchone() is None:
+					exists = False
+				else:
+					exists = True
 
-			curd.execute('''INSERT INTO `role_perms` (`role_id`, `perm`) VALUES (%s,%s)''', (id, permission_name))
-			g.db.commit()
+				should_exist = False
+				if perm['name'] in request.form:
+					if request.form[perm['name']] == 'yes':
+						should_exist = True
 
-			flash("Permission " + permission_name + " was added to the role", "alert-success")
+				if not should_exist and exists:
+					curd.execute('''DELETE FROM `role_perms` WHERE `role_id` = %s AND `perm` = %s''', (id, perm['name']))
+					g.db.commit()
+					changes += 1
+
+				elif should_exist and not exists:
+					curd.execute('''INSERT INTO `role_perms` (`role_id`, `perm`) VALUES (%s, %s)''', (id, perm['name']))
+					g.db.commit()
+					changes += 1
+
+			if changes == 0:
+				flash("Permissions were not updated - no changes requested", "alert-warning")
+			else:
+				flash("Permissions for the role were successfully updated", "alert-success")
 			return redirect(url_for('perms_role',id=id))
-		elif action == 'revoke':
-			pid = request.form['pid']
-			if not re.match(r'^[0-9]+$',pid):
-				flash("The permission ID you sent was invalid", "alert-danger")
-				return redirect(url_for('perms_role',id=id))				
-		
-			# Ensure the permission was not already granted
-			curd.execute('SELECT 1 FROM `role_perms` WHERE `id` = %s', (pid))
-			if curd.fetchone() is None:
-				flash('That permission is not granted to the role', 'alert-warning')
-				return redirect(url_for('perms_role',id=id))
 
-			curd.execute('''DELETE FROM `role_perms` WHERE `id` = %s''', (pid))
-			g.db.commit()
-
-			flash("The permission was revoked from the role", "alert-success")
-			return redirect(url_for('perms_role',id=id))
-		elif action == 'enable':
+		## Add a user or group to the role
+		elif action == 'add':
 			name = request.form['name']
 			if not re.match(r'^[a-zA-Z0-9\-\_]{3,255}$', name):
 				flash("The user or group name you sent was invalid", "alert-danger")
@@ -189,12 +199,12 @@ def perms_role(id):
 			flash("The " + hstr + " " + name + " was added to the role", "alert-success")
 			return redirect(url_for('perms_role',id=id))
 
-
-		elif action == 'disable':
+		## Remove a user or group from the role
+		elif action == 'remove':
 			wid = request.form['wid']
 			if not re.match(r'^[0-9]+$',wid):
 				flash("The user/group ID you sent was invalid", "alert-danger")
-				return redirect(url_for('perms_role',id=id))				
+				return redirect(url_for('perms_role',id=id))
 		
 			# Ensure the permission was not already granted
 			curd.execute('SELECT 1 FROM `role_who` WHERE `id` = %s', (wid))
