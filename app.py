@@ -731,20 +731,19 @@ Username:             %s
 		cursor.execute("""INSERT IGNORE INTO `roles` (`id`, `name`, `description`) VALUES (1, "Administrator", "Has full access to everything")""")
 		cursor.execute("""INSERT IGNORE INTO `role_perms` (`role_id`, `perm`) VALUES 
 		  (1, "admin.permissions"), 
-		  (1, "systems.view"), 
-		  (1, "systems.comments.edit"), 
-		  (1, "systems.vmware.edit"), 
-		  (1, "systems.cmdb.edit"), 
-		  (1, "systems.expiry.edit"), 
-		  (1, "systems.review.edit"), 
+		  (1, "systems.all.view"), 
+		  (1, "systems.all.view.puppet"), 
+		  (1, "systems.all.edit.expiry"), 
+		  (1, "systems.all.edit.review"), 
+		  (1, "systems.all.edit.vmware"), 
+		  (1, "systems.all.edit.cmdb"), 
+		  (1, "systems.all.edit.comment"), 
+		  (1, "systems.all.edit.puppet"), 
 		  (1, "systems.allocate_name"), 
 		  (1, "systems.add_existing"),
 		  (1, "vmware.view"), 
 		  (1, "puppet.dashboard.view"), 
 		  (1, "puppet.nodes.view"), 
-		  (1, "puppet.nodes.edit"), 
-		  (1, "puppet.reports.view"), 
-		  (1, "puppet.facts.view"), 
 		  (1, "puppet.default_classes.view"), 
 		  (1, "puppet.default_classes.edit"), 
 		  (1, "puppet.groups.view"), 
@@ -755,8 +754,7 @@ Username:             %s
 		  (1, "maintenance.vmware"), 
 		  (1, "maintenance.cmdb"), 
 		  (1, "maintenance.expire_vm"),
-		  (1, "workflows.all"),
-		  (1, "systems.all")""")
+		  (1, "workflows.all")""")
 
 		## Close database connection
 		temp_db.close()
