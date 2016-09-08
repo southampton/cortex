@@ -152,9 +152,11 @@ class CortexWorkflow:
 				if permission is None:
 					if not does_user_have_system_permission(id,system_permission) and not does_user_have_permission("workflows.all"):
 						abort(403)
+
 				else:
-					if not does_user_have_system_permission(id,system_permission) and not does_user_have_permission(permission) and not does_user_have_permission("workflows.all"):
+					if not does_user_have_system_permission(id,system_permission) and not does_user_have_permission("workflows." + permission) and not does_user_have_permission("workflows.all"):
 						abort(403)
+
 				return fn(*args, **kwargs)
 			return decorated_function
 		return decorator
