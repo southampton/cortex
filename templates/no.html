@@ -3,18 +3,13 @@
 
 
 <div class="error-block">
-	<img src="{{url_for('static',filename='images/tbservers.png')}}" class="img-responsive"></img>
+	<img src="{{url_for('static',filename='images/no.png')}}" class="img-responsive"></img>
 	<div class="error-header error-text">
 		{{title}}
 	</div>
 	<div class="error-body error-text">
 		{{ message }}
 	</div>
-	{% if debug %}
-	<!--<div class="error-debug">
-		<pre>{{ debug }}</pre>
-	</div>-->
-	{% endif %}
 </div>
 
 {% endblock %}

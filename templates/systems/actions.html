@@ -8,7 +8,7 @@
 {% for action in actions %}
 
 <div class="list-group-item">
-	<p class="list-group-item-text"><a href="{{url_for(action.view_func,id=system.id)}}" class="btn btn-primary" style="margin-right: 10px">{{action.display}}</a> {{action.description}}</p>
+	<p class="list-group-item-text"><a href="{{url_for(action.name,id=system.id)}}" class="btn btn-primary" style="margin-right: 10px">{{action.title}}</a> {{action.desc}}</p>
 </div>
 
 {% endfor %}

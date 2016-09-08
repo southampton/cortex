@@ -25,7 +25,7 @@ def error400(error):
 
 @app.errorhandler(403)
 def error403(error):
-	return stderr("Permission Denied","You do not have permission to access that page or perform that action.",403)
+	return stderr("Permission Denied","You do not have permission to access that page or perform that action.",403,template="no.html")
 
 @app.errorhandler(404)
 def error404(error):
@@ -33,7 +33,7 @@ def error404(error):
 
 @app.errorhandler(405)
 def error405(error):
-	return stderr("Not allowed","Your web browser sent the wrong HTTP method",405)
+	return stderr("Not allowed","Your web browser sent the wrong HTTP method",405,template="no.html")
 
 ################################################################################
 

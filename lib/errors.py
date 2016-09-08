@@ -8,7 +8,7 @@ import traceback
 ################################################################################
 
 ## standard error (uses render_template and thus standard page layout)
-def stderr(title,message,code=200):
+def stderr(title,message,code=200,template="error.html"):
 	"""This function is called by other error functions to show the error to the
 	end user. It takes an error title and an error message.
 	"""
@@ -19,7 +19,7 @@ def stderr(title,message,code=200):
 	else:
 		debug = ""
 
-	return render_template('error.html',title=title,message=message,debug=debug), code
+	return render_template(template,title=title,message=message,debug=debug), code
 
 ################################################################################
 

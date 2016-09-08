@@ -14,18 +14,14 @@ from logging.handlers import RotatingFileHandler
 from logging import Formatter
 import redis
 import MySQLdb as mysql
+import traceback
 
 class CortexFlask(Flask):
+	## A list of dict's, each representing a workflow 'create' function
+	wf_functions        = []
 
-	# type of workflows
-	WF_CREATE        = 1 # create new things
-	WF_SYSTEM_ACTION = 2 # perform actions on systems
-
-	# store the list of 'CREATE' workflows
-	workflows = []
-
-	# store the list of 'SYSTEM ACTION' workflows
-	system_actions = []
+	## A list of dict's, each representing a workflow 'system-action' function
+	wf_system_functions = []
 
 	################################################################################
 
@@ -230,56 +226,14 @@ Further Details:
 				self.logger.info("Workflows: Loading workflow '" + entry + "'")
 
 				views_file = os.path.join(fqp, "views.py")
+				self.logger.info("Loading " + entry + " from " + views_file)
 				try:
 					view_module = imp.load_source(entry, views_file)
-					self.logger.info("Workflows: Loaded view module from '" + entry + "'")
+					self.logger.info("Workflows: Finished loading workflow '" + entry + "'")
 				except Exception as ex:
-					self.logger.warn("Workflows: Could not load from file " + views_file + ": " + str(ex))
+					self.logger.warn("Workflows: Could not load from file " + views_file + ": " + str(type(ex)) + " - " + str(ex))
+					self.logger.warn(traceback.format_exc())
 					continue
-
-				# Load settings for this workflow if they exist ( settings files are optional )
-				settings_file = os.path.join(fqp, "workflow.conf")
-				if os.path.isfile(settings_file):
-					try:
-						self.wfsettings[entry] = self._load_workflow_settings(settings_file)
-						self.logger.info("Workflows: Loaded config file for '" + entry + "'")
-					except Exception as ex:
-						self.logger.warn("Workflows: Could not load config file " + settings_file + ": " + str(ex))
-						continue
-				else:
-					self.logger.debug("Workflows: No config file found for '" + entry + "'")
-
-				# Try to run the workflow's init function (if any)
-				try:
-					view_module.init()
-				except AttributeError:
-					self.logger.debug("Workflows: No init() function defined in '" + entry + "'")
-				except Exception as ex:
-					self.logger.warn("Workflows: Exception occured during init() call in '" + entry + "': " + str(type(ex)) + " - " + str(ex))
-
-				wfperms    = []
-				wfsysperms = []
-
-				try:
-					wfperms = view_module.PERMISSIONS
-				except AttributeError:
-					self.logger.info("Workflows: No permissions are defined in '" + entry + "'")
-
-				try:
-					wfsysperms = view_module.SYSTEM_PERMISSIONS
-				except AttributeError:
-					self.logger.info("Workflows: No per-system permissions are defined in '" + entry + "'")
-
-				## Add standard permissions
-				for perm in wfperms:
-					if 'name' in perm and 'desc' in perm:
-						self.workflow_permissions.append(perm)
-						self.logger.info("Workflows: Added permission '" + perm['name'] + "'")
-
-				for perm in wfsysperms:
-					if 'name' in perm and 'desc' in perm:
-						self.system_permissions.append(perm)
-						self.logger.info("Workflows: Added per-system permission '" + perm['name'] + "'")
 
 		# Warn if we didn't find any workflows
 		if not found:
@@ -288,10 +242,10 @@ Further Details:
 		# Set up template loading. Firstly build a list of FileSystemLoaders
 		# that will process templates in each workflows' templates directory
 		loader_data = {}
-		wflist = self.workflows + self.system_actions
+		wflist = self.wf_functions + self.wf_system_functions
 		for workflow in wflist:
-			template_dir = os.path.join(self.config['WORKFLOWS_DIR'], workflow['name'], 'templates')
-			loader_data[workflow['name']] = jinja2.FileSystemLoader(template_dir)
+			template_dir = os.path.join(self.config['WORKFLOWS_DIR'], workflow['workflow'], 'templates')
+			loader_data[workflow['workflow']] = jinja2.FileSystemLoader(template_dir)
 
 		# Create a ChoiceLoader, which by default will use the default 
 		# template loader, and if that fails, uses a PrefixLoader which
@@ -302,66 +256,6 @@ Further Details:
 			jinja2.PrefixLoader(loader_data, '::')
 		])
 		self.jinja_loader = choice_loader
-
-	################################################################################
-		
-	def workflow_handler(self, workflow_name, workflow_title, workflow_order=999, workflow_type=WF_CREATE, workflow_desc=None, **options):
-		"""This is a decorator function that is used in workflows to add a view
-		function into Cortex for creating new 'things'. It performs the 
-		function of Flask's @app.route but also adds the view function
-		to a menu on the website to allow the workflow to be activated by the 
-		user.
-
-		Usage is as follows:
-
-		@app.workflow_handler(__name__,"Title on menu", methods=['GET','POST'])
-
-		:param workflow_name: the name of the workflow. This should always be __name__.
-		:param workflow_title: the title of the workflow, as it appears in the list
-		:param workflow_order: an integer hint as to the ordering of the workflow within the list. Defaults to 999.
-		:param workflow_type: the type of workflow task. either app.WF_CREATE or app.WF_SYSTEM_ACTION. Defaults to WF_CREATE.
-		:param workflow_desc: a description of what this workflow view does. This is currently only used for WF_SYSTEM_ACTION. Defaults to None.
-		:param options: the options to be forwarded to the underlying
-			     :class:`~werkzeug.routing.Rule` object.  A change
-			     to Werkzeug is handling of method options.  methods
-			     is a list of methods this rule should be limited
-			     to (``GET``, ``POST`` etc.).  By default a rule
-			     just listens for ``GET`` (and implicitly ``HEAD``).
-			     Starting with Flask 0.6, ``OPTIONS`` is implicitly
-			     added and handled by the standard request handling.
-		"""
-
-		def decorator(f):
-
-			if workflow_type == self.WF_CREATE:
-				rule = "/workflows/" + f.__name__
-			elif workflow_type == self.WF_SYSTEM_ACTION:
-				rule = "/workflows/" + f.__name__ + "/<int:id>"
-			else:
-				app.logger.warn("Workflow '" + workflow_name + " could not be loaded because the workflow_type is invalid")
-				return
-
-
-			# Get the endpoint
-			endpoint = options.pop('endpoint', None)
-
-			# This is what Flask normally does for a route, which allows the
-			# page to be accessible
-			self.add_url_rule(rule, endpoint, f, **options)
-
-			# Store the workflow details in a hash
-			wfdata = {'display': workflow_title, 'name': workflow_name, 'order': workflow_order, 'view_func': f.__name__, 'description': workflow_desc }
-
-			if workflow_type == self.WF_CREATE:
-				self.logger.info("Workflows: Registered creation view function '" + f.__name__ + "' in '" + workflow_name + "'")
-				self.workflows.append(wfdata)
-			elif workflow_type == self.WF_SYSTEM_ACTION:
-				self.logger.info("Workflows: Registered system action function '" + f.__name__ + "' in '" + workflow_name + "'")
-				self.system_actions.append(wfdata)
-
-			return f
-
-		return decorator
 
 	################################################################################
 		
@@ -709,7 +603,6 @@ Username:             %s
 		  `role_id` mediumint(11) NOT NULL,
 		  `who` varchar(128) NOT NULL,
 		  `type` tinyint(1) NOT NULL,
-		  `perm` varchar(64) NOT NULL,
 		  PRIMARY KEY (`id`),
 		  UNIQUE (`role_id`, `who`, `type`),
 		  CONSTRAINT `role_who_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
@@ -720,6 +613,7 @@ Username:             %s
 		  `system_id` mediumint(11) NOT NULL,
 		  `who` varchar(128) NOT NULL,
 		  `type` tinyint(1) NOT NULL,
+		  `perm` varchar(64) NOT NULL,
 		  PRIMARY KEY (`id`),
 		  UNIQUE (`system_id`, `who`, `type`),
 		  CONSTRAINT `system_perms_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
@@ -791,11 +685,10 @@ Username:             %s
 			{'name': 'maintenance.cmdb',            'desc': 'Run CMDB maintenance tasks'},
 			{'name': 'maintenance.expire_vm',       'desc': 'Run the Expire VM maintenance task'},
 			{'name': 'admin.permissions',           'desc': 'Modify permissions'},
+			{'name': 'workflows.all',               'desc': 'Use any workflow or workflow function'},
 		]
 
-		self.workflow_permissions = [
-			{'name': 'workflows.all',               'desc': 'Use any workflow'},
-		]			
+		self.workflow_permissions = []
 
 		self.system_permissions = [
 			{'name': 'view',                        'desc': 'View the system'},
@@ -807,4 +700,3 @@ Username:             %s
 			{'name': 'edit.comment',                'desc': 'Change the comment'},
 			{'name': 'edit.puppet',                 'desc': 'Change Puppet settings'},
 		]
-

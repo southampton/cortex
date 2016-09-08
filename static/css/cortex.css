@@ -108,10 +108,6 @@ table#classes td:last-child
 		overflow: auto;
 	}
 	
-	.error-img
-	{
-		font-size: 10em;
-	}
 	.error-header
 	{
 		font-size: 3em;
@@ -129,10 +125,6 @@ table#classes td:last-child
 	{
 		padding-top: 80px;
 		text-align: center;
-	}
-	.error-img
-	{
-		font-size: 5em;
 	}
 	.error-header
 	{
@@ -404,4 +396,10 @@ fieldset
 legend
 {
 	margin-bottom: 5px;
+}
+
+.img-responsive
+{
+	margin-left: auto;
+	margin-right: auto;
 }

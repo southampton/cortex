@@ -409,11 +409,29 @@ def does_user_have_permission(perm, user=None):
 
 #############################################################################
 
-def can_user_access_workflow(workflow, user=None):
-	"""Returns a boolean indicating if a user is allowed to use the
-	specified workflow. This function takes into account the 
-	workflows.all permission, which overrides this.
-	  workflow: The name of the workflow's view function.
+def does_user_have_workflow_permission(perm, user=None):
+	"""Shortcut function to determine if a user has the permission specified,
+		or 'workflows.all' which bypasses all workflow permissions. """
+	if does_user_have_permission(perm,user) or does_user_have_permission("workflows.all",user):
+		return True
+	return False
+
+#############################################################################
+
+def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
+	"""Returns a boolean indicating if a user has the specified permission
+	on the system specified in system_id. This does not take into account
+	the global permissions such as systems.all.view - you must check these
+	seperatley
+
+	  system_id: The Cortex system id of the system (as found in the
+                     systems table)
+	  sysperm: Either a string or a list of strings that contains the
+	           permission(s) to search for
+	  perm: The global permission, which is the user has, overrides system
+			permissions and causes the function to return True irrespective
+			of whether the user has the system permission or not. Defaults to 
+			None (no global permission is checked for)
 	  user: The user whose permissions should be checked. Defaults to
 	        None, which checks the currently logged in user."""
 
@@ -425,19 +443,19 @@ def can_user_access_workflow(workflow, user=None):
 			# User not logged in - they definitely don't have permission!
 			return False
 
-	# Check the overriding permission of "workflows.all". If the user has
-	# this then they can access the workflow regardless
-	if does_user_have_permission("workflows.all", user):
-		return True
+	## Global permission override
+	if perm is not None:
+		if does_user_have_permission(perm,user):
+			return True
 
-	app.logger.debug("Checking permissions for user " + str(user) + " on workflow " + str(workflow))
+	app.logger.debug("Checking system permissions for user " + str(user) + " on system " + str(system_id))
 
-	# Query the workflow_perms table to see if the user has the workflow
+	# Query the system_perms table to see if the user has the system
 	# explicitly given access to them
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT 1 FROM `workflow_perms` WHERE `workflow_name` = %s AND `who` = %s AND `type` = %s', (workflow, user, ROLE_WHO_USER))
+	curd.execute('SELECT 1 FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (system_id, user, ROLE_WHO_USER, sysperm))
 
-	# If a row is returned then they have access to the workflow
+	# If a row is returned then they have the permission
 	if len(curd.fetchall()) > 0:
 		return True
 
@@ -456,23 +474,72 @@ def can_user_access_workflow(workflow, user=None):
 		else:
 			continue
 
-		# Query the workflow_perms table to see if the workflow is 
-		# given access by group
-		curd.execute('SELECT 1 FROM `workflow_perms` WHERE `workflow_name` = %s AND `who` = %s AND `type` = %s', (workflow, group, ROLE_WHO_LDAP_GROUP))
+		# Query the system_perms table to see if the permission is granted
+		# to the group the user is in
+		curd.execute('SELECT 1 FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (system_id, group, ROLE_WHO_LDAP_GROUP, sysperm))
 
 		# If a row is returned then they have access to the workflow
 		if len(curd.fetchall()) > 0:
 			return True
 
-	# Default: return False as the user shouldn't be able to access the workflow
 	return False
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #############################################################################
 
 def can_user_access_system(system_id, user=None):
-	"""Returns a boolean indicating if a user is allowed to modify the
+	"""Returns a boolean indicating if a user is allowed to view the
 	specified system. This function takes into account the 
-	systems.all permission, which overrides this.
+	systems.all.view permission, which overrides this.
 	  system_id: The Cortex system id of the system (as found in the
                      systems table)
 	  user: The user whose permissions should be checked. Defaults to

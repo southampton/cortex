@@ -1,6 +1,6 @@
 from cortex import app
 from cortex.lib.errors import logerr, fatalerr
-from cortex.lib.user import does_user_have_permission, can_user_access_workflow
+from cortex.lib.user import does_user_have_permission, does_user_have_workflow_permission
 from flask import Flask, request, session, g, abort, render_template, url_for
 import redis
 import time
@@ -38,7 +38,6 @@ def before_request():
 	# This would ideally go in app.py, but it can't as it depends on 
 	# cortex.lib.user which it can't import due to a cyclic dependency
 	app.jinja_env.globals['does_user_have_permission'] = does_user_have_permission
-	#app.jinja_env.globals['can_user_access_workflow'] = can_user_access_workflow
 
 ################################################################################
 
@@ -54,25 +53,22 @@ def context_processor():
 	injectdata = dict()
 
 	# Inject the workflows variable which is a list of loaded workflows. We
-	# filter this to just the ones the user is allowed to use. Note that we
-	# use 'view_func' rather than 'name' here as we can have many workflows
-	# inside a single workflow module, e.g. buildvm which does standard and
-	# sandbox VMs.
+	# filter this to just the ones the user is allowed to use.
 	injectdata['workflows'] = []
-	for workflow in app.workflows:
-		#if can_user_access_workflow(workflow['view_func']):
-		injectdata['workflows'].append(workflow)
+	for fn in app.wf_functions:
+		if fn['menu']:
+			if does_user_have_workflow_permission(fn['permission']):
+				injectdata['workflows'].append(fn)
 
 	# Inject the menu items 
-	# systems, workflows, vmware, puppet, admin
 
 	# Set up the Systems menu, based on a single permission
 	systems = []
-	if does_user_have_permission("systems.view"):
+	if does_user_have_permission("systems.all.view"):
 		systems = [
-			{'link': url_for('systems'), 'title': 'Systems list', 'icon': 'fa-list'},
-			{'link': url_for('systems_nocmdb'), 'title': 'VMs missing CMBD record', 'icon': 'fa-list'},
-			{'link': url_for('systems_expired'), 'title': 'Expired systems list', 'icon': 'fa-list'}
+			{'link': url_for('systems'), 'title': 'All systems', 'icon': 'fa-list'},
+			{'link': url_for('systems_nocmdb'), 'title': 'Systems without a CMBD record', 'icon': 'fa-list'},
+			{'link': url_for('systems_expired'), 'title': 'Expired systems', 'icon': 'fa-list'}
 		]
 
 	# Set up the VMware menu, based on a single permission
@@ -121,13 +117,5 @@ def context_processor():
 		perms.append({'link': url_for('perms_roles'), 'title': 'Users', 'icon': 'fa-users'})
 
 	injectdata['menu'] = { 'systems': systems, 'vmware': vmware, 'puppet': puppet, 'admin': admin, 'perms': perms }
-
-	# If the current request is for a page that is a workflow, set the
-	# value of the 'active' variable that's passed to the page templates
-	# to say it's a workflow (this allows the navigation bar to work)
-	for workflow in app.workflows:
-		if workflow['view_func'] == request.endpoint:
-			injectdata['active'] = 'workflows'
-			break
 
 	return injectdata
