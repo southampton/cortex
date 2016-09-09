@@ -39,8 +39,7 @@ MYSQL_PORT=3306
 CMDB_URL_FORMAT="http://localhost/cmdb/%s"
 
 ## Cortex internal version number
-VERSION_MAJOR='1.0'
-VERSION_MINOR='2016072901'
+VERSION='1.9'
 
 ## Flask defaults (changed to what we prefer)
 SESSION_COOKIE_SECURE      = False

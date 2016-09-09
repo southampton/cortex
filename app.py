@@ -60,7 +60,7 @@ class CortexFlask(Flask):
 			file_handler.setLevel(logging.INFO)
 
 		# Output some startup info
-		self.logger.info('cortex version ' + self.config['VERSION_MAJOR'] + " r" + self.config['VERSION_MINOR'] + ' initialised')
+		self.logger.info('cortex version ' + self.config['VERSION'] + ' initialised')
 		self.logger.info('cortex debug status: ' + str(self.config['DEBUG']))
 
 		# set up e-mail alert logging
