@@ -4,7 +4,7 @@ from cortex import app
 import cortex.lib.puppet
 import cortex.lib.core
 import cortex.lib.systems
-from cortex.lib.user import does_user_have_permission, can_user_access_system
+from cortex.lib.user import does_user_have_permission, does_user_have_system_permission
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
 import time
@@ -32,10 +32,6 @@ def puppet_help():
 def puppet_enc_edit(node):
 	"""Handles the manage Puppet node page"""
 
-	# Check user permissions
-	if not does_user_have_permission("puppet.nodes.edit"):
-		abort(403)
-
 	# Get the system out of the database
 	system       = cortex.lib.systems.get_system_by_puppet_certname(node)
 	environments = cortex.lib.core.get_puppet_environments()
@@ -44,9 +40,8 @@ def puppet_enc_edit(node):
 	if system == None:
 		abort(404)
 
-	# Check user permissions. User must have either systems.all or specific 
-	# access to the system
-	if not can_user_access_system(system['id']):
+	## Check if the user is allowed to edit the Puppet configuration
+	if not does_user_have_system_permission(id,"edit.puppet","systems.all.edit.puppet"):
 		abort(403)
 
 	# If we've got a new node, then don't show "None"
@@ -309,18 +304,13 @@ def puppet_group_edit(name):
 def puppet_facts(node):
 	"""Handle the Puppet node facts page"""
 
-	# Check user permissions
-	if not does_user_have_permission("puppet.facts.view"):
-		abort(403)
-
 	# Get the system (we need to know the ID for permissions checking)
 	system = cortex.lib.systems.get_system_by_puppet_certname(node)
 	if system is None:
 		abort(404)
 
-	# Check user permissions. User must have either systems.all or specific 
-	# access to the system
-	if not can_user_access_system(system['id']):
+	## Check if the user is allowed to view the facts about this node
+	if not does_user_have_system_permission(system['id'],"view.puppet","systems.all.view.puppet"):
 		abort(403)
 
 	dbnode = None
@@ -371,6 +361,9 @@ def puppet_dashboard():
 @app.route('/puppet/dashboard/status/<status>')
 @cortex.lib.user.login_required
 def puppet_dashboard_status(status):
+	"""This view is responsible for listing puppet nodes but only those matching
+	a certain status in PuppetDB."""
+
 	# Check user permissions (note this is the nodes permission rather than dashboard)
 	if not does_user_have_permission("puppet.nodes.view"):
 		abort(403)
@@ -438,18 +431,13 @@ def puppet_radiator_body():
 def puppet_reports(node):
 	"""Handles the Puppet reports page for a node"""
 
-	# Check user permissions
-	if not does_user_have_permission("puppet.reports.view"):
-		abort(403)
-
 	# Get the system (we need to know the ID for permissions checking)
 	system = cortex.lib.systems.get_system_by_puppet_certname(node)
 	if system is None:
 		abort(404)
 
-	# Check user permissions. User must have either systems.all or specific 
-	# access to the system
-	if not can_user_access_system(system['id']):
+	## Check if the user is allowed to view the reports of this node
+	if not does_user_have_system_permission(system['id'],"view.puppet","systems.all.view.puppet"):
 		abort(403)
 
 	try:
@@ -478,10 +466,6 @@ def puppet_reports(node):
 def puppet_report(report_hash):
 	"""Displays an individual report for a Puppet node"""
 
-	# Check user permissions
-	if not does_user_have_permission("puppet.reports.view"):
-		abort(403)
-
 	# Connect to Puppet DB and query for a report with the given hash
 	db = cortex.lib.puppet.puppetdb_connect()
 	reports = db.reports(query='["=", "hash", "' + report_hash + '"]')
@@ -500,10 +484,9 @@ def puppet_report(report_hash):
 	if system is None:
 		return abort(404)
 
-	# Check user permissions. User must have either systems.all or specific 
-	# access to the system
-	if not can_user_access_system(system['id']):
-		return abort(403)
+	## Check if the user is allowed to view the report
+	if not does_user_have_system_permission(system['id'],"view.puppet","systems.all.view.puppet"):
+		abort(403)
 
 	# Build metrics into a more useful dictionary
 	metrics = {}
@@ -513,10 +496,8 @@ def puppet_report(report_hash):
 
 		metrics[metric['category']][metric['name']] = metric['value']
 
-	## TODO...find out the system from the report_hash so we can load a node header
-
 	# Render
-	return render_template('puppet/report.html', report=report, metrics=metrics, active='puppet', title=report.node + " - Puppet Report")
+	return render_template('puppet/report.html', report=report, metrics=metrics, system=system, active='puppet', title=report.node + " - Puppet Report")
 
 ##############################################################################
 

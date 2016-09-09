@@ -50,11 +50,14 @@
 	text-align: center;
 }
 </style>
-<div class="page-header">
+{{ node.header(system,active="puppet_reports" ) }}
+
+<!--<div class="page-header">
 <a href="{{ url_for('puppet_reports', node=report.node) }}" class="pull-right btn btn-sm btn-primary"><i class="fa fa-fw fa-files-o"></i> Node Reports</a>
 <h3><i class="fa fa-fw fa-file-text-o"></i> {{ report.node }} - Puppet Report</h3>
+</div>-->
+
 <p class="text-muted">Received: <span class="date">{{ report.received.strftime('%Y-%m-%d %H:%M:%S') }}</span>. Run time: {{ report.run_time }}</p>
-</div>
 <div class="row">
 </div>
 <div class="row">
