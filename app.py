@@ -615,7 +615,7 @@ Username:             %s
 		  `type` tinyint(1) NOT NULL,
 		  `perm` varchar(64) NOT NULL,
 		  PRIMARY KEY (`id`),
-		  UNIQUE (`system_id`, `who`, `type`),
+		  UNIQUE (`system_id`, `who`, `type`, `perm`),
 		  CONSTRAINT `system_perms_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 

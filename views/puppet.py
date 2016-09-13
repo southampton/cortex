@@ -5,6 +5,7 @@ import cortex.lib.puppet
 import cortex.lib.core
 import cortex.lib.systems
 from cortex.lib.user import does_user_have_permission, does_user_have_system_permission
+from cortex.lib.errors import stderr
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
 import time
@@ -178,7 +179,11 @@ def puppet_nodes():
 	results = curd.fetchall()
 
 	# Get node statuses
-	statuses = cortex.lib.puppet.puppetdb_get_node_statuses()
+	try:
+		statuses = cortex.lib.puppet.puppetdb_get_node_statuses()
+	except Exception as ex:
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
+
 
 	for row in results:
 		if row['certname'] in statuses:
@@ -328,7 +333,8 @@ def puppet_facts(node):
 		else:
 			raise(he)
 	except Exception, e:
-		raise(e)
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
+
 
 	# Turn the facts generator in to a dictionary
 	facts_dict = {}
@@ -354,7 +360,12 @@ def puppet_dashboard():
 	if not does_user_have_permission("puppet.dashboard.view"):
 		abort(403)
 
-	return render_template('puppet/dashboard.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet', title="Puppet Dashboard")
+	try:
+		stats=cortex.lib.puppet.puppetdb_get_node_stats()
+	except Exception as ex:
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
+
+	return render_template('puppet/dashboard.html', stats=stats,active='puppet', title="Puppet Dashboard")
 
 ################################################################################
 
@@ -380,7 +391,10 @@ def puppet_dashboard_status(status):
 		abort(404)
 
 	# Connect to PuppetDB
-	db = cortex.lib.puppet.puppetdb_connect()
+	try:
+		db = cortex.lib.puppet.puppetdb_connect()
+	except Exception as ex:
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
 
 	# Get information about all the nodes, including their status
 	nodes = db.nodes(with_status = True)
@@ -409,8 +423,12 @@ def puppet_radiator():
 	"""Handles the Puppet radiator view page. Similar to the dashboard."""
 
 	## No permissions check: this is accessible without logging in
+	try:
+		stats=cortex.lib.puppet.puppetdb_get_node_stats()
+	except Exception as ex:
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
 
-	return render_template('puppet/radiator.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet')
+	return render_template('puppet/radiator.html', stats=stats, active='puppet')
 
 ################################################################################
 
@@ -452,7 +470,8 @@ def puppet_reports(node):
 		else:
 			raise(he)
 	except Exception, e:
-		raise(e)
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
+
 
 	# Load the system data - we don't care if it fails (i.e its not in the systems table)
 	system = cortex.lib.systems.get_system_by_puppet_certname(node)
@@ -467,7 +486,11 @@ def puppet_report(report_hash):
 	"""Displays an individual report for a Puppet node"""
 
 	# Connect to Puppet DB and query for a report with the given hash
-	db = cortex.lib.puppet.puppetdb_connect()
+	try:
+		db = cortex.lib.puppet.puppetdb_connect()
+	except Exception as ex:
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
+
 	reports = db.reports(query='["=", "hash", "' + report_hash + '"]')
 
 	# 'reports' is a generator. Get the next (first and indeed, only item) from the generator

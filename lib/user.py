@@ -426,8 +426,7 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 
 	  system_id: The Cortex system id of the system (as found in the
                      systems table)
-	  sysperm: Either a string or a list of strings that contains the
-	           permission(s) to search for
+	  sysperm: A string containing the system permission to check for
 	  perm: The global permission, which is the user has, overrides system
 			permissions and causes the function to return True irrespective
 			of whether the user has the system permission or not. Defaults to 

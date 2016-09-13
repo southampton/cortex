@@ -17,6 +17,9 @@
 		<li role="presentation" class="disabled"><a href="#">Facts</a></li>
 		{% endif %}
 
+		{% if does_user_have_permission("admin.permissions") %}
+		<li role="presentation"{% if active == "perms" %}class="active"{%endif%}><a href="{{url_for('perms_system',id=system.id)}}">Permissions</a></li>
+		{% endif %}
 <!--		<li role="presentation"{% if active == "satellite" %}class="active"{%endif%}><a href="#profile">Satellite</a></li>-->
 		
 

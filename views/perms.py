@@ -7,6 +7,9 @@ from flask import request, session, redirect, url_for, flash, g, abort, render_t
 import re
 import MySQLdb as mysql
 
+## TODO check user/group is valid
+## TODO javascript check user/group is valid
+
 ################################################################################
 
 @app.route('/permissions/roles',methods=['GET','POST'])
@@ -217,5 +220,163 @@ def perms_role(id):
 
 			flash("The user or group was revoked from the role", "alert-success")
 			return redirect(url_for('perms_role',id=id))
+		else:
+			abort(400)
+
+################################################################################
+
+@app.route('/permissions/system/<int:id>',methods=['GET','POST'])
+@cortex.lib.user.login_required
+def perms_system(id):
+	"""View function to let administrators view and manage a role"""
+
+	# Check user permissions
+	if not does_user_have_permission("admin.permissions"):
+		abort(403)
+
+	# Get the system
+	system = cortex.lib.systems.get_system_by_id(id)
+
+	# Ensure that the system actually exists, and return a 404 if it doesn't
+	if system is None:
+		abort(404)
+
+	# Cursor for the DB
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	if request.method == 'GET':
+
+		# Get the list of distinct users/groups/etc added to this system
+		curd.execute('SELECT DISTINCT `type`, `who` FROM `system_perms` WHERE `system_id` = %s', (system['id']))
+		who = curd.fetchall()
+
+		# We create a dictionary with the key being a tuple of the 'type' and 'who'
+		# with the value being a list of dictionaries, each dictionary having the
+		# id of the permission and the permission itself
+		perms_by_who = {}
+
+		# This is pretty nasty looking, but it works!
+		# it creates the above-explained structure.
+		for entry in who:
+			curd.execute('SELECT `id`, `perm` FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s', (system['id'], entry['who'], entry['type']))	
+			perms = curd.fetchall()
+
+			permslist = []
+			for perm in perms:
+				permslist.append(perm['perm'])
+
+			perms_by_who[(entry['type'],entry['who'])] = permslist
+
+
+		return render_template('perms/system.html', active='systems', title="Server permissions", system=system, who=who, perms_by_who=perms_by_who, sysperms=app.system_permissions)		
+
+	else:
+		action = request.form['action']
+
+		## Make changes to an existing user/group
+		if action == 'edit':
+
+			## Get the 'who' and the 'type'
+			who   = request.form['who']
+			wtype = request.form['type']
+
+			# Loop over all the per-system permissions available. Check if the 
+			# permission is in the form data sent by the browser.
+			# if it isn't, make sure to delete from the table
+			# if it is, make sure it is in the table
+			changes = 0
+
+			for perm in app.system_permissions:
+				## Check if the role already has this permission or not
+				curd.execute('SELECT 1 FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (id,who,wtype,perm['name']))
+				if curd.fetchone() is None:
+					exists = False
+				else:
+					exists = True
+
+				should_exist = False
+				if perm['name'] in request.form:
+					if request.form[perm['name']] == 'yes':
+						should_exist = True
+
+				if not should_exist and exists:
+					curd.execute('''DELETE FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s''', (id, who, wtype, perm['name']))
+					g.db.commit()
+					changes += 1
+
+				elif should_exist and not exists:
+					curd.execute('''INSERT INTO `system_perms` (`system_id`, `who`, `type`, `perm`) VALUES (%s, %s, %s, %s)''', (id, who, wtype, perm['name']))
+					g.db.commit()
+					changes += 1
+
+			if changes == 0:
+				flash("Permissions were not updated - no changes requested", "alert-warning")
+			else:
+				flash("Permissions for the system were successfully updated", "alert-success")
+			return redirect(url_for('perms_system',id=id))
+
+		elif action == 'add':
+			name = request.form['name']
+			if not re.match(r'^[a-zA-Z0-9\-\_]{3,255}$', name):
+				flash("The user or group name you sent was invalid", "alert-danger")
+				return redirect(url_for('perms_system',id=id))
+
+			wtype = request.form['type']
+			if not re.match(r'^[0-9]+$',wtype):
+				flash("The type you sent was invalid", "alert-danger")
+				return redirect(url_for('perms_system',id=id))
+			else:
+				wtype = int(wtype)
+
+			if wtype not in [0, 1]:
+				flash("The type you sent was invalid", "alert-danger")
+				return redirect(url_for('perms_system',id=id))
+
+			if wtype == 0:
+				hstr = "user"
+			elif wtype == 1:
+				hstr = "group"
+
+			## Now loop over the per-system permissions available to us
+			for perm in app.system_permissions:
+				## If the form has the checkbox for this perm checked...
+				if perm['name'] in request.form:
+					if request.form[perm['name']] == 'yes':
+						## Insert the permission for this name/type/perm combo
+						curd.execute('''INSERT INTO `system_perms` (`system_id`, `who`, `type`, `perm`) VALUES (%s, %s, %s, %s)''', (id, name, wtype, perm['name']))
+						g.db.commit()
+
+			flash("The " + hstr + " " + name + " was added to the system", "alert-success")
+			return redirect(url_for('perms_system',id=id))
+
+
+		elif action == 'remove':
+			name = request.form['name']
+			if not re.match(r'^[a-zA-Z0-9\-\_]{3,255}$', name):
+				flash("The user or group name you sent was invalid", "alert-danger")
+				return redirect(url_for('perms_system',id=id))
+
+			wtype = request.form['type']
+			if not re.match(r'^[0-9]+$',wtype):
+				flash("The type you sent was invalid", "alert-danger")
+				return redirect(url_for('perms_system',id=id))
+			else:
+				wtype = int(wtype)
+
+			if wtype not in [0, 1]:
+				flash("The type you sent was invalid", "alert-danger")
+				return redirect(url_for('perms_system',id=id))
+
+			if wtype == 0:
+				hstr = "user"
+			elif wtype == 1:
+				hstr = "group"
+
+			curd.execute('''DELETE FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s''', (id, name, wtype))
+			g.db.commit()
+
+			flash("The " + hstr + " " + name + " was removed from the system", "alert-success")
+			return redirect(url_for('perms_system',id=id))
+		
 		else:
 			abort(400)
