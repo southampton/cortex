@@ -58,7 +58,7 @@ def csv_stream(cursor):
 
 ################################################################################
 
-def get_system_count(class_name = None, search = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False):
+def get_system_count(class_name = None, search = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only=False):
 	"""Returns the number of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost)"""
 
 	## BUILD THE QUERY
@@ -68,7 +68,7 @@ def get_system_count(class_name = None, search = None, hide_inactive = True, onl
 	query = 'SELECT COUNT(*) AS `count` FROM `systems_info_view` '
 
 	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
-	query_where = _build_systems_query(class_name, search, None, None, None, None, hide_inactive, only_other, show_expired, show_nocmdb)
+	query_where = _build_systems_query(class_name, search, None, None, None, None, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only)
 	query = query + query_where[0]
 	params = params + query_where[1]
 
@@ -133,7 +133,7 @@ def get_system_by_vmware_uuid(name):
 
 ################################################################################
 
-def _build_systems_query(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False):
+def _build_systems_query(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False):
 	params = ()
 
 	query = ""
@@ -193,6 +193,13 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 		else:
 			query = query + "WHERE "
 		query = query + ' (`cmdb_id` IS NULL AND `vmware_uuid` IS NOT NULL)'
+
+	if show_perms_only:
+		if class_name is not None or search is not None or hide_inactive == True or only_other or show_expired or show_nocmdb:
+			query = query + " AND "
+		else:
+			query = query + "WHERE "
+		query = query + ' `id` IN (SELECT DISTINCT `system_id` FROM `system_perms`)'
 			
 	# Handle the ordering of the rows
 	query = query + " ORDER BY ";
@@ -232,7 +239,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 			# If we want them all, but have specified a limit_start,
 			# we have to request as many rows as possible.
 			#
-			# Seriously, this is how MySQL recommends to do this :(
+			# Seriously, this is how MySQL recommends to do this :'(
 			query = query + "18446744073709551610"
 
 	return (query, params)
@@ -240,7 +247,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 
 ################################################################################
 
-def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, return_cursor = False):
+def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, return_cursor = False):
 	"""Returns the list of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost), and ordered (defaults to "name")"""
 
 	## BUILD THE QUERY
@@ -250,7 +257,7 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 	query = "SELECT * FROM `systems_info_view` "
 
 	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
-	query_where = _build_systems_query(class_name, search, order, order_asc, limit_start, limit_length, hide_inactive, only_other, show_expired, show_nocmdb)
+	query_where = _build_systems_query(class_name, search, order, order_asc, limit_start, limit_length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only)
 	query       = query + query_where[0]
 	params      = params + query_where[1]
 

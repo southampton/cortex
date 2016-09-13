@@ -337,16 +337,22 @@ def perms_system(id):
 			elif wtype == 1:
 				hstr = "group"
 
+			changes = 0
+
 			## Now loop over the per-system permissions available to us
 			for perm in app.system_permissions:
 				## If the form has the checkbox for this perm checked...
 				if perm['name'] in request.form:
 					if request.form[perm['name']] == 'yes':
 						## Insert the permission for this name/type/perm combo
+						changes = changes + 1
 						curd.execute('''INSERT INTO `system_perms` (`system_id`, `who`, `type`, `perm`) VALUES (%s, %s, %s, %s)''', (id, name, wtype, perm['name']))
 						g.db.commit()
 
-			flash("The " + hstr + " " + name + " was added to the system", "alert-success")
+			if changes == 0:
+				flash("The " + hstr + " " + name + " was not added because no permissions were selected", "alert-danger")
+			else:				
+				flash("The " + hstr + " " + name + " was added to the system", "alert-success")
 			return redirect(url_for('perms_system',id=id))
 
 

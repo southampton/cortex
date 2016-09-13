@@ -114,8 +114,9 @@ def context_processor():
 	# Sets up the permissions menu
 	perms = []
 	if does_user_have_permission("admin.permissions"):
-		perms.append({'link': url_for('perms_roles'), 'title': 'Roles', 'icon': 'fa-user-secret'})
-		perms.append({'link': url_for('perms_roles'), 'title': 'Users', 'icon': 'fa-users'})
+		perms.append({'link': url_for('perms_roles'), 'title': 'Permission Roles', 'icon': 'fa-user-secret'})
+		perms.append({'link': url_for('systems_withperms'), 'title': 'Systems with permissions', 'icon': 'fa-list'})
+		#perms.append({'link': url_for('perms_roles'), 'title': 'User lookup', 'icon': 'fa-users'})
 
 	injectdata['menu'] = { 'systems': systems, 'vmware': vmware, 'puppet': puppet, 'admin': admin, 'perms': perms }
 
