@@ -146,23 +146,34 @@ def get_users_groups(username, from_cache=True):
 	be in no groups, and if they are, then they probably shouldn't be using cortex.
 	"""
 
-	# This uses REDIS to cache the LDAP response
-	# because Active Directory is dog slow and takes forever to respond
-	# with a list of groups, making pages load really slowly. 
+	# We cache the groups a user has in MySQL because Active Directory is VERY
+	# slow and we don't want to have to wait for AD every time a user wants to
+	# access something (or list the systems they have access to). We don't use
+	# REDIS cos we need to do complicated SQL queries to determine a users
+	# systems they can access and its much faster with joins/subqueries than
+	# thousands of queries 'cos the groups are stored in REDIS.
+	# so its in Mysql. So there.
 
 	if from_cache == False:
 		return cortex.lib.ldapc.get_users_groups_from_ldap(username)
 	else:
-		# Check the cache to see if it already has entries for the user
-		# we use a key to set whether we /have/ cached the users 
-		groups = g.redis.smembers("ldap/user/groups/" + username)
+		curd = g.db.cursor(mysql.cursors.DictCursor)
 
-		if groups == None:
-			return cortex.lib.ldapc.get_users_groups_from_ldap(username)
-		elif not len(groups) > 0:
-			return cortex.lib.ldapc.get_users_groups_from_ldap(username)
-		else:
+		## Get from the cache (if it hasn't expired)
+		curd.execute('SELECT 1 FROM `ldap_group_cache_expire` WHERE `username` = %s AND `expiry_date` > CURDATE()', (username))
+		if curd.fetchone() is not None:
+			## The cache has not expired, return the list
+			curd.execute('SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s', (username))
+			groupdict = curd.fetchall()
+			groups = []
+			for group in groupdict:
+				groups.append(group['group'])
+
 			return groups
+
+		else:
+			## teh cache has expired, return them from LDAP directly (but also cache)
+			return cortex.lib.ldapc.get_users_groups_from_ldap(username)
 
 #############################################################################
 
@@ -236,7 +247,7 @@ def does_user_have_permission(perm, user=None):
 				return True
 
 		# Didn't match any permissions, return False
-		app.logger.info("User " + str(user) + " did not have permission(s) " + str(perm))
+		app.logger.debug("User " + str(user) + " did not have permission(s) " + str(perm))
 		return False
 
 	app.logger.debug("Calculating permissions for user " + str(user) + ": " + str(perm))

@@ -89,9 +89,23 @@ def get_users_groups_from_ldap(username):
 			# Found the DN. Yay! Now bind with that DN and the password the user supplied
 			if 'memberOf' in attrs:
 				if len(attrs['memberOf']) > 0:
+
+					app.logger.debug("Found groups for " + username)
+
+					## Delete the existing cache
+					curd = g.db.cursor(mysql.cursors.DictCursor)
+					curd.execute('DELETE FROM `ldap_group_cache` WHERE `username` = %s', (username))
+					
+					## Create the new cache
 					for group in attrs['memberOf']:
-						g.redis.sadd("ldap/user/groups/" + username, group)
-					g.redis.expire("ldap/user/groups/" + username, app.config['LDAP_GROUPS_CACHE_EXPIRE'])
+						curd.execute('INSERT INTO `ldap_group_cache` (`username`, `group`) VALUES (%s,%s)', (username,group))
+
+					## Set the cache expiration
+					curd.execute('REPLACE INTO `ldap_group_cache_expire` (`username`, `expiry_date`) VALUES (%s,NOW() + INTERVAL 15 MINUTE)', (username))
+
+					## Commit the transaction
+					g.db.commit()
+
 					return attrs['memberOf']
 				else:
 					return None
