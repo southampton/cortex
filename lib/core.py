@@ -97,26 +97,6 @@ def fqdn_strip_domain(fqdn):
 
 ################################################################################
 
-def connect():
-	# Connect to LDAP and turn off referrals
-	conn = ldap.initialize(app.config['LDAP_URI'])
-	conn.set_option(ldap.OPT_REFERRALS, 0)
-
-	 # Bind to the server either with anon or with a defined user/pass in the config
-	try:
-		if app.config['LDAP_ANON_BIND']:
-			conn.simple_bind_s()
-		else:
-			conn.simple_bind_s( (app.config['LDAP_BIND_USER']), (app.config['LDAP_BIND_PW']) )
-	except ldap.LDAPError as e:
-		flash('Internal Error - Could not connect to LDAP directory: ' + str(e), 'alert-danger')
-		app.logger.error("Could not bind to LDAP: " + str(e))
-		abort(500)
-
-	return conn
-
-################################################################################
-
 def task_get(id):
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)

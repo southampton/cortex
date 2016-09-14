@@ -42,7 +42,7 @@ def login():
 
 			# Cache user real name
 			try:
-				cortex.lib.user.get_user_realname_from_ldap(session['username'])
+				cortex.lib.user.get_user_realname(session['username'],from_cache=False)
 			except Exception as ex:
 				pass
 			

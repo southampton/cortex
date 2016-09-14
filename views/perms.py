@@ -7,9 +7,6 @@ from flask import request, session, redirect, url_for, flash, g, abort, render_t
 import re
 import MySQLdb as mysql
 
-## TODO check user/group is valid
-## TODO javascript check user/group is valid
-
 ################################################################################
 
 @app.route('/permissions/roles',methods=['GET','POST'])
