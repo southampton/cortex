@@ -337,6 +337,12 @@ def perms_system(id):
 			elif wtype == 1:
 				hstr = "group"
 
+			## Check the user/group/type combo doesn't already exist
+			curd.execute('SELECT 1 FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s', (id,name,wtype))
+			if curd.fetchone() is not None:
+				flash('That user/group is already added to the system, please select it from the list below and change permissions as required', 'alert-warning')
+				return redirect(url_for('perms_system',id=id))
+
 			changes = 0
 
 			## Now loop over the per-system permissions available to us
