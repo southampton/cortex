@@ -2,6 +2,7 @@
 
 from cortex import app
 import cortex.lib.perms
+import cortex.lib.user
 from cortex.lib.user import does_user_have_permission
 from flask import request, session, redirect, url_for, flash, g, abort, render_template
 import re
@@ -184,8 +185,17 @@ def perms_role(id):
 
 			if ptype == 0:
 				hstr = "user"
+
+				if not cortex.lib.user.does_user_exist(name):
+					flash("The username you sent does not exist", "alert-danger")
+					return redirect(url_for('perms_role',id=id))
+
 			elif ptype == 1:
 				hstr = "group"
+
+				if not cortex.lib.ldapc.does_group_exist(name):
+					flash("The Active Directory group you specified does not exist", "alert-danger")
+					return redirect(url_for('perms_role',id=id))
 
 			# Ensure the user/group combo was not already added
 			curd.execute('SELECT 1 FROM `role_who` WHERE `role_id` = %s AND `who` = %s AND `type` = %s', (id,name,ptype))
@@ -331,8 +341,17 @@ def perms_system(id):
 
 			if wtype == 0:
 				hstr = "user"
+
+				if not cortex.lib.user.does_user_exist(name):
+					flash("The username you specified does not exist", "alert-danger")
+					return redirect(url_for('perms_system',id=id))
+
 			elif wtype == 1:
 				hstr = "group"
+
+				if not cortex.lib.ldapc.does_group_exist(name):
+					flash("The Active Directory group you specified does not exist", "alert-danger")
+					return redirect(url_for('perms_system',id=id))
 
 			## Check the user/group/type combo doesn't already exist
 			curd.execute('SELECT 1 FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s', (id,name,wtype))

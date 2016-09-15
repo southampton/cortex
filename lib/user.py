@@ -5,6 +5,7 @@ import cortex.lib.ldapc
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
 import re
+import pwd
 import MySQLdb as mysql
 from functools import wraps
 from werkzeug.urls import url_encode
@@ -219,7 +220,7 @@ def does_user_have_permission(perm, user=None):
 	# Iterate over the groups, getting the roles (and thus permissions) for
 	# that group
 	for group in ldap_groups:
-		curd.execute('SELECT LOWER(`role_perms`.`perm`) AS `perm` FROM `role_who` JOIN `role_perms` ON `role_who`.`role_id` = `role_perms`.`role_id` JOIN `roles` ON `roles`.`id` = `role_perms`.`role_id` WHERE `role_who`.`who` = %s AND `role_who`.`type` = %s', (group, ROLE_WHO_LDAP_GROUP))
+		curd.execute('SELECT LOWER(`role_perms`.`perm`) AS `perm` FROM `role_who` JOIN `role_perms` ON `role_who`.`role_id` = `role_perms`.`role_id` JOIN `roles` ON `roles`.`id` = `role_perms`.`role_id` WHERE `role_who`.`who` = %s AND `role_who`.`type` = %s', (group.lower(), ROLE_WHO_LDAP_GROUP))
 
 		# Add all the user permissions to the set
 		user_perms.update([row['perm'] for row in curd])
@@ -295,10 +296,20 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 	for group in ldap_groups:
 		# Query the system_perms table to see if the permission is granted
 		# to the group the user is in
-		curd.execute('SELECT 1 FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (system_id, group, ROLE_WHO_LDAP_GROUP, sysperm))
+		curd.execute('SELECT 1 FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (system_id, group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
 
 		# If a row is returned then they have access to the workflow
 		if len(curd.fetchall()) > 0:
 			return True
 
 	return False
+
+################################################################################
+
+def does_user_exist(username):
+
+	try:
+		passwd = pwd.getpwnam(username)
+		return True
+	except KeyError as e:
+		return False

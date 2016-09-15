@@ -11,6 +11,10 @@
 	<p class="list-group-item-text"><a href="{{url_for(action.name,id=system.id)}}" class="btn btn-primary" style="margin-right: 10px">{{action.title}}</a> {{action.desc}}</p>
 </div>
 
+{% else %}
+<div class="list-group-item">
+	<p class="list-group-item-text">No actions available</p>
+</div>
 {% endfor %}
 </div>
 

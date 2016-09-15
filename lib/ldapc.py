@@ -110,7 +110,7 @@ def get_users_groups_from_ldap(username):
 							## didn't find the cn, so skip this 'group'
 							continue
 
-						curd.execute('INSERT INTO `ldap_group_cache` (`username`, `group`) VALUES (%s,%s)', (username,group))
+						curd.execute('INSERT INTO `ldap_group_cache` (`username`, `group`) VALUES (%s,%s)', (username,group.lower()))
 						groups.append(group)
 
 					## Set the cache expiration
@@ -138,7 +138,7 @@ def get_user_realname_from_ldap(username):
 	
 	# Now search for the user object
 	try:
-		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
+		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, app.config['LDAP_USER_ATTRIBUTE'] + "=" + username)
 	except ldap.LDAPError as e:
 		return username
 
@@ -176,3 +176,28 @@ def get_user_realname_from_ldap(username):
 		app.logger.warning('Failed to cache user name: ' + str(ex))
 	return name
 
+################################################################################
+
+def does_group_exist(groupname):
+	# Connect to the LDAP server
+	l = connect()
+
+	# Now search for the user object to bind as
+	try:
+		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, "cn" + "=" + ldap.filter.escape_filter_chars(groupname))
+	except ldap.LDAPError as e:
+		return False
+
+	# Handle the search results
+	for result in results:
+		dn	  = result[0]
+		attrs = result[1]
+
+		if dn == None:
+			# No dn returned. Return false.
+			return False
+		else:
+			if "member" in attrs:
+				return True
+
+	return False
