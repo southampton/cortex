@@ -59,10 +59,28 @@ def dashboard():
 	curd.execute('SELECT `id`, `module`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` = %s ORDER BY `start` DESC LIMIT 5', (session['username'],))
 	tasks = curd.fetchall()
 
+	# Get the list of systems the user is specifically allowed to view
+	curd.execute("SELECT * FROM `systems_info_view` WHERE `id` IN (SELECT `system_id` FROM `system_perms` WHERE (`type` = '0' AND `who` = %s AND `perm` = 'view') OR (`type` = '1' AND `perm` = 'view' AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s)))",(session['username'],session['username']))
+	systems = curd.fetchall()
+
+	# Recent systems
+	curd.execute("SELECT * FROM `systems_info_view` ORDER BY `allocation_date` DESC LIMIT 0,5")
+	recent_systems = curd.fetchall()
+
 	# OS VM stats
 	types = cortex.lib.vmware.get_os_stats()
 
-	return render_template('dashboard.html', active="dashboard", vm_count=vm_count, ci_count=ci_count, task_progress_count=task_progress_count, task_failed_count=task_failed_count, tasks=tasks, types=types, title="Dashboard")
+	return render_template('dashboard.html', active="dashboard", 
+		vm_count=vm_count, 
+		ci_count=ci_count, 
+		task_progress_count=task_progress_count, 
+		task_failed_count=task_failed_count, 
+		tasks=tasks, 
+		types=types, 
+		title="Dashboard",
+		systems=systems,
+		syscount = len(systems),
+		recent_systems=recent_systems)
 
 ################################################################################
 

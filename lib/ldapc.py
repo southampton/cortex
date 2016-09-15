@@ -4,6 +4,7 @@ from cortex import app
 from flask import g, abort
 import MySQLdb as mysql
 import ldap, ldap.filter
+import re
 
 ################################################################################
 
@@ -97,8 +98,20 @@ def get_users_groups_from_ldap(username):
 					curd.execute('DELETE FROM `ldap_group_cache` WHERE `username` = %s', (username))
 					
 					## Create the new cache
+					groups = []
 					for group in attrs['memberOf']:
+						## We only want the group name, not the DN
+						cn_regex = re.compile("^(cn|CN)=([^,;]+),")
+
+						matched = cn_regex.match(group)
+						if matched:
+							group = matched.group(2)
+						else:
+							## didn't find the cn, so skip this 'group'
+							continue
+
 						curd.execute('INSERT INTO `ldap_group_cache` (`username`, `group`) VALUES (%s,%s)', (username,group))
+						groups.append(group)
 
 					## Set the cache expiration
 					curd.execute('REPLACE INTO `ldap_group_cache_expire` (`username`, `expiry_date`) VALUES (%s,NOW() + INTERVAL 15 MINUTE)', (username))
@@ -106,7 +119,7 @@ def get_users_groups_from_ldap(username):
 					## Commit the transaction
 					g.db.commit()
 
-					return attrs['memberOf']
+					return groups
 				else:
 					return None
 			else:

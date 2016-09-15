@@ -30,56 +30,6 @@ def login_required(f):
 
 ################################################################################
 
-# NOT CURRENTLY IN USE
-def global_admin_required(f):
-	"""This is a decorator function that when called ensures the user is a global admin
-	Usage is as such: @cortex.lib.user.global_admin_required"""
-
-	@wraps(f)
-	def decorated_function(*args, **kwargs):
-		if not is_global_admin(session['username']):
-			abort(403)
-		return f(*args, **kwargs)
-	return decorated_function
-
-################################################################################
-
-def is_global_admin(username):
-	"""Returns a boolean indicating if the given user is a global admin."""
-
-	groups = get_users_groups(username)
-	groups = [x.lower() for x in groups]
-
-	if app.config['LDAP_ADMIN_GROUP'].lower() in groups:
-		return True
-
-	return False
-
-################################################################################
-
-# NOT CURRENTLY IN USE
-def is_in_group(group_cn):
-	"""Returns a boolean indicating if the logged in user is in the given
-	group, which is specified given it's entire CN. The group name 
-	comparison is performed in a case insensitive manner. If no user is
-	logged in, this function will return False."""
-
-	# If user is not logged in, then assume we're not in the group
-	if not is_logged_in():
-		return False
-
-	# Get a lowercase list of groups
-	groups = get_users_groups(session['username'])
-	groups = [x.lower() for x in groups]
-
-	# See if the user is in the group and return true if they are
-	if group.lower() in groups:
-		return True
-
-	return False
-
-################################################################################
-
 def is_logged_in():
 	"""Returns a boolean indicating whether the current session has a logged
 	in user."""
@@ -266,19 +216,9 @@ def does_user_have_permission(perm, user=None):
 	# Get the (possibly cached) list of groups for the user
 	ldap_groups = get_users_groups(user)
 
-	# Regex for extracting just the CN from the DN in the cached group names
-	cn_regex = re.compile("^(cn|CN)=([^,;]+),")
-
 	# Iterate over the groups, getting the roles (and thus permissions) for
 	# that group
 	for group in ldap_groups:
-		# Extract the CN from the DN using the compiled regex
-		matched = cn_regex.match(group)
-		if matched:
-			group = matched.group(2)
-		else:
-			continue
-
 		curd.execute('SELECT LOWER(`role_perms`.`perm`) AS `perm` FROM `role_who` JOIN `role_perms` ON `role_who`.`role_id` = `role_perms`.`role_id` JOIN `roles` ON `roles`.`id` = `role_perms`.`role_id` WHERE `role_who`.`who` = %s AND `role_who`.`type` = %s', (group, ROLE_WHO_LDAP_GROUP))
 
 		# Add all the user permissions to the set
@@ -351,18 +291,8 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 	# Get the (possibly cached) list of groups for the user
 	ldap_groups = get_users_groups(user)
 
-	# Regex for extracting just the CN from the DN in the cached group names
-	cn_regex = re.compile("^(cn|CN)=([^,;]+),")
-
 	# Iterate over the groups, checking each group for the permission
 	for group in ldap_groups:
-		# Extract the CN from the DN using the compiled regex
-		matched = cn_regex.match(group)
-		if matched:
-			group = matched.group(2)
-		else:
-			continue
-
 		# Query the system_perms table to see if the permission is granted
 		# to the group the user is in
 		curd.execute('SELECT 1 FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (system_id, group, ROLE_WHO_LDAP_GROUP, sysperm))

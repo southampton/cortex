@@ -74,17 +74,6 @@ def user_groups():
 
 	# Get all the LDAP groups
 	ldap_groups = cortex.lib.user.get_users_groups(session['username'])
-	groups = []
-
-	# Build a list of groups as a dictionary with 'name' and 'dn' components,
-	# rathern than just the CNs which ldap_groups is
-	for lgroup in ldap_groups:
-		p = re.compile("^(cn|CN)=([^,;]+),")
-		matched = p.match(lgroup)
-		if matched:
-			name = matched.group(2)
-			groups.append({"name": name, "dn": lgroup})
-	
 
 	# Display the page
-	return render_template('user/groups.html', active='user', groups=groups, title="AD Groups")
+	return render_template('user/groups.html', active='user', groups=ldap_groups, title="AD Groups")
