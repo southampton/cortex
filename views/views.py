@@ -78,7 +78,7 @@ def dashboard():
 	total_ram = curd.fetchone()['total']
 
 	curd.execute("SELECT SUM(`ram_usage`) AS `total` FROM `vmware_cache_clusters`")
-	total_ram_usage = int(curd.fetchone()['total']) * 1024
+	total_ram_usage = int(curd.fetchone()['total']) * 1024 * 1024
 
 	curd.execute("SELECT SUM(`memoryMB`) AS `total` FROM `vmware_cache_vm`")
 	total_vm_ram = (curd.fetchone()['total']) * 1024 * 1024
