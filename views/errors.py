@@ -4,6 +4,7 @@
 from cortex import app
 from cortex.lib.errors import stderr, logerr, fatalerr
 import traceback
+from flask import g
 
 ################################################################################
 
@@ -50,6 +51,15 @@ def error_handler(error):
 		debug = traceback.format_exc()
 	else:
 		debug = "Ask your system administrator to consult the error log for this application."
+
+	## If we're handling a workflow view handler we don't need to show the fatal
+	## error screen, instead we'll use a standard error screen. the fatal error
+	## screen exists in case a flaw occurs which prevents rendering of the 
+	## layout - but that can't happen with a workflow.
+	if 'workflow' in g:
+		if g.workflow:
+			app.logger.warn("Workflow error occured")
+			return stderr("Workflow error","An error occured in the workflow function - " + type(error).__name__ + ": " + str(error))
 
 	# Output a fatal error
 	return fatalerr(debug=debug)

@@ -1,7 +1,7 @@
 import os
 import imp
 from cortex import app
-from flask import render_template, abort
+from flask import render_template, abort, g
 from cortex.lib.user import login_required, does_user_have_workflow_permission, does_user_have_permission, does_user_have_system_permission
 from functools import wraps
 
@@ -69,9 +69,14 @@ class CortexWorkflow:
 		def decorator(fn):
 			## Require login, and the right permissions
 			fn = login_required(fn)
+
+			## Require permissions
 			if permission is not None:
 				permfn = self._require_permission(permission)
 				fn = permfn(fn)
+
+			## Mark the view function as a workflow view function
+			fn = self._mark_as_workflow(fn)
 
 			# Get the endpoint, if any
 			endpoint = options.pop('endpoint', None)
@@ -99,9 +104,14 @@ class CortexWorkflow:
 		def decorator(fn):
 			## Require login, and the right permissions
 			fn = login_required(fn)
+
+			## Require a permission, if set
 			if system_permission is not None:
 				permfn = self._require_system_permission(system_permission,permission)
 				fn = permfn(fn)
+
+			## Mark the view function as a workflow view function
+			fn = self._mark_as_workflow(fn)
 
 			# Get the endpoint, if any
 			endpoint = options.pop('endpoint', None)
@@ -160,3 +170,10 @@ class CortexWorkflow:
 				return fn(*args, **kwargs)
 			return decorated_function
 		return decorator
+
+	def _mark_as_workflow(self,f):
+		@wraps(f)
+		def decorated_function(*args, **kwargs):
+			g.workflow = True
+			return f(*args, **kwargs)
+		return decorated_function
