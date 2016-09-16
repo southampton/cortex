@@ -235,7 +235,7 @@ def does_user_have_permission(perm, user=None):
 			return True
 	
 	# We've not found the permission, return False to indicate that
-	app.logger.info("User " + str(user) + " did not have permission(s) " + str(perm))
+	app.logger.debug("User " + str(user) + " did not have permission(s) " + str(perm))
 	return False
 
 #############################################################################
@@ -251,9 +251,9 @@ def does_user_have_workflow_permission(perm, user=None):
 
 def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 	"""Returns a boolean indicating if a user has the specified permission
-	on the system specified in system_id. This does not take into account
-	the global permissions such as systems.all.view - you must check these
-	seperatley
+	on the system specified in system_id. If 'perm' is supplied then the function
+	returns true if the user has the global 'perm' instead (e.g. a global
+	override permission).
 
 	  system_id: The Cortex system id of the system (as found in the
                      systems table)
@@ -302,6 +302,55 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 		if len(curd.fetchall()) > 0:
 			return True
 
+	return False
+
+################################################################################
+
+#############################################################################
+
+def does_user_have_any_system_permission(sysperm,user=None):
+	"""Returns a boolean indicating if a user has a per-system permission on
+	any system. This exists because some functions return data that can only
+	be accessed if a user has a permission on at least one system, but it does
+	not matter which system
+
+	  sysperm: A string containing the system permission to check for"""
+
+	# Default to using the current user
+	if user is None:
+		if 'username' in session:
+			user = session['username']
+		else:
+			# User not logged in - they definitely don't have permission!
+			return False
+
+	app.logger.debug("Checking to see if " + str(user) + " has system permission " + sysperm + " on any system")
+
+	# Query the system_perms table to see if the user has the system
+	# explicitly given access to them
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT 1 FROM `system_perms` WHERE `who` = %s AND `type` = %s AND `perm` = %s', (user, ROLE_WHO_USER, sysperm))
+
+	# If a row is returned then they have the permission
+	if len(curd.fetchall()) > 0:
+		app.logger.debug("The user " + str(user) + " has system permission " + sysperm + " on at least one system")
+		return True
+
+	# Get the (possibly cached) list of groups for the user
+	ldap_groups = get_users_groups(user)
+
+	# Iterate over the groups, checking each group for the permission
+	for group in ldap_groups:
+		# Query the system_perms table to see if the permission is granted
+		# to the group the user is in
+		curd.execute('SELECT 1 FROM `system_perms` WHERE `who` = %s AND `type` = %s AND `perm` = %s', (group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
+
+		# If a row is returned then they have access to the workflow
+		if len(curd.fetchall()) > 0:
+			app.logger.debug("The user " + str(user) + " has system permission " + sysperm + " on at least one system")
+			return True
+
+	app.logger.debug("The user " + str(user) + " does NOT have system permission " + sysperm + " on any system")
 	return False
 
 ################################################################################

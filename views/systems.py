@@ -6,7 +6,7 @@ import cortex.lib.core
 import cortex.lib.systems
 import cortex.lib.cmdb
 import cortex.lib.classes
-from cortex.lib.user import does_user_have_permission, does_user_have_system_permission
+from cortex.lib.user import does_user_have_permission, does_user_have_system_permission, does_user_have_any_system_permission
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
 import os 
@@ -602,9 +602,15 @@ def systems_vmware_json():
 	"""Used by DataTables to extract infromation from the VMware cache. The
 	parameters and return format are dictated by DataTables"""
 
-	# Check user permissions
-	if not does_user_have_permission("systems.all.view"):
-		abort(403)
+	# Check user permissions	
+	# either they have systems.all.view (view all systems)
+	# OR they have at least one instance of the per-system permission 'edit.vmware' 
+	# (cos if they have that they need to be able to list the VMWare UUIDs)
+	# or if they have systems.all.edit.vmware 
+
+	if not does_user_have_permission("systems.all.view") and not does_user_have_permission("systems.all.edit.vmware"):
+		if not does_user_have_any_system_permission("edit.vmware"):
+			abort(403)
 
 	# Extract information from DataTables
 	(draw, start, length, order_column, order_asc, search) = _systems_extract_datatables()
@@ -681,9 +687,15 @@ def systems_cmdb_json():
 	"""Used by DataTables to extract information from the ServiceNow CMDB CI
 	cache. The parameters and return format are as dictated by DataTables"""
 
-	# Check user permissions
-	if not does_user_have_permission("systems.all.view"):
-		abort(403)
+	# Check user permissions	
+	# either they have systems.all.view (view all systems)
+	# OR they have at least one instance of the per-system permission 'edit.cmdb' 
+	# (cos if they have that they need to be able to list the CMDB entries)
+	# or if they have systems.all.edit.cmdb 
+
+	if not does_user_have_permission("systems.all.view") and not does_user_have_permission("systems.all.edit.cmdb"):
+		if not does_user_have_any_system_permission("edit.cmdb"):
+			abort(403)
 
 	# Extract information from DataTables
 	(draw, start, length, order_column, order_asc, search) = _systems_extract_datatables()
