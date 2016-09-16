@@ -57,9 +57,9 @@
 					<td>{{ cluster.name }}</td>
 					<td>{{ cluster.hosts }}</td>
 					<td>{{ cluster.vm_count }}</td>
-					<td data-order="{{cluster.total_ram}}">{{ cluster.total_ram | filesizeformat }}</td>
-					<td data-order="{{cluster.assigned_ram}}">{{ cluster.assigned_ram | filesizeformat }}</td>
-					<td data-order="{{cluster.ram_usage}}">{{ cluster.ram_usage | filesizeformat }}</td>
+					<td data-order="{{cluster.total_ram}}">{{ cluster.total_ram | filesizeformat(binary=True) }}</td>
+					<td data-order="{{cluster.assigned_ram}}">{{ cluster.assigned_ram | filesizeformat(binary=True) }}</td>
+					<td data-order="{{cluster.ram_usage}}">{{ cluster.ram_usage | filesizeformat(binary=True) }}</td>
 					<td>{{ cluster.total_mhz }}</td>
 					<td>{{ cluster.cpu_usage_mhz }}</td>
 					<td>{{ cluster.total_cores }}</td>
@@ -73,9 +73,9 @@
 					<td>Totals:</td>
 					<td>{{ clusters | sum(attribute="hosts") }}</td>
 					<td>{{ clusters | sum(attribute="vm_count") }}</td>
-					<td>{{ clusters | sum(attribute="total_ram") | filesizeformat }}</td>
-					<td>{{ clusters | sum(attribute="assigned_ram") | filesizeformat }}</td>
-					<td>{{ clusters | sum(attribute="ram_usage") | filesizeformat }}</td>
+					<td>{{ clusters | sum(attribute="total_ram") | filesizeformat(binary=True) }}</td>
+					<td>{{ clusters | sum(attribute="assigned_ram") | filesizeformat(binary=True) }}</td>
+					<td>{{ clusters | sum(attribute="ram_usage") | filesizeformat(binary=True) }}</td>
 					<td>{{ clusters | sum(attribute="total_mhz") }}</td>
 					<td>{{ clusters | sum(attribute="cpu_usage_mhz") }}</td>
 					<td>{{ clusters | sum(attribute="total_cores") }}</td>

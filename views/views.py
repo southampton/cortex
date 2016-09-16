@@ -70,6 +70,9 @@ def dashboard():
 	# OS VM stats
 	types = cortex.lib.vmware.get_os_stats()
 
+	# select SUM(`ram`) from vmware_cache_clusters;
+	# 
+
 	return render_template('dashboard.html', active="dashboard", 
 		vm_count=vm_count, 
 		ci_count=ci_count, 
