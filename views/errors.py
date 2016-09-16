@@ -46,12 +46,6 @@ def error_handler(error):
 	# Record the error in the log
 	logerr()
 
-	# Get the traceback
-	if app.debug:
-		debug = traceback.format_exc()
-	else:
-		debug = "Ask your system administrator to consult the error log for this application."
-
 	## If we're handling a workflow view handler we don't need to show the fatal
 	## error screen, instead we'll use a standard error screen. the fatal error
 	## screen exists in case a flaw occurs which prevents rendering of the 
@@ -60,6 +54,12 @@ def error_handler(error):
 		if g.workflow:
 			app.logger.warn("Workflow error occured")
 			return stderr("Workflow error","An error occured in the workflow function - " + type(error).__name__ + ": " + str(error))
+
+	# Get the traceback
+	if app.debug:
+		debug = traceback.format_exc()
+	else:
+		debug = "Ask your system administrator to consult the error log for this application."
 
 	# Output a fatal error
 	return fatalerr(debug=debug)
