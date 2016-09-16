@@ -71,7 +71,17 @@ def dashboard():
 	types = cortex.lib.vmware.get_os_stats()
 
 	# select SUM(`ram`) from vmware_cache_clusters;
-	# 
+	# select SUM(`ram_usage`) from vmware_cache_clusters;
+	# select SUM(`memoryMB`) FROM `vmware_cache_vm`;
+
+	curd.execute("SELECT SUM(`ram`) AS `total` FROM `vmware_cache_clusters`")
+	total_ram = curd.fetchone()['total']
+
+	curd.execute("SELECT SUM(`ram_usage`) AS `total` FROM `vmware_cache_clusters`")
+	total_ram_usage = int(curd.fetchone()['total']) * 1024
+
+	curd.execute("SELECT SUM(`memoryMB`) AS `total` FROM `vmware_cache_vm`")
+	total_vm_ram = (curd.fetchone()['total']) * 1024 * 1024
 
 	return render_template('dashboard.html', active="dashboard", 
 		vm_count=vm_count, 
@@ -83,7 +93,10 @@ def dashboard():
 		title="Dashboard",
 		systems=systems,
 		syscount = len(systems),
-		recent_systems=recent_systems)
+		recent_systems=recent_systems,
+		total_ram = total_ram,
+		total_ram_usage = total_ram_usage,
+		total_vm_ram = total_vm_ram)
 
 ################################################################################
 

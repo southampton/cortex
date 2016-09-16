@@ -48,6 +48,10 @@
 }
 a.server-link { text-decoration: none !important; color: inherit; }
 a.server-link:hover { text-decoration: underline !important; }
+.bg-success
+{
+	color: #FFFFFF;
+}
 </style>
 
 {% if does_user_have_permission('systems.all.view') %}
@@ -239,6 +243,11 @@ a.server-link:hover { text-decoration: underline !important; }
 		<div class="dashblock bg-dorange">
 			<strong><i class="fa fa-fw fa-cog"></i> {{ task_progress_count }}</strong> Tasks in progress<br/>
 			<strong><i class="fa fa-fw fa-exclamation-triangle"></i> {{ task_failed_count }}</strong> Recent failed tasks
+		</div>
+		<div class="dashblock bg-success">
+			<strong><i class="fa fa-fw fa-database"></i> {{ total_ram | filesizeformat(binary=True) }}</strong> RAM total<br/>
+			<strong><i class="fa fa-fw fa-bar-chart"></i> {{ total_vm_ram | filesizeformat(binary=True) }}</strong> RAM allocated <br/>
+			<strong><i class="fa fa-fw fa-line-chart"></i> {{ total_ram_usage | filesizeformat(binary=True) }}</strong> RAM usage
 		</div>
 	</div>
 </div>
