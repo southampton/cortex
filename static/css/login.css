@@ -33,11 +33,12 @@ label
 /* the main title (on mobile/non-mobile) */
 .loginbox h1 
 {
+	margin-top: 70px;
 	font-family: 'Orbitron', cursive;
 	margin-bottom: 20px;
 	text-align: center;
 	font-weight: 600;
-	font-size: 40px;
+	font-size: 100px;
 	text-shadow: 0px 0px 30px rgba(150, 150, 150, 1);
 }
 
@@ -46,12 +47,12 @@ label
 {   
 	.loginbox
 	{
-		margin-top: 70px;
+		margin-top: 120px;
 		width: 450px;
 		/* this is because IE8 is shit */
 		background-color: #f5f5f5;
 		/* for good browsers.... */
-		background: rgba(245, 245, 245, 0.90);
+		background: rgba(245, 245, 245, 0.95);
 		padding: 20px;
 		margin-left: auto;
 		margin-right: auto;
