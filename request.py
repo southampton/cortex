@@ -120,4 +120,13 @@ def context_processor():
 
 	injectdata['menu'] = { 'systems': systems, 'vmware': vmware, 'puppet': puppet, 'admin': admin, 'perms': perms }
 
+	# Determine the layout mode for the user
+	injectdata['classic_layout'] = False
+	if 'username' in session:
+		try:
+			if g.redis.get('user:' + session['username'] + ":preferences:interface:layout") == "classic":
+				injectdata['classic_layout'] = True
+		except Exception as ex:
+			pass
+
 	return injectdata

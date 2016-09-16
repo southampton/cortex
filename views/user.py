@@ -77,3 +77,25 @@ def user_groups():
 
 	# Display the page
 	return render_template('user/groups.html', active='user', groups=ldap_groups, title="AD Groups")
+
+################################################################################
+
+@app.route('/preferences',methods=['POST'])
+@cortex.lib.user.login_required
+def preferences():
+	"""Saves changed to a users preferences"""
+
+	# the only preference right now is interface layout mode
+	classic = False
+	if 'uihorizontal' in request.form:
+		if request.form['uihorizontal'] == "yes":
+			classic = True
+
+	if classic:
+		g.redis.set("user:" + session['username'] + ":preferences:interface:layout","classic")
+	else:
+		# if they dont want the classic layout then dont store a preference at all
+		g.redis.delete("user:" + session['username'] + ":preferences:interface:layout")
+
+	flash("Your preferences have been saved","alert-success")
+	return redirect(url_for('dashboard'))
