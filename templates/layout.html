@@ -244,12 +244,14 @@
 				</div>
 
 				<div id="main" class="main">
-{%- for category, message in get_flashed_messages(with_categories=true) %}
-					<div class="alert alert-dismissable {{category}}"><button type="button" class="close" data-dismiss="alert">×</button>{{message}}</div>
-{%- endfor -%}
 		{%else%}
 		<div class="container-fluid">
 		{%endif%}
+
+{%- for category, message in get_flashed_messages(with_categories=true) %}
+					<div class="alert alert-dismissable {{category}}"><button type="button" class="close" data-dismiss="alert">×</button>{{message}}</div>
+{%- endfor -%}
+
 					{% block body %}{% endblock -%}
 
 		{% if not classic_layout %}
