@@ -8,6 +8,10 @@
 		<link rel="icon" href="../../favicon.ico">
 		<link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}">
 		{#- CSS #}
+		<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/font-awesome/4.6.0/css/font-awesome.min.css">
+		<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootswatch/3.3.7/lumen/bootstrap.min.css">
+		<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.9/css/dataTables.bootstrap.min.css">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}">
 		{%- if classic_layout %}
 		<style type="text/css">
 		body
@@ -16,10 +20,6 @@
 		}
 		</style> 
 		{%endif%}
-		<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/font-awesome/4.6.0/css/font-awesome.min.css">
-		<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootswatch/3.3.7/lumen/bootstrap.min.css">
-		<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.9/css/dataTables.bootstrap.min.css">
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}">
 		{#- JavaScript #}
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 		<script src="//netdna.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
