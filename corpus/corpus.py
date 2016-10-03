@@ -1369,13 +1369,13 @@ class Corpus(object):
 
 		# Build some JSON
 		task_data = {}
-		task_data['short_description'] = short_descrtipton
+		task_data['short_description'] = short_description
 		task_data['description'] = description
 		task_data['opened_by'] = opened_by
 		task_data['assignment_group'] = assignment_group
 
 		# Make a post request to ServiceNow to create the task
-		r = requests.post('https://' + app.config['SN_HOST'] + '/api/now/v1/table/incident', auth=(app.config['SN_USER'], app.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=task_data)
+		r = requests.post('https://' + self.config['SN_HOST'] + '/api/now/v1/table/incident', auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=task_data)
 
 		# If we succeeded
 		if r is not None and r.status_code == 201:
@@ -1384,5 +1384,4 @@ class Corpus(object):
 			error = "Failed to open a new CMDB ticket"
 			if r is not None:
 				error = error + " HTTP Response code: " + str(r.status_code)
-			app.logger.error(error)
 			raise Exception()
