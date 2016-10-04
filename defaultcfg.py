@@ -103,4 +103,9 @@ SATELLITE_KEYS = {
 		'development': 'changeme'
 	}
 }
+
+# Notification e-mails for new VM creation
 NOTIFY_EMAILS = []
+
+# Notification e-mail address 
+SYSTEM_EXPIRE_NOTIFY_EMAILS = []

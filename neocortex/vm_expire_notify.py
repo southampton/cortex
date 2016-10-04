@@ -33,6 +33,7 @@ def run(helper, options):
 			helper.event('check_expire_found', 'The system ' + system['name'] + " (ID " + str(system['id']) + ") will expire in the next seven days",oneshot=True)
 
 		system_link = 'https://' + helper.config['CORTEX_DOMAIN'] + '/systems/edit/' + str(system['id'])
+		cmdb_link   = helper.config['CMDB_URL_FORMAT'] % system['cmdb_id']
 
 		message = message + """%s - %s
 Expires on:    %s
@@ -41,10 +42,11 @@ OS:            %s
 Comment:       %s 
 CMDB Comment:  %s
 CMDB Status:   %s
-CMDB ID:       %s
+CMDB ID:       %s - %s
 
-""" % (system['name'],system_link,system['expiry_date'], system_status,system['vmware_os'],system['allocation_comment'],system['cmdb_description'],system['cmdb_environment'],system['cmdb_u_number'])
+""" % (system['name'],system_link,system['expiry_date'], system_status,system['vmware_os'], system['allocation_comment'], system['cmdb_description'], system['cmdb_environment'], system['cmdb_u_number'], cmdb_link)
 
 	helper.event('check_expire_mail', 'Sending warning e-mail for expired systems ')
-	helper.lib.send_email("db2z07@soton.ac.uk", 'Systems expiration warning: ' + str(len(systems)) + ' system(s) will expire in the next 7 days', message)
+	for addr in helper.config['SYSTEM_EXPIRE_NOTIFY_EMAILS']:
+		helper.lib.send_email(addr, 'Systems expiration warning: ' + str(len(systems)) + ' system(s) will expire in the next 7 days', message)
 	helper.end_event(description="Sent warning e-mail for expired systems")
