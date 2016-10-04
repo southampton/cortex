@@ -1,0 +1,44 @@
+#!/usr/bin/python
+
+import Pyro4
+import os
+import imp
+import sys
+
+CONFIG_FILE = '/data/cortex/cortex.conf'
+
+def load_config(): 
+	d = imp.new_module('config')
+	d.__file__ = CONFIG_FILE
+	try:
+		with open(CONFIG_FILE) as config_file:
+			exec(compile(config_file.read(), CONFIG_FILE, 'exec'), d.__dict__)
+	except IOError as e:
+		print 'Unable to load configuration file ' + e.strerror
+		sys.exit(1)
+	config = {}
+
+	for key in dir(d):
+		if key.isupper():
+			config[key] = getattr(d, key)
+
+	## ensure we have required config options
+	for wkey in ['NEOCORTEX_KEY']:
+		if not wkey in config.keys():
+			print "Missing configuation option: " + wkey
+			sys.exit(1)
+
+	return config
+
+if __name__ == "__main__":
+	config = load_config()
+
+	try:
+		neocortex = Pyro4.Proxy('PYRO:neocortex@localhost:1888')
+		neocortex._pyroHmacKey = config['NEOCORTEX_KEY']
+		neocortex._pyroTimeout = 5
+		task_id = neocortex.start_internal_task('scheduler', 'vm_expire_notify.py', '_vm_expire_notify', description="Sends a summary e-mail alerting which systems are due to expire soon")
+		print "job submitted with ID " + str(task_id)
+	except Exception as ex:
+		print "Error submitting job: " + str(ex)
+		sys.exit(1)

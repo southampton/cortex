@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import requests
 import MySQLdb as mysql
 import sys, copy, os
 from pyVmomi import vim
@@ -12,10 +11,10 @@ def run(helper, options):
 
 	helper.event('check_expired', 'Checking for expired VMs')
 
-	# Delete all the server CIs from the table (we must do this before we delete 
-	# from the choices tables as there is a foreign key constraint)
+	# Select all the systems which have expired
 	curd.execute('SELECT `vmware_cache_vm`.`vcenter`, `vmware_cache_vm`.`name`, `vmware_cache_vm`.`uuid`, `systems`.`expiry_date` from `systems` LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid` WHERE `systems`.`expiry_date` < NOW()')
-	
+
+	helper.end_event(description="Expiration checking complete - " + str(shutdowncount) + " VM(s) shutdown")
 
 	shutdowncount = 0
 

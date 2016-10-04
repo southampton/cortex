@@ -73,7 +73,7 @@ class TaskHelper(object):
 			('neocortex.task',self.task_id, self.workflow_name + "." + 'exception', self.username, message))
 		self.db.commit()
 
-	def event(self, name, description, success=True):
+	def event(self, name, description, success=True, oneshot=False):
 		# Handle closing an existing event if there is still one
 		if self.event_id != -1:
 			self.end_event(success)
@@ -82,6 +82,10 @@ class TaskHelper(object):
 		self.curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `start`) VALUES (%s, %s, %s, %s, %s, NOW())", ('neocortex.task', self.task_id, name, self.username, description))
 		self.db.commit()
 		self.event_id = self.curd.lastrowid
+
+		if oneshot:
+			self.end_event(success=success)
+
 		return True
 
 	def update_event(self, description):
@@ -105,7 +109,7 @@ class TaskHelper(object):
 		else:
 			status = 2 
 
-		self.curd.execute("UPDATE `events` SET `status` = %s WHERE `id` = %s", (status, self.event_id))
+		self.curd.execute("UPDATE `events` SET `status` = %s, `end` = NOW() WHERE `id` = %s", (status, self.event_id))
 		self.db.commit()
 		self.event_id = -1
 
