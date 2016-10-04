@@ -12,28 +12,36 @@ def run(helper, options):
 	helper.event('check_expired', 'Checking for expired VMs')
 
 	# Select all the systems which have expired
-	curd.execute('SELECT `vmware_cache_vm`.`vcenter`, `vmware_cache_vm`.`name`, `vmware_cache_vm`.`uuid`, `systems`.`expiry_date` from `systems` LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid` WHERE `systems`.`expiry_date` < NOW()')
+	curd.execute('SELECT * FROM `systems_info_view` WHERE `expiry_date` < NOW()')
+	systems = curd.fetchall()
 
-	helper.end_event(description="Expiration checking complete - " + str(shutdowncount) + " VM(s) shutdown")
+	helper.end_event(description="Expiration checking complete - " + str(len(systems)) + " VM(s) shutdown")
 
 	shutdowncount = 0
 
-	for row in curd:
-		vm=helper.lib.vmware_get_vm_by_uuid(row['uuid'], row['vcenter'])
+	for row in systems:
+		vm = helper.lib.vmware_get_vm_by_uuid(row['vmware_uuid'], row['vmware_vcenter'])
 		if vm.runtime.powerState == vim.VirtualMachine.PowerState.poweredOn:
+			failed = False
+
 			try:
 				helper.lib.vmware_vm_shutdown_guest(vm)
+
 			except vim.fault.ToolsUnavailable, e:
+
 				try:
 					helper.lib.vmware_vm_poweroff(vm)
 				except Exception, e:
+					failed = True
 					pass
-			except vim.fault.InvalidPowerState, e:
-				pass
+
 			except Exception, e:
+				failed = True				
 				pass
 
-			print('Shutdown ' + vm.config.name)
-			shutdowncount += 1
+			if not failed:
+				helper.event('check_expire_poweroff', 'The system ' + row['name'] + " (ID " + str(row['id']) + ") has been turned off",oneshot=True)
+			else:
+				helper.event('check_expire_poweroff', 'The system ' + row['name'] + " (ID " + str(row['id']) + ") failed to turn off",success=False,oneshot=True)
 
-	helper.end_event(description="Expiration checking complete - " + str(shutdowncount) + " VM(s) shutdown")
+			shutdowncount += 1
