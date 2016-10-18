@@ -300,10 +300,12 @@
 	<div id="puppet-menu" class="hidden">
 	<ul class="list-group list-group-popover">
 		{% for item in menu.puppet -%}
+		{% if item.link == "*puppet_search" -%}
+		<a tabindex="0" role="button" title="Search" data-toggle="modal" data-target="#puppet-search" class="list-group-item enable-tooltip" data-placement="right"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
+		{% else -%}
 		<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
+		{%- endif %}
 		{%- endfor %}
-		<a tabindex="0" role="button" title="Search" data-toggle="modal" data-target="#puppet-search" class="list-group-item enable-tooltip" data-placement="right">
-			<i class="fa fa-fw fa-search"></i> Configuration Search</a>
 	</ul>
 	</div>
 	{%- endif %}

@@ -97,6 +97,8 @@ def context_processor():
 		puppet.append({'link': url_for('puppet_enc_default'), 'title': 'Default classes', 'icon': 'fa-globe'})
 	if does_user_have_permission("puppet.dashboard.view"):
 		puppet.append({'link': url_for('puppet_radiator'), 'title': 'Radiator view', 'icon': 'fa-desktop'})
+	if does_user_have_permission("puppet.nodes.view"):
+		puppet.append({'link': '*puppet_search', 'title': 'Configuration search', 'icon': 'fa-search'})
 
 	# Set up the Admin menu, based on permissions
 	admin = []

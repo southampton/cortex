@@ -243,8 +243,12 @@ def does_user_have_permission(perm, user=None):
 def does_user_have_workflow_permission(perm, user=None):
 	"""Shortcut function to determine if a user has the permission specified,
 		or 'workflows.all' which bypasses all workflow permissions. """
-	if does_user_have_permission("workflows." + perm,user) or does_user_have_permission("workflows.all",user):
+	if not perm.startswith("workflows."):
+		perm = "workflows." + perm
+
+	if does_user_have_permission(perm, user) or does_user_have_permission("workflows.all", user):
 		return True
+
 	return False
 
 #############################################################################
