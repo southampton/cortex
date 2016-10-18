@@ -42,7 +42,7 @@ def puppet_enc_edit(node):
 		abort(404)
 
 	## Check if the user is allowed to edit the Puppet configuration
-	if not does_user_have_system_permission(id,"edit.puppet","systems.all.edit.puppet"):
+	if not does_user_have_system_permission(system['id'],"edit.puppet","systems.all.edit.puppet"):
 		abort(403)
 
 	# If we've got a new node, then don't show "None"
