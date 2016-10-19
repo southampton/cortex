@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
-
+{% if does_user_have_permission("puppet.groups.edit") -%}
 <div class="modal fade" id="addgroup" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
@@ -49,11 +49,13 @@
 		</div>
 	</div>
 </div>
-
+{%- endif %}
 <div class="page-header">
+	{%- if does_user_have_permission("puppet.groups.edit") %}
 	<div class="pull-right">
 		<a href="#" data-toggle="modal" data-target="#addgroup" class="btn btn-sm btn-primary"><i class="fa fa-fa fa-plus"></i> Add Netgroup</a>
 	</div>
+	{%- endif %}
 	<h3><i class="fa fa-fw fa-object-group"></i> Puppet Groups</h3>
 	<p class="text-muted">Puppet Groups are provided by UNIX netgroups. You can attach classes to netgroups which affect the hosts in those netgroups. To use this functionality first create a netgroup in NIS and then click "Add Netgroup" at the top right.
 </div>
@@ -70,7 +72,9 @@
 			<td>{{ group.name }}</td>
 			<td>
 				<a href="{{url_for('puppet_group_edit',name=group.name) }}" class="btn btn-default btn-xs"><i class="fa fa-fw fa-code"></i> Classes</a>
+{%- if does_user_have_permission("puppet.groups.edit") %}
 				<a href="#" class="btn btn-danger btn-xs delete"><i class="fa fa-fw fa-times"></i> Delete</a>
+{% endif -%}
 			</td>
 		</tr>
 {%- endfor %}
@@ -83,6 +87,7 @@ $('#data').DataTable({
 	"order": [[0, 'asc']],
 	"columns": [null, { "orderable": false, "targets": 0 }],
 });
+{% if does_user_have_permission("puppet.groups.edit") -%}
 $('#addgroup').on('shown.bs.modal', function () {
 	$('#netgroup_name').focus();
 })
@@ -92,5 +97,6 @@ $('a.delete').click(function (e) {
 	$('#group').val(name);
 	$('#deletegroup').modal();
 });
+{%- endif %}
 </script>
 {% endblock %}

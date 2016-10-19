@@ -215,6 +215,10 @@ def puppet_groups():
 
 		return render_template('puppet/groups.html', active='puppet', data=results, title="Puppet Groups")
 	else:
+		# Check user permissions
+		if not does_user_have_permission("puppet.groups.edit"):
+			abort(403)
+
 		if request.form['action'] == 'add':
 			netgroup_name = request.form['netgroup_name']
 
