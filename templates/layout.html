@@ -34,79 +34,81 @@
 		{%- block head %}{% endblock %}
 	</head>
 	<body>
+{%- if menu.systems and menu.systems|length > 0 %}
 		<div id="search" class="modal" tabindex="-1" role="dialog">
-		  <div class="modal-dialog">
-			<div class="modal-content">
-			  <form role="search" method="GET" action="{{url_for('systems_search')}}">
-			  <div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title">Search for systems</h4>
-			  </div>
-			  <div class="modal-body">
-				<div class="form-group">
-					<input id="searchinput" type="text" class="form-control" placeholder="Search for systems..." name="query">
-				</div>
-			  </div>
-			  <div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-				<button type="submit" class="btn btn-primary">Search</button>
-			  </div>
-			</form>
-			</div>
-		  </div>
-		</div>
-
-		<div id="puppet-search" class="modal" tabindex="-1" role="dialog">
-		  <div class="modal-dialog">
-			<div class="modal-content">
-			  <form role="search" method="GET" action="{{url_for('puppet_search')}}">
-			  <div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title">Search for a Puppet configuration</h4>
-			  </div>
-			  <div class="modal-body">
-				<p>You can search for classes such as 'uos_common_dns' or variables such as '$content'.</p>
-				<div class="form-group">
-					<input id="searchinput" type="text" class="form-control" placeholder="Search for nodes..." name="q">
-				</div>
-			  </div>
-			  <div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-				<button type="submit" class="btn btn-primary">Search</button>
-			  </div>
-			</form>
-			</div>
-		  </div>
-		</div>
-
-		<div id="prefs" class="modal fade" tabindex="-1" role="dialog">
-		  <div class="modal-dialog">
-			<div class="modal-content">
-			  <form role="search" method="POST" action="{{url_for('preferences')}}">
-				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-			  <div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title">Preferences</h4>
-			  </div>
-			  <div class="modal-body" style="padding-bottom: 40px">
-				<div class="form-group">
-					<div class="col-sm-10">
-						<div class="checkbox">
-							<label>
-								<input type="checkbox" name="uihorizontal" value="yes" {%if classic_layout %}checked="checked"{%endif%}>
-								Use alternative horizontal user interface layout<br/>
-							</label>
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<form role="search" method="GET" action="{{url_for('systems_search')}}">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+							<h4 class="modal-title">Search for systems</h4>
 						</div>
-					</div>
+						<div class="modal-body">
+							<div class="form-group">
+								<input id="searchinput" type="text" class="form-control" placeholder="Search for systems..." name="query">
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+							<button type="submit" class="btn btn-primary">Search</button>
+						</div>
+					</form>
 				</div>
-			  </div>
-			  <div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-				<button type="submit" class="btn btn-primary">Save</button>
-			  </div>
-			</form>
 			</div>
-		  </div>
+		</div>
+{%- endif %}
+{%- if menu.puppet and menu.puppet|length > 0 %}
+		<div id="puppet-search" class="modal" tabindex="-1" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<form role="search" method="GET" action="{{url_for('puppet_search')}}">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+							<h4 class="modal-title">Search for a Puppet configuration</h4>
+						</div>
+						<div class="modal-body">
+							<p>You can search for classes such as 'uos_common_dns' or variables such as '$content'.</p>
+							<div class="form-group">
+								<input id="searchinput" type="text" class="form-control" placeholder="Search for nodes..." name="q">
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+							<button type="submit" class="btn btn-primary">Search</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+{%- endif %}
+		<div id="prefs" class="modal fade" tabindex="-1" role="dialog">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<form role="search" method="POST" action="{{url_for('preferences')}}">
+						<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+							<h4 class="modal-title">Preferences</h4>
+						</div>
+						<div class="modal-body" style="padding-bottom: 40px">
+							<div class="form-group">
+								<div class="col-sm-10">
+									<div class="checkbox">
+										<label>
+											<input type="checkbox" name="uihorizontal" value="yes" {%if classic_layout %}checked="checked"{%endif%}>
+											Use alternative horizontal user interface layout<br/>
+										</label>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+							<button type="submit" class="btn btn-primary">Save</button>
+						</div>
+					</form>
+				</div>
+			</div>
 		</div>
 
 		<div class="navbar navbar-fixed-top navbar-default {%if not classic_layout %}visible-xs{%endif%}" role="navigation">
@@ -211,32 +213,32 @@
 			<div class="row">
 				<div id="sidebar-small" class="sidebar" style="width: 55px" >
 					<div class="list-group list-group-menu">
-					  <a href="{{ url_for('dashboard') }}" title="Dashboard" class="list-group-item{%if active == 'dashboard'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-dashboard fa-2x"></i></a>
+						<a href="{{ url_for('dashboard') }}" title="Dashboard" class="list-group-item{%if active == 'dashboard'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-dashboard fa-2x"></i></a>
 
-					  {%- if menu.systems and menu.systems|length > 0 %}
-					  <a tabindex="0" role="button" title="Search (Alt+S)" data-toggle="modal" data-target="#search" class="list-group-item enable-tooltip" data-placement="right">
+						{%- if menu.systems and menu.systems|length > 0 %}
+						<a tabindex="0" role="button" title="Search (Alt+S)" data-toggle="modal" data-target="#search" class="list-group-item enable-tooltip" data-placement="right">
 						<i class="fa fa-fw fa-search fa-2x"></i>
-					  </a>
-					  <a tabindex="0" role="button" data-mpop="systems-menu" title="Systems" data-container="body" class="list-group-item enable-menu-popover{%if active == 'systems'%} menu-active{%endif%} enable-tooltip">
+						</a>
+						<a tabindex="0" role="button" data-mpop="systems-menu" title="Systems" data-container="body" class="list-group-item enable-menu-popover{%if active == 'systems'%} menu-active{%endif%} enable-tooltip">
 						<i class="fa fa-fw fa-server fa-2x"></i>
-					  </a>
-					  {%- endif %}
-					  {%- if workflows and workflows|length > 0 %}
-					  <a tabindex="0" role="button" data-mpop="workflows-menu" title="Workflows" data-container="body" class="list-group-item enable-menu-popover{%if active == 'workflows'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-plus-circle fa-2x"></i></a>
-					  {%- endif %}
-					  {%- if menu.vmware and menu.vmware|length > 0 %}
-					  <a tabindex="0" role="button" data-mpop="vmware-menu" title="VMware" data-container="body" class="list-group-item enable-menu-popover{%if active == 'vmware'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-line-chart fa-2x"></i></a>
-					  {%- endif %}
-					  {%- if menu.puppet and menu.puppet|length > 0 %}
-					  <a tabindex="0" role="button" data-mpop="puppet-menu" title="Puppet" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-magic fa-2x"></i></a>
-					  {%- endif %}
-					  {%- if menu.perms and menu.perms|length > 0 %}
-					  <a tabindex="0" role="button" data-mpop="perms-menu" title="Permissions" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-lock fa-2x"></i></a>
-					  {%- endif %}
-					  {%- if menu.admin and menu.admin|length > 0 %}
-					  <a tabindex="0" role="button" data-mpop="settings-menu" title="Advanced" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-sliders fa-2x"></i></a>
-					  {%- endif %}
-					  <a href="{{ url_for('about') }}" title="About" class="list-group-item {%if active == 'about'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-info-circle fa-2x"></i></a>
+						</a>
+						{%- endif %}
+						{%- if workflows and workflows|length > 0 %}
+						<a tabindex="0" role="button" data-mpop="workflows-menu" title="Workflows" data-container="body" class="list-group-item enable-menu-popover{%if active == 'workflows'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-plus-circle fa-2x"></i></a>
+						{%- endif %}
+						{%- if menu.vmware and menu.vmware|length > 0 %}
+						<a tabindex="0" role="button" data-mpop="vmware-menu" title="VMware" data-container="body" class="list-group-item enable-menu-popover{%if active == 'vmware'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-line-chart fa-2x"></i></a>
+						{%- endif %}
+						{%- if menu.puppet and menu.puppet|length > 0 %}
+						<a tabindex="0" role="button" data-mpop="puppet-menu" title="Puppet" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-magic fa-2x"></i></a>
+						{%- endif %}
+						{%- if menu.perms and menu.perms|length > 0 %}
+						<a tabindex="0" role="button" data-mpop="perms-menu" title="Permissions" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-lock fa-2x"></i></a>
+						{%- endif %}
+						{%- if menu.admin and menu.admin|length > 0 %}
+						<a tabindex="0" role="button" data-mpop="settings-menu" title="Advanced" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-sliders fa-2x"></i></a>
+						{%- endif %}
+						<a href="{{ url_for('about') }}" title="About" class="list-group-item {%if active == 'about'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-info-circle fa-2x"></i></a>
 					</div>
 					<div class="list-group list-group-bottom list-group-menu">
 						<a tabindex="0" role="button" data-mpop="user-menu" title="{{ session.username }}" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'user'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-user fa-2x"></i></a>
@@ -244,26 +246,22 @@
 				</div>
 
 				<div id="main" class="main">
-		{%else%}
+		{%- else %}
 		<div class="container-fluid">
-		{%endif%}
-
+		{%- endif %}
 {%- for category, message in get_flashed_messages(with_categories=true) %}
 					<div class="alert alert-dismissable {{category}}"><button type="button" class="close" data-dismiss="alert">×</button>{{message}}</div>
 {%- endfor -%}
-
 					{% block body %}{% endblock -%}
 
-		{% if not classic_layout %}
+{%- if not classic_layout %}
 				</div>
 			</div>
 		</div>
-		{% else %}
+{%- else %}
 		</div>
-		{% endif %}
-		
-
-		{% if not classic_layout %}
+{%- endif %}
+{%- if not classic_layout %}
 	{#- Popup menus (popover content is loaded via the id) #}
 
 	{%- if menu.systems and menu.systems|length > 0 %}
@@ -278,7 +276,7 @@
 
 	{%- if workflows and workflows|length > 0 %}
 	<div id="workflows-menu" class="hidden">
-	<div class="list-group list-group-popover">
+	<ul class="list-group list-group-popover">
 		{% for func in workflows|sort(attribute='order') -%}
 		<a class="list-group-item" href="{{ url_for(func.name)}}"><i class="fa fa-plus-circle fa-fw"></i> {{ func.title }}</a>
 		{%- endfor %}
@@ -288,7 +286,7 @@
 
 	{%- if menu.vmware and menu.vmware|length > 0 %}
 	<div id="vmware-menu" class="hidden">
-	<div class="list-group list-group-popover">
+	<ul class="list-group list-group-popover">
 		{% for item in menu.vmware -%}
 		<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 		{%- endfor %}
@@ -328,8 +326,8 @@
 		{%- endfor %}
 	</ul>
 	</div>
-	{%- endif %}
 
+	{%- endif %}
 	<div id="user-menu" class="hidden">
 	<ul class="list-group list-group-popover">
 		<a class="list-group-item" data-toggle="modal" data-target="#prefs" href="#"><i class="fa fa-fw fa-cog"></i> Preferences</a>
@@ -337,6 +335,6 @@
 		<a class="list-group-item" href="{{ url_for('logout') }}"><i class="fa fa-sign-out fa-fw"></i> Sign Out</a>
 	</ul>
 	</div>
-	{%endif%}
+	{%- endif %}
 	</body>
 </html>
