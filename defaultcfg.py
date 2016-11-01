@@ -7,7 +7,7 @@ DEBUG = False
 ## Enable the debug toolbar. DO NOT DO THIS ON A PRODUCTION SYSTEM. EVER. It exposes SECRET_KEY.
 DEBUG_TOOLBAR = False
 
-# Key used to sign/encrypt session data stored in cookies.
+# Key used to sign session data stored in cookies.
 SECRET_KEY = ''
 
 ## File logging
@@ -39,7 +39,7 @@ MYSQL_PORT=3306
 CMDB_URL_FORMAT="http://localhost/cmdb/%s"
 
 ## Cortex internal version number
-VERSION='1.9'
+VERSION='2.0'
 
 ## Flask defaults (changed to what we prefer)
 SESSION_COOKIE_SECURE      = False
