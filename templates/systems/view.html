@@ -116,7 +116,7 @@
 						<div class="col-sm-9"><p class="form-control-static">{% if system.cmdb_comments %}{% for line in system.cmdb_comments.splitlines() %}{{ line }}<br/>{% endfor %}{% else %}N/A{% endif %}</p></div>
 					</div>
 					{%else%}
-					<p class="text-muted"><em>This system record has not been linked to ServiceNow. To do so click Edit System.</em></p>
+					<p class="text-muted"><em>This system record has not been linked to ServiceNow. To do so click the Settings tab.</em></p>
 					{%endif%}
 				</div>
 			</div>
@@ -157,7 +157,7 @@
 						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_ipaddr or 'Unknown' }}</p></div>
 					</div>
 					{%else%}
-					<p class="text-muted"><em>This system record has not been linked to VMWare. To do so click Edit System.</em></p>
+					<p class="text-muted"><em>This system record has not been linked to VMWare. To do so click the Settings tab.</em></p>
 					{%endif%}
 				</div>
 			</div>
