@@ -12,7 +12,7 @@ def run(helper, options):
 	helper.event('check_expired', 'Checking for expired VMs')
 
 	# Select all the systems which have expired
-	curd.execute('SELECT * FROM `systems_info_view` WHERE `expiry_date` < NOW() `vmware_uuid` IS NOT NULL')
+	curd.execute('SELECT * FROM `systems_info_view` WHERE `expiry_date` < NOW() AND `vmware_uuid` IS NOT NULL')
 	systems = curd.fetchall()
 
 	helper.end_event(description="Expiration checking complete - " + str(len(systems)) + " found expired")
