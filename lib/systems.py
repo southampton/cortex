@@ -3,6 +3,7 @@
 from cortex import app
 import MySQLdb as mysql
 from flask import Flask, request, redirect, session, url_for, abort, render_template, flash, g
+import io, csv
 
 REVIEW_STATUS_BY_NAME = {'NONE': 0, 'REQUIRED': 1, 'REVIEW': 2, 'NOT_REQUIRED': 3}
 REVIEW_STATUS_BY_ID   = {0: 'Not reviewed', 1: 'Required', 2: 'Under review', 3: 'Not required' }
