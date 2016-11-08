@@ -38,8 +38,8 @@ def api_register_system():
 			abort(403)
 
 		# LDAP authorisation
-		if not cortex.lib.user.is_global_admin(request.form['username']):
-			app.logger.warn('Non-admin user attempted to register ' + hostname + ', username: ' + request.form['username'] + ')')
+		if not cortex.lib.user.does_user_have_permission('api.register', request.form['username']):
+			app.logger.warn('User does not have permission when attempting to register ' + hostname + ', username: ' + request.form['username'] + ')')
 			abort(403)
 
 		interactive = True

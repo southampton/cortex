@@ -632,6 +632,7 @@ Username:             %s
 		  (1, "maintenance.vmware"), 
 		  (1, "maintenance.cmdb"), 
 		  (1, "maintenance.expire_vm"),
+		  (1, "api.register"),
 		  (1, "workflows.all")""")
 
 		## Close database connection
@@ -668,6 +669,7 @@ Username:             %s
 			{'name': 'maintenance.vmware',          'desc': 'Run VMware maintenance tasks'},
 			{'name': 'maintenance.cmdb',            'desc': 'Run CMDB maintenance tasks'},
 			{'name': 'maintenance.expire_vm',       'desc': 'Run the Expire VM maintenance task'},
+			{'name': 'api.register',                'desc': 'Manually register Linux machines (rebuilds / physical machines)'},
 			{'name': 'admin.permissions',           'desc': 'Modify permissions'},
 			{'name': 'workflows.all',               'desc': 'Use any workflow or workflow function'},
 		]
