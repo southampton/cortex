@@ -19,7 +19,7 @@
 			padding-top: 70px;
 		}
 		</style> 
-		{%endif%}
+		{%- endif %}
 		{#- JavaScript #}
 		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 		<script src="//netdna.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
@@ -30,7 +30,7 @@
 		<script type="text/javascript" src="//cdn.datatables.net/1.10.9/js/jquery.dataTables.min.js"></script>
 		<script type="text/javascript" src="//cdn.datatables.net/1.10.9/js/dataTables.bootstrap.min.js"></script>
 		<script type="text/javascript" src="{{ url_for('static', filename='js/mousetrap.min.js') }}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='js/cortex.js') }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='js/cortex.js') }}?v=20161114.1"></script>
 		{%- block head %}{% endblock %}
 	</head>
 	<body>
@@ -69,7 +69,7 @@
 						<div class="modal-body">
 							<p>You can search for classes such as 'uos_common_dns' or variables such as '$content'.</p>
 							<div class="form-group">
-								<input id="searchinput" type="text" class="form-control" placeholder="Search for nodes..." name="q">
+								<input id="puppetsearchinput" type="text" class="form-control" placeholder="Search for nodes..." name="q">
 							</div>
 						</div>
 						<div class="modal-footer">
@@ -131,7 +131,7 @@
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Systems <b class="caret"></b></a>
 							<ul class="dropdown-menu">
 								{% for item in menu.systems -%}
-								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i>{{item.title}}</a></li>
+								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
 								{%- endfor %}
 							</ul>
 						</li>
@@ -151,7 +151,7 @@
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">VMware <b class="caret"></b></a>
 							<ul class="dropdown-menu">
 								{% for item in menu.vmware -%}
-								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i>{{item.title}}</a></li>
+								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
 								{%- endfor %}
 							</ul>
 						</li>
@@ -161,7 +161,11 @@
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Puppet <b class="caret"></b></a>
 							<ul class="dropdown-menu">
 								{% for item in menu.puppet -%}
-								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i>{{item.title}}</a></li>
+									{% if item.link == "*puppet_search" -%}
+								<li><a data-toggle="modal" data-target="#puppet-search" href="#"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
+									{% else -%}
+								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
+									{%- endif %}
 								{%- endfor %}
 							</ul>
 						</li>
@@ -171,7 +175,7 @@
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Permissions <b class="caret"></b></a>
 							<ul class="dropdown-menu">
 								{% for item in menu.perms -%}
-								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i>{{item.title}}</a></li>
+								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
 								{%- endfor %}
 							</ul>
 						</li>
@@ -181,7 +185,7 @@
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Advanced <b class="caret"></b></a>
 							<ul class="dropdown-menu">
 								{% for item in menu.admin -%}
-								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i>{{item.title}}</a></li>
+								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
 								{%- endfor %}
 							</ul>
 						</li>

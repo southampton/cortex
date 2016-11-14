@@ -56,10 +56,14 @@ $(document).ready(function ()
 		enableMenuTooltip(this);
 	});
 
-
 	$("#search").on('shown.bs.modal', function()
 	{
 		$("#searchinput").focus();
+	});
+
+	$("#puppet-search").on('shown.bs.modal', function()
+	{
+		$("#puppetsearchinput").focus();
 	});
 
 	/* Searching for systems */
