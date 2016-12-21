@@ -46,7 +46,7 @@ def perms_roles():
 			return redirect(url_for('perms_roles'))
 
 		# Check if the class already exists
-		curd.execute('SELECT 1 FROM `roles` WHERE `name` = %s;', (name))
+		curd.execute('SELECT 1 FROM `roles` WHERE `name` = %s;', (name,))
 		if curd.fetchone() is not None:
 			flash('A role already exists with that name', 'alert-danger')
 			return redirect(url_for('perms_roles'))
@@ -103,7 +103,7 @@ def perms_role(id):
 
 		# Delete the role
 		if action == 'delete':
-			curd.execute('''DELETE FROM `roles` WHERE `id` = %s''', (id))
+			curd.execute('''DELETE FROM `roles` WHERE `id` = %s''', (id,))
 			g.db.commit()
 
 			flash("The role `" + role['name'] + "` has been deleted", "alert-success")
@@ -217,12 +217,12 @@ def perms_role(id):
 				return redirect(url_for('perms_role',id=id))
 		
 			# Ensure the permission was not already granted
-			curd.execute('SELECT 1 FROM `role_who` WHERE `id` = %s', (wid))
+			curd.execute('SELECT 1 FROM `role_who` WHERE `id` = %s', (wid,))
 			if curd.fetchone() is None:
 				flash('That user/group is not added to the role', 'alert-warning')
 				return redirect(url_for('perms_role',id=id))
 
-			curd.execute('''DELETE FROM `role_who` WHERE `id` = %s''', (wid))
+			curd.execute('''DELETE FROM `role_who` WHERE `id` = %s''', (wid,))
 			g.db.commit()
 
 			flash("The user or group was revoked from the role", "alert-success")
@@ -254,7 +254,7 @@ def perms_system(id):
 	if request.method == 'GET':
 
 		# Get the list of distinct users/groups/etc added to this system
-		curd.execute('SELECT DISTINCT `type`, `who` FROM `system_perms` WHERE `system_id` = %s', (system['id']))
+		curd.execute('SELECT DISTINCT `type`, `who` FROM `system_perms` WHERE `system_id` = %s', (system['id'],))
 		who = curd.fetchall()
 
 		# We create a dictionary with the key being a tuple of the 'type' and 'who'

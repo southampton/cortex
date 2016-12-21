@@ -227,7 +227,7 @@ def puppet_groups():
 				return redirect(url_for('puppet_groups'))
 
 			# Make sure that group hasnt already been imported
-			curd.execute('SELECT 1 FROM `puppet_groups` WHERE `name` = %s', netgroup_name)
+			curd.execute('SELECT 1 FROM `puppet_groups` WHERE `name` = %s', (netgroup_name),)
 			found = curd.fetchone()
 			if found:
 				flash('That netgroup has already been imported as a Puppet Group', 'alert-warning')
@@ -237,7 +237,7 @@ def puppet_groups():
 				flash('That netgroup does not exist', 'alert-danger')
 				return redirect(url_for('puppet_groups'))
 
-			curd.execute('INSERT INTO `puppet_groups` (`name`) VALUES (%s)', (netgroup_name))
+			curd.execute('INSERT INTO `puppet_groups` (`name`) VALUES (%s)', (netgroup_name,))
 			g.db.commit()
 
 			flash('The netgroup "' + netgroup_name + '" has imported as a Puppet Group', 'alert-success')

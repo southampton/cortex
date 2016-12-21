@@ -641,7 +641,7 @@ def systems_vmware_json():
 
 	# Get total number of VMs that match query
 	if search is not None:
-		curd.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `name` LIKE %s', ("%" + search + "%"))
+		curd.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `name` LIKE %s', ("%" + search + "%",))
 		filtered_count = curd.fetchone()['count']
 	else:
 		# If unfiltered, return the total count

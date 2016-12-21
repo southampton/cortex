@@ -254,11 +254,11 @@ def run(helper, options):
 
 		# Update statistics tables
 		helper.event("vmware_stats_update", "Updating statistics")
-		curd.execute("INSERT INTO `stats_vm_count` (`timestamp`, `value`) VALUES (NOW(), %s)", (stats_vms))
-		curd.execute("INSERT INTO `stats_linux_vm_count` (`timestamp`, `value`) VALUES (NOW(), %s)", (stats_linux))
-		curd.execute("INSERT INTO `stats_windows_vm_count` (`timestamp`, `value`) VALUES (NOW(), %s)", (stats_winserver))
-		curd.execute("INSERT INTO `stats_desktop_vm_count` (`timestamp`, `value`) VALUES (NOW(), %s)", (stats_windesktop))
-		curd.execute("INSERT INTO `stats_other_vm_count` (`timestamp`, `value`) VALUES (NOW(), %s)", (stats_other))
+		curd.execute("INSERT INTO `stats_vm_count` (`timestamp`, `value`) VALUES (NOW(), %s)", (stats_vms,))
+		curd.execute("INSERT INTO `stats_linux_vm_count` (`timestamp`, `value`) VALUES (NOW(), %s)", (stats_linux,))
+		curd.execute("INSERT INTO `stats_windows_vm_count` (`timestamp`, `value`) VALUES (NOW(), %s)", (stats_winserver,))
+		curd.execute("INSERT INTO `stats_desktop_vm_count` (`timestamp`, `value`) VALUES (NOW(), %s)", (stats_windesktop,))
+		curd.execute("INSERT INTO `stats_other_vm_count` (`timestamp`, `value`) VALUES (NOW(), %s)", (stats_other,))
 		helper.end_event(description="Statistics updated")
 
 		# Commit all the changes to the database

@@ -132,7 +132,7 @@ def admin_tasks_active():
 
 	# Get additional information out of the database
 	for ntask in neotasks:
-		curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `id` = %s", (ntask['id']))
+		curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `id` = %s", (ntask['id'],))
 		task = curd.fetchone()
 		if not task == None:
 			tasks.append(task)
@@ -234,7 +234,7 @@ def admin_classes():
 				class_link_vmware = 0
 
 			# Check if the class already exists
-			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', (class_name))
+			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', (class_name,))
 			if curd.fetchone() is None:
 				class_exists = False
 			else:
@@ -266,32 +266,32 @@ def admin_classes():
 
 		elif action == "create_default_classes":
 
-			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("srv"))
+			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("srv",))
 			if curd.fetchone() is None:
 				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES ('srv', 5, 'Standard servers, physical and VMs', 0, 1, 'cmdb_ci_server')''')
 				g.db.commit()
 
-			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("play"))
+			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("play",))
 			if curd.fetchone() is None:
 				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES ('play', 5, 'Sandbox cluster VMs', 0, 1, 'cmdb_ci_server')''')
 				g.db.commit()
 
-			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("vhost"))
+			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("vhost",))
 			if curd.fetchone() is None:
 				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES ('vhost', 5, 'Virtualisation hosts', 0, 0, 'cmdb_ci_server')''')
 				g.db.commit()
 
-			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("stg"))
+			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("stg",))
 			if curd.fetchone() is None:
 				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES ('stg', 5, 'Storage devices', 0, 0, 'cmdb_ci_msd')''')
 				g.db.commit()
 
-			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("ibs"))
+			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("ibs",))
 			if curd.fetchone() is None:
 				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES ('ibs', 5, 'Infiniband switches', 0, 0, 'cmdb_ci_netgear')''')
 				g.db.commit()
 
-			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("san"))
+			curd.execute('SELECT 1 FROM `classes` WHERE `name` = %s;', ("san",))
 			if curd.fetchone() is None:
 				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES ('san', 5, 'Fibre channel switches', 0, 0, 'cmdb_ci_netgear')''')
 				g.db.commit()

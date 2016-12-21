@@ -63,7 +63,7 @@ def vmware_list_clusters(tag):
 	if tag in app.config['VMWARE']:
 		# SQL to grab the clusters from the cache
 		curd = g.db.cursor(mysql.cursors.DictCursor)
-		curd.execute("SELECT * FROM `vmware_cache_clusters` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname']))
+		curd.execute("SELECT * FROM `vmware_cache_clusters` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname'],))
 		return curd.fetchall()
 	else:
 		raise Exception("Invalid VMware tag")
