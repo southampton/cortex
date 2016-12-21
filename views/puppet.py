@@ -227,7 +227,7 @@ def puppet_groups():
 				return redirect(url_for('puppet_groups'))
 
 			# Make sure that group hasnt already been imported
-			curd.execute('SELECT 1 FROM `puppet_groups` WHERE `name` = %s', (netgroup_name),)
+			curd.execute('SELECT 1 FROM `puppet_groups` WHERE `name` = %s', (netgroup_name,))
 			found = curd.fetchone()
 			if found:
 				flash('That netgroup has already been imported as a Puppet Group', 'alert-warning')
@@ -246,7 +246,7 @@ def puppet_groups():
 			group_name = request.form['group']
 
 			try:
-				curd.execute('DELETE FROM `puppet_groups` WHERE `name` = %s', group_name)
+				curd.execute('DELETE FROM `puppet_groups` WHERE `name` = %s', (group_name,))
 				g.db.commit()
 				flash('Deleted Puppet group "' + group_name + '"', 'alert-success')
 			except Exception, e:
@@ -269,7 +269,7 @@ def puppet_group_edit(name):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get the group from the DB
-	curd.execute('SELECT * FROM `puppet_groups` WHERE `name` = %s', name)
+	curd.execute('SELECT * FROM `puppet_groups` WHERE `name` = %s', (name,))
 	group = curd.fetchone()
 	if not group:
 		flash('I could not find a Puppet Group with that name', 'alert-warning')

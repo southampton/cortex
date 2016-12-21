@@ -87,7 +87,7 @@ class Corpus(object):
 
 		# 2a. Get the class (along with the next nubmer to allocate)
 		try:
-			cur.execute("SELECT * FROM `classes` WHERE `name` = %s", (class_name, ))
+			cur.execute("SELECT * FROM `classes` WHERE `name` = %s", (class_name,))
 			class_data = cur.fetchone()
 		except Exception as ex:
 			cur.execute('UNLOCK TABLES;')
