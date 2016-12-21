@@ -95,7 +95,7 @@ def get_users_groups_from_ldap(username):
 
 					## Delete the existing cache
 					curd = g.db.cursor(mysql.cursors.DictCursor)
-					curd.execute('DELETE FROM `ldap_group_cache` WHERE `username` = %s', (username))
+					curd.execute('DELETE FROM `ldap_group_cache` WHERE `username` = %s', (username,))
 					
 					## Create the new cache
 					groups = []
@@ -114,7 +114,7 @@ def get_users_groups_from_ldap(username):
 						groups.append(group)
 
 					## Set the cache expiration
-					curd.execute('REPLACE INTO `ldap_group_cache_expire` (`username`, `expiry_date`) VALUES (%s,NOW() + INTERVAL 15 MINUTE)', (username))
+					curd.execute('REPLACE INTO `ldap_group_cache_expire` (`username`, `expiry_date`) VALUES (%s,NOW() + INTERVAL 15 MINUTE)', (username,))
 
 					## Commit the transaction
 					g.db.commit()

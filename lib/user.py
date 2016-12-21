@@ -111,10 +111,10 @@ def get_users_groups(username, from_cache=True):
 		curd = g.db.cursor(mysql.cursors.DictCursor)
 
 		## Get from the cache (if it hasn't expired)
-		curd.execute('SELECT 1 FROM `ldap_group_cache_expire` WHERE `username` = %s AND `expiry_date` > CURDATE()', (username))
+		curd.execute('SELECT 1 FROM `ldap_group_cache_expire` WHERE `username` = %s AND `expiry_date` > CURDATE()', (username,))
 		if curd.fetchone() is not None:
 			## The cache has not expired, return the list
-			curd.execute('SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s', (username))
+			curd.execute('SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s', (username,))
 			groupdict = curd.fetchall()
 			groups = []
 			for group in groupdict:
@@ -150,7 +150,7 @@ def get_user_realname(username, from_cache=True):
 		# we use a key to set whether we /have/ cached the users //
 		try:
 			curd = g.db.cursor(mysql.cursors.DictCursor)
-			curd.execute('SELECT `realname` AS `name` FROM `realname_cache` WHERE `username` = %s', (username))
+			curd.execute('SELECT `realname` AS `name` FROM `realname_cache` WHERE `username` = %s', (username,))
 			user = curd.fetchone()
 			curd.close()
 		except Exception as ex:
