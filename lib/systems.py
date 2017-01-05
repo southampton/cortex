@@ -171,7 +171,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 		else:
 			query = query + "WHERE "
 
-		query = query + ' ((`cmdb_id` IS NOT NULL AND `cmdb_operational_status` = "In Service") OR (`cmdb_id` IS NULL AND `vmware_uuid` IS NOT NULL))'
+		query = query + ' ((`cmdb_id` IS NOT NULL AND `cmdb_operational_status` = "In Service") OR `vmware_uuid` IS NOT NULL)'
 
 	# Restrict to other/legacy types
 	if only_other:
