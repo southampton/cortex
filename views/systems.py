@@ -652,7 +652,7 @@ def systems_vmware_json():
 	query_params = ()
 	if search is not None:
 		query = query + 'WHERE `name` LIKE %s '
-		query_params = ("%" + search + "%")
+		query_params = ("%" + search + "%",)
 
 	# Add on ordering
 	query = query + "ORDER BY " + order_column + " " + order_dir + " "
