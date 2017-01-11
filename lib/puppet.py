@@ -97,8 +97,8 @@ def generate_node_config(certname):
 	# Add in (and indeed potentially overwrite) some auto-generated variables
 	if 'cmdb_id' not in system or system['cmdb_id'] is None or len(system['cmdb_id'].strip()) == 0:
 		# Not linked to a ServiceNow entry, put in some defaults
-		response['parameters']['uos_motd_sn_environment'] = 'ERROR: Not linked to ServiceNow. Visit: ' + url_for('systems_edit', _external=True, id=system['id'])
-		response['parameters']['uos_motd_sn_description'] = 'ERROR: Not linked to ServiceNow. Visit: ' + url_for('systems_edit', _external=True, id=system['id'])
+		response['parameters']['uos_motd_sn_environment'] = 'ERROR: Not linked to ServiceNow. Visit: ' + url_for('system_edit', _external=True, id=system['id'])
+		response['parameters']['uos_motd_sn_description'] = 'ERROR: Not linked to ServiceNow. Visit: ' + url_for('system_edit', _external=True, id=system['id'])
 	else:
 		response['parameters']['uos_motd_sn_environment'] = system['cmdb_environment']
 		if system['cmdb_description'] is None or len(system['cmdb_description'].strip()) == 0:
