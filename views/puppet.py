@@ -77,17 +77,32 @@ def puppet_enc_edit(node):
 
 		# Validate classes YAML
 		try:
-			yaml.load(classes)
+			data = yaml.load(classes)
 		except Exception, e:
 			flash('Invalid YAML syntax for classes: ' + str(e), 'alert-danger')
 			error = True
 
+		try:
+			if not data is None:
+				assert isinstance(data, dict)
+		except Exception, e:
+			flash('Invalid YAML syntax for classes: result was not a list of classes, did you forget a trailing colon? ' + str(e), 'alert-danger')
+			error = True
+
 		# Validate variables YAML
 		try:
-			yaml.load(variables)
+			data = yaml.load(variables)
 		except Exception, e:
 			flash('Invalid YAML syntax for variables: ' + str(e), 'alert-danger')
 			error = True
+
+		try:
+			if not data is None:
+				assert isinstance(data, dict)
+		except Exception, e:
+			flash('Invalid YAML syntax for variables: result was not a list of classes, did you forget a trailing colon? ' + str(e), 'alert-danger')
+			error = True
+
 
 		# On error, overwrite what is in the system object with our form variables
 		# and return the page back to the user for fixing
@@ -96,7 +111,7 @@ def puppet_enc_edit(node):
 			system['puppet_classes'] = classes
 			system['puppet_variables'] = variables
 			system['puppet_include_default'] = include_default
-			return render_template('puppet/enc.html', system=system, active='puppet', environments=environments, title=system.name)
+			return render_template('puppet/enc.html', system=system, active='puppet', environments=environments, title=system['name'])
 
 		# Get a cursor to the database
 		curd = g.db.cursor(mysql.cursors.DictCursor)
