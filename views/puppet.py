@@ -160,9 +160,16 @@ def puppet_enc_default():
 
 		# Validate classes YAML
 		try:
-			yaml.load(classes)
+			data = yaml.load(classes)
 		except Exception, e:
 			flash('Invalid YAML syntax: ' + str(e), 'alert-danger')
+			return render_template('puppet/default.html', classes=classes, active='puppet', title="Default Classes")
+
+		try:
+			if not data is None:
+				assert isinstance(data, dict)
+		except Exception, e:
+			flash('Invalid YAML syntax: result was not a list of classes, did you forget a trailing colon? ' + str(e), 'alert-danger')
 			return render_template('puppet/default.html', classes=classes, active='puppet', title="Default Classes")
 
 		# Get a cursor to the database
@@ -308,10 +315,19 @@ def puppet_group_edit(name):
 
 		# Validate classes YAML
 		try:
-			yaml.load(classes)
+			data = yaml.load(classes)
 		except Exception, e:
 			flash('Invalid YAML syntax for classes: ' + str(e), 'alert-danger')
-			return render_template('puppet/group.html', group=group, classes=classes, active='puppet', title=group['name'])
+			group['classes'] = classes
+			return render_template('puppet/group.html', group=group, active='puppet', title=group['name'])
+
+		try:
+			if not data is None:
+				assert isinstance(data, dict)
+		except Exception, e:
+			flash('Invalid YAML syntax: result was not a list of classes, did you forget a trailing colon? ' + str(e), 'alert-danger')
+			group['classes'] = classes
+			return render_template('puppet/group.html', group=group, active='puppet', title=group['name'])
 
 		# Update the system
 		curd.execute('UPDATE `puppet_groups` SET `classes` = %s WHERE `name` = %s', (classes, name))
