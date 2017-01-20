@@ -100,7 +100,7 @@ def puppet_enc_edit(node):
 			if not data is None:
 				assert isinstance(data, dict)
 		except Exception, e:
-			flash('Invalid YAML syntax for variables: result was not a list of classes, did you forget a trailing colon? ' + str(e), 'alert-danger')
+			flash('Invalid YAML syntax for variables: result was not a list of variables, did you forget a trailing colon? ' + str(e), 'alert-danger')
 			error = True
 
 

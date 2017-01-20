@@ -36,6 +36,9 @@ def generate_node_config(certname):
 		# YAML load can come back with no actual objects, e.g. comments, blank etc.
 		if default_classes == None:
 			default_classes = {}
+		elif not isinstance(default_classes, dict):
+			default_classes = {}
+			app.logger.error("YAML Error: Parsing of default classes resulted in a string, did not result in a dictionary!")
 	else:
 		default_classes = {}
 
@@ -49,6 +52,9 @@ def generate_node_config(certname):
 		# YAML load can come back with no actual objects, e.g. comments, blank etc.
 		if node_classes == None:
 			response['classes'] = {}
+		elif not isinstance(node_classes, dict):
+			response['classes'] = {}
+			app.logger.error("YAML Error: Parsing of node classes for node " + str(certname) + " did not result in a dictionary!")
 		else:
 			response['classes'] = node_classes
 	else:
