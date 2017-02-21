@@ -133,8 +133,12 @@ Further Details:
 		for any function that has been added to _exempt_views by use of the
 		disable_csrf_check decorator."""
 
+		## Throw away requests with methods we don't support
+		if request.method not in ('GET', 'HEAD', 'POST'):
+			abort(405)
+
 		# For methods that require CSRF checking
-		if request.method not in ('GET', 'HEAD', 'OPTIONS', 'TRACE'):
+		if request.method == 'POST':
 			# Get the function that is rendering the current view
 			view = self.view_functions.get(request.endpoint)
 			view_location = view.__module__ + '.' + view.__name__
