@@ -518,6 +518,27 @@ Username:             %s
 		  PRIMARY KEY (`username`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_request` (
+		 `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		 `request_date` datetime NOT NULL,
+		 `requested_who` varchar(64) NOT NULL,
+		 `workflow` varchar(64) NOT NULL,
+		 `sockets` int(11) NOT NULL,
+		 `cores` int(11) NOT NULL,
+		 `ram` int(11) NOT NULL,
+		 `disk` int(11) NOT NULL,
+		 `template` varchar(255) NOT NULL,
+		 `network` varchar(255) DEFAULT NULL,
+		 `cluster` varchar(255) NOT NULL,
+		 `environment` varchar(255) NOT NULL,
+		 `purpose` text NOT NULL,
+		 `comments` text NOT NULL,
+		 `expiry_date` datetime DEFAULT NULL,
+		 `sendmail` tinyint(1) NOT NULL,
+		 `status` int(2) NOT NULL COMMENT '0: pending, 1: rejected, 2: approved',
+		  PRIMARY KEY (`id`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `expiry_date` datetime DEFAULT NULL""")
 		except Exception, e:

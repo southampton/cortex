@@ -1,0 +1,101 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<style type="text/css">
+a.server-link { text-decoration: none !important; color: inherit; }
+a.server-link:hover { text-decoration: underline !important; }
+</style>
+
+<div class="page-header">
+	<small><strong>&nbsp;Legend:</strong>
+		<i title='Request has been approved' class='fa fa-fw fa-check icon-state icon-legend icon-on'></i>Approved
+		<i title='Request has been rejected' class='fa fa-fw fa-times icon-state icon-legend icon-off'></i>Rejected
+		<i title='Request is pending review' class='fa fa-fw fa-question icon-state icon-legend icon-pause'></i>Pending
+	</small>
+</h3>
+</div>
+
+<ul id="status-tabs" class="nav nav-tabs" style="margin-bottom:1em">
+	{%- for status in statuses %}
+	<li {% if loop.index0 == 0 and not q %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-status="{{ status[0] }}" role="tab">{{ status[1] }}</a></li>
+	{%- endfor %}
+	<li {% if q or classes|length == 0 or expired or nocmdb %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-status="*ALL" role="tab">All</a></li>
+</ul>
+<div id="systemsWrapper">
+<table class="table table-condensed table-striped" id="requests">
+	<thead>
+		<tr>
+			<th class="tablesorter-inner">ID</th>
+			<th class="tablesorter-inner">Status</th>
+			<th class="tablesorter-inner">Requested by</th>
+			<th class="tablesorter-inner">Purpose</th>
+			<th class="tablesorter-inner">Requested at</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+	</tbody>
+</table>
+</div>
+<script type="text/javascript">
+$(function() {
+	var systemsTable = $('#requests').DataTable({
+		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
+		"pageLength": 15,
+		"order": [[0, 'desc']],
+		"columns": [null, null, null, null, null, {"orderable": false, "targets": 0}],
+		"serverSide": true,
+		"searchDelay": 500,
+		"stateSave": true,
+		"stateLoadCallback": function (settings) {
+			if (window.history.state != undefined)
+			{
+				$('#status-tabs li').removeClass('active');
+				$('#status-tabs li a[data-status=\"' + window.history.state['tab'] + '\"]').closest('li').addClass('active');
+				return window.history.state['dtState'];
+			}
+			return {}
+		},
+		"stateSaveCallback": function (settings, data) {
+			var statusname = $('#status-tabs li.active a').attr('data-status');
+			window.history.replaceState({dtState: data, tab: statusname}, "SystemsListState");
+		},
+		"ajax": {
+			"url": "{{ url_for('requests_json') }}",
+			"type": "POST",
+			"data": function (d) {
+				d.filter_group = $('#status-tabs li.active a').attr('data-status');
+				d.order_column = 0;
+			}
+		},
+		{% if q %}
+		"search": { "search": {{q|tojson|safe}} },
+		{% endif %}
+		"searching": true,
+		"rowCallback": function(row, data, index) {
+			{#- data[6] is CMDB URL, data[7] is database ID, data[5] is operational status, data[9] is Puppet Cert Name #}
+			if (data[1] == 0) {
+				$('td:eq(1)', row).html("<i title='Request is pending review' class='fa fa-fw fa-question icon-state icon-legend icon-pause'></i>Pending");
+			} else if (data[1] == 1) {
+				$('td:eq(1)', row).html("<i title='Request has been rejected' class='fa fa-fw fa-times icon-state icon-legend icon-off'></i>Rejected");
+			} else if (data[1] == 2) {
+				$('td:eq(1)', row).html("<i title='Request has been approved' class='fa fa-fw fa-check icon-state icon-legend icon-on'></i>Approved");
+			}
+			$('td:eq(5)', row).html('<a title="View" class="btn btn-xs btn-default" style="margin-right:0.1em" href="/systems/request/' + data[5] + '"><i class="fa fa-fw fa-info-circle"></i></a>');
+		}
+	});
+	$('#status-tabs li').click(function() {
+		$('#status-tabs li').removeClass('active');
+		$(this).addClass('active');
+		$('#systemsWrapper').fadeOut(150, function() {
+			systemsTable.ajax.reload(function() {
+				$('#systemsWrapper').fadeIn(150);
+			});
+		});
+	});
+});
+$(function () {
+	$('[data-toggle="popover"]').popover()
+})
+</script>
+{% endblock %}
