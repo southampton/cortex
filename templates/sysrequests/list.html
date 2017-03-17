@@ -19,7 +19,7 @@ a.server-link:hover { text-decoration: underline !important; }
 	{%- for status in statuses %}
 	<li {% if loop.index0 == 0 and not q %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-status="{{ status[0] }}" role="tab">{{ status[1] }}</a></li>
 	{%- endfor %}
-	<li {% if q or classes|length == 0 or expired or nocmdb %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-status="*ALL" role="tab">All</a></li>
+	<li {% if q or statuses|length == 0 %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-status="*ALL" role="tab">All</a></li>
 </ul>
 <div id="systemsWrapper">
 <table class="table table-condensed table-striped" id="requests">
@@ -61,7 +61,7 @@ $(function() {
 			window.history.replaceState({dtState: data, tab: statusname}, "SystemsListState");
 		},
 		"ajax": {
-			"url": "{{ url_for('requests_json') }}",
+			"url": "{{ url_for('sysrequests_json') }}",
 			"type": "POST",
 			"data": function (d) {
 				d.filter_group = $('#status-tabs li.active a').attr('data-status');
@@ -73,7 +73,7 @@ $(function() {
 		{% endif %}
 		"searching": true,
 		"rowCallback": function(row, data, index) {
-			{#- data[6] is CMDB URL, data[7] is database ID, data[5] is operational status, data[9] is Puppet Cert Name #}
+			$('td:eq(0)', row).html('<a title="View" href="/request/view/' + data[0] + '">' + data[0] + '</a>');
 			if (data[1] == 0) {
 				$('td:eq(1)', row).html("<i title='Request is pending review' class='fa fa-fw fa-question icon-state icon-legend icon-pause'></i>Pending");
 			} else if (data[1] == 1) {
@@ -81,7 +81,7 @@ $(function() {
 			} else if (data[1] == 2) {
 				$('td:eq(1)', row).html("<i title='Request has been approved' class='fa fa-fw fa-check icon-state icon-legend icon-on'></i>Approved");
 			}
-			$('td:eq(5)', row).html('<a title="View" class="btn btn-xs btn-default" style="margin-right:0.1em" href="/systems/request/' + data[5] + '"><i class="fa fa-fw fa-info-circle"></i></a>');
+			$('td:eq(5)', row).html('<a title="View" class="btn btn-xs btn-default" style="margin-right:0.1em" href="/request/view/' + data[0] + '"><i class="fa fa-fw fa-info-circle"></i></a>');
 		}
 	});
 	$('#status-tabs li').click(function() {
