@@ -522,6 +522,7 @@ Username:             %s
 		 `id` mediumint(11) NOT NULL AUTO_INCREMENT,
 		 `request_date` datetime NOT NULL,
 		 `requested_who` varchar(64) NOT NULL,
+		 `fqdn` varchar(255) NOT NULL,
 		 `workflow` varchar(64) NOT NULL,
 		 `sockets` int(11) NOT NULL,
 		 `cores` int(11) NOT NULL,

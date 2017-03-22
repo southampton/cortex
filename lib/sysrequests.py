@@ -181,8 +181,7 @@ def approve(id):
 	options = curd.fetchall()
 
 	#trigger build
-	#neocortex = cortex.lib.core.neocortex_connect()
-	#task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and sets up a virtual machine (student VMware environment)")
+	task_id = workflow.start_task(options)
 	return redirect(url_for('task_status', id=task_id))
 
 

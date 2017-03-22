@@ -105,7 +105,7 @@ def sysrequests_json():
 		if row['updated_who'] is not None:	
 			row['updated_who'] = cortex.lib.user.get_user_realname(row['updated_who'])
 
-		requests_data.append([row['id'], row['status'], row['requested_who'], row['purpose'], row['request_date'], row['updated_at'], row['updated_who'], row['id']])
+		requests_data.append([row['id'], row['status'], row['requested_who'], row['fqdn'], row['purpose'], row['request_date'], row['updated_at'], row['updated_who'], row['id']])
 
 	# Return JSON data in the format DataTables wants
 	return jsonify(draw=draw, recordsTotal=system_count, recordsFiltered=filtered_count, data=requests_data)

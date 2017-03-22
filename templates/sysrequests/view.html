@@ -3,9 +3,9 @@
 {% endblock %}
 {% block body %}
 
-{% set status = [('pending', 'fa-clock-o'), ('rejected', 'fa-times'), ('aprroved', 'fa-check')] %}
+{% set status = [('pending', 'fa-clock-o icon-pause'), ('rejected', 'fa-times icon-off'), ('approved', 'fa-check icon-on')] %}
 
-<h1 style="padding-bottom: 0.2em; border-bottom: 1px solid #eeeeee;">System Request #{{request.id}} <small><span class="fa {{ status[request.status][1] }}"><span> {{ status[request.status][0] }}</small></h1>
+<h1 style="padding-bottom: 0.2em; border-bottom: 1px solid #eeeeee;">System Request #{{request.id}} <small><i class="fa {{ status[request.status][1] }}"></i> {{ status[request.status][0] }}</small></h1>
 <div class="row">
 	<div class="col-md-6">
 		<div class="panel panel-default">
@@ -15,6 +15,7 @@
 			<div class="panel-body">
 				<p>Status: {{ status[request.status][0] }}</p>
 				<p>Requested by: {{ request.requested_who or 'unknown' }}</p>
+				<p>FQDN: {{ request.fqdn or 'unknown' }}</p>
 				<p>Purpose: {{ request.purpose or '' }}</p>
 				<p>Comment: {{ request.comments or '' }}</p>
 				<p>Requested at: {{ request.request_date or 'unknown' }}</p>
