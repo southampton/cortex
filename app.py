@@ -536,6 +536,8 @@ Username:             %s
 		 `expiry_date` datetime DEFAULT NULL,
 		 `sendmail` tinyint(1) NOT NULL,
 		 `status` int(2) NOT NULL COMMENT '0: pending, 1: rejected, 2: approved',
+		 `updated_who` varchar(64) NOT NULL,
+		 `updated_at` datetime NOT NULL,
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
@@ -658,7 +660,10 @@ Username:             %s
 		  (1, "maintenance.cmdb"), 
 		  (1, "maintenance.expire_vm"),
 		  (1, "api.register"),
-		  (1, "workflows.all")""")
+		  (1, "workflows.all"),
+		  (1, "sysrequests.all.view"),
+		  (1, "sysrequests.all.approve"),
+		  (1, "sysrequests.all.reject")""")
 
 		## Close database connection
 		temp_db.close()
@@ -697,6 +702,10 @@ Username:             %s
 			{'name': 'api.register',                'desc': 'Manually register Linux machines (rebuilds / physical machines)'},
 			{'name': 'admin.permissions',           'desc': 'Modify permissions'},
 			{'name': 'workflows.all',               'desc': 'Use any workflow or workflow function'},
+
+			{'name': 'sysrequests.all.view',        'desc': 'View any system request'},
+			{'name': 'sysrequests.all.approve',     'desc': 'Approve any system request'},
+			{'name': 'sysrequests.all.reject',      'desc': 'Reject any system request'},
 		]
 
 		self.workflow_permissions = []

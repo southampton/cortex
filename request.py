@@ -69,7 +69,8 @@ def context_processor():
 		systems = [
 			{'link': url_for('systems'), 'title': 'All systems', 'icon': 'fa-list'},
 			{'link': url_for('systems_nocmdb'), 'title': 'Systems without a CMBD record', 'icon': 'fa-list'},
-			{'link': url_for('systems_expired'), 'title': 'Expired systems', 'icon': 'fa-list'}
+			{'link': url_for('systems_expired'), 'title': 'Expired systems', 'icon': 'fa-list'},
+			{'link': url_for('sysrequests'), 'title': 'System requests', 'icon': 'fa-list'}
 		]
 
 	# Set up the VMware menu, based on a single permission

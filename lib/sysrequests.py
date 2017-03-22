@@ -6,7 +6,7 @@ from flask import Flask, request, redirect, session, url_for, abort, render_temp
 
 ################################################################################
 
-def get_requests(status = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None):
+def get_requests(status = None, user = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None):
 	"""Returns the list of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost), and ordered (defaults to "name")"""
 
 	## BUILD THE QUERY
@@ -16,7 +16,7 @@ def get_requests(status = None, search = None, order = None, order_asc = True, l
 	query = "SELECT * FROM `system_request` "
 
 	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
-	query_where = _build_requests_query(status, search, order, order_asc, limit_start, limit_length)
+	query_where = _build_requests_query(status, user, search, order, order_asc, limit_start, limit_length)
 	query       = query + query_where[0]
 	params      = params + query_where[1]
 
@@ -29,8 +29,8 @@ def get_requests(status = None, search = None, order = None, order_asc = True, l
 
 ################################################################################
 
-def get_request_count(status = None, search = None):
-	"""Returns the number of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost)"""
+def get_request_count(status = None, user = None, search = None):
+	"""Returns the number of reqeusts in the database, optionally restricted to those of a certain status or user"""
 
 	## BUILD THE QUERY
 
@@ -39,7 +39,7 @@ def get_request_count(status = None, search = None):
 	query = 'SELECT COUNT(*) AS `count` FROM `system_request` '
 
 	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
-	query_where = _build_requests_query(status, search, None, None, None, None)
+	query_where = _build_requests_query(status, user, search, None, None, None, None)
 	query = query + query_where[0]
 	params = params + query_where[1]
 
@@ -55,7 +55,7 @@ def get_request_count(status = None, search = None):
 
 ################################################################################
 
-def _build_requests_query(status = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None):
+def _build_requests_query(status = None, user = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None):
 	params = ()
 
 	query = ""
@@ -64,6 +64,13 @@ def _build_requests_query(status = None, search = None, order = None, order_asc 
 	if status is not None:
 		query = query + "WHERE `status` = %s"
 		params = (status,)
+	if user is not None:
+		if status is not None:
+			query = query + " AND "
+		else:
+			query = query + "WHERE "
+		query = query + "`requested_who` = %s"
+		params = params + (user,)
 
 	# If a search term is specified...
 	if search is not None:
@@ -72,7 +79,7 @@ def _build_requests_query(status = None, search = None, order = None, order_asc 
 
 		# If a class name was specified already, we need to AND the query,
 		# otherwise we need to start the WHERE clause
-		if status is not None:
+		if status is not None or user is not None:
 			query = query + " AND "
 		else:
 			query = query + "WHERE "
@@ -146,13 +153,38 @@ def approve(id):
 	if sysrequest['status'] == 2:
 		raise Exception('Request already approved')
 
-	stmt = 'UPDATE `system_request` SET `status`=2 WHERE `id`=%s'
-	params = (id,)
+	stmt = 'UPDATE `system_request` SET `status`=2, `updated_at`=NOW(), `updated_who`=%s WHERE `id`=%s'
+	params = (session['username'], id)
 
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute(stmt,params)
+	curd.execute(stmt, params)
 	g.db.commit()
-	#trigger build HERE
+
+	#load options from request
+	stmt = ('SELECT `workflow`, '
+                       '`sockets`, '
+                       '`cores`, '
+                       '`ram`, '
+                       '`disk`, '
+                       '`template`, '
+                       '`network`, '
+                       '`cluster`, '
+                       '`environment`, '
+                       '`purpose`, '
+                       '`comments`, '
+                       '`expiry_date`, '
+                       '`sendmail` '
+              'FROM `system_request` '
+              'WHERE `id`=%s')
+	params = (id,)
+	curd.execute(stmt, params)
+	options = curd.fetchall()
+
+	#trigger build
+	#neocortex = cortex.lib.core.neocortex_connect()
+	#task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and sets up a virtual machine (student VMware environment)")
+	return redirect(url_for('task_status', id=task_id))
+
 
 ################################################################################
 
@@ -166,10 +198,11 @@ def reject(id):
 	elif sysrequest['status'] == 1:
 		raise Exception('Request already rejected')
 
-	stmt = 'UPDATE `system_request` SET `status`=1 WHERE `id`=%s'
-	params = (id,)
+	stmt = 'UPDATE `system_request` SET `status`=1, `updated_at`=NOW(), `updated_who`=%s WHERE `id`=%s'
+	params = (session['username'], id)
 
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute(stmt,params)
 	g.db.commit()
+	flash('Request has been rejected', 'alert-info')
 	#email requester?

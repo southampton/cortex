@@ -19,8 +19,8 @@ def sysrequests():
 	"""Shows the list of system requests to the user."""
 
 	# Check user permissions
-	if not does_user_have_permission("systems.all.view"):
-		abort(403)
+	#if not does_user_have_permission("sysrequests.all.view"):
+#		abort(403)
 
 	# Get the list of active classes (used to populate the tab bar)
 	statuses = ((0, 'Pending'), (1, 'Rejected'), (2, 'Approved'))
@@ -44,10 +44,6 @@ def sysrequests_json():
 	"""Used by DataTables to extract information from the systems table in
 	the database. The parameters and return format are as dictated by 
 	DataTables"""
-
-	# Check user permissions
-	if not does_user_have_permission("systems.all.view"):
-		abort(403)
 
 	# Extract information from DataTables
 	(draw, start, length, order_column, order_asc, search) = _sysrequests_extract_datatables()
@@ -75,9 +71,16 @@ def sysrequests_json():
 
 
 	# Get results of query
-	system_count = cortex.lib.sysrequests.get_request_count(filter_group)
-	filtered_count = cortex.lib.sysrequests.get_request_count(filter_group, search)
-	results = cortex.lib.sysrequests.get_requests(filter_group, search, order_column, order_asc, start, length)
+	# get all the requests if the user has the permission
+	if does_user_have_permission("sysrequests.all.view"):
+		system_count = cortex.lib.sysrequests.get_request_count(filter_group)
+		filtered_count = cortex.lib.sysrequests.get_request_count(filter_group, None, search)
+		results = cortex.lib.sysrequests.get_requests(filter_group, None, search, order_column, order_asc, start, length)
+	# otherwise only get their own requests
+	else:
+		system_count = cortex.lib.sysrequests.get_request_count(filter_group, session['username'])
+		filtered_count = cortex.lib.sysrequests.get_request_count(filter_group, session['username'], search)
+		results = cortex.lib.sysrequests.get_requests(filter_group, session['username'], search, order_column, order_asc, start, length)
 
 	# DataTables wants an array in JSON, so we build this here, returning
 	# only the columns we want. We format the date as a string as
@@ -89,12 +92,20 @@ def sysrequests_json():
 		if row['request_date'] is not None:
 			row['request_date'] = row['request_date'].strftime('%Y-%m-%d %H:%M:%S')
 		else:
-			row['request_date'] = "Unknown"
+			row['request_date'] = "unknown"
 
 		if row['requested_who'] is not None:	
 			row['requested_who'] = cortex.lib.user.get_user_realname(row['requested_who'])
 
-		requests_data.append([row['id'], row['status'], row['requested_who'], row['purpose'], row['request_date'], row['id']])
+		if row['updated_at'] is not None:
+			row['updated_at'] = row['updated_at'].strftime('%Y-%m-%d %H:%M:%S')
+		else:
+			row['updated_at'] = "unknown"
+
+		if row['updated_who'] is not None:	
+			row['updated_who'] = cortex.lib.user.get_user_realname(row['updated_who'])
+
+		requests_data.append([row['id'], row['status'], row['requested_who'], row['purpose'], row['request_date'], row['updated_at'], row['updated_who'], row['id']])
 
 	# Return JSON data in the format DataTables wants
 	return jsonify(draw=draw, recordsTotal=system_count, recordsFiltered=filtered_count, data=requests_data)
@@ -104,10 +115,6 @@ def sysrequests_json():
 @app.route('/request/view/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def sysrequest(id):
-	# Check user permissions. User must have either requests.all or specific 
-	# access to the request
-	if not does_user_have_system_permission(id,"view","systems.all.view"):
-		abort(403)
 
 	# Get the system
 	sysrequest = cortex.lib.sysrequests.get_request_by_id(id)
@@ -116,21 +123,31 @@ def sysrequest(id):
 	if sysrequest is None:
 		abort(404)
 
-	sysrequest['requested_who'] = cortex.lib.user.get_user_realname(sysrequest['requested_who']) + ' (' + sysrequest['requested_who'] + ')'
+	# Check user permissions. User must have either sysrequests.all or own
+	# the request
+	if sysrequest['requested_who'] != session['username'] and not does_user_have_permission("sysrequests.all.view"):
+		abort(403)
 
 	if request.method == 'POST':
 		try:
 			action = request.form.get('action')
-			if action == 'approve':
+			if action == 'approve' and does_user_have_permission("sysrequests.all.approve"):
 				cortex.lib.sysrequests.approve(id)
-			elif action == 'reject':
+			elif action == 'reject' and does_user_have_permission("sysrequests.all.reject"):
 				cortex.lib.sysrequests.reject(id)
 			else:
 				raise ValueError('Unexpected action: "' + action + '".')
-		except ValueError as e:
+			# get the updated system
+			sysrequest = cortex.lib.sysrequests.get_request_by_id(id)
+		except Exception as e:
 			abort(400)
 
-	return render_template('sysrequests/view.html', request=sysrequest, title="Request #" + str(sysrequest['id']))
+	sysrequest['requested_who'] = cortex.lib.user.get_user_realname(sysrequest['requested_who']) + ' (' + sysrequest['requested_who'] + ')'
+
+	#get action permssions to decide whether or not to show controls
+	perms = {'approve': does_user_have_permission("sysrequests.all.approve"), 'reject': does_user_have_permission("sysrequests.all.reject")}
+
+	return render_template('sysrequests/view.html', request=sysrequest, title="Request #" + str(sysrequest['id']), perms=perms)
 
 ################################################################################
 
