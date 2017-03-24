@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from cortex import app
+from cortex.corpus import Corpus
 import MySQLdb as mysql
 from flask import Flask, request, redirect, session, url_for, abort, render_template, flash, g
 
@@ -34,7 +35,7 @@ def get_request_count(status = None, user = None, search = None):
 
 	## BUILD THE QUERY
 
-	# Start with no parameters, and a generic SELECT COUNT(*) from the appropriate table
+	# Start with no parameters, and a generic SELECT COUNT(*) from the /ppropriate table
 	params = ()
 	query = 'SELECT COUNT(*) AS `count` FROM `system_request` '
 
@@ -160,6 +161,17 @@ def approve(id):
 	curd.execute(stmt, params)
 	g.db.commit()
 
+	#email requester
+	subject = 'System request approved'
+	message = ('Your request for a system has been approved.\n' +
+		   '\n' +
+		   'Request id: ' + str(sysrequest['id']) + '\n' +
+		   'Requested at: ' + str(sysrequest['request_date']) + '\n' +
+		   '\n' +
+		   'For more details see https://cortex.soton.ac.uk/sysrequest/view/' + str(sysrequest['id']))
+	corpus = Corpus(g.db, app.config)
+	corpus.send_email(str(sysrequest['requested_who']), subject, message)
+
 	#load options from request
 	stmt = ('SELECT `workflow`, '
                        '`sockets`, '
@@ -181,8 +193,15 @@ def approve(id):
 	options = curd.fetchall()
 
 	#trigger build
-	task_id = workflow.start_task(options)
+	
+	options['wfconfig'] = app.workflows.get('buildvm').config
+	#flash(task_id)
+	
+	# Connect to NeoCortex and start the task
+	neocortex = cortex.lib.core.neocortex_connect()
+	task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and configures a virtual machine")
 	return redirect(url_for('task_status', id=task_id))
+	#return redirect(url_for('dashboard'))
 
 
 ################################################################################
@@ -204,4 +223,14 @@ def reject(id):
 	curd.execute(stmt,params)
 	g.db.commit()
 	flash('Request has been rejected', 'alert-info')
-	#email requester?
+
+	#email requester
+	subject = 'System request rejected'
+	message = ('Your request for a system has been rejected.\n' +
+		   '\n' +
+		   'Request id: ' + str(sysrequest['id']) + '\n' +
+		   'Requested at: ' + str(sysrequest['request_date']) + '\n' +
+		   '\n' +
+		   'For more details see https://cortex.soton.ac.uk/sysrequest/view/' + str(sysrequest['id']))
+	corpus = Corpus(g.db, app.config)
+	corpus.send_email(str(sysrequest['requested_who']), subject, message)

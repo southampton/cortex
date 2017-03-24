@@ -23,6 +23,8 @@ class CortexFlask(Flask):
 	## A list of dict's, each representing a workflow 'system-action' function
 	wf_system_functions = []
 
+	workflows = {}
+
 	################################################################################
 
 	def __init__(self, init_object_name):
