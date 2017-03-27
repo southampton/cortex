@@ -26,16 +26,17 @@ def run(helper, options):
 		## Determine if the VM is currently powered on, we directly ask vCenter
 		## rather than rely on the cache so we're 100% accurate at the time of
 		## sending the summary e-mail
-		vm = helper.lib.vmware_get_vm_by_uuid(system['vmware_uuid'], system['vmware_vcenter'])
-		system_status = "off"
-		if vm.runtime.powerState == vim.VirtualMachine.PowerState.poweredOn:
-			system_status = "on"
-			helper.event('check_expire_found', 'The system ' + system['name'] + " (ID " + str(system['id']) + ") will expire in the next four weeks",oneshot=True)
+		try:
+			vm = helper.lib.vmware_get_vm_by_uuid(system['vmware_uuid'], system['vmware_vcenter'])
+			system_status = "off"
+			if vm.runtime.powerState == vim.VirtualMachine.PowerState.poweredOn:
+				system_status = "on"
+				helper.event('check_expire_found', 'The system ' + system['name'] + " (ID " + str(system['id']) + ") will expire in the next four weeks",oneshot=True)
 
-		system_link = 'https://' + helper.config['CORTEX_DOMAIN'] + '/systems/edit/' + str(system['id'])
-		cmdb_link   = helper.config['CMDB_URL_FORMAT'] % system['cmdb_id']
+			system_link = 'https://' + helper.config['CORTEX_DOMAIN'] + '/systems/edit/' + str(system['id'])
+			cmdb_link   = helper.config['CMDB_URL_FORMAT'] % system['cmdb_id']
 
-		message = message + """%s - %s
+			message = message + """%s - %s
 Expires on:    %s
 Status:        Powered %s
 OS:            %s
@@ -45,6 +46,9 @@ CMDB Status:   %s
 CMDB ID:       %s - %s
 
 """ % (system['name'],system_link,system['expiry_date'], system_status,system['vmware_os'], system['allocation_comment'], system['cmdb_description'], system['cmdb_environment'], system['cmdb_u_number'], cmdb_link)
+
+		except Execption as e:
+			pass
 
 	helper.event('check_expire_mail', 'Sending warning e-mail for expired systems ')
 	for addr in helper.config['SYSTEM_EXPIRE_NOTIFY_EMAILS']:
