@@ -29,7 +29,7 @@ def systems():
 	"""Shows the list of known systems to the user."""
 
 	# Check user permissions
-	if not does_user_have_permission("systems.all.view"):
+	if not (does_user_have_permission("systems.all.view") or does_user_have_permission("systems.own.view")):
 		abort(403)
 
 	# Get the list of active classes (used to populate the tab bar)
@@ -733,7 +733,7 @@ def systems_json():
 	DataTables"""
 
 	# Check user permissions
-	if not does_user_have_permission("systems.all.view"):
+	if not (does_user_have_permission("systems.all.view") or does_user_have_permission("systems.own.view")):
 		abort(403)
 
 	# Extract information from DataTables
@@ -792,13 +792,19 @@ def systems_json():
 		if str(request.form['show_perms_only']) != '0':
 			show_perms_only = True
 
+	if does_user_have_permission("systems.all.view"):
+		only_allocated_by = None
+	else:
+		only_allocated_by = session['username']
+
+		
 	# Get number of systems that match the query, and the number of systems
 	# within the filter group
-	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only)
-	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only)
+	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, only_allocated_by=only_allocated_by)
+	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, only_allocated_by=only_allocated_by)
 
 	# Get results of query
-	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only)
+	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, only_allocated_by=only_allocated_by)
 
 	# DataTables wants an array in JSON, so we build this here, returning
 	# only the columns we want. We format the date as a string as

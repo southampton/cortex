@@ -683,6 +683,7 @@ Username:             %s
 		## The ORDER MATTERS! It determines the order used on the Roles page
 		self.permissions        = [
 			{'name': 'systems.all.view',            'desc': 'View any system'},
+			{'name': 'systems.own.view',            'desc': 'View systems allocated by the user'},
 			{'name': 'systems.all.view.puppet',     'desc': 'View Puppet reports and facts on any system'},		
 			{'name': 'systems.all.edit.expiry',     'desc': 'Modify the expiry date of any system'},
 			{'name': 'systems.all.edit.review',     'desc': 'Modify the review status of any system'},

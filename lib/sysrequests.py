@@ -200,7 +200,7 @@ def approve(id, status_text=None):
 	
 	# Connect to NeoCortex and start the task
 	neocortex = cortex.lib.core.neocortex_connect()
-	task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and configures a virtual machine")
+	task_id = neocortex.create_task('buildvm', session['username'], options, description="Creates and configures a virtual machine")
 	return redirect(url_for('task_status', id=task_id))
 	#return redirect(url_for('dashboard'))
 

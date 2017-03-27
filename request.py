@@ -65,12 +65,12 @@ def context_processor():
 
 	# Set up the Systems menu, based on a single permission
 	systems = []
+	if does_user_have_permission("systems.own.view") or does_user_have_permission("systems.all.view"):
+		systems.append({'link': url_for('systems'), 'title': 'All systems', 'icon': 'fa-list'})
+
 	if does_user_have_permission("systems.all.view"):
-		systems = [
-			{'link': url_for('systems'), 'title': 'All systems', 'icon': 'fa-list'},
-			{'link': url_for('systems_nocmdb'), 'title': 'Systems without a CMBD record', 'icon': 'fa-list'},
-			{'link': url_for('systems_expired'), 'title': 'Expired systems', 'icon': 'fa-list'}
-		]
+		systems.append({'link': url_for('systems_nocmdb'), 'title': 'Systems without a CMBD record', 'icon': 'fa-list'})
+		systems.append({'link': url_for('systems_expired'), 'title': 'Expired systems', 'icon': 'fa-list'})
 	if does_user_have_permission("sysrequests.own.view") or does_user_have_permission("sysrequests.all.view"):
 		systems.append({'link': url_for('sysrequests'), 'title': 'System requests', 'icon': 'fa-list'})
 
