@@ -31,7 +31,6 @@ a.server-link:hover { text-decoration: underline !important; }
 			<th class="tablesorter-inner">Status</th>
 			<th class="tablesorter-inner">Requested by</th>
 			<th class="tablesorter-inner">FQDN</th>
-			<th class="tablesorter-inner">Purpose</th>
 			<th class="tablesorter-inner">Requested at</th>
 			<th class="tablesorter-inner">Last updated at</th>
 			<th class="tablesorter-inner">Last updated by</th>
@@ -48,7 +47,7 @@ $(function() {
 		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 		"pageLength": 15,
 		"order": [[0, 'desc']],
-		"columns": [null, null, null, null, null, null, null, null, {"orderable": false, "targets": 0}],
+		"columns": [null, null, null, null, null, null, null, {"orderable": false, "targets": 0}],
 		"serverSide": true,
 		"searchDelay": 500,
 		"stateSave": true,
@@ -86,7 +85,7 @@ $(function() {
 			} else if (data[1] == 2) {
 				$('td:eq(1)', row).html("<i title='Request has been approved' class='fa fa-fw fa-check icon-state icon-legend icon-on'></i>Approved");
 			}
-			$('td:eq(8)', row).html('<a title="View" class="btn btn-xs btn-default" style="margin-right:0.1em" href="/request/view/' + data[0] + '"><i class="fa fa-fw fa-info-circle"></i></a>');
+			$('td:eq(7)', row).html('<a title="View" class="btn btn-xs btn-default" style="margin-right:0.1em" href="/request/view/' + data[0] + '"><i class="fa fa-fw fa-info-circle"></i></a>');
 		}
 	});
 	$('#status-tabs li').click(function() {

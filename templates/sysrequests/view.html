@@ -13,14 +13,16 @@
 				<h3 class="panel-title">Request</h3> 
 			</div>
 			<div class="panel-body">
-				<p>Status: {{ status[request.status][0] }}</p>
-				<p>Requested by: {{ request.requested_who or 'unknown' }}</p>
-				<p>FQDN: {{ request.fqdn or 'unknown' }}</p>
-				<p>Purpose: {{ request.purpose or '' }}</p>
-				<p>Comment: {{ request.comments or '' }}</p>
-				<p>Requested at: {{ request.request_date or 'unknown' }}</p>
-				<p>Workflow: {{ request.workflow or 'unknown' }}</p>
-				<p>Expiry Date: {{ request.expiry_date or 'unknown' }}</p>
+				<table class="table">
+					<tr><td>Status</td><td>{{ status[request.status][0] }}</td></tr>
+					<tr><td>Requested by</td><td>{{ request.requested_who or 'unknown' }}</td></tr>
+					<tr><td>FQDN</td><td>{{ request.fqdn or 'unknown' }}</td></tr>
+					<tr><td>Purpose</td><td>{{ request.purpose or '' }}</td></tr>
+					<tr><td>Comment</td><td>{{ request.comments or '' }}</td></tr>
+					<tr><td>Requested at</td><td>{{ request.request_date or 'unknown' }}</td></tr>
+					<tr><td>Workflow</td><td>{{ request.workflow or 'unknown' }}</td></tr>
+					<tr><td>Expiry Date</td><td>{{ request.expiry_date or 'unknown' }}</td></tr>
+				</table>
 			</div>
 		</div>
 	</div>
@@ -32,31 +34,46 @@
 			<div class="panel-body row">
 				<div class="col-md-6">
 					<h3>Spec</h3>
-					<p>Sockets: {{ request.sockets }}</p>
-					<p>Cores: {{ request.cores }}</p>
-					<p>RAM: {{ request.ram }}</p>
-					<p>Disk: {{ request.disk }}</p>
-					<p>Template: {{ request.template or 'unknown' }}</p>
+					<table class="table">
+						<tr><td>Sockets</td><td>{{ request.sockets }}</td></tr>
+						<tr><td>Cores</td><td>{{ request.cores }}</td></tr>
+						<tr><td>RAM</td><td>{{ request.ram }} GB</td></tr>
+						<tr><td>Addiontal Disk</td><td>{{ request.disk }} GB</td></tr>
+						<tr><td>Template</td><td>{{ request.template or 'unknown' }}</td></tr>
+					</table>
 				</div>
 				<div class="col-md-6">
 					<h3>Environment</h3>
-					<p>Network: {{ request.network }}</p>
-					<p>Cluster: {{ request.cluster }}</p>
-					<p>Environment: {{ request.environment }}</p>
+					<table class="table">
+						<tr><td>Network</td><td>{{ request.network }}</td></tr>
+						<tr><td>Cluster</td><td>{{ request.cluster }}</td></tr>
+						<tr><td>Environment</td><td>{{ request.environment }}</td></tr>
+					</table>
 				</div>
 			</div>
 		</div>
 	</div>
 </div>
-{% if request.status != 2 and (perms.approve or perms.reject) %}
-<form method="POST" role="form" class="form-horizontal">
-	<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-	{%- if perms.approve %}
-	<button class="btn btn-success btn-lg" type="submit" name="action" value="approve">Approve</button>
-	{%- endif %}
-	{%- if perms.reject and request.status == 0 %}
-	<button class="btn btn-danger btn-lg" type="submit" name="action" value="reject">Reject</button>
-	{%- endif %}
-</form>
+{% if perms.approve or perms.reject %}
+<div class="row">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Action</h3>
+			</div>
+			<div class="panel-body">
+				<form method="POST" role="form" class="form">
+					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+					<div class="form-group">
+						<label for="status_text">Reason (optional):</label>
+						<textarea name="status_text" maxlength="65535" class="form-control{{ ' disabled' if request.status == 2 }}"{{ ' disabled' if request.status == 2 }}></textarea>
+					</div>
+					<button class="btn btn-success btn-lg{{ ' disabled' if not perms.approve or request.status == 2}}" type="submit" name="action" value="approve"{{ ' disabled' if not perms.approve or request.status ==2 }} title="Approves the request and starts the build process"><i class="fa fa-check"></i> Approve</button>
+					<button class="btn btn-danger btn-lg{{ ' disabled' if not perms.reject or request.status != 0}}" type="submit" name="action" value="reject"{{ ' disabled' if not perms.reject or request.status != 0}} title="Rejects the request"><i class="fa fa-times"></i> Reject</button>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
 {% endif %}
 {% endblock %}

@@ -105,7 +105,7 @@ def sysrequests_json():
 		if row['updated_who'] is not None:	
 			row['updated_who'] = cortex.lib.user.get_user_realname(row['updated_who'])
 
-		requests_data.append([row['id'], row['status'], row['requested_who'], row['fqdn'], row['purpose'], row['request_date'], row['updated_at'], row['updated_who'], row['id']])
+		requests_data.append([row['id'], row['status'], row['requested_who'], row['fqdn'], row['request_date'], row['updated_at'], row['updated_who'], row['id']])
 
 	# Return JSON data in the format DataTables wants
 	return jsonify(draw=draw, recordsTotal=system_count, recordsFiltered=filtered_count, data=requests_data)
@@ -132,9 +132,9 @@ def sysrequest(id):
 		try:
 			action = request.form.get('action')
 			if action == 'approve' and does_user_have_permission("sysrequests.all.approve"):
-				cortex.lib.sysrequests.approve(id)
+				cortex.lib.sysrequests.approve(id, request.form.get('status_text', None))
 			elif action == 'reject' and does_user_have_permission("sysrequests.all.reject"):
-				cortex.lib.sysrequests.reject(id)
+				cortex.lib.sysrequests.reject(id, request.form.get('status_text', None))
 			else:
 				raise ValueError('Unexpected action: "' + action + '".')
 			# get the updated system

@@ -146,7 +146,7 @@ def get_request_by_id(id):
 
 ################################################################################
 
-def approve(id):
+def approve(id, status_text=None):
 	"""Approves and triggers the build of a system"""
 	sysrequest = get_request_by_id(id)
 	
@@ -154,8 +154,8 @@ def approve(id):
 	if sysrequest['status'] == 2:
 		raise Exception('Request already approved')
 
-	stmt = 'UPDATE `system_request` SET `status`=2, `updated_at`=NOW(), `updated_who`=%s WHERE `id`=%s'
-	params = (session['username'], id)
+	stmt = 'UPDATE `system_request` SET `status`=2, `updated_at`=NOW(), `updated_who`=%s, `status_text`=%s WHERE `id`=%s'
+	params = (session['username'], status_text, id)
 
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute(stmt, params)
@@ -167,6 +167,7 @@ def approve(id):
 		   '\n' +
 		   'Request id: ' + str(sysrequest['id']) + '\n' +
 		   'Requested at: ' + str(sysrequest['request_date']) + '\n' +
+		   'Reason: ' + str(status_text) + '\n' +
 		   '\n' +
 		   'For more details see https://cortex.soton.ac.uk/sysrequest/view/' + str(sysrequest['id']))
 	corpus = Corpus(g.db, app.config)
@@ -206,7 +207,7 @@ def approve(id):
 
 ################################################################################
 
-def reject(id):
+def reject(id, status_text=None):
 	"""Rejects a request"""
 	sysrequest = get_request_by_id(id)
 	
@@ -216,8 +217,8 @@ def reject(id):
 	elif sysrequest['status'] == 1:
 		raise Exception('Request already rejected')
 
-	stmt = 'UPDATE `system_request` SET `status`=1, `updated_at`=NOW(), `updated_who`=%s WHERE `id`=%s'
-	params = (session['username'], id)
+	stmt = 'UPDATE `system_request` SET `status`=1, `updated_at`=NOW(), `updated_who`=%s, `status_text`=%s WHERE `id`=%s'
+	params = (session['username'], status_text, id)
 
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute(stmt,params)
@@ -230,6 +231,7 @@ def reject(id):
 		   '\n' +
 		   'Request id: ' + str(sysrequest['id']) + '\n' +
 		   'Requested at: ' + str(sysrequest['request_date']) + '\n' +
+		   'Reason: ' + str(status_text) + '\n' +
 		   '\n' +
 		   'For more details see https://cortex.soton.ac.uk/sysrequest/view/' + str(sysrequest['id']))
 	corpus = Corpus(g.db, app.config)

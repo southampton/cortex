@@ -541,6 +541,7 @@ Username:             %s
 		 `status` int(2) NOT NULL COMMENT '0: pending, 1: rejected, 2: approved',
 		 `updated_who` varchar(64) NOT NULL,
 		 `updated_at` datetime NOT NULL,
+		 `status_text` text DEFAULT NULL,
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
@@ -706,6 +707,7 @@ Username:             %s
 			{'name': 'admin.permissions',           'desc': 'Modify permissions'},
 			{'name': 'workflows.all',               'desc': 'Use any workflow or workflow function'},
 
+			{'name': 'sysrequests.own.view',        'desc': 'View system requests owned by the user'},
 			{'name': 'sysrequests.all.view',        'desc': 'View any system request'},
 			{'name': 'sysrequests.all.approve',     'desc': 'Approve any system request'},
 			{'name': 'sysrequests.all.reject',      'desc': 'Reject any system request'},
