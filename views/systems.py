@@ -425,6 +425,30 @@ def system(id):
 
 ################################################################################
 
+@app.route('/systems/overview/<int:id>')
+@cortex.lib.user.login_required
+def system_overview(id):
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system
+	if not does_user_have_system_permission(id,"view","systems.all.view"):
+		abort(403)
+
+	# Get the system
+	system = cortex.lib.systems.get_system_by_id(id)
+
+	# Ensure that the system actually exists, and return a 404 if it doesn't
+	if system is None:
+		abort(404)
+
+	if system['allocation_who_realname'] is not None:	
+		system['allocation_who'] = system['allocation_who_realname'] + ' (' + system['allocation_who'] + ')'
+	else:
+		system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
+
+	return render_template('systems/overview.html', system=system, active='systems', title=system['name'])
+
+################################################################################
+
 @app.route('/systems/edit/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_edit(id):
