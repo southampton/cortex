@@ -105,7 +105,7 @@ def run(helper, options):
 
 					# Store attributes for the VM
 					for attr in ['name', 'config.uuid', 'config.hardware.numCPU', 'config.hardware.memoryMB', 'runtime.powerState', 'config.guestFullName', 'config.guestId', 'config.version', 'guest.hostName', 'guest.ipAddress', 'config.annotation', 'guest.toolsRunningStatus', 'guest.toolsVersionStatus2', 'config.template']:
-						vm_data[key][moId][attr] = vm[attr]
+						vm_data[key][moId].get(attr, None) = vm[attr]
 
 				# Finish the event
 				helper.end_event(description="Downloaded virtual machine information for " + instance['hostname'])
