@@ -1,11 +1,30 @@
 {% extends "layout.html" %}
 {% block head %}
 {% endblock %}
+
 {% block body %}
+<style>
+header {
+	padding-bottom: 0.2em;
+	margin-bottom: 1.2em;
+	border-bottom: 1px solid #eeeeee;
+}
+</style>
 
 {% set status = [('pending', 'fa-clock-o icon-pause'), ('rejected', 'fa-times icon-off'), ('approved', 'fa-check icon-on')] %}
 
-<h1 style="padding-bottom: 0.2em; border-bottom: 1px solid #eeeeee;">System Request #{{request.id}} <small><i class="fa {{ status[request.status][1] }}"></i> {{ status[request.status][0] }}</small></h1>
+<header class="row page-header">
+	<h1><span class="col-md-10">System Request #{{request.id}} <small><i class="fa {{ status[request.status][1] }}"></i> {{ status[request.status][0] }}</small></span>
+
+{% if perms.approve or perms.reject %}
+	<div class="col-md-2">
+		<button class="btn btn-success btn-lg{{ ' disabled' if not perms.approve or request.status == 2}}" data-toggle="modal" data-target="#approveModal"{{ ' disabled' if not perms.approve or request.status ==2 }} title="Approves the request and starts the build process"><i class="fa fa-check"></i> Approve</button>
+		<button class="btn btn-danger btn-lg{{ ' disabled' if not perms.reject or request.status != 0}}" data-toggle="modal" data-target="#rejectModal"{{ ' disabled' if not perms.reject or request.status != 0}} title="Rejects the request"><i class="fa fa-times"></i> Reject</button>
+	</div>
+{% endif %}
+
+</h1>
+</header>
 <div class="row">
 	<div class="col-md-6">
 		<div class="panel panel-default">
@@ -55,25 +74,45 @@
 	</div>
 </div>
 {% if perms.approve or perms.reject %}
-<div class="row">
-	<div class="col-md-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Action</h3>
+<div class="modal fade" tabindex="-1" role="dialog" id="approveModal">
+	<div class="modal-dialog" role="document">
+		<form method="POST" class="modal-content">
+			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Approve Request</h4>
 			</div>
-			<div class="panel-body">
-				<form method="POST" role="form" class="form">
-					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-					<div class="form-group">
-						<label for="status_text">Reason (optional):</label>
-						<textarea name="status_text" maxlength="65535" class="form-control{{ ' disabled' if request.status == 2 }}"{{ ' disabled' if request.status == 2 }}></textarea>
-					</div>
-					<button class="btn btn-success btn-lg{{ ' disabled' if not perms.approve or request.status == 2}}" type="submit" name="action" value="approve"{{ ' disabled' if not perms.approve or request.status ==2 }} title="Approves the request and starts the build process"><i class="fa fa-check"></i> Approve</button>
-					<button class="btn btn-danger btn-lg{{ ' disabled' if not perms.reject or request.status != 0}}" type="submit" name="action" value="reject"{{ ' disabled' if not perms.reject or request.status != 0}} title="Rejects the request"><i class="fa fa-times"></i> Reject</button>
-				</form>
+			<div class="modal-body">
+				<p>The request will be approved, the requester will be notifed and a system will be built.</p>
+				<label for="status_text">Reason:</label>
+				<textarea placeholder="optional" name="status_text" maxlength="65535" class="form-control"></textarea>
 			</div>
-		</div>
-	</div>
-</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+				<button class="btn btn-success{{ ' disabled' if not perms.approve or request.status == 2}}" type="submit" name="action" value="approve"{{ ' disabled' if not perms.approve or request.status ==2 }} title="Approves the request and starts the build process"><i class="fa fa-check"></i> Approve</button>
+			</div>
+		</form><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<div class="modal fade" tabindex="-1" role="dialog" id="rejectModal">
+	<div class="modal-dialog" role="document">
+		<form method="POST" class="modal-content">
+			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Reject Request</h4>
+			</div>
+			<div class="modal-body">
+				<p>A the request will go on the reject pile and the requester will be notifed.</p>
+				<label for="status_text">Reason:</label>
+				<textarea placeholder="optional" name="status_text" maxlength="65535" class="form-control"></textarea>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+				<button class="btn btn-danger{{ ' disabled' if not perms.reject or request.status != 0}}" type="submit" name="action" value="reject"{{ ' disabled' if not perms.reject or request.status != 0}} title="Rejects the request"><i class="fa fa-times"></i> Reject</button>
+			</div>
+		</form><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 {% endif %}
 {% endblock %}
