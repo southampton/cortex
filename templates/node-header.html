@@ -3,9 +3,18 @@
 <div style="margin-bottom: 20px">
 	<ul class="nav nav-tabs">
 		<li style="padding: 2px 15px; font-size: 28px;"><i class="fa fa-fw fa-server"></i> {{ system.name }}</li>
-		<li role="presentation"{% if active == "view" %} class="active"{%endif%}><a href="{{url_for('system',id=system.id)}}">Overview</a></li>
+		{% if does_user_have_system_permission(system.id, "view.overview", "systems.all.view") %}
+		<li role="presentation"{% if active == "overview" %} class="active"{%endif%}><a href="{{url_for('system_overview',id=system.id)}}">Overview</a></li>
+		{% endif %}
+		{% if does_user_have_system_permission(system.id, "view.detail", "systems.all.view") %}
+		<li role="presentation"{% if active == "info" %} class="active"{%endif%}><a href="{{url_for('system',id=system.id)}}">Info</a></li>
+		{% endif %}
+		{% if does_user_have_system_permission(system.id, "view.detail", "systems.all.view") %}
 		<li role="presentation"{% if active == "edit" %} class="active"{%endif%}><a href="{{url_for('system_edit',id=system.id)}}">Settings</a></li>
+		{% endif %}
+		{% if does_user_have_system_permission(system.id, "view.detail", "systems.all.view") %}
 		<li role="presentation"{% if active == "actions" %} class="active"{%endif%}><a href="{{url_for('system_actions',id=system.id)}}">Actions</a></li>
+		{% endif %}
 
 		{% if system.puppet_certname -%}
 		{% if does_user_have_system_permission(system.id, "edit.puppet", "systems.all.edit.puppet") -%}

@@ -26,99 +26,175 @@
 }
 </style>
 
-<form role="form" class="form-horizontal">
-{{ node.header(system,active="view" ) }}
-	<div class="row equal">
-		<div class="col-md-6">
-			<div class="panel panel-default">
-				<div class="panel-heading">
-					<h3 class="panel-title">System Record</h3> 
-				</div>
-				<div class="panel-body">
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="allocation_comment">Purpose:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_purpose or '' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="allocation_comment">Comment:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_comment or '' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="allocation_who">Allocated by:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_who or '' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="allocation_date">Allocation Date:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_date or '' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="expiry_date">Expiry Date:</label><div class="col-sm-9"><p class="form-control-static">{{ system.expiry_date or 'Not set' }}</p></div>
-					</div>
-				</div>
+{{ node.header(system,active="overview" ) }}
+<div class="row equal">
+	<div class="col-md-6">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">System Record</h3>
 			</div>
-		</div>
-		<div class="col-md-6">
-			<div class="panel {% if system.vmware_uuid %}panel-default{%else%}panel-default{%endif%}">
-				<div class="panel-heading">
-					<h3 class="panel-title">VM status</h3> 
+			<div class="panel-body">
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="allocation_comment">Purpose:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_purpose or '' }}</p></div>
 				</div>
-				<div class="panel-body">
-					{% if system.vmware_uuid %}
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="vm_state">Power State:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_guest_state or '' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="vm_cpus">Spec:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_cpus or 'Unknown' }} vCPU, {{ system.vmware_ram or '' }} MB RAM</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="vm_os">OS:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_os or '' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="vm_cpus">Hostname:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_hostname or 'Unknown' }}</p></div>
-					</div>
-					{%else%}
-					<p class="text-muted"><em>System information unavailable</em></p>
-					{%endif%}
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="allocation_comment">Comment:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_comment or '' }}</p></div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="allocation_who">Allocated by:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_who or '' }}</p></div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="allocation_date">Allocation Date:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_date or '' }}</p></div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="expiry_date">Expiry Date:</label><div class="col-sm-9"><p class="form-control-static">{{ system.expiry_date or 'Not set' }}</p></div>
 				</div>
 			</div>
 		</div>
 	</div>
-	<div class="row equal">
-		<div class="col-md-6">
-			<div class="panel panel-default">
-				<div class="panel-heading">
-					<h3 class="panel-title">Remote Access</h3> 
+	<div class="col-md-6">
+		<div class="panel {% if system.vmware_uuid %}panel-default{%else%}panel-default{%endif%}">
+			<div class="panel-heading">
+				<h3 class="panel-title">System status</h3>
+			</div>
+			<div class="panel-body">
+				{% if system.vmware_uuid %}
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="vm_state">Power State:</label>
+					<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_guest_state or '' }}</p></div>
 				</div>
-				<div class="panel-body">
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="vm_ipaddr">IP Address:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_ipaddr or 'Unknown' }}</p></div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="vm_ipaddr">SSH:</label>
-						<div class="col-sm-9"><code class="form-control-static">ssh {{session['username']|e}}@{{system.vmware_ipaddr}}</code></div>
-					</div>
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="vm_cpus">Spec:</label>
+					<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_cpus or 'Unknown' }} vCPU, {{ system.vmware_ram or '' }} MB RAM</p></div>
 				</div>
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="vm_os">OS:</label>
+					<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_os or '' }}</p></div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="vm_cpus">Hostname:</label>
+					<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_hostname or 'Unknown' }}</p></div>
+				</div>
+				{%else%}
+				<p class="text-muted"><em>System information unavailable</em></p>
+				{%endif%}
 			</div>
 		</div>
-		<div class="col-md-6">
-			<div class="panel {% if system.vmware_uuid %}panel-default{%else%}panel-default{%endif%}">
-				<div class="panel-heading">
-					<h3 class="panel-title">Power control</h3> 
+	</div>
+</div>
+<div class="row equal">
+	<div class="col-md-6">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Remote Access</h3>
+			</div>
+			<div class="panel-body">
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="vm_ipaddr">IP Address:</label>
+					<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_ipaddr or 'Unknown' }}</p></div>
 				</div>
-				<div class="panel-body">
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="vm_state">Power State:</label>
-						<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_guest_state or 'unknown' }}</p></div>
-						<form method="POST" class="form">
-							<button name="power_action" value="on"class="btn btn-success"><span class="fa fa-play"></span> Power on</button>
-							<button name="power_action" value="off" class="btn btn-danger"><span class="fa fa-stop"></span> Power off</button>
-							<button name="power_action" value="reset" class="btn btn-danger"><span class="fa fa-refresh"></span> Reset</button>
-						</form>
-					</div>
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="vm_ipaddr">SSH:</label>
+					<div class="col-sm-9">{% if system.vmware_ipaddr %}<code>ssh {{session['username']|e}}@{{system.vmware_ipaddr}}</code>{% endif %}</div>
 				</div>
 			</div>
 		</div>
 	</div>
-</form>
+	<div class="col-md-6">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Power control</h3>
+			</div>
+			<div class="panel-body">
+				{% if system.vmware_uuid %}
+				<p><span class="fa fa-info"></span> You can control the power state of the system should it become unresponsive. To avoid losing data, graceful shutdowns should be issued by logging into the system.</p>
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="vm_state">Power State:</label>
+					<div class="col-sm-9"><p class="form-control-static">{% if system.vmware_guest_state == "poweredOn" %}ON{% elif system.vmware_guest_state == "poweredOff" %}OFF{% else %}UNKNOWN{% endif %}</p></div>
+				</div>
+				{% if power_ctl_perm %}
+				<button data-toggle="modal" data-target="#powerOnModal" title="Power on the system" class="btn btn-success"><span class="fa fa-play"></span> Power on</button>
+				<button data-toggle="modal" data-target="#powerOffModal" title="Power off the system" class="btn btn-danger"><span class="fa fa-stop"></span> Power off</button>
+				<button data-toggle="modal" data-target="#resetModal" title="Reset the system" class="btn btn-danger"><span class="fa fa-refresh"></span> Reset</button>
+				{% else %}
+				<p><span class="fa fa-info"></span> You do not have permission to control this system's power</p>
+				<button title="Power on the system" class="btn btn-success disabled" disabled><span class="fa fa-play"></span> Power on</button>
+				<button title="Power off the system" class="btn btn-danger disabled" disabled><span class="fa fa-stop"></span> Power off</button>
+				<button title="Reset the system" class="btn btn-danger disabled" disabled><span class="fa fa-refresh"></span> Reset</button>
+				{% endif %}
+				{% else %}
+				<p><span class="fa fa-info"></span> Power controls are unavailable for this system.</p>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+</div>
+
+{% if power_ctl_perm and system.vmware_uuid %}
+<div class="modal fade" tabindex="-1" role="dialog" id="powerOnModal">
+	<div class="modal-dialog" role="document">
+		<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="modal-content">
+			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Power on</h4>
+			</div>
+			<div class="modal-body">
+				{% if system.vmware_guest_state == "poweredOn" %}
+				<p><span class="fa fa-warning"></span> The system appears to already be powered on.</p>
+				{% endif %}
+				<p>Power on the system from an off state?</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button class="btn btn-success" type="submit" name="power_action" value="on"><i class="fa fa-play"></i> Power on</button>
+			</div>
+		</form><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<div class="modal fade" tabindex="-1" role="dialog" id="powerOffModal">
+	<div class="modal-dialog" role="document">
+		<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="modal-content">
+			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Power off</h4>
+			</div>
+			<div class="modal-body">
+				{% if system.vmware_guest_state == "poweredOff" %}
+				<p><span class="fa fa-warning"></span> The system appears to already be powered off.</p>
+				{% endif %}
+				<p>Powering the system off will make it unavialalble until it is powered on again.</p>
+				<p>You can either issue a soft or hard request.</p>
+				<p>A soft request will trigger an OS shutdown event.</p>
+				<p>A hard request will power of the system immediately.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button class="btn btn-danger" type="submit" name="power_action" value="shutdown"><i class="fa fa-power-off"></i> Soft power off</button>
+				<button class="btn btn-danger" type="submit" name="power_action" value="off"><i class="fa fa-plug"></i> Hard power off</button>
+
+			</div>
+		</form><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<div class="modal fade" tabindex="-1" role="dialog" id="resetModal">
+	<div class="modal-dialog" role="document">
+		<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="modal-content">
+			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Reset system</h4>
+			</div>
+			<div class="modal-body">
+				<p>Reset the system.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button class="btn btn-danger" type="submit" name="power_action" value="reset"><i class="fa fa-refresh"></i> Reset</button>
+			</div>
+		</form><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+{% endif %}
 {% endblock %}

@@ -4,6 +4,7 @@ from cortex import app
 import MySQLdb as mysql
 from flask import Flask, request, redirect, session, url_for, abort, render_template, flash, g
 import io, csv
+from cortex.corpus import Corpus
 
 REVIEW_STATUS_BY_NAME = {'NONE': 0, 'REQUIRED': 1, 'REVIEW': 2, 'NOT_REQUIRED': 3}
 REVIEW_STATUS_BY_ID   = {0: 'Not reviewed', 1: 'Required', 2: 'Under review', 3: 'Not required' }
@@ -279,3 +280,51 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 		return curd
 	else:
 		return curd.fetchall()
+
+################################################################################
+
+def powerOn(id):
+	query = 'SELECT `vmware_uuid`, `vmware_vcenter` FROM `systems_info_view` WHERE `id`=%s AND `vmware_uuid` IS NOT NULL'
+	params = (id,)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute(query, params)
+	row = curd.fetchone()
+	corpus = Corpus(g.db, app.config)
+	vm = corpus.vmware_get_vm_by_uuid(row['vmware_uuid'], row['vmware_vcenter'])
+	return vm.PowerOn()
+
+################################################################################
+
+def shutdown(id):
+	query = 'SELECT `vmware_uuid`, `vmware_vcenter` FROM `systems_info_view` WHERE `id`=%s AND `vmware_uuid` IS NOT NULL'
+	params = (id,)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute(query, params)
+	row = curd.fetchone()
+	corpus = Corpus(g.db, app.config)
+	vm = corpus.vmware_get_vm_by_uuid(row['vmware_uuid'], row['vmware_vcenter'])
+	return vm.ShutdownGuest()
+
+################################################################################
+
+def powerOff(id):
+	query = 'SELECT `vmware_uuid`, `vmware_vcenter` FROM `systems_info_view` WHERE `id`=%s AND `vmware_uuid` IS NOT NULL'
+	params = (id,)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute(query, params)
+	row = curd.fetchone()
+	corpus = Corpus(g.db, app.config)
+	vm = corpus.vmware_get_vm_by_uuid(row['vmware_uuid'], row['vmware_vcenter'])
+	return vm.PowerOff()
+
+################################################################################
+
+def reset(id):
+	query = 'SELECT `vmware_uuid`, `vmware_vcenter` FROM `systems_info_view` WHERE `id`=%s AND `vmware_uuid` IS NOT NULL'
+	params = (id,)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute(query, params)
+	row = curd.fetchone()
+	corpus = Corpus(g.db, app.config)
+	vm = corpus.vmware_get_vm_by_uuid(row['vmware_uuid'], row['vmware_vcenter'])
+	return vm.ResetVM()

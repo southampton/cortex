@@ -717,7 +717,8 @@ Username:             %s
 		self.workflow_permissions = []
 
 		self.system_permissions = [
-			{'name': 'view',                        'desc': 'View the system'},
+			{'name': 'view.overview',               'desc': 'View the system overview'},
+			{'name': 'view.detail',                 'desc': 'View the system details'},
 			{'name': 'view.puppet',                 'desc': 'View the system\'s Puppet reports and facts'},
 			{'name': 'edit.expiry',                 'desc': 'Change the expiry date of the system'},
 			{'name': 'edit.review',                 'desc': 'Change the review status of the system'},
@@ -725,4 +726,5 @@ Username:             %s
 			{'name': 'edit.cmdb',                   'desc': 'Change the CMDB link'},
 			{'name': 'edit.comment',                'desc': 'Change the comment'},
 			{'name': 'edit.puppet',                 'desc': 'Change Puppet settings'},
+			{'name': 'control.vmware.power',        'desc': 'Control the VMware power state'},
 		]

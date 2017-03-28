@@ -20,6 +20,7 @@ import yaml
 import csv
 import io
 import requests
+from pyVmomi import vim
 
 ################################################################################
 
@@ -430,7 +431,7 @@ def system(id):
 def system_overview(id):
 	# Check user permissions. User must have either systems.all or specific 
 	# access to the system
-	if not does_user_have_system_permission(id,"view","systems.all.view"):
+	if not does_user_have_system_permission(id,"view.overview","systems.all.view"):
 		abort(403)
 
 	# Get the system
@@ -445,7 +446,62 @@ def system_overview(id):
 	else:
 		system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
 
-	return render_template('systems/overview.html', system=system, active='systems', title=system['name'])
+	return render_template('systems/overview.html', system=system, active='systems', title=system['name'], power_ctl_perm=does_user_have_system_permission(id, "control.vmware.power"))
+
+################################################################################
+
+#@app.route('/systems/power/<int:id>')
+#@cortex.lib.user.login_required
+#def system_power_status(id):
+#	# Check user permissions. User must have either systems.all or specific
+#	# access to the system
+#	if not does_user_have_system_permission(id,"view.overview","systems.all.view"):
+#		abort(403)
+#	##### TODO NOT IMPLEMENTED
+
+################################################################################
+
+@app.route('/systems/power/<int:id>', methods=['POST'])
+@cortex.lib.user.login_required
+def system_power(id):
+	# Check user permissions. User must have either systems.all or specific
+	# access to the system
+	if not does_user_have_system_permission(id,"control.vmware.power"):
+		abort(403)
+
+	# Get the system
+	system = cortex.lib.systems.get_system_by_id(id)
+
+	# Ensure that the system actually exists, and return a 404 if it doesn't
+	if system is None:
+		abort(400)
+
+	if request.form.get('power_action', None) == "on":
+		try:
+			cortex.lib.systems.powerOn(id)
+			flash("Power on command sent", "alert-info")
+		except vim.fault.VimFault as e:
+			flash("Could not power on system", "alert-warning")
+	elif request.form.get('power_action', None) == "shutdown":
+		try:
+			cortex.lib.systems.shutdown(id)
+			flash("Shutdown command sent", "alert-info")
+		except vim.fault.VimFault as e:
+			flash("Could not trigger shutdown; consider a hard power off", "alert-warning")
+	elif request.form.get('power_action', None) == "off":
+		try:
+			cortex.lib.systems.powerOff(id)
+			flash("Power off command sent", "alert-info")
+		except vim.fault.VimFault as e:
+			flash("Could not power off system", "alert-warning")
+	elif request.form.get('power_action', None) == "reset":
+		try:
+			cortex.lib.systems.reset(id)
+			flash("Reset command sent", "alert-info")
+		except vim.fault.VimFault as e:
+			flash("Could reset system", "alert-warning")
+
+	return redirect(url_for('system_overview', id=id))
 
 ################################################################################
 
