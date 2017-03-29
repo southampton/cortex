@@ -450,14 +450,46 @@ def system_overview(id):
 
 ################################################################################
 
-#@app.route('/systems/power/<int:id>')
-#@cortex.lib.user.login_required
-#def system_power_status(id):
-#	# Check user permissions. User must have either systems.all or specific
-#	# access to the system
-#	if not does_user_have_system_permission(id,"view.overview","systems.all.view"):
-#		abort(403)
-#	##### TODO NOT IMPLEMENTED
+@app.route('/systems/status/<int:id>')
+@cortex.lib.user.login_required
+def system_status(id):
+	# Check user permissions. User must have either systems.all or specific
+	# access to the system
+	if not does_user_have_system_permission(id,"view.overview","systems.all.view"):
+		abort(403)
+	
+	system = cortex.lib.systems.get_system_by_id(id)
+
+	# Ensure that the system actually exists, and return a 404 if it doesn't
+	if system is None:
+		abort(404)
+	vm = cortex.lib.systems.get_vm_by_system_id(id)
+	guest_state = vm.guest.guestState
+	power_state = vm.runtime.powerState
+	cpu = vm.summary.quickStats.overallCpuUsage
+	cpu_res = vm.summary.quickStats.staticCpuEntitlement
+	mem = vm.summary.quickStats.guestMemoryUsage
+	mem_max = vm.summary.quickStats.staticMemoryEntitlement
+	uptime = vm.summary.quickStats.uptimeSeconds
+
+	storage = []
+#	for disk in vm.guest.disk:
+#		#storage[disk.diskPath] = {'capacity': disk.capacity, 'free': disk.freeSpace}
+#		storage = storage + [[disk.diskPath, disk.capacity - disk.freeSpace]]
+#		storage = 
+	try:
+		storage = [['Used', vm.guest.disk[0].capacity - vm.guest.disk[0].freeSpace], ['Free', vm.guest.disk[0].freeSpace]]
+	except Exception:
+		pass;
+
+	return jsonify(guest_state=guest_state,
+                       power_state=power_state,
+                       cpu_usage=cpu,
+                       cpu_res=cpu_res,
+                       mem_usage=mem,
+                       mem_max=mem_max,
+                       uptime=uptime,
+                       storage=storage)
 
 ################################################################################
 
@@ -474,11 +506,11 @@ def system_power(id):
 
 	# Ensure that the system actually exists, and return a 404 if it doesn't
 	if system is None:
-		abort(400)
+		abort(404)
 
 	if request.form.get('power_action', None) == "on":
 		try:
-			cortex.lib.systems.powerOn(id)
+			cortex.lib.systems.power_on(id)
 			flash("Power on command sent", "alert-info")
 		except vim.fault.VimFault as e:
 			flash("Could not power on system", "alert-warning")
@@ -490,7 +522,7 @@ def system_power(id):
 			flash("Could not trigger shutdown; consider a hard power off", "alert-warning")
 	elif request.form.get('power_action', None) == "off":
 		try:
-			cortex.lib.systems.powerOff(id)
+			cortex.lib.systems.power_off(id)
 			flash("Power off command sent", "alert-info")
 		except vim.fault.VimFault as e:
 			flash("Could not power off system", "alert-warning")
@@ -500,8 +532,11 @@ def system_power(id):
 			flash("Reset command sent", "alert-info")
 		except vim.fault.VimFault as e:
 			flash("Could reset system", "alert-warning")
-
-	return redirect(url_for('system_overview', id=id))
+	#is it an XHR?
+	if request.headers.get('X-Requested-With', None) == "XMLHttpRequest":
+		return system_status(id)
+	else:
+		return redirect(url_for('system_overview', id=id))
 
 ################################################################################
 

@@ -4,7 +4,18 @@
 {% block body %}
 {% import 'node-header.html' as node %}
 
+<link href="//cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.css" rel="stylesheet" type="text/css">
 <style type="text/css">
+.graphic {
+	width: 10em;
+	height: 8em;
+	margin-left: 4em;
+	border: 0.8em solid #000;
+	border-radius: 0.4em;
+	padding: 1em;
+	background-color: #f5f5f5;
+}
+
 @media (min-width: 992px)
 {
 	.equal, .equal > div[class*='col-']
@@ -28,7 +39,7 @@
 
 {{ node.header(system,active="overview" ) }}
 <div class="row equal">
-	<div class="col-md-6">
+	<div class="col-md-8">
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h3 class="panel-title">System Record</h3>
@@ -52,55 +63,7 @@
 			</div>
 		</div>
 	</div>
-	<div class="col-md-6">
-		<div class="panel {% if system.vmware_uuid %}panel-default{%else%}panel-default{%endif%}">
-			<div class="panel-heading">
-				<h3 class="panel-title">System status</h3>
-			</div>
-			<div class="panel-body">
-				{% if system.vmware_uuid %}
-				<div class="form-group">
-					<label class="col-sm-3 control-label" for="vm_state">Power State:</label>
-					<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_guest_state or '' }}</p></div>
-				</div>
-				<div class="form-group">
-					<label class="col-sm-3 control-label" for="vm_cpus">Spec:</label>
-					<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_cpus or 'Unknown' }} vCPU, {{ system.vmware_ram or '' }} MB RAM</p></div>
-				</div>
-				<div class="form-group">
-					<label class="col-sm-3 control-label" for="vm_os">OS:</label>
-					<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_os or '' }}</p></div>
-				</div>
-				<div class="form-group">
-					<label class="col-sm-3 control-label" for="vm_cpus">Hostname:</label>
-					<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_hostname or 'Unknown' }}</p></div>
-				</div>
-				{%else%}
-				<p class="text-muted"><em>System information unavailable</em></p>
-				{%endif%}
-			</div>
-		</div>
-	</div>
-</div>
-<div class="row equal">
-	<div class="col-md-6">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Remote Access</h3>
-			</div>
-			<div class="panel-body">
-				<div class="form-group">
-					<label class="col-sm-3 control-label" for="vm_ipaddr">IP Address:</label>
-					<div class="col-sm-9"><p class="form-control-static">{{ system.vmware_ipaddr or 'Unknown' }}</p></div>
-				</div>
-				<div class="form-group">
-					<label class="col-sm-3 control-label" for="vm_ipaddr">SSH:</label>
-					<div class="col-sm-9">{% if system.vmware_ipaddr %}<code>ssh {{session['username']|e}}@{{system.vmware_ipaddr}}</code>{% endif %}</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div class="col-md-6">
+	<div class="col-md-4">
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h3 class="panel-title">Power control</h3>
@@ -110,7 +73,7 @@
 				<p><span class="fa fa-info"></span> You can control the power state of the system should it become unresponsive. To avoid losing data, graceful shutdowns should be issued by logging into the system.</p>
 				<div class="form-group">
 					<label class="col-sm-3 control-label" for="vm_state">Power State:</label>
-					<div class="col-sm-9"><p class="form-control-static">{% if system.vmware_guest_state == "poweredOn" %}ON{% elif system.vmware_guest_state == "poweredOff" %}OFF{% else %}UNKNOWN{% endif %}</p></div>
+					<div class="col-sm-9"><p class="form-control-static power_state">{% if system.vmware_guest_state == "poweredOn" %}ON{% elif system.vmware_guest_state == "poweredOff" %}OFF{% else %}UNKNOWN{% endif %}</p></div>
 				</div>
 				{% if power_ctl_perm %}
 				<button data-toggle="modal" data-target="#powerOnModal" title="Power on the system" class="btn btn-success"><span class="fa fa-play"></span> Power on</button>
@@ -129,11 +92,55 @@
 		</div>
 	</div>
 </div>
+<div class="row equal">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">System Status</h3>
+			</div>
+			<div class="panel-body row">
+				<div class="col-md-4">
+					{% if system.vmware_uuid %}
+					<div class="graphic"><i id="power-icon"></i></div>
+					<table class="table">
+						<tr><td>Power State:</td><td class="power_state">{{ system.vmware_guest_state or '' }}</td></tr>
+						<tr><td>Spec:</td><td>{{ system.vmware_cpus or 'Unknown' }} vCPU, {{ system.vmware_ram or '' }} MB RAM</td></tr>
+						<tr><td>OS:</td><td>{{ system.vmware_os or '' }}</td></tr>
+						<tr><td>Hostname:</td><td>{{ system.vmware_hostname or 'Unknown' }}</td></tr>
+						<tr><td>CPU usage:</td><td id="cpu_usage"></td></tr>
+						<tr><td>RAM usage:</td><td id="mem_usage"></td></tr>
+						<tr><td>Uptime:</td><td id="uptime"></td></tr>
+						<tr><td>IP Addr:</td><td>{{ system.vmware_ipaddr or 'Unknown' }}</td></tr>
+						{#<label class="col-sm-3 control-label" for="vm_ipaddr">SSH:</label>
+						<div class="col-sm-9">{% if system.vmware_ipaddr %}<code>ssh {{session['username']|e}}@{{system.vmware_ipaddr}}</code>{% endif %}</div>#}
+					</table>
+					{%else%}
+					<p class="text-muted"><em>System information unavailable</em></p>
+					{%endif%}
+				</div>
+				<div class="col-md-8">
+					<div class="col-md-4">
+						<div id="chart_cpu"></div>
+						<h4>CPU</h4>
+					</div>
+					<div class="col-md-4">
+						<div id="chart_ram"></div>
+						<h4>Memory</h4>
+					</div>
+					<div class="col-md-4">
+						<div id="chart_disk"></div>
+						<h4>Disk</h4>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
 
 {% if power_ctl_perm and system.vmware_uuid %}
 <div class="modal fade" tabindex="-1" role="dialog" id="powerOnModal">
 	<div class="modal-dialog" role="document">
-		<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="modal-content">
+		<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form modal-content">
 			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -154,7 +161,7 @@
 </div><!-- /.modal -->
 <div class="modal fade" tabindex="-1" role="dialog" id="powerOffModal">
 	<div class="modal-dialog" role="document">
-		<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="modal-content">
+		<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form modal-content">
 			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -180,7 +187,7 @@
 </div><!-- /.modal -->
 <div class="modal fade" tabindex="-1" role="dialog" id="resetModal">
 	<div class="modal-dialog" role="document">
-		<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="modal-content">
+		<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form modal-content">
 			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -197,4 +204,113 @@
 	</div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
 {% endif %}
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+<script>
+function secondsToString(seconds) {
+	var numyears = Math.floor(seconds / 31536000);
+	var numdays = Math.floor((seconds % 31536000) / 86400); 
+	var numhours = Math.floor(((seconds % 31536000) % 86400) / 3600);
+	var numminutes = Math.floor((((seconds % 31536000) % 86400) % 3600) / 60);
+	var numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
+	return numyears + " years " +  numdays + " days " + numhours + " hours " + numminutes + " minutes " + numseconds + " seconds";
+}
+
+var chart_ram = c3.generate({
+	bindto: '#chart_ram',
+	data: {
+		columns: [
+			['Used', 0],
+		],
+		type: 'gauge'
+	},
+
+	gauge: {
+		units: 'MB',
+	},
+	color: {
+	pattern: ['#60B044', '#F6C600', '#F97600', '#FF0000'], // the three color levels for the percentage values.
+	threshold: {
+		unit: 'percentage', // percentage is default
+		max: 100,
+		values: [30, 60, 90, 100]
+		}
+	},
+});
+
+var chart_cpu = c3.generate({
+	bindto: '#chart_cpu',
+	data: {
+		columns: [
+			['Used', 0],
+		],
+		type: 'gauge'
+	},
+
+	gauge: {
+		units: 'Mhz',
+	},
+	color: {
+	pattern: ['#60B044', '#F6C600', '#F97600', '#FF0000'], // the three color levels for the percentage values.
+	threshold: {
+		//            unit: 'value', // percentage is default
+		//            max: 200, // 100 is default
+		values: [30, 60, 90, 100]
+		}
+	},
+});
+
+var chart_disk = c3.generate({
+	bindto: '#chart_disk',
+	data: {
+		columns: [[]],
+		type: 'pie',
+	},
+});
+
+(function get_stats() {
+	$.ajax({
+		url: '{{ url_for('system_status', id=system.id) }}',
+		dataType: "json",
+		success: update_data,
+		complete: function() {
+			setTimeout(get_stats, 10000);
+		}
+	});
+})();
+
+$('.power-ctl-form').submit(function(e) {
+	e.preventDefault();
+	form = $(this);
+	$(form).closest('.modal').modal('hide');
+	$.ajax({
+		method: form.attr('method'),
+		url: form.attr('action'),
+		data: form.serialize(),//add submit
+		success: update_data,
+	});
+	return false;
+});
+
+function update_data(data) {
+	$('.power_state').text(data.guest_state + ' (' + data.power_state + ')');
+	if (data.power_state === "poweredOn") {
+		$('#power-icon').attr("class", "fa fa-play fa-3x icon-on");
+	} else if (data.power_state === "poweredOff") {
+		$('#power-icon').attr("class", "fa fa-stop fa-3x icon-off");
+	} else {
+		$('#power-icon').attr("class", "fa fa-question fa-3x icon-unknown");
+	}
+	$('#cpu_usage').text(data.cpu_usage + "/" + data.cpu_res + "Mhz (" + +(Math.round((data.cpu_usage / data.cpu_res * 100) + "e+2") + "e-2") + "%)");
+	$('#mem_usage').text(data.mem_usage + "/" + data.mem_max + "MB (" + +(Math.round((data.mem_usage / data.mem_max * 100) + "e+2") + "e-2") + "%)");
+	$('#uptime').text(secondsToString(data.uptime));
+	chart_ram.internal.config.gauge_max = data.mem_max;
+	chart_ram.load({ columns: [['Used', data.mem_usage]], });
+	chart_cpu.internal.config.gauge_max = data.cpu_res;
+	chart_cpu.load({ columns: [['Used', data.cpu_usage]], });
+	chart_disk.load({ columns: data.storage });
+	return true;
+}
+
+</script>
 {% endblock %}
