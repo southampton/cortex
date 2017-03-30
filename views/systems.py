@@ -463,44 +463,47 @@ def system_status(id):
 	# Ensure that the system actually exists, and return a 404 if it doesn't
 	if system is None:
 		abort(404)
+	# get the VM
 	vm = cortex.lib.systems.get_vm_by_system_id(id)
-	hostname = vm.guest.ipStack[0].dnsConfig.hostName
-	net = []
+
+	data = {}
+	hostname = ''
+	dns_resolvers = ''
+	search_domain = ''
+	routes = []
+	try:
+		data['hostname'] = vm.guest.ipStack[0].dnsConfig.hostName
+		data['dns_resolvers'] = vm.guest.ipStack[0].dnsConfig.ipAddress
+		data['search_domain'] = vm.guest.ipStack[0].dnsConfig.domainName
+		for route in vm.guest.ipStack[0].ipRouteConfig.ipRoute:
+			if route.gateway.ipAddress:
+				routes = routes + [{'network': route.network, 'prefix': route.prefixLength, 'gateway': route.gateway.ipAddress}]
+	except IndexError as e:
+		pass
+
+	ipaddr = []
 	for net_adapter in vm.guest.net:
 		for address in net_adapter.ipConfig.ipAddress:
-			net = net + [{'ipaddr': address.ipAddress, 'prefix': address.prefixLength}]
-	dns_resolvers = vm.guest.ipStack[0].dnsConfig.ipAddress
-	search_domain = vm.guest.ipStack[0].dnsConfig.domainName
-	guest_state = vm.guest.guestState
-	power_state = vm.runtime.powerState
-	cpu = vm.summary.quickStats.overallCpuUsage
-	cpu_res = vm.summary.quickStats.staticCpuEntitlement
-	mem = vm.summary.quickStats.guestMemoryUsage
-	mem_max = vm.summary.quickStats.staticMemoryEntitlement
-	uptime = vm.summary.quickStats.uptimeSeconds
+			ipaddr = ipaddr + [{'ipaddr': address.ipAddress, 'prefix': address.prefixLength}]
 
-	storage = []
+	data['net'] = {'ipaddr': ipaddr, 'routes': routes}
+	data['guest_state'] = vm.guest.guestState
+	data['power_state'] = vm.runtime.powerState
+	data['cpu'] = {'overall_usage': vm.summary.quickStats.overallCpuUsage, 'entitlement': vm.summary.quickStats.staticCpuEntitlement}
+	data['mem'] = {'overall_usage': vm.summary.quickStats.guestMemoryUsage, 'entitlement': vm.summary.quickStats.staticMemoryEntitlement}
+	data['uptime'] = vm.summary.quickStats.uptimeSeconds
+
+	data['storage'] = []
 #	for disk in vm.guest.disk:
 #		#storage[disk.diskPath] = {'capacity': disk.capacity, 'free': disk.freeSpace}
 #		storage = storage + [[disk.diskPath, disk.capacity - disk.freeSpace]]
 #		storage = 
 	try:
-		storage = [['Used', vm.guest.disk[0].capacity - vm.guest.disk[0].freeSpace], ['Free', vm.guest.disk[0].freeSpace]]
+		data['storage'] = [['Used', vm.guest.disk[0].capacity - vm.guest.disk[0].freeSpace], ['Free', vm.guest.disk[0].freeSpace]]
 	except Exception:
-		pass;
+		pass
 
-	return jsonify(hostname=hostname,
-                       net=net,
-                       dns_resolvers=dns_resolvers,
-                       search_domain=search_domain,
-                       guest_state=guest_state,
-                       power_state=power_state,
-                       cpu_usage=cpu,
-                       cpu_res=cpu_res,
-                       mem_usage=mem,
-                       mem_max=mem_max,
-                       uptime=uptime,
-                       storage=storage)
+	return jsonify(data)
 
 ################################################################################
 

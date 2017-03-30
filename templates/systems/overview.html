@@ -54,10 +54,10 @@ tr > td:first-child{
 			</div>
 			<div class="panel-body">
 				<table class="table">
-					<tr><td>Comment:</td><td>{{ system.allocation_comment or '' }}</td></tr>
-					<tr><td>Allocated by:</td><td>{{ system.allocation_who or 'Unknown' }}</td></tr>
-					<tr><td>Allocation date:</td><td>{{ system.allocation_date or '' }}</td></tr>
-					<tr><td>Expiry date:</td><td>{{ system.expiry_date or 'Not Set' }}</td></tr>
+					<tr><td>Comment</td><td>{{ system.allocation_comment or '' }}</td></tr>
+					<tr><td>Allocated by</td><td>{{ system.allocation_who or 'Unknown' }}</td></tr>
+					<tr><td>Allocation date</td><td>{{ system.allocation_date or '' }}</td></tr>
+					<tr><td>Expiry date</td><td>{{ system.expiry_date or 'Not Set' }}</td></tr>
 				</table>
 			</div>
 		</div>
@@ -68,11 +68,12 @@ tr > td:first-child{
 				<h3 class="panel-title">Network</h3>
 			</div>
 			<div class="panel-body">
+				{% if system.vmware_uuid %}
 				<table class="table" id="net_table">
-					<tr><td>IP Addresses:</td><td id="ip_addr"></td></tr>
-					<tr><td>Hostname:</td><td id="hostname"></td></tr>
-					<tr><td>Search Domain:</td><td id="search_domain">unknown</td></tr>
 				</table>
+				{% else %}
+				<p><span class="fa fa-info"></span> Network information unavailable.<p>
+				{% endif %}
 			</div>
 		</div>
 	</div>
@@ -84,18 +85,18 @@ tr > td:first-child{
 			<div class="panel-body">
 				{% if system.vmware_uuid %}
 				{#<p><span class="fa fa-info"></span> You can control the power state of the system should it become unresponsive. To avoid losing data, graceful shutdowns should be issued by logging into the system.</p>#}
-				<table class="table" id="net_table">
-					<tr><td>Power State:</td><td class="power_state"></td></tr>
+				<table class="table">
+					<tr><td>Power State</td><td class="power_state"></td></tr>
 				</table>
 				{% if power_ctl_perm %}
 				<button data-toggle="modal" data-target="#powerOnModal" title="Power on the system" class="btn btn-success"><span class="fa fa-play"></span> Power on</button>
 				<button data-toggle="modal" data-target="#powerOffModal" title="Power off the system" class="btn btn-danger"><span class="fa fa-stop"></span> Power off</button>
 				<button data-toggle="modal" data-target="#resetModal" title="Reset the system" class="btn btn-danger"><span class="fa fa-refresh"></span> Reset</button>
 				{% else %}
-				<p><span class="fa fa-info"></span> You do not have permission to control this system's power</p>
 				<button title="Power on the system" class="btn btn-success disabled" disabled><span class="fa fa-play"></span> Power on</button>
 				<button title="Power off the system" class="btn btn-danger disabled" disabled><span class="fa fa-stop"></span> Power off</button>
 				<button title="Reset the system" class="btn btn-danger disabled" disabled><span class="fa fa-refresh"></span> Reset</button>
+				<p><span class="fa fa-info"></span> You do not have permission to control this system's power</p>
 				{% endif %}
 				{% else %}
 				<p><span class="fa fa-info"></span> Power controls are unavailable for this system.</p>
@@ -115,30 +116,32 @@ tr > td:first-child{
 					{% if system.vmware_uuid %}
 					<div class="fa-stack fa-5x graphic"><i class="fa fa-desktop fa-stack-2x"></i><i id="power-icon"></i></div>
 					<table class="table">
-						<tr><td>Power State:</td><td class="power_state">{{ system.vmware_guest_state or '' }}</td></tr>
-						<tr><td>Uptime:</td><td id="uptime"></td></tr>
-						<tr><td>Spec:</td><td>{{ system.vmware_cpus or 'Unknown' }} vCPU, {{ system.vmware_ram or '' }} MB RAM</td></tr>
-						<tr><td>OS:</td><td>{{ system.vmware_os or '' }}</td></tr>
-						<tr><td>CPU usage:</td><td id="cpu_usage"></td></tr>
-						<tr><td>RAM usage:</td><td id="mem_usage"></td></tr>
+						<tr><td>Power State</td><td class="power_state">{{ system.vmware_guest_state or '' }}</td></tr>
+						<tr><td>Uptime</td><td id="uptime"></td></tr>
+						<tr><td>Spec</td><td>{{ system.vmware_cpus or 'Unknown' }} vCPU, {{ system.vmware_ram or '' }} MB RAM</td></tr>
+						<tr><td>OS</td><td>{{ system.vmware_os or '' }}</td></tr>
+						<tr><td>CPU usage</td><td id="cpu_usage"></td></tr>
+						<tr><td>RAM usage</td><td id="mem_usage"></td></tr>
 					</table>
 					{%else%}
 					<p class="text-muted"><em>System information unavailable</em></p>
 					{%endif%}
 				</div>
 				<div class="col-md-8">
-					<div class="col-md-4">
+					<div class="col-md-6">
 						<div id="chart_cpu"></div>
 						<h4>CPU</h4>
 					</div>
-					<div class="col-md-4">
-						<div id="chart_ram"></div>
+					<div class="col-md-6">
+						<div id="chart_mem"></div>
 						<h4>Memory</h4>
 					</div>
+{#
 					<div class="col-md-4">
 						<div id="chart_disk"></div>
 						<h4>Disk</h4>
 					</div>
+#}
 				</div>
 			</div>
 		</div>
@@ -226,16 +229,23 @@ tr > td:first-child{
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
 <script>
 function secondsToString(seconds) {
+	if (seconds <= 0) return 'N/A';
 	var numyears = Math.floor(seconds / 31536000);
 	var numdays = Math.floor((seconds % 31536000) / 86400); 
 	var numhours = Math.floor(((seconds % 31536000) % 86400) / 3600);
 	var numminutes = Math.floor((((seconds % 31536000) % 86400) % 3600) / 60);
 	var numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
-	return numyears + " years " +  numdays + " days " + numhours + " hours " + numminutes + " minutes " + numseconds + " seconds";
+	var result = ''
+	if (numyears != 0) result = result + numyears + ' years ';
+	if (numdays != 0) result = result + numdays + ' days ';
+	if (numhours != 0) result = result + numhours + ' hours ';
+	if (numminutes != 0) result = result + numminutes + ' minutes ';
+	if (numseconds != 0) result = result + numseconds + ' seconds';
+	return result;
 }
 
-var chart_ram = c3.generate({
-	bindto: '#chart_ram',
+var chart_mem = c3.generate({
+	bindto: '#chart_mem',
 	size: {
 		height: 200,
 	},
@@ -284,6 +294,7 @@ var chart_cpu = c3.generate({
 	},
 });
 
+{#
 var chart_disk = c3.generate({
 	bindto: '#chart_disk',
 	size: {
@@ -294,6 +305,7 @@ var chart_disk = c3.generate({
 		type: 'pie',
 	},
 });
+#}
 
 (function get_stats() {
 	$.ajax({
@@ -335,19 +347,52 @@ function update_data(data) {
 		$('.warn-pwr-off').hide();
 	}
 
-	if (data.hostname) {
-		$('#hostname').text(data.hostname)
-	} else {
-		$('#hostname').text('unknown');
+	$('#net_table').empty();
+	{#Hostname#}
+	$('#net_table').append(
+		$('<tr>', {class: 'hostname'}).append(
+			$('<td>').text('Hostname'),
+			$('<td>').text(data.hostname)
+		)
+	);
+
+	{#IP Addr#}
+	if (data.net.ipaddr.length == 0) {
+		$('#net_table').append(
+			$('<tr>', {class: 'ip_addr'}).append(
+				$('<td>').text('IP Addresses'),
+				$('<td>')
+			)
+		);
+	}
+	for (ip_addr in data.net.ipaddr){
+		$('#net_table').append(
+			$('<tr>', {class: 'ip_addr'}).append(
+				$('<td>').text(ip_addr == 0 ? 'IP Addresses' : ''),
+				$('<td>').text(data.net.ipaddr[ip_addr].ipaddr + '/' + data.net.ipaddr[ip_addr].prefix)
+			)
+		);
 	}
 
-	ip_string = '';
-	for (ip_addr in data.net){
-		ip_string = ip_string + (data.net[ip_addr].ipaddr + '/' + data.net[ip_addr].prefix + ' ')
+	{#IP r#}
+	if (data.net.routes.length == 0) {
+		$('#net_table').append(
+			$('<tr>', {class: 'ip_routes'}).append(
+				$('<td>').text('IP Routes'),
+				$('<td>')
+			)
+		);
 	}
-	$('#ip_addr').text(ip_string);
+	for (route in data.net.routes){
+		$('#net_table').append(
+			$('<tr>', {class: 'ip_routes'}).append(
+				$('<td>').text(route == 0 ? 'IP routes' : ''),
+				$('<td>').text(data.net.routes[route].network + '/' + data.net.routes[route].prefix + ' via ' + data.net.routes[route].gateway)
+			)
+		);
+	}
 
-	$('.dns_resolver').remove();
+	{#DNS#}
 	for (resolver in data.dns_resolvers){
 		$('#net_table').append(
 			$('<tr>', {class: 'dns_resolver'}).append(
@@ -356,15 +401,27 @@ function update_data(data) {
 			)
 		);
 	}
-	$('#search_domain').text(data.search_domain);
-	$('#cpu_usage').text(data.cpu_usage + "/" + data.cpu_res + "Mhz (" + +(Math.round((data.cpu_usage / data.cpu_res * 100) + "e+2") + "e-2") + "%)");
-	$('#mem_usage').text(data.mem_usage + "/" + data.mem_max + "MB (" + +(Math.round((data.mem_usage / data.mem_max * 100) + "e+2") + "e-2") + "%)");
+
+	{#Search Domain#}
+	$('#net_table').append(
+		$('<tr>', {class: 'search_domain'}).append(
+			$('<td>').text('Search domain'),
+			$('<td>').text(data.search_domain)
+		)
+	);
+
+	$('#cpu_usage').text(data.cpu.overall_usage + "/" + data.cpu.entitlement + "Mhz (" + +(Math.round((data.cpu.overall_usage / data.cpu.entitlement * 100) + "e+2") + "e-2") + "%)");
+	$('#mem_usage').text(data.mem.overall_usage + "/" + data.mem.entitlement + "MB (" + +(Math.round((data.cpu.overall_usage / data.mem.entitlement * 100) + "e+2") + "e-2") + "%)");
 	$('#uptime').text(secondsToString(data.uptime));
-	chart_ram.internal.config.gauge_max = data.mem_max;
-	chart_ram.load({ columns: [['Used', data.mem_usage]], });
-	chart_cpu.internal.config.gauge_max = data.cpu_res;
-	chart_cpu.load({ columns: [['Used', data.cpu_usage]], });
+
+	chart_mem.internal.config.gauge_max = data.mem.entitlement;
+	if (chart_mem.internal.data.targets[0].values[0].value != data.mem.overall_usage) chart_mem.load({ columns: [['Used', data.mem.overall_usage]], });
+	chart_cpu.internal.config.gauge_max = data.cpu.entitlement;
+	if (chart_cpu.internal.data.targets[0].values[0].value != data.cpu.overall_usage) chart_cpu.load({ columns: [['Used', data.cpu.overall_usage]], });
+
+	{# currently uses root partition but needs a rethink
 	chart_disk.load({ columns: data.storage });
+	#}
 	return true;
 }
 
