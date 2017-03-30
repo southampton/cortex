@@ -464,6 +464,13 @@ def system_status(id):
 	if system is None:
 		abort(404)
 	vm = cortex.lib.systems.get_vm_by_system_id(id)
+	hostname = vm.guest.ipStack[0].dnsConfig.hostName
+	net = []
+	for net_adapter in vm.guest.net:
+		for address in net_adapter.ipConfig.ipAddress:
+			net = net + [{'ipaddr': address.ipAddress, 'prefix': address.prefixLength}]
+	dns_resolvers = vm.guest.ipStack[0].dnsConfig.ipAddress
+	search_domain = vm.guest.ipStack[0].dnsConfig.domainName
 	guest_state = vm.guest.guestState
 	power_state = vm.runtime.powerState
 	cpu = vm.summary.quickStats.overallCpuUsage
@@ -482,7 +489,11 @@ def system_status(id):
 	except Exception:
 		pass;
 
-	return jsonify(guest_state=guest_state,
+	return jsonify(hostname=hostname,
+                       net=net,
+                       dns_resolvers=dns_resolvers,
+                       search_domain=search_domain,
+                       guest_state=guest_state,
                        power_state=power_state,
                        cpu_usage=cpu,
                        cpu_res=cpu_res,
@@ -508,35 +519,22 @@ def system_power(id):
 	if system is None:
 		abort(404)
 
-	if request.form.get('power_action', None) == "on":
-		try:
-			cortex.lib.systems.power_on(id)
-			flash("Power on command sent", "alert-info")
-		except vim.fault.VimFault as e:
-			flash("Could not power on system", "alert-warning")
-	elif request.form.get('power_action', None) == "shutdown":
-		try:
-			cortex.lib.systems.shutdown(id)
-			flash("Shutdown command sent", "alert-info")
-		except vim.fault.VimFault as e:
-			flash("Could not trigger shutdown; consider a hard power off", "alert-warning")
-	elif request.form.get('power_action', None) == "off":
-		try:
-			cortex.lib.systems.power_off(id)
-			flash("Power off command sent", "alert-info")
-		except vim.fault.VimFault as e:
-			flash("Could not power off system", "alert-warning")
-	elif request.form.get('power_action', None) == "reset":
-		try:
-			cortex.lib.systems.reset(id)
-			flash("Reset command sent", "alert-info")
-		except vim.fault.VimFault as e:
-			flash("Could reset system", "alert-warning")
-	#is it an XHR?
-	if request.headers.get('X-Requested-With', None) == "XMLHttpRequest":
-		return system_status(id)
-	else:
-		return redirect(url_for('system_overview', id=id))
+	try:
+		if request.form.get('power_action', None) == "on":
+				cortex.lib.systems.power_on(id)
+		elif request.form.get('power_action', None) == "shutdown":
+				cortex.lib.systems.shutdown(id)
+		elif request.form.get('power_action', None) == "off":
+				cortex.lib.systems.power_off(id)
+		elif request.form.get('power_action', None) == "reset":
+				cortex.lib.systems.reset(id)
+		#is it an XHR?
+		if request.headers.get('X-Requested-With', None) == "XMLHttpRequest":
+			return system_status(id)
+		else:
+			return redirect(url_for('system_overview', id=id))
+	except vim.fault.VimFault as e:
+		abort(500)
 
 ################################################################################
 

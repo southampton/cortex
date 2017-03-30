@@ -6,14 +6,22 @@
 
 <link href="//cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.css" rel="stylesheet" type="text/css">
 <style type="text/css">
+
 .graphic {
-	width: 10em;
-	height: 8em;
-	margin-left: 4em;
-	border: 0.8em solid #000;
-	border-radius: 0.4em;
-	padding: 1em;
-	background-color: #f5f5f5;
+	width: 50%;
+}
+
+#power-icon {
+	font-size: 0.8em;
+	line-height: 1.6em;
+}
+
+form {
+	display: inline;
+}
+
+tr > td:first-child{
+	font-weight: bolder;
 }
 
 @media (min-width: 992px)
@@ -39,27 +47,32 @@
 
 {{ node.header(system,active="overview" ) }}
 <div class="row equal">
-	<div class="col-md-8">
+	<div class="col-md-4">
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h3 class="panel-title">System Record</h3>
 			</div>
 			<div class="panel-body">
-				<div class="form-group">
-					<label class="col-sm-3 control-label" for="allocation_comment">Purpose:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_purpose or '' }}</p></div>
-				</div>
-				<div class="form-group">
-					<label class="col-sm-3 control-label" for="allocation_comment">Comment:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_comment or '' }}</p></div>
-				</div>
-				<div class="form-group">
-					<label class="col-sm-3 control-label" for="allocation_who">Allocated by:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_who or '' }}</p></div>
-				</div>
-				<div class="form-group">
-					<label class="col-sm-3 control-label" for="allocation_date">Allocation Date:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_date or '' }}</p></div>
-				</div>
-				<div class="form-group">
-					<label class="col-sm-3 control-label" for="expiry_date">Expiry Date:</label><div class="col-sm-9"><p class="form-control-static">{{ system.expiry_date or 'Not set' }}</p></div>
-				</div>
+				<table class="table">
+					<tr><td>Comment:</td><td>{{ system.allocation_comment or '' }}</td></tr>
+					<tr><td>Allocated by:</td><td>{{ system.allocation_who or 'Unknown' }}</td></tr>
+					<tr><td>Allocation date:</td><td>{{ system.allocation_date or '' }}</td></tr>
+					<tr><td>Expiry date:</td><td>{{ system.expiry_date or 'Not Set' }}</td></tr>
+				</table>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-4">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Network</h3>
+			</div>
+			<div class="panel-body">
+				<table class="table" id="net_table">
+					<tr><td>IP Addresses:</td><td id="ip_addr"></td></tr>
+					<tr><td>Hostname:</td><td id="hostname"></td></tr>
+					<tr><td>Search Domain:</td><td id="search_domain">unknown</td></tr>
+				</table>
 			</div>
 		</div>
 	</div>
@@ -70,11 +83,10 @@
 			</div>
 			<div class="panel-body">
 				{% if system.vmware_uuid %}
-				<p><span class="fa fa-info"></span> You can control the power state of the system should it become unresponsive. To avoid losing data, graceful shutdowns should be issued by logging into the system.</p>
-				<div class="form-group">
-					<label class="col-sm-3 control-label" for="vm_state">Power State:</label>
-					<div class="col-sm-9"><p class="form-control-static power_state">{% if system.vmware_guest_state == "poweredOn" %}ON{% elif system.vmware_guest_state == "poweredOff" %}OFF{% else %}UNKNOWN{% endif %}</p></div>
-				</div>
+				{#<p><span class="fa fa-info"></span> You can control the power state of the system should it become unresponsive. To avoid losing data, graceful shutdowns should be issued by logging into the system.</p>#}
+				<table class="table" id="net_table">
+					<tr><td>Power State:</td><td class="power_state"></td></tr>
+				</table>
 				{% if power_ctl_perm %}
 				<button data-toggle="modal" data-target="#powerOnModal" title="Power on the system" class="btn btn-success"><span class="fa fa-play"></span> Power on</button>
 				<button data-toggle="modal" data-target="#powerOffModal" title="Power off the system" class="btn btn-danger"><span class="fa fa-stop"></span> Power off</button>
@@ -101,18 +113,14 @@
 			<div class="panel-body row">
 				<div class="col-md-4">
 					{% if system.vmware_uuid %}
-					<div class="graphic"><i id="power-icon"></i></div>
+					<div class="fa-stack fa-5x graphic"><i class="fa fa-desktop fa-stack-2x"></i><i id="power-icon"></i></div>
 					<table class="table">
 						<tr><td>Power State:</td><td class="power_state">{{ system.vmware_guest_state or '' }}</td></tr>
+						<tr><td>Uptime:</td><td id="uptime"></td></tr>
 						<tr><td>Spec:</td><td>{{ system.vmware_cpus or 'Unknown' }} vCPU, {{ system.vmware_ram or '' }} MB RAM</td></tr>
 						<tr><td>OS:</td><td>{{ system.vmware_os or '' }}</td></tr>
-						<tr><td>Hostname:</td><td>{{ system.vmware_hostname or 'Unknown' }}</td></tr>
 						<tr><td>CPU usage:</td><td id="cpu_usage"></td></tr>
 						<tr><td>RAM usage:</td><td id="mem_usage"></td></tr>
-						<tr><td>Uptime:</td><td id="uptime"></td></tr>
-						<tr><td>IP Addr:</td><td>{{ system.vmware_ipaddr or 'Unknown' }}</td></tr>
-						{#<label class="col-sm-3 control-label" for="vm_ipaddr">SSH:</label>
-						<div class="col-sm-9">{% if system.vmware_ipaddr %}<code>ssh {{session['username']|e}}@{{system.vmware_ipaddr}}</code>{% endif %}</div>#}
 					</table>
 					{%else%}
 					<p class="text-muted"><em>System information unavailable</em></p>
@@ -140,37 +148,35 @@
 {% if power_ctl_perm and system.vmware_uuid %}
 <div class="modal fade" tabindex="-1" role="dialog" id="powerOnModal">
 	<div class="modal-dialog" role="document">
-		<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form modal-content">
-			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				<h4 class="modal-title">Power on</h4>
 			</div>
 			<div class="modal-body">
-				{% if system.vmware_guest_state == "poweredOn" %}
-				<p><span class="fa fa-warning"></span> The system appears to already be powered on.</p>
-				{% endif %}
+				<p class="warn-pwr-on"><span class="fa fa-warning"></span> The system appears to already be powered on.</p>
 				<p>Power on the system from an off state?</p>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-				<button class="btn btn-success" type="submit" name="power_action" value="on"><i class="fa fa-play"></i> Power on</button>
+				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
+					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+					<input type="hidden" name="power_action" value="on"/>
+					<button class="btn btn-success" type="submit"><i class="fa fa-play"></i> Power on</button>
+				</form>
 			</div>
-		</form><!-- /.modal-content -->
+		</div><!-- /.modal-content -->
 	</div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
 <div class="modal fade" tabindex="-1" role="dialog" id="powerOffModal">
 	<div class="modal-dialog" role="document">
-		<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form modal-content">
-			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				<h4 class="modal-title">Power off</h4>
 			</div>
 			<div class="modal-body">
-				{% if system.vmware_guest_state == "poweredOff" %}
-				<p><span class="fa fa-warning"></span> The system appears to already be powered off.</p>
-				{% endif %}
+				<p class="warn-pwr-off"><span class="fa fa-warning"></span> The system appears to already be powered off.</p>
 				<p>Powering the system off will make it unavialalble until it is powered on again.</p>
 				<p>You can either issue a soft or hard request.</p>
 				<p>A soft request will trigger an OS shutdown event.</p>
@@ -178,17 +184,24 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-				<button class="btn btn-danger" type="submit" name="power_action" value="shutdown"><i class="fa fa-power-off"></i> Soft power off</button>
-				<button class="btn btn-danger" type="submit" name="power_action" value="off"><i class="fa fa-plug"></i> Hard power off</button>
+				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
+					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+					<input type="hidden" name="power_action" value="shutdown"/>
+					<button class="btn btn-danger" type="submit"><i class="fa fa-power-off"></i> Soft power off</button>
+				</form>
+				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
+					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+					<input type="hidden" name="power_action" value="off"/>
+					<button class="btn btn-danger" type="submit"><i class="fa fa-plug"></i> Hard power off</button>
+				</form>
 
 			</div>
-		</form><!-- /.modal-content -->
+		</div><!-- /.modal-content -->
 	</div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
 <div class="modal fade" tabindex="-1" role="dialog" id="resetModal">
 	<div class="modal-dialog" role="document">
-		<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form modal-content">
-			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+		<div class="modal-content">
 			<div class="modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				<h4 class="modal-title">Reset system</h4>
@@ -198,12 +211,17 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-				<button class="btn btn-danger" type="submit" name="power_action" value="reset"><i class="fa fa-refresh"></i> Reset</button>
+				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
+					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+					<input type="hidden" name="power_action" value="reset"/>
+					<button class="btn btn-danger" type="submit"><i class="fa fa-refresh"></i> Reset</button>
+				</form>
 			</div>
-		</form><!-- /.modal-content -->
+		</div><!-- /.modal-content -->
 	</div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
 {% endif %}
+{% if system.vmware_uuid %}
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
 <script>
@@ -218,6 +236,9 @@ function secondsToString(seconds) {
 
 var chart_ram = c3.generate({
 	bindto: '#chart_ram',
+	size: {
+		height: 200,
+	},
 	data: {
 		columns: [
 			['Used', 0],
@@ -226,20 +247,23 @@ var chart_ram = c3.generate({
 	},
 
 	gauge: {
+		label: {
+			format: function(value, ratio) {
+				return value;
+			}
+		},
 		units: 'MB',
 	},
 	color: {
-	pattern: ['#60B044', '#F6C600', '#F97600', '#FF0000'], // the three color levels for the percentage values.
-	threshold: {
-		unit: 'percentage', // percentage is default
-		max: 100,
-		values: [30, 60, 90, 100]
-		}
+		pattern: ['#60B044', '#F6C600', '#F97600', '#FF0000'],
 	},
 });
 
 var chart_cpu = c3.generate({
 	bindto: '#chart_cpu',
+	size: {
+		height: 200,
+	},
 	data: {
 		columns: [
 			['Used', 0],
@@ -248,20 +272,23 @@ var chart_cpu = c3.generate({
 	},
 
 	gauge: {
+		label: {
+			format: function(value, ratio) {
+				return value;
+			}
+		},
 		units: 'Mhz',
 	},
 	color: {
-	pattern: ['#60B044', '#F6C600', '#F97600', '#FF0000'], // the three color levels for the percentage values.
-	threshold: {
-		//            unit: 'value', // percentage is default
-		//            max: 200, // 100 is default
-		values: [30, 60, 90, 100]
-		}
+		pattern: ['#60B044', '#F6C600', '#F97600', '#FF0000'],
 	},
 });
 
 var chart_disk = c3.generate({
 	bindto: '#chart_disk',
+	size: {
+		height: 200,
+	},
 	data: {
 		columns: [[]],
 		type: 'pie',
@@ -286,7 +313,7 @@ $('.power-ctl-form').submit(function(e) {
 	$.ajax({
 		method: form.attr('method'),
 		url: form.attr('action'),
-		data: form.serialize(),//add submit
+		data: form.serialize(),
 		success: update_data,
 	});
 	return false;
@@ -295,12 +322,41 @@ $('.power-ctl-form').submit(function(e) {
 function update_data(data) {
 	$('.power_state').text(data.guest_state + ' (' + data.power_state + ')');
 	if (data.power_state === "poweredOn") {
-		$('#power-icon').attr("class", "fa fa-play fa-3x icon-on");
+		$('#power-icon').attr("class", "fa fa-play fa-stack-1x icon-on");
+		$('.warn-pwr-on').show();
+		$('.warn-pwr-off').hide();
 	} else if (data.power_state === "poweredOff") {
-		$('#power-icon').attr("class", "fa fa-stop fa-3x icon-off");
+		$('#power-icon').attr("class", "fa fa-stop fa-stack-1x icon-off");
+		$('.warn-pwr-on').hide();
+		$('.warn-pwr-off').show();
 	} else {
-		$('#power-icon').attr("class", "fa fa-question fa-3x icon-unknown");
+		$('#power-icon').attr("class", "fa fa-question fa-stack-1x icon-unknown");
+		$('.warn-pwr-on').hide();
+		$('.warn-pwr-off').hide();
 	}
+
+	if (data.hostname) {
+		$('#hostname').text(data.hostname)
+	} else {
+		$('#hostname').text('unknown');
+	}
+
+	ip_string = '';
+	for (ip_addr in data.net){
+		ip_string = ip_string + (data.net[ip_addr].ipaddr + '/' + data.net[ip_addr].prefix + ' ')
+	}
+	$('#ip_addr').text(ip_string);
+
+	$('.dns_resolver').remove();
+	for (resolver in data.dns_resolvers){
+		$('#net_table').append(
+			$('<tr>', {class: 'dns_resolver'}).append(
+				$('<td>').text('DNS resolver #' + (parseInt(resolver) + 1)),
+				$('<td>').text(data.dns_resolvers[resolver])
+			)
+		);
+	}
+	$('#search_domain').text(data.search_domain);
 	$('#cpu_usage').text(data.cpu_usage + "/" + data.cpu_res + "Mhz (" + +(Math.round((data.cpu_usage / data.cpu_res * 100) + "e+2") + "e-2") + "%)");
 	$('#mem_usage').text(data.mem_usage + "/" + data.mem_max + "MB (" + +(Math.round((data.mem_usage / data.mem_max * 100) + "e+2") + "e-2") + "%)");
 	$('#uptime').text(secondsToString(data.uptime));
@@ -313,4 +369,5 @@ function update_data(data) {
 }
 
 </script>
+{% endif %}
 {% endblock %}

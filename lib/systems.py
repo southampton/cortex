@@ -314,4 +314,4 @@ def power_off(id):
 
 def reset(id):
 	vm = get_vm_by_system_id(id)
-	return vm.ResetVM()
+	return vm.Reset()
