@@ -34,7 +34,9 @@ def systems():
 		abort(403)
 
 	# Get the list of active classes (used to populate the tab bar)
-	classes = cortex.lib.classes.list()
+	classes = {}
+	if does_user_have_permission("systems.all.view"):
+		classes = cortex.lib.classes.list()
 
 	# Get the search string, if any
 	q = request.args.get('q', None)
@@ -106,7 +108,7 @@ def systems_search():
 	search box"""
 
 	# Check user permissions
-	if not does_user_have_permission("systems.all.view"):
+	if not (does_user_have_permission("systems.all.view") or does_user_have_permission("systems.own.view")):
 		abort(403)
 
 	# Get the query from the URL
@@ -116,6 +118,7 @@ def systems_search():
 		return abort(400)
 
 	# Search for the system
+	
 	system = cortex.lib.systems.get_system_by_name(query)
 
 	if system is not None:
