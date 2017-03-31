@@ -470,9 +470,9 @@ def system_status(id):
 	vm = cortex.lib.systems.get_vm_by_system_id(id)
 
 	data = {}
-	hostname = ''
-	dns_resolvers = ''
-	search_domain = ''
+	data['hostname'] = ''
+	data['dns_resolvers'] = []
+	data['search_domain'] = ''
 	routes = []
 	try:
 		data['hostname'] = vm.guest.ipStack[0].dnsConfig.hostName

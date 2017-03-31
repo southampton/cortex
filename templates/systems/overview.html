@@ -68,15 +68,17 @@ tr > td:first-child {
 			<div class="panel-heading">
 				<h3 class="panel-title">Network</h3>
 			</div>
-			<div class="panel-body row">
+			<div class="panel-body">
 				{% if system.vmware_uuid %}
-				<div class="col-md-6">
-					<table class="table" id="net_table">
-					</table>
-				</div>
-				<div class="col-md-6">
-					<table class="table" id="dns_table">
-					</table>
+				<div class="row">
+					<div class="col-md-6">
+						<table class="table" id="net_table">
+						</table>
+					</div>
+					<div class="col-md-6">
+						<table class="table" id="dns_table">
+						</table>
+					</div>
 				</div>
 				{% else %}
 				<p><span class="fa fa-info"></span> Network information unavailable.<p>
@@ -369,7 +371,7 @@ function update_data(data) {
 	if (data.net.ipaddr.length == 0) {
 		$('#net_table').append(
 			$('<tr>', {class: 'ip_addr'}).append(
-				$('<td>').text('IP Addresses'),
+				$('<td>').text('IP addresses'),
 				$('<td>')
 			)
 		);
@@ -377,7 +379,7 @@ function update_data(data) {
 	for (ip_addr in data.net.ipaddr){
 		$('#net_table').append(
 			$('<tr>', {class: 'ip_addr'}).append(
-				$('<td>').text(ip_addr == 0 ? 'IP Addresses' : ''),
+				$('<td>').text(ip_addr == 0 ? 'IP addresses' : ''),
 				$('<td>').text(data.net.ipaddr[ip_addr].ipaddr + '/' + data.net.ipaddr[ip_addr].prefix)
 			)
 		);
@@ -387,7 +389,7 @@ function update_data(data) {
 	if (data.net.routes.length == 0) {
 		$('#net_table').append(
 			$('<tr>', {class: 'ip_routes'}).append(
-				$('<td>').text('IP Routes'),
+				$('<td>').text('IP routes'),
 				$('<td>')
 			)
 		);
@@ -403,10 +405,18 @@ function update_data(data) {
 
 	$('#dns_table').empty();
 	{#DNS#}
+	if (data.dns_resolvers.length == 0) {
+		$('#dns_table').append(
+			$('<tr>', {class: 'dns_resolver'}).append(
+				$('<td>').text('DNS resolvers'),
+				$('<td>')
+			)
+		);
+	}
 	for (resolver in data.dns_resolvers){
 		$('#dns_table').append(
 			$('<tr>', {class: 'dns_resolver'}).append(
-				$('<td>').text('DNS resolver #' + (parseInt(resolver) + 1)),
+				$('<td>').text(resolver == 0 ? 'DNS resolvers' : ''),
 				$('<td>').text(data.dns_resolvers[resolver])
 			)
 		);
