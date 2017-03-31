@@ -401,7 +401,7 @@ def systems_bulk_view(start, finish):
 def system(id):
 	# Check user permissions. User must have either systems.all or specific 
 	# access to the system
-	if not does_user_have_system_permission(id,"view","systems.all.view"):
+	if not does_user_have_system_permission(id,"view.detail","systems.all.view"):
 		abort(403)
 
 	# Get the system
@@ -493,15 +493,14 @@ def system_status(id):
 	data['mem'] = {'overall_usage': vm.summary.quickStats.guestMemoryUsage, 'entitlement': vm.summary.quickStats.staticMemoryEntitlement}
 	data['uptime'] = vm.summary.quickStats.uptimeSeconds
 
-	data['storage'] = []
+#	data['storage'] = []
 #	for disk in vm.guest.disk:
 #		#storage[disk.diskPath] = {'capacity': disk.capacity, 'free': disk.freeSpace}
 #		storage = storage + [[disk.diskPath, disk.capacity - disk.freeSpace]]
-#		storage = 
-	try:
-		data['storage'] = [['Used', vm.guest.disk[0].capacity - vm.guest.disk[0].freeSpace], ['Free', vm.guest.disk[0].freeSpace]]
-	except Exception:
-		pass
+#	try:
+#		data['storage'] = [['Used', vm.guest.disk[0].capacity - vm.guest.disk[0].freeSpace], ['Free', vm.guest.disk[0].freeSpace]]
+#	except Exception:
+#		pass
 
 	return jsonify(data)
 
@@ -544,7 +543,7 @@ def system_power(id):
 @app.route('/systems/edit/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_edit(id):
-	if not does_user_have_system_permission(id,"view","systems.all.view"):
+	if not does_user_have_system_permission(id,"view.detail","systems.all.view"):
 		abort(403)
 
 	# Get the system
@@ -675,7 +674,7 @@ def system_edit(id):
 @app.route('/systems/actions/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_actions(id):
-	if not does_user_have_system_permission(id,"view","systems.all.view"):
+	if not does_user_have_system_permission(id,"view.detail","systems.all.view"):
 		abort(403)
 
 	# Get the system
