@@ -3,6 +3,7 @@
 from cortex import app
 import cortex.lib.perms
 import cortex.lib.user
+import cortex.lib.logger
 from cortex.lib.user import does_user_have_permission
 from flask import request, session, redirect, url_for, flash, g, abort, render_template
 import re
@@ -106,6 +107,7 @@ def perms_role(id):
 			curd.execute('''DELETE FROM `roles` WHERE `id` = %s''', (id,))
 			g.db.commit()
 
+			cortex.lib.logger.log(__name__, "Role " + role['name'] + " (" + id + ")" + " deleted")
 			flash("The role `" + role['name'] + "` has been deleted", "alert-success")
 			return redirect(url_for('perms_roles'))
 
@@ -123,6 +125,7 @@ def perms_role(id):
 				flash("The description you sent was invalid. It must be between 3 and 512 characters long.", "alert-danger")
 				return redirect(url_for('perms_role',id=id))
 
+			cortex.lib.logger.log(__name__, "Role " + role['name'] + " (" + id + ")" + " edited")
 			curd.execute('''UPDATE `roles` SET `name` = %s, `description` = %s WHERE `id` = %s''', (name, desc, id))
 			g.db.commit()
 
@@ -152,11 +155,13 @@ def perms_role(id):
 				if not should_exist and exists:
 					curd.execute('''DELETE FROM `role_perms` WHERE `role_id` = %s AND `perm` = %s''', (id, perm['name']))
 					g.db.commit()
+					cortex.lib.logger.log(__name__, "Permission '" + perm['name'] + "' removed from role " + role['name'] + " (" + id + ")")
 					changes += 1
 
 				elif should_exist and not exists:
 					curd.execute('''INSERT INTO `role_perms` (`role_id`, `perm`) VALUES (%s, %s)''', (id, perm['name']))
 					g.db.commit()
+					cortex.lib.logger.log(__name__, "Permission '" + perm['name'] + "' added to role " + role['name'] + " (" + id + ")")
 					changes += 1
 
 			if changes == 0:

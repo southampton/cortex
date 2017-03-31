@@ -106,6 +106,8 @@ def context_processor():
 		admin.append({'link': url_for('admin_classes'), 'title': 'Classes', 'icon': 'fa-table'})
 	if does_user_have_permission("tasks.view"):
 		admin.append({'link': url_for('admin_tasks'), 'title': 'Tasks', 'icon': 'fa-tasks'})
+	if does_user_have_permission("events.view"):
+		admin.append({'link': url_for('admin_events'), 'title': 'Events', 'icon': 'fa-list-alt'})
 	if does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm"]):
 		admin.append({'link': url_for('admin_maint'), 'title': 'Maintenance', 'icon': 'fa-gears'})
 	if does_user_have_permission("systems.allocate_name"):

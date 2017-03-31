@@ -36,7 +36,7 @@ def admin_tasks_json(tasktype):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Extract stuff from DataTables requests
-	(draw, start, length, order_column, order_asc, search) = _tasks_extract_datatables()
+	(draw, start, length, order_column, order_asc, search) = _extract_datatables()
 
 	# Choose the order column
 	if order_column == 0:
@@ -167,6 +167,115 @@ def admin_tasks_system():
 
 	# Render the page
 	return render_template('admin/tasks.html', active='admin', title="System Tasks", tasktype='system', json_source=url_for('admin_tasks_json', tasktype='system'))
+
+################################################################################
+
+@app.route('/admin/events')
+@cortex.lib.user.login_required
+def admin_events():
+	"""Displays the list of events to the user."""
+
+	# Check user permissions
+	if not does_user_have_permission("events.view"):
+		abort(403)
+
+	# Render the page
+	return render_template('admin/events.html', active='admin', title="Events", event_source='all', json_source=url_for('admin_events_json', event_source='all'))
+
+################################################################################
+
+@app.route('/admin/events/json/<event_source>', methods=['POST'])
+@cortex.lib.user.login_required
+@app.disable_csrf_check
+def admin_events_json(event_source):
+	# Check user permissions
+	if not does_user_have_permission("events.view"):
+		abort(403)
+
+	# Get a cursor to the database
+	curd = g.db.cursor()
+
+	# Extract stuff from DataTables requests
+	(draw, start, length, order_column, order_asc, search) = _extract_datatables()
+
+	# Choose the order column
+	if order_column == 0:
+		order_by = "id"
+	elif order_column == 1:
+		order_by = "time"
+	elif order_column == 2:
+		order_by = "username"
+	elif order_column == 3:
+		order_by = "source"
+	elif order_column == 4:
+		order_by = "desc"
+	else:
+		app.logger.warn('Invalid ordering column parameter in DataTables request')
+		abort(400)
+
+	# Choose order direction
+	order_dir = "DESC"
+	if order_asc:
+		order_dir = "ASC"
+
+	# Determine the event type and add that to the query
+	params = ()
+	where_clause = ""
+	if event_source == 'all':
+		where_clause = '1=1'	# This is just to make 'search' always be able to be an AND and not need an optional WHERE
+	elif event_source == 'user':
+		where_clause = '`username` != "scheduler"'
+	elif event_source == 'system':
+		where_clause = '`username` = "scheduler"'
+	else:
+		abort(404)
+
+	# Add on search string if we have one
+	if search:
+		where_clause = where_clause + " AND (`source` LIKE %s OR `desc` LIKE %s OR `username` LIKE %s) "
+		params = params + ('%' + search + '%', '%' + search + '%', '%' + search + '%')
+
+	# Get the total number of events
+	curd.execute("SELECT COUNT(*) AS `count` FROM `log`")
+	event_count = curd.fetchone()[0]
+
+	# Get the total number of events
+	curd.execute("SELECT COUNT(*) AS `count` FROM `log` WHERE " + where_clause, params)
+	filtered_event_count = curd.fetchone()[0]
+
+	# Get the list of events
+	curd.execute("SELECT `id`, `time`, `username`, `source`, `desc` FROM `log` WHERE " + where_clause + " ORDER BY `" + order_by + "` " + order_dir + " LIMIT " + str(start) + "," + str(length), params)
+	data = curd.fetchall()
+
+	return jsonify(draw=draw, recordsTotal=event_count, recordsFiltered=filtered_event_count, data=data)
+
+################################################################################
+
+@app.route('/admin/events/user')
+@cortex.lib.user.login_required
+def admin_events_user():
+	"""Displays the list of events, excluding any system events"""
+
+	# Check user permissions
+	if not does_user_have_permission("events.view"):
+		abort(403)
+
+	# Render the page
+	return render_template('admin/events.html', active='admin', title="User Events", event_source='user', json_source=url_for('admin_events_json', event_source='user'))
+
+################################################################################
+
+@app.route('/admin/events/system')
+@cortex.lib.user.login_required
+def admin_events_system():
+	"""Displays the list of events started by the system"""
+
+	# Check user permissions
+	if not does_user_have_permission("events.view"):
+		abort(403)
+
+	# Render the page
+	return render_template('admin/events.html', active='admin', title="System Events", event_source='system', json_source=url_for('admin_events_json', event_source='system'))
 
 ################################################################################
 
@@ -369,7 +478,7 @@ def admin_maint():
 
 ################################################################################
 
-def _tasks_extract_datatables():
+def _extract_datatables():
 	# Validate and extract 'draw' parameter. This parameter is simply a counter
 	# that DataTables uses internally.
 	if 'draw' in request.form:

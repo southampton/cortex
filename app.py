@@ -347,6 +347,15 @@ Username:             %s
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `log` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `time` datetime NOT NULL,
+		  `username` varchar(64) NOT NULL,
+		  `source` varchar(255) NOT NULL,
+		  `desc` text,
+		  PRIMARY KEY (`id`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `kv_settings` (
 		  `key` varchar(64) NOT NULL,
 		  `value` text,
@@ -633,6 +642,7 @@ Username:             %s
 		  (1, "classes.view"), 
 		  (1, "classes.edit"), 
 		  (1, "tasks.view"),
+		  (1, "events.view"),
 		  (1, "maintenance.vmware"), 
 		  (1, "maintenance.cmdb"), 
 		  (1, "maintenance.expire_vm"),
@@ -670,6 +680,7 @@ Username:             %s
 			{'name': 'classes.view',                'desc': 'View the list of system class definitions'},
 			{'name': 'classes.edit',                'desc': 'Edit system class definitions'},
 			{'name': 'tasks.view',                  'desc': 'View the details of all tasks (not just your own)'},
+			{'name': 'events.view',                 'desc': 'View the details of all events (not just your own)'},
 			{'name': 'maintenance.vmware',          'desc': 'Run VMware maintenance tasks'},
 			{'name': 'maintenance.cmdb',            'desc': 'Run CMDB maintenance tasks'},
 			{'name': 'maintenance.expire_vm',       'desc': 'Run the Expire VM maintenance task'},
