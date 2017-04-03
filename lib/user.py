@@ -49,6 +49,7 @@ def clear_session():
 	session.pop('logged_in', None)
 	session.pop('username', None)
 	session.pop('id', None)
+	cortex.lib.logger.log(__name__, 'Logout success', username)
 
 
 ################################################################################
@@ -62,6 +63,7 @@ def logon_ok():
 
 	# Log a successful login
 	app.logger.info('User "' + session['username'] + '" logged in from "' + request.remote_addr + '" using ' + request.user_agent.string)
+	cortex.lib.logger.log(__name__, 'Login success', request.form['username'].lower())
 		
 	# Determine if "next" variable is set (the URL to be sent to)
 	next = request.form.get('next', default=None)

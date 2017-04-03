@@ -225,9 +225,9 @@ def admin_events_json(event_source):
 	if event_source == 'all':
 		where_clause = '1=1'	# This is just to make 'search' always be able to be an AND and not need an optional WHERE
 	elif event_source == 'user':
-		where_clause = '`source` = "cortex.views.user"'
+		where_clause = '`source` = "cortex.lib.user"'
 	elif event_source == 'cortex':
-		where_clause = '`source` != "cortex.views.user"'
+		where_clause = '`source` != "cortex.lib.user"'
 	else:
 		abort(404)
 

@@ -30,7 +30,6 @@ def login():
 				cortex.lib.logger.log(__name__, 'Login failure: incorrect username/password', request.form['username'].lower())
 				return redirect(url_for('login'))
 
-			cortex.lib.logger.log(__name__, 'Login success', request.form['username'].lower())
 			# Set the username in the session
 			session['username']  = request.form['username'].lower()
 
@@ -61,12 +60,8 @@ def logout():
 
 	# Log out of the session
 	username = session['username']
-	try:
-		cortex.lib.user.clear_session()
-		cortex.lib.logger.log(__name__, 'Logout success', username)
-		flash('You were logged out successfully', 'alert-success')
-	except Exception as e:
-		cortex.lib.logger.log(__name__, 'Logout failed', username)
+	cortex.lib.user.clear_session()
+	flash('You were logged out successfully', 'alert-success')
 
 	# Tell the user
 	
