@@ -6,6 +6,7 @@ import cortex.lib.core
 import cortex.lib.systems
 import cortex.lib.cmdb
 import cortex.lib.classes
+import cortex.lib.logger
 from cortex.lib.user import does_user_have_permission, does_user_have_system_permission, does_user_have_any_system_permission
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
@@ -138,6 +139,7 @@ def systems_download_csv():
 	# Get the list of systems
 	curd = cortex.lib.systems.get_systems(return_cursor=True, hide_inactive=False)
 
+	cortex.lib.logger.log(__name__, "CSV dumped")
 	# Return the response
 	return Response(cortex.lib.systems.csv_stream(curd), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
 
@@ -278,6 +280,7 @@ def systems_add_existing():
 				curd.execute("UPDATE `systems` SET `cmdb_id` = %s WHERE `id` = %s", (ci_results[0]['sys_id'], system_id))
 				g.db.commit()
 
+		cortex.lib.logger.log(__name__, "System added, id " + str(system_id))
 		# Redirect to the system page for the system we just added
 		flash("System added", "alert-success")
 		return redirect(url_for('system', id=system_id))
@@ -339,6 +342,7 @@ def systems_new():
 		# system, then redirect to a bulk-comments-edit page where they can
 		# change the comments on all of the systems.
 		if len(new_systems) == 1: 
+			cortex.lib.logger.log(__name__, "System name '" + class_name + "' allocated")
 			flash("System name allocated successfully", "alert-success")
 			return redirect(url_for('system', id=new_systems[new_systems.keys()[0]]))
 		else:
@@ -367,6 +371,7 @@ def systems_bulk_save():
 			found_keys.append(updateid)
 			cur = g.db.cursor()
 			cur.execute("UPDATE `systems` SET `allocation_comment` = %s WHERE `id` = %s", (request.form[key], updateid))
+			cortex.lib.logger.log(__name__, "System comment updated for id " + str(updateid))
 
 	g.db.commit()
 
@@ -540,6 +545,7 @@ def system_edit(id):
 			# Update the system
 			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, expiry_date, id))
 			g.db.commit();
+			cortex.lib.logger.log(__name__, "System edited, id " + str(updateid))
 
 			flash('System updated', "alert-success") 
 		except ValueError as ex:

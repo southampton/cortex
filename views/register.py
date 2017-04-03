@@ -1,6 +1,7 @@
 from cortex import app
 import cortex.lib.core
 import cortex.lib.systems
+import cortex.lib.logger
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, jsonify, Response
 import os 
 import re
@@ -155,6 +156,7 @@ def api_register_system():
 	else:
 		app.logger.warn('No OS ident provided - a Satellite activation key will not be returned')
 
+	cortex.lib.logger.log(__name__, "System registered")
 	return(jsonify(cdata))
 
 ################################################################################

@@ -1,6 +1,7 @@
 from cortex import app
 import cortex.lib.core
 import cortex.lib.systems
+import cortex.lib.logger
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, jsonify, Response
 import os 
 import re
@@ -26,6 +27,7 @@ def api_systems_csv():
 	# Get the list of systems
 	cur = cortex.lib.systems.get_systems(return_cursor=True)
 
+	cortex.lib.logger.log(__name__, "CSV dumped")
 	# Return the response as a downloadable CSV
 	return Response(cortex.lib.systems.csv_stream(cur), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
 	
@@ -59,4 +61,5 @@ def api_puppet_enc(certname):
 	# Make a response and return it
 	r = make_response(node_yaml)
 	r.headers['Content-Type'] = "application/x-yaml"
+	cortex.lib.logger.log(__name__, "YAML dumped")
 	return r

@@ -55,6 +55,7 @@ def perms_roles():
 		# SQL insert
 		curd.execute('''INSERT INTO `roles` (`name`, `description`) VALUES (%s, %s)''', (name, desc))
 		g.db.commit()
+		cortex.lib.logger.log(__name__, "Role '" + name + "' created")
 
 		flash("Role created", "alert-success")
 		return redirect(url_for('perms_roles'))
@@ -107,7 +108,7 @@ def perms_role(id):
 			curd.execute('''DELETE FROM `roles` WHERE `id` = %s''', (id,))
 			g.db.commit()
 
-			cortex.lib.logger.log(__name__, "Role " + role['name'] + " (" + id + ")" + " deleted")
+			cortex.lib.logger.log(__name__, "Role '" + role['name'] + "' (" + str(id) + ")" + " deleted")
 			flash("The role `" + role['name'] + "` has been deleted", "alert-success")
 			return redirect(url_for('perms_roles'))
 
@@ -125,9 +126,9 @@ def perms_role(id):
 				flash("The description you sent was invalid. It must be between 3 and 512 characters long.", "alert-danger")
 				return redirect(url_for('perms_role',id=id))
 
-			cortex.lib.logger.log(__name__, "Role " + role['name'] + " (" + id + ")" + " edited")
 			curd.execute('''UPDATE `roles` SET `name` = %s, `description` = %s WHERE `id` = %s''', (name, desc, id))
 			g.db.commit()
+			cortex.lib.logger.log(__name__, "Role '" + role['name'] + "' (" + str(id) + ")" + " name/description edited")
 
 			flash("Role updated", "alert-success")
 			return redirect(url_for('perms_role',id=id))
@@ -155,13 +156,13 @@ def perms_role(id):
 				if not should_exist and exists:
 					curd.execute('''DELETE FROM `role_perms` WHERE `role_id` = %s AND `perm` = %s''', (id, perm['name']))
 					g.db.commit()
-					cortex.lib.logger.log(__name__, "Permission '" + perm['name'] + "' removed from role " + role['name'] + " (" + id + ")")
+					cortex.lib.logger.log(__name__, "Permission '" + perm['name'] + "' removed from role '" + role['name'] + "' (" + str(id) + ")")
 					changes += 1
 
 				elif should_exist and not exists:
 					curd.execute('''INSERT INTO `role_perms` (`role_id`, `perm`) VALUES (%s, %s)''', (id, perm['name']))
 					g.db.commit()
-					cortex.lib.logger.log(__name__, "Permission '" + perm['name'] + "' added to role " + role['name'] + " (" + id + ")")
+					cortex.lib.logger.log(__name__, "Permission '" + perm['name'] + "' added to role '" + role['name'] + "' (" + str(id) + ")")
 					changes += 1
 
 			if changes == 0:
@@ -210,6 +211,7 @@ def perms_role(id):
 
 			curd.execute('''INSERT INTO `role_who` (`role_id`, `who`, `type`) VALUES (%s, %s, %s)''', (id, name, ptype))
 			g.db.commit()
+			cortex.lib.logger.log(__name__, hstr + " '" + name + "' added to role '" + role['name'] + "' (" + str(id) + ")")
 
 			flash("The " + hstr + " " + name + " was added to the role", "alert-success")
 			return redirect(url_for('perms_role',id=id))
@@ -229,6 +231,7 @@ def perms_role(id):
 
 			curd.execute('''DELETE FROM `role_who` WHERE `id` = %s''', (wid,))
 			g.db.commit()
+			cortex.lib.logger.log(__name__, "The " + hstr + " '" + name + "' was revoked from role '" + role['name'] + "' (" + str(id) + ")")
 
 			flash("The user or group was revoked from the role", "alert-success")
 			return redirect(url_for('perms_role',id=id))
@@ -314,11 +317,19 @@ def perms_system(id):
 				if not should_exist and exists:
 					curd.execute('''DELETE FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s''', (id, who, wtype, perm['name']))
 					g.db.commit()
+					if wtype == 0:
+						cortex.lib.logger.log(__name__, "System permission '" + perm['name'] + "' revoked for user '" + who + "' on system " + str(id))
+					else:
+						cortex.lib.logger.log(__name__, "System permission '" + perm['name'] + "' revoked for group '" + who + "' on system " + str(id))
 					changes += 1
 
 				elif should_exist and not exists:
 					curd.execute('''INSERT INTO `system_perms` (`system_id`, `who`, `type`, `perm`) VALUES (%s, %s, %s, %s)''', (id, who, wtype, perm['name']))
 					g.db.commit()
+					if wtype == 0:
+						cortex.lib.logger.log(__name__, "System permission '" + perm['name'] + "' granted for user '" + who + "' on system " + str(id))
+					else:
+						cortex.lib.logger.log(__name__, "System permission '" + perm['name'] + "' granted for group '" + who + "' on system " + str(id))
 					changes += 1
 
 			if changes == 0:
@@ -375,6 +386,10 @@ def perms_system(id):
 						changes = changes + 1
 						curd.execute('''INSERT INTO `system_perms` (`system_id`, `who`, `type`, `perm`) VALUES (%s, %s, %s, %s)''', (id, name, wtype, perm['name']))
 						g.db.commit()
+						if wtype == 0:
+							cortex.lib.logger.log(__name__, "System permission '" + perm['name'] + "' granted for user '" + who + "' on system " + str(id))
+						else:
+							cortex.lib.logger.log(__name__, "System permission '" + perm['name'] + "' granted for group '" + who + "' on system " + str(id))
 
 			if changes == 0:
 				flash("The " + hstr + " " + name + " was not added because no permissions were selected", "alert-danger")
@@ -407,6 +422,7 @@ def perms_system(id):
 
 			curd.execute('''DELETE FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s''', (id, name, wtype))
 			g.db.commit()
+			cortex.lib.logger.log(__name__, "System permissions purged for " + hstr + " '" + name + "' on system " + str(id))
 
 			flash("The " + hstr + " " + name + " was removed from the system", "alert-success")
 			return redirect(url_for('perms_system',id=id))

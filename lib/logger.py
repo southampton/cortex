@@ -4,7 +4,7 @@ import MySQLdb as mysql
 
 def log(source, desc, username=None):
 	if username is None:
-		username = session['username']
+		username = session.get('username', None)
 	try:
 		cur = g.db.cursor()
 		stmt = 'INSERT INTO `log` (`time`, `username`, `source`, `desc`) VALUES (NOW(), %s, %s, %s)'
