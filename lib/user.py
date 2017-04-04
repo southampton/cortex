@@ -54,7 +54,7 @@ def clear_session():
 
 ################################################################################
 
-def logon_ok(username): 
+def logon_ok(username):
 	"""This function is called post-logon or post TOTP logon to complete the
 	logon sequence"""
 

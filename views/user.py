@@ -26,7 +26,7 @@ def root():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
 	"""Handles the login page, logging a user in on correct authentication."""
-		
+
 	# If the user is already logged in, just redirect them to their dashboard
 	if cortex.lib.user.is_logged_in():
 		return redirect(url_for('dashboard'))
@@ -55,7 +55,7 @@ def login():
 	# present LDAP auth
 	elif request.args.get('bypasscas', None) == '1':
 		return render_template('login.html')
-		
+
 	#otherwise perform cas auth
 	else:
 		ticket = request.args.get('ticket')
