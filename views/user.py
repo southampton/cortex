@@ -23,27 +23,57 @@ def root():
 
 ################################################################################
 
-@app.route('/login', methods=['GET'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
 	"""Handles the login page, logging a user in on correct authentication."""
+		
 	# If the user is already logged in, just redirect them to their dashboard
 	if cortex.lib.user.is_logged_in():
 		return redirect(url_for('dashboard'))
+
+	# LDAP login
+	if request.method == 'POST':
+		if all(field in request.form for field in ['username', 'password']):
+			result = cortex.lib.user.authenticate(request.form['username'], request.form['password'])
+
+			if not result:
+				flash('Incorrect username and/or password', 'alert-danger')
+				return render_template('login.html')
+			
+			# Permanent sessions
+			permanent = request.form.get('sec', default="")
+
+			# Set session as permanent or not
+			if permanent == 'sec':
+				session.permanent = True
+			else:
+				session.permanent = False
+			# Logon is OK to proceed
+			return cortex.lib.user.logon_ok(request.form['username'])
+		abort(400)
+
+	# present LDAP auth
+	elif request.args.get('bypasscas', None) == '1':
+		return render_template('login.html')
+		
 	#otherwise perform cas auth
 	else:
 		ticket = request.args.get('ticket')
 		if ticket:
 			try:
 				cas_response = cas_client.perform_service_validate(ticket=ticket)
+				raise Exception()
 			except:
-				#CAS is not working
-				raise
+				#CAS is not working falling back to LDAP
+				flash("CAS SSO is not working, falling back to LDAP authentication", 'alert-warning')
+				return render_template('login.html')
 			if cas_response and cas_response.success:
 				try:
 					return cortex.lib.user.logon_ok(cas_response.attributes.get('uid'))
 				except KeyError:
-					#required user attributes not returned
-					pass
+					#required user attributes not returned fallback to LDAP
+					alert("CAS SSO authentication successful but missing information, falling back to LDAP authentication", 'alert-warning')
+					return render_template('login.html')
 		return redirect(cas_client.get_login_url())
 
 ################################################################################
