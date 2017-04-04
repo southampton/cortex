@@ -43,7 +43,8 @@ def clear_session():
 	"""Ends the logged in user's login session. The session remains but it 
 	is marked as being not logged in."""
 
-	app.logger.info('User "' + session['username'] + '" logged out from "' + request.remote_addr + '" using ' + request.user_agent.string)
+	if 'username' in session:
+		app.logger.info('User "' + session.get('username', 'unknown') + '" logged out from "' + request.remote_addr + '" using ' + request.user_agent.string)
 
 	# Remove the following items from the session
 	session.pop('logged_in', None)
@@ -53,11 +54,12 @@ def clear_session():
 
 ################################################################################
 
-def logon_ok(): 
+def logon_ok(username): 
 	"""This function is called post-logon or post TOTP logon to complete the
 	logon sequence"""
 
 	# Mark as logged on
+	session['username'] = username.lower()
 	session['logged_in'] = True
 
 	# Log a successful login
