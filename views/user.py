@@ -39,7 +39,7 @@ def login():
 			if not result:
 				flash('Incorrect username and/or password', 'alert-danger')
 				return render_template('login.html')
-			
+
 			# Permanent sessions
 			permanent = request.form.get('sec', default="")
 
@@ -84,7 +84,7 @@ def logout():
 
 	# destroy the session
 	cortex.lib.user.clear_session()
-	
+
 	# Tell cas about the logout
 	return redirect(cas_client.get_logout_url())
 
