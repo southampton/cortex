@@ -8,7 +8,7 @@ from cas_client import CASClient
 
 ################################################################################
 #CAS client init
-cas_client = CASClient(app.config['CAS_SERVER_URL'], app.config['CAS_SERVICE_URL'])
+cas_client = CASClient(app.config['CAS_SERVER_URL'], app.config['CAS_SERVICE_URL'], verify_certificates=True)
 
 ################################################################################
 
@@ -62,7 +62,6 @@ def login():
 		if ticket:
 			try:
 				cas_response = cas_client.perform_service_validate(ticket=ticket)
-				raise Exception()
 			except:
 				#CAS is not working falling back to LDAP
 				flash("CAS SSO is not working, falling back to LDAP authentication", 'alert-warning')
