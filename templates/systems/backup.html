@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block head %}
+{% endblock %}
+{% block body %}
+{% import 'node-header.html' as node %}
+
+{{ node.header(system,active="backup" ) }}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">SLA Domain</h3>
+            </div>
+            <div class="panel-body">
+                <p>Current SLA Domain:</p>
+                <h3><span class="fa fa-shield fa-2x" style="color: {{ vm.effectiveSlaDomain.uiColor or '#000' }};"></span> {{ vm.effectiveSlaDomainName }}</h3>
+
+                <form method="POST" class="form">
+                    {#csrf#}
+                    <select class="form-control">
+                        {% for sla_domain in sla_domains.data -%}
+                        <option{{ ' selected' if sla_domain.id == vm.effectiveSlaDomainId }}>{{ sla_domain.name }}</option>
+                        {%- endfor -%}
+                    </select>
+                    <button type="submit" class="btn btn-success">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
