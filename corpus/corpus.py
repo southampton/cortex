@@ -1352,8 +1352,7 @@ class Corpus(object):
 			# Search for the VM by UUID
 			return content.searchIndex.FindByUuid(None, uuid, True, False)
 		else:
-			## TODO shouldn't this raise an exception?!
-			return None
+			raise Exception('VMware instance not found')
 
 	############################################################################
 
