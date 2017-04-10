@@ -24,6 +24,9 @@ from pyVim.connect import SmartConnect, Disconnect
 # we talk about to neocortex via RPC
 import Pyro4
 
+from urlparse import urljoin
+from urllib import quote
+
 class Corpus(object):
 	"""Library functions used in both cortex and neocortex and workflow tasks"""
 
@@ -1385,3 +1388,27 @@ class Corpus(object):
 			if r is not None:
 				error = error + " HTTP Response code: " + str(r.status_code)
 			raise Exception()
+
+	############################################################################
+
+	def tsm_get_system(self, name):
+		try:
+			r = requests.get(urljoin(self.config['TSM_API_URL_BASE'], 'clients'), auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']), verify=False)
+			r.raise_for_status()
+			client = next((client for client in r.json()['list'] if client['NAME'].split('.')[0] == name.upper()), None)
+			if client is None:
+				return False
+			else:
+				return client
+		except requests.exceptions.HTTPError as e:
+			return False
+
+	############################################################################
+
+	def tsm_decom_system(self, name, server):
+		try:
+			r = requests.put(urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(server) + '/client/' + quote(name) + '/decomissionclient'), auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']), verify=False)
+			r.raise_for_status()
+			return True
+		except requests.exceptions.HTTPError as e:
+			raise
