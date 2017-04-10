@@ -9,7 +9,7 @@ import cortex.lib.classes
 from cortex.lib.user import does_user_have_permission, does_user_have_system_permission, does_user_have_any_system_permission
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
-import os 
+import os
 import time
 import datetime
 import json
@@ -20,6 +20,8 @@ import yaml
 import csv
 import io
 import requests
+from flask.views import MethodView
+import cortex.lib.rubrik
 
 ################################################################################
 
@@ -37,7 +39,7 @@ def systems():
 
 	# Get the search string, if any
 	q = request.args.get('q', None)
-	
+
 	# Strip any leading and or trailing spaces
 	if q is not None:
 		q = q.strip()
@@ -199,7 +201,7 @@ def systems_add_existing():
 			if 'number' not in request.form:
 				flash('You must enter a server number', category='alert-danger')
 				return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
-				
+
 			number = request.form['number'].strip()
 
 			# Validate that we have a number
@@ -236,7 +238,7 @@ def systems_add_existing():
 
 			# Type 1 (in the database) is a legacy system
 			system_type = 1
-		
+
 		# Insert the system
 		curd.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`) VALUES (%s, %s, %s, %s, NOW(), %s, %s)", (system_type, class_name, number, hostname, session['username'], comment))
 		system_id = curd.lastrowid
@@ -281,7 +283,7 @@ def systems_add_existing():
 		# Redirect to the system page for the system we just added
 		flash("System added", "alert-success")
 		return redirect(url_for('system', id=system_id))
-			
+
 ################################################################################
 
 @app.route('/systems/new', methods=['GET', 'POST'])
@@ -338,12 +340,68 @@ def systems_new():
 		# list page and flash up success. If they requested more than one
 		# system, then redirect to a bulk-comments-edit page where they can
 		# change the comments on all of the systems.
-		if len(new_systems) == 1: 
+		if len(new_systems) == 1:
 			flash("System name allocated successfully", "alert-success")
 			return redirect(url_for('system', id=new_systems[new_systems.keys()[0]]))
 		else:
 			return render_template('systems/new-bulk.html', systems=new_systems, comment=system_comment, title="Systems")
 
+################################################################################
+
+class Backup(MethodView):
+
+    def __init__(self):
+        self.rubrik = cortex.lib.rubrik.Rubrik()
+
+    @cortex.lib.user.login_required
+    def get(self, id):
+        # Check user permissions. User must have either systems.all or specific 
+        # access to the system
+        if not does_user_have_system_permission(id,"view","systems.all.view"):
+            abort(403)
+
+        # Get the name of the vm
+        system = cortex.lib.systems.get_system_by_id(id)
+        if not system:
+            abort(404)
+
+        try:
+            vm = self.rubrik.get_vm(system['name'])
+        except:
+            raise
+            abort(500)
+
+        sla_domains = self.rubrik.get_sla_domains()
+
+        vm['effectiveSlaDomain'] = next((sla_domain for sla_domain in
+            sla_domains['data'] if sla_domain['id'] ==
+            vm['effectiveSlaDomainId']))
+
+        vm['snapshots'] = self.rubrik.get_vm_snapshots(vm['id'])
+
+        return render_template('systems/backup.html', system=system, sla_domains=sla_domains,
+                vm=vm, title=system['name'])
+    def post(self, id):
+        if not does_user_have_system_permission(id,"view","systems.all.view"):
+            abort(403)
+
+        # Get the name of the vm
+        system = cortex.lib.systems.get_system_by_id(id)
+        if not system:
+            abort(404)
+
+        try:
+            vm = self.rubrik.get_vm(system['name'])
+        except:
+            abort(500)
+        self.rubrik.update_vm(vm['id'], {'configuredSlaDomainId':
+            request.form.get('sla_domain')})
+
+        return self.get(id)
+
+systems_view = Backup.as_view('system_backup')
+app.add_url_rule('/systems/backup/<int:id>', view_func=systems_view,
+        methods=['GET','POST'])
 ################################################################################
 
 @app.route('/systems/bulk/save', methods=['POST'])
@@ -361,7 +419,7 @@ def systems_bulk_save():
 	# Find a list of systems from the form. Each of the form input elements
 	# containing a system comment has a name that starts "system_comment_"
 	for key, value in request.form.iteritems():
-		 if key.startswith("system_comment_"):
+		if key.startswith("system_comment_"):
 			# Yay we found one! blindly update it!
 			updateid = key.replace("system_comment_", "")
 			found_keys.append(updateid)
@@ -412,11 +470,11 @@ def system(id):
 
 	system_class = cortex.lib.classes.get(system['class'])
 	system['review_status_text'] = cortex.lib.systems.REVIEW_STATUS_BY_ID[system['review_status']]
-		
+
 	if system['puppet_certname']:
 		system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
-		
-	if system['allocation_who_realname'] is not None:	
+
+	if system['allocation_who_realname'] is not None:
 		system['allocation_who'] = system['allocation_who_realname'] + ' (' + system['allocation_who'] + ')'
 	else:
 		system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
@@ -441,10 +499,10 @@ def system_edit(id):
 	if request.method == 'GET' or request.method == 'HEAD':
 		system_class = cortex.lib.classes.get(system['class'])
 		system['review_status_text'] = cortex.lib.systems.REVIEW_STATUS_BY_ID[system['review_status']]
-		
+
 		if system['puppet_certname']:
 			system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
-		
+
 		return render_template('systems/edit.html', system=system, system_class=system_class, active='systems', title=system['name'])
 
 	elif request.method == 'POST':
@@ -455,7 +513,7 @@ def system_edit(id):
 			# Extract CMDB ID from form
 			if does_user_have_system_permission(id,"edit.cmdb","systems.all.edit.cmdb"):
 				cmdb_id = request.form.get('cmdb_id',None)
-				if cmdb_id is not None:			
+				if cmdb_id is not None:
 					cmdb_id = cmdb_id.strip()
 					if len(cmdb_id) == 0:
 						cmdb_id = None
@@ -468,7 +526,7 @@ def system_edit(id):
 			# Extract VMware UUID from form
 			if does_user_have_system_permission(id,"edit.vmware","systems.all.edit.vmware"):
 				vmware_uuid = request.form.get('vmware_uuid',None)
-				if vmware_uuid is not None:			
+				if vmware_uuid is not None:
 					vmware_uuid = vmware_uuid.strip()
 					if len(vmware_uuid) == 0:
 						vmware_uuid = None
@@ -541,7 +599,7 @@ def system_edit(id):
 			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, expiry_date, id))
 			g.db.commit();
 
-			flash('System updated', "alert-success") 
+			flash('System updated', "alert-success")
 		except ValueError as ex:
 			flash('Failed to update system: 400 Bad request', 'alert-danger')
 			return redirect(url_for('system_edit', id=id))
@@ -582,7 +640,7 @@ def system_actions(id):
 				actions.append(action)
 			elif does_user_have_system_permission(id,action['system_permission']):
 				app.logger.debug("User " + session['username'] + " does not have workflows.all")
-				actions.append(action)								
+				actions.append(action)
 			elif action['permission'] is not None:
 				app.logger.debug("User " + session['username'] + " does not have " + action['system_permission'])
 
@@ -817,7 +875,7 @@ def systems_json():
 		else:
 			row['allocation_date'] = "Unknown"
 
-		if row['allocation_who'] is not None:	
+		if row['allocation_who'] is not None:
 			if row['allocation_who_realname'] is not None:
 				row['allocation_who'] = row['allocation_who_realname']
 			else:

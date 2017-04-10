@@ -8,11 +8,11 @@
 		{{title}}
 	</div>
 	<div class="error-body error-text">
-		{{ message }}
+		{{ message|e }}
 	</div>
 	{% if debug %}
 	<div class="error-debug">
-		<pre>{{ debug }}</pre>
+		<pre>{{ debug|e }}</pre>
 	</div>
 	{% endif %}
 </div>

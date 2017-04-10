@@ -5,6 +5,7 @@
 		<li style="padding: 2px 15px; font-size: 28px;"><i class="fa fa-fw fa-server"></i> {{ system.name }}</li>
 		<li role="presentation"{% if active == "view" %} class="active"{%endif%}><a href="{{url_for('system',id=system.id)}}">Overview</a></li>
 		<li role="presentation"{% if active == "edit" %} class="active"{%endif%}><a href="{{url_for('system_edit',id=system.id)}}">Settings</a></li>
+		<li role="presentation"{% if active == "backup" %} class="active"{%endif%}><a href="{{url_for('system_backup',id=system.id)}}">Backup</a></li>
 		<li role="presentation"{% if active == "actions" %} class="active"{%endif%}><a href="{{url_for('system_actions',id=system.id)}}">Actions</a></li>
 
 		{% if system.puppet_certname -%}

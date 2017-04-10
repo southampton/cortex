@@ -13,18 +13,52 @@
                 <h3 class="panel-title">SLA Domain</h3>
             </div>
             <div class="panel-body">
-                <p>Current SLA Domain:</p>
+                <p>Effective SLA Domain:</p>
                 <h3><span class="fa fa-shield fa-2x" style="color: {{ vm.effectiveSlaDomain.uiColor or '#000' }};"></span> {{ vm.effectiveSlaDomainName }}</h3>
-
                 <form method="POST" class="form">
-                    {#csrf#}
-                    <select class="form-control">
+                    <input name="_csrf_token" type="hidden" value="{{ csrf_token() }}">
+                    {% for label, value in [('Inherit', 'Derived'), ('Direct', 'Direct'), ('Unassigned', 'Unassinged')] %}
+                    <div class="radio">
+                        <label>
+                            <input type="radio" name="mode" value="{{ value|e }}"{{ ' checked' if vm.slaAssignment == value }}> {{ label|e }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                    <select class="form-control" name="sla_domain">
                         {% for sla_domain in sla_domains.data -%}
-                        <option{{ ' selected' if sla_domain.id == vm.effectiveSlaDomainId }}>{{ sla_domain.name }}</option>
+                        <option value="{{ sla_domain.id }}"{{ ' selected' if sla_domain.id == vm.effectiveSlaDomainId }}>{{ sla_domain.name }}</option>
                         {%- endfor -%}
                     </select>
                     <button type="submit" class="btn btn-success">Save</button>
                 </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Recent backups</h3>
+            </div>
+            <div class="panel-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <td>Date Taken</td>
+                            <td>Reason</td>
+                            <td>Expires</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for snapshot in vm.snapshots.data %}
+                        <tr>
+                            <td>{{ snapshot.date }}</td>
+                            <td>{{ 'on demand' if snapshot.isOnDemandSnapshot
+                        else 'scheduled' }}</td>
+                            <td>{{ snapshot.expirationDate }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

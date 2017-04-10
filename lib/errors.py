@@ -24,7 +24,7 @@ def stderr(title,message,code=200,template="error.html"):
 ################################################################################
 
 ## fatal error (returns HTML from python code - which is more likely to work)
-def fatalerr(title=u"fatal error ☹",message="Whilst processing your request an unexpected error occured which the application could not recover from",debug=None):
+def fatalerr(title=u"Totes not an error ;)",message="While processing your request an unexpected error occured which the application could not recover from",debug=None):
 
 	# Should we show a traceback?	
 	if debug is None:
@@ -45,7 +45,7 @@ def fatalerr(title=u"fatal error ☹",message="Whilst processing your request an
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<style type="text/css">
 	body {
-		background-color: #8B1820;
+		background-color: #188B20;
 		color: #FFFFFF;
 		margin: 0;
 		padding: 0;
@@ -70,7 +70,7 @@ def fatalerr(title=u"fatal error ☹",message="Whilst processing your request an
             padding: 1em;
         }
     }
-    </style>    
+    </style>
 </head>
 <body>
 <div>
