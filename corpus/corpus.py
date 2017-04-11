@@ -138,7 +138,7 @@ class Corpus(object):
 		specification. For example, if prefix is 'test', number is '12' and
 		'digits' is 5, then this returns 'test00012'"""
 
-		return ("%s%0" + str(int(digits)) + "d") % (prefix, number)	
+		return ("%s%0" + str(int(digits)) + "d") % (prefix, number)
 
 	################################################################################
 
@@ -149,7 +149,7 @@ class Corpus(object):
 		if r.status_code == 201:
 			objectid = str(r.json())
 			r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + objectid, auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
-	
+
 			if r.status_code == 200:
 				response = r.json()
 
@@ -198,10 +198,10 @@ class Corpus(object):
 					for record in response:
 						if '_ref' in record:
 							results.append(record['_ref'])
-				
+
 				return results
 			else:
-				raise LookupError("Invalid data returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)			
+				raise LookupError("Invalid data returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
 		else:
 			raise LookupError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
 
@@ -274,7 +274,7 @@ class Corpus(object):
 				return
 
 			if task.info.state == 'error':
-			
+
 				## Try to get a meaningful error message
 				if hasattr(task.info.error,'msg'):
 					error_message = task.info.error.msg
@@ -292,7 +292,7 @@ class Corpus(object):
 	################################################################################
 
 	def vmware_vm_custspec(self, dhcp=True, gateway=None, netmask=None, ipaddr=None, dns_servers="8.8.8.8", dns_domain="localdomain", os_type=None, os_domain="localdomain", timezone=None, hwClockUTC=True, domain_join_user=None, domain_join_pass=None, fullname=None, orgname=None, productid=""):
-		"""This function generates a vmware VM customisation spec for use in cloning a VM. 
+		"""This function generates a vmware VM customisation spec for use in cloning a VM.
 
 		   If you choose DHCP (the default) the gateway, netmask, ipaddr, dns_servers and dns_domain parameters are ignored.
 
@@ -353,7 +353,7 @@ class Corpus(object):
 
 			## finally load in the sysprep into the customisation spec
 			custspec.identity = linuxprep
-	
+
 		elif os_type == self.OS_TYPE_BY_NAME['Windows']:
 
 			## the windows sysprep /CRI
@@ -395,7 +395,7 @@ class Corpus(object):
 		instance = self.config['VMWARE'][tag]
 
 		sslContext = ssl.create_default_context()
-		
+
 		if 'verify' in instance:
 			if instance['verify'] == False:
 				sslContext.check_hostname = False
@@ -404,7 +404,7 @@ class Corpus(object):
 		return SmartConnect(host=instance['hostname'], user=instance['user'], pwd=instance['pass'], port=instance['port'], sslContext=sslContext)
 
 	################################################################################
-	
+
 	def vmware_clone_vm(self, service_instance, vm_template, vm_name, vm_datacenter=None, vm_datastore=None, vm_folder=None, vm_cluster=None, vm_rpool=None, vm_network=None, vm_poweron=False, custspec=None, vm_datastore_cluster=None):
 		"""This function connects to vcenter and clones a virtual machine. Only vm_template and
 		   vm_name are required parameters although this is unlikely what you'd want - please
@@ -606,8 +606,7 @@ class Corpus(object):
 
 		return template.Clone(folder=destfolder, name=vm_name, spec=clonespec)
 
-	############################################################################
-	
+	############################################################################ 
 	def update_vm_cache(self, vm, tag):
 		"""Updates the VMware cache data with the information about the VM."""
 
@@ -621,7 +620,7 @@ class Corpus(object):
 
 			# Get a cursor to the database
 			cur = self.db.cursor(mysql.cursors.DictCursor)
-		
+
 			# Get the instance details of the vCenter given by tag
 			instance = self.config['VMWARE'][tag]
 
@@ -653,7 +652,7 @@ class Corpus(object):
 			self.db.commit()
 
 	############################################################################
-	
+
 	def puppet_enc_register(self, system_id, certname, environment):
 		"""
 		"""
@@ -673,7 +672,7 @@ class Corpus(object):
 		self.db.commit()
 
 	############################################################################
-	
+
 	def puppet_enc_remove(self, system_id):
 		"""Removes a Puppet node from the ENC, given a Cortex system ID"""
 
@@ -730,7 +729,7 @@ class Corpus(object):
 	############################################################################
 
 	def vmware_vm_add_disk(self, vm, size_in_bytes, thin=True):
-		
+
 		# find the last SCSI controller on the VM
 		for device in vm.config.hardware.device:
 			if isinstance(device, vim.vm.device.VirtualSCSIController):
@@ -745,7 +744,7 @@ class Corpus(object):
 
 				## can't have more than 16 disks
 				if unit_number >= 16:
-					raise Exception("Too many disks on the SCSI controller")				
+					raise Exception("Too many disks on the SCSI controller")
 
 		if controller == None:
 			raise Exception("No scsi controller found!")
@@ -753,7 +752,7 @@ class Corpus(object):
 		if unit_number == None:
 			raise Exception("Unable to calculate logical unit number for SCSI device")
 
-		newdev = vim.vm.device.VirtualDeviceSpec()		
+		newdev = vim.vm.device.VirtualDeviceSpec()
 		newdev.fileOperation = "create"
 		newdev.operation = "add"
 		newdev.device = vim.vm.device.VirtualDisk()
@@ -926,7 +925,7 @@ class Corpus(object):
 				elif type(event) == vim.event.CustomizationSucceeded and desired_status == 2:
 					status = 2
 					break
-	
+
 			# Sleep brifly if we've not hit our status
 			if status != desired_status:
 				time.sleep(1)
@@ -1003,10 +1002,10 @@ class Corpus(object):
 		if r is not None and r.status_code >= 200 and r.status_code <= 299:
 			# Get the response
 			response_json = r.json()
-			
+
 			# This returns something like this:
 			# {"result": [{"sys_id": "f49bc4bb0fc3b500488ec453e2050ec3", "number": "PRJTASK0123456"}]}
-			
+
 			# Get the sys_id of the task
 			try:
 				task_sys_id = response_json['result'][0]['sys_id']
@@ -1134,7 +1133,7 @@ class Corpus(object):
 			if r.status_code >= 200 and r.status_code <= 299:
 				# Get the response
 				response_json = r.json()
-				
+
 				# Determine the value of the virtual flag
 				try:
 					virtual = response_json['result']['virtual']
@@ -1155,7 +1154,7 @@ class Corpus(object):
 
 		# Update the operational_status field with the new status
 		r = requests.put('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_ci_server/' + sys_id, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json={'operational_status': new_status})
-		
+
 		if r is not None:
 			if not r.status_code >= 200 and r.status_code <= 299:
 				raise Exception("ServiceNow failed to update the CI. ServiceNow returned error code " + str(r.status_code))
@@ -1169,7 +1168,7 @@ class Corpus(object):
 		self.db.commit()
 
 	################################################################################
-	
+
 	def _connect_redis(self):
 		"""Connects to the Redis instance specified in the configuration and 
 		returns a StrictRedis object"""
@@ -1344,9 +1343,9 @@ class Corpus(object):
 		# Connect to the correct vCenter
 		instance = None
 		for key in self.config['VMWARE']:
-		        if self.config['VMWARE'][key]['hostname'] == vcenter: 
-		                instance = key
-		
+			if self.config['VMWARE'][key]['hostname'] == vcenter:
+				instance = key
+
 		# If we've found the right vCenter
 		if instance is not None:
 			# Connect
@@ -1392,22 +1391,38 @@ class Corpus(object):
 	############################################################################
 
 	def tsm_get_system(self, name):
+		"""Gets the system from TSM
+			Returns:
+			  A client dict or False"""
 		try:
 			r = requests.get(urljoin(self.config['TSM_API_URL_BASE'], 'clients'), auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']), verify=False)
 			r.raise_for_status()
-			client = next((client for client in r.json()['list'] if client['NAME'].split('.')[0] == name.upper()), None)
+			client = next((client for client in r.json()['list'] if client['NAME'].split('.')[0].lower() == name.lower()), None)
 			if client is None:
 				return False
 			else:
+				r = requests.get(urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(client['SERVER']) + '/client/' + quote(client['NAME']) + '/detail'), auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']), verify=False)
+				r.raise_for_status()
+				client['DECOMMISSIONED'] = r.json()['DECOMMISSIONED']
 				return client
 		except requests.exceptions.HTTPError as e:
+			return False
+		except Exception as e:
 			return False
 
 	############################################################################
 
 	def tsm_decom_system(self, name, server):
+		"""Decoms the system from TSM
+			Args:
+			  name (string): the client name to decom
+			  server (string): the server the client belongs to
+			Returns:
+			  True if suceeds
+			Throws:
+			  HTTPError"""
 		try:
-			r = requests.put(urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(server) + '/client/' + quote(name) + '/decomissionclient'), auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']), verify=False)
+			r = requests.put(urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(server) + '/client/' + quote(name) + '/decommissionclient'), auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']), verify=False)
 			r.raise_for_status()
 			return True
 		except requests.exceptions.HTTPError as e:

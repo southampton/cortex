@@ -109,3 +109,8 @@ NOTIFY_EMAILS = []
 
 # Notification e-mail address 
 SYSTEM_EXPIRE_NOTIFY_EMAILS = []
+
+# TSM  config
+TSM_API_URL_BASE = ''
+TSM_API_USER = ''
+TSM_API_PASS = ''
