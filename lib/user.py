@@ -2,6 +2,7 @@
 
 from cortex import app
 import cortex.lib.ldapc
+import cortex.lib.core
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
 import re
@@ -49,12 +50,12 @@ def clear_session():
 	session.pop('logged_in', None)
 	session.pop('username', None)
 	session.pop('id', None)
-	cortex.lib.logger.log(__name__, 'Logout success', username)
+	cortex.lib.core.log(__name__, 'Logout success', username)
 
 
 ################################################################################
 
-def logon_ok(): 
+def logon_ok():
 	"""This function is called post-logon or post TOTP logon to complete the
 	logon sequence"""
 
@@ -63,11 +64,11 @@ def logon_ok():
 
 	# Log a successful login
 	app.logger.info('User "' + session['username'] + '" logged in from "' + request.remote_addr + '" using ' + request.user_agent.string)
-	cortex.lib.logger.log(__name__, 'Login success', request.form['username'].lower())
-		
+	cortex.lib.core.log(__name__, 'Login success', request.form['username'].lower())
+
 	# Determine if "next" variable is set (the URL to be sent to)
 	next = request.form.get('next', default=None)
-	
+
 	if next == None:
 		return redirect(url_for('dashboard'))
 	else:

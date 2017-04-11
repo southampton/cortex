@@ -3,7 +3,6 @@
 
 from cortex import app
 import cortex.lib.core
-import cortex.lib.logger
 from cortex.lib.user import does_user_have_permission
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
 import re
@@ -359,7 +358,7 @@ def admin_classes():
 				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES (%s, %s, %s, %s, %s, %s)''', (class_name, class_digits, class_comment, class_disabled, class_link_vmware, class_cmdb_type))
 				g.db.commit()
 
-				cortex.lib.logger.log(__name__, "Class '" + class_name + "' created")
+				cortex.lib.core.log(__name__, "Class '" + class_name + "' created")
 				flash("System class created", "alert-success")
 				return redirect(url_for('admin_classes'))
 			
@@ -371,7 +370,7 @@ def admin_classes():
 
 				curd.execute('''UPDATE `classes` SET `digits` = %s, `disabled` = %s, `comment` = %s, `link_vmware` = %s, `cmdb_type` = %s WHERE `name` = %s''', (class_digits, class_disabled, class_comment, class_link_vmware, class_cmdb_type, class_name))
 				g.db.commit()
-				cortex.lib.logger.log(__name__, "Class '" + class_name + "' edited")
+				cortex.lib.core.log(__name__, "Class '" + class_name + "' edited")
 
 				flash("System class updated", "alert-success")
 				return redirect(url_for('admin_classes'))
@@ -408,7 +407,7 @@ def admin_classes():
 				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES ('san', 5, 'Fibre channel switches', 0, 0, 'cmdb_ci_netgear')''')
 				g.db.commit()
 
-			cortex.lib.logger.log(__name__, "System classes added")
+			cortex.lib.core.log(__name__, "System classes added")
 			flash("System classes added", "alert-success")
 			return redirect(url_for('admin_classes'))
 
@@ -461,21 +460,21 @@ def admin_maint():
 				abort(403)
 
 			task_id = neocortex.start_internal_task(session['username'], 'cache_vmware.py', '_cache_vmware', description="Caches information about virtual machines, datacenters and clusters from VMware")
-			cortex.lib.logger.log(__name__, "VM cache task started")
+			cortex.lib.core.log(__name__, "VM cache task started")
 		elif module == 'sncache':
 			# Check user permissions
 			if not does_user_have_permission("maintenance.cmdb"):
 				abort(403)
 
 			task_id = neocortex.start_internal_task(session['username'], 'cache_servicenow.py', '_cache_servicenow', description="Caches server CIs from the ServiceNow CMDB")
-			cortex.lib.logger.log(__name__, "SN cache task started")
+			cortex.lib.core.log(__name__, "SN cache task started")
 		elif module == 'vmexpire':
 			# Check user permissions
 			if not does_user_have_permission("maintenance.expire_vm"):
 				abort(403)
 
 			task_id = neocortex.start_internal_task(session['username'], 'vm_expire.py', '_vm_expire', description="Turns off VMs which have expired")
-			cortex.lib.logger.log(__name__, "VM expire task started")
+			cortex.lib.core.log(__name__, "VM expire task started")
 		else:
 			app.logger.warn('Unknown module name specified when starting task')
 			abort(400)
@@ -490,7 +489,7 @@ def _extract_datatables():
 	# that DataTables uses internally.
 	if 'draw' in request.form:
 		draw = int(request.form['draw'])
-	else:   
+	else:
 		app.logger.warn('\'draw\' parameter missing from DataTables request')
 		abort(400)
 

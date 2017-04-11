@@ -116,3 +116,18 @@ def task_render_status(task, template):
 	events = curd.fetchall()
 
 	return make_response((render_template(template, id=task['id'], task=task, events=events, title="Task Status"), 200, {'Cache-Control': 'no-cache'}))
+
+################################################################################
+
+def log(source, desc, username=None):
+	if username is None:
+		username = session.get('username', None)
+	try:
+		cur = g.db.cursor()
+		stmt = 'INSERT INTO `log` (`time`, `username`, `source`, `desc`) VALUES (NOW(), %s, %s, %s)'
+		params = (username, source, desc)
+		cur.execute(stmt, params)
+		g.db.commit()
+		return True
+	except Exception as e:
+		return False

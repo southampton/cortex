@@ -2,7 +2,7 @@
 
 from cortex import app
 import cortex.lib.user
-import cortex.lib.logger
+import cortex.lib.core
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 import re
 
@@ -27,7 +27,7 @@ def login():
 
 			if not result:
 				flash('Incorrect username and/or password', 'alert-danger')
-				cortex.lib.logger.log(__name__, 'Login failure: incorrect username/password', request.form['username'].lower())
+				cortex.lib.core.log(__name__, 'Login failure: incorrect username/password', request.form['username'].lower())
 				return redirect(url_for('login'))
 
 			# Set the username in the session
@@ -47,7 +47,7 @@ def login():
 				cortex.lib.user.get_user_realname(session['username'],from_cache=False)
 			except Exception as ex:
 				pass
-			
+
 			# Logon is OK to proceed
 			return cortex.lib.user.logon_ok()
 
@@ -64,7 +64,7 @@ def logout():
 	flash('You were logged out successfully', 'alert-success')
 
 	# Tell the user
-	
+
 	# Redirect the user to the login page
 	return redirect(url_for('login'))
 

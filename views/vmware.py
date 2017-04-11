@@ -4,9 +4,9 @@
 from cortex import app
 from cortex.lib.user import does_user_have_permission
 import cortex.lib.vmware
-import cortex.lib.logger
+import cortex.lib.core
 from flask import Flask, request, session, redirect, url_for, flash, g, render_template, jsonify, Response, abort
-import os 
+import os
 import time
 import json
 import re
@@ -313,7 +313,7 @@ def vmware_download_csv():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT * FROM `vmware_cache_vm` ORDER BY `name`')
 
-	cortex.lib.logger.log(__name__, "CSV dumped")
+	cortex.lib.core.log(__name__, "CSV dumped")
 	# Return the response
 	return Response(vmware_csv_stream(curd), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="vmware.csv"'})
 

@@ -4,11 +4,10 @@ from cortex import app
 import cortex.lib.puppet
 import cortex.lib.core
 import cortex.lib.systems
-import cortex.lib.logger
 from cortex.lib.user import does_user_have_permission, does_user_have_system_permission
 from cortex.lib.errors import stderr
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
-import os 
+import os
 import time
 import json
 import re
