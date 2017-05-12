@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 from flask import Flask, request, session, abort, g, render_template, url_for
-import jinja2 
+import jinja2
 import os.path
 from os import walk
 import imp
@@ -150,7 +150,7 @@ Further Details:
 					if 'username' in session:
 						self.logger.warning('CSRF protection alert: %s failed to present a valid POST token', session['username'])
 					else:
-			 			self.logger.warning('CSRF protection alert: a non-logged in user failed to present a valid POST token')
+						self.logger.warning('CSRF protection alert: a non-logged in user failed to present a valid POST token')
 
 					# The user should not have accidentally triggered this so just throw a 400
 					abort(400)
@@ -176,7 +176,7 @@ Further Details:
 
 	################################################################################
 
-	def _load_workflow_settings(self, filename): 
+	def _load_workflow_settings(self, filename):
 		"""Extracts the settings from the given config file."""
 
 		# Start a new module, which will be the context for parsing the config
@@ -295,7 +295,7 @@ Username:             %s
 			request.user_agent.browser,
 			request.user_agent.version,
 			usr,
-			
+
 		), exc_info=exc_info)
 
 ################################################################################
@@ -344,15 +344,6 @@ Username:             %s
 		  `status` tinyint(4) NOT NULL DEFAULT '0',
 		  `start` datetime NOT NULL,
 		  `end` datetime DEFAULT NULL,
-		  PRIMARY KEY (`id`)
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
-
-		cursor.execute("""CREATE TABLE IF NOT EXISTS `log` (
-		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
-		  `time` datetime NOT NULL,
-		  `username` varchar(64) NOT NULL,
-		  `source` varchar(255) NOT NULL,
-		  `desc` text,
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
