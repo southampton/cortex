@@ -1393,22 +1393,32 @@ class Corpus(object):
 	def tsm_get_system(self, name):
 		"""Gets the system from TSM
 			Returns:
-			  A client dict or False"""
-		try:
-			r = requests.get(urljoin(self.config['TSM_API_URL_BASE'], 'clients'), auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']), verify=False)
+			  A client dict
+			Rasises:
+				requests.exceptions.HTTPError if the API call fails
+				LookupError if client is not found """
+		r = requests.get(urljoin(self.config['TSM_API_URL_BASE'], 'clients'),
+		                         auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
+		                         verify=self.config['TSM_API_VERIFY_SERVER'])
+		#raise an exception if we get an error
+		r.raise_for_status()
+		#get the specific client details from the response
+		#JSON decode the response. Using the list key, iterate over each client in the list extracting the hostname
+		#from the FQDN and compare it system name we want; we stop interating as soon as we get a match.
+		client = next((client for client in r.json()['list'] if client['NAME'].split('.')[0].lower() == name.lower()), None)
+
+		if client is None:
+			#client was not found
+			raise LookupError('Client not found')
+		else:
+			#We found the client so we can now get the details we need
+			r = requests.get(urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(client['SERVER'])
+			                         + '/client/' + quote(client['NAME']) + '/detail'),
+			                         auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
+			                         verify=self.config['TSM_API_VERIFY_SERVER'])
 			r.raise_for_status()
-			client = next((client for client in r.json()['list'] if client['NAME'].split('.')[0].lower() == name.lower()), None)
-			if client is None:
-				return False
-			else:
-				r = requests.get(urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(client['SERVER']) + '/client/' + quote(client['NAME']) + '/detail'), auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']), verify=False)
-				r.raise_for_status()
-				client['DECOMMISSIONED'] = r.json()['DECOMMISSIONED']
-				return client
-		except requests.exceptions.HTTPError as e:
-			return False
-		except Exception as e:
-			return False
+			client['DECOMMISSIONED'] = r.json()['DECOMMISSIONED']
+			return client
 
 	############################################################################
 
@@ -1418,12 +1428,12 @@ class Corpus(object):
 			  name (string): the client name to decom
 			  server (string): the server the client belongs to
 			Returns:
-			  True if suceeds
+			  True if succeeds
 			Throws:
-			  HTTPError"""
-		try:
-			r = requests.put(urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(server) + '/client/' + quote(name) + '/decommissionclient'), auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']), verify=False)
-			r.raise_for_status()
-			return True
-		except requests.exceptions.HTTPError as e:
-			raise
+				requests.exceptions.HTTPError if the API call fails"""
+		r = requests.put(urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(server)
+		                         + '/client/' + quote(name) + '/decommissionclient'),
+		                         auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
+		                         verify=self.config['TSM_API_VERIFY_SERVER'])
+		r.raise_for_status()
+		return True
