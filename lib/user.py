@@ -23,9 +23,8 @@ def login_required(f):
 	@wraps(f)
 	def decorated_function(*args, **kwargs):
 		if not is_logged_in():
-			flash('You must login first!', 'alert-danger')
-			args = url_encode(request.args)
-			return redirect(url_for('login', next=request.script_root + request.path + "?" + args))
+			session['next'] = request.url
+			return redirect(url_for('root'))
 		return f(*args, **kwargs)
 	return decorated_function
 
@@ -50,6 +49,7 @@ def clear_session():
 	session.pop('logged_in', None)
 	session.pop('username', None)
 	session.pop('id', None)
+	session.pop('cas_ticket', None)
 
 
 ################################################################################
@@ -66,7 +66,7 @@ def logon_ok(username):
 	app.logger.info('User "' + session['username'] + '" logged in from "' + request.remote_addr + '" using ' + request.user_agent.string)
 
 	# Determine if "next" variable is set (the URL to be sent to)
-	next = request.form.get('next', default=None)
+	next = session.pop('next', None)
 
 	if next == None:
 		return redirect(url_for('dashboard'))

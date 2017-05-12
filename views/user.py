@@ -7,31 +7,23 @@ import re
 from cas_client import CASClient
 
 ################################################################################
-#CAS client init
-cas_client = CASClient(app.config['CAS_SERVER_URL'], app.config['CAS_SERVICE_URL'], verify_certificates=True)
-
-################################################################################
 
 @app.route('/', methods=['GET', 'POST'])
 @app.disable_csrf_check
 def root():
-	if request.method == 'POST' and 'logoutRequest' in request.form:
-		cortex.lib.user.clear_session()
-		return ('', 200)
-	else:
-		return login()
-
-################################################################################
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-	"""Handles the login page, logging a user in on correct authentication."""
-
 	# If the user is already logged in, just redirect them to their dashboard
 	if cortex.lib.user.is_logged_in():
 		return redirect(url_for('dashboard'))
+	else:
+		if app.config['USER_AUTH'] == 'cas':
+			return cas()
+		else:
+			return login()
 
-	# LDAP login
+###############################################################################
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
 	if request.method == 'POST':
 		if all(field in request.form for field in ['username', 'password']):
 			result = cortex.lib.user.authenticate(request.form['username'], request.form['password'])
@@ -51,29 +43,50 @@ def login():
 			# Logon is OK to proceed
 			return cortex.lib.user.logon_ok(request.form['username'])
 		abort(400)
+	return render_template('login.html')
 
-	# present LDAP auth
-	elif request.args.get('bypasscas', None) == '1':
-		return render_template('login.html')
+###############################################################################
 
-	#otherwise perform cas auth
-	else:
-		ticket = request.args.get('ticket')
-		if ticket:
+
+@app.route('/cas', methods=['GET', 'POST'])
+@app.disable_csrf_check
+def cas():
+	"""Handles the login page, logging a user in on correct authentication."""
+
+	#CAS client init
+	cas_client = CASClient(app.config['CAS_SERVER_URL'], app.config['CAS_SERVICE_URL'], verify_certificates=True)
+
+	#SLO
+	if request.method == 'POST' and session.get('cas_ticket') is not None and 'logoutRequest' in request.form:
+		#check the verify the ticket to prevent cross orign attacks
+		message = cas_client.parse_logout_request(request.form.get('logoutRequest'))
+		if message.get('session_index', None) == session.get('cas_ticket'):
+			cortex.lib.user.clear_session()
+			return ('', 200)
+		else:
+			abort(400)
+
+
+	# If the user is already logged in, just redirect them to their dashboard
+	if cortex.lib.user.is_logged_in():
+		return redirect(url_for('dashboard'))
+
+	ticket = request.args.get('ticket', None)
+	if ticket is not None:
+		try:
+			cas_response = cas_client.perform_service_validate(ticket=ticket)
+		except:
+			return root()
+		if cas_response and cas_response.success:
 			try:
-				cas_response = cas_client.perform_service_validate(ticket=ticket)
-			except:
-				#CAS is not working falling back to LDAP
-				flash("CAS SSO is not working, falling back to LDAP authentication", 'alert-warning')
-				return render_template('login.html')
-			if cas_response and cas_response.success:
-				try:
-					return cortex.lib.user.logon_ok(cas_response.attributes.get('uid'))
-				except KeyError:
-					#required user attributes not returned fallback to LDAP
-					alert("CAS SSO authentication successful but missing information, falling back to LDAP authentication", 'alert-warning')
-					return render_template('login.html')
-		return redirect(cas_client.get_login_url())
+				#keep the ticket for SLO
+				session['cas_ticket'] = ticket
+				return cortex.lib.user.logon_ok(cas_response.attributes.get('uid'))
+			except KeyError:
+				#required user attributes not returned
+				alert("CAS SSO authentication successful but missing required information consider using LDAP authentication", 'alert-warning')
+				return root()
+	return redirect(cas_client.get_login_url())
 
 ################################################################################
 
@@ -82,11 +95,18 @@ def login():
 def logout():
 	"""Logs a user out"""
 
+	#CAS client init
+	cas_client = CASClient(app.config['CAS_SERVER_URL'], app.config['CAS_SERVICE_URL'], verify_certificates=True)
+
+	cas_ticket = session.get('cas_ticket', None)
 	# destroy the session
 	cortex.lib.user.clear_session()
 
-	# Tell cas about the logout
-	return redirect(cas_client.get_logout_url())
+	if cas_ticket is not None:
+		# Tell cas about the logout
+		return redirect(cas_client.get_logout_url())
+	else:
+		return login()
 
 ################################################################################
 
