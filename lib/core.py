@@ -119,13 +119,21 @@ def task_render_status(task, template):
 
 ################################################################################
 
-def log(source, name, desc, username=None, related_id=None):
+def log(source, name, desc, username=None, related_id=None, success=True):
 	if username is None:
 		username = session.get('username', None)
+
+	if success:
+		status = 1
+	else:
+		status = 2
+
+	app.logger.info(str(source) + ',' + str(related_id) + ',' + str(name) + ',' + str(username) + ',' + str(desc))
+
 	try:
 		cur = g.db.cursor()
-		stmt = 'INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, 2, NOW(), NOW())'
-		params = (source, related_id, name, username, desc)
+		stmt = 'INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())'
+		params = (source, related_id, name, username, desc, status)
 		cur.execute(stmt, params)
 		g.db.commit()
 	except Exception as e:
