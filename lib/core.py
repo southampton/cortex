@@ -2,7 +2,7 @@
 
 from cortex import app
 from cortex.lib.errors import fatalerr
-from flask import g, abort, make_response, render_template
+from flask import g, abort, make_response, render_template, request
 import MySQLdb as mysql
 import Pyro4
 import re
@@ -132,8 +132,8 @@ def log(source, name, desc, username=None, related_id=None, success=True):
 
 	try:
 		cur = g.db.cursor()
-		stmt = 'INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())'
-		params = (source, related_id, name, username, desc, status)
+		stmt = 'INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW(), %s)'
+		params = (source, related_id, name, username, desc, status, request.remote_addr)
 		cur.execute(stmt, params)
 		g.db.commit()
 	except Exception as e:

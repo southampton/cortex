@@ -344,6 +344,7 @@ Username:             %s
 		  `status` tinyint(4) NOT NULL DEFAULT '0',
 		  `start` datetime NOT NULL,
 		  `end` datetime DEFAULT NULL,
+		  `ipaddr` varchar(43) DEFAULT NULL,
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
