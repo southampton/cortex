@@ -115,14 +115,14 @@ $(document).ready(function()
 		<div class="panel panel-default">
 			<div class="panel-heading">Puppet Classes</div>
 			<div class="panel-body" style="padding:0px">
-				<textarea id="classes" name="classes">{{ system.puppet_classes }}</textarea>
+				<textarea id="classes" name="classes" placeholder="Classess to include can be entered here">{{ system.puppet_classes or '' }}</textarea>
 			</div>
 		</div>
 
 		<div class="panel panel-default">
 			<div class="panel-heading">Puppet Global Variables</div>
 			<div class="panel-body" style="padding:0px">
-				<textarea id="variables" name="variables">{{ system.puppet_variables }}</textarea>
+				<textarea id="variables" name="variables" placholder="Global variables to include can be entered here">{{ system.puppet_variables or '' }}</textarea>
 			</div>
 		</div>
 
