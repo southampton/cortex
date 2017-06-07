@@ -45,14 +45,6 @@ def puppet_enc_edit(node):
 	if not does_user_have_system_permission(system['id'],"edit.puppet","systems.all.edit.puppet"):
 		abort(403)
 
-	# If we've got a new node, then don't show "None"
-	if system['puppet_classes'] is None or system['puppet_classes'] == '':
-		system['puppet_classes'] = "# Classes to include can be entered here\n"
-	if system['puppet_variables'] is None or system['puppet_variables'] == '':
-		system['puppet_variables'] = "# Global variables to include can be entered here\n"
-	if system['puppet_certname'] is None:
-		system['puppet_certname'] = ""
-
 	# On any GET request, just display the information
 	if request.method == 'GET':
 
