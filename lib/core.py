@@ -2,7 +2,7 @@
 
 from cortex import app
 from cortex.lib.errors import fatalerr
-from flask import g, abort, make_response, render_template, request
+from flask import g, abort, make_response, render_template, request, session
 import MySQLdb as mysql
 import Pyro4
 import re
