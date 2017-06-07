@@ -8,21 +8,22 @@ a.server-link:hover { text-decoration: underline !important; }
 
 <div class="page-header">
 	<button id="hide_inactive" type="button" class="btn btn-sm pull-right {% if hide_inactive %}btn-success active{%else%}btn-danger{%endif%}" style="margin-left:4px" data-toggle="popover" data-trigger="hover" data-placement="left" title="Hide Inactive Systems" data-content="When ticked, systems that are not in ServiceNow or VMware will not be shown, nor will systems that are not marked as 'In Service' in ServiceNow."><i class="fa fa-fw {% if hide_inactive %}fa-check-square-o{%else%}fa-square-o{%endif%}"></i> Hide Inactive Systems</button>
-<h3><i class="fa fa-server fa-fw"></i>{% if expired %} Expired Systems{% elif nocmdb %} VMs Missing a CMDB Record{% elif perms_only %} Systems with permissions{% else %} Systems{% endif %}<a class="btn btn-primary btn-sm pull-right" href="{{ url_for('systems_download_csv') }}"><i class="fa fa-fw fa-download"></i> Download CSV</a>
-	<small><strong>&nbsp;Legend:</strong>
-		<i title='System is linked to VMware and the VM is powered on' class='fa fa-fw fa-play icon-state icon-legend icon-on'></i>On
-		<i title='System is linked to VMware and the VM is powered off' class='fa fa-fw fa-stop icon-state icon-legend icon-off'></i>Off
-		<i title='System is linked to VMware and the VM is suspended' class='fa fa-fw fa-pause icon-state icon-legend icon-pause'></i>Suspended
-		<i title='System is not linked to VMware. It may be a physical box, a name that has been allocated and not used, or it may have been VM that has deleted from VMware' class='fa fa-fw fa-dot-circle-o icon-state icon-legend icon-unknown'></i>Not linked to VMware
-	</small>
-</h3>
+	<h3><i class="fa fa-server fa-fw"></i>{% if expired %} Expired Systems{% elif nocmdb %} VMs Missing a CMDB Record{% elif perms_only %} Systems with permissions{% else %} Systems{% endif %}
+		{% if does_user_have_permission("systems.all.view") %}<a class="btn btn-primary btn-sm pull-right" href="{{ url_for('systems_download_csv') }}"><i class="fa fa-fw fa-download"></i> Download CSV</a>{% endif %}
+		<small><strong>&nbsp;Legend:</strong>
+			<i title='System is linked to VMware and the VM is powered on' class='fa fa-fw fa-play icon-state icon-legend icon-on'></i>On
+			<i title='System is linked to VMware and the VM is powered off' class='fa fa-fw fa-stop icon-state icon-legend icon-off'></i>Off
+			<i title='System is linked to VMware and the VM is suspended' class='fa fa-fw fa-pause icon-state icon-legend icon-pause'></i>Suspended
+			<i title='System is not linked to VMware. It may be a physical box, a name that has been allocated and not used, or it may have been VM that has deleted from VMware' class='fa fa-fw fa-dot-circle-o icon-state icon-legend icon-unknown'></i>Not linked to VMware
+		</small>
+	</h3>
 </div>
 
 <ul id="class-tabs" class="nav nav-tabs" style="margin-bottom:1em">
 	{%- for class in classes %}
 	<li {% if loop.index0 == 0 and not q and not expired and not nocmdb %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="{{ class.name }}" data-vmware="{{ class.link_vmware }}" role="tab">{{ class.name }}</a></li>
 	{%- endfor %}
-	<li role="presentation"><a style="cursor:pointer" data-class="*OTHER" data-vmware="1" role="tab">Other/Legacy</a></li>
+	{% if classes|length > 0 %}<li role="presentation"><a style="cursor:pointer" data-class="*OTHER" data-vmware="1" role="tab">Other/Legacy</a></li>{% endif %}
 	<li {% if q or classes|length == 0 or expired or nocmdb %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="*ALL" data-vmware="1" role="tab">All</a></li>
 </ul>
 <div id="systemsWrapper">
@@ -83,7 +84,7 @@ $(function() {
 		"rowCallback": function(row, data, index) {
 			{#- data[6] is CMDB URL, data[7] is database ID, data[5] is operational status, data[9] is Puppet Cert Name #}
 			$('td:eq(6)', row).html(
-				'<a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/view/' + data[7] + '">' +
+				'<a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/overview/' + data[7] + '">' +
 				'	<i class="fa fa-fw fa-info-circle"></i>' +
 				'</a>' + (data[6] != '' ?
 				'<a title="CMDB" style="margin-right:0.5em" class="btn btn-xs btn-primary" href="' + data[6] + '" target="_blank">' +
@@ -98,7 +99,7 @@ $(function() {
 				$('td:eq(5)', row).html("Unknown");
 			}
 
-			var view_link = "<a class='server-link' href='/systems/view/" + data[7] + "'>" + data[0] + "</a>";
+			var view_link = "<a class='server-link' href='/systems/overview/" + data[7] + "'>" + data[0] + "</a>";
 
 			if ($('#class-tabs li.active a').attr('data-vmware') == 1)
 			{

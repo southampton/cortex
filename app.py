@@ -23,6 +23,8 @@ class CortexFlask(Flask):
 	## A list of dict's, each representing a workflow 'system-action' function
 	wf_system_functions = []
 
+	workflows = {}
+
 	################################################################################
 
 	def __init__(self, init_object_name):
@@ -381,7 +383,7 @@ Username:             %s
 		  `username` varchar(64) NOT NULL,
 		  `start` datetime NOT NULL,
 		  `end` datetime DEFAULT NULL,
-		  `status` tinyint(4) NOT NULL DEFAULT '0',
+		  `status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '0: in progress, 1: success, 2: failure',
 		  `description` text,
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
@@ -519,6 +521,31 @@ Username:             %s
 		  PRIMARY KEY (`username`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_request` (
+		 `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		 `request_date` datetime NOT NULL,
+		 `requested_who` varchar(64) NOT NULL,
+		 `fqdn` varchar(255) NOT NULL,
+		 `workflow` varchar(64) NOT NULL,
+		 `sockets` int(11) NOT NULL,
+		 `cores` int(11) NOT NULL,
+		 `ram` int(11) NOT NULL,
+		 `disk` int(11) NOT NULL,
+		 `template` varchar(255) NOT NULL,
+		 `network` varchar(255) DEFAULT NULL,
+		 `cluster` varchar(255) NOT NULL,
+		 `environment` varchar(255) NOT NULL,
+		 `purpose` text NOT NULL,
+		 `comments` text NOT NULL,
+		 `expiry_date` datetime DEFAULT NULL,
+		 `sendmail` tinyint(1) NOT NULL,
+		 `status` int(2) NOT NULL COMMENT '0: pending, 1: rejected, 2: approved',
+		 `updated_who` varchar(64) NOT NULL,
+		 `updated_at` datetime NOT NULL,
+		 `status_text` text DEFAULT NULL,
+		  PRIMARY KEY (`id`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `expiry_date` datetime DEFAULT NULL""")
 		except Exception, e:
@@ -639,7 +666,10 @@ Username:             %s
 		  (1, "maintenance.cmdb"), 
 		  (1, "maintenance.expire_vm"),
 		  (1, "api.register"),
-		  (1, "workflows.all")""")
+		  (1, "workflows.all"),
+		  (1, "sysrequests.all.view"),
+		  (1, "sysrequests.all.approve"),
+		  (1, "sysrequests.all.reject")""")
 
 		## Close database connection
 		temp_db.close()
@@ -655,6 +685,7 @@ Username:             %s
 		## The ORDER MATTERS! It determines the order used on the Roles page
 		self.permissions        = [
 			{'name': 'systems.all.view',            'desc': 'View any system'},
+			{'name': 'systems.own.view',            'desc': 'View systems allocated by the user'},
 			{'name': 'systems.all.view.puppet',     'desc': 'View Puppet reports and facts on any system'},		
 			{'name': 'systems.all.edit.expiry',     'desc': 'Modify the expiry date of any system'},
 			{'name': 'systems.all.edit.review',     'desc': 'Modify the review status of any system'},
@@ -679,12 +710,18 @@ Username:             %s
 			{'name': 'api.register',                'desc': 'Manually register Linux machines (rebuilds / physical machines)'},
 			{'name': 'admin.permissions',           'desc': 'Modify permissions'},
 			{'name': 'workflows.all',               'desc': 'Use any workflow or workflow function'},
+
+			{'name': 'sysrequests.own.view',        'desc': 'View system requests owned by the user'},
+			{'name': 'sysrequests.all.view',        'desc': 'View any system request'},
+			{'name': 'sysrequests.all.approve',     'desc': 'Approve any system request'},
+			{'name': 'sysrequests.all.reject',      'desc': 'Reject any system request'},
 		]
 
 		self.workflow_permissions = []
 
 		self.system_permissions = [
-			{'name': 'view',                        'desc': 'View the system'},
+			{'name': 'view.overview',               'desc': 'View the system overview'},
+			{'name': 'view.detail',                 'desc': 'View the system details'},
 			{'name': 'view.puppet',                 'desc': 'View the system\'s Puppet reports and facts'},
 			{'name': 'edit.expiry',                 'desc': 'Change the expiry date of the system'},
 			{'name': 'edit.review',                 'desc': 'Change the review status of the system'},
@@ -692,4 +729,5 @@ Username:             %s
 			{'name': 'edit.cmdb',                   'desc': 'Change the CMDB link'},
 			{'name': 'edit.comment',                'desc': 'Change the comment'},
 			{'name': 'edit.puppet',                 'desc': 'Change Puppet settings'},
+			{'name': 'control.vmware.power',        'desc': 'Control the VMware power state'},
 		]
