@@ -89,23 +89,23 @@ def run(helper, options):
 					# Start a vm_data section for this vm
 					vm_data[key][moId] = {}
 
-					# Put in blank strings for data we don't have
-					for attr in ['config.annotation', 'guest.hostName', 'guest.ipAddress']:
-						if attr not in vm:
-							vm[attr] = ''
-
 					# Put in the resource pool name rather than a Managed Object
 					if 'resourcePool' in vm:
 						vm_data[key][moId]['cluster'] = vm['resourcePool'].owner.name
 					else:
-						vm_data[key][moId]['cluster'] = "None"
+						vm_data[key][moId]['cluster'] = 'None'
 
 					# Store moId
 					vm_data[key][moId]['_moId'] = moId
 
 					# Store attributes for the VM
 					for attr in ['name', 'config.uuid', 'config.hardware.numCPU', 'config.hardware.memoryMB', 'runtime.powerState', 'config.guestFullName', 'config.guestId', 'config.version', 'guest.hostName', 'guest.ipAddress', 'config.annotation', 'guest.toolsRunningStatus', 'guest.toolsVersionStatus2', 'config.template']:
-						vm_data[key][moId][attr] = vm[attr]
+						if attr in vm:
+							vm_data[key][moId][attr] = vm[attr]
+						else:
+							# Put in blank strings for data we don't have
+							vm_data[key][moId][attr] = ''
+
 
 				# Finish the event
 				helper.end_event(description="Downloaded virtual machine information for " + instance['hostname'])
