@@ -9,7 +9,7 @@ import cortex.lib.classes
 from cortex.lib.user import does_user_have_permission, does_user_have_system_permission, does_user_have_any_system_permission
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
-import os 
+import os
 import time
 import datetime
 import json
@@ -37,7 +37,7 @@ def systems():
 
 	# Get the search string, if any
 	q = request.args.get('q', None)
-	
+
 	# Strip any leading and or trailing spaces
 	if q is not None:
 		q = q.strip()
@@ -138,6 +138,7 @@ def systems_download_csv():
 	# Get the list of systems
 	curd = cortex.lib.systems.get_systems(return_cursor=True, hide_inactive=False)
 
+	cortex.lib.core.log(__name__, "CSV dumped")
 	# Return the response
 	return Response(cortex.lib.systems.csv_stream(curd), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
 
@@ -278,6 +279,7 @@ def systems_add_existing():
 				curd.execute("UPDATE `systems` SET `cmdb_id` = %s WHERE `id` = %s", (ci_results[0]['sys_id'], system_id))
 				g.db.commit()
 
+		cortex.lib.core.log(__name__, "System added, id " + str(system_id))
 		# Redirect to the system page for the system we just added
 		flash("System added", "alert-success")
 		return redirect(url_for('system', id=system_id))
@@ -338,7 +340,8 @@ def systems_new():
 		# list page and flash up success. If they requested more than one
 		# system, then redirect to a bulk-comments-edit page where they can
 		# change the comments on all of the systems.
-		if len(new_systems) == 1: 
+		if len(new_systems) == 1:
+			cortex.lib.core.log(__name__, "System name '" + class_name + "' allocated")
 			flash("System name allocated successfully", "alert-success")
 			return redirect(url_for('system', id=new_systems[new_systems.keys()[0]]))
 		else:
@@ -361,12 +364,13 @@ def systems_bulk_save():
 	# Find a list of systems from the form. Each of the form input elements
 	# containing a system comment has a name that starts "system_comment_"
 	for key, value in request.form.iteritems():
-		 if key.startswith("system_comment_"):
+		if key.startswith("system_comment_"):
 			# Yay we found one! blindly update it!
 			updateid = key.replace("system_comment_", "")
 			found_keys.append(updateid)
 			cur = g.db.cursor()
 			cur.execute("UPDATE `systems` SET `allocation_comment` = %s WHERE `id` = %s", (request.form[key], updateid))
+			cortex.lib.core.log(__name__, "System comment updated for id " + str(updateid))
 
 	g.db.commit()
 
@@ -540,8 +544,9 @@ def system_edit(id):
 			# Update the system
 			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, expiry_date, id))
 			g.db.commit();
+			cortex.lib.core.log(__name__, "System edited, id " + str(updateid))
 
-			flash('System updated', "alert-success") 
+			flash('System updated', "alert-success")
 		except ValueError as ex:
 			flash('Failed to update system: 400 Bad request', 'alert-danger')
 			return redirect(url_for('system_edit', id=id))
@@ -582,7 +587,7 @@ def system_actions(id):
 				actions.append(action)
 			elif does_user_have_system_permission(id,action['system_permission']):
 				app.logger.debug("User " + session['username'] + " does not have workflows.all")
-				actions.append(action)								
+				actions.append(action)
 			elif action['permission'] is not None:
 				app.logger.debug("User " + session['username'] + " does not have " + action['system_permission'])
 

@@ -2,6 +2,7 @@
 
 from cortex import app
 import cortex.lib.user
+import cortex.lib.core
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 import re
 from cas_client import CASClient
@@ -30,7 +31,9 @@ def login():
 
 			if not result:
 				flash('Incorrect username and/or password', 'alert-danger')
-				return render_template('login.html')
+				# Do we want this? Could fill up the database volume (DoS)
+				#cortex.lib.core.log(__name__, 'Login failure: incorrect username/password', request.form['username'].lower())
+				return redirect(url_for('login'))
 
 			# Permanent sessions
 			permanent = request.form.get('sec', default="")
@@ -79,13 +82,14 @@ def cas():
 			return root()
 		if cas_response and cas_response.success:
 			try:
-				#keep the ticket for SLO
+				# keep the ticket for SLO
 				session['cas_ticket'] = ticket
 				return cortex.lib.user.logon_ok(cas_response.attributes.get('uid'))
 			except KeyError:
-				#required user attributes not returned
-				alert("CAS SSO authentication successful but missing required information consider using LDAP authentication", 'alert-warning')
+				# required user attributes not returned
+				flash("CAS SSO authentication successful but missing required information consider using LDAP authentication", 'alert-warning')
 				return root()
+
 	return redirect(cas_client.get_login_url())
 
 ################################################################################
@@ -98,8 +102,8 @@ def logout():
 	#CAS client init
 	cas_client = CASClient(app.config['CAS_SERVER_URL'], app.config['CAS_SERVICE_URL'], verify_certificates=True)
 
-	cas_ticket = session.get('cas_ticket', None)
 	# destroy the session
+	cas_ticket = session.get('cas_ticket', None)
 	cortex.lib.user.clear_session()
 
 	if cas_ticket is not None:

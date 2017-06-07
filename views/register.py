@@ -1,8 +1,9 @@
 from cortex import app
 import cortex.lib.core
 import cortex.lib.systems
+import cortex.lib.core
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, jsonify, Response
-import os 
+import os
 import re
 import MySQLdb as mysql
 import requests
@@ -155,6 +156,7 @@ def api_register_system():
 	else:
 		app.logger.warn('No OS ident provided - a Satellite activation key will not be returned')
 
+	cortex.lib.core.log(__name__, "System registered")
 	return(jsonify(cdata))
 
 ################################################################################

@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="page-header">
+<h3>
+	<div class="pull-right">
+		<a class="btn btn-sm {% if eventtype == 'all' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_events') }}">All</a>
+		<a class="btn btn-sm {% if eventtype == 'user' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_events_user') }}">User</a>
+		<a class="btn btn-sm {% if eventtype == 'system' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_events_system') }}">System</a>
+	</div>
+	<i class="fa fa-fw fa-list-alt"></i> {{ title }}
+</h3>
+<div class="text-muted">
+{%- if eventtype == 'all' %}
+The list below shows all past and present events that have been run on the system
+{%- elif eventtype == 'active' %}
+The list below shows events currently supervised by the NeoCortex event daemon
+{%- elif eventtype == 'user' %}
+The list below shows all past and present events started by a user
+{%- elif eventtype == 'system' %}
+The list below shows all past and present system-started events
+{%- endif -%}
+</div>
+</div>
+
+<table class="table table-condensed table-striped" id="events">
+	<thead>
+		<tr>
+			<th>ID</th>
+			<th>Date</th>
+			<th>User</th>
+			<th>Source</th>
+			<th>Description</th>
+		</tr>
+	</thead>
+	<tbody>
+	</tbody>
+</table>
+
+<script type="text/javascript">
+	$('#events').DataTable({
+		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
+		"pageLength": 15,
+		"order": [[0, 'desc']],
+		"columns": [null, null, null, null, null],
+		"searching": true,
+{%- if json_source %}
+		"serverSide": true,
+		"searchDelay": 500,
+		"ajax": {
+			"url": "{{ json_source }}",
+			"type": "POST",
+		},
+		"rowCallback": function(row, data, index) {
+		}
+{%- endif %}
+	});
+</script>
+{% endblock %}

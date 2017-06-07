@@ -2,7 +2,7 @@
 
 from cortex import app
 from cortex.lib.errors import fatalerr
-from flask import g, abort, make_response, render_template
+from flask import g, abort, make_response, render_template, request
 import MySQLdb as mysql
 import Pyro4
 import re
@@ -116,3 +116,25 @@ def task_render_status(task, template):
 	events = curd.fetchall()
 
 	return make_response((render_template(template, id=task['id'], task=task, events=events, title="Task Status"), 200, {'Cache-Control': 'no-cache'}))
+
+################################################################################
+
+def log(source, name, desc, username=None, related_id=None, success=True):
+	if username is None:
+		username = session.get('username', None)
+
+	if success:
+		status = 1
+	else:
+		status = 2
+
+	app.logger.info(str(source) + ',' + str(related_id) + ',' + str(name) + ',' + str(username) + ',' + str(desc))
+
+	try:
+		cur = g.db.cursor()
+		stmt = 'INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW(), %s)'
+		params = (source, related_id, name, username, desc, status, request.remote_addr)
+		cur.execute(stmt, params)
+		g.db.commit()
+	except Exception as e:
+		pass

@@ -2,6 +2,7 @@
 
 from cortex import app
 import cortex.lib.ldapc
+import cortex.lib.core
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os
 import re
@@ -49,8 +50,7 @@ def clear_session():
 	session.pop('logged_in', None)
 	session.pop('username', None)
 	session.pop('id', None)
-	session.pop('cas_ticket', None)
-
+	cortex.lib.core.log(__name__, 'Logout success', username)
 
 ################################################################################
 
@@ -61,9 +61,16 @@ def logon_ok(username):
 	# Mark as logged on
 	session['username'] = username.lower()
 	session['logged_in'] = True
+	
+	# Update the user's realname in the cache table
+	try:
+		get_user_realname(session['username'], from_cache=False)
+	except:
+		pass
 
 	# Log a successful login
 	app.logger.info('User "' + session['username'] + '" logged in from "' + request.remote_addr + '" using ' + request.user_agent.string)
+	cortex.lib.core.log(__name__, 'Login success', request.form['username'].lower())
 
 	# Determine if "next" variable is set (the URL to be sent to)
 	next = session.pop('next', None)

@@ -36,7 +36,7 @@ def admin_tasks_json(tasktype):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Extract stuff from DataTables requests
-	(draw, start, length, order_column, order_asc, search) = _tasks_extract_datatables()
+	(draw, start, length, order_column, order_asc, search) = _extract_datatables()
 
 	# Choose the order column
 	if order_column == 0:
@@ -170,6 +170,115 @@ def admin_tasks_system():
 
 ################################################################################
 
+@app.route('/admin/events')
+@cortex.lib.user.login_required
+def admin_events():
+	"""Displays the list of events to the user."""
+
+	# Check user permissions
+	if not does_user_have_permission("events.view"):
+		abort(403)
+
+	# Render the page
+	return render_template('admin/events.html', active='admin', title="Events", event_source='all', json_source=url_for('admin_events_json', event_source='all'))
+
+################################################################################
+
+@app.route('/admin/events/json/<event_source>', methods=['POST'])
+@cortex.lib.user.login_required
+@app.disable_csrf_check
+def admin_events_json(event_source):
+	# Check user permissions
+	if not does_user_have_permission("events.view"):
+		abort(403)
+
+	# Get a cursor to the database
+	curd = g.db.cursor()
+
+	# Extract stuff from DataTables requests
+	(draw, start, length, order_column, order_asc, search) = _extract_datatables()
+
+	# Choose the order column
+	if order_column == 0:
+		order_by = "id"
+	elif order_column == 1:
+		order_by = "time"
+	elif order_column == 2:
+		order_by = "username"
+	elif order_column == 3:
+		order_by = "source"
+	elif order_column == 4:
+		order_by = "desc"
+	else:
+		app.logger.warn('Invalid ordering column parameter in DataTables request')
+		abort(400)
+
+	# Choose order direction
+	order_dir = "DESC"
+	if order_asc:
+		order_dir = "ASC"
+
+	# Determine the event type and add that to the query
+	params = ()
+	where_clause = ""
+	if event_source == 'all':
+		where_clause = '1=1'	# This is just to make 'search' always be able to be an AND and not need an optional WHERE
+	elif event_source == 'user':
+		where_clause = '`source` = "cortex.lib.user"'
+	elif event_source == 'cortex':
+		where_clause = '`source` != "cortex.lib.user"'
+	else:
+		abort(404)
+
+	# Add on search string if we have one
+	if search:
+		where_clause = where_clause + " AND (`source` LIKE %s OR `desc` LIKE %s OR `username` LIKE %s) "
+		params = params + ('%' + search + '%', '%' + search + '%', '%' + search + '%')
+
+	# Get the total number of events
+	curd.execute("SELECT COUNT(*) AS `count` FROM `log`")
+	event_count = curd.fetchone()[0]
+
+	# Get the total number of events
+	curd.execute("SELECT COUNT(*) AS `count` FROM `log` WHERE " + where_clause, params)
+	filtered_event_count = curd.fetchone()[0]
+
+	# Get the list of events
+	curd.execute("SELECT `id`, `time`, `username`, `source`, `desc` FROM `log` WHERE " + where_clause + " ORDER BY `" + order_by + "` " + order_dir + " LIMIT " + str(start) + "," + str(length), params)
+	data = curd.fetchall()
+
+	return jsonify(draw=draw, recordsTotal=event_count, recordsFiltered=filtered_event_count, data=data)
+
+################################################################################
+
+@app.route('/admin/events/user')
+@cortex.lib.user.login_required
+def admin_events_user():
+	"""Displays the list of events, excluding any system events"""
+
+	# Check user permissions
+	if not does_user_have_permission("events.view"):
+		abort(403)
+
+	# Render the page
+	return render_template('admin/events.html', active='admin', title="User Events", event_source='user', json_source=url_for('admin_events_json', event_source='user'))
+
+################################################################################
+
+@app.route('/admin/events/system')
+@cortex.lib.user.login_required
+def admin_events_system():
+	"""Displays the list of events started by the system"""
+
+	# Check user permissions
+	if not does_user_have_permission("events.view"):
+		abort(403)
+
+	# Render the page
+	return render_template('admin/events.html', active='admin', title="System Events", event_source='system', json_source=url_for('admin_events_json', event_source='cortex'))
+
+################################################################################
+
 @app.route('/admin/classes', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def admin_classes():
@@ -249,6 +358,7 @@ def admin_classes():
 				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES (%s, %s, %s, %s, %s, %s)''', (class_name, class_digits, class_comment, class_disabled, class_link_vmware, class_cmdb_type))
 				g.db.commit()
 
+				cortex.lib.core.log(__name__, "Class '" + class_name + "' created")
 				flash("System class created", "alert-success")
 				return redirect(url_for('admin_classes'))
 			
@@ -260,6 +370,7 @@ def admin_classes():
 
 				curd.execute('''UPDATE `classes` SET `digits` = %s, `disabled` = %s, `comment` = %s, `link_vmware` = %s, `cmdb_type` = %s WHERE `name` = %s''', (class_digits, class_disabled, class_comment, class_link_vmware, class_cmdb_type, class_name))
 				g.db.commit()
+				cortex.lib.core.log(__name__, "Class '" + class_name + "' edited")
 
 				flash("System class updated", "alert-success")
 				return redirect(url_for('admin_classes'))
@@ -296,6 +407,7 @@ def admin_classes():
 				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES ('san', 5, 'Fibre channel switches', 0, 0, 'cmdb_ci_netgear')''')
 				g.db.commit()
 
+			cortex.lib.core.log(__name__, "System classes added")
 			flash("System classes added", "alert-success")
 			return redirect(url_for('admin_classes'))
 
@@ -348,18 +460,21 @@ def admin_maint():
 				abort(403)
 
 			task_id = neocortex.start_internal_task(session['username'], 'cache_vmware.py', '_cache_vmware', description="Caches information about virtual machines, datacenters and clusters from VMware")
+			cortex.lib.core.log(__name__, "VM cache task started")
 		elif module == 'sncache':
 			# Check user permissions
 			if not does_user_have_permission("maintenance.cmdb"):
 				abort(403)
 
 			task_id = neocortex.start_internal_task(session['username'], 'cache_servicenow.py', '_cache_servicenow', description="Caches server CIs from the ServiceNow CMDB")
+			cortex.lib.core.log(__name__, "SN cache task started")
 		elif module == 'vmexpire':
 			# Check user permissions
 			if not does_user_have_permission("maintenance.expire_vm"):
 				abort(403)
 
 			task_id = neocortex.start_internal_task(session['username'], 'vm_expire.py', '_vm_expire', description="Turns off VMs which have expired")
+			cortex.lib.core.log(__name__, "VM expire task started")
 		else:
 			app.logger.warn('Unknown module name specified when starting task')
 			abort(400)
@@ -369,12 +484,12 @@ def admin_maint():
 
 ################################################################################
 
-def _tasks_extract_datatables():
+def _extract_datatables():
 	# Validate and extract 'draw' parameter. This parameter is simply a counter
 	# that DataTables uses internally.
 	if 'draw' in request.form:
 		draw = int(request.form['draw'])
-	else:   
+	else:
 		app.logger.warn('\'draw\' parameter missing from DataTables request')
 		abort(400)
 

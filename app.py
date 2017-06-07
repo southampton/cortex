@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 from flask import Flask, request, session, abort, g, render_template, url_for
-import jinja2 
+import jinja2
 import os.path
 from os import walk
 import imp
@@ -150,7 +150,7 @@ Further Details:
 					if 'username' in session:
 						self.logger.warning('CSRF protection alert: %s failed to present a valid POST token', session['username'])
 					else:
-			 			self.logger.warning('CSRF protection alert: a non-logged in user failed to present a valid POST token')
+						self.logger.warning('CSRF protection alert: a non-logged in user failed to present a valid POST token')
 
 					# The user should not have accidentally triggered this so just throw a 400
 					abort(400)
@@ -176,7 +176,7 @@ Further Details:
 
 	################################################################################
 
-	def _load_workflow_settings(self, filename): 
+	def _load_workflow_settings(self, filename):
 		"""Extracts the settings from the given config file."""
 
 		# Start a new module, which will be the context for parsing the config
@@ -295,7 +295,7 @@ Username:             %s
 			request.user_agent.browser,
 			request.user_agent.version,
 			usr,
-			
+
 		), exc_info=exc_info)
 
 ################################################################################
@@ -344,6 +344,7 @@ Username:             %s
 		  `status` tinyint(4) NOT NULL DEFAULT '0',
 		  `start` datetime NOT NULL,
 		  `end` datetime DEFAULT NULL,
+		  `ipaddr` varchar(43) DEFAULT NULL,
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
@@ -633,6 +634,7 @@ Username:             %s
 		  (1, "classes.view"), 
 		  (1, "classes.edit"), 
 		  (1, "tasks.view"),
+		  (1, "events.view"),
 		  (1, "maintenance.vmware"), 
 		  (1, "maintenance.cmdb"), 
 		  (1, "maintenance.expire_vm"),
@@ -670,6 +672,7 @@ Username:             %s
 			{'name': 'classes.view',                'desc': 'View the list of system class definitions'},
 			{'name': 'classes.edit',                'desc': 'Edit system class definitions'},
 			{'name': 'tasks.view',                  'desc': 'View the details of all tasks (not just your own)'},
+			{'name': 'events.view',                 'desc': 'View the details of all events (not just your own)'},
 			{'name': 'maintenance.vmware',          'desc': 'Run VMware maintenance tasks'},
 			{'name': 'maintenance.cmdb',            'desc': 'Run CMDB maintenance tasks'},
 			{'name': 'maintenance.expire_vm',       'desc': 'Run the Expire VM maintenance task'},
