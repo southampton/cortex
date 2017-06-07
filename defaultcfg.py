@@ -28,6 +28,14 @@ EMAIL_DOMAIN='localdomain'
 REDIS_HOST='localhost'
 REDIS_PORT=6379
 
+#USER auth mode
+#can be 'cas' or 'ldap'
+USER_AUTH='cas'
+
+#CAS configuration
+CAS_SERVER_URL='https://domain.invalid/'
+CAS_SERVICE_URL='https://cortex.invalid/cas'
+
 ## MySQL
 MYSQL_HOST='localhost'
 MYSQL_USER='cortex'
@@ -57,7 +65,7 @@ LDAP_BIND_PW        = ''
 LDAP_ADMIN_GROUP    = "CN=groupname,OU=localhost,DC=localdomain"
 
 # Infoblox server
-INFOBLOX_HOST = "" 
+INFOBLOX_HOST = ""
 INFOBLOX_USER = ""
 INFOBLOX_PASS = ""
 

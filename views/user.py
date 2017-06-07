@@ -4,32 +4,33 @@ from cortex import app
 import cortex.lib.user
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 import re
+from cas_client import CASClient
 
 ################################################################################
 
 @app.route('/', methods=['GET', 'POST'])
-def login():
-	"""Handles the login page, logging a user in on correct authentication."""
-
+@app.disable_csrf_check
+def root():
 	# If the user is already logged in, just redirect them to their dashboard
 	if cortex.lib.user.is_logged_in():
 		return redirect(url_for('dashboard'))
 	else:
-		# On GET requests, just render the login page
-		if request.method == 'GET' or request.method == 'HEAD':
-			next = request.args.get('next', default=None)
-			return render_template('login.html', next=next)
+		if app.config['USER_AUTH'] == 'cas':
+			return cas()
+		else:
+			return login()
 
-		# On POST requests, authenticate the user
-		elif request.method == 'POST':
+###############################################################################
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+	if request.method == 'POST':
+		if all(field in request.form for field in ['username', 'password']):
 			result = cortex.lib.user.authenticate(request.form['username'], request.form['password'])
 
 			if not result:
 				flash('Incorrect username and/or password', 'alert-danger')
-				return redirect(url_for('login'))
-			
-			# Set the username in the session
-			session['username']  = request.form['username'].lower()
+				return render_template('login.html')
 
 			# Permanent sessions
 			permanent = request.form.get('sec', default="")
@@ -39,15 +40,53 @@ def login():
 				session.permanent = True
 			else:
 				session.permanent = False
-
-			# Cache user real name
-			try:
-				cortex.lib.user.get_user_realname(session['username'],from_cache=False)
-			except Exception as ex:
-				pass
-			
 			# Logon is OK to proceed
-			return cortex.lib.user.logon_ok()
+			return cortex.lib.user.logon_ok(request.form['username'])
+		abort(400)
+	return render_template('login.html')
+
+###############################################################################
+
+
+@app.route('/cas', methods=['GET', 'POST'])
+@app.disable_csrf_check
+def cas():
+	"""Handles the login page, logging a user in on correct authentication."""
+
+	#CAS client init
+	cas_client = CASClient(app.config['CAS_SERVER_URL'], app.config['CAS_SERVICE_URL'], verify_certificates=True)
+
+	#SLO
+	if request.method == 'POST' and session.get('cas_ticket') is not None and 'logoutRequest' in request.form:
+		#check the verify the ticket to prevent cross orign attacks
+		message = cas_client.parse_logout_request(request.form.get('logoutRequest'))
+		if message.get('session_index', None) == session.get('cas_ticket'):
+			cortex.lib.user.clear_session()
+			return ('', 200)
+		else:
+			abort(400)
+
+
+	# If the user is already logged in, just redirect them to their dashboard
+	if cortex.lib.user.is_logged_in():
+		return redirect(url_for('dashboard'))
+
+	ticket = request.args.get('ticket', None)
+	if ticket is not None:
+		try:
+			cas_response = cas_client.perform_service_validate(ticket=ticket)
+		except:
+			return root()
+		if cas_response and cas_response.success:
+			try:
+				#keep the ticket for SLO
+				session['cas_ticket'] = ticket
+				return cortex.lib.user.logon_ok(cas_response.attributes.get('uid'))
+			except KeyError:
+				#required user attributes not returned
+				alert("CAS SSO authentication successful but missing required information consider using LDAP authentication", 'alert-warning')
+				return root()
+	return redirect(cas_client.get_login_url())
 
 ################################################################################
 
@@ -56,14 +95,18 @@ def login():
 def logout():
 	"""Logs a user out"""
 
-	# Log out of the session
+	#CAS client init
+	cas_client = CASClient(app.config['CAS_SERVER_URL'], app.config['CAS_SERVICE_URL'], verify_certificates=True)
+
+	cas_ticket = session.get('cas_ticket', None)
+	# destroy the session
 	cortex.lib.user.clear_session()
-	
-	# Tell the user
-	flash('You were logged out successfully', 'alert-success')
-	
-	# Redirect the user to the login page
-	return redirect(url_for('login'))
+
+	if cas_ticket is not None:
+		# Tell cas about the logout
+		return redirect(cas_client.get_logout_url())
+	else:
+		return login()
 
 ################################################################################
 
