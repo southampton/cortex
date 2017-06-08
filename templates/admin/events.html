@@ -3,21 +3,22 @@
 <div class="page-header">
 <h3>
 	<div class="pull-right">
-		<a class="btn btn-sm {% if eventtype == 'all' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_events') }}">All</a>
-		<a class="btn btn-sm {% if eventtype == 'user' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_events_user') }}">User</a>
-		<a class="btn btn-sm {% if eventtype == 'system' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_events_system') }}">System</a>
+		<a class="btn btn-sm {% if event_source == 'all' %}btn-primary{% else %}btn-default{% endif %}" href="{{ url_for('admin_events') }}">All</a>
+		<a class="btn btn-sm {% if event_source == 'user' %}btn-primary{% else %}btn-default{% endif %}" href="{{ url_for('admin_events',src='user') }}">User</a>
+		<a class="btn btn-sm {% if event_source == 'scheduler' %}btn-primary{% else %}btn-default{% endif %}" href="{{ url_for('admin_events',src='scheduler') }}">Scheduler</a>
+		<a class="btn btn-sm {% if event_source == 'tasks' %}btn-primary{% else %}btn-default{% endif %}" href="{{ url_for('admin_events',src='tasks') }}">Tasks</a>
 	</div>
 	<i class="fa fa-fw fa-list-alt"></i> {{ title }}
 </h3>
 <div class="text-muted">
-{%- if eventtype == 'all' %}
-The list below shows all past and present events that have been run on the system
-{%- elif eventtype == 'active' %}
-The list below shows events currently supervised by the NeoCortex event daemon
-{%- elif eventtype == 'user' %}
-The list below shows all past and present events started by a user
-{%- elif eventtype == 'system' %}
-The list below shows all past and present system-started events
+{%- if event_source == 'all' %}
+The list below shows all events
+{%- elif event_source == 'tasks' %}
+The list below shows events relating to tasks
+{%- elif event_source == 'user' %}
+The list below shows all events started by a user
+{%- elif event_source == 'system' %}
+The list below shows all events started by the scheduler
 {%- endif -%}
 </div>
 </div>
@@ -26,10 +27,13 @@ The list below shows all past and present system-started events
 	<thead>
 		<tr>
 			<th>ID</th>
-			<th>Date</th>
-			<th>User</th>
+			<th>Start</th>
+			<th>End</th>
+			<th>Name</th>
+			<th style="max-width: 30%">Description</th>
 			<th>Source</th>
-			<th>Description</th>
+			<th>Username</th>
+			<th>Address</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -41,7 +45,7 @@ The list below shows all past and present system-started events
 		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 		"pageLength": 15,
 		"order": [[0, 'desc']],
-		"columns": [null, null, null, null, null],
+		"columns": [null, null, null, null, null, null, null, null],
 		"searching": true,
 {%- if json_source %}
 		"serverSide": true,
