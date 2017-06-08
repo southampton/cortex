@@ -20,6 +20,7 @@ import yaml
 import csv
 import io
 import requests
+from pyVmomi import vim
 
 ################################################################################
 
@@ -29,11 +30,13 @@ def systems():
 	"""Shows the list of known systems to the user."""
 
 	# Check user permissions
-	if not does_user_have_permission("systems.all.view"):
+	if not (does_user_have_permission("systems.all.view") or does_user_have_permission("systems.own.view")):
 		abort(403)
 
 	# Get the list of active classes (used to populate the tab bar)
-	classes = cortex.lib.classes.list()
+	classes = {}
+	if does_user_have_permission("systems.all.view"):
+		classes = cortex.lib.classes.list()
 
 	# Get the search string, if any
 	q = request.args.get('q', None)
@@ -105,7 +108,7 @@ def systems_search():
 	search box"""
 
 	# Check user permissions
-	if not does_user_have_permission("systems.all.view"):
+	if not (does_user_have_permission("systems.all.view") or does_user_have_permission("systems.own.view")):
 		abort(403)
 
 	# Get the query from the URL
@@ -115,6 +118,7 @@ def systems_search():
 		return abort(400)
 
 	# Search for the system
+	
 	system = cortex.lib.systems.get_system_by_name(query)
 
 	if system is not None:
@@ -406,7 +410,7 @@ def systems_bulk_view(start, finish):
 def system(id):
 	# Check user permissions. User must have either systems.all or specific 
 	# access to the system
-	if not does_user_have_system_permission(id,"view","systems.all.view"):
+	if not does_user_have_system_permission(id,"view.detail","systems.all.view"):
 		abort(403)
 
 	# Get the system
@@ -431,10 +435,124 @@ def system(id):
 
 ################################################################################
 
+@app.route('/systems/overview/<int:id>')
+@cortex.lib.user.login_required
+def system_overview(id):
+	# Check user permissions. User must have either systems.all or specific 
+	# access to the system
+	if not does_user_have_system_permission(id,"view.overview","systems.all.view"):
+		abort(403)
+
+	# Get the system
+	system = cortex.lib.systems.get_system_by_id(id)
+
+	# Ensure that the system actually exists, and return a 404 if it doesn't
+	if system is None:
+		abort(404)
+
+	if system['allocation_who_realname'] is not None:	
+		system['allocation_who'] = system['allocation_who_realname'] + ' (' + system['allocation_who'] + ')'
+	else:
+		system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
+
+	return render_template('systems/overview.html', system=system, active='systems', title=system['name'], power_ctl_perm=does_user_have_system_permission(id, "control.vmware.power"))
+
+################################################################################
+
+@app.route('/systems/status/<int:id>')
+@cortex.lib.user.login_required
+def system_status(id):
+	# Check user permissions. User must have either systems.all or specific
+	# access to the system
+	if not does_user_have_system_permission(id,"view.overview","systems.all.view"):
+		abort(403)
+	
+	system = cortex.lib.systems.get_system_by_id(id)
+
+	# Ensure that the system actually exists, and return a 404 if it doesn't
+	if system is None:
+		abort(404)
+	# get the VM
+	vm = cortex.lib.systems.get_vm_by_system_id(id)
+
+	data = {}
+	data['hostname'] = ''
+	data['dns_resolvers'] = []
+	data['search_domain'] = ''
+	routes = []
+	try:
+		data['hostname'] = vm.guest.ipStack[0].dnsConfig.hostName
+		data['dns_resolvers'] = vm.guest.ipStack[0].dnsConfig.ipAddress
+		data['search_domain'] = vm.guest.ipStack[0].dnsConfig.domainName
+		for route in vm.guest.ipStack[0].ipRouteConfig.ipRoute:
+			if route.gateway.ipAddress:
+				routes = routes + [{'network': route.network, 'prefix': route.prefixLength, 'gateway': route.gateway.ipAddress}]
+	except IndexError as e:
+		pass
+
+	ipaddr = []
+	for net_adapter in vm.guest.net:
+		for address in net_adapter.ipConfig.ipAddress:
+			ipaddr = ipaddr + [{'ipaddr': address.ipAddress, 'prefix': address.prefixLength}]
+
+	data['net'] = {'ipaddr': ipaddr, 'routes': routes}
+	data['guest_state'] = vm.guest.guestState
+	data['power_state'] = vm.runtime.powerState
+	data['cpu'] = {'overall_usage': vm.summary.quickStats.overallCpuUsage, 'entitlement': vm.summary.quickStats.staticCpuEntitlement}
+	data['mem'] = {'overall_usage': vm.summary.quickStats.guestMemoryUsage, 'entitlement': vm.summary.quickStats.staticMemoryEntitlement}
+	data['uptime'] = vm.summary.quickStats.uptimeSeconds
+
+#	data['storage'] = []
+#	for disk in vm.guest.disk:
+#		#storage[disk.diskPath] = {'capacity': disk.capacity, 'free': disk.freeSpace}
+#		storage = storage + [[disk.diskPath, disk.capacity - disk.freeSpace]]
+#	try:
+#		data['storage'] = [['Used', vm.guest.disk[0].capacity - vm.guest.disk[0].freeSpace], ['Free', vm.guest.disk[0].freeSpace]]
+#	except Exception:
+#		pass
+
+	return jsonify(data)
+
+################################################################################
+
+@app.route('/systems/power/<int:id>', methods=['POST'])
+@cortex.lib.user.login_required
+def system_power(id):
+	# Check user permissions. User must have either systems.all or specific
+	# access to the system
+	if not does_user_have_system_permission(id,"control.vmware.power"):
+		abort(403)
+
+	# Get the system
+	system = cortex.lib.systems.get_system_by_id(id)
+
+	# Ensure that the system actually exists, and return a 404 if it doesn't
+	if system is None:
+		abort(404)
+
+	try:
+		if request.form.get('power_action', None) == "on":
+				cortex.lib.systems.power_on(id)
+		elif request.form.get('power_action', None) == "shutdown":
+				cortex.lib.systems.shutdown(id)
+		elif request.form.get('power_action', None) == "off":
+				cortex.lib.systems.power_off(id)
+		elif request.form.get('power_action', None) == "reset":
+				cortex.lib.systems.reset(id)
+		#is it an XHR?
+		if request.headers.get('X-Requested-With', None) == "XMLHttpRequest":
+			return system_status(id)
+		else:
+			return redirect(url_for('system_overview', id=id))
+	except vim.fault.VimFault as e:
+		abort(500)
+
+################################################################################
+
 @app.route('/systems/edit/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_edit(id):
-	if not does_user_have_system_permission(id,"view","systems.all.view"):
+	if not does_user_have_system_permission(id,"view.detail","systems.all.view"):
 		abort(403)
 
 	# Get the system
@@ -566,7 +684,7 @@ def system_edit(id):
 @app.route('/systems/actions/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_actions(id):
-	if not does_user_have_system_permission(id,"view","systems.all.view"):
+	if not does_user_have_system_permission(id,"view.detail","systems.all.view"):
 		abort(403)
 
 	# Get the system
@@ -740,7 +858,7 @@ def systems_json():
 	DataTables"""
 
 	# Check user permissions
-	if not does_user_have_permission("systems.all.view"):
+	if not (does_user_have_permission("systems.all.view") or does_user_have_permission("systems.own.view")):
 		abort(403)
 
 	# Extract information from DataTables
@@ -799,13 +917,19 @@ def systems_json():
 		if str(request.form['show_perms_only']) != '0':
 			show_perms_only = True
 
+	if does_user_have_permission("systems.all.view"):
+		only_allocated_by = None
+	else:
+		only_allocated_by = session['username']
+
+		
 	# Get number of systems that match the query, and the number of systems
 	# within the filter group
-	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only)
-	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only)
+	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, only_allocated_by=only_allocated_by)
+	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, only_allocated_by=only_allocated_by)
 
 	# Get results of query
-	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only)
+	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, only_allocated_by=only_allocated_by)
 
 	# DataTables wants an array in JSON, so we build this here, returning
 	# only the columns we want. We format the date as a string as
