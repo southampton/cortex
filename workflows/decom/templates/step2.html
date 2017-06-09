@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="page-header">
+	<h1>Decommission system</h1>
+	<div class="text-muted"><strong>System:</strong> {{system.name}}</div>
+</div>
+<p>The following steps will be taken to decomission this system:</p>
+
+<form role="form" action="{{ url_for('decom_step3',id=system['id']) }}" method="POST">
+	<ul class="list-group">
+	{% for action in actions %}
+	<li class="list-group-item">
+		<div class="checkbox">
+			<label>
+				<input type="checkbox" name="runaction" value="{{ loop.index0 }}" checked>
+				<span class="badge">{{ loop.index0 }}</span><i class="fa fa-fw fa-arrow-right"></i> {{action.desc}}
+				<br/><span class="text-muted">{{action.detail}}</span>
+			</label>
+		</div>
+	</li>
+	{%endfor%}
+	</ul>
+
+	<p class="lead text-center">You are about to decommission <strong>{{system.name}}</strong>, whose description is <strong>{{system.allocation_comment}}</strong>, and is in the <strong{% if system.cmdb_environment|lower == "production" %} class="text-danger"{% elif system.cmdb_environment|lower == "pre-production" or system.cmdb_environment == "preproduction" %} class="text-warning"{% endif %}>{{system.cmdb_environment}}</strong> environment. It was created on <strong>{{system.allocation_date}}</strong>.<br />If this is correct, click the Decommission button below to confirm and start the decommission process.</p>
+	<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+	<input name="actions" type="hidden" value="{{json_data}}"/>
+	<div class="text-center">
+		<input class="btn btn-danger btn-lg" type="submit" name="submit" value="Decommission"/>
+	</div>
+</form>
+
+{% endblock %}

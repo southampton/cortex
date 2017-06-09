@@ -1,0 +1,184 @@
+{% extends "layout.html" %}
+{% block head -%}
+		<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/css/bootstrap-select.min.css">
+		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/js/bootstrap-select.min.js"></script>
+{% endblock %}
+{% block body %}
+
+<div class="page-header">
+<h3>Create system record</h3>
+<p class="text-muted">This workflow will allocate a hostname, allocate an IP address by creating a Host object in Infoblox, and create a ServiceNow CI for the newly created server, linking it to a ServiceNow task. Options marked with<span class="required">*</span> are required.</p>
+</div>
+
+<style type="text/css">
+.submit
+{
+	padding-bottom: 2em;
+	margin-left: 1em;
+}
+
+.btn-submit
+{
+	font-size: 2em;
+}
+
+span.required
+{
+	color: #f00;
+	font-weight: bold;
+	margin-left: 0.2em;
+}
+</style>
+
+<form method="POST" role="form">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+
+	<div class="row">
+		<div class="col-md-12">
+			<h4 style="margin-top:0">1. Enter details</h4>
+			<div class="form-group col-md-3">
+				<label for="task">ServiceNow Task:</label><input class="form-control" id="task" name="task" placeholder="e.g. INCTASK0123456 or PRJTASK0987654" autofocus />
+			</div>
+			<div class="form-group col-md-9">
+				<label for="purpose">Purpose:<span class="required">*</span></label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the server, e.g. VMware appliance" autofocus />
+			</div>
+			<div class="form-group col-md-12">
+				<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
+			</div>
+		</div>
+	</div>
+
+	<div class="row" style="margin-top: 1.0em">
+		<div class="col-md-4">
+			<h4>2. Choose Class<span class="required">*</span></h4>
+			<div style="margin-left:1em">
+				<select class="selectpicker" name="class" id="class">
+{%- if not default_class %}
+					<option></option>
+{%- endif %}
+{%- for class in classes %}
+					<option value="{{ class.name }}"{% if default_class == class.name %} selected="selected"{% endif %}>{{ class.name }}</option>
+{%- endfor %}
+				</select>
+			</div>
+		</div>
+		<div class="col-md-4">
+			<h4>3. Choose Operating System<span class="required">*</span></h4>
+			<div style="margin-left:1em">
+				<select class="selectpicker" name="os" id="os">
+					<option></option>
+{%- for os in oses %}
+					<option value="{{ os.id }}">{{ os.name }}</option>
+{%- endfor %}
+				</select>
+			</div>
+		</div>
+		<div class="col-md-4">
+			<h4>4. Choose Environment<span class="required">*</span></h4>
+			<div style="margin-left:1em">
+				<select class="selectpicker" name="environment" id="environment">
+					<option></option>
+{%- for environment in environments %}
+					<option value="{{ environment.id }}"{% if default_env == environment.id %} selected="selected"{% endif %}>{{ environment.name }}</option>
+{%- endfor %}
+				</select>
+			</div>
+		</div>
+	</div>
+	<div class="row" style="margin-top: 1.0em">
+		<div class="col-md-4">
+			<h4>5. Choose Networking</h4>
+			<div style="margin-left:1em">
+				<div style="margin:0 0 0.3em 0">
+					<input type="checkbox" checked="checked" name="alloc_ip" id="alloc_ip" style="margin-right:0.4em" /><label for="alloc_ip" style="position:relative;top:-2px">Allocate an IP and DNS entry</label>
+				</div>
+				<div id="network_settings">
+					<h5 style="font-weight:bold">Network<span class="required">*</span></h5>
+					<select class="selectpicker" name="network" id="network">
+{%- if not default_network %}
+						<option></option>
+{%- endif %}
+{%- for network in networks %}
+						<option value="{{ network.id }}"{% if default_network == network.id %} selected="selected"{% endif %}>{{ network.name }}</option>
+{%- endfor %}
+					</select>
+					<h5 style="font-weight:bold">DNS Domain<span class="required">*</span></h5>
+					<select class="selectpicker" name="domain" id="domain">
+{%- if not default_domain %}
+						<option></option>
+{%- endif %}
+{%- for domain in domains %}
+						<option value="{{ domain }}"{% if default_domain == domain %} selected="selected"{% endif %}>{{ domain }}</option>
+{%- endfor %}
+					</select>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-4">
+			<h4>6. Options</h4>
+			<div style="margin-left:1em">
+				<div style="margin:0 0 0.3em 0">
+					<input type="checkbox" checked="checked" name="is_virtual" id="is_virtual" style="margin-right:0.4em;vertical-align:top;position:relative;top:-3px" /><label for="is_virtual" style="position:relative;top:-2px">Server will be a virtual machine<p class="text-muted">This sets the 'Is Virtual' flag in ServiceNow</p>
+					</label>
+				</div>
+			</div>	
+		</div>
+		<div class="col-md-4">
+			<h4>7. Create</h4>
+			<div class="submit">
+				<button type="submit" class="btn btn-success btn-submit" id="allocate"><i class="fa fa-fw fa-plus"></i> Create</button>
+			</div>
+		</div>
+	</div>
+</form>
+<script type="text/javascript">
+$('#alloc_ip').change(function(e) {
+	var display = this.checked ? 'inline' : 'none';
+	$('#network_settings').css('display', display);
+});
+$('span.required').attr('title', 'Required');
+$('#allocate').click(function(e) {
+	// If a ServiceNow ticket has been entered, validate the number
+	if ($("#task").val().length > 0 && $("#task").val().match(/^[ \t]*((PRJ)|(INC))TASK[0-9]+[ \t]*/) == null)
+	{
+		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456 or PRJTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident.');
+		$('#task').focus();
+	}
+	else if ($('#purpose').val().length == 0)
+	{
+		alert('You must enter a purpose for the VM.');
+		$('#purpose').focus();
+	}
+	else if ($("#class").val() == "")
+	{
+		alert('You must select a class.');
+	}
+	else if ($("#os").val() == "")
+	{
+		alert('You must select an operating system.');
+	}
+	else if ($("#environment").val() == "")
+	{
+		alert('You must select an environment.');
+	}
+	// Network must be populated if we're allocating an IP
+	else if ($("#alloc_ip")[0].checked && $("#network").val() == "")
+	{
+		alert('You must select a network');
+	}
+	// Domain must be populated if we're allocating an IP
+	else if ($("#alloc_ip")[0].checked && $("#domain").val() == "")
+	{
+		alert('You must select a domain');
+	}
+	else
+	{
+		return true;
+	}
+
+	// We've hit an error condition, don't allow the form to submit
+	e.preventDefault();
+	return false;
+});
+</script>
+{% endblock %}
