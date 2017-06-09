@@ -8,6 +8,7 @@ from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 from pyVmomi import vim
 from itsdangerous import JSONWebSignatureSerializer
+import requests
 
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('systems.all.decom', 'Decommission any system')
@@ -101,10 +102,12 @@ def decom_step2(id):
 		#if the TSM client is not decomissioned, then decomission it
 		if tsm_client['DECOMMISSIONED'] is None:
 			actions.append({'id': 'tsm.decom', 'desc': 'Decommission the system in TSM', 'detail': tsm_client['NAME']  + ' on server ' + tsm_client['SERVER'], 'data': {'NAME': tsm_client['NAME'], 'SERVER': tsm_client['SERVER']}})
-	except requests.execptions.HTTPError as e:
-		flash("Warning - An error occured when communicating with TSM ", "alert-warning")
+	except requests.exceptions.HTTPError as e:
+		flash("Warning - An error occured when communicating with TSM: " + str(ex), "alert-warning")
 	except LookupError:
 		pass
+	except Exception as ex:
+		flash("Warning - An error occured when communicating with TSM: " + str(ex), "alert-warning")
 
 	# We need to check all (unique) AD domains as we register development
 	# Linux boxes to the production domain
@@ -122,6 +125,16 @@ def decom_step2(id):
 
 		except Exception as ex:
 			flash("Warning - An error occured when communicating with Active Directory: " + str(type(ex)) + " - " + str(ex), "alert-warning")
+
+	## Check if a record exists in RHN for this system
+	try:
+		(rhn,key) = corpus.rhn5_connect()
+		rsystems = rhn.system.search.hostname(key,"play01205")
+		if len(rsystems) > 0:
+			for rsys in rsystems:
+				actions.append({'id': 'rhn5.delete', 'desc': 'Delete the RHN Satellite object', 'detail': rsys['name'] + ', RHN ID ' + str(rsys['id']), 'data': {'id': rsys['id']}})
+	except Exception as ex:
+		flash("Warning - An error occured when communicating with RHN: " + str(ex), "alert-warning")
 
 	# If there are actions to be performed, add on an action to raise a ticket to ESM (but not for Sandbox!)
 	if len(actions) > 0 and system['class'] != "play":
