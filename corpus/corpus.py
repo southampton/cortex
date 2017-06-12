@@ -1453,34 +1453,25 @@ class Corpus(object):
 		Throws:
 			IOError if the connection failed"""
 		
-		try:
-			context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-			context.verify_mode = ssl.CERT_REQUIRED
-			context.check_hostname = True
-			context.load_verify_locations(cafile=self.config['RHN5_CERT'])
 
-			client = xmlrpclib.ServerProxy(self.config['RHN5_URL'], verbose=0,context=context)
+		# Determine the API URL
+		rhnurl = self.config['RHN5_URL']
+		if not rhnurl.endswith("/"):
+			rhnurl = rhnurl + "/"
+
+		rhnurl = rhnurl + "rpc/api"
+
+		try:
+			#context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+			#context.verify_mode = ssl.CERT_REQUIRED
+			#context.check_hostname = True
+			#context.load_verify_locations(cafile=self.config['RHN5_CERT'])
+
+			#client = xmlrpclib.ServerProxy(self.config['RHN5_URL'], verbose=0,context=context)
+			client = xmlrpclib.ServerProxy(rhnurl, verbose=0)
 			key = client.auth.login(self.config['RHN5_USER'], self.config['RHN5_PASS'])
 			return (client,key)
 		except Exception as ex:
 			raise IOError(str(ex))
 
 	############################################################################
-
-	def rhn5_system_search_by_hostname(self, searchstr, srv, key):
-		"""Searches for and returns systems which match the specified hostname
-			from RHN (Red Hat Network Satellite) version 5.
-
-			Args:
-				searchstr: The hostname to search for (not qualified)
-				srv: the server object (via corpus.rhn5_connect())
-				key: the session key (via corpus.rhn5_connect())
-			Returns:
-				a list of systems, if any
-			Throws:
-				IOError if the API call fails"""
-
-		try:
-			return client.system.search.hostname(key,"play01205")
-		except Exception as ex:
-			raise IOError(str(ex))

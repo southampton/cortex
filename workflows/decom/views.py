@@ -126,13 +126,21 @@ def decom_step2(id):
 		except Exception as ex:
 			flash("Warning - An error occured when communicating with Active Directory: " + str(type(ex)) + " - " + str(ex), "alert-warning")
 
+	## Work out the URL for any RHN systems
+	rhnurl = app.config['RHN5_URL']
+	if not rhnurl.endswith("/"):
+		rhnurl = rhnurl + "/"
+	rhnurl = rhnurl + "rhn/systems/details/Overview.do?sid="
+
 	## Check if a record exists in RHN for this system
 	try:
 		(rhn,key) = corpus.rhn5_connect()
-		rsystems = rhn.system.search.hostname(key,"play01205")
+		rsystems = rhn.system.search.hostname(key,system['name'])
 		if len(rsystems) > 0:
 			for rsys in rsystems:
-				actions.append({'id': 'rhn5.delete', 'desc': 'Delete the RHN Satellite object', 'detail': rsys['name'] + ', RHN ID ' + str(rsys['id']), 'data': {'id': rsys['id']}})
+				actions.append({'id': 'rhn5.delete', 'desc': 'Delete the RHN Satellite object', 'detail': rsys['name'] + ', RHN ID <a target="_blank" href="' + rhnurl + str(rsys['id']) + '">' + str(rsys['id']) + "</a>", 'data': {'id': rsys['id']}})
+		else:
+			flash("No systems returned from RHN :(","alert-info")
 	except Exception as ex:
 		flash("Warning - An error occured when communicating with RHN: " + str(ex), "alert-warning")
 
