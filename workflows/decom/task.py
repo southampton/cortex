@@ -25,6 +25,8 @@ def run(helper, options):
 			r = action_ticket_ops(action, helper, options['wfconfig'])
 		elif action['id'] == "tsm.decom":
 			r = action_tsm_decom(action, helper)
+		elif action['id'] == "rhn5.delete":
+			r = action_rhn5_delete(action, helper)
 
 		# End the event (don't change the description) if the action
 		# succeeded. The action_* functions either raise Exceptions or
@@ -164,10 +166,23 @@ def action_ticket_ops(action, helper, wfconfig):
 		helper.end_event(success=False, description="Failed to raise ticket: " + str(e))
 		return False
 
+################################################################################
+
 def action_tsm_decom(action, helper):
 	try:
 		helper.lib.tsm_decom_system(action['data']['NAME'], action['data']['SERVER'])
 		return True
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to decomission system in TSM")
+		return False
+
+################################################################################
+
+def action_rhn5_delete(action, helper):
+	try:
+		(rhn,key) = corpus.rhn5_connect()
+		rhn.system.deleteSystem(key,	int(action['data']['id']))
+		return True
+	except Exception as e:
+		helper.end_event(success=False, description="Failed to delete the system object in RHN5")
 		return False
