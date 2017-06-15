@@ -165,9 +165,9 @@ def action_ticket_ops(action, helper, wfconfig):
 		return False
 
 def action_tsm_decom(action, helper):
-    try:
-        helper.lib.tsm_decom_system(action['data']['NAME'], action['data']['SERVER'])
-        return True
-    except Exception as e:
-        helper.end_event(success=False, description="Failed to decomission system in TSM")
-        return False
+	try:
+		helper.lib.tsm_decom_system(action['data']['NAME'], action['data']['SERVER'])
+		return True
+	except Exception as e:
+		helper.end_event(success=False, description="Failed to decomission system in TSM")
+		return False
