@@ -139,8 +139,6 @@ def decom_step2(id):
 		if len(rsystems) > 0:
 			for rsys in rsystems:
 				actions.append({'id': 'rhn5.delete', 'desc': 'Delete the RHN Satellite object', 'detail': rsys['name'] + ', RHN ID <a target="_blank" href="' + rhnurl + str(rsys['id']) + '">' + str(rsys['id']) + "</a>", 'data': {'id': rsys['id']}})
-		else:
-			flash("No systems returned from RHN :(","alert-info")
 	except Exception as ex:
 		flash("Warning - An error occured when communicating with RHN: " + str(ex), "alert-warning")
 
