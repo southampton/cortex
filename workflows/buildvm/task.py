@@ -27,7 +27,7 @@ def run(helper, options):
 		cluster_storage_pools = options['wfconfig']['CLUSTER_STORAGE_POOLS']
 		cluster_rpool = options['wfconfig']['CLUSTER_RPOOL']
 		notify_emails = options['notify_emails']
-		win_groups = options['wfconfig']['WIN_GROUPS']
+		win_groups = options['wfconfig']['WIN_GROUPS_BY_TEMPLATE']
 		os_templates = options['wfconfig']['OS_TEMPLATES']
 		os_names = options['wfconfig']['OS_NAMES']
 		os_disks = options['wfconfig']['OS_DISKS']
@@ -46,7 +46,7 @@ def run(helper, options):
 		network_name = options['wfconfig']['SB_NETWORK_NAME']
 		cluster_storage_pools = options['wfconfig']['SB_CLUSTER_STORAGE_POOLS']
 		cluster_rpool = options['wfconfig']['SB_CLUSTER_RPOOL']
-		win_groups = options['wfconfig']['SB_WIN_GROUPS']
+		win_groups = options['wfconfig']['SB_WIN_GROUPS_BY_TEMPLATE']
 		os_templates = options['wfconfig']['SB_OS_TEMPLATES']
 		os_names = options['wfconfig']['SB_OS_NAMES']
 		os_disks = options['wfconfig']['SB_OS_DISKS']
@@ -63,7 +63,7 @@ def run(helper, options):
 		sn_location = options['wfconfig']['STU_SN_LOCATION']
 		network_name = options['wfconfig']['STU_NETWORK_NAMES'][options['network']]
 		cluster_storage_pools = options['wfconfig']['STU_CLUSTER_STORAGE_POOLS']
-		win_groups = options['wfconfig']['STU_WIN_GROUPS']
+		win_groups = options['wfconfig']['STU_WIN_GROUPS_BY_TEMPLATE']
 		os_templates = options['wfconfig']['STU_OS_TEMPLATES']
 		os_names = options['wfconfig']['STU_OS_NAMES']
 		os_disks = options['wfconfig']['STU_OS_DISKS']
@@ -393,14 +393,18 @@ def run(helper, options):
 
 		# Join default groups (failure does not kill task)
 		try:
-			# Start the event
-			helper.event('windows_join_groups', 'Joining default groups')
+			# If this template has groups configured
+			if options['template'] in win_groups:
+				# If this environment in this template has groups configured
+				if options['env'] in win_groups[options['template']]:
+					# Start the event
+					helper.event('windows_join_groups', 'Joining default groups')
 
-			# Run RPC to join groups
-			helper.lib.windows_join_groups(system_name, options['env'], win_groups[options['env']])
+					# Run RPC to join groups
+					helper.lib.windows_join_groups(system_name, options['env'], win_groups[options['template']][options['env']])
 
-			# End the event
-			helper.end_event(success=True, description='Joined default groups')
+					# End the event
+					helper.end_event(success=True, description='Joined default groups')
 		except Exception as e:
 			helper.end_event(success=False, description='Failed to join default groups: ' + str(e))
 
