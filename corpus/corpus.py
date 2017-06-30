@@ -6,6 +6,7 @@ import json
 import time
 import redis
 import ssl
+import xmlrpclib # for RHN5 API support
 
 # For email
 import smtplib
@@ -1424,15 +1425,53 @@ class Corpus(object):
 	def tsm_decom_system(self, name, server):
 		"""Decoms the system from TSM
 			Args:
-			  name (string): the client name to decom
-			  server (string): the server the client belongs to
+				name (string): the client name to decom
+				server (string): the server the client belongs to
 			Returns:
-			  True if succeeds
+				True if succeeds
 			Throws:
 				requests.exceptions.HTTPError if the API call fails"""
+
 		r = requests.put(urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(server)
-		                         + '/client/' + quote(name) + '/decommissionclient'),
-		                         auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
-		                         verify=self.config['TSM_API_VERIFY_SERVER'])
+			 + '/client/' + quote(name) + '/decommissionclient'),
+			 auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
+			 verify=self.config['TSM_API_VERIFY_SERVER'])
 		r.raise_for_status()
 		return True
+
+	############################################################################
+
+	def rhn5_connect(self):
+		"""Searches for and returns systems which match the specified hostname
+		from RHN (Red Hat Network Satellite) version 5.
+
+		Args:
+			None
+		Returns:
+			A two-entry tuple with the connect object and the session key
+			e.g (client, key) = corpus.rhn5_connect()
+		Throws:
+			IOError if the connection failed"""
+		
+
+		# Determine the API URL
+		rhnurl = self.config['RHN5_URL']
+		if not rhnurl.endswith("/"):
+			rhnurl = rhnurl + "/"
+
+		rhnurl = rhnurl + "rpc/api"
+
+		try:
+			#context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+			#context.verify_mode = ssl.CERT_REQUIRED
+			#context.check_hostname = True
+			#context.load_verify_locations(cafile=self.config['RHN5_CERT'])
+
+			#client = xmlrpclib.ServerProxy(self.config['RHN5_URL'], verbose=0,context=context)
+			client = xmlrpclib.ServerProxy(rhnurl, verbose=0)
+			key = client.auth.login(self.config['RHN5_USER'], self.config['RHN5_PASS'])
+			return (client,key)
+		except Exception as ex:
+			raise IOError(str(ex))
+
+	############################################################################

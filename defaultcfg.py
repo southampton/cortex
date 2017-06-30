@@ -118,7 +118,13 @@ NOTIFY_EMAILS = []
 # Notification e-mail address 
 SYSTEM_EXPIRE_NOTIFY_EMAILS = []
 
-# TSM  config
+# TSM config
 TSM_API_URL_BASE = ''
 TSM_API_USER = ''
 TSM_API_PASS = ''
+
+# RHN Satellite management (for decom)
+RHN5_URL  = "https://rhn.yourdomain.tld"
+RHN5_USER = "admin"
+RHN5_PASS = "admin"
+RHN5_CERT = "/usr/share/rhn/RHN-ORG-TRUSTED-SSL-CERT"

@@ -65,7 +65,7 @@ def api_register_system():
 	# Build the node's fqdn
 	fqdn = hostname + '.soton.ac.uk'
 
-	# Contact the puppet-autosign server to get ssl certificates for this hostname
+	# Contact the cortex-puppet-bridge server to get ssl certificates for this hostname
 	autosign_url = app.config['PUPPET_AUTOSIGN_URL']
 	if not autosign_url.endswith('/'):
 		autosign_url += '/'
@@ -156,7 +156,11 @@ def api_register_system():
 	else:
 		app.logger.warn('No OS ident provided - a Satellite activation key will not be returned')
 
-	cortex.lib.core.log(__name__, "System registered")
+	if interactive:
+		cortex.lib.core.log(__name__, "api.register.system", "New Linux system '" + fqdn + "' registered via the API by " + request.form['username'],username=request.form['username'])
+	else:
+		cortex.lib.core.log(__name__, "api.register.system", "New Linux system '" + fqdn + "' registered via the API by VM-UUID authentication")
+
 	return(jsonify(cdata))
 
 ################################################################################

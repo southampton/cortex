@@ -44,8 +44,7 @@ def clear_session():
 	is marked as being not logged in."""
 
 	if 'username' in session:
-		app.logger.info('User "' + session.get('username', 'unknown') + '" logged out from "' + request.remote_addr + '" using ' + request.user_agent.string)
-		cortex.lib.core.log(__name__, 'Logout success', session['username'])
+		cortex.lib.core.log(__name__, 'cortex.logout', session['username'] + ' logged out using ' + request.user_agent.string)
 
 	# Remove the following items from the session
 	session.pop('logged_in', None)
@@ -69,8 +68,7 @@ def logon_ok(username):
 		pass
 
 	# Log a successful login
-	app.logger.info('User "' + session['username'] + '" logged in from "' + request.remote_addr + '" using ' + request.user_agent.string)
-	cortex.lib.core.log(__name__, 'Login success', username)
+	cortex.lib.core.log(__name__, 'cortex.login', '' + session['username'] + ' logged in using ' + request.user_agent.string)
 
 	# Determine if "next" variable is set (the URL to be sent to)
 	next = session.pop('next', None)

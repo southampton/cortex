@@ -26,7 +26,7 @@ def api_systems_csv():
 	# Get the list of systems
 	cur = cortex.lib.systems.get_systems(return_cursor=True)
 
-	cortex.lib.core.log(__name__, "CSV dumped")
+	cortex.lib.core.log(__name__, "api.systems.csv", "CSV of systems downloaded")
 	# Return the response as a downloadable CSV
 	return Response(cortex.lib.systems.csv_stream(cur), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
 
@@ -57,8 +57,11 @@ def api_puppet_enc(certname):
 	if node_yaml is None:
 		return abort(404)
 
+	# we've decided after all not to do this, because this would generate SO
+	# many rows in the database...
+	#cortex.lib.core.log(__name__, "api.puppet.enc", "Generated Puppet ENC YAML for " + certname)
+
 	# Make a response and return it
 	r = make_response(node_yaml)
 	r.headers['Content-Type'] = "application/x-yaml"
-	cortex.lib.core.log(__name__, "YAML dumped")
 	return r

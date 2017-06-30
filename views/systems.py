@@ -142,7 +142,7 @@ def systems_download_csv():
 	# Get the list of systems
 	curd = cortex.lib.systems.get_systems(return_cursor=True, hide_inactive=False)
 
-	cortex.lib.core.log(__name__, "CSV dumped")
+	cortex.lib.core.log(__name__, "systems.csv.download", "CSV of systems downloaded")
 	# Return the response
 	return Response(cortex.lib.systems.csv_stream(curd), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
 
@@ -283,7 +283,7 @@ def systems_add_existing():
 				curd.execute("UPDATE `systems` SET `cmdb_id` = %s WHERE `id` = %s", (ci_results[0]['sys_id'], system_id))
 				g.db.commit()
 
-		cortex.lib.core.log(__name__, "System added, id " + str(system_id))
+		cortex.lib.core.log(__name__, "systems.add.existing", "System manually added, id " + str(system_id),related_id=system_id)
 		# Redirect to the system page for the system we just added
 		flash("System added", "alert-success")
 		return redirect(url_for('system', id=system_id))
@@ -340,12 +340,14 @@ def systems_new():
 			flash("A fatal error occured when trying to allocate names: " + str(ex), "alert-danger")
 			return redirect(url_for('systems_new'))
 
+		for new_system_name in new_systems:
+			cortex.lib.core.log(__name__, "systems.name.allocate", "New system name allocated: " + new_system_name,related_id=new_systems[new_system_name])
+
 		# If the user only wanted one system, redirect back to the systems
 		# list page and flash up success. If they requested more than one
 		# system, then redirect to a bulk-comments-edit page where they can
 		# change the comments on all of the systems.
 		if len(new_systems) == 1:
-			cortex.lib.core.log(__name__, "System name '" + class_name + "' allocated")
 			flash("System name allocated successfully", "alert-success")
 			return redirect(url_for('system', id=new_systems[new_systems.keys()[0]]))
 		else:
@@ -374,7 +376,7 @@ def systems_bulk_save():
 			found_keys.append(updateid)
 			cur = g.db.cursor()
 			cur.execute("UPDATE `systems` SET `allocation_comment` = %s WHERE `id` = %s", (request.form[key], updateid))
-			cortex.lib.core.log(__name__, "System comment updated for id " + str(updateid))
+			cortex.lib.core.log(__name__, "systems.comment.edit", "System comment updated for id " + str(updateid),related_id=updateid)
 
 	g.db.commit()
 
@@ -676,7 +678,7 @@ def system_edit(id):
 			# Update the system
 			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, expiry_date, id))
 			g.db.commit();
-			cortex.lib.core.log(__name__, "System edited, id " + str(updateid))
+			cortex.lib.core.log(__name__, "systems.edit", "System '" + system['name'] + "' edited, id " + str(id), related_id=id)
 
 			flash('System updated', "alert-success")
 		except ValueError as ex:
