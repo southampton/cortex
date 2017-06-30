@@ -448,7 +448,7 @@ def system_overview(id):
 	if system is None:
 		abort(404)
 
-	if system['allocation_who_realname'] is not None:	
+	if system['allocation_who_realname'] is not None:
 		system['allocation_who'] = system['allocation_who_realname'] + ' (' + system['allocation_who'] + ')'
 	else:
 		system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
@@ -464,50 +464,64 @@ def system_status(id):
 	# access to the system
 	if not does_user_have_system_permission(id,"view.overview","systems.all.view"):
 		abort(403)
-	
+
 	system = cortex.lib.systems.get_system_by_id(id)
 
 	# Ensure that the system actually exists, and return a 404 if it doesn't
 	if system is None:
 		abort(404)
 	# get the VM
-	vm = cortex.lib.systems.get_vm_by_system_id(id)
+	try:
+		vm = cortex.lib.systems.get_vm_by_system_id(id)
+	except ValueError as e:
+		abort(404)
 
 	data = {}
 	data['hostname'] = ''
 	data['dns_resolvers'] = []
 	data['search_domain'] = ''
 	routes = []
-	try:
-		data['hostname'] = vm.guest.ipStack[0].dnsConfig.hostName
-		data['dns_resolvers'] = vm.guest.ipStack[0].dnsConfig.ipAddress
-		data['search_domain'] = vm.guest.ipStack[0].dnsConfig.domainName
-		for route in vm.guest.ipStack[0].ipRouteConfig.ipRoute:
-			if route.gateway.ipAddress:
-				routes = routes + [{'network': route.network, 'prefix': route.prefixLength, 'gateway': route.gateway.ipAddress}]
-	except IndexError as e:
-		pass
-
 	ipaddr = []
-	for net_adapter in vm.guest.net:
-		for address in net_adapter.ipConfig.ipAddress:
-			ipaddr = ipaddr + [{'ipaddr': address.ipAddress, 'prefix': address.prefixLength}]
 
-	data['net'] = {'ipaddr': ipaddr, 'routes': routes}
-	data['guest_state'] = vm.guest.guestState
-	data['power_state'] = vm.runtime.powerState
-	data['cpu'] = {'overall_usage': vm.summary.quickStats.overallCpuUsage, 'entitlement': vm.summary.quickStats.staticCpuEntitlement}
-	data['mem'] = {'overall_usage': vm.summary.quickStats.guestMemoryUsage, 'entitlement': vm.summary.quickStats.staticMemoryEntitlement}
-	data['uptime'] = vm.summary.quickStats.uptimeSeconds
+	if vm is not None and vm.guest is not None:
+		if vm.guest.ipStack is not None and len(vm.guest.ipStack) > 0:
+			if vm.guest.ipStack[0].dnsConfig is not None:
+				if vm.guest.ipStack[0].dnsConfig.hostName is not None:
+					data['hostname'] = vm.guest.ipStack[0].dnsConfig.hostName
+				if vm.guest.ipStack[0].dnsConfig.ipAddress is not None:
+					data['dns_resolvers'] = vm.guest.ipStack[0].dnsConfig.ipAddress
+				if vm.guest.ipStack[0].dnsConfig.domainName is not None:
+					data['search_domain'] = vm.guest.ipStack[0].dnsConfig.domainName
+			if vm.guest.ipStack[0].ipRouteConfig is not None and vm.guest.ipStack[0].ipRouteConfig.ipRoute is not None and len(vm.guest.ipStack[0].ipRouteConfig.ipRoute) > 0:
+				for route in vm.guest.ipStack[0].ipRouteConfig.ipRoute:
+					addroute = {}
+					if route.gateway is not None and route.gateway.ipAddress is not None:
+						addroute['gateway'] = route.gateway.ipAddress
+					if route.network is not None:
+						addroute['network'] = route.network
+					if route.prefixLength is not None:
+						addroute['prefix'] = route.prefixLength
+					if addroute:
+						routes = routes + [addroute]
 
-#	data['storage'] = []
-#	for disk in vm.guest.disk:
-#		#storage[disk.diskPath] = {'capacity': disk.capacity, 'free': disk.freeSpace}
-#		storage = storage + [[disk.diskPath, disk.capacity - disk.freeSpace]]
-#	try:
-#		data['storage'] = [['Used', vm.guest.disk[0].capacity - vm.guest.disk[0].freeSpace], ['Free', vm.guest.disk[0].freeSpace]]
-#	except Exception:
-#		pass
+		if vm.guest.net is not None and len(vm.guest.net) > 0:
+			for net_adapter in vm.guest.net:
+				if net_adapter.ipAddress is not None and len(net_adapter.ipAddress) > 0:
+					for addr in net_adapter.ipAddress:
+						ipaddr = ipaddr + [addr]
+
+		data['net'] = {'ipaddr': ipaddr, 'routes': routes}
+		if vm.guest.guestState is not None:
+			data['guest_state'] = vm.guest.guestState
+		if vm.runtime.powerState is not None:
+			data['power_state'] = vm.runtime.powerState
+		if vm.summary is not None and vm.summary.quickStats is not None:
+			if vm.summary.quickStats.overallCpuUsage is not None and vm.summary.quickStats.staticCpuEntitlement is not None:
+				data['cpu'] = {'overall_usage': vm.summary.quickStats.overallCpuUsage, 'entitlement': vm.summary.quickStats.staticCpuEntitlement}
+			if vm.summary.quickStats.guestMemoryUsage is not None and vm.summary.quickStats.staticMemoryEntitlement is not None:
+				data['mem'] = {'overall_usage': vm.summary.quickStats.guestMemoryUsage, 'entitlement': vm.summary.quickStats.staticMemoryEntitlement}
+			if vm.summary.quickStats.uptimeSeconds is not None:
+				data['uptime'] = vm.summary.quickStats.uptimeSeconds
 
 	return jsonify(data)
 

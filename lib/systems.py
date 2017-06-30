@@ -289,6 +289,8 @@ def get_vm_by_system_id(id):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute(query, params)
 	row = curd.fetchone()
+	if row is None:
+		raise ValueError
 	corpus = Corpus(g.db, app.config)
 	return corpus.vmware_get_vm_by_uuid(row['vmware_uuid'], row['vmware_vcenter'])
 

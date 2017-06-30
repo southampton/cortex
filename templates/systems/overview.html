@@ -380,7 +380,7 @@ function update_data(data) {
 		$('#net_table').append(
 			$('<tr>', {class: 'ip_addr'}).append(
 				$('<td>').text(ip_addr == 0 ? 'IP addresses' : ''),
-				$('<td>').text(data.net.ipaddr[ip_addr].ipaddr + '/' + data.net.ipaddr[ip_addr].prefix)
+				$('<td>').text(data.net.ipaddr[ip_addr])
 			)
 		);
 	}
@@ -398,7 +398,7 @@ function update_data(data) {
 		$('#net_table').append(
 			$('<tr>', {class: 'ip_routes'}).append(
 				$('<td>').text(route == 0 ? 'IP routes' : ''),
-				$('<td>').text(data.net.routes[route].network + '/' + data.net.routes[route].prefix + ' via ' + data.net.routes[route].gateway)
+				$('<td>').text('gateway' in data.net.routes[route] ? data.net.routes[route].network + '/' + data.net.routes[route].prefix + ' via ' + data.net.routes[route].gateway : data.net.routes[route].network + '/' + data.net.routes[route].prefix + ' on link')
 			)
 		);
 	}
