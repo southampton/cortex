@@ -686,7 +686,7 @@ Username:             %s
 		self.permissions        = [
 			{'name': 'systems.all.view',            'desc': 'View any system'},
 			{'name': 'systems.own.view',            'desc': 'View systems allocated by the user'},
-			{'name': 'systems.all.view.puppet',     'desc': 'View Puppet reports and facts on any system'},		
+			{'name': 'systems.all.view.puppet',     'desc': 'View Puppet reports and facts on any system'},
 			{'name': 'systems.all.edit.expiry',     'desc': 'Modify the expiry date of any system'},
 			{'name': 'systems.all.edit.review',     'desc': 'Modify the review status of any system'},
 			{'name': 'systems.all.edit.vmware',     'desc': 'Modify the VMware link on any system'},
@@ -715,6 +715,7 @@ Username:             %s
 			{'name': 'sysrequests.all.view',        'desc': 'View any system request'},
 			{'name': 'sysrequests.all.approve',     'desc': 'Approve any system request'},
 			{'name': 'sysrequests.all.reject',      'desc': 'Reject any system request'},
+			{'name': 'control.all.vmware.power',    'desc': 'Contol the power settings of any VM'},
 		]
 
 		self.workflow_permissions = []

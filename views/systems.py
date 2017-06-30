@@ -455,7 +455,7 @@ def system_overview(id):
 	else:
 		system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
 
-	return render_template('systems/overview.html', system=system, active='systems', title=system['name'], power_ctl_perm=does_user_have_system_permission(id, "control.vmware.power"))
+	return render_template('systems/overview.html', system=system, active='systems', title=system['name'], power_ctl_perm=does_user_have_system_permission(id, "control.vmware.power", "control.all.vmware.power"))
 
 ################################################################################
 
@@ -534,7 +534,7 @@ def system_status(id):
 def system_power(id):
 	# Check user permissions. User must have either systems.all or specific
 	# access to the system
-	if not does_user_have_system_permission(id,"control.vmware.power"):
+	if not does_user_have_system_permission(id,"control.vmware.power", "control.all.vmware.power"):
 		abort(403)
 
 	# Get the system
