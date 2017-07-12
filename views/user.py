@@ -141,8 +141,19 @@ def preferences():
 	if classic:
 		g.redis.set("user:" + session['username'] + ":preferences:interface:layout","classic")
 	else:
-		# if they dont want the classic layout then dont store a preference at all
+		# if they dont want the classic layout then don't store a preference at all
 		g.redis.delete("user:" + session['username'] + ":preferences:interface:layout")
+
+	theme = 'default'
+	if 'theme' in request.form:
+		if request.form['theme'] == "dark":
+			theme = "dark"
+	if theme == 'dark':
+		g.redis.set("user:" + session['username'] + ":preferences:interface:theme","dark")
+	else:
+		# if they dont want a different theme then don't store a preference at all
+		g.redis.delete("user:" + session['username'] + ":preferences:interface:theme")
+
 
 	flash("Your preferences have been saved","alert-success")
 	return redirect(url_for('dashboard'))
