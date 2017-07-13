@@ -387,9 +387,9 @@ def perms_system(id):
 						curd.execute('''INSERT INTO `system_perms` (`system_id`, `who`, `type`, `perm`) VALUES (%s, %s, %s, %s)''', (id, name, wtype, perm['name']))
 						g.db.commit()
 						if wtype == 0:
-							cortex.lib.core.log(__name__, "permissions.system.grant.user", "System permission '" + perm['name'] + "' granted for user '" + who + "' on system " + str(id))
+							cortex.lib.core.log(__name__, "permissions.system.grant.user", "System permission '" + perm['name'] + "' granted for user '" + name + "' on system " + str(id))
 						else:
-							cortex.lib.core.log(__name__, "permissions.system.grant.group", "System permission '" + perm['name'] + "' granted for group '" + who + "' on system " + str(id))
+							cortex.lib.core.log(__name__, "permissions.system.grant.group", "System permission '" + perm['name'] + "' granted for group '" + name + "' on system " + str(id))
 
 			if changes == 0:
 				flash("The " + hstr + " " + name + " was not added because no permissions were selected", "alert-danger")

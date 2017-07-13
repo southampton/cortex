@@ -134,8 +134,8 @@ def context_processor():
 				injectdata['classic_layout'] = True
 		except Exception as ex:
 			pass
+
 	# Determine theme for the user
-	injectdata['classic_layout'] = False
 	if 'username' in session:
 		try:
 			if g.redis.get('user:' + session['username'] + ":preferences:interface:theme") == "dark":
