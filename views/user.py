@@ -16,7 +16,7 @@ def root():
 	if cortex.lib.user.is_logged_in():
 		return redirect(url_for('dashboard'))
 	else:
-		if app.config['USER_AUTH'] == 'cas':
+		if app.config['DEFAULT_USER_AUTH'] == 'cas':
 			return cas()
 		else:
 			return login()

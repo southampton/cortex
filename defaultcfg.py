@@ -30,7 +30,7 @@ REDIS_PORT=6379
 
 #USER auth mode
 #can be 'cas' or 'ldap'
-USER_AUTH='cas'
+DEFAULT_USER_AUTH='cas'
 
 #CAS configuration
 CAS_SERVER_URL='https://domain.invalid/'
