@@ -111,7 +111,7 @@ def puppet_enc_edit(node):
 		# Update the system
 		curd.execute('UPDATE `puppet_nodes` SET `env` = %s, `classes` = %s, `variables` = %s, `include_default` = %s WHERE `certname` = %s', (env_dict[environment]['puppet'], classes, variables, include_default, system['puppet_certname']))
 		g.db.commit()
-		cortex.logger.log(__name__, "Puppet node configuration updated for '" + system['puppet_certname'] + "'")
+		cortex.lib.core.log(__name__, "puppet.config.changed", "Puppet node configuration updated for '" + system['puppet_certname'] + "'")
 
 		# Redirect back to the systems page
 		flash('Puppet ENC for host ' + system['name'] + ' updated', 'alert-success')
@@ -170,7 +170,7 @@ def puppet_enc_default():
 		curd.execute('REPLACE INTO `kv_settings` (`key`, `value`) VALUES ("puppet.enc.default", %s)', (classes,))
 		g.db.commit()
 
-		cortex.logger.log(__name__, "Puppet default configuration updated")
+		cortex.lib.core.log(__name__, "puppet.defaultconfig.changed", "Puppet default configuration updated")
 		# Redirect back
 		flash('Puppet default settings updated', 'alert-success')
 
@@ -255,7 +255,7 @@ def puppet_groups():
 
 			curd.execute('INSERT INTO `puppet_groups` (`name`) VALUES (%s)', (netgroup_name,))
 			g.db.commit()
-			cortex.logger.log(__name__, "Netgroup '" + netgroup_name + "' imported as a Puppet Group")
+			cortex.lib.core.log(__name__, "puppet.group.created", "Netgroup '" + netgroup_name + "' imported as a Puppet Group")
 
 			flash('The netgroup "' + netgroup_name + '" has imported as a Puppet Group', 'alert-success')
 			return redirect(url_for('puppet_groups'))
@@ -265,7 +265,7 @@ def puppet_groups():
 			try:
 				curd.execute('DELETE FROM `puppet_groups` WHERE `name` = %s', (group_name,))
 				g.db.commit()
-				cortex.logger.log(__name__, "Deleted Puppet group '" + group_name + "'")
+				cortex.lib.core.log(__name__, "puppet.group.deleted", "Deleted Puppet group '" + group_name + "'")
 				flash('Deleted Puppet group "' + group_name + '"', 'alert-success')
 			except Exception, e:
 				flash('Failed to delete Puppet group', 'alert-danger')
@@ -328,7 +328,7 @@ def puppet_group_edit(name):
 		# Update the system
 		curd.execute('UPDATE `puppet_groups` SET `classes` = %s WHERE `name` = %s', (classes, name))
 		g.db.commit()
-		cortex.logger.log(__name__, "Puppet group '" + group_name + "' edited")
+		cortex.lib.core.log(__name__, "puppet.group.changed", "Puppet group '" + group_name + "' edited")
 
 		# Redirect back to the systems page
 		flash('Changes saved successfully', 'alert-success')
