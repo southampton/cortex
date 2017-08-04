@@ -41,9 +41,9 @@ class SNPuppetConnector:
 	
 	def push_facts(self, node, cmdb_id, **kwargs):
 		"""
-		Push facts from Puppet to Service Now
+		Push facts from Puppet to ServiceNow
 		Args:
-			cmbd_id - Service Now Sys ID
+			cmbd_id - ServiceNow Sys ID
 		"""
 
 		# Get the ID for the server.
@@ -63,7 +63,7 @@ class SNPuppetConnector:
 
 	def push_server_facts(self, node, node_sys_id, **kwargs):
 		"""
-		Push server facts from Puppet to Service Now.
+		Push server facts from Puppet to ServiceNow.
 		"""
 		facts = self.puppet.get_all_facts(node)
 		try:
@@ -105,7 +105,7 @@ class SNPuppetConnector:
 
 	def push_networking_facts(self, node, node_sys_id, **kwargs):
 		"""
-		Push networking facts from Puppet to Service Now
+		Push networking facts from Puppet to ServiceNow
 		"""
 		# Get the network facts from Puppet.
 		network_facts = self.puppet.get_network_facts(node) 
@@ -163,7 +163,7 @@ class SNPuppetConnector:
 
 	def push_disk_facts(self, node, node_sys_id, **kwargs):
 		"""
-		Push disk facts from Puppet to Service Now
+		Push disk facts from Puppet to ServiceNow
 		"""
 		# Get disk facts from Puppet
 		disk_facts = self.puppet.get_disk_facts(node)
@@ -213,7 +213,7 @@ class SNPuppetConnector:
 
 	def push_mountpoint_facts(self, node, node_sys_id, **kwargs):
 		"""
-		Push mountpoint facts from Puppet to Service Now
+		Push mountpoint facts from Puppet to ServiceNow
 		"""
 		# Get mountpoint facts from puppet.
 		mountpoint_facts = self.puppet.get_mountpoint_facts(node)
