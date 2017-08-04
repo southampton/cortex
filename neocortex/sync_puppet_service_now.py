@@ -1,0 +1,44 @@
+#!/usr/bin/python
+
+import MySQLdb as mysql
+from corpus import SNPuppetConnector
+
+def run(helper, options):
+
+	# Connect to database.
+	db = helper.db_connect()
+
+	# Create the connector object.
+	connector = SNPuppetConnector.SNPuppetConnector(
+		#sn_host = helper.config['SN_HOST'],
+		sn_host = 'sotonpprd.service-now.com',
+		sn_version = 'v1',
+		sn_user = helper.config['SN_USER'],
+		sn_pass = helper.config['SN_PASS'],
+		puppet_host = helper.config['PUPPETDB_HOST'],
+		puppet_port = helper.config['PUPPETDB_PORT'],
+		puppet_ssl_cert = helper.config['PUPPETDB_SSL_CERT'],
+		puppet_ssl_key = helper.config['PUPPETDB_SSL_KEY'],
+		puppet_ssl_verify = helper.config['PUPPETDB_SSL_VERIFY'],
+	)
+
+	helper.event('puppet_nodes', 'Getting nodes from Puppet')
+	nodes = connector.get_nodes_from_puppet()
+	helper.end_event(description="Received nodes from Puppet")
+
+	for node in nodes:
+		helper.event('push_facts_to_service_now', 'Pushing facts for node ' + str(node.name) + ' to Service Now')
+
+		# Use the cortex database to get the node sys_id.
+		curd = db.cursor(mysql.cursors.SSDictCursor)
+		curd.execute('SELECT `name`, `cmdb_id`, `puppet_certname`, `vmware_ram` FROM `systems_info_view` WHERE `puppet_certname`="%s"' %(node.name))		
+		result = curd.fetchone()
+		curd.close()
+		# Ensure we have a result.
+		if result is not None:
+			cmdb_id = result["cmdb_id"]
+
+			if connector.push_facts(node, cmdb_id, vmware_ram=result["vmware_ram"]):
+				helper.end_event(description='Successfully pushed facts for node ' + str(node.name) + ' with CMDB ID ' + str(cmdb_id))
+			else:
+				helper.end_event(description='Failed to push facts for node ' + str(node.name), success=False)
