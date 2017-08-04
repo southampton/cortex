@@ -39,7 +39,7 @@ if __name__ == "__main__":
 		neocortex._pyroTimeout = 5
 
 		# Ping the server to ensure it's alive
-		task_id = neocortex.start_internal_task('scheduler', 'sync_puppet_service_now.py', '_sync_puppet_service_now', description="Sync Puppet facts with Service Now")
+		task_id = neocortex.start_internal_task('scheduler', 'sync_puppet_service_now.py', '_sync_puppet_service_now', description="Sync Puppet facts with ServiceNow")
 
 		print "job submitted with ID " + str(task_id)
 	except Exception as ex:

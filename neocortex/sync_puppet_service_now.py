@@ -10,8 +10,7 @@ def run(helper, options):
 
 	# Create the connector object.
 	connector = SNPuppetConnector.SNPuppetConnector(
-		#sn_host = helper.config['SN_HOST'],
-		sn_host = 'sotonpprd.service-now.com',
+		sn_host = helper.config['SN_HOST'],
 		sn_version = 'v1',
 		sn_user = helper.config['SN_USER'],
 		sn_pass = helper.config['SN_PASS'],
@@ -27,7 +26,7 @@ def run(helper, options):
 	helper.end_event(description="Received nodes from Puppet")
 
 	for node in nodes:
-		helper.event('push_facts_to_service_now', 'Pushing facts for node ' + str(node.name) + ' to Service Now')
+		helper.event('push_facts_to_service_now', 'Pushing facts for node ' + str(node.name) + ' to ServiceNow')
 
 		# Use the cortex database to get the node sys_id.
 		curd = db.cursor(mysql.cursors.SSDictCursor)
