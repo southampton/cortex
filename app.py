@@ -98,7 +98,7 @@ Further Details:
 		if self.config['DEBUG_TOOLBAR']:
 			self.debug = True
 			from flask_debugtoolbar import DebugToolbarExtension
-			toolbar = DebugToolbarExtension(app)
+			toolbar = DebugToolbarExtension(self)
 			self.logger.info('cortex debug toolbar enabled - DO NOT USE THIS ON LIVE SYSTEMS!')
 
 		# check the database is up and is working
