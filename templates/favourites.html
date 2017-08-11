@@ -8,7 +8,7 @@ a.server-link:hover { text-decoration: underline !important; }
 
 <div class="page-header">
 	<button id="hide_inactive" type="button" class="btn btn-sm pull-right {% if hide_inactive %}btn-success active{%else%}btn-danger{%endif%}" style="margin-left:4px" data-toggle="popover" data-trigger="hover" data-placement="left" title="Hide Inactive Systems" data-content="When ticked, systems that are not in ServiceNow or VMware will not be shown, nor will systems that are not marked as 'In Service' in ServiceNow."><i class="fa fa-fw {% if hide_inactive %}fa-check-square-o{%else%}fa-square-o{%endif%}"></i> Hide Inactive Systems</button>
-	<h3><i class="fa fa-server fa-fw"></i>{% if expired %} Expired Systems{% elif nocmdb %} VMs Missing a CMDB Record{% elif perms_only %} Systems with permissions{% else %} Systems{% endif %}
+	<h3><i class="fa fa-star fa-fw"></i>Favourites
 		{% if does_user_have_permission("systems.all.view") %}<a class="btn btn-primary btn-sm pull-right" href="{{ url_for('systems_download_csv') }}"><i class="fa fa-fw fa-download"></i> Download CSV</a>{% endif %}
 		<small><strong>&nbsp;Legend:</strong>
 			<i title='System is linked to VMware and the VM is powered on' class='fa fa-fw fa-play icon-state icon-legend icon-on'></i>On
@@ -53,6 +53,7 @@ $(function() {
 		"serverSide": true,
 		"searchDelay": 500,
 		"stateSave": true,
+		"language": {"emptyTable":"No favourites found, you should try adding some."},
 		"stateLoadCallback": function (settings) {
 			if (window.history.state != undefined)
 			{
@@ -75,6 +76,7 @@ $(function() {
 				d.show_expired = {% if expired %}"1"{% else %}"0"{% endif %};
 				d.show_nocmdb = {% if nocmdb %}"1"{% else %}"0"{% endif %};
 				d.show_perms_only = {% if perms_only %}"1"{% else %}"0"{% endif %};
+				d.show_favourites_only = '1';
 			}
 		},
 		{% if q %}
@@ -101,36 +103,28 @@ $(function() {
 
 			var view_link = "<a class='server-link' href='/systems/overview/" + data[7] + "'>" + data[0] + "</a>";
 
-			if (data[10] == true)
-			{
-				var favourite = '<i style="color: gold; margin-right: 5px;" class="fa fa-fw fa-star"></i>';
-
-			}else {
-				var favourite = '<i style="margin-right: 5px;" class="fa fa-fw fa-star-o"></i>';
-			}
-
 			if ($('#class-tabs li.active a').attr('data-vmware') == 1)
 			{
 				if (data[8] == "poweredOn")
 				{
-					$('td:eq(0)', row).html("<nobr>" + favourite + "<i title='VM Powered On' class='fa fa-fw fa-play icon-state icon-on' />" + view_link + "</nobr>");
+					$('td:eq(0)', row).html("<nobr><i title='VM Powered On' class='fa fa-fw fa-play icon-state icon-on' />" + view_link + "</nobr>");
 				}
 				else if (data[8] == "poweredOff")
 				{
-					$('td:eq(0)', row).html("<nobr>" + favourite + "<i title='VM Powered Off' class='fa fa-fw fa-stop icon-state icon-off' />" + view_link + "</nobr>");
+					$('td:eq(0)', row).html("<nobr><i title='VM Powered Off' class='fa fa-fw fa-stop icon-state icon-off' />" + view_link + "</nobr>");
 				}
 				else if (data[8] == "suspended")
 				{
-					$('td:eq(0)', row).html("<nobr>" + favourite + "<i title='VM Suspended' class='fa fa-fw fa-pause icon-state icon-pause' />" + view_link + "</nobr>");
+					$('td:eq(0)', row).html("<nobr><i title='VM Suspended' class='fa fa-fw fa-pause icon-state icon-pause' />" + view_link + "</nobr>");
 				}
 				else
 				{
-					$('td:eq(0)', row).html("<nobr>" + favourite + "<i title='Not linked to VMware' class='fa fa-fw fa-dot-circle-o icon-state icon-unknown' />" + view_link + "</nobr>");
+					$('td:eq(0)', row).html("<nobr><i title='Not linked to VMware' class='fa fa-fw fa-dot-circle-o icon-state icon-unknown' />" + view_link + "</nobr>");
 				}
 			}
 			else
 			{
-				$('td:eq(0)', row).html(favourite + view_link);
+				$('td:eq(0)', row).html(view_link);
 			}
 		}
 	});
