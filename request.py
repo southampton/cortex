@@ -65,12 +65,14 @@ def context_processor():
 
 	# Set up the Systems menu, based on a single permission
 	systems = []
+	if does_user_have_permission("systems.own.view") or does_user_have_permission("systems.all.view"):
+		systems.append({'link': url_for('systems'), 'title': 'All systems', 'icon': 'fa-list'})
+
 	if does_user_have_permission("systems.all.view"):
-		systems = [
-			{'link': url_for('systems'), 'title': 'All systems', 'icon': 'fa-list'},
-			{'link': url_for('systems_nocmdb'), 'title': 'Systems without a CMBD record', 'icon': 'fa-list'},
-			{'link': url_for('systems_expired'), 'title': 'Expired systems', 'icon': 'fa-list'}
-		]
+		systems.append({'link': url_for('systems_nocmdb'), 'title': 'Systems without a CMBD record', 'icon': 'fa-list'})
+		systems.append({'link': url_for('systems_expired'), 'title': 'Expired systems', 'icon': 'fa-list'})
+	if does_user_have_permission("sysrequests.own.view") or does_user_have_permission("sysrequests.all.view"):
+		systems.append({'link': url_for('sysrequests'), 'title': 'System requests', 'icon': 'fa-list'})
 
 	# Set up the VMware menu, based on a single permission
 	vmware = []
@@ -106,6 +108,8 @@ def context_processor():
 		admin.append({'link': url_for('admin_classes'), 'title': 'Classes', 'icon': 'fa-table'})
 	if does_user_have_permission("tasks.view"):
 		admin.append({'link': url_for('admin_tasks'), 'title': 'Tasks', 'icon': 'fa-tasks'})
+	if does_user_have_permission("events.view"):
+		admin.append({'link': url_for('admin_events'), 'title': 'Events', 'icon': 'fa-list-alt'})
 	if does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm"]):
 		admin.append({'link': url_for('admin_maint'), 'title': 'Maintenance', 'icon': 'fa-gears'})
 	if does_user_have_permission("systems.allocate_name"):
@@ -128,6 +132,14 @@ def context_processor():
 		try:
 			if g.redis.get('user:' + session['username'] + ":preferences:interface:layout") == "classic":
 				injectdata['classic_layout'] = True
+		except Exception as ex:
+			pass
+
+	# Determine theme for the user
+	if 'username' in session:
+		try:
+			if g.redis.get('user:' + session['username'] + ":preferences:interface:theme") == "dark":
+				injectdata['theme'] = "dark"
 		except Exception as ex:
 			pass
 

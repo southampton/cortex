@@ -1,5 +1,4 @@
 #!/usr/bin/python
-#
 
 from cortex import app
 import cortex.lib.core
@@ -7,6 +6,7 @@ from cortex.lib.user import does_user_have_permission
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
 import re
 import MySQLdb as mysql
+import datetime
 
 ################################################################################
 
@@ -36,7 +36,7 @@ def admin_tasks_json(tasktype):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Extract stuff from DataTables requests
-	(draw, start, length, order_column, order_asc, search) = _tasks_extract_datatables()
+	(draw, start, length, order_column, order_asc, search) = _extract_datatables()
 
 	# Choose the order column
 	if order_column == 0:
@@ -170,6 +170,120 @@ def admin_tasks_system():
 
 ################################################################################
 
+@app.route('/admin/events/json/<event_source>', methods=['POST'])
+@cortex.lib.user.login_required
+@app.disable_csrf_check
+def admin_events_json(event_source):
+	# Check user permissions
+	if not does_user_have_permission("events.view"):
+		abort(403)
+
+	# Get a cursor to the database
+	cur = g.db.cursor()
+
+	# Extract stuff from DataTables requests
+	(draw, start, length, order_column, order_asc, search) = _extract_datatables()
+
+	# Choose the order column
+	if order_column == 0:
+		order_by = "id"
+	elif order_column == 1:
+		order_by = "start"
+	elif order_column == 2:
+		order_by = "end"
+	elif order_column == 3:
+		order_by = "name"
+	elif order_column == 4:
+		order_by = "desc"
+	elif order_column == 5:
+		order_by = "source"
+	elif order_column == 6:
+		order_by = "username"
+	elif order_column == 7:
+		order_by = "ipaddr"
+	elif order_column == 8:
+		order_by = "status"
+	else:
+		app.logger.warn('Invalid ordering column parameter in DataTables request')
+		abort(400)
+
+	# Choose order direction
+	order_dir = "DESC"
+	if order_asc:
+		order_dir = "ASC"
+
+	# Determine the event type and add that to the query
+	params = ()
+	where_clause = ""
+	if event_source == 'all':
+		where_clause = '1=1'	# This is just to make 'search' always be able to be an AND and not need an optional WHERE
+	elif event_source == 'user':
+		where_clause = "`username` != 'scheduler'"
+	elif event_source == 'scheduler':
+		where_clause = "`username` = 'scheduler'"
+	elif event_source == 'tasks':
+		where_clause = "`source` = 'neocortex.task'"
+	else:
+		where_clause = "1=1"
+
+	# Add on search string if we have one
+	if search:
+		where_clause = where_clause + " AND (`name` LIKE %s OR `source` LIKE %s OR `desc` LIKE %s OR `username` LIKE %s OR `ipaddr` LIKE %s) "
+		params = params + ('%' + search + '%', '%' + search + '%', '%' + search + '%', '%' + search + '%', '%' + search + '%')
+
+	# Get the total number of events
+	cur.execute("SELECT COUNT(*) AS `count` FROM `events`")
+	event_count = cur.fetchone()[0]
+
+	# Get the total number of events
+	cur.execute("SELECT COUNT(*) AS `count` FROM `events` WHERE " + where_clause, params)
+	filtered_event_count = cur.fetchone()[0]
+
+	# Get the list of events
+	app.logger.debug("SELECT `id`, `start`, `end`, `name`, `desc`, `source`, `username`, `ipaddr`, `status` FROM `events` WHERE " + where_clause + " ORDER BY `" + order_by + "` " + order_dir + " LIMIT " + str(start) + "," + str(length))
+
+	cur.execute("SELECT `id`, `start`, `end`, `name`, `desc`, `source`, `username`, `ipaddr` FROM `events` WHERE " + where_clause + " ORDER BY `" + order_by + "` " + order_dir + " LIMIT " + str(start) + "," + str(length), params)
+	data = cur.fetchall()
+
+	## jsonify uses a particular format for datetime conversion to string,
+	## which creates a long string with data we don't care about. we can't 
+	## just pre-convert the datetimes, because the result from mysql is a tuple
+	## rather than a list. So! We convert everything to a list first, then
+	## convert.
+	new_data = []
+	for record in data:
+		record = list(record)
+		if type(record[1]) is datetime.datetime:
+			record[1] = record[1].strftime('%Y-%m-%d %H:%M:%S %Z')
+		if type(record[2]) is datetime.datetime:
+			record[2] = record[2].strftime('%Y-%m-%d %H:%M:%S %Z')
+
+		if record[6] is None:
+			record[6] = "N/A"
+		if record[7] is None:
+			record[7] = "N/A"
+
+		new_data.append(record)
+
+	return jsonify(draw=draw, recordsTotal=event_count, recordsFiltered=filtered_event_count, data=new_data)
+
+################################################################################
+
+@app.route('/admin/events')
+@app.route('/admin/events/<src>')
+@cortex.lib.user.login_required
+def admin_events(src="all"):
+	"""Displays the list of events, excluding any system events"""
+
+	# Check user permissions
+	if not does_user_have_permission("events.view"):
+		abort(403)
+
+	# Render the page
+	return render_template('admin/events.html', active='admin', title="Events", event_source=src, json_source=url_for('admin_events_json', event_source=src))
+
+################################################################################
+
 @app.route('/admin/classes', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def admin_classes():
@@ -192,7 +306,7 @@ def admin_classes():
 		action = request.form['action']
 		curd   = g.db.cursor()
 
-		if action in ['add_class', 'edit_class']:		
+		if action in ['add_class', 'edit_class']:
 			# Validate class name/prefix
 			class_name = request.form['class_name']
 			if not re.match(r'^[a-z]{1,16}$', class_name):
@@ -249,6 +363,7 @@ def admin_classes():
 				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES (%s, %s, %s, %s, %s, %s)''', (class_name, class_digits, class_comment, class_disabled, class_link_vmware, class_cmdb_type))
 				g.db.commit()
 
+				cortex.lib.core.log(__name__, "systemclass.create", "System class '" + class_name + "' created")
 				flash("System class created", "alert-success")
 				return redirect(url_for('admin_classes'))
 			
@@ -260,6 +375,7 @@ def admin_classes():
 
 				curd.execute('''UPDATE `classes` SET `digits` = %s, `disabled` = %s, `comment` = %s, `link_vmware` = %s, `cmdb_type` = %s WHERE `name` = %s''', (class_digits, class_disabled, class_comment, class_link_vmware, class_cmdb_type, class_name))
 				g.db.commit()
+				cortex.lib.core.log(__name__, "systemclass.edit", "System class '" + class_name + "' edited")
 
 				flash("System class updated", "alert-success")
 				return redirect(url_for('admin_classes'))
@@ -296,6 +412,7 @@ def admin_classes():
 				curd.execute('''INSERT INTO `classes` (`name`, `digits`, `comment`, `disabled`, `link_vmware`, `cmdb_type`) VALUES ('san', 5, 'Fibre channel switches', 0, 0, 'cmdb_ci_netgear')''')
 				g.db.commit()
 
+			cortex.lib.core.log(__name__, "systemclass.createdefaults", "Default system classes added")
 			flash("System classes added", "alert-success")
 			return redirect(url_for('admin_classes'))
 
@@ -369,13 +486,13 @@ def admin_maint():
 
 ################################################################################
 
-def _tasks_extract_datatables():
+def _extract_datatables():
 	# Validate and extract 'draw' parameter. This parameter is simply a counter
 	# that DataTables uses internally.
 	if 'draw' in request.form:
 		draw = int(request.form['draw'])
-	else:   
-		app.logger.warn('\'draw\' parameter missing from DataTables request')
+	else:
+		app.logger.warn('`draw` parameter missing from DataTables request')
 		abort(400)
 
 	# Validate and extract 'start' parameter. This parameter is the index of the
@@ -383,7 +500,7 @@ def _tasks_extract_datatables():
 	if 'start' in request.form:
 		start = int(request.form['start'])
 	else:
-		app.logger.warn('\'start\' parameter missing from DataTables request')
+		app.logger.warn('`start` parameter missing from DataTables request')
 		abort(400)
 
 	# Validate and extract 'length' parameter. This parameter is the number of
@@ -393,7 +510,7 @@ def _tasks_extract_datatables():
 		if length < 0:
 			length = None
 	else:
-		app.logger.warn('\'length\' parameter missing from DataTables request')
+		app.logger.warn('`length` parameter missing from DataTables request')
 		abort(400)
 
 	# Validate and extract ordering column. This parameter is the index of the
@@ -411,7 +528,7 @@ def _tasks_extract_datatables():
 		elif request.form['order[0][dir]'] == 'desc':
 			order_asc = False
 		else:
-			app.logger.warn('Invalid \'order[0][dir]\' parameter in DataTables request')
+			app.logger.warn('Invalid `order[0][dir]` parameter in DataTables request')
 			abort(400)
 	else:
 		order_asc = False

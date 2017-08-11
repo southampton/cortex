@@ -1,0 +1,202 @@
+{% extends "layout.html" %}
+{% block head -%}
+		<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/6.0.5/css/bootstrap-slider.min.css">
+		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/6.0.5/bootstrap-slider.min.js"></script>
+		<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/css/bootstrap-select.min.css">
+		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/js/bootstrap-select.min.js"></script>
+
+		<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css">
+		<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js"></script>        
+		<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/locale/en-gb.js"></script>                
+		<script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
+{% endblock %}
+{% block body %}
+
+<div class="page-header">
+<h3><i class="fa fa-plus-circle fa-fw"></i> Request Virtual Machine</h3>
+<p class="text-muted">This workflow will request a new virtual machine.</p>
+</div>
+
+<style type="text/css">
+
+.btn-group .btn-primary, .btn-group .btn-warning, .btn-group .btn-success
+{
+	opacity: 0.7;
+	font-size: 14px;
+}
+
+.active
+{
+	opacity: 1 !important;
+}
+
+.submit
+{
+	padding-bottom: 2em;
+	margin-left: 1em;
+}
+
+.btn-submit
+{
+	font-size: 2em;
+}
+
+.warning
+{
+	display:none;
+}
+
+</style>
+
+<form method="POST" role="form">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+	<div class="row">
+		<div class="col-md-6">
+			<p class="lead">As a member of ECS you are able to request Virtual Machines (VMs)</p>
+			<p>Please remember that you are bound by the <a href="http://www.calendar.soton.ac.uk/sectionIV/computers.html">University's regulations</a>. Any illegal or improper use of your VM will result in it being removed without warning and may result in disciplinary action.</p>
+			<p>Members of ORC or Physics and Astronomy should contact the iSolutions Business Relationship Manager for FPSE, <a href="mailto:J.P.Webb@soton.ac.uk">Jeremy Webb</a>.</p>
+			<p>ECS staff and researchers needing virtual machines (VMs) for funded projects should contact the Faculty Research Systems Manager, <a href="mailto:fpse-rsm@soton.ac.uk">Lance Draper</a>.</p>
+		</div>
+		<div class="col-md-6">
+			<h4>What you will get:</h4>
+			<p>A VM with the following specifications:</p>
+			<ul>
+				<li><strong>vCPUs:</strong> 4</li>
+				<li><strong>Memory:</strong> 4 GiB</li>
+				<li><strong>Disk:</strong> 50 GiB</li>
+			</ul>
+			<h4>What you won't:</h4>
+			<ul>
+				<li>Backups. If VM backups <em>are</em> required, contact <a href="mailto:fpse-rsm@soton.ac.uk">Lance Draper</a>.</li>
+			</ul>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+			<h4>1. Enter request details</h4>
+			<div class="form-group col-md-12">
+				<label for="fqdn">FQDN:</label>
+				<div class="input-group">
+					<div class="input-group-addon">svm-{{ session.username }}-</div>
+					<input class="form-control" id="fqdn" name="fqdn" placeholder="The hostname suffix of this Virtual Machine (1 to 32 characters long of 'a-z', '0-9' and '-'). Example: 'myfirstserver'." pattern="[a-z0-9\-]{1,32}" required autofocus />
+					<div class="input-group-addon">.ecs.soton.ac.uk</div>
+				</div>
+				<label for="purpose">Purpose:</label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. SMTP server" autofocus />
+				<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes about the system" />
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-6">
+			<h4>2. Choose Image</h4>
+			<select class="col-md-12 selectpicker" name="template" id="template">
+				<option></option>
+{% for os in os_order -%}
+				<option value="{{ os }}">{{ os_names[os] }}</option>
+{%- endfor %}
+			</select>
+		</div>
+
+		<div class="col-md-6">
+			<h4>3. Network Zone</h4>
+			<fieldset id="networks">
+				<div class="col-md-6 row">
+				<label class="col-md-12" for="internal"><input type="radio" class="radio" id="internal" name="network" value="internal" checked></input>
+					<h4>Internal</h4>
+					<p>The VM will only be accessible from inside the ECS network. Remote access is possible through the ECS VPN.</p>
+				</label>
+				</div>
+				<div class="col-md-6 row">
+				<label class="col-md-12" for="external"><input type="radio" class="radio" id="external" name="network" value="external"></input>
+					<h4>External</h4>
+					<p>The VM will be directly accessible from the Internet.</p>
+				</label>
+				</div>
+			</fieldset>
+			<div id="networkwarning" class="warning alert col-md-12 alert-warning">VMs on the external network require human approval</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-6">
+			<h4>4. Expiry date</h4>
+			<div class="col-md-12">
+				<p>Set the date that this VM will be automatically destroyed. This should usually be under one year.</p>
+				<div class='input-group date' id='expirypicker'>
+					<input type='text' class="form-control" id="expiry" name="expiry" placeholder="YYYY-MM-DD" required></input>
+					<span class="input-group-addon">
+						<span class="glyphicon glyphicon-calendar"></span>
+					</span>
+				</div>
+				<div id="expirywarning" class="warning alert col-md-12 alert-warning">Selecting an expiry over one year in advance will require human approval</div>
+				<script>
+					$(function () {
+						$('#expirypicker').datetimepicker({
+							viewMode: 'days',
+							format: 'YYYY-MM-DD',
+							minDate: moment(),
+							useCurrent: false,
+							defaultDate: moment().add(365, 'days'),
+
+						}).on('dp.change', function(e) {
+							if (e.date > moment().add(366, 'days')){
+								$('#expirywarning').show();
+							} else {
+								$('#expirywarning').hide();
+							}
+						});
+					});
+				</script>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<h4>5. Create</h4>
+			<div class="col-md-12">
+				<div class="checkbox">
+					<label for="send_mail"><input type="checkbox" name="send_mail" id="send_mail" checked>Notify me by e-mail when done</label>
+				</div>
+			</div>
+			<div class="col-md-12">
+				<button type="submit" class="btn btn-success btn-submit" id="create"><i class="fa fa-fw fa-send"></i> Request</button>
+			</div>
+		</div>
+	</div>
+</form>
+<script type="text/javascript">
+
+$('input:radio[name="network"]').change(function(){
+	if ($(this).val() !== 'internal') {
+		$('#networkwarning').show();
+	} else {
+		$('#networkwarning').hide();
+	}
+});
+
+{# Callback for clicking Create button #}
+$('#create').click(function(e) {
+	// Validate
+	if ($('#purpose').val().length == 0)
+	{
+		alert('You must enter a purpose for the VM.');
+		$('#purpose').focus();
+	}
+	else if ($("#template").val() == "")
+	{
+		alert('You must select a VM image to use.');
+	}
+	else if ($("#expiry").val() == "")
+	{
+		alert('You must select a VM image to use.');
+	}
+	else
+	{
+		return true;
+	}
+
+	{#We've hit an error condition, don't allow the form to submit#}
+	e.preventDefault();
+	return false;
+});
+</script>
+{% endblock %}

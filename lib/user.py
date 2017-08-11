@@ -2,8 +2,9 @@
 
 from cortex import app
 import cortex.lib.ldapc
+import cortex.lib.core
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
-import os 
+import os
 import re
 import pwd
 import MySQLdb as mysql
@@ -23,9 +24,8 @@ def login_required(f):
 	@wraps(f)
 	def decorated_function(*args, **kwargs):
 		if not is_logged_in():
-			flash('You must login first!', 'alert-danger')
-			args = url_encode(request.args)
-			return redirect(url_for('login', next=request.script_root + request.path + "?" + args))
+			session['next'] = request.url
+			return redirect(url_for('root'))
 		return f(*args, **kwargs)
 	return decorated_function
 
@@ -43,29 +43,36 @@ def clear_session():
 	"""Ends the logged in user's login session. The session remains but it 
 	is marked as being not logged in."""
 
-	app.logger.info('User "' + session['username'] + '" logged out from "' + request.remote_addr + '" using ' + request.user_agent.string)
+	if 'username' in session:
+		cortex.lib.core.log(__name__, 'cortex.logout', session['username'] + ' logged out using ' + request.user_agent.string)
 
 	# Remove the following items from the session
 	session.pop('logged_in', None)
 	session.pop('username', None)
 	session.pop('id', None)
 
-
 ################################################################################
 
-def logon_ok(): 
+def logon_ok(username):
 	"""This function is called post-logon or post TOTP logon to complete the
 	logon sequence"""
 
 	# Mark as logged on
+	session['username'] = username.lower()
 	session['logged_in'] = True
+	
+	# Update the user's realname in the cache table
+	try:
+		get_user_realname(session['username'], from_cache=False)
+	except:
+		pass
 
 	# Log a successful login
-	app.logger.info('User "' + session['username'] + '" logged in from "' + request.remote_addr + '" using ' + request.user_agent.string)
-		
+	cortex.lib.core.log(__name__, 'cortex.login', '' + session['username'] + ' logged in using ' + request.user_agent.string)
+
 	# Determine if "next" variable is set (the URL to be sent to)
-	next = request.form.get('next', default=None)
-	
+	next = session.pop('next', None)
+
 	if next == None:
 		return redirect(url_for('dashboard'))
 	else:
@@ -90,7 +97,7 @@ def get_users_groups(username, from_cache=True):
 	"""Returns a set (not a list) of groups that a user belongs to. The result is 
 	cached to improve performance and to lessen the impact on the LDAP server. The 
 	results are returned from the cache unless you set "from_cache" to be 
-	False. 
+	False.
 
 	This function will return None in all cases where the user was not found
 	or where the user has no groups. It is not expeceted that a user will ever
@@ -233,7 +240,7 @@ def does_user_have_permission(perm, user=None):
 	for p in perm:
 		if p in g.user_perms:
 			return True
-	
+
 	# We've not found the permission, return False to indicate that
 	app.logger.debug("User " + str(user) + " did not have permission(s) " + str(perm))
 	return False

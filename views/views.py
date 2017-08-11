@@ -60,7 +60,7 @@ def dashboard():
 	tasks = curd.fetchall()
 
 	# Get the list of systems the user is specifically allowed to view
-	curd.execute("SELECT * FROM `systems_info_view` WHERE `id` IN (SELECT `system_id` FROM `system_perms` WHERE (`type` = '0' AND `who` = %s AND `perm` = 'view') OR (`type` = '1' AND `perm` = 'view' AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s)))",(session['username'],session['username']))
+	curd.execute("SELECT * FROM `systems_info_view` WHERE `id` IN (SELECT `system_id` FROM `system_perms` WHERE (`type` = '0' AND `who` = %s AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail')) OR (`type` = '1' AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail') AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s)))",(session['username'],session['username']))
 	systems = curd.fetchall()
 
 	# Recent systems
@@ -75,13 +75,13 @@ def dashboard():
 	# select SUM(`memoryMB`) FROM `vmware_cache_vm`;
 
 	curd.execute("SELECT SUM(`ram`) AS `total` FROM `vmware_cache_clusters`")
-	total_ram = curd.fetchone()['total']
+	total_ram = curd.fetchone()['total'] or 0
 
 	curd.execute("SELECT SUM(`ram_usage`) AS `total` FROM `vmware_cache_clusters`")
-	total_ram_usage = int(curd.fetchone()['total']) * 1024 * 1024
+	total_ram_usage = int(curd.fetchone()['total'] or 0) * 1024 * 1024
 
 	curd.execute("SELECT SUM(`memoryMB`) AS `total` FROM `vmware_cache_vm`")
-	total_vm_ram = (curd.fetchone()['total']) * 1024 * 1024
+	total_vm_ram = (curd.fetchone()['total'] or 0) * 1024 * 1024
 
 	return render_template('dashboard.html', active="dashboard", 
 		vm_count=vm_count, 

@@ -1,0 +1,450 @@
+{% extends "layout.html" %}
+{% block head %}
+{% endblock %}
+{% block body %}
+{% import 'node-header.html' as node %}
+
+<link href="//cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.css" rel="stylesheet" type="text/css">
+<style type="text/css">
+
+.graphic {
+	width: 50%;
+}
+
+#power-icon {
+	font-size: 0.8em;
+	line-height: 1.6em;
+}
+
+form {
+	display: inline;
+}
+
+tr > td:first-child {
+	text-align: right;
+	font-weight: bolder;
+}
+
+@media (min-width: 992px)
+{
+	.equal, .equal > div[class*='col-']
+	{
+		display: -webkit-flex;
+		display: flex;
+		flex: 1 1 auto;
+	}
+
+	.equal .panel
+	{
+		width: 100%;
+	}
+
+	.equal .panel
+	{
+		min-height: 15em;
+	}
+}
+</style>
+
+{{ node.header(system,active="overview" ) }}
+<div class="row equal">
+	<div class="col-md-4">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">System Record</h3>
+			</div>
+			<div class="panel-body">
+				<table class="table">
+					<tr><td>Comment</td><td>{{ system.allocation_comment or '' }}</td></tr>
+					<tr><td>Allocated by</td><td>{{ system.allocation_who or 'Unknown' }}</td></tr>
+					<tr><td>Allocation date</td><td>{{ system.allocation_date or '' }}</td></tr>
+					<tr><td>Expiry date</td><td>{{ system.expiry_date or 'Not Set' }}</td></tr>
+				</table>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-5">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Network</h3>
+			</div>
+			<div class="panel-body">
+				{% if system.vmware_uuid %}
+				<div class="row">
+					<div class="col-md-6">
+						<table class="table" id="net_table">
+						</table>
+					</div>
+					<div class="col-md-6">
+						<table class="table" id="dns_table">
+						</table>
+					</div>
+				</div>
+				{% else %}
+				<p><span class="fa fa-info"></span> Network information unavailable.<p>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+	<div class="col-md-3">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Power control</h3>
+			</div>
+			<div class="panel-body">
+				{% if system.vmware_uuid %}
+				{#<p><span class="fa fa-info"></span> You can control the power state of the system should it become unresponsive. To avoid losing data, graceful shutdowns should be issued by logging into the system.</p>#}
+				<table class="table">
+					<tr><td>Power State</td><td class="power_state"></td></tr>
+				</table>
+				<div class="center-block">
+					{%- if power_ctl_perm %}
+					<button data-toggle="modal" data-target="#powerOnModal" title="Power on the system" class="btn btn-lg btn-success"><span class="fa fa-play"></span> Power on</button>
+					<button data-toggle="modal" data-target="#powerOffModal" title="Power off the system" class="btn btn-lg btn-danger"><span class="fa fa-stop"></span> Power off</button>
+					<button data-toggle="modal" data-target="#resetModal" title="Reset the system" class="btn btn-lg btn-danger"><span class="fa fa-refresh"></span> Reset</button>
+					{%- else %}
+					<button title="Power on the system" class="btn btn-lg btn-success disabled" disabled><span class="fa fa-play"></span> Power on</button>
+					<button title="Power off the system" class="btn btn-lg btn-danger disabled" disabled><span class="fa fa-stop"></span> Power off</button>
+					<button title="Reset the system" class="btn btn-lg btn-danger disabled" disabled><span class="fa fa-refresh"></span> Reset</button>
+					<p><span class="fa fa-info"></span> You do not have permission to control this system's power</p>
+					{%- endif %}
+				</div>
+				{% else %}
+				<p><span class="fa fa-info"></span> Power controls are unavailable for this system.</p>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+</div>
+<div class="row equal">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">System Status</h3>
+			</div>
+			<div class="panel-body row">
+				{% if system.vmware_uuid %}
+				<div class="col-md-4">
+					<div class="fa-stack fa-5x graphic"><i class="fa fa-desktop fa-stack-2x"></i><i id="power-icon"></i></div>
+					<table class="table">
+						<tr><td>Power State</td><td class="power_state"></td></tr>
+						<tr><td>Uptime</td><td id="uptime"></td></tr>
+						<tr><td>Spec</td><td>{{ system.vmware_cpus or 'unknown' }} vCPU, {{ system.vmware_ram or 'unknown' }} MB RAM</td></tr>
+						<tr><td>OS</td><td>{{ system.vmware_os or 'unknown' }}</td></tr>
+						<tr><td>CPU usage</td><td id="cpu_usage"></td></tr>
+						<tr><td>RAM usage</td><td id="mem_usage"></td></tr>
+					</table>
+				</div>
+				<div class="col-md-8">
+					<div class="col-md-6">
+						<div id="chart_cpu"></div>
+						<h4>CPU</h4>
+					</div>
+					<div class="col-md-6">
+						<div id="chart_mem"></div>
+						<h4>Memory</h4>
+					</div>
+{#
+					<div class="col-md-4">
+						<div id="chart_disk"></div>
+						<h4>Disk</h4>
+					</div>
+#}
+				</div>
+				{%else%}
+				<p class="col-md-12"><span class="fa fa-info"></span> System information unavailable.</p>
+				{%endif%}
+			</div>
+		</div>
+	</div>
+</div>
+
+{% if power_ctl_perm and system.vmware_uuid %}
+<div class="modal fade" tabindex="-1" role="dialog" id="powerOnModal">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Power on</h4>
+			</div>
+			<div class="modal-body">
+				<p class="warn-pwr-on"><span class="fa fa-warning"></span> The system appears to already be powered on.</p>
+				<p>Power on the system from an off state?</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
+					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+					<input type="hidden" name="power_action" value="on"/>
+					<button class="btn btn-success" type="submit"><i class="fa fa-play"></i> Power on</button>
+				</form>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<div class="modal fade" tabindex="-1" role="dialog" id="powerOffModal">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Power off</h4>
+			</div>
+			<div class="modal-body">
+				<p class="warn-pwr-off"><span class="fa fa-warning"></span> The system appears to already be powered off.</p>
+				<p>Powering the system off will make it unavialalble until it is powered on again.</p>
+				<p>You can either issue a soft or hard request.</p>
+				<p>A soft request will trigger an OS shutdown event.</p>
+				<p>A hard request will power of the system immediately.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
+					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+					<input type="hidden" name="power_action" value="shutdown"/>
+					<button class="btn btn-danger" type="submit"><i class="fa fa-power-off"></i> Soft power off</button>
+				</form>
+				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
+					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+					<input type="hidden" name="power_action" value="off"/>
+					<button class="btn btn-danger" type="submit"><i class="fa fa-plug"></i> Hard power off</button>
+				</form>
+
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<div class="modal fade" tabindex="-1" role="dialog" id="resetModal">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Reset system</h4>
+			</div>
+			<div class="modal-body">
+				<p>Reset the system.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
+					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+					<input type="hidden" name="power_action" value="reset"/>
+					<button class="btn btn-danger" type="submit"><i class="fa fa-refresh"></i> Reset</button>
+				</form>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+{% endif %}
+{% if system.vmware_uuid %}
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+<script>
+function secondsToString(seconds) {
+	if (seconds <= 0) return 'N/A';
+	var numyears = Math.floor(seconds / 31536000);
+	var numdays = Math.floor((seconds % 31536000) / 86400); 
+	var numhours = Math.floor(((seconds % 31536000) % 86400) / 3600);
+	var numminutes = Math.floor((((seconds % 31536000) % 86400) % 3600) / 60);
+	var numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
+	var result = ''
+	if (numyears != 0) result = result + numyears + ' years ';
+	if (numdays != 0) result = result + numdays + ' days ';
+	if (numhours != 0) result = result + numhours + ' hours ';
+	if (numminutes != 0) result = result + numminutes + ' minutes ';
+	if (numseconds != 0) result = result + numseconds + ' seconds';
+	return result;
+}
+
+var chart_mem = c3.generate({
+	bindto: '#chart_mem',
+	size: {
+		height: 200,
+	},
+	data: {
+		columns: [
+			['Used', 0],
+		],
+		type: 'gauge'
+	},
+
+	gauge: {
+		label: {
+			format: function(value, ratio) {
+				return value;
+			}
+		},
+		units: 'MB',
+	},
+	color: {
+		pattern: ['#60B044', '#F6C600', '#F97600', '#FF0000'],
+	},
+});
+
+var chart_cpu = c3.generate({
+	bindto: '#chart_cpu',
+	size: {
+		height: 200,
+	},
+	data: {
+		columns: [
+			['Used', 0],
+		],
+		type: 'gauge'
+	},
+
+	gauge: {
+		label: {
+			format: function(value, ratio) {
+				return value;
+			}
+		},
+		units: 'Mhz',
+	},
+	color: {
+		pattern: ['#60B044', '#F6C600', '#F97600', '#FF0000'],
+	},
+});
+
+{#
+var chart_disk = c3.generate({
+	bindto: '#chart_disk',
+	size: {
+		height: 200,
+	},
+	data: {
+		columns: [[]],
+		type: 'pie',
+	},
+});
+#}
+
+(function get_stats() {
+	$.ajax({
+		url: '{{ url_for('system_status', id=system.id) }}',
+		dataType: "json",
+		success: update_data,
+		complete: function() {
+			setTimeout(get_stats, 10000);
+		}
+	});
+})();
+
+$('.power-ctl-form').submit(function(e) {
+	e.preventDefault();
+	form = $(this);
+	$(form).closest('.modal').modal('hide');
+	$.ajax({
+		method: form.attr('method'),
+		url: form.attr('action'),
+		data: form.serialize(),
+		success: update_data,
+	});
+	return false;
+});
+
+function update_data(data) {
+	$('.power_state').text(data.guest_state + ' (' + data.power_state + ')');
+	if (data.power_state === "poweredOn") {
+		$('#power-icon').attr("class", "fa fa-play fa-stack-1x icon-on");
+		$('.warn-pwr-on').show();
+		$('.warn-pwr-off').hide();
+	} else if (data.power_state === "poweredOff") {
+		$('#power-icon').attr("class", "fa fa-stop fa-stack-1x icon-off");
+		$('.warn-pwr-on').hide();
+		$('.warn-pwr-off').show();
+	} else {
+		$('#power-icon').attr("class", "fa fa-question fa-stack-1x icon-unknown");
+		$('.warn-pwr-on').hide();
+		$('.warn-pwr-off').hide();
+	}
+
+	$('#net_table').empty();
+	{#Hostname#}
+	$('#net_table').append(
+		$('<tr>', {class: 'hostname'}).append(
+			$('<td>').text('Hostname'),
+			$('<td>').text(data.hostname)
+		)
+	);
+
+	{#IP Addr#}
+	if (data.net.ipaddr.length == 0) {
+		$('#net_table').append(
+			$('<tr>', {class: 'ip_addr'}).append(
+				$('<td>').text('IP addresses'),
+				$('<td>')
+			)
+		);
+	}
+	for (ip_addr in data.net.ipaddr){
+		$('#net_table').append(
+			$('<tr>', {class: 'ip_addr'}).append(
+				$('<td>').text(ip_addr == 0 ? 'IP addresses' : ''),
+				$('<td>').text(data.net.ipaddr[ip_addr])
+			)
+		);
+	}
+
+	{#IP r#}
+	if (data.net.routes.length == 0) {
+		$('#net_table').append(
+			$('<tr>', {class: 'ip_routes'}).append(
+				$('<td>').text('IP routes'),
+				$('<td>')
+			)
+		);
+	}
+	for (route in data.net.routes){
+		$('#net_table').append(
+			$('<tr>', {class: 'ip_routes'}).append(
+				$('<td>').text(route == 0 ? 'IP routes' : ''),
+				$('<td>').text('gateway' in data.net.routes[route] ? data.net.routes[route].network + '/' + data.net.routes[route].prefix + ' via ' + data.net.routes[route].gateway : data.net.routes[route].network + '/' + data.net.routes[route].prefix + ' on link')
+			)
+		);
+	}
+
+	$('#dns_table').empty();
+	{#DNS#}
+	if (data.dns_resolvers.length == 0) {
+		$('#dns_table').append(
+			$('<tr>', {class: 'dns_resolver'}).append(
+				$('<td>').text('DNS resolvers'),
+				$('<td>')
+			)
+		);
+	}
+	for (resolver in data.dns_resolvers){
+		$('#dns_table').append(
+			$('<tr>', {class: 'dns_resolver'}).append(
+				$('<td>').text(resolver == 0 ? 'DNS resolvers' : ''),
+				$('<td>').text(data.dns_resolvers[resolver])
+			)
+		);
+	}
+
+	{#Search Domain#}
+	$('#dns_table').append(
+		$('<tr>', {class: 'search_domain'}).append(
+			$('<td>').text('Search domain'),
+			$('<td>').text(data.search_domain)
+		)
+	);
+
+	$('#cpu_usage').text(data.cpu.overall_usage + "/" + data.cpu.entitlement + "Mhz (" + +(Math.round((data.cpu.overall_usage / data.cpu.entitlement * 100) + "e+2") + "e-2") + "%)");
+	$('#mem_usage').text(data.mem.overall_usage + "/" + data.mem.entitlement + "MB (" + +(Math.round((data.cpu.overall_usage / data.mem.entitlement * 100) + "e+2") + "e-2") + "%)");
+	$('#uptime').text(secondsToString(data.uptime));
+
+	chart_mem.internal.config.gauge_max = data.mem.entitlement;
+	if (chart_mem.internal.data.targets[0].values[0].value != data.mem.overall_usage) chart_mem.load({ columns: [['Used', data.mem.overall_usage]], });
+	chart_cpu.internal.config.gauge_max = data.cpu.entitlement;
+	if (chart_cpu.internal.data.targets[0].values[0].value != data.cpu.overall_usage) chart_cpu.load({ columns: [['Used', data.cpu.overall_usage]], });
+
+	{# currently uses root partition but needs a rethink
+	chart_disk.load({ columns: data.storage });
+	#}
+	return true;
+}
+
+</script>
+{% endif %}
+{% endblock %}

@@ -2,7 +2,7 @@
 
 from cortex import app
 from cortex.lib.errors import fatalerr
-from flask import g, abort, make_response, render_template
+from flask import g, abort, make_response, render_template, request, session
 import MySQLdb as mysql
 import Pyro4
 import re
@@ -116,3 +116,46 @@ def task_render_status(task, template):
 	events = curd.fetchall()
 
 	return make_response((render_template(template, id=task['id'], task=task, events=events, title="Task Status"), 200, {'Cache-Control': 'no-cache'}))
+
+################################################################################
+
+def log(source, name, desc, username=None, related_id=None, success=True):
+	"""
+	Record a message in the 'events' table, i.e. generate a log record
+
+	Args:
+		source: The name of the function generating this log event. Use __name__
+		name: The name of the event that has taken place
+		desc: A description
+		username: The username. Defaults to None, which will use the username from session.
+		related_id: An ID of the element in a table this event refers to. Defaults to None.
+		success: Was this 'event' succcessful? Generally, you don't need to use this. Defaults to True.
+
+	Returns:
+		Nothing
+
+	Raises:
+		Nothing
+	"""
+
+	if not source.startswith("cortex."):
+		source = "cortex." + source
+
+	if username is None:
+		username = session.get('username', None)
+
+	if success:
+		status = 1
+	else:
+		status = 2
+
+	app.logger.info(str(source) + ',' + str(related_id) + ',' + str(name) + ',' + str(username) + ',' + str(desc))
+
+	try:
+		cur    = g.db.cursor()
+		stmt   = 'INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `ipaddr`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())'
+		params = (source, related_id, name, username, desc, status, request.remote_addr)
+		cur.execute(stmt, params)
+		g.db.commit()
+	except Exception as e:
+		pass

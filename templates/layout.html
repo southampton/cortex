@@ -9,7 +9,11 @@
 		<link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}">
 		{#- CSS #}
 		<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/font-awesome/4.6.0/css/font-awesome.min.css">
+		{%- if theme == "dark" %}
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap-dark.css') }}">
+		{%- else %}
 		<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootswatch/3.3.7/lumen/bootstrap.min.css">
+		{%- endif %}
 		<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.9/css/dataTables.bootstrap.min.css">
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}">
 		{%- if classic_layout %}
@@ -97,6 +101,10 @@
 										<label>
 											<input type="checkbox" name="uihorizontal" value="yes" {%if classic_layout %}checked="checked"{%endif%}>
 											Use alternative horizontal user interface layout<br/>
+										</label>
+										<label>
+											<input type="checkbox" name="theme" value="dark" {%if theme == "dark" %}checked="checked"{%endif%}>
+											Use dark theme<br/>
 										</label>
 									</div>
 								</div>

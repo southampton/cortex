@@ -17,9 +17,9 @@
 		<li role="presentation"{% if active == "puppet_facts" %} class="active"{%endif%}><a href="{{url_for('puppet_facts',node=system.puppet_certname)}}">Facts</a></li>
 		{% endif -%}
 		{% else -%}
-		<li role="presentation" class="disabled"><a href="#">Classify</a></li>
-		<li role="presentation" class="disabled"><a href="#">Reports</a></li>
-		<li role="presentation" class="disabled"><a href="#">Facts</a></li>
+		<li role="presentation" class="disabled"><a>Classify</a></li>
+		<li role="presentation" class="disabled"><a>Reports</a></li>
+		<li role="presentation" class="disabled"><a>Facts</a></li>
 		{% endif -%}
 
 		{% if does_user_have_permission("admin.permissions") -%}
@@ -27,8 +27,11 @@
 		{% endif -%}
 <!--		<li role="presentation"{% if active == "satellite" %} class="active"{%endif%}><a href="#profile">Satellite</a></li>-->
 		
-		{%- if system.cmdb_id %}<li role="presentation"><a href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank">ServiceNow <i class="fa fa-fw fa-external-link"></i></a></li>{%endif%} 
-
+		{%- if system.cmdb_id and does_user_have_system_permission(system.id, "view.detail", "systems.all.view") %}
+		<li role="presentation"><a href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank">ServiceNow <i class="fa fa-fw fa-external-link"></i></a></li>
+		{% else %}
+		<li role="presentation" class="disabled"><a>ServiceNow <i class="fa fa-fw fa-external-link"></i></a></li>
+		{%endif%}
 	</ul>
 </div>
 {%- endmacro %}

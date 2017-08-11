@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 from flask import Flask, request, session, abort, g, render_template, url_for
-import jinja2 
+import jinja2
 import os.path
 from os import walk
 import imp
@@ -22,6 +22,8 @@ class CortexFlask(Flask):
 
 	## A list of dict's, each representing a workflow 'system-action' function
 	wf_system_functions = []
+
+	workflows = {}
 
 	################################################################################
 
@@ -96,7 +98,7 @@ Further Details:
 		if self.config['DEBUG_TOOLBAR']:
 			self.debug = True
 			from flask_debugtoolbar import DebugToolbarExtension
-			toolbar = DebugToolbarExtension(app)
+			toolbar = DebugToolbarExtension(self)
 			self.logger.info('cortex debug toolbar enabled - DO NOT USE THIS ON LIVE SYSTEMS!')
 
 		# check the database is up and is working
@@ -150,7 +152,7 @@ Further Details:
 					if 'username' in session:
 						self.logger.warning('CSRF protection alert: %s failed to present a valid POST token', session['username'])
 					else:
-			 			self.logger.warning('CSRF protection alert: a non-logged in user failed to present a valid POST token')
+						self.logger.warning('CSRF protection alert: a non-logged in user failed to present a valid POST token')
 
 					# The user should not have accidentally triggered this so just throw a 400
 					abort(400)
@@ -176,7 +178,7 @@ Further Details:
 
 	################################################################################
 
-	def _load_workflow_settings(self, filename): 
+	def _load_workflow_settings(self, filename):
 		"""Extracts the settings from the given config file."""
 
 		# Start a new module, which will be the context for parsing the config
@@ -295,7 +297,7 @@ Username:             %s
 			request.user_agent.browser,
 			request.user_agent.version,
 			usr,
-			
+
 		), exc_info=exc_info)
 
 ################################################################################
@@ -344,6 +346,7 @@ Username:             %s
 		  `status` tinyint(4) NOT NULL DEFAULT '0',
 		  `start` datetime NOT NULL,
 		  `end` datetime DEFAULT NULL,
+		  `ipaddr` varchar(43) DEFAULT NULL,
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
@@ -380,7 +383,7 @@ Username:             %s
 		  `username` varchar(64) NOT NULL,
 		  `start` datetime NOT NULL,
 		  `end` datetime DEFAULT NULL,
-		  `status` tinyint(4) NOT NULL DEFAULT '0',
+		  `status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '0: in progress, 1: success, 2: failure',
 		  `description` text,
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
@@ -518,6 +521,31 @@ Username:             %s
 		  PRIMARY KEY (`username`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_request` (
+		 `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		 `request_date` datetime NOT NULL,
+		 `requested_who` varchar(64) NOT NULL,
+		 `fqdn` varchar(255) NOT NULL,
+		 `workflow` varchar(64) NOT NULL,
+		 `sockets` int(11) NOT NULL,
+		 `cores` int(11) NOT NULL,
+		 `ram` int(11) NOT NULL,
+		 `disk` int(11) NOT NULL,
+		 `template` varchar(255) NOT NULL,
+		 `network` varchar(255) DEFAULT NULL,
+		 `cluster` varchar(255) NOT NULL,
+		 `environment` varchar(255) NOT NULL,
+		 `purpose` text NOT NULL,
+		 `comments` text NOT NULL,
+		 `expiry_date` datetime DEFAULT NULL,
+		 `sendmail` tinyint(1) NOT NULL,
+		 `status` int(2) NOT NULL COMMENT '0: pending, 1: rejected, 2: approved',
+		 `updated_who` varchar(64) NOT NULL,
+		 `updated_at` datetime NOT NULL,
+		 `status_text` text DEFAULT NULL,
+		  PRIMARY KEY (`id`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `expiry_date` datetime DEFAULT NULL""")
 		except Exception, e:
@@ -633,11 +661,15 @@ Username:             %s
 		  (1, "classes.view"), 
 		  (1, "classes.edit"), 
 		  (1, "tasks.view"),
+		  (1, "events.view"),
 		  (1, "maintenance.vmware"), 
 		  (1, "maintenance.cmdb"), 
 		  (1, "maintenance.expire_vm"),
 		  (1, "api.register"),
-		  (1, "workflows.all")""")
+		  (1, "workflows.all"),
+		  (1, "sysrequests.all.view"),
+		  (1, "sysrequests.all.approve"),
+		  (1, "sysrequests.all.reject")""")
 
 		## Close database connection
 		temp_db.close()
@@ -653,7 +685,8 @@ Username:             %s
 		## The ORDER MATTERS! It determines the order used on the Roles page
 		self.permissions        = [
 			{'name': 'systems.all.view',            'desc': 'View any system'},
-			{'name': 'systems.all.view.puppet',     'desc': 'View Puppet reports and facts on any system'},		
+			{'name': 'systems.own.view',            'desc': 'View systems allocated by the user'},
+			{'name': 'systems.all.view.puppet',     'desc': 'View Puppet reports and facts on any system'},
 			{'name': 'systems.all.edit.expiry',     'desc': 'Modify the expiry date of any system'},
 			{'name': 'systems.all.edit.review',     'desc': 'Modify the review status of any system'},
 			{'name': 'systems.all.edit.vmware',     'desc': 'Modify the VMware link on any system'},
@@ -670,18 +703,26 @@ Username:             %s
 			{'name': 'classes.view',                'desc': 'View the list of system class definitions'},
 			{'name': 'classes.edit',                'desc': 'Edit system class definitions'},
 			{'name': 'tasks.view',                  'desc': 'View the details of all tasks (not just your own)'},
+			{'name': 'events.view',                 'desc': 'View the details of all events (not just your own)'},
 			{'name': 'maintenance.vmware',          'desc': 'Run VMware maintenance tasks'},
 			{'name': 'maintenance.cmdb',            'desc': 'Run CMDB maintenance tasks'},
 			{'name': 'maintenance.expire_vm',       'desc': 'Run the Expire VM maintenance task'},
 			{'name': 'api.register',                'desc': 'Manually register Linux machines (rebuilds / physical machines)'},
 			{'name': 'admin.permissions',           'desc': 'Modify permissions'},
 			{'name': 'workflows.all',               'desc': 'Use any workflow or workflow function'},
+
+			{'name': 'sysrequests.own.view',        'desc': 'View system requests owned by the user'},
+			{'name': 'sysrequests.all.view',        'desc': 'View any system request'},
+			{'name': 'sysrequests.all.approve',     'desc': 'Approve any system request'},
+			{'name': 'sysrequests.all.reject',      'desc': 'Reject any system request'},
+			{'name': 'control.all.vmware.power',    'desc': 'Contol the power settings of any VM'},
 		]
 
 		self.workflow_permissions = []
 
 		self.system_permissions = [
-			{'name': 'view',                        'desc': 'View the system'},
+			{'name': 'view.overview',               'desc': 'View the system overview'},
+			{'name': 'view.detail',                 'desc': 'View the system details'},
 			{'name': 'view.puppet',                 'desc': 'View the system\'s Puppet reports and facts'},
 			{'name': 'edit.expiry',                 'desc': 'Change the expiry date of the system'},
 			{'name': 'edit.review',                 'desc': 'Change the review status of the system'},
@@ -689,4 +730,5 @@ Username:             %s
 			{'name': 'edit.cmdb',                   'desc': 'Change the CMDB link'},
 			{'name': 'edit.comment',                'desc': 'Change the comment'},
 			{'name': 'edit.puppet',                 'desc': 'Change Puppet settings'},
+			{'name': 'control.vmware.power',        'desc': 'Control the VMware power state'},
 		]

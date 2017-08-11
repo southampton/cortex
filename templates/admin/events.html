@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="page-header">
+<h3>
+	<div class="pull-right">
+		<a class="btn btn-sm {% if event_source == 'all' %}btn-primary{% else %}btn-default{% endif %}" href="{{ url_for('admin_events') }}">All</a>
+		<a class="btn btn-sm {% if event_source == 'user' %}btn-primary{% else %}btn-default{% endif %}" href="{{ url_for('admin_events',src='user') }}">User</a>
+		<a class="btn btn-sm {% if event_source == 'scheduler' %}btn-primary{% else %}btn-default{% endif %}" href="{{ url_for('admin_events',src='scheduler') }}">Scheduler</a>
+		<a class="btn btn-sm {% if event_source == 'tasks' %}btn-primary{% else %}btn-default{% endif %}" href="{{ url_for('admin_events',src='tasks') }}">Tasks</a>
+	</div>
+	<i class="fa fa-fw fa-list-alt"></i> {{ title }}
+</h3>
+<div class="text-muted">
+{%- if event_source == 'all' %}
+The list below shows all events
+{%- elif event_source == 'tasks' %}
+The list below shows events relating to tasks
+{%- elif event_source == 'user' %}
+The list below shows all events started by a user
+{%- elif event_source == 'system' %}
+The list below shows all events started by the scheduler
+{%- endif -%}
+</div>
+</div>
+
+<table class="table table-condensed table-striped" id="events">
+	<thead>
+		<tr>
+			<th>ID</th>
+			<th>Start</th>
+			<th>End</th>
+			<th>Name</th>
+			<th style="max-width: 30%">Description</th>
+			<th>Source</th>
+			<th>Username</th>
+			<th>Address</th>
+		</tr>
+	</thead>
+	<tbody>
+	</tbody>
+</table>
+
+<script type="text/javascript">
+	$('#events').DataTable({
+		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
+		"pageLength": 15,
+		"order": [[0, 'desc']],
+		"columns": [null, null, null, null, null, null, null, null],
+		"searching": true,
+{%- if json_source %}
+		"serverSide": true,
+		"searchDelay": 500,
+		"ajax": {
+			"url": "{{ json_source }}",
+			"type": "POST",
+		},
+		"rowCallback": function(row, data, index) {
+		}
+{%- endif %}
+	});
+</script>
+{% endblock %}

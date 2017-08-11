@@ -2,7 +2,7 @@ from cortex import app
 import cortex.lib.core
 import cortex.lib.systems
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, jsonify, Response
-import os 
+import os
 import re
 import MySQLdb as mysql
 import yaml
@@ -26,9 +26,10 @@ def api_systems_csv():
 	# Get the list of systems
 	cur = cortex.lib.systems.get_systems(return_cursor=True)
 
+	cortex.lib.core.log(__name__, "api.systems.csv", "CSV of systems downloaded")
 	# Return the response as a downloadable CSV
 	return Response(cortex.lib.systems.csv_stream(cur), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="systems.csv"'})
-	
+
 ################################################################################
 
 @app.route('/api/puppet/enc/<certname>')
@@ -55,6 +56,10 @@ def api_puppet_enc(certname):
 	# If we don't get any configuration, return 404
 	if node_yaml is None:
 		return abort(404)
+
+	# we've decided after all not to do this, because this would generate SO
+	# many rows in the database...
+	#cortex.lib.core.log(__name__, "api.puppet.enc", "Generated Puppet ENC YAML for " + certname)
 
 	# Make a response and return it
 	r = make_response(node_yaml)

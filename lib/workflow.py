@@ -24,6 +24,9 @@ class CortexWorkflow:
 		else:
 			app.logger.debug("Workflows: No config file found for '" + self.name + "'")
 
+		#register the workflow against the app so it can be accessed from cortex
+		app.workflows.update({name: self})
+
 	def _load_config(self, filename): 
 		"""Extracts the settings from the given config file."""
 
