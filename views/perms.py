@@ -224,14 +224,15 @@ def perms_role(id):
 				return redirect(url_for('perms_role',id=id))
 
 			# Ensure the permission was not already granted
-			curd.execute('SELECT 1 FROM `role_who` WHERE `id` = %s', (wid,))
-			if curd.fetchone() is None:
+			curd.execute('SELECT `who` FROM `role_who` WHERE `id` = %s', (wid,))
+			who_row = curd.fetchone()
+			if who_row is None:
 				flash('That user/group is not added to the role', 'alert-warning')
 				return redirect(url_for('perms_role',id=id))
 
 			curd.execute('''DELETE FROM `role_who` WHERE `id` = %s''', (wid,))
 			g.db.commit()
-			cortex.lib.core.log(__name__, "permissions.role.member.remove", "The " + hstr + " '" + name + "' was removed from role '" + role['name'] + "' (" + str(id) + ")")
+			cortex.lib.core.log(__name__, "permissions.role.member.remove", "The user/group '" + who_row['who'] + "' was removed from role '" + role['name'] + "' (" + str(id) + ")")
 
 			flash("The user or group was revoked from the role", "alert-success")
 			return redirect(url_for('perms_role',id=id))

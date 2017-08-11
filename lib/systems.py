@@ -21,7 +21,7 @@ def csv_stream(cursor):
 	# Write CSV header
 	output = io.BytesIO()
 	writer = csv.writer(output)
-	writer.writerow(['Name', 'Comment', 'Allocated by', 'Allocation date', 'CI Operational Status', 'CMDB Link'])
+	writer.writerow(['Name', 'Comment', 'Allocated by', 'Allocation date', 'CI Operational Status', 'CMDB Link', 'CMDB OS', 'VMware OS'])
 	yield output.getvalue()
 
 	# Write data
@@ -37,7 +37,7 @@ def csv_stream(cursor):
 			cmdb_url = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
 
 		# Write a row to the CSV output
-		outrow = [row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_url]
+		outrow = [row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_url, row['cmdb_os'], row['vmware_os']]
 
 		# For each element in the output row...
 		for i in range(0, len(outrow)):

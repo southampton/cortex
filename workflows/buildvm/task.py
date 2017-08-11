@@ -316,7 +316,7 @@ def run(helper, options):
 		helper.lib.set_link_ids(system_dbid, cmdb_id=sys_id, vmware_uuid=vm.config.uuid)
 
 		# End the event
-		helper.end_event(success=True, description="Created ServiceNow CMDB CI")
+		helper.end_event(success=True, description="Created ServiceNow CMDB CI " + str(cmdb_id))
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
 
@@ -450,6 +450,7 @@ def run(helper, options):
 		message += 'CPUs: ' + str(total_cpu) + '\n'
 		message += 'RAM: ' + str(options['ram']) + ' GiB\n'
 		message += 'Data Disk: ' + str(options['disk']) + ' GiB\n'
+		message += 'CMDB ID: ' + str(cmdb_id) +'\n'
 		message += '\n'
 		message += 'The event log for the task can be found at https://' + str(helper.config['CORTEX_DOMAIN']) + '/task/status/' + str(helper.task_id) + '\n'
 		message += 'More information about the VM, can be found on the Cortex systems page at https://' + str(helper.config['CORTEX_DOMAIN']) + '/systems/edit/' + str(system_dbid) + '\n'
@@ -467,6 +468,7 @@ def run(helper, options):
 		message += 'Operating System: ' + str(os_name) + '\n'
 		message += 'CPUs: ' + str(total_cpu) + '\n'
 		message += 'RAM: ' + str(options['ram']) + ' GiB\n'
+		message += 'CMDB ID: ' + str(cmdb_id) +'\n'
 		message += '\n'
 		message += 'The event log for the task can be found at https://' + str(helper.config['CORTEX_DOMAIN']) + '/task/status/' + str(helper.task_id) + '\n'
 		message += 'More information about the VM, can be found on the Cortex systems page at https://' + str(helper.config['CORTEX_DOMAIN']) + '/systems/edit/' + str(system_dbid) + '\n'
