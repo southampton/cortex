@@ -383,9 +383,14 @@ class Backup(MethodView):
 		sla_domains = self.rubrik.get_sla_domains()
 		vm['effectiveSlaDomain'] = next((sla_domain for sla_domain in sla_domains['data'] if sla_domain['id'] == vm['effectiveSlaDomainId']), 'unknown')
 		vm['snapshots'] = self.rubrik.get_vm_snapshots(vm['id'])
+		try:
+			vm['snapshots']['data'] = vm['snapshots']['data'][:10]
+		except (KeyError,):
+			pass
 
 		return render_template('systems/backup.html', system=system, sla_domains=sla_domains,
 				vm=vm, title=system['name'])
+	@cortex.lib.user.login_required
 	def post(self, id):
 		if not does_user_have_system_permission(id,"view","systems.all.view"):
 			abort(403)
