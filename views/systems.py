@@ -21,6 +21,7 @@ import csv
 import io
 import requests
 import cortex.lib.rubrik
+from flask.views import MethodView
 from pyVmomi import vim
 
 ################################################################################
@@ -358,58 +359,54 @@ def systems_new():
 
 class Backup(MethodView):
 
-    def __init__(self):
-        self.rubrik = cortex.lib.rubrik.Rubrik()
+	def __init__(self):
+		self.rubrik = cortex.lib.rubrik.Rubrik()
 
-    @cortex.lib.user.login_required
-    def get(self, id):
-        # Check user permissions. User must have either systems.all or specific 
-        # access to the system
-        if not does_user_have_system_permission(id,"view","systems.all.view"):
-            abort(403)
+	@cortex.lib.user.login_required
+	def get(self, id):
+		# Check user permissions. User must have either systems.all or specific 
+		# access to the system
+		if not does_user_have_system_permission(id,"view","systems.all.view"):
+			abort(403)
 
-        # Get the name of the vm
-        system = cortex.lib.systems.get_system_by_id(id)
-        if not system:
-            abort(404)
+		# Get the name of the vm
+		system = cortex.lib.systems.get_system_by_id(id)
+		if not system:
+			abort(404)
 
-        try:
-            vm = self.rubrik.get_vm(system['name'])
-        except:
-            raise
-            abort(500)
+		try:
+			vm = self.rubrik.get_vm(system['name'])
+		except:
+			raise
+			abort(500)
 
-        sla_domains = self.rubrik.get_sla_domains()
+		sla_domains = self.rubrik.get_sla_domains()
+		vm['effectiveSlaDomain'] = next((sla_domain for sla_domain in sla_domains['data'] if sla_domain['id'] == vm['effectiveSlaDomainId']), 'unknown')
+		vm['snapshots'] = self.rubrik.get_vm_snapshots(vm['id'])
 
-        vm['effectiveSlaDomain'] = next((sla_domain for sla_domain in
-            sla_domains['data'] if sla_domain['id'] ==
-            vm['effectiveSlaDomainId']))
+		return render_template('systems/backup.html', system=system, sla_domains=sla_domains,
+				vm=vm, title=system['name'])
+	def post(self, id):
+		if not does_user_have_system_permission(id,"view","systems.all.view"):
+			abort(403)
 
-        vm['snapshots'] = self.rubrik.get_vm_snapshots(vm['id'])
+		# Get the name of the vm
+		system = cortex.lib.systems.get_system_by_id(id)
+		if not system:
+			abort(404)
 
-        return render_template('systems/backup.html', system=system, sla_domains=sla_domains,
-                vm=vm, title=system['name'])
-    def post(self, id):
-        if not does_user_have_system_permission(id,"view","systems.all.view"):
-            abort(403)
+		try:
+			vm = self.rubrik.get_vm(system['name'])
+		except:
+			abort(500)
+		self.rubrik.update_vm(vm['id'], {'configuredSlaDomainId':
+			request.form.get('sla_domain')})
 
-        # Get the name of the vm
-        system = cortex.lib.systems.get_system_by_id(id)
-        if not system:
-            abort(404)
-
-        try:
-            vm = self.rubrik.get_vm(system['name'])
-        except:
-            abort(500)
-        self.rubrik.update_vm(vm['id'], {'configuredSlaDomainId':
-            request.form.get('sla_domain')})
-
-        return self.get(id)
+		return self.get(id)
 
 systems_view = Backup.as_view('system_backup')
 app.add_url_rule('/systems/backup/<int:id>', view_func=systems_view,
-        methods=['GET','POST'])
+		methods=['GET','POST'])
 ################################################################################
 
 @app.route('/systems/bulk/save', methods=['POST'])

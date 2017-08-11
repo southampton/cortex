@@ -128,3 +128,8 @@ RHN5_URL  = "https://rhn.yourdomain.tld"
 RHN5_USER = "admin"
 RHN5_PASS = "admin"
 RHN5_CERT = "/usr/share/rhn/RHN-ORG-TRUSTED-SSL-CERT"
+
+# Rubrik
+RUBRIK_API_URL_BASE = ''
+RUBRIK_API_USER = ''
+RUBRIK_API_PASS = ''
