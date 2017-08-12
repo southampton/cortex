@@ -4,10 +4,10 @@
 from cortex import app
 import cortex.lib.user
 from cortex.lib.user import does_user_have_permission
-from flask import g, render_template, session, request
+from flask import g, render_template, session, request, jsonify
 import MySQLdb as mysql
 
-@app.route('/favourites')
+@app.route('/favourites', methods=['GET'])
 @cortex.lib.user.login_required
 def favourites():
 
@@ -29,4 +29,32 @@ def favourites():
 
 	# Render
 	return render_template('favourites.html', classes=classes, active='favourites', title="Favourites", q=q, hide_inactive=False)
+
+@app.route('/favourites', methods=['POST'])
+@cortex.lib.user.login_required
+def favourites_json():
+	"""
+	Add / Remove a system from your favourites.
+	"""
+	if all(field in request.form for field in ['system_id', 'status']):
+
+		try:
+			system_id = int(request.form["system_id"])
+		except ValueError:
+			abort(400)
+		else:
+
+			# Get a cursor to the database
+			curd = g.db.cursor(mysql.cursors.DictCursor)
+
+			if request.form["status"] == "1":
+				curd.execute("INSERT INTO `system_user_favourites` (`username`, `system_id`) VALUES (%s, %s) ON DUPLICATE KEY UPDATE `system_id`=`system_id`", (session.get('username'), system_id))
+			else:
+				curd.execute("DELETE FROM `system_user_favourites` WHERE `username` = %s AND `system_id` = %s", (session.get('username'), system_id))
+			
+			g.db.commit()
+
+			return jsonify({"success":True})
+	else:
+		abort(400)
 
