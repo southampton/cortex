@@ -102,6 +102,7 @@
 											<input type="checkbox" name="uihorizontal" value="yes" {%if classic_layout %}checked="checked"{%endif%}>
 											Use alternative horizontal user interface layout<br/>
 										</label>
+										<br/>
 										<label>
 											<input type="checkbox" name="theme" value="dark" {%if theme == "dark" %}checked="checked"{%endif%}>
 											Use dark theme<br/>
@@ -134,6 +135,16 @@
 				{%- if session.logged_in %}
 				<div class="navbar-collapse collapse" id="navbar-collapse-1">	
 					<ul class="nav navbar-nav">
+						{%- if menu.favourites and menu.favourites|length > 0 %}
+						<li class="{%if not classic_layout %}visible-xs {%endif%}dropdown{%if active == 'favourites'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Favourites <b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								{% for item in menu.favourites -%}
+								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
+								{%- endfor %}
+							</ul>
+						</li>
+						{%- endif %}
 						{%- if menu.systems and menu.systems|length > 0 %}
 						<li class="{%if not classic_layout %}visible-xs {%endif%}dropdown{%if active == 'systems'%} active{%endif%}">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Systems <b class="caret"></b></a>
@@ -226,13 +237,15 @@
 				<div id="sidebar-small" class="sidebar" style="width: 55px" >
 					<div class="list-group list-group-menu">
 						<a href="{{ url_for('dashboard') }}" title="Dashboard" class="list-group-item{%if active == 'dashboard'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-dashboard fa-2x"></i></a>
-
+						
+						{%- if menu.favourites and menu.favourites|length > 0 %}
+						<a tabindex="0" role="button" data-mpop="favourites-menu" title="Favourites" data-container="body" class="list-group-item enable-menu-popover{%if active == 'favourites'%} menu-active{%endif%} enable-tooltip">
+						<i class="fa fa-fw fa-star fa-2x"></i>
+						</a>
+						{%- endif %}
 						{%- if menu.systems and menu.systems|length > 0 %}
 						<a tabindex="0" role="button" title="Search (Alt+S)" data-toggle="modal" data-target="#search" class="list-group-item enable-tooltip" data-placement="right">
 						<i class="fa fa-fw fa-search fa-2x"></i>
-						</a>
-						<a tabindex="0" role="button" title="Favourites" class="list-group-item enable-tooltip{%if active == 'favourites'%} menu-active{%endif%}" href="{{url_for('favourites')}}">
-						<i class="fa fa-fw fa-star fa-2x"></i>
 						</a>
 						<a tabindex="0" role="button" data-mpop="systems-menu" title="Systems" data-container="body" class="list-group-item enable-menu-popover{%if active == 'systems'%} menu-active{%endif%} enable-tooltip">
 						<i class="fa fa-fw fa-server fa-2x"></i>
@@ -278,7 +291,17 @@
 {%- endif %}
 {%- if not classic_layout %}
 	{#- Popup menus (popover content is loaded via the id) #}
-
+	
+	{%- if menu.favourites and menu.favourites|length > 0 %}
+	<div id="favourites-menu" class="hidden">
+	<ul class="list-group list-group-popover">
+		{% for item in menu.favourites -%}
+		<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
+		{%- endfor %}
+	</ul>
+	</div>
+	{%- endif %}
+	
 	{%- if menu.systems and menu.systems|length > 0 %}
 	<div id="systems-menu" class="hidden">
 	<ul class="list-group list-group-popover">

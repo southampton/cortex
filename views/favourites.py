@@ -4,12 +4,12 @@
 from cortex import app
 import cortex.lib.user
 from cortex.lib.user import does_user_have_permission
-from flask import g, render_template, session, request, jsonify
+from flask import g, render_template, session, request, jsonify, flash
 import MySQLdb as mysql
 
 @app.route('/favourites', methods=['GET'])
 @cortex.lib.user.login_required
-def favourites():
+def favourites(display='all'):
 
 	# Check user permissions
 	if not (does_user_have_permission("systems.all.view") or does_user_have_permission("systems.own.view")):
@@ -20,6 +20,17 @@ def favourites():
 	if does_user_have_permission("systems.all.view"):
 		classes = cortex.lib.classes.list()
 
+	# Validate system type
+	flag = False
+	if classes and display != 'all':
+		for c in classes:
+			if display == c["name"]:
+				flag = True
+				break
+	if not flag:
+		flash('System type %s does not exist.'%(display), category='alert-info')
+		display = 'all'
+
 	# Get the search string, if any
 	q = request.args.get('q', None)
 
@@ -28,7 +39,12 @@ def favourites():
 		q = q.strip()
 
 	# Render
-	return render_template('favourites.html', classes=classes, active='favourites', title="Favourites", q=q, hide_inactive=False)
+	return render_template('favourites.html', classes=classes, active='favourites', title="Favourites", q=q, hide_inactive=False, display=display)
+
+@app.route('/favourites/<string:system_type>', methods=['GET'])
+@cortex.lib.user.login_required
+def favourites_by_type(system_type):
+	return favourites(system_type)
 
 @app.route('/favourites', methods=['POST'])
 @cortex.lib.user.login_required

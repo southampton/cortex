@@ -23,10 +23,10 @@ a.server-link:hover { text-decoration: underline !important; }
 
 <ul id="class-tabs" class="nav nav-tabs" style="margin-bottom:1em">
 	{%- for class in classes %}
-	<li role="presentation"><a style="cursor:pointer" data-class="{{ class.name }}" data-vmware="{{ class.link_vmware }}" role="tab">{{ class.name }}</a></li>
+	<li {% if display and display == class.name %}class="active"{% endif %}role="presentation"><a style="cursor:pointer" data-class="{{ class.name }}" data-vmware="{{ class.link_vmware }}" role="tab">{{ class.name }}</a></li>
 	{%- endfor %}
 	{% if classes|length > 0 %}<li role="presentation"><a style="cursor:pointer" data-class="*OTHER" data-vmware="1" role="tab">Other/Legacy</a></li>{% endif %}
-	<li class="active" role="presentation"><a style="cursor:pointer" data-class="*ALL" data-vmware="1" role="tab">All</a></li>
+	<li {% if display and display == 'all' %}class="active"{% elif display|length <=0 %}class="active"{% endif%} role="presentation"><a style="cursor:pointer" data-class="*ALL" data-vmware="1" role="tab">All</a></li>
 </ul>
 <div id="systemsWrapper">
 <table class="table table-condensed table-striped" id="systems">
