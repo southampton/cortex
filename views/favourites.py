@@ -27,6 +27,9 @@ def favourites(display='all'):
 			if display == c["name"]:
 				flag = True
 				break
+	else:
+		flag = True
+
 	if not flag:
 		flash('System type %s does not exist.'%(display), category='alert-info')
 		display = 'all'
