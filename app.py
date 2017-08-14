@@ -635,6 +635,14 @@ Username:             %s
 		  CONSTRAINT `system_perms_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_user_favourites` (
+		  `username` varchar(255),
+		  `system_id` mediumint(11) NOT NULL,
+		  PRIMARY KEY (`username`, `system_id`),
+		  UNIQUE (`username`, `system_id`),
+		  CONSTRAINT `system_user_favourites_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
 		cursor.execute("""DROP TABLE IF EXISTS `workflow_perms`""")
 
 		# Ensure we have a default administrator role with appropriate permissions

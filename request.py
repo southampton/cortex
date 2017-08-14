@@ -62,6 +62,13 @@ def context_processor():
 				injectdata['workflows'].append(fn)
 
 	# Inject the menu items 
+	
+	# Favourites menu
+	favourites = [
+		{'link': url_for('favourites'), 'title': 'All Favourites', 'icon': 'fa-star'},
+		{'link': url_for('favourites_by_type', system_type='srv'), 'title': 'Favourited srv systems', 'icon': 'fa-star'},
+		{'link': url_for('favourites_by_type', system_type='play'), 'title': 'Favourited play systems', 'icon': 'fa-star'},
+	]
 
 	# Set up the Systems menu, based on a single permission
 	systems = []
@@ -124,7 +131,7 @@ def context_processor():
 		perms.append({'link': url_for('systems_withperms'), 'title': 'Systems with permissions', 'icon': 'fa-list'})
 		#perms.append({'link': url_for('perms_roles'), 'title': 'User lookup', 'icon': 'fa-users'})
 
-	injectdata['menu'] = { 'systems': systems, 'vmware': vmware, 'puppet': puppet, 'admin': admin, 'perms': perms }
+	injectdata['menu'] = { 'systems': systems, 'favourites': favourites, 'vmware': vmware, 'puppet': puppet, 'admin': admin, 'perms': perms }
 
 	# Determine the layout mode for the user
 	injectdata['classic_layout'] = False

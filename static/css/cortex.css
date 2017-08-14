@@ -310,6 +310,20 @@ i.icon-unknown
 	color: #22c;
 }
 
+i.icon-favourited
+{
+	color: gold;
+}
+
+i.icon-favourited:hover
+{
+	color: #555555 !important;
+}
+
+i.icon-favourites:hover
+{
+	color: gold !important;
+}
 /* Additional bg-classes for dashboard */
 
 .bg-green
@@ -408,3 +422,5 @@ legend
 {
 	vertical-align: middle;
 }
+
+
