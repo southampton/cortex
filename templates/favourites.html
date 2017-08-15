@@ -51,7 +51,14 @@ $(function() {
 		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 		"pageLength": 15,
 		"order": [[0, 'desc']],
-		"columns": [null, null, null, null, null, null, { "orderable": false, "targets": 0 }],
+		"columns": [
+			{"data": "name"},
+			{"data": "allocation_comment"},
+			{"data": "cmdb_environment"},
+			{"data": "allocation_who"},
+			{"data": "allocation_date"},
+			{"data": "cmdb_operational_status"},
+			{"data": null, "orderable": false, "targets": 0 }],
 		"serverSide": true,
 		"searchDelay": 500,
 		"stateSave": true,
@@ -88,43 +95,43 @@ $(function() {
 		"rowCallback": function(row, data, index) {
 			{#- data[6] is CMDB URL, data[7] is database ID, data[5] is operational status, data[9] is Puppet Cert Name #}
 			$('td:eq(6)', row).html(
-				'<a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/overview/' + data[7] + '">' +
+				'<a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/overview/' + data["id"] + '">' +
 				'	<i class="fa fa-fw fa-info-circle"></i>' +
-				'</a>' + (data[6] != '' ?
-				'<a title="CMDB" style="margin-right:0.5em" class="btn btn-xs btn-primary" href="' + data[6] + '" target="_blank">' +
+				'</a>' + (data["cmdb_id"] != '' ?
+				'<a title="CMDB" style="margin-right:0.5em" class="btn btn-xs btn-primary" href="' + data["cmdb_id"] + '" target="_blank">' +
 				'	<i class="fa fa-fw fa-cloud"></i>' +
-				'</a>' : '') + (data[9] != null ?
-				'<a title="Puppet" class="btn btn-xs btn-success" href="/puppet/enc/' + data[9] + '">' +
+				'</a>' : '') + (data["puppet_certname"] != null ?
+				'<a title="Puppet" class="btn btn-xs btn-success" href="/puppet/enc/' + data["puppet_certname"] + '">' +
 				'	<i class="fa fa-fw fa-book"></i>' +
 				'</a>': ''));
 
-			if (data[5] == "" || data[5] == undefined)
+			if (data["cmdb_operational_status"] == "" || data["cmdb_operational_status"] == undefined)
 			{
 				$('td:eq(5)', row).html("Unknown");
 			}
 
-			var view_link = "<a class='server-link' href='/systems/overview/" + data[7] + "'>" + data[0] + "</a>";
+			var view_link = "<a class='server-link' href='/systems/overview/" + data["id"] + "'>" + data["name"] + "</a>";
 
-			if (data[10] == true)
+			if (data["favourited"] == true)
 			{
 
-				var favourite = '<span data-system-id="' + data[7] + '" id="btn_unfavourite" style="margin-right:0.5em"><i class="fa fa-fw fa-star icon-favourited"></i></span>';
+				var favourite = '<span data-system-id="' + data["id"] + '" id="btn_unfavourite" style="margin-right:0.5em"><i class="fa fa-fw fa-star icon-favourited"></i></span>';
 			}else {
 
-				var favourite = '<span data-system-id="' + data[7] + '" id="btn_favourite" style="margin-right:0.5em"><i class="fa fa-fw fa-star-o icon-favourites"></i></span>';
+				var favourite = '<span data-system-id="' + data["id"] + '" id="btn_favourite" style="margin-right:0.5em"><i class="fa fa-fw fa-star-o icon-favourites"></i></span>';
 			}
 
 			if ($('#class-tabs li.active a').attr('data-vmware') == 1)
 			{
-				if (data[8] == "poweredOn")
+				if (data["vmware_guest_state"] == "poweredOn")
 				{
 					$('td:eq(0)', row).html("<nobr>" + favourite + "<i title='VM Powered On' class='fa fa-fw fa-play icon-state icon-on' />" + view_link + "</nobr>");
 				}
-				else if (data[8] == "poweredOff")
+				else if (data["vmware_guest_state"] == "poweredOff")
 				{
 					$('td:eq(0)', row).html("<nobr>" + favourite + "<i title='VM Powered Off' class='fa fa-fw fa-stop icon-state icon-off' />" + view_link + "</nobr>");
 				}
-				else if (data[8] == "suspended")
+				else if (data["vmware_guest_state"] == "suspended")
 				{
 					$('td:eq(0)', row).html("<nobr>" + favourite + "<i title='VM Suspended' class='fa fa-fw fa-pause icon-state icon-pause' />" + view_link + "</nobr>");
 				}
