@@ -508,7 +508,8 @@ def _extract_datatables():
 	if 'length' in request.form:
 		length = int(request.form['length'])
 		if length < 0:
-			length = None
+			# MySQL Max Length
+			length = "18446744073709551610"
 	else:
 		app.logger.warn('`length` parameter missing from DataTables request')
 		abort(400)
