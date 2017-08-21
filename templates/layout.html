@@ -236,40 +236,40 @@
 			<div class="row">
 				<div id="sidebar-small" class="sidebar" style="width: 55px" >
 					<div class="list-group list-group-menu">
-						<a href="{{ url_for('dashboard') }}" title="Dashboard" class="list-group-item{%if active == 'dashboard'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-dashboard fa-2x"></i></a>
+						<a href="{{ url_for('dashboard') }}" class="list-group-item{%if active == 'dashboard'%} menu-active{%endif%}"><i class="fa fa-fw fa-dashboard fa-2x"></i></a>
 						
 						{%- if menu.favourites and menu.favourites|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="favourites-menu" title="Favourites" data-container="body" class="list-group-item enable-menu-popover{%if active == 'favourites'%} menu-active{%endif%} enable-tooltip">
+						<a href="{{ menu.favourites[0].link }}" tabindex="0" role="button" data-mpop="favourites-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'favourites'%} menu-active{%endif%}">
 						<i class="fa fa-fw fa-star fa-2x"></i>
 						</a>
 						{%- endif %}
 						{%- if menu.systems and menu.systems|length > 0 %}
-						<a tabindex="0" role="button" title="Search (Alt+S)" data-toggle="modal" data-target="#search" class="list-group-item enable-tooltip" data-placement="right">
+						<a tabindex="0" role="button" data-toggle="modal" data-target="#search" class="list-group-item" data-placement="right">
 						<i class="fa fa-fw fa-search fa-2x"></i>
 						</a>
-						<a tabindex="0" role="button" data-mpop="systems-menu" title="Systems" data-container="body" class="list-group-item enable-menu-popover{%if active == 'systems'%} menu-active{%endif%} enable-tooltip">
+						<a href="{{ menu.systems[0].link }}" tabindex="0" role="button" data-mpop="systems-menu"tle="Systems" data-container="body" class="list-group-item enable-menu-popover{%if active == 'systems'%} menu-active{%endif%}">
 						<i class="fa fa-fw fa-server fa-2x"></i>
 						</a>
 						{%- endif %}
 						{%- if workflows and workflows|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="workflows-menu" title="Workflows" data-container="body" class="list-group-item enable-menu-popover{%if active == 'workflows'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-plus-circle fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="workflows-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'workflows'%} menu-active{%endif%}"><i class="fa fa-fw fa-plus-circle fa-2x"></i></a>
 						{%- endif %}
 						{%- if menu.vmware and menu.vmware|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="vmware-menu" title="VMware" data-container="body" class="list-group-item enable-menu-popover{%if active == 'vmware'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-line-chart fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="vmware-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'vmware'%} menu-active{%endif%}"><i class="fa fa-fw fa-line-chart fa-2x"></i></a>
 						{%- endif %}
 						{%- if menu.puppet and menu.puppet|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="puppet-menu" title="Puppet" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-magic fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="puppet-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%}"><i class="fa fa-fw fa-magic fa-2x"></i></a>
 						{%- endif %}
 						{%- if menu.perms and menu.perms|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="perms-menu" title="Permissions" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-lock fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="perms-menu" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%}"><i class="fa fa-fw fa-lock fa-2x"></i></a>
 						{%- endif %}
 						{%- if menu.admin and menu.admin|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="settings-menu" title="Advanced" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-sliders fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="settings-menu"  data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%}"><i class="fa fa-fw fa-sliders fa-2x"></i></a>
 						{%- endif %}
-						<a href="{{ url_for('about') }}" title="About" class="list-group-item {%if active == 'about'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-info-circle fa-2x"></i></a>
+						<a href="{{ url_for('about') }}" class="list-group-item {%if active == 'about'%} menu-active{%endif%}"><i class="fa fa-fw fa-info-circle fa-2x"></i></a>
 					</div>
 					<div class="list-group list-group-bottom list-group-menu">
-						<a tabindex="0" role="button" data-mpop="user-menu" title="{{ session.username }}" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'user'%} menu-active{%endif%} enable-tooltip"><i class="fa fa-fw fa-user fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="user-menu" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'user'%} menu-active{%endif%}"><i class="fa fa-fw fa-user fa-2x"></i></a>
 					</div>
 				</div>
 
@@ -337,7 +337,7 @@
 	<ul class="list-group list-group-popover">
 		{% for item in menu.puppet -%}
 		{% if item.link == "*puppet_search" -%}
-		<a tabindex="0" role="button" title="Search" data-toggle="modal" data-target="#puppet-search" class="list-group-item enable-tooltip" data-placement="right"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
+		<a tabindex="0" role="button" data-toggle="modal" data-target="#puppet-search" class="list-group-item" data-placement="right"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 		{% else -%}
 		<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 		{%- endif %}

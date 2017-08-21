@@ -30,7 +30,21 @@ $(document).ready(function ()
 			container: 'body',
 			content: $("#" + $(this).data("mpop")).html(),
 			template: '<div class="popover" role="tooltip"><div class="arrow"></div><div class="popover-content popover-content-nopad"></div></div>'
-		}).click(togglePopover).blur(hidePopover);
+		}).on('mouseenter', function() {
+			var button = this
+			$(this).popover('show');
+			$('.popover').on('mouseleave', function () {
+				$(button).popover('hide');
+			});
+		}).on('mouseleave', function () {
+			var button = this;
+			setTimeout(function () {
+				if (!$(".popover:hover").length) {
+					$(button).popover("hide");
+				}
+			}, 62);
+		})
+		//click(togglePopover).blur(hidePopover);
 	});
 
 	$('.mobilepop').each(function()
