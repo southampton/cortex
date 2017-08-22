@@ -1040,7 +1040,19 @@ def systems_json():
 			else:
 				row['allocation_who'] = cortex.lib.user.get_user_realname(row['allocation_who'])
 
-		system_data.append([row['name'], row['allocation_comment'], row['cmdb_environment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_id, row['id'], row['vmware_guest_state'], row['puppet_certname'], favourited])
+		system_data.append({
+			"name": row["name"],
+			"allocation_comment": row["allocation_comment"],
+			"cmdb_environment": row["cmdb_environment"],
+			"allocation_who": row["allocation_who"],
+			"allocation_date": row["allocation_date"],
+			"cmdb_operational_status": row["cmdb_operational_status"],
+			"cmdb_id": cmdb_id,
+			"id": row["id"],
+			"vmware_guest_state": row["vmware_guest_state"],
+			"puppet_certname": row["puppet_certname"],
+			"favourited": favourited
+		})
 
 	# Return JSON data in the format DataTables wants
 	return jsonify(draw=draw, recordsTotal=system_count, recordsFiltered=filtered_count, data=system_data)
