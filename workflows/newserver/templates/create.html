@@ -37,7 +37,7 @@ span.required
 		<div class="col-md-12">
 			<h4 style="margin-top:0">1. Enter details</h4>
 			<div class="form-group col-md-3">
-				<label for="task">ServiceNow Task:</label><input class="form-control" id="task" name="task" placeholder="e.g. INCTASK0123456 or PRJTASK0987654" autofocus />
+				<label for="task">ServiceNow Task:</label><input class="form-control" id="task" name="task" placeholder="e.g. INCTASK0123456, PRJTASK0987654 or CTASK012345" autofocus />
 			</div>
 			<div class="form-group col-md-9">
 				<label for="purpose">Purpose:<span class="required">*</span></label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the server, e.g. VMware appliance" autofocus />
@@ -139,9 +139,9 @@ $('#alloc_ip').change(function(e) {
 $('span.required').attr('title', 'Required');
 $('#allocate').click(function(e) {
 	// If a ServiceNow ticket has been entered, validate the number
-	if ($("#task").val().length > 0 && $("#task").val().match(/^[ \t]*((PRJ)|(INC))TASK[0-9]+[ \t]*/) == null)
+	if ($("#task").val().length > 0 && $("#task").val().match(/^[ \t]*((PRJ)|(INC)|(C))TASK[0-9]+[ \t]*/) == null)
 	{
-		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456 or PRJTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident.');
+		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345 CTASK012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident.');
 		$('#task').focus();
 	}
 	else if ($('#purpose').val().length == 0)
