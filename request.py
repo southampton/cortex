@@ -64,8 +64,9 @@ def context_processor():
 	# Inject the menu items 
 	
 	# Favourites menu
-	favourites = [
-		{'link': url_for('favourites'), 'title': 'All Favourites', 'icon': 'fa-star'},
+	favourites = []
+	if does_user_have_permission("systems.own.view") or does_user_have_permission("systems.all.view"):
+		favourites = [{'link': url_for('favourites'), 'title': 'All Favourites', 'icon': 'fa-star'},
 		{'link': url_for('favourites_by_type', system_type='srv'), 'title': 'Favourited srv systems', 'icon': 'fa-star'},
 		{'link': url_for('favourites_by_type', system_type='play'), 'title': 'Favourited play systems', 'icon': 'fa-star'},
 	]
