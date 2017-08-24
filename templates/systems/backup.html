@@ -55,13 +55,19 @@
 			</tr>
 		    </thead>
 		    <tbody>
-			{% for snapshot in vm.snapshots.data %}
+                        {% if vm.snapshots.data|length == 0 -%}
+                        <tr>
+                            <td colspan=3>No backups have been taken.</td>
+                        </tr>
+			{% else -%}
+			{%     for snapshot in vm.snapshots.data -%}
 			<tr>
 			    <td>{{ snapshot.date }}</td>
 			    <td>{{ 'on demand' if snapshot.isOnDemandSnapshot else 'scheduled' }}</td>
 			    <td>{{ snapshot.expirationDate or 'not set'}}</td>
 			</tr>
-			{% endfor %}
+			{%     endfor -%}
+			{% endif %}
 		    </tbody>
 		</table>
 	    </div>
