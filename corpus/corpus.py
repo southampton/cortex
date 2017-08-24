@@ -133,6 +133,52 @@ class Corpus(object):
 
 	################################################################################
 
+	def insert_name(self, name, comment=None, username=None, expiry=None):
+		'''inserts a system name into cortex'''
+
+
+		# Get a cursor to the database
+		cur = self.db.cursor(mysql.cursors.DictCursor)
+
+		cur.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `expiry_date`) VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s)",
+			   (self.SYSTEM_TYPE_BY_NAME['System'], None, None, name, username, comment, expiry))
+
+		self.db.commit()
+		return cur.lastrowid
+
+	################################################################################
+
+	def pad_system_name(self, prefix, number, digits):
+		"""Takes a class name ('prefix') a system number, and the number of
+		digits that class should have in its name and formats a string to that
+		specification. For example, if prefix is 'test', number is '12' and
+		'digits' is 5, then this returns 'test00012'"""
+
+		return ("%s%0" + str(int(digits)) + "d") % (prefix, number)
+
+	################################################################################
+
+	def infoblox_create_host(self, name, subnet):
+		payload = {'name': name, "ipv4addrs": [{"ipv4addr":"func:nextavailableip:" + subnet}],}
+		r = requests.post("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/record:host", data=json.dumps(payload), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+		if r.status_code == 201:
+			objectid = str(r.json())
+			r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + objectid, auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+			if r.status_code == 200:
+				response = r.json()
+
+				try:
+					return response['ipv4addrs'][0]['ipv4addr']
+				except Exception as ex:
+					raise RuntimeError("Malformed JSON response from Infoblox API")
+			else:
+				raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
+		else:
+			raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
+	################################################################################
+
 	def pad_system_name(self, prefix, number, digits):
 		"""Takes a class name ('prefix') a system number, and the number of
 		digits that class should have in its name and formats a string to that

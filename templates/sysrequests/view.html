@@ -35,7 +35,7 @@ header {
 				<table class="table">
 					<tr><td>Status</td><td>{{ status[request.status][0] }}</td></tr>
 					<tr><td>Requested by</td><td>{{ request.requested_who or 'unknown' }}</td></tr>
-					<tr><td>FQDN</td><td>{{ request.fqdn or 'unknown' }}</td></tr>
+					<tr><td>Hostname</td><td>{{ request.fqdn or 'unknown' }}</td></tr>
 					<tr><td>Purpose</td><td>{{ request.purpose or '' }}</td></tr>
 					<tr><td>Comment</td><td>{{ request.comments or '' }}</td></tr>
 					<tr><td>Requested at</td><td>{{ request.request_date or 'unknown' }}</td></tr>
