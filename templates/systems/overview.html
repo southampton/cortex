@@ -99,13 +99,13 @@ tr > td:first-child {
 				</table>
 				<div class="center-block" style="text-align:center">
 					{%- if power_ctl_perm %}
-					<button data-toggle="modal" data-target="#powerOnModal" title="Power on the system" class="btn btn-lg btn-success" style="margin-right:8px"><span class="fa fa-play" style="margin-right:6px"></span>Power on</button>
-					<button data-toggle="modal" data-target="#powerOffModal" title="Power off the system" class="btn btn-lg btn-danger" style="margin-right:8px"><span class="fa fa-stop" style="margin-right:6px"></span>Power off</button>
-					<button data-toggle="modal" data-target="#resetModal" title="Reset the system" class="btn btn-lg btn-danger"><span class="fa fa-refresh" style="margin-right:6px"></span>Reset</button>
+					<button data-toggle="modal" data-target="#powerOnModal" title="Power on the system" class="btn btn-lg btn-success" style="width:60%;"><span class="fa fa-play" style="margin-right:6px"></span>Power on</button>
+					<button data-toggle="modal" data-target="#powerOffModal" title="Power off the system" class="btn btn-lg btn-danger" style="margin-top:8px;width:60%;"><span class="fa fa-stop" style="margin-right:6px"></span>Power off</button>
+					<button data-toggle="modal" data-target="#resetModal" title="Reset the system" class="btn btn-lg btn-danger" style="margin-top:8px;width:60%;"><span class="fa fa-refresh" style="margin-right:6px"></span>Reset</button>
 					{%- else %}
-					<button title="Power on the system" class="btn btn-lg btn-success disabled" disabled style="margin-right:8px"><span class="fa fa-play" style="margin-right:6px"></span> Power on</button>
-					<button title="Power off the system" class="btn btn-lg btn-danger disabled" disabled style="margin-right:8px"><span class="fa fa-stop" style="margin-right:6px"></span> Power off</button>
-					<button title="Reset the system" class="btn btn-lg btn-danger disabled" disabled><span class="fa fa-refresh" style="margin-right:6px"></span> Reset</button>
+					<button title="Power on the system" class="btn btn-lg btn-success disabled" disabled style="width:60%;"><span class="fa fa-play" style="margin-right:6px"></span> Power on</button>
+					<button title="Power off the system" class="btn btn-lg btn-danger disabled" disabled style="margin-top:8px;width:60%;"><span class="fa fa-stop" style="margin-right:6px"></span> Power off</button>
+					<button title="Reset the system" class="btn btn-lg btn-danger disabled" disabled style="margin-top:8px;width:60%;"><span class="fa fa-refresh" style="margin-right:6px"></span> Reset</button>
 					<p><span class="fa fa-info"></span> You do not have permission to control this system's power</p>
 					{%- endif %}
 				</div>
