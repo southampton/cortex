@@ -19,7 +19,7 @@
 
 <div class="row">
 {%- if does_user_have_permission("maintenance.vmware") %}
-	<div class="col-md-3">
+	<div class="col-md-4">
 		<div class="well mtask">
 			<h3><i class="fa fa-fa fa-upload"></i> Update VMware Cache</h3>
 			<p>Updates the Cortex database cache with data from VMware vCenter</p>
@@ -36,7 +36,7 @@
 	</div>
 {%- endif %}
 {%- if does_user_have_permission("maintenance.cmdb") %}
-	<div class="col-md-3">
+	<div class="col-md-4">
 		<div class="well mtask">
 			<h3><i class="fa fa-fa fa-cloud-download"></i> Update CMDB Cache</h3>
 			<p>Updates the Cortex database cache with data from the ServiceNow CMDB</p>
@@ -53,7 +53,7 @@
 	</div>
 {%- endif %}
 {%- if does_user_have_permission("maintenance.expire_vm") %}
-	<div class="col-md-3">
+	<div class="col-md-4">
 		<div class="well mtask">
 			<h3><i class="fa fa-fa fa-cloud-download"></i> Turn off expired VMs</h3>
 			<p>Finds all virtual machines which have expired and ensures they are switched off.</p>
@@ -62,6 +62,25 @@
 				<input type="hidden" name="task_name" value="vmexpire"/>
 			{%- if vmexpire_task_id %}
 				<a href="{{url_for('task_status',id=vmexpire_task_id)}}" class="btn btn-primary form-control"><i class="fa fa-fw fa-cog fa-spin"></i> View in progress task</a>
+			{%- else %}
+			<button class="form-control btn btn-success" type="submit"><i class="fa fa-fw fa-play"></i> Start</button>
+			{%- endif %}
+			</form>
+		</div>
+	</div>
+{%- endif %}
+</div>
+<div class="row">
+{%- if does_user_have_permission("maintenance.sync_puppet_servicenow") %}
+	<div class="col-md-4">
+		<div class="well mtask">
+			<h3><i class="fa fa-fa fa-upload"></i> Sync Puppet facts with ServiceNow</h3>
+			<p>Pulls all the nodes from Puppet and syncs their facts with ServiceNow</p>
+			<form method="POST">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input type="hidden" name="task_name" value="sync_puppet_servicenow"/>
+			{%- if sync_puppet_servicenow_id %}
+				<a href="{{url_for('task_status',id=sync_puppet_servicenow_id)}}" class="btn btn-primary form-control"><i class="fa fa-fw fa-cog fa-spin"></i> View in progress task</a>
 			{%- else %}
 			<button class="form-control btn btn-success" type="submit"><i class="fa fa-fw fa-play"></i> Start</button>
 			{%- endif %}

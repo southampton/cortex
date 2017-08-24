@@ -427,7 +427,7 @@ def admin_maint():
 	"""Allows the user to kick off scheduled jobs on demand"""
 
 	# Check user permissions
-	if not does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm"]):
+	if not does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow"]):
 		abort(403)
 
 	# Connect to NeoCortex and the database
@@ -438,6 +438,7 @@ def admin_maint():
 	vmcache_task_id  = None
 	sncache_task_id  = None
 	vmexpire_task_id = None
+	sync_puppet_servicenow_id = None
 
 	if request.method == 'GET':
 		# See which tasks are already running
@@ -450,9 +451,15 @@ def admin_maint():
 				sncache_task_id = task['id']
 			elif task['name'] == '_vm_expire':
 				sncache_task_id = task['id']
+			elif task['name'] == '_sync_puppet_servicenow':
+				sync_puppet_servicenow_id = task['id']
 
 		# Render the page
-		return render_template('admin/maint.html', active='admin', sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id, vmexpire_task_id=vmexpire_task_id, title="Maintenance Tasks")
+		return render_template('admin/maint.html', active='admin',
+			sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id,
+			vmexpire_task_id=vmexpire_task_id, sync_puppet_servicenow_id=sync_puppet_servicenow_id,
+			title="Maintenance Tasks"
+		)
 
 	else:
 		# Find out what task to start
@@ -477,6 +484,11 @@ def admin_maint():
 				abort(403)
 
 			task_id = neocortex.start_internal_task(session['username'], 'vm_expire.py', '_vm_expire', description="Turns off VMs which have expired")
+		elif module == 'sync_puppet_servicenow':
+			# Check user permissions
+			if not does_user_have_permission("maintenance.sync_puppet_servicenow"):
+				abort(403)
+			task_id = neocortex.start_internal_task(session['username'], 'sync_puppet_servicenow.py', '_sync_puppet_servicenow', description="Sync Puppet facts with ServiceNow")
 		else:
 			app.logger.warn('Unknown module name specified when starting task')
 			abort(400)
