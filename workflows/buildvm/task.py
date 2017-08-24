@@ -63,26 +63,35 @@ def run(helper, options):
 		sn_location = options['wfconfig']['STU_SN_LOCATION']
 		network_name = options['wfconfig']['STU_NETWORK_NAMES'][options['network']]
 		cluster_storage_pools = options['wfconfig']['STU_CLUSTER_STORAGE_POOLS']
+		cluster_rpool = options['wfconfig']['STU_CLUSTER_RPOOL']
 		win_groups = options['wfconfig']['STU_WIN_GROUPS_BY_TEMPLATE']
 		os_templates = options['wfconfig']['STU_OS_TEMPLATES']
 		os_names = options['wfconfig']['STU_OS_NAMES']
 		os_disks = options['wfconfig']['STU_OS_DISKS']
-		vm_folder_name = option['wfconfig']['STU_VM_FOLDER']
+		vm_folder_name = options['wfconfig']['STU_VM_FOLDER']
 
 	## Allocate a hostname #################################################
+	# student vms don't need a name
+	if workflow == 'student':
+		system_name = options['hostname']
+		# Start the task
+		helper.event("allocate_name", "Allocating a system name")
 
-	# Start the task
-	helper.event("allocate_name", "Allocating a '" + prefix + "' system name")
+		# Allocate the name
+		system_dbid = helper.lib.insert_name(system_name, options['purpose'], helper.username, expiry=options['expiry'])
+	else:
+		# Start the task
+		helper.event("allocate_name", "Allocating a '" + prefix + "' system name")
 
-	# Allocate the name
-	system_info = helper.lib.allocate_name(prefix, options['purpose'], helper.username, expiry=options['expiry'])
+		# Allocate the name
+		system_info = helper.lib.allocate_name(prefix, options['purpose'], helper.username, expiry=options['expiry'])
 
-	# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
-	system_name = system_info.keys()[0]
-	system_dbid = system_info.values()[0]
+		# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
+		system_name = system_info.keys()[0]
+		system_dbid = system_info.values()[0]
 
-	# End the event
-	helper.end_event(description="Allocated system name " + system_name)
+		# End the event
+		helper.end_event(description="Allocated system name " + system_name)
 
 
 
@@ -288,7 +297,7 @@ def run(helper, options):
 	## Register Linux VMs with the built in Puppet ENC #####################
 
 	# Only for Linux VMs...
-	if os_type == helper.lib.OS_TYPE_BY_NAME['Linux'] and options['template'] != 'rhel6c':
+	if workflow != 'student' and os_type == helper.lib.OS_TYPE_BY_NAME['Linux'] and options['template'] != 'rhel6c':
 		# Start the event
 		helper.event("puppet_enc_register", "Registering with Puppet ENC")
 
@@ -343,35 +352,36 @@ def run(helper, options):
 
 	## Wait for the VM to finish building ##################################
 
-	# Linux has separate events for installation starting and installation
-	# finishing, but windows only has installation finishing
-	if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
-		# Start the event
-		helper.event('guest_installer_progress', 'Waiting for in-guest installation to start')
+	if workflow != 'student':
+		# Linux has separate events for installation starting and installation
+		# finishing, but windows only has installation finishing
+		if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
+			# Start the event
+			helper.event('guest_installer_progress', 'Waiting for in-guest installation to start')
+
+			# Wait for the in-guest installer to set the state to 'progress' or 'done'
+			wait_response = helper.lib.wait_for_guest_notify(vm, ['inprogress', 'done'])
+
+			# When it returns, end the event
+			if wait_response is None or wait_response not in ['inprogress', 'done']:
+				helper.end_event(success=False, description='Timed out waiting for in-guest installation to start')
+
+				# End the task here
+				return
+			else:
+				helper.end_event(success=True, description='In-guest installation started')
+
+		# Start another event
+		helper.event('guest_installer_done', 'Waiting for in-guest installation to finish')
 
 		# Wait for the in-guest installer to set the state to 'progress' or 'done'
-		wait_response = helper.lib.wait_for_guest_notify(vm, ['inprogress', 'done'])
+		wait_response = helper.lib.wait_for_guest_notify(vm, ['done'])
 
 		# When it returns, end the event
-		if wait_response is None or wait_response not in ['inprogress', 'done']:
-			helper.end_event(success=False, description='Timed out waiting for in-guest installation to start')
-
-			# End the task here
-			return
+		if wait_response is None or wait_response not in ['done']:
+			helper.end_event(success=False, description='Timed out waiting for in-guest installation to finish')
 		else:
-			helper.end_event(success=True, description='In-guest installation started')
-
-	# Start another event
-	helper.event('guest_installer_done', 'Waiting for in-guest installation to finish')
-
-	# Wait for the in-guest installer to set the state to 'progress' or 'done'
-	wait_response = helper.lib.wait_for_guest_notify(vm, ['done'])
-
-	# When it returns, end the event
-	if wait_response is None or wait_response not in ['done']:
-		helper.end_event(success=False, description='Timed out waiting for in-guest installation to finish')
-	else:
-		helper.end_event(success=True, description='In-guest installation finished')
+			helper.end_event(success=True, description='In-guest installation finished')
 
 
 
