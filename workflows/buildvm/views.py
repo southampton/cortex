@@ -193,7 +193,7 @@ def student():
 			if not re.compile(r"^[a-z0-9\-]{1,16}$").match(session['username']):
 				raise Exception('Username contains incompatible characters')
 
-			fqdn = 'svm-' + session['username'] + '-' + host_suffix + '.ecs.soton.ac.uk'
+			hostname = 'svm-' + session['username'] + '-' + host_suffix
 
 			# load corpus
 			corpus = Corpus(g.db, app.config)
@@ -228,10 +228,9 @@ def student():
 		options['disk'] = 0
 		options['template'] = template
 		options['network'] = network
-		#options['cluster'] = cluster	## Commenting out while we only have one cluster
-		options['cluster'] = 'CHARTREUSE'
+		options['cluster'] = 'COBALT'
 		options['env'] = 'prod'
-		options['fqdn'] = fqdn
+		options['hostname'] = hostname
 		options['purpose'] = purpose
 		options['comments'] = comments
 		options['expiry'] = expiry
@@ -260,8 +259,8 @@ def student():
 		if cortex.lib.systems.get_system_count(only_allocated_by=session['username']) >= 3 or network == 'external' or expiry > datetime.datetime.utcnow() + datetime.timedelta(days=366):
 			try:
 				curd = g.db.cursor(mysql.cursors.DictCursor)
-				sql = 'INSERT INTO `system_request` (`request_date`, `requested_who`, `fqdn`, `workflow`, `sockets`, `cores`, `ram`, `disk`, `template`, `network`, `cluster`, `environment`, `purpose`, `comments`, `expiry_date`, `sendmail`, `status`, `updated_at`, `updated_who`) VALUES (NOW(), %s, %s ,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), %s)'
-				params = ( session['username'], options['fqdn'], options['workflow'], options['sockets'], options['cores'], options['ram'], options['disk'], options['template'], options['network'], options['cluster'], options['env'], options['purpose'], options['comments'], options['expiry'], options['sendmail'], 0, session['username'])
+				sql = 'INSERT INTO `system_request` (`request_date`, `requested_who`, `hostname`, `workflow`, `sockets`, `cores`, `ram`, `disk`, `template`, `network`, `cluster`, `environment`, `purpose`, `comments`, `expiry_date`, `sendmail`, `status`, `updated_at`, `updated_who`) VALUES (NOW(), %s, %s ,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), %s)'
+				params = ( session['username'], options['hostname'], options['workflow'], options['sockets'], options['cores'], options['ram'], options['disk'], options['template'], options['network'], options['cluster'], options['env'], options['purpose'], options['comments'], options['expiry'], options['sendmail'], 0, session['username'])
 				curd.execute(sql, params)
 
 				g.db.commit()
@@ -274,8 +273,8 @@ def student():
 
 		try:
 			curd = g.db.cursor(mysql.cursors.DictCursor)
-			sql = 'INSERT INTO `system_request` (`request_date`, `requested_who`, `fqdn`, `workflow`, `sockets`, `cores`, `ram`, `disk`, `template`, `network`, `cluster`, `environment`, `purpose`, `comments`, `expiry_date`, `sendmail`, `status`, `updated_at`, `updated_who`) VALUES (NOW(), %s, %s ,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), %s)'
-			params = ( session['username'], options['fqdn'], options['workflow'], options['sockets'], options['cores'], options['ram'], options['disk'], options['template'], options['network'], options['cluster'], options['env'], options['purpose'], options['comments'], options['expiry'], options['sendmail'], 2, session['username'])
+			sql = 'INSERT INTO `system_request` (`request_date`, `requested_who`, `hostname`, `workflow`, `sockets`, `cores`, `ram`, `disk`, `template`, `network`, `cluster`, `environment`, `purpose`, `comments`, `expiry_date`, `sendmail`, `status`, `updated_at`, `updated_who`) VALUES (NOW(), %s, %s ,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), %s)'
+			params = ( session['username'], options['hostname'], options['workflow'], options['sockets'], options['cores'], options['ram'], options['disk'], options['template'], options['network'], options['cluster'], options['env'], options['purpose'], options['comments'], options['expiry'], options['sendmail'], 2, session['username'])
 			curd.execute(sql, params)
 
 			g.db.commit()

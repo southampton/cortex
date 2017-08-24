@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from cortex import app
+import cortex.lib.core
 from cortex.corpus import Corpus
 import MySQLdb as mysql
 from flask import Flask, request, redirect, session, url_for, abort, render_template, flash, g
@@ -154,27 +155,11 @@ def approve(id, status_text=None):
 	if sysrequest['status'] == 2:
 		raise Exception('Request already approved')
 
-	stmt = 'UPDATE `system_request` SET `status`=2, `updated_at`=NOW(), `updated_who`=%s, `status_text`=%s WHERE `id`=%s'
-	params = (session['username'], status_text, id)
 
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute(stmt, params)
-	g.db.commit()
-
-	#email requester
-	subject = 'System request approved'
-	message = ('Your request for a system has been approved.\n' +
-		   '\n' +
-		   'Request id: ' + str(sysrequest['id']) + '\n' +
-		   'Requested at: ' + str(sysrequest['request_date']) + '\n' +
-		   'Reason: ' + str(status_text) + '\n' +
-		   '\n' +
-		   'For more details see https://cortex.soton.ac.uk/sysrequest/view/' + str(sysrequest['id']))
-	corpus = Corpus(g.db, app.config)
-	corpus.send_email(str(sysrequest['requested_who']), subject, message)
 
 	#load options from request
 	stmt = ('SELECT `workflow`, '
+                       '`hostname`, '
                        '`sockets`, '
                        '`cores`, '
                        '`ram`, '
@@ -190,17 +175,54 @@ def approve(id, status_text=None):
               'FROM `system_request` '
               'WHERE `id`=%s')
 	params = (id,)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute(stmt, params)
-	options = curd.fetchall()
+	results = curd.fetchall()[0]
+
+	options = {}
+	options['workflow'] = results['workflow']
+	options['sockets'] = results['sockets']
+	options['cores'] = results['cores']
+	options['ram'] = results['ram']
+	options['disk'] = results['disk']
+	options['template'] = results['template']
+	options['network'] = results['network']
+	options['cluster'] = results['cluster']
+	options['env'] = results['environment']
+	options['hostname'] = results['hostname']
+	options['purpose'] = results['purpose']
+	options['comments'] = results['comments']
+	options['expiry'] = results['expiry_date']
+	options['sendmail'] = results['sendmail']
 
 	#trigger build
 	
 	options['wfconfig'] = app.workflows.get('buildvm').config
-	#flash(task_id)
 	
 	# Connect to NeoCortex and start the task
 	neocortex = cortex.lib.core.neocortex_connect()
 	task_id = neocortex.create_task('buildvm', session['username'], options, description="Creates and configures a virtual machine")
+
+
+	#update db
+	stmt = 'UPDATE `system_request` SET `status`=2, `updated_at`=NOW(), `updated_who`=%s, `status_text`=%s WHERE `id`=%s'
+	params = (session['username'], status_text, id)
+
+	curd.execute(stmt, params)
+	g.db.commit()
+
+	#email requester
+	subject = 'System request approved'
+	message = ('Your request for a system has been approved.\n' +
+		   '\n' +
+		   'Request id: ' + str(sysrequest['id']) + '\n' +
+		   'Requested at: ' + str(sysrequest['request_date']) + '\n' +
+		   'Reason: ' + str(status_text) + '\n' +
+		   '\n' +
+		   'For more details see https://cortex.soton.ac.uk/sysrequest/view/' + str(sysrequest['id']))
+	corpus = Corpus(g.db, app.config)
+	corpus.send_email(str(sysrequest['requested_who']), subject, message)
+
 	return redirect(url_for('task_status', id=task_id))
 	#return redirect(url_for('dashboard'))
 
