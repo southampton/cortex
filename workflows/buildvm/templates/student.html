@@ -75,10 +75,10 @@
 		<div class="col-md-12">
 			<h4>1. Enter request details</h4>
 			<div class="form-group col-md-12">
-				<label for="fqdn">FQDN:</label>
+				<label for="hostname">FQDN:</label>
 				<div class="input-group">
 					<div class="input-group-addon">svm-{{ session.username }}-</div>
-					<input class="form-control" id="fqdn" name="fqdn" placeholder="The hostname suffix of this Virtual Machine (1 to 32 characters long of 'a-z', '0-9' and '-'). Example: 'myfirstserver'." pattern="[a-z0-9\-]{1,32}" required autofocus />
+					<input class="form-control" id="hostname" name="hostname" placeholder="The hostname suffix of this Virtual Machine (1 to 32 characters long of 'a-z', '0-9' and '-'). Example: 'myfirstserver'." pattern="[a-z0-9\-]{1,32}" required autofocus />
 					<div class="input-group-addon">.ecs.soton.ac.uk</div>
 				</div>
 				<label for="purpose">Purpose:</label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. SMTP server" autofocus />

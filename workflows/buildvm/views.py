@@ -174,17 +174,21 @@ def student():
 		if not {'template', 'network', 'expiry'}.issubset(request.form):
 			flash('You must select options for all questions before creating', 'alert-danger')
 			return redirect(url_for('student'))
-		
+
 		# Form validation
 		try:
-			# Extract all the parameters
-			host_suffix = request.form['fqdn']
-			purpose  = request.form['purpose']
-			comments = request.form['comments']
-			template = request.form['template']
-			network  = request.form['network']
-			expiry = request.form['expiry']
-			sendmail = 'send_mail' in request.form
+			try:
+				# Extract all the parameters
+				host_suffix = request.form['hostname']
+				purpose  = request.form['purpose']
+				comments = request.form['comments']
+				template = request.form['template']
+				network  = request.form['network']
+				expiry = request.form['expiry']
+				sendmail = 'send_mail' in request.form
+			except KeyError as e:
+				flash('Submitted data invalid ' + str(e), 'alert-danger')
+				return redirect(url_for('student'))
 
 			# Check name is RFC1123 complient
 			if not re.compile(r"^[a-z0-9\-]{1,32}$").match(host_suffix):
@@ -194,6 +198,7 @@ def student():
 				raise Exception('Username contains incompatible characters')
 
 			hostname = 'svm-' + session['username'] + '-' + host_suffix
+			fqdn = hostname + '.ecs.soton.ac.uk'
 
 			# load corpus
 			corpus = Corpus(g.db, app.config)
@@ -215,10 +220,7 @@ def student():
 			flash(str(e), 'alert-danger')
 			return redirect(url_for('student'))
 
-		except Exception as e:
-			flash('Submitted data invalid ' + str(e), 'alert-danger')
-			return redirect(url_for('student'))
-				
+
 		# Build options to pass to the task
 		options = {}
 		options['workflow'] = 'student'
