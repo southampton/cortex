@@ -27,7 +27,7 @@ def sysrequests():
 
 	# Get the search string, if any
 	q = request.args.get('q', None)
-	
+
 	# Strip any leading and or trailing spaces
 	if q is not None:
 		q = q.strip()
@@ -94,7 +94,7 @@ def sysrequests_json():
 		else:
 			row['request_date'] = "unknown"
 
-		if row['requested_who'] is not None:	
+		if row['requested_who'] is not None:
 			row['requested_who'] = cortex.lib.user.get_user_realname(row['requested_who'])
 
 		if row['updated_at'] is not None:
@@ -102,7 +102,7 @@ def sysrequests_json():
 		else:
 			row['updated_at'] = "unknown"
 
-		if row['updated_who'] is not None:	
+		if row['updated_who'] is not None:
 			row['updated_who'] = cortex.lib.user.get_user_realname(row['updated_who'])
 
 		requests_data.append([row['id'], row['status'], row['requested_who'], row['hostname'], row['request_date'], row['updated_at'], row['updated_who'], row['id']])
@@ -131,10 +131,14 @@ def sysrequest(id):
 	if request.method == 'POST':
 		try:
 			action = request.form.get('action')
+			if len(request.form.get('status_text', '')) > 0:
+					status_text = request.form.get('status_text')
+			else:
+				status_text = None
 			if action == 'approve' and does_user_have_permission("sysrequests.all.approve"):
-				cortex.lib.sysrequests.approve(id, request.form.get('status_text', None))
+				cortex.lib.sysrequests.approve(id, status_text)
 			elif action == 'reject' and does_user_have_permission("sysrequests.all.reject"):
-				cortex.lib.sysrequests.reject(id, request.form.get('status_text', None))
+				cortex.lib.sysrequests.reject(id, status_text)
 			else:
 				raise ValueError('Unexpected action: "' + action + '".')
 			# get the updated system

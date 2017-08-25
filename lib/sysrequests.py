@@ -150,7 +150,7 @@ def get_request_by_id(id):
 def approve(id, status_text=None):
 	"""Approves and triggers the build of a system"""
 	sysrequest = get_request_by_id(id)
-	
+
 	#check if system is already approved
 	if sysrequest['status'] == 2:
 		raise Exception('Request already approved')
@@ -196,9 +196,9 @@ def approve(id, status_text=None):
 	options['sendmail'] = results['sendmail']
 
 	#trigger build
-	
+
 	options['wfconfig'] = app.workflows.get('buildvm').config
-	
+
 	# Connect to NeoCortex and start the task
 	neocortex = cortex.lib.core.neocortex_connect()
 	task_id = neocortex.create_task('buildvm', session['username'], options, description="Creates and configures a virtual machine")
