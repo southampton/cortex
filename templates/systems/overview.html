@@ -167,7 +167,24 @@ tr > td:first-child {
 		</div>
 	</div>
 </div>
-
+{# Full Net Table Modal #}
+<div class="modal fade" tabindex="-1" role="dialog" id="routesModal">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">IP Routes</h4>
+			</div>
+			<div class="modal-body">
+				<table class="table" id="routing_table">
+				<table>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 {% if power_ctl_perm and system.vmware_uuid %}
 <div class="modal fade" tabindex="-1" role="dialog" id="powerOnModal">
 	<div class="modal-dialog" role="document">
@@ -368,6 +385,7 @@ function update_data(data) {
 	}
 
 	$('#net_table').empty();
+	$('#routing_table').empty();
 	{#Hostname#}
 	$('#net_table').append(
 		$('<tr>', {class: 'hostname'}).append(
@@ -394,9 +412,15 @@ function update_data(data) {
 		);
 	}
 
-	{#IP r#}
+	{#IP Routes#}
+	$('#net_table').append(
+		$('<tr>', {class: 'ip_routes'}).append(
+			$('<td>').text('IP Routes:'),
+			$('<td>').html('<a href="#" data-toggle="modal" data-target="#routesModal"> Show IP Routes</a>')
+		)
+	);
 	if (data.net.routes.length == 0) {
-		$('#net_table').append(
+		$('#routing_table').append(
 			$('<tr>', {class: 'ip_routes'}).append(
 				$('<td>').text('IP Routes:'),
 				$('<td>')
@@ -404,7 +428,7 @@ function update_data(data) {
 		);
 	}
 	for (route in data.net.routes){
-		$('#net_table').append(
+		$('#routing_table').append(
 			$('<tr>', {class: 'ip_routes'}).append(
 				$('<td>').text(route == 0 ? 'IP Routes:' : ''),
 				$('<td>').text('gateway' in data.net.routes[route] ? data.net.routes[route].network + '/' + data.net.routes[route].prefix + ' via ' + data.net.routes[route].gateway : data.net.routes[route].network + '/' + data.net.routes[route].prefix + ' on link')
