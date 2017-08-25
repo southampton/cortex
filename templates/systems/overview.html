@@ -55,10 +55,10 @@ tr > td:first-child {
 			</div>
 			<div class="panel-body">
 				<table class="table">
-					<tr><td>Comment</td><td>{{ system.allocation_comment or '' }}</td></tr>
-					<tr><td>Allocated by</td><td>{{ system.allocation_who or 'Unknown' }}</td></tr>
-					<tr><td>Allocation date</td><td>{{ system.allocation_date or '' }}</td></tr>
-					<tr><td>Expiry date</td><td>{{ system.expiry_date or 'Not Set' }}</td></tr>
+					<tr><td>Comment:</td><td>{{ system.allocation_comment or '' }}</td></tr>
+					<tr><td>Allocated by:</td><td>{{ system.allocation_who or 'Unknown' }}</td></tr>
+					<tr><td>Allocation Date:</td><td>{{ system.allocation_date or '' }}</td></tr>
+					<tr><td>Expiry Date:</td><td>{{ system.expiry_date or 'Not Set' }}</td></tr>
 				</table>
 			</div>
 		</div>
@@ -95,17 +95,17 @@ tr > td:first-child {
 				{% if system.vmware_uuid %}
 				{#<p><span class="fa fa-info"></span> You can control the power state of the system should it become unresponsive. To avoid losing data, graceful shutdowns should be issued by logging into the system.</p>#}
 				<table class="table">
-					<tr><td>Power State</td><td class="power_state"></td></tr>
+					<tr><td>Power State:</td><td class="power_state"></td></tr>
 				</table>
-				<div class="center-block">
+				<div class="center-block" style="text-align:center">
 					{%- if power_ctl_perm %}
-					<button data-toggle="modal" data-target="#powerOnModal" title="Power on the system" class="btn btn-lg btn-success"><span class="fa fa-play"></span> Power on</button>
-					<button data-toggle="modal" data-target="#powerOffModal" title="Power off the system" class="btn btn-lg btn-danger"><span class="fa fa-stop"></span> Power off</button>
-					<button data-toggle="modal" data-target="#resetModal" title="Reset the system" class="btn btn-lg btn-danger"><span class="fa fa-refresh"></span> Reset</button>
+					<button data-toggle="modal" data-target="#powerOnModal" title="Power on the system" class="btn btn-lg btn-success" style="width:60%;"><span class="fa fa-play" style="margin-right:6px"></span>Power on</button>
+					<button data-toggle="modal" data-target="#powerOffModal" title="Power off the system" class="btn btn-lg btn-danger" style="margin-top:8px;width:60%;"><span class="fa fa-stop" style="margin-right:6px"></span>Power off</button>
+					<button data-toggle="modal" data-target="#resetModal" title="Reset the system" class="btn btn-lg btn-danger" style="margin-top:8px;width:60%;"><span class="fa fa-refresh" style="margin-right:6px"></span>Reset</button>
 					{%- else %}
-					<button title="Power on the system" class="btn btn-lg btn-success disabled" disabled><span class="fa fa-play"></span> Power on</button>
-					<button title="Power off the system" class="btn btn-lg btn-danger disabled" disabled><span class="fa fa-stop"></span> Power off</button>
-					<button title="Reset the system" class="btn btn-lg btn-danger disabled" disabled><span class="fa fa-refresh"></span> Reset</button>
+					<button title="Power on the system" class="btn btn-lg btn-success disabled" disabled style="width:60%;"><span class="fa fa-play" style="margin-right:6px"></span> Power on</button>
+					<button title="Power off the system" class="btn btn-lg btn-danger disabled" disabled style="margin-top:8px;width:60%;"><span class="fa fa-stop" style="margin-right:6px"></span> Power off</button>
+					<button title="Reset the system" class="btn btn-lg btn-danger disabled" disabled style="margin-top:8px;width:60%;"><span class="fa fa-refresh" style="margin-right:6px"></span> Reset</button>
 					<p><span class="fa fa-info"></span> You do not have permission to control this system's power</p>
 					{%- endif %}
 				</div>
@@ -125,14 +125,16 @@ tr > td:first-child {
 			<div class="panel-body row">
 				{% if system.vmware_uuid %}
 				<div class="col-md-4">
-					<div class="fa-stack fa-5x graphic"><i class="fa fa-desktop fa-stack-2x"></i><i id="power-icon"></i></div>
+					<div style="text-align:center">
+						<div class="fa-stack fa-5x graphic"><i class="fa fa-desktop fa-stack-2x"></i><i id="power-icon"></i></div>
+					</div>
 					<table class="table">
-						<tr><td>Power State</td><td class="power_state"></td></tr>
-						<tr><td>Uptime</td><td id="uptime"></td></tr>
-						<tr><td>Spec</td><td>{{ system.vmware_cpus or 'unknown' }} vCPU, {{ system.vmware_ram or 'unknown' }} MB RAM</td></tr>
-						<tr><td>OS</td><td>{{ system.vmware_os or 'unknown' }}</td></tr>
-						<tr><td>CPU usage</td><td id="cpu_usage"></td></tr>
-						<tr><td>RAM usage</td><td id="mem_usage"></td></tr>
+						<tr><td>Power State:</td><td class="power_state"></td></tr>
+						<tr><td>Uptime:</td><td id="uptime"></td></tr>
+						<tr><td>Spec:</td><td>{{ system.vmware_cpus or 'unknown' }} vCPU, {{ system.vmware_ram or 'unknown' }} MB RAM</td></tr>
+						<tr><td>OS:</td><td>{{ system.vmware_os or 'unknown' }}</td></tr>
+						<tr><td>CPU Usage:</td><td id="cpu_usage"></td></tr>
+						<tr><td>RAM Usage:</td><td id="mem_usage"></td></tr>
 					</table>
 				</div>
 				<div class="col-md-8">
@@ -362,7 +364,7 @@ function update_data(data) {
 	{#Hostname#}
 	$('#net_table').append(
 		$('<tr>', {class: 'hostname'}).append(
-			$('<td>').text('Hostname'),
+			$('<td>').text('Hostname:'),
 			$('<td>').text(data.hostname)
 		)
 	);
@@ -371,7 +373,7 @@ function update_data(data) {
 	if (data.net.ipaddr.length == 0) {
 		$('#net_table').append(
 			$('<tr>', {class: 'ip_addr'}).append(
-				$('<td>').text('IP addresses'),
+				$('<td>').text('IP Addresses:'),
 				$('<td>')
 			)
 		);
@@ -379,7 +381,7 @@ function update_data(data) {
 	for (ip_addr in data.net.ipaddr){
 		$('#net_table').append(
 			$('<tr>', {class: 'ip_addr'}).append(
-				$('<td>').text(ip_addr == 0 ? 'IP addresses' : ''),
+				$('<td>').text(ip_addr == 0 ? 'IP Addresses:' : ''),
 				$('<td>').text(data.net.ipaddr[ip_addr])
 			)
 		);
@@ -389,7 +391,7 @@ function update_data(data) {
 	if (data.net.routes.length == 0) {
 		$('#net_table').append(
 			$('<tr>', {class: 'ip_routes'}).append(
-				$('<td>').text('IP routes'),
+				$('<td>').text('IP Routes:'),
 				$('<td>')
 			)
 		);
@@ -397,7 +399,7 @@ function update_data(data) {
 	for (route in data.net.routes){
 		$('#net_table').append(
 			$('<tr>', {class: 'ip_routes'}).append(
-				$('<td>').text(route == 0 ? 'IP routes' : ''),
+				$('<td>').text(route == 0 ? 'IP Routes:' : ''),
 				$('<td>').text('gateway' in data.net.routes[route] ? data.net.routes[route].network + '/' + data.net.routes[route].prefix + ' via ' + data.net.routes[route].gateway : data.net.routes[route].network + '/' + data.net.routes[route].prefix + ' on link')
 			)
 		);
@@ -408,7 +410,7 @@ function update_data(data) {
 	if (data.dns_resolvers.length == 0) {
 		$('#dns_table').append(
 			$('<tr>', {class: 'dns_resolver'}).append(
-				$('<td>').text('DNS resolvers'),
+				$('<td>').text('DNS Resolvers:'),
 				$('<td>')
 			)
 		);
@@ -425,7 +427,7 @@ function update_data(data) {
 	{#Search Domain#}
 	$('#dns_table').append(
 		$('<tr>', {class: 'search_domain'}).append(
-			$('<td>').text('Search domain'),
+			$('<td>').text('Search Domain:'),
 			$('<td>').text(data.search_domain)
 		)
 	);
