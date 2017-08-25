@@ -62,7 +62,7 @@ def context_processor():
 				injectdata['workflows'].append(fn)
 
 	# Inject the menu items 
-	
+
 	# Favourites menu
 	favourites = []
 	if does_user_have_permission("systems.own.view") or does_user_have_permission("systems.all.view"):
