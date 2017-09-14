@@ -49,8 +49,9 @@
 		<table class="table table-striped">
 		    <thead>
 			<tr>
+			    <td>Snapshot ID</td>
 			    <td>Date Taken</td>
-			    <td>Reason</td>
+			    <td>Type</td>
 			    <td>Expires</td>
 			</tr>
 		    </thead>
@@ -62,6 +63,7 @@
 			{% else -%}
 			{%     for snapshot in vm.snapshots.data -%}
 			<tr>
+			    <td>{{ snapshot.id }} </td>
 			    <td>{{ snapshot.date }}</td>
 			    <td>{{ 'on demand' if snapshot.isOnDemandSnapshot else 'scheduled' }}</td>
 			    <td>{{ snapshot.expirationDate or 'not set'}}</td>
