@@ -67,8 +67,8 @@ def run(helper, options):
 					vm_properties = ["name", "config.uuid", "config.hardware.numCPU",
 							 "config.hardware.memoryMB", "runtime.powerState",
 							 "config.guestFullName", "config.guestId",
-							 "config.version", "guest.hostName", "guest.ipAddress", 
-							 "config.annotation", "resourcePool", "guest.toolsRunningStatus", 
+							 "config.version", "guest.hostName", "guest.ipAddress",
+							 "config.annotation", "resourcePool", "guest.toolsRunningStatus",
 							 "guest.toolsVersionStatus2", "config.template"]
 
 					## List VMs ##########
@@ -120,7 +120,7 @@ def run(helper, options):
 
 					# Finish the event
 					helper.end_event(description="Downloaded virtual machine information for " + instance['hostname'])
-			
+
 				## List DCs ##########
 				helper.event("vmware_cache_dc", "Downloading datacenter and folder information from " + instance['hostname'])
 				dcs[key] = helper.lib.vmware_get_objects(content, [vim.Datacenter])
