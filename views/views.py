@@ -140,3 +140,7 @@ def task_status_log(id):
 			abort(403)
 
 	return cortex.lib.core.task_render_status(task, "tasks/status-log.html")
+
+@app.route('/teapot', methods=['GET'])
+def teapot():
+	return render_template('teapot.html'), 418
