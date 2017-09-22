@@ -41,3 +41,7 @@ def run(helper, options):
 				helper.end_event(description='Successfully pushed facts for node ' + str(node.name) + ' with CMDB ID ' + str(cmdb_id))
 			else:
 				helper.end_event(description='Failed to push facts for node ' + str(node.name), success=False)
+
+		else:
+			# No result found - the certname of this node is not in the cortex db.
+			helper.end_event(description='No result for node ' + str(node.name) + ' in the Cortex DB.', success=False)

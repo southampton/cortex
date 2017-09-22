@@ -3,6 +3,7 @@ import json
 import pypuppetdb
 import requests
 from requests.exceptions import HTTPError
+import syslog
 
 class SNPuppetConnector:
 
@@ -24,8 +25,7 @@ class SNPuppetConnector:
 		"""
 		Called when we want to display a message.
 		"""
-		# For now just print messages.
-		print(message)
+		syslog.syslog(message)
 
 	def get_nodes_from_puppet(self):
 		"""
@@ -90,15 +90,13 @@ class SNPuppetConnector:
 				sn_server_data["ram"] = ram
 
 			try:
-				self.message("DEBUG: Send PUT Request to SYS_ID=%s" %(node_sys_id), "debug")
-				self.message("DEBUG: Data=%s"%(str(sn_server_data)), "debug")
 				response = self.sn.put(self.LINUX_SERVER_TABLE, node_sys_id, data=sn_server_data)
 			except HTTPError as e:
-				self.message("Could not add update %s. Error: %s" %(node.name, str(e)), "error")
+				self.message("Could not update %s. Error: %s" %(node.name, str(e)), "error")
 				return False
 
 		except KeyError as e:
-			self.message("Error in adding server data: Error %s" %(str(e)), "error")
+			self.message("Error adding server data. Error: %s" %(str(e)), "error")
 			return False
 
 		return True
@@ -133,30 +131,26 @@ class SNPuppetConnector:
 					if e.response.status_code == 404:
 						# POST request needed as this nic doesn't exist yet.
 						try:
-							self.message("DEBUG: Send POST Request", "debug")
-							self.message("DEBUG: Data=%s"%(str(sn_interface_data)), "debug")
 							response = self.sn.post(self.NETWORK_ADAPTER_TABLE, data=sn_interface_data)
 						except HTTPError as e:
-							self.message("Could not add interface %s. Error: %s" %(interface_name, str(e)), "debug")
+							self.message("Could not add interface %s. Error: %s" %(interface_name, str(e)), "error")
 							return False
 					else:
 						# HTTP Error.
-						self.message("Could not add interface %s. Error: %s" %(interface_name, str(e)), "debug")
+						self.message("Could not add interface %s. Error: %s" %(interface_name, str(e)), "error")
 						return False
 
 				else:
 					# PUT request needed.
 					try:
 						adapter_id = adapter_response["result"][0]["sys_id"]
-						self.message("DEBUG: Send PUT Request to SYS_ID=%s" %(adapter_id), "debug")
-						self.message("DEBUG: Data=%s"%(str(sn_interface_data)), "debug")
 						response = self.sn.put(self.NETWORK_ADAPTER_TABLE, adapter_id, data=sn_interface_data)
 					except HTTPError as e:
-						self.message("Could not add update %s. Error: %s" %(interface_name, str(e)), "debug")
+						self.message("Could not update interface %s. Error: %s" %(interface_name, str(e)), "error")
 						return False
 
 		except KeyError as e:
-			self.message("Error in adding network interfaces: Error %s" %(str(e)), "debug")
+			self.message("Error adding network interfaces. Error: %s" %(str(e)), "error")
 			return False
 
 		return True
@@ -184,8 +178,6 @@ class SNPuppetConnector:
 					if e.response.status_code == 404:
 						# POST request needed as this nic doesn't exist yet.
 						try:
-							self.message("DEBUG: Send POST Request", "debug")
-							self.message("DEBUG: Data=%s"%(str(sn_disk_data)), "debug")
 							response = self.sn.post(self.DISKS_TABLE, data=sn_disk_data)
 						except HTTPError as e:
 							self.message("Could not add disk %s. Error: %s" %(disk_name, str(e)), "error")
@@ -199,14 +191,12 @@ class SNPuppetConnector:
 					# PUT request needed.
 					try:
 						disk_id = disk_response["result"][0]["sys_id"]
-						self.message("DEBUG: Send PUT Request to SYS_ID=%s" %(disk_id), "debug")
-						self.message("DEBUG: Data=%s"%(str(sn_disk_data)), "debug")
 						response = self.sn.put(self.DISKS_TABLE, disk_id, data=sn_disk_data)
 					except HTTPError as e:
-						self.message("Could not add update %s. Error: %s" %(disk_name, str(e)), "error")
+						self.message("Could not update disk %s. Error: %s" %(disk_name, str(e)), "error")
 						return False
 		except KeyError:
-			self.message("Error in adding disks: Error %s" %(str(e)), "error")
+			self.message("Error adding disks. Error: %s" %(str(e)), "error")
 			return False
 
 		return True
@@ -238,8 +228,6 @@ class SNPuppetConnector:
 					if e.response.status_code == 404:
 						# POST request needed as this nic doesn't exist yet.
 						try:
-							self.message("DEBUG: Send POST Request", "debug")
-							self.message("DEBUG: Data=%s"%(str(sn_mountpoint_data)), "debug")
 							response = self.sn.post(self.FILESYSTEMS_TABLE, data=sn_mountpoint_data)
 						except HTTPError as e:
 							self.message("Could not add mountpoint %s. Error: %s" %(mountpoint_name, str(e)), "error")
@@ -253,14 +241,12 @@ class SNPuppetConnector:
 					# PUT request needed.
 					try:
 						mountpoint_id = mountpoint_response["result"][0]["sys_id"]
-						self.message("DEBUG: Send PUT Request to SYS_ID=%s" %(mountpoint_id), "debug")
-						self.message("DEBUG: Data=%s"%(str(sn_mountpoint_data)), "debug")
 						response = self.sn.put(self.FILESYSTEMS_TABLE, mountpoint_id, data=sn_mountpoint_data)
 					except HTTPError as e:
-						self.message("Could not add update %s. Error: %s" %(mountpoint_name, str(e)), "error")
+						self.message("Could not update mountpoint %s. Error: %s" %(mountpoint_name, str(e)), "error")
 						return False
 		except KeyError:
-			self.message("Error in adding mountpoints: Error %s" %(str(e)), "error")
+			self.message("Error adding mountpoints. Error: %s" %(str(e)), "error")
 			return False
 
 		return True
