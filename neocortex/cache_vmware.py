@@ -31,6 +31,9 @@ def run(helper, options):
 		tdb = helper.db_connect()
 		curd = tdb.cursor(mysql.cursors.DictCursor)
 
+		# Create a list for instances that were successful
+		successful_instances = []
+
 		# Create dictionaries for VM data
 		vm_data = {}
 		dcs = {}
@@ -47,153 +50,163 @@ def run(helper, options):
 			instance = helper.config['VMWARE'][key]
 
 			helper.event("vmware_connect", "Connecting to VMware instance " + instance['hostname'])
-			si = helper.lib.vmware_smartconnect(key)	
-			content = si.RetrieveContent()
-			helper.end_event(description="Connected to instance " + instance['hostname'])
+			try:
+				si = helper.lib.vmware_smartconnect(key)
+				content = si.RetrieveContent()
+			except Exception as e:
+				helper.end_event(description="Failed to connect to instance " + instance['hostname'], success=False)
+				continue
+			else:
+				helper.end_event(description="Connected to instance " + instance['hostname'])
 
-			# If the task options don't say to skip VM information
-			if not skip_vms:
-				vm_properties = ["name", "config.uuid", "config.hardware.numCPU",
-						 "config.hardware.memoryMB", "runtime.powerState",
-						 "config.guestFullName", "config.guestId",
-						 "config.version", "guest.hostName", "guest.ipAddress", 
-						 "config.annotation", "resourcePool", "guest.toolsRunningStatus", 
-						 "guest.toolsVersionStatus2", "config.template"]
+				# Add the instance hostname to the successful instances.
+				successful_instances.append(instance["hostname"])
 
-				## List VMs ##########
-				helper.event("vmware_cache_vm", "Downloading virtual machine information from " + instance['hostname'])
+				# If the task options don't say to skip VM information
+				if not skip_vms:
+					vm_properties = ["name", "config.uuid", "config.hardware.numCPU",
+							 "config.hardware.memoryMB", "runtime.powerState",
+							 "config.guestFullName", "config.guestId",
+							 "config.version", "guest.hostName", "guest.ipAddress", 
+							 "config.annotation", "resourcePool", "guest.toolsRunningStatus", 
+							 "guest.toolsVersionStatus2", "config.template"]
 
-				# Get the root of the VMware containers, and search for virtual machines
-				root_folder = si.content.rootFolder
-				view = helper.lib.vmware_get_container_view(si, obj_type=[vim.VirtualMachine])
+					## List VMs ##########
+					helper.event("vmware_cache_vm", "Downloading virtual machine information from " + instance['hostname'])
 
-				# Collect a subset of data on all VMs
-				vm_data_proxy = helper.lib.vmware_collect_properties(si, view_ref=view,
-								  obj_type=vim.VirtualMachine,
-								  path_set=vm_properties,
-								  include_mors=True)
+					# Get the root of the VMware containers, and search for virtual machines
+					root_folder = si.content.rootFolder
+					view = helper.lib.vmware_get_container_view(si, obj_type=[vim.VirtualMachine])
 
-				# Start a vm_data section for this vCenter
-				vm_data[key] = {}
+					# Collect a subset of data on all VMs
+					vm_data_proxy = helper.lib.vmware_collect_properties(si, view_ref=view,
+									  obj_type=vim.VirtualMachine,
+									  path_set=vm_properties,
+									  include_mors=True)
 
-				# Copy data from the proxy that pyVmomi returns to a non-proxied dictionary
-				for vm in vm_data_proxy:
+					# Start a vm_data section for this vCenter
+					vm_data[key] = {}
+
+					# Copy data from the proxy that pyVmomi returns to a non-proxied dictionary
+					for vm in vm_data_proxy:
+						# Get the managed object reference
+						moId = vm['obj']._moId
+
+						# Ensure we have a config.uuid (it's kind of essential...)
+						if 'config.uuid' not in vm:
+							# If we don't, ignore this VM
+							continue
+
+						# Start a vm_data section for this vm
+						vm_data[key][moId] = {}
+
+						# Put in the resource pool name rather than a Managed Object
+						if 'resourcePool' in vm:
+							vm_data[key][moId]['cluster'] = vm['resourcePool'].owner.name
+						else:
+							vm_data[key][moId]['cluster'] = 'None'
+
+						# Store moId
+						vm_data[key][moId]['_moId'] = moId
+
+						# Store attributes for the VM
+						for attr in ['name', 'config.uuid', 'config.hardware.numCPU', 'config.hardware.memoryMB', 'runtime.powerState', 'config.guestFullName', 'config.guestId', 'config.version', 'guest.hostName', 'guest.ipAddress', 'config.annotation', 'guest.toolsRunningStatus', 'guest.toolsVersionStatus2', 'config.template']:
+							if attr in vm:
+								vm_data[key][moId][attr] = vm[attr]
+							else:
+								# Put in blank strings for data we don't have
+								vm_data[key][moId][attr] = ''
+
+
+					# Finish the event
+					helper.end_event(description="Downloaded virtual machine information for " + instance['hostname'])
+			
+				## List DCs ##########
+				helper.event("vmware_cache_dc", "Downloading datacenter and folder information from " + instance['hostname'])
+				dcs[key] = helper.lib.vmware_get_objects(content, [vim.Datacenter])
+
+				for datacenter in dcs[key]:
+					folders[datacenter._moId] = []
+					recurse_folder(datacenter.vmFolder,folders[datacenter._moId])
+
+				helper.end_event(description="Downloaded datacenter and folder information for " + instance['hostname'])
+
+				## List clusters ##########
+				helper.event("vmware_cache_cluster", "Downloading cluster information from " + instance['hostname'])
+				clusters_proxy = helper.lib.vmware_get_objects(content, [vim.ClusterComputeResource])
+				clusters[key] = {}
+				for cluster in clusters_proxy:
 					# Get the managed object reference
-					moId = vm['obj']._moId
+					moId = cluster._moId
 
-					# Ensure we have a config.uuid (it's kind of essential...)
-					if 'config.uuid' not in vm:
-						# If we don't, ignore this VM
-						continue
+					# Start a section for this cluster
+					clusters[key][moId] = {}
 
-					# Start a vm_data section for this vm
-					vm_data[key][moId] = {}
+					## Recurse up to find the data center
+					parent = cluster.parent
+					found = False
 
-					# Put in the resource pool name rather than a Managed Object
-					if 'resourcePool' in vm:
-						vm_data[key][moId]['cluster'] = vm['resourcePool'].owner.name
-					else:
-						vm_data[key][moId]['cluster'] = 'None'
+					# Loop until we find the data center
+					while not found:
+						try:
+							# If we've got a Datacenter object as the parent
+							# then we've foudn what we're looking for
+							if isinstance(parent, vim.Datacenter):
+								clusterdc = parent._moId
+								found = True
+							else:
+								# Recurse to parent
+								parent = parent.parent
+						except Exception as ex:
+							clusterdc = "Unknown"
+							break
 
-					# Store moId
-					vm_data[key][moId]['_moId'] = moId
+					# Calculate cluster statistics
+					total_ram   = 0
+					total_cores = 0
+					total_hz    = 0
+					total_cpu_usage = 0
+					total_ram_usage = 0
 
-					# Store attributes for the VM
-					for attr in ['name', 'config.uuid', 'config.hardware.numCPU', 'config.hardware.memoryMB', 'runtime.powerState', 'config.guestFullName', 'config.guestId', 'config.version', 'guest.hostName', 'guest.ipAddress', 'config.annotation', 'guest.toolsRunningStatus', 'guest.toolsVersionStatus2', 'config.template']:
-						if attr in vm:
-							vm_data[key][moId][attr] = vm[attr]
-						else:
-							# Put in blank strings for data we don't have
-							vm_data[key][moId][attr] = ''
+					# We check for Nones here for hosts that are in maintenance mode, which return
+					# None rather than 0.
+					for host in cluster.host:
+						if host.hardware.memorySize is not None:
+							total_ram = total_ram + host.hardware.memorySize
+						if host.hardware.cpuInfo.numCpuCores is not None:
+							total_cores = total_cores + host.hardware.cpuInfo.numCpuCores
+						if host.hardware.cpuInfo.hz is not None:
+							total_hz = total_hz + host.hardware.cpuInfo.hz
+						if host.summary.quickStats.overallCpuUsage is not None:
+							total_cpu_usage = total_cpu_usage + host.summary.quickStats.overallCpuUsage
+						if host.summary.quickStats.overallMemoryUsage is not None:
+							total_ram_usage = total_ram_usage + host.summary.quickStats.overallMemoryUsage
 
-
-				# Finish the event
-				helper.end_event(description="Downloaded virtual machine information for " + instance['hostname'])
-		
-			## List DCs ##########
-			helper.event("vmware_cache_dc", "Downloading datacenter and folder information from " + instance['hostname'])
-			dcs[key] = helper.lib.vmware_get_objects(content, [vim.Datacenter])
-
-			for datacenter in dcs[key]:
-				folders[datacenter._moId] = []
-				recurse_folder(datacenter.vmFolder,folders[datacenter._moId])
-
-			helper.end_event(description="Downloaded datacenter and folder information for " + instance['hostname'])
-
-			## List clusters ##########
-			helper.event("vmware_cache_cluster", "Downloading cluster information from " + instance['hostname'])
-			clusters_proxy = helper.lib.vmware_get_objects(content, [vim.ClusterComputeResource])
-			clusters[key] = {}
-			for cluster in clusters_proxy:
-				# Get the managed object reference
-				moId = cluster._moId
-
-				# Start a section for this cluster
-				clusters[key][moId] = {}
-
-				## Recurse up to find the data center
-				parent = cluster.parent
-				found = False
-
-				# Loop until we find the data center
-				while not found:
-					try:
-						# If we've got a Datacenter object as the parent
-						# then we've foudn what we're looking for
-						if isinstance(parent, vim.Datacenter):
-							clusterdc = parent._moId
-							found = True
-						else:
-							# Recurse to parent
-							parent = parent.parent
-					except Exception as ex:
-						clusterdc = "Unknown"
-						break
-
-				# Calculate cluster statistics
-				total_ram   = 0
-				total_cores = 0
-				total_hz    = 0
-				total_cpu_usage = 0
-				total_ram_usage = 0
-
-				# We check for Nones here for hosts that are in maintenance mode, which return
-				# None rather than 0.
-				for host in cluster.host:
-					if host.hardware.memorySize is not None:
-						total_ram = total_ram + host.hardware.memorySize
-					if host.hardware.cpuInfo.numCpuCores is not None:
-						total_cores = total_cores + host.hardware.cpuInfo.numCpuCores
-					if host.hardware.cpuInfo.hz is not None:
-						total_hz = total_hz + host.hardware.cpuInfo.hz
-					if host.summary.quickStats.overallCpuUsage is not None:
-						total_cpu_usage = total_cpu_usage + host.summary.quickStats.overallCpuUsage
-					if host.summary.quickStats.overallMemoryUsage is not None:
-						total_ram_usage = total_ram_usage + host.summary.quickStats.overallMemoryUsage
-
-				# Put in our data
-				clusters[key][moId]['_moId'] = moId
-				clusters[key][moId]['name'] = cluster.name
-				clusters[key][moId]['dc'] = clusterdc
-				clusters[key][moId]['total_ram'] = total_ram
-				clusters[key][moId]['total_cores'] = total_cores
-				clusters[key][moId]['total_hz'] = total_hz
-				clusters[key][moId]['total_cpu_usage'] = total_cpu_usage
-				clusters[key][moId]['total_ram_usage'] = total_ram_usage
-				clusters[key][moId]['host_count'] = len(cluster.host)
+					# Put in our data
+					clusters[key][moId]['_moId'] = moId
+					clusters[key][moId]['name'] = cluster.name
+					clusters[key][moId]['dc'] = clusterdc
+					clusters[key][moId]['total_ram'] = total_ram
+					clusters[key][moId]['total_cores'] = total_cores
+					clusters[key][moId]['total_hz'] = total_hz
+					clusters[key][moId]['total_cpu_usage'] = total_cpu_usage
+					clusters[key][moId]['total_ram_usage'] = total_ram_usage
+					clusters[key][moId]['host_count'] = len(cluster.host)
 
 		# Note: We delete the cache from the database after downloading all the data, so 
 		# as to not lock the table and have it empty whilst the job is running
 
 		## Delete existing data from database
-		helper.event("delete_cache", "Deleting existing cache")
-		curd.execute("START TRANSACTION")
-		curd.execute("DELETE FROM `vmware_cache_clusters`")
-		curd.execute("DELETE FROM `vmware_cache_datacenters`")
-		curd.execute("DELETE FROM `vmware_cache_folders`")
-		if not skip_vms:
-			curd.execute("DELETE FROM `vmware_cache_vm`")
-		helper.end_event(description="Deleted existing cache")
+		# Only delete where the instance was successfully connected.
+		for instance_hostname in successful_instances:
+			helper.event("delete_cache", "Deleting existing cache for instance " + instance_hostname)
+			curd.execute("START TRANSACTION")
+			curd.execute("DELETE FROM `vmware_cache_clusters` WHERE `vcenter` = %s", (instance_hostname, ))
+			curd.execute("DELETE FROM `vmware_cache_datacenters` WHERE `vcenter` = %s", (instance_hostname, ))
+			curd.execute("DELETE FROM `vmware_cache_folders` WHERE `vcenter` = %s", (instance_hostname, ))
+			if not skip_vms:
+				curd.execute("DELETE FROM `vmware_cache_vm` WHERE `vcenter` = %s", (instance_hostname, ))
+			helper.end_event(description="Deleted existing cache for instance " + instance_hostname)
 
 		# Statistics gathering setup
 		stats_vms = 0
@@ -207,50 +220,53 @@ def run(helper, options):
 			# Get the hostname
 			instance = helper.config['VMWARE'][key]
 
-			# Start the event
-			helper.event("vmware_cache_data", "Caching downloaded data from " + instance['hostname'])
+			# Check that this instance was successful
+			if instance["hostname"] in successful_instances:
 
-			# If the task options doesn't say to skip VM information
-			if not skip_vms:
-				# For each VM
-				for moId in vm_data[key]:
-					# Get the VM
-					vm = vm_data[key][moId]
+				# Start the event
+				helper.event("vmware_cache_data", "Caching downloaded data from " + instance['hostname'])
 
-					# Put the VM in the database
-					curd.execute("INSERT INTO `vmware_cache_vm` (`id`, `vcenter`, `name`, `uuid`, `numCPU`, `memoryMB`, `powerState`, `guestFullName`, `guestId`, `hwVersion`, `hostname`, `ipaddr`, `annotation`, `cluster`, `toolsRunningStatus`, `toolsVersionStatus`, `template`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (vm['_moId'], instance['hostname'], vm['name'], vm['config.uuid'], vm['config.hardware.numCPU'], vm['config.hardware.memoryMB'], vm['runtime.powerState'], vm['config.guestFullName'], vm['config.guestId'], vm['config.version'], vm['guest.hostName'], vm['guest.ipAddress'], vm['config.annotation'], vm['cluster'], vm['guest.toolsRunningStatus'], vm['guest.toolsVersionStatus2'], vm['config.template']))
+				# If the task options doesn't say to skip VM information
+				if not skip_vms:
+					# For each VM
+					for moId in vm_data[key]:
+						# Get the VM
+						vm = vm_data[key][moId]
 
-					# Decide what kind of OS we have and update statistics
-					if vm['config.template'] == 0:
-						ostr = vm['config.guestId']
-						stats_vms += 1
-						if 'win' in ostr:
-							# Check between Windows Server and Desktop
-							if 'winLonghornGuest' in ostr or 'winLonghorn64Guest' in ostr or 'windows7Guest' in ostr or 'windows7_64Guest' in ostr or 'windows8Guest' in ostr or 'windows8_64Guest' in ostr or 'windows9Guest' in ostr or 'windows9_64Guest' in ostr:
-								stats_windesktop += 1
+						# Put the VM in the database
+						curd.execute("INSERT INTO `vmware_cache_vm` (`id`, `vcenter`, `name`, `uuid`, `numCPU`, `memoryMB`, `powerState`, `guestFullName`, `guestId`, `hwVersion`, `hostname`, `ipaddr`, `annotation`, `cluster`, `toolsRunningStatus`, `toolsVersionStatus`, `template`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (vm['_moId'], instance['hostname'], vm['name'], vm['config.uuid'], vm['config.hardware.numCPU'], vm['config.hardware.memoryMB'], vm['runtime.powerState'], vm['config.guestFullName'], vm['config.guestId'], vm['config.version'], vm['guest.hostName'], vm['guest.ipAddress'], vm['config.annotation'], vm['cluster'], vm['guest.toolsRunningStatus'], vm['guest.toolsVersionStatus2'], vm['config.template']))
+
+						# Decide what kind of OS we have and update statistics
+						if vm['config.template'] == 0:
+							ostr = vm['config.guestId']
+							stats_vms += 1
+							if 'win' in ostr:
+								# Check between Windows Server and Desktop
+								if 'winLonghornGuest' in ostr or 'winLonghorn64Guest' in ostr or 'windows7Guest' in ostr or 'windows7_64Guest' in ostr or 'windows8Guest' in ostr or 'windows8_64Guest' in ostr or 'windows9Guest' in ostr or 'windows9_64Guest' in ostr:
+									stats_windesktop += 1
+								else:
+									stats_winserver += 1
+							elif "Linux" in ostr or 'linux' in ostr or 'rhel' in ostr or 'sles' in ostr or 'ubuntu' in ostr or 'centos' in ostr or 'debian' in ostr:
+								stats_linux += 1
 							else:
-								stats_winserver += 1
-						elif "Linux" in ostr or 'linux' in ostr or 'rhel' in ostr or 'sles' in ostr or 'ubuntu' in ostr or 'centos' in ostr or 'debian' in ostr:
-							stats_linux += 1
-						else:
-							stats_other += 1
+								stats_other += 1
 
-			# For each Data Center, put it in the database (and the folders too)
-			for dc in dcs[key]:
-				curd.execute("INSERT INTO `vmware_cache_datacenters` (`id`, `name`, `vcenter`) VALUES (%s, %s, %s)", (dc._moId, dc.name, instance['hostname']))
+				# For each Data Center, put it in the database (and the folders too)
+				for dc in dcs[key]:
+					curd.execute("INSERT INTO `vmware_cache_datacenters` (`id`, `name`, `vcenter`) VALUES (%s, %s, %s)", (dc._moId, dc.name, instance['hostname']))
 
-				for folder in folders[dc._moId]:
-					curd.execute("INSERT INTO `vmware_cache_folders` (`id`, `name`, `vcenter`, `did`, `parent`) VALUES (%s, %s, %s, %s, %s)",(folder['_moId'], folder['name'], instance['hostname'], dc._moId, folder['parent']))
+					for folder in folders[dc._moId]:
+						curd.execute("INSERT INTO `vmware_cache_folders` (`id`, `name`, `vcenter`, `did`, `parent`) VALUES (%s, %s, %s, %s, %s)",(folder['_moId'], folder['name'], instance['hostname'], dc._moId, folder['parent']))
 
-			# For each cluster
-			for moId in clusters[key]:
-				# Get the cluster
-				cluster = clusters[key][moId]
+				# For each cluster
+				for moId in clusters[key]:
+					# Get the cluster
+					cluster = clusters[key][moId]
 
-				# Put the cluster in the database
-				curd.execute("INSERT INTO `vmware_cache_clusters` (`id`, `name`, `vcenter`, `did`, `ram`, `cores`, `cpuhz`, `cpu_usage`, `ram_usage`, `hosts`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (cluster['_moId'], cluster['name'], instance['hostname'], cluster['dc'], cluster['total_ram'], cluster['total_cores'], cluster['total_hz'], cluster['total_cpu_usage'], cluster['total_ram_usage'], cluster['host_count']))
+					# Put the cluster in the database
+					curd.execute("INSERT INTO `vmware_cache_clusters` (`id`, `name`, `vcenter`, `did`, `ram`, `cores`, `cpuhz`, `cpu_usage`, `ram_usage`, `hosts`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (cluster['_moId'], cluster['name'], instance['hostname'], cluster['dc'], cluster['total_ram'], cluster['total_cores'], cluster['total_hz'], cluster['total_cpu_usage'], cluster['total_ram_usage'], cluster['host_count']))
 
-			helper.end_event(description="Cached information from " + instance['hostname'])
+				helper.end_event(description="Cached information from " + instance['hostname'])
 
 		# Update statistics tables
 		helper.event("vmware_stats_update", "Updating statistics")
