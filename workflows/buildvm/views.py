@@ -19,7 +19,7 @@ workflow.add_permission('buildvm.student', 'Create Student VM')
 @workflow.route("sandbox",title='Create Sandbox VM', order=20, permission="buildvm.sandbox", methods=['GET', 'POST'])
 def sandbox():
 	# Get the list of clusters
-	clusters = cortex.lib.core.vmware_list_clusters(workflow.config['SB_VCENTER_TAG'))
+	all_clusters = cortex.lib.core.vmware_list_clusters(workflow.config['SB_VCENTER_TAG'])
 
 	# Exclude any clusters that the config asks to:
 	clusters = []
@@ -32,7 +32,7 @@ def sandbox():
 
 	if request.method == 'GET':
 		## Show form
-		return workflow.render_template("sandbox.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_cluster=workflow.config['SB_DEFAULT_CLUSTER'], default_env='dev', os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'])
+		return workflow.render_template("sandbox.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_cluster=workflow.config['SB_DEFAULT_CLUSTER'], default_env=workflow.config['SB_DEFAULT_ENV'], os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'])
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
@@ -169,7 +169,7 @@ def standard():
 @workflow.route("student", title='Create Student VM', order=30, permission="buildvm.student", methods=['GET', 'POST'])
 def student():
 	# Get the list of clusters
-	clusters = cortex.lib.core.vmware_list_clusters(workflow.config['STU_VCENTER_TAG')
+	clusters = cortex.lib.core.vmware_list_clusters(workflow.config['STU_VCENTER_TAG'])
 
 	# Get the list of environments
 	environments = cortex.lib.core.get_cmdb_environments()
@@ -233,14 +233,14 @@ def student():
 		# Build options to pass to the task
 		options = {}
 		options['workflow'] = 'student'
-		options['sockets'] = 1
-		options['cores'] = 4
-		options['ram'] = 4
-		options['disk'] = 0
+		options['sockets'] = workflow.config['STU_SPEC_SOCKETS']
+		options['cores'] = workflow.config['STU_SPEC_CORES']
+		options['ram'] = workflow.config['STU_SPEC_RAM']
+		options['disk'] = workflow.config['STU_SPEC_DISK']
 		options['template'] = template
 		options['network'] = network
-		options['cluster'] = workflow.confg['STU_CLUSTER']'COBALT'
-		options['env'] = workflow.config['STU_ENV']'prod'
+		options['cluster'] = workflow.confg['STU_CLUSTER']
+		options['env'] = workflow.config['STU_ENV']
 		options['hostname'] = hostname
 		options['purpose'] = purpose
 		options['comments'] = comments
