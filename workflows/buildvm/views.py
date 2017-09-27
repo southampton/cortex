@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 from cortex import app
 from cortex.lib.workflow import CortexWorkflow
@@ -19,21 +19,27 @@ workflow.add_permission('buildvm.student', 'Create Student VM')
 @workflow.route("sandbox",title='Create Sandbox VM', order=20, permission="buildvm.sandbox", methods=['GET', 'POST'])
 def sandbox():
 	# Get the list of clusters
-	clusters = cortex.lib.core.vmware_list_clusters("srv01197")
+	clusters = cortex.lib.core.vmware_list_clusters(workflow.config['SB_VCENTER_TAG'))
+
+	# Exclude any clusters that the config asks to:
+	clusters = []
+	for cluster in all_clusters:
+		if cluster['name'] in workflow.config['SB_CLUSTERS']:
+			clusters.append(cluster)
 
 	# Get the list of environments
 	environments = cortex.lib.core.get_cmdb_environments()
 
 	if request.method == 'GET':
 		## Show form
-		return workflow.render_template("sandbox.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_env='dev', default_cluster='CHARTREUSE', os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'])
+		return workflow.render_template("sandbox.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_cluster=workflow.config['SB_DEFAULT_CLUSTER'], default_env='dev', os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'])
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
 		if 'sockets' not in request.form or 'cores' not in request.form or 'ram' not in request.form or 'disk' not in request.form or 'template' not in request.form or 'environment' not in request.form:
 			flash('You must select options for all questions before creating', 'alert-danger')
 			return redirect(url_for('sandbox'))
-		
+
 		# Form validation
 		try:
 			# Extract all the parameters
@@ -42,7 +48,11 @@ def sandbox():
 			sendmail = 'send_mail' in request.form
 
 			# Validate the data (common between standard / sandbox)
-			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, workflow.config['SB_OS_ORDER'], [e['id'] for e in environments])
+			(sockets, cores, ram, disk, template, cluster, env, expiry) = validate_data(request, workflow.config['SB_OS_ORDER'], [e['id'] for e in environments])
+
+			# Validate cluster against the list we've got
+			if cluster not in [c['name'] for c in clusters]:
+				raise ValueError('Invalid cluster selected')
 
 		except ValueError as e:
 			flash(str(e), 'alert-danger')
@@ -51,7 +61,7 @@ def sandbox():
 		except Exception as e:
 			flash('Submitted data invalid ' + str(e), 'alert-danger')
 			return redirect(url_for('sandbox'))
-				
+
 		# Build options to pass to the task
 		options = {}
 		options['workflow'] = 'sandbox'
@@ -60,8 +70,7 @@ def sandbox():
 		options['ram'] = ram
 		options['disk'] = disk
 		options['template'] = template
-		#options['cluster'] = cluster	## Commenting out whilst we only have one cluster
-		options['cluster'] = 'CHARTREUSE'
+		options['cluster'] = cluster
 		options['env'] = env
 		options['purpose'] = purpose
 		options['comments'] = comments
@@ -82,7 +91,7 @@ def sandbox():
 @workflow.route("standard",title='Create Standard VM', order=10, permission="buildvm.standard", methods=['GET', 'POST'])
 def standard():
 	# Get the list of clusters
-	all_clusters = cortex.lib.core.vmware_list_clusters("srv00080")
+	all_clusters = cortex.lib.core.vmware_list_clusters(workflow.config['VCENTER_TAG'])
 
 	# Exclude any clusters that the config asks to:
 	clusters = []
@@ -126,7 +135,7 @@ def standard():
 		except Exception as e:
 			flash('Submitted data invalid', 'alert-danger')
 			return redirect(url_for('standard'))
-	
+
 		# Build options to pass to the task
 		options = {}
 		options['workflow'] = 'standard'
@@ -160,7 +169,7 @@ def standard():
 @workflow.route("student", title='Create Student VM', order=30, permission="buildvm.student", methods=['GET', 'POST'])
 def student():
 	# Get the list of clusters
-	clusters = cortex.lib.core.vmware_list_clusters("srv00080")
+	clusters = cortex.lib.core.vmware_list_clusters(workflow.config['STU_VCENTER_TAG')
 
 	# Get the list of environments
 	environments = cortex.lib.core.get_cmdb_environments()
@@ -230,8 +239,8 @@ def student():
 		options['disk'] = 0
 		options['template'] = template
 		options['network'] = network
-		options['cluster'] = 'COBALT'
-		options['env'] = 'prod'
+		options['cluster'] = workflow.confg['STU_CLUSTER']'COBALT'
+		options['env'] = workflow.config['STU_ENV']'prod'
 		options['hostname'] = hostname
 		options['purpose'] = purpose
 		options['comments'] = comments
@@ -250,7 +259,7 @@ def student():
 			if tasks_in_progress > 0:
 				flash('You already have a task in progress', 'alert-warning')
 				abort(400)
-			
+
 		except mysql.Error as e:
 			flash('An internal error occurred and your request could not be processed', 'alert-warning')
 			abort(500)
@@ -316,14 +325,14 @@ def validate_data(r, templates, envs):
 	ram = int(ram)
 	if not 2 <= ram <= 32:
 		raise ValueError('Invalid amount of RAM selected')
-	
+
 	disk = int(disk)
 	if not 100 <= disk <= 2000:
 		raise ValueError('Invalid disk capacity selected')
-	
+
 	if template not in templates:
 		raise ValueError('Invalid template selected')
-	
+
 	if env not in envs:
 		raise ValueError('Invalid environment selected')
 
