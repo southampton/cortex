@@ -193,6 +193,10 @@ def run(helper, options):
 					clusters[key][moId]['total_ram_usage'] = total_ram_usage
 					clusters[key][moId]['host_count'] = len(cluster.host)
 
+		# If no vCentres appear in the configuration.
+		else:
+			raise Exception("No vCenters found in configuration")
+
 		# Note: We delete the cache from the database after downloading all the data, so 
 		# as to not lock the table and have it empty whilst the job is running
 
