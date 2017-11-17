@@ -47,7 +47,7 @@ MYSQL_PORT=3306
 CMDB_URL_FORMAT="http://localhost/cmdb/%s"
 
 ## Cortex internal version number
-VERSION='2.0'
+VERSION='3.0'
 
 ## Flask defaults (changed to what we prefer)
 SESSION_COOKIE_SECURE      = False
@@ -133,3 +133,6 @@ RHN5_CERT = "/usr/share/rhn/RHN-ORG-TRUSTED-SSL-CERT"
 RUBRIK_API_URL_BASE = ''
 RUBRIK_API_USER = ''
 RUBRIK_API_PASS = ''
+
+# Puppet Module Documentation Location
+PUPPET_MODULE_DOCS_URL = None

@@ -113,9 +113,9 @@ $(document).ready(function()
 <div class="row">
 	<div class="col-md-9">
 		<div class="panel panel-default">
-			<div class="panel-heading">Puppet Classes</div>
+			<div class="panel-heading">Puppet Classes{% if config['PUPPET_MODULE_DOCS_URL'] %}<div class="pull-right"><a href="{{ config['PUPPET_MODULE_DOCS_URL'] }}"><i class="fa fa-question-circle"></i> Module Help</a></div>{% endif %}</div>
 			<div class="panel-body" style="padding:0px">
-				<textarea id="classes" name="classes" placeholder="Classess to include can be entered here">{{ system.puppet_classes or '' }}</textarea>
+				<textarea id="classes" name="classes" placeholder="Classes to include can be entered here">{{ system.puppet_classes or '' }}</textarea>
 			</div>
 		</div>
 
@@ -134,12 +134,13 @@ $(document).ready(function()
 		<div class="panel panel-default">
 			<div class="panel-heading">Help</div>
 			<div class="panel-body">
-				<p>Use the <strong>Classes</strong> field to define the classes that this node will import. You can also
-				define parameters for the classes. Nodes will also import classes configured in groups and the default node configuration.</p>
+				<p>Use the <strong>Classes</strong> field to define the classes that this node will import, along with the parameters
+				for the classes. Nodes will also import classes configured in groups and the default node configuration. You cannot
+				specify <a href="https://puppet.com/docs/puppet/latest/lang_resources.html">resources</a> here.</p>
 				<p>Use the <strong>Global Variables</strong> field to define the global puppet variables that will be sent to all the
 				classes imported by this node. Groups and the default node configuration cannot set global variables - only this field can.</p>
-				<p>The format of this field is <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a>. Use two spaces for indentation. Do not use tabs, but you can safely
-					press the tab key within the editor (it will enter 2 spaces for you).</p>
+				<p>The format of this field is <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a>. Use two spaces for 
+				indentation. Do not use tabs, but you can safely press the tab key within the editor (it will enter 2 spaces for you).</p>
 				<div class="text-center">
 					<a href="{{url_for('puppet_help')}}" target="_blank" class="btn btn-success">Find out more</a>
 				</div>
