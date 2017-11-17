@@ -358,7 +358,6 @@ def systems_new():
 ################################################################################
 
 class Backup(MethodView):
-
 	def __init__(self):
 		self.rubrik = cortex.lib.rubrik.Rubrik()
 
@@ -377,12 +376,20 @@ class Backup(MethodView):
 		try:
 			vm = self.rubrik.get_vm(system['name'])
 		except:
-			raise
 			abort(500)
 
+		# If the VM was not found, return early
+		if vm is None:
+			return render_template('systems/backup.html', system=system, vm=None, title=system['name'])
+
+		# Get the list of all SLA Domains
 		sla_domains = self.rubrik.get_sla_domains()
+
+		# Get the SLA Domains and Snapshots for the VM
 		vm['effectiveSlaDomain'] = next((sla_domain for sla_domain in sla_domains['data'] if sla_domain['id'] == vm['effectiveSlaDomainId']), 'unknown')
 		vm['snapshots'] = self.rubrik.get_vm_snapshots(vm['id'])
+
+		# Try to limit to the most recent 10, ignoring the error if there are less
 		try:
 			vm['snapshots']['data'] = vm['snapshots']['data'][:10]
 		except (KeyError,):
@@ -390,6 +397,7 @@ class Backup(MethodView):
 
 		return render_template('systems/backup.html', system=system, sla_domains=sla_domains,
 				vm=vm, title=system['name'])
+
 	@cortex.lib.user.login_required
 	def post(self, id):
 		if not does_user_have_system_permission(id,"view","systems.all.view"):
@@ -404,8 +412,8 @@ class Backup(MethodView):
 			vm = self.rubrik.get_vm(system['name'])
 		except:
 			abort(500)
-		self.rubrik.update_vm(vm['id'], {'configuredSlaDomainId':
-			request.form.get('sla_domain')})
+
+		self.rubrik.update_vm(vm['id'], {'configuredSlaDomainId': request.form.get('sla_domain')})
 
 		return self.get(id)
 

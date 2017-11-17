@@ -78,6 +78,7 @@ tr > td:first-child {
 			<div class="panel-body network-body">
 				{% if system.vmware_uuid %}
 				<div class="row">
+					<div class="col-md-12" id="network_loading">Loading...</div>
 					<div class="col-md-6">
 						<table class="table" id="net_table">
 						</table>
@@ -96,14 +97,14 @@ tr > td:first-child {
 	<div class="col-md-3">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title">Power control</h3>
+				<h3 class="panel-title">Power Control</h3>
 			</div>
 			<div class="panel-body">
 				{% if system.vmware_uuid %}
 				{#<p><span class="fa fa-info"></span> You can control the power state of the system should it become unresponsive. To avoid losing data, graceful shutdowns should be issued by logging into the system.</p>#}
-				<table class="table">
-					<tr><td>Power State:</td><td class="power_state"></td></tr>
-				</table>
+				<div class="text-center" style="margin:0.5em">
+					<label class="control-label" style="margin-right:0.5em">Power State:</label><span class="power_state">Loading...</span>
+				</div>
 				<div class="center-block" style="text-align:center">
 					{%- if power_ctl_perm %}
 					<button data-toggle="modal" data-target="#powerOnModal" title="Power on the system" class="btn btn-lg btn-success" style="width:60%;"><span class="fa fa-play" style="margin-right:6px"></span>Power on</button>
@@ -367,6 +368,7 @@ function update_data(data) {
 		$('.warn-pwr-off').hide();
 	}
 
+	$('#network_loading').css('display', 'none');
 	$('#net_table').empty();
 	{#Hostname#}
 	$('#net_table').append(
@@ -425,7 +427,7 @@ function update_data(data) {
 	for (resolver in data.dns_resolvers){
 		$('#dns_table').append(
 			$('<tr>', {class: 'dns_resolver'}).append(
-				$('<td>').text(resolver == 0 ? 'DNS resolvers' : ''),
+				$('<td>').text(resolver == 0 ? 'DNS resolvers:' : ''),
 				$('<td>').text(data.dns_resolvers[resolver])
 			)
 		);

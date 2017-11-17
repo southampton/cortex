@@ -64,8 +64,12 @@ class Rubrik(object):
         """
         try:
             #try to get the only vm in the response
-            return self.get_request('vmware/vm', {'name': quote(name), 'limit':
+            try:
+                return self.get_request('vmware/vm', {'name': quote(name), 'limit':
             1})['data'][0]
+            except IndexError:
+                # In the event the system is not found
+                return None
         except KeyError:
             raise Exception('VM not found')
 
