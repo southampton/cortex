@@ -50,7 +50,7 @@ CMDB ID:       %s - %s
 		except Execption as e:
 			pass
 
-	helper.event('check_expire_mail', 'Sending warning e-mail for expired systems ')
+	helper.event('check_expire_mail', 'Sending warning e-mail for expired systems')
 	for addr in helper.config['SYSTEM_EXPIRE_NOTIFY_EMAILS']:
 		helper.lib.send_email(addr, 'Systems expiration warning: ' + str(len(systems)) + ' system(s) will expire in the next 28 days', message)
 	helper.end_event(description="Sent warning e-mail for expired systems")

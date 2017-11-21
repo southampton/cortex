@@ -71,7 +71,7 @@ def run(helper, options):
 	if failed_records == 0:
 		helper.end_event(description='Cached ' + str(total_records) + ' records')
 	else:
-		helper.end_event(description='Cached ' + str(total_records - failed_records) + ' out of ' + str(total_records) + ' records', success=False)
+		helper.end_event(description='Cached ' + str(total_records - failed_records) + ' out of ' + str(total_records) + ' records', success=True, warning=True)
 
 	# Commit to database
 	helper.event('servicenow_cache_ci', 'Saving cache to disk')

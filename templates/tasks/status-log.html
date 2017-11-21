@@ -3,6 +3,7 @@
 {%- if task.status == 0 %} is currently <strong id="taskStatus" data-taskstatus="0" style="color:#22c">in progress</strong>{% endif -%}
 {%- if task.status == 1 %} <strong id="taskStatus" data-taskstatus="1" style="color:#2c2">succeeded</strong>{% endif -%}
 {%- if task.status == 2 %} <strong id="taskStatus" data-taskstatus="2" style="color:#c22">failed</strong>{% endif -%}
+{%- if task.status == 3 %} <strong id="taskStatus" data-taskstatus="3" style="color:#ca2">finished with warnings</strong>{% endif -%}
 . The event log for the task is shown below:</p>
 
 {#- Print task started event #}
@@ -10,7 +11,7 @@
 <p class="event"><i class="fa fa-fw fa-arrow-right"></i> Task started by {{ task.username }} at {{ task.start }}</p>
 {% endif -%}
 {% for event in events -%}
-<p class="event"><i class="fa fa-fw {% if event.status == 0 %}fa-spin fa-refresh{% elif event.status == 1 %}fa-check{% elif event.status == 2 %}fa-times{% endif %}"></i>  {{ event.desc }}</p>
+<p class="event"><i class="fa fa-fw {% if event.status == 0 %}fa-spin fa-refresh{% elif event.status == 1 %}fa-check{% elif event.status == 2 %}fa-times{% elif event.status == 3 %}fa-exclamation{% endif %}"></i>  {{ event.desc }}</p>
 {% endfor -%}
 {% if task.end -%}
 <p class="event"><i class="fa fa-fw fa-arrow-right"></i> Task ended at {{ task.end }}. Elapsed Time: {{ task.end - task.start }}</p>

@@ -45,7 +45,7 @@ The list below shows all past and present system-started tasks
 			<td>{{ task.end or '' }}</td>
 			<td>{% if task.start and task.end %}{{ task.end - task.start }}{% endif %}</td>
 			<td>{{ task.username }}</td>
-			<td>{% if task.status == 0 %}<span style="color:#22c">In Progress</span>{% elif task.status == 1 %}<span style="color:#2c2">Succeeded</span>{% elif task.status == 2 %}<span style="color:#c22">Failed</span>{% else %}Unknown{% endif %}</td>
+			<td>{% if task.status == 0 %}<span style="color:#22c">In Progress</span>{% elif task.status == 1 %}<span style="color:#2c2">Succeeded</span>{% elif task.status == 2 %}<span style="color:#c22">Failed</span>{% elif task.status == 3 %}<span style="color:#c82">Warnings</span>{% else %}Unknown{% endif %}</td>
 			<td><a class="btn btn-xs btn-default" href="{{ url_for('task_status', id=task.id) }}"><i class="fa fa-fw fa-info"></i> Details</a></td>
 		</tr>
 {%- endfor %}
@@ -71,6 +71,7 @@ The list below shows all past and present system-started tasks
 			if      (data[6] == 0) { $('td:eq(6)', row).html('<span style="color:#22c">In Progress</span>'); }
 			else if (data[6] == 1) { $('td:eq(6)', row).html('<span style="color:#2c2">Succeeded</span>'); }
 			else if (data[6] == 2) { $('td:eq(6)', row).html('<span style="color:#c22">Failed</span>'); }
+			else if (data[6] == 3) { $('td:eq(6)', row).html('<span style="color:#c82">Warnings</span>'); }
 			else                   { $('td:eq(6)', row).html('Unknown'); }
 			$('td:eq(7)', row).html('<a class="btn btn-xs btn-default" href="/task/status/' + data[0] + '"><i class="fa fa-fw fa-info"></i> Details</a>');
 		}

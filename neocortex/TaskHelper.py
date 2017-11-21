@@ -15,14 +15,25 @@ from corpus import Corpus
 
 class TaskHelper(object):
 
+	# Task / Event statuses
+	STATUS_PROGRESS = 0
+	STATUS_SUCCESS = 1
+	STATUS_FAILED = 2
+	STATUS_WARNED = 3
+	
 	def __init__(self, config, workflow_name, task_id, username):
-		self.config        = config
-		self.workflow_name = workflow_name
-		self.task_id       = task_id
-		self.username      = username
-		self.event_id      = -1
+		"""Initialises the TaskHelper object"""
+
+		self.config         = config
+		self.workflow_name  = workflow_name
+		self.task_id        = task_id
+		self.username       = username
+		self.event_id       = -1
+		self.event_problems = 0
 
 	def _signal_handler(self, signal, frame):
+		"""Marks task and event as failed when interrupted by a signal, and then exits"""
+
 		syslog.syslog('task id ' + str(self.task_id) + ' caught exit signal')
 
 		self.end_event(success=False)
@@ -33,6 +44,9 @@ class TaskHelper(object):
 		sys.exit(0)
 
 	def run(self, task_module, options):
+		"""Runs the task, passing this object to the task to provide access to
+		library routines and configuration options. Handles task closures and
+		SIGINT/SIGTERM signals ending tasks prematurely."""
 
 		## Set up signal handlers to mark the task as error'ed
 		signal.signal(signal.SIGTERM, self._signal_handler)
@@ -59,24 +73,32 @@ class TaskHelper(object):
 			self._end_task(success=False)
 
 	def db_connect(self):
+		"""Returns a connection to the Cortex database"""
+
 		return mysql.connect(self.config['MYSQL_HOST'], self.config['MYSQL_USER'], self.config['MYSQL_PASS'], self.config['MYSQL_NAME'], charset='utf8')
 
 	def _log_exception(self, ex):
+		"""Logs an exception into the events for this task"""
+
 		exception_type = str(type(ex).__name__)
 		exception_message = str(ex)
-		self.curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, 2, NOW(), NOW())", 
-			('neocortex.task',self.task_id, self.workflow_name + "." + 'exception', self.username, "The task failed because an exception was raised: " + exception_type + " - " + exception_message))
+		self.curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())", 
+			('neocortex.task',self.task_id, self.workflow_name + "." + 'exception', self.username, "The task failed because an exception was raised: " + exception_type + " - " + exception_message, self.STATUS_FAILED))
 		self.db.commit()
 
 	def _log_fatal_error(self, message):
-		self.curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, 2, NOW(), NOW())", 
-			('neocortex.task',self.task_id, self.workflow_name + "." + 'exception', self.username, message))
+		"""Logs a fatal error into the events for this task"""
+
+		self.curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())", 
+			('neocortex.task',self.task_id, self.workflow_name + "." + 'exception', self.username, message, self.STATUS_FAILED))
 		self.db.commit()
 
-	def event(self, name, description, success=True, oneshot=False):
+	def event(self, name, description, success=True, oneshot=False, warning=False):
+		"""Starts a new event within the tasks, closing an existing one if there was one"""
+
 		# Handle closing an existing event if there is still one
 		if self.event_id != -1:
-			self.end_event(success)
+			self.end_event(success=success, warning=warning)
 
 		name = self.workflow_name + "." + name
 		self.curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `start`) VALUES (%s, %s, %s, %s, %s, NOW())", ('neocortex.task', self.task_id, name, self.username, description))
@@ -84,11 +106,13 @@ class TaskHelper(object):
 		self.event_id = self.curd.lastrowid
 
 		if oneshot:
-			self.end_event(success=success)
+			self.end_event(success=success, warning=warning)
 
 		return True
 
 	def update_event(self, description):
+		"""Updates the description of the currently running event"""
+
 		if self.event_id == -1:
 			return False
 
@@ -97,7 +121,9 @@ class TaskHelper(object):
 
 		return True
 
-	def end_event(self, success=True, description=None):
+	def end_event(self, success=True, description=None, warning=False):
+		"""Ends the currently running event, updating it's description and status as necessaru"""
+
 		if self.event_id == -1:
 			return False
 
@@ -105,9 +131,16 @@ class TaskHelper(object):
 			self.update_event(description)
 
 		if success:
-			status = 1
+			if warning:
+				# Keep count of events with warnings/failures
+				self.event_problems += 1
+				status = self.STATUS_WARNED
+			else:
+				status = self.STATUS_SUCCESS
 		else:
-			status = 2 
+			# Keep count of events with warnings/failures
+			self.event_problems += 1
+			status = self.STATUS_FAILED
 
 		self.curd.execute("UPDATE `events` SET `status` = %s, `end` = NOW() WHERE `id` = %s", (status, self.event_id))
 		self.db.commit()
@@ -116,14 +149,29 @@ class TaskHelper(object):
 		return True
 
 	def _end_task(self, success=True):
+		"""End the tasks, updaing it's status as appropriate. If any events within the
+		task failed, this will mark the tasks as finishing with warnings even if the
+		task succeeds"""
+
 		# Handle closing an existing event if there is still one
 		if self.event_id != -1:
 			self.end_event(success)
 
 		if success:
-			status = 1
+			# If we had one or more task event failures, then end the task
+			# with warnings rather than a complete success
+			if self.event_problems > 0:
+				status = self.STATUS_WARNED
+			else:
+				status = self.STATUS_SUCCESS
 		else:
-			status = 2 
+			status = self.STATUS_FAILED
 
 		self.curd.execute("UPDATE `tasks` SET `status` = %s, `end` = NOW() WHERE `id` = %s", (status, self.task_id))
 		self.db.commit()
+		self.event_problems = 0
+
+	def get_problem_count(self):
+		"""Returns the number of events within the task that have failed or finished with warnings."""
+
+		return self.event_problems
