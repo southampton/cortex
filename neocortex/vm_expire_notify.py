@@ -47,7 +47,7 @@ CMDB ID:       %s - %s
 
 """ % (system['name'],system_link,system['expiry_date'], system_status,system['vmware_os'], system['allocation_comment'], system['cmdb_description'], system['cmdb_environment'], system['cmdb_u_number'], cmdb_link)
 
-		except Execption as e:
+		except Exception as e:
 			pass
 
 	helper.event('check_expire_mail', 'Sending warning e-mail for expired systems')
