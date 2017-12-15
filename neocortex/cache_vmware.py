@@ -6,6 +6,17 @@ import sys
 from pyVmomi import vim
 from pyVmomi import vmodl
 import time
+import signal
+
+def sigalrm_handler(signum, frame):
+	"""
+	Handles the SIGALRM signal, which we use to interrupt a read should it 
+	take a long time. This prevents this task from never completing and 
+	never getting killed.
+	"""
+	
+	# Raise an exception, which should interrupt and terminate
+	raise Exception("Timed out when communicating with vCenter")
 
 def run(helper, options):
 	"""
@@ -30,6 +41,17 @@ def run(helper, options):
 		## whilst this big mysql transaction goes on
 		tdb = helper.db_connect()
 		curd = tdb.cursor(mysql.cursors.DictCursor)
+
+		# Grab the timeout value from our configuration, or defaulting to
+		# an hour if none exists
+		if 'VMWARE_CACHE_UPDATE_TIMEOUT' in helper.config:
+			timeout_alarm = int(helper.config['VMWARE_CACHE_UPDATE_TIMEOUT'])
+		else:
+			timeout_alarm = 3600
+
+		# Set up the signal handler for SIGALRM to interrupt reads (as
+		# PyVmomi doesn't appear to have a proper timeout on it's reads)
+		signal.signal(signal.SIGALRM, sigalrm_handler)
 
 		# Create a list for instances that were successful
 		successful_instances = []
@@ -79,6 +101,7 @@ def run(helper, options):
 					view = helper.lib.vmware_get_container_view(si, obj_type=[vim.VirtualMachine])
 
 					# Collect a subset of data on all VMs
+					signal.alarm(timeout_alarm)
 					vm_data_proxy = helper.lib.vmware_collect_properties(si, view_ref=view,
 									  obj_type=vim.VirtualMachine,
 									  path_set=vm_properties,
@@ -119,20 +142,24 @@ def run(helper, options):
 
 
 					# Finish the event
+					signal.alarm(0)
 					helper.end_event(description="Downloaded virtual machine information for " + instance['hostname'])
 
 				## List DCs ##########
 				helper.event("vmware_cache_dc", "Downloading datacenter and folder information from " + instance['hostname'])
+				signal.alarm(timeout_alarm)
 				dcs[key] = helper.lib.vmware_get_objects(content, [vim.Datacenter])
 
 				for datacenter in dcs[key]:
 					folders[datacenter._moId] = []
 					recurse_folder(datacenter.vmFolder,folders[datacenter._moId])
 
+				signal.alarm(0)
 				helper.end_event(description="Downloaded datacenter and folder information for " + instance['hostname'])
 
 				## List clusters ##########
 				helper.event("vmware_cache_cluster", "Downloading cluster information from " + instance['hostname'])
+				signal.alarm(timeout_alarm)
 				clusters_proxy = helper.lib.vmware_get_objects(content, [vim.ClusterComputeResource])
 				clusters[key] = {}
 				for cluster in clusters_proxy:
@@ -192,6 +219,10 @@ def run(helper, options):
 					clusters[key][moId]['total_cpu_usage'] = total_cpu_usage
 					clusters[key][moId]['total_ram_usage'] = total_ram_usage
 					clusters[key][moId]['host_count'] = len(cluster.host)
+
+				# Finish the event
+				signal.alarm(0)
+				helper.end_event(description="Downloaded cluster machine information for " + instance['hostname'])
 
 		# Note: We delete the cache from the database after downloading all the data, so 
 		# as to not lock the table and have it empty whilst the job is running
