@@ -237,16 +237,15 @@
 				<div id="sidebar-small" class="sidebar" style="width: 55px" >
 					<div class="list-group list-group-menu">
 						<a href="{{ url_for('dashboard') }}" class="list-group-item{%if active == 'dashboard'%} menu-active{%endif%}"><i class="fa fa-fw fa-dashboard fa-2x"></i></a>
-						
+						<a tabindex="0" role="button" data-toggle="modal" data-target="#search" class="list-group-item" data-placement="right">
+							<i class="fa fa-fw fa-search fa-2x"></i>
+						</a>	
 						{%- if menu.favourites and menu.favourites|length > 0 %}
 						<a href="{{ menu.favourites[0].link }}" tabindex="0" role="button" data-mpop="favourites-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'favourites'%} menu-active{%endif%}">
 						<i class="fa fa-fw fa-star fa-2x"></i>
 						</a>
 						{%- endif %}
 						{%- if menu.systems and menu.systems|length > 0 %}
-						<a tabindex="0" role="button" data-toggle="modal" data-target="#search" class="list-group-item" data-placement="right">
-						<i class="fa fa-fw fa-search fa-2x"></i>
-						</a>
 						<a href="{{ menu.systems[0].link }}" tabindex="0" role="button" data-mpop="systems-menu"tle="Systems" data-container="body" class="list-group-item enable-menu-popover{%if active == 'systems'%} menu-active{%endif%}">
 						<i class="fa fa-fw fa-server fa-2x"></i>
 						</a>
