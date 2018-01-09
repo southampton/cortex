@@ -27,12 +27,12 @@
 					<div class="col-sm-12">
 					{% for label, value in [('Inherit', 'Derived'), ('Unassigned', 'Unassigned'), ('Direct:', 'Direct')] -%}
 						<div class="radio">
-							<label><input type="radio" name="mode" value="{{ value|e }}"{{ ' checked' if vm.slaAssignment == value }}> {{ label|e }}</label>
+							<label><input {% if not does_user_have_permission('systems.all.edit.rubrik') %}disabled="disabled" {% endif %}type="radio" name="mode" value="{{ value|e }}"{{ ' checked' if vm.slaAssignment == value }}> {{ label|e }}</label>
 						</div>
 					{% endfor -%}
 					</div>
 					<div class="col-sm-10">
-						<select class="form-control" name="sla_domain" style="margin-left:2em"{% if vm.slaAssignment != "Direct" %} disabled="disabled"{% endif %}>
+						<select {% if not does_user_have_permission('systems.all.edit.rubrik') %}disabled="disabled" {% endif %}class="form-control" name="sla_domain" style="margin-left:2em"{% if vm.slaAssignment != "Direct" %} disabled="disabled"{% endif %}>
 							<option value="NONE">None Selected</option>
 					{% for sla_domain in sla_domains.data -%}
 							<option value="{{ sla_domain.id }}"{{ ' selected' if sla_domain.id == vm.effectiveSlaDomainId }}>{{ sla_domain.name }}</option>
@@ -40,7 +40,9 @@
 						</select>
 					</div>
 					<div class="col-sm-2">
+{% if does_user_have_permission('systems.all.edit.rubrik') -%}
 						<button type="submit" class="btn btn-success" style="margin-left:1em">Save</button>
+{% endif -%}
 					</div>
 				</form>
 			</div>
@@ -64,7 +66,7 @@
 					<tbody>
 					{% if vm.snapshots.data|length == 0 -%}
 						<tr>
-							<td colspan=3>No backups have been taken.</td>
+							<td colspan="4">No backups have been taken.</td>
 						</tr>
 					{% else -%}
 					{%	 for snapshot in vm.snapshots.data -%}

@@ -363,9 +363,8 @@ class Backup(MethodView):
 
 	@cortex.lib.user.login_required
 	def get(self, id):
-		# Check user permissions. User must have either systems.all or specific 
-		# access to the system
-		if not does_user_have_system_permission(id,"view","systems.all.view"):
+		# Check user permissions. User must have either systems.all.view.rubrik
+		if not does_user_have_permission("systems.all.view.rubrik"):
 			abort(403)
 
 		# Get the name of the vm
@@ -400,7 +399,7 @@ class Backup(MethodView):
 
 	@cortex.lib.user.login_required
 	def post(self, id):
-		if not does_user_have_system_permission(id,"view","systems.all.view"):
+		if not does_user_have_permission("systems.all.edit.rubrik"):
 			abort(403)
 
 		# Get the name of the vm
@@ -420,6 +419,7 @@ class Backup(MethodView):
 systems_view = Backup.as_view('system_backup')
 app.add_url_rule('/systems/backup/<int:id>', view_func=systems_view,
 		methods=['GET','POST'])
+
 ################################################################################
 
 @app.route('/systems/bulk/save', methods=['POST'])

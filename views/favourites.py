@@ -1,11 +1,12 @@
 #!/usr/bin/python
 
-
 from cortex import app
 import cortex.lib.user
 from cortex.lib.user import does_user_have_permission
 from flask import g, render_template, session, request, jsonify, flash, abort
 import MySQLdb as mysql
+
+################################################################################
 
 @app.route('/favourites', methods=['GET'])
 @cortex.lib.user.login_required
@@ -44,10 +45,14 @@ def favourites(display='all'):
 	# Render
 	return render_template('favourites.html', classes=classes, active='favourites', title="Favourites", q=q, hide_inactive=False, display=display)
 
+################################################################################
+
 @app.route('/favourites/<string:system_type>', methods=['GET'])
 @cortex.lib.user.login_required
 def favourites_by_type(system_type):
 	return favourites(system_type)
+
+################################################################################
 
 @app.route('/favourites', methods=['POST'])
 @cortex.lib.user.login_required
