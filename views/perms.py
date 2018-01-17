@@ -341,7 +341,7 @@ def perms_system(id):
 
 		elif action == 'add':
 			name = request.form['name']
-			if not re.match(r'^[a-zA-Z0-9\-\_]{3,255}$', name):
+			if not re.match(r'^[a-zA-Z0-9\-\_&]{3,255}$', name):
 				flash("The user or group name you sent was invalid", "alert-danger")
 				return redirect(url_for('perms_system',id=id))
 
@@ -400,7 +400,7 @@ def perms_system(id):
 
 		elif action == 'remove':
 			name = request.form['name']
-			if not re.match(r'^[a-zA-Z0-9\-\_]{3,255}$', name):
+			if not re.match(r'^[a-zA-Z0-9\-\_&]{3,255}$', name):
 				flash("The user or group name you sent was invalid", "alert-danger")
 				return redirect(url_for('perms_system',id=id))
 
