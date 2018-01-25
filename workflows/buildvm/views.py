@@ -16,6 +16,11 @@ workflow.add_permission('buildvm.student', 'Create Student VM')
 
 ################################################################################
 ## Sandbox VM Workflow view handler
+
+@workflow.route("api", title='Cortex Build VM API', require_login=False, menu=False, methods=['GET'])
+def buildvm_api():
+	abort(403)
+
 @workflow.route("sandbox",title='Create Sandbox VM', order=20, permission="buildvm.sandbox", methods=['GET', 'POST'])
 def sandbox():
 	# Get the list of clusters

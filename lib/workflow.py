@@ -65,18 +65,21 @@ class CortexWorkflow:
 		kwargs['active'] = 'workflows'
 		return render_template(self.name + "::" + template_name,**kwargs)
 
-	def route(self, rule, title="Untitled", order=999, permission=None, menu=True, **options):
-		if not permission.startswith("workflows."):
+	def route(self, rule, title="Untitled", order=999, permission=None, menu=True, require_login=True, **options):
+		if permission is not None and not permission.startswith("workflows."):
 			permission = "workflows." + permission
 
 		def decorator(fn):
-			## Require login, and the right permissions
-			fn = login_required(fn)
-
 			## Require permissions
 			if permission is not None:
 				permfn = self._require_permission(permission)
 				fn = permfn(fn)
+
+			## Require login, and the right permissions
+			## Note this must come after the decoration by _require_permission
+			## as the decorators are essentially processed backwards
+			if require_login:
+				fn = login_required(fn)
 
 			## Mark the view function as a workflow view function
 			fn = self._mark_as_workflow(fn)
