@@ -6,7 +6,7 @@ import json
 import time
 import redis
 import ssl
-import xmlrpclib # for RHN5 API support
+import xmlrpclib, httplib # for RHN5 API support
 
 # For email
 import smtplib
@@ -1508,13 +1508,43 @@ class Corpus(object):
 		rhnurl = rhnurl + "rpc/api"
 
 		try:
-			#context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-			#context.verify_mode = ssl.CERT_REQUIRED
-			#context.check_hostname = True
-			#context.load_verify_locations(cafile=self.config['RHN5_CERT'])
+			if 'RHN5_CERT' in self.config and self.config['RHN5_CERT'] is not None:
+				context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+				context.verify_mode = ssl.CERT_REQUIRED
+				context.check_hostname = True
+				context.load_verify_locations(cafile=self.config['RHN5_CERT'])
+			else:
+				context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+				context.verify_mode = ssl.CERT_NONE
+				context.check_hostname = False
 
-			#client = xmlrpclib.ServerProxy(self.config['RHN5_URL'], verbose=0,context=context)
-			client = xmlrpclib.ServerProxy(rhnurl, verbose=0)
+			# For version 2.7.9 upwards, we can use an SSL context directly with xmlrpclib
+			if sys.version_info >= (2, 7, 9):
+				client = xmlrpclib.ServerProxy(rhnurl, verbose=0, context=context)
+
+			# For less than 2.7.9, we need to provide a context to httplib.HTTPSConnection 
+			# (which according to the docs got added in 2.7.9, but it's there in RHEL 7, 
+			# which has 2.7.5... no idea)
+			else:
+				# Define a XML-RPC SafeTransport that accepts a certificate
+				class SafeTransportWithCert(xmlrpclib.SafeTransport):
+					def __init__(self, use_datetime=0, context=None):
+						self._context = context
+
+						# The base 'Transport' class (and thus SafeTransport as our superclass) is 
+						# an "old-style" object, so we can't use super(), but we need to call the
+						# constructor
+						xmlrpclib.SafeTransport.__init__(self, use_datetime)
+
+					def make_connection(self, host):
+						if self._connection and host == self._connection[0]:
+							return self._connection[1]
+
+						self._connection = host, httplib.HTTPSConnection(host, None, context = self._context)
+						return self._connection[1]
+
+				client = xmlrpclib.ServerProxy(rhnurl, transport=SafeTransportWithCert(use_datetime=0, context=context), verbose=0)
+
 			key = client.auth.login(self.config['RHN5_USER'], self.config['RHN5_PASS'])
 			return (client,key)
 		except Exception as ex:
