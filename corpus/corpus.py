@@ -1499,15 +1499,11 @@ class Corpus(object):
 		Throws:
 			IOError if the connection failed"""
 		
-
 		# Determine the API URL
-		rhnurl = self.config['RHN5_URL']
-		if not rhnurl.endswith("/"):
-			rhnurl = rhnurl + "/"
-
-		rhnurl = rhnurl + "rpc/api"
+		rhnurl = urljoin(self.config['RHN5_URL'], 'rpc/api')
 
 		try:
+			# Build an SSL context for verification or no verification
 			if 'RHN5_CERT' in self.config and self.config['RHN5_CERT'] is not None:
 				context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
 				context.verify_mode = ssl.CERT_REQUIRED
