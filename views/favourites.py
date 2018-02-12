@@ -43,7 +43,7 @@ def favourites(display='all'):
 		q = q.strip()
 
 	# Render
-	return render_template('favourites.html', classes=classes, active='favourites', title="Favourites", q=q, hide_inactive=False, display=display)
+	return render_template('systems/list.html', classes=classes, active='favourites', title="Favourites", favourites=1, q=q, hide_inactive=False, display=display)
 
 ################################################################################
 

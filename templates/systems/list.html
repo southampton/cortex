@@ -8,7 +8,7 @@ a.server-link:hover { text-decoration: underline !important; }
 
 <div class="page-header">
 	<button id="hide_inactive" type="button" class="btn btn-sm pull-right {% if hide_inactive %}btn-success active{%else%}btn-danger{%endif%}" style="margin-left:4px" data-toggle="popover" data-trigger="hover" data-placement="left" title="Hide Inactive Systems" data-content="When ticked, systems that are not in ServiceNow or VMware will not be shown, nor will systems that are not marked as 'In Service' in ServiceNow."><i class="fa fa-fw {% if hide_inactive %}fa-check-square-o{%else%}fa-square-o{%endif%}"></i> Hide Inactive Systems</button>
-	<h3><i class="fa fa-server fa-fw"></i>{% if expired %} Expired Systems{% elif nocmdb %} VMs Missing a CMDB Record{% elif perms_only %} Systems with permissions{% else %} Systems{% endif %}
+	<h3><i class="fa {% if favourites %}fa-star{% else %}fa-server{% endif %} fa-fw"></i>{% if expired %} Expired Systems{% elif nocmdb %} VMs Missing a CMDB Record{% elif perms_only %} Systems with permissions{% elif favourites %}Favourites{% else %} Systems{% endif %}
 		{% if does_user_have_permission("systems.all.view") %}<a class="btn btn-primary btn-sm pull-right" href="{{ url_for('systems_download_csv') }}"><i class="fa fa-fw fa-download"></i> Download CSV</a>{% endif %}
 		<small><strong>&nbsp;Legend:</strong>
 			<i title='System is linked to VMware and the VM is powered on' class='fa fa-fw fa-play icon-state icon-legend icon-on'></i>On
@@ -23,10 +23,10 @@ a.server-link:hover { text-decoration: underline !important; }
 
 <ul id="class-tabs" class="nav nav-tabs" style="margin-bottom:1em">
 	{%- for class in classes %}
-	<li {% if loop.index0 == 0 and not q and not expired and not nocmdb %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="{{ class.name }}" data-vmware="{{ class.link_vmware }}" role="tab">{{ class.name }}</a></li>
+	<li {% if (display and display == class.name) or (not display and loop.index0 == 0 and not q and not expired and not nocmdb) %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="{{ class.name }}" data-vmware="{{ class.link_vmware }}" role="tab">{{ class.name }}</a></li>
 	{%- endfor %}
 	{% if classes|length > 0 %}<li role="presentation"><a style="cursor:pointer" data-class="*OTHER" data-vmware="1" role="tab">Other/Legacy</a></li>{% endif %}
-	<li {% if q or classes|length == 0 or expired or nocmdb %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="*ALL" data-vmware="1" role="tab">All</a></li>
+	<li {% if (display and display == 'all') or q or classes|length == 0 or expired or nocmdb %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="*ALL" data-vmware="1" role="tab">All</a></li>
 </ul>
 <div id="systemsWrapper">
 <table class="table table-condensed table-striped" id="systems">
@@ -52,17 +52,20 @@ $(function() {
 		"pageLength": 15,
 		"order": [[0, 'desc']],
 		"columns": [
-                        {"data": "name"},
-                        {"data": "allocation_comment"},
-                        {"data": "cmdb_environment"},
-                        {"data": "allocation_who"},
-                        {"data": "allocation_date"},
-                        {"data": "cmdb_operational_status"},
-                        {"data": null, "orderable": false, "targets": 0 }
-                ],
+			{"data": "name"},
+			{"data": "allocation_comment"},
+			{"data": "cmdb_environment"},
+			{"data": "allocation_who"},
+			{"data": "allocation_date"},
+			{"data": "cmdb_operational_status"},
+			{"data": null, "orderable": false, "targets": 0 }
+		],
 		"serverSide": true,
 		"searchDelay": 500,
 		"stateSave": true,
+		{%- if favourites %}
+		"language": {"emptyTable":"No favourites found, you should try adding some."},
+		{%- endif %}
 		"stateLoadCallback": function (settings) {
 			if (window.history.state != undefined)
 			{
@@ -85,6 +88,9 @@ $(function() {
 				d.show_expired = {% if expired %}"1"{% else %}"0"{% endif %};
 				d.show_nocmdb = {% if nocmdb %}"1"{% else %}"0"{% endif %};
 				d.show_perms_only = {% if perms_only %}"1"{% else %}"0"{% endif %};
+				{%- if favourites %}
+				d.show_favourites_only = '1';
+				{%- endif %}
 			}
 		},
 		{% if q %}
@@ -93,56 +99,56 @@ $(function() {
 		"searching": true,
 		"rowCallback": function(row, data, index) {
 			{#- data[6] is CMDB URL, data[7] is database ID, data[5] is operational status, data[9] is Puppet Cert Name #}
-                        $('td:eq(6)', row).html(
-                                '<a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/overview/' + data["id"] + '">' +
-                                '       <i class="fa fa-fw fa-info-circle"></i>' +
-                                '</a>' + (data["cmdb_id"] != '' ?
-                                '<a title="CMDB" style="margin-right:0.5em" class="btn btn-xs btn-primary" href="' + data["cmdb_id"] + '" target="_blank">' +
-                                '       <i class="fa fa-fw fa-cloud"></i>' +
-                                '</a>' : '') + (data["puppet_certname"] != null ?
-                                '<a title="Puppet" class="btn btn-xs btn-success" href="/puppet/enc/' + data["puppet_certname"] + '">' +
-                                '       <i class="fa fa-fw fa-book"></i>' +
-                                '</a>': ''));
+			$('td:eq(6)', row).html(
+				'<a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/overview/' + data["id"] + '">' +
+				'	<i class="fa fa-fw fa-info-circle"></i>' +
+				'</a>' + (data["cmdb_id"] != '' ?
+				'<a title="CMDB" style="margin-right:0.5em" class="btn btn-xs btn-primary" href="' + data["cmdb_id"] + '" target="_blank">' +
+				'	<i class="fa fa-fw fa-cloud"></i>' +
+				'</a>' : '') + (data["puppet_certname"] != null ?
+				'<a title="Puppet" class="btn btn-xs btn-success" href="/puppet/enc/' + data["puppet_certname"] + '">' +
+				'	<i class="fa fa-fw fa-book"></i>' +
+				'</a>': ''));
 
-                        if (data["cmdb_operational_status"] == "" || data["cmdb_operational_status"] == undefined)
-                        {
-                                $('td:eq(5)', row).html("Unknown");
-                        }
+			if (data["cmdb_operational_status"] == "" || data["cmdb_operational_status"] == undefined)
+			{
+				$('td:eq(5)', row).html("Unknown");
+			}
 
-                        var view_link = "<a class='server-link' href='/systems/overview/" + data["id"] + "'>" + data["name"] + "</a>";
+			var view_link = "<a class='server-link' href='/systems/overview/" + data["id"] + "'>" + data["name"] + "</a>";
 
-                        if (data["favourited"] == true)
-                        {
+			if (data["favourited"] == true)
+			{
 
-                                var favourite = '<span data-system-id="' + data["id"] + '" id="btn_unfavourite" style="margin-right:0.5em"><i class="fa fa-fw fa-star icon-favourited"></i></span>';
-                        }else {
+				var favourite = '<span data-system-id="' + data["id"] + '" id="btn_unfavourite" style="margin-right:0.5em"><i class="fa fa-fw fa-star icon-favourited"></i></span>';
+			}else {
 
-                                var favourite = '<span data-system-id="' + data["id"] + '" id="btn_favourite" style="margin-right:0.5em"><i class="fa fa-fw fa-star-o icon-favourites"></i></span>';
-                        }
+				var favourite = '<span data-system-id="' + data["id"] + '" id="btn_favourite" style="margin-right:0.5em"><i class="fa fa-fw fa-star-o icon-favourites"></i></span>';
+			}
 
-                        if ($('#class-tabs li.active a').attr('data-vmware') == 1)
-                        {
-                                if (data["vmware_guest_state"] == "poweredOn")
-                                {
-                                        $('td:eq(0)', row).html("<nobr>" + favourite + "<i title='VM Powered On' class='fa fa-fw fa-play icon-state icon-on' />" + view_link + "</nobr>");
-                                }
-                                else if (data["vmware_guest_state"] == "poweredOff")
-                                {
-                                        $('td:eq(0)', row).html("<nobr>" + favourite + "<i title='VM Powered Off' class='fa fa-fw fa-stop icon-state icon-off' />" + view_link + "</nobr>");
-                                }
-                                else if (data["vmware_guest_state"] == "suspended")
-                                {
-                                        $('td:eq(0)', row).html("<nobr>" + favourite + "<i title='VM Suspended' class='fa fa-fw fa-pause icon-state icon-pause' />" + view_link + "</nobr>");
-                                }
-                                else
-                                {
-                                        $('td:eq(0)', row).html("<nobr>" + favourite + "<i title='Not linked to VMware' class='fa fa-fw fa-dot-circle-o icon-state icon-unknown' />" + view_link + "</nobr>");
-                                }
-                        }
-                        else
-                        {
-                                $('td:eq(0)', row).html(favourite + view_link);
-                        }	
+			if ($('#class-tabs li.active a').attr('data-vmware') == 1)
+			{
+				if (data["vmware_guest_state"] == "poweredOn")
+				{
+					$('td:eq(0)', row).html("<nobr>" + favourite + "<i title='VM Powered On' class='fa fa-fw fa-play icon-state icon-on' />" + view_link + "</nobr>");
+				}
+				else if (data["vmware_guest_state"] == "poweredOff")
+				{
+					$('td:eq(0)', row).html("<nobr>" + favourite + "<i title='VM Powered Off' class='fa fa-fw fa-stop icon-state icon-off' />" + view_link + "</nobr>");
+				}
+				else if (data["vmware_guest_state"] == "suspended")
+				{
+					$('td:eq(0)', row).html("<nobr>" + favourite + "<i title='VM Suspended' class='fa fa-fw fa-pause icon-state icon-pause' />" + view_link + "</nobr>");
+				}
+				else
+				{
+					$('td:eq(0)', row).html("<nobr>" + favourite + "<i title='Not linked to VMware' class='fa fa-fw fa-dot-circle-o icon-state icon-unknown' />" + view_link + "</nobr>");
+				}
+			}
+			else
+			{
+				$('td:eq(0)', row).html(favourite + view_link);
+			}
 		}
 	});
 	$('#class-tabs li').click(function() {
@@ -205,8 +211,7 @@ $(function() {
 			dataType: 'json',
 		});
 	});
-
-	});
+});
 $(function () {
 	$('[data-toggle="popover"]').popover()
 })
