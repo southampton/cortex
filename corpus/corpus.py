@@ -7,6 +7,7 @@ import time
 import redis
 import ssl
 import xmlrpclib, httplib # for RHN5 API support
+import re
 
 # For email
 import smtplib
@@ -36,6 +37,7 @@ class Corpus(object):
 	SYSTEM_TYPE_BY_ID = {0: "System", 1: "Legacy", 2: "Other"}
 	SYSTEM_TYPE_BY_NAME = {"System": 0, "Legacy": 1, "Other": 2}
 
+
 	class TaskFatalError(Exception):
 		def __init__(self, message="The task failed for an unspecified reason"):
 			self.message = str(message)
@@ -54,6 +56,18 @@ class Corpus(object):
 		self.db     = db
 		self.config = config
 		self.rdb    = self._connect_redis()
+
+		# Regex for TSM matches. Matches nodenames of the format:
+		#  FQDN
+		#  PREFIX_FQDN
+		#  FQDN_SUFFIX
+		#  PREFIX_FQDN_SUFFIX
+		# where PREFIX and SUFFIX can't contain a . and FQDN can't contain _ (which it shouldn't)
+		#
+		# This probably falls down is we happen to have a node that has a prefix or suffix but not
+		# fully qualified: (e.g. myserver_db) as it can't tell whether myserver is a prefix to db
+		# or db is the suffix to myserver
+		self.tsm_nodename_match_re = re.compile(r'^(?P<prefix>[^\.]*_)?(?P<fqdn>(?P<hostname>[^_\.]*)((\.[^_\.]+)*))(?P<suffix>_[^\.]*)?')
 
 	################################################################################
 
@@ -1436,6 +1450,15 @@ class Corpus(object):
 
 	############################################################################
 
+	def tsm_nodename_matches(self, nodename, hostname):
+		res = self.tsm_nodename_match_re.match(nodename.lower())
+		if res is not None:
+			if res.group('hostname') == hostname.lower():
+				return True
+		return False
+
+	############################################################################
+
 	def tsm_get_system(self, name):
 		"""Gets the system from TSM
 			Returns:
@@ -1451,20 +1474,22 @@ class Corpus(object):
 		#get the specific client details from the response
 		#JSON decode the response. Using the list key, iterate over each client in the list extracting the hostname
 		#from the FQDN and compare it system name we want; we stop interating as soon as we get a match.
-		client = next((client for client in r.json()['list'] if client['NAME'].split('.')[0].lower() == name.lower()), None)
+		clients = [client for client in r.json()['list'] if self.tsm_nodename_matches(client['NAME'], name)]
+		#client = next((client for client in r.json()['list'] if client['NAME'].split('.')[0].lower() == name.lower()), None)
 
-		if client is None:
+		if len(clients) == 0:
 			#client was not found
 			raise LookupError('Client not found')
 		else:
-			#We found the client so we can now get the details we need
-			r = requests.get(urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(client['SERVER'])
-			                         + '/client/' + quote(client['NAME']) + '/detail'),
-			                         auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
-			                         verify=self.config['TSM_API_VERIFY_SERVER'])
-			r.raise_for_status()
-			client['DECOMMISSIONED'] = r.json()['DECOMMISSIONED']
-			return client
+			# We found the client(s) so we can now get the details we need
+			for idx, client in enumerate(clients):
+				r = requests.get(urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(client['SERVER'])
+				                         + '/client/' + quote(client['NAME']) + '/detail'),
+				                         auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
+				                         verify=self.config['TSM_API_VERIFY_SERVER'])
+				r.raise_for_status()
+				clients[idx]['DECOMMISSIONED'] = r.json()['DECOMMISSIONED']
+			return clients
 
 	############################################################################
 

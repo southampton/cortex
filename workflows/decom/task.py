@@ -158,7 +158,8 @@ def action_ticket_ops(action, helper, wfconfig):
 		message += 'Please perform the final, manual steps of the decommissioning process:\n'
 		message += ' - Remove the system from monitoring\n'
 		message += ' - Remove any associated perimeter firewall rules\n'
-		message += ' - Remove the system from backups\n'
+		message += ' - Remove any associated load balancer configuration\n'
+		message += ' - Update any relevant documentation\n'
 
 		helper.lib.servicenow_create_ticket(short_desc, message, wfconfig['TICKET_OPENER_SYS_ID'], wfconfig['TICKET_TEAM'])
 		return True
@@ -181,7 +182,7 @@ def action_tsm_decom(action, helper):
 def action_rhn5_delete(action, helper):
 	try:
 		(rhn,key) = corpus.rhn5_connect()
-		rhn.system.deleteSystem(key,	int(action['data']['id']))
+		rhn.system.deleteSystem(key, int(action['data']['id']))
 		return True
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to delete the system object in RHN5")

@@ -98,10 +98,11 @@ def decom_step2(id):
 
 	## Check if TSM backups exist
 	try:
-		tsm_client = corpus.tsm_get_system(system['name'])
+		tsm_clients = corpus.tsm_get_system(system['name'])
 		#if the TSM client is not decomissioned, then decomission it
-		if tsm_client['DECOMMISSIONED'] is None:
-			actions.append({'id': 'tsm.decom', 'desc': 'Decommission the system in TSM', 'detail': tsm_client['NAME']  + ' on server ' + tsm_client['SERVER'], 'data': {'NAME': tsm_client['NAME'], 'SERVER': tsm_client['SERVER']}})
+		for client in tsm_clients:
+			if client['DECOMMISSIONED'] is None:
+				actions.append({'id': 'tsm.decom', 'desc': 'Decommission the system in TSM', 'detail': 'Node ' + client['NAME']  + ' on server ' + client['SERVER'], 'data': {'NAME': client['NAME'], 'SERVER': client['SERVER']}})
 	except requests.exceptions.HTTPError as e:
 		flash("Warning - An error occured when communicating with TSM: " + str(ex), "alert-warning")
 	except LookupError:
@@ -144,7 +145,7 @@ def decom_step2(id):
 
 	# If there are actions to be performed, add on an action to raise a ticket to ESM (but not for Sandbox!)
 	if len(actions) > 0 and system['class'] != "play":
-		actions.append({'id': 'ticket.ops', 'desc': 'Raises a ticket with operations to perform manual steps, such as removal from monitoring', 'detail': 'Creates a ticket in Service Now and assigns it to ' + workflow.config['TICKET_TEAM'], 'data': {'hostname': system['name']}})
+		actions.append({'id': 'ticket.ops', 'desc': 'Raises a ticket with operations to perform manual steps, such as removal from monitoring', 'detail': 'Creates a ticket in ServiceNow and assigns it to ' + workflow.config['TICKET_TEAM'], 'data': {'hostname': system['name']}})
 
 	# Turn the actions list into a signed JSON document via itsdangerous
 	signer = JSONWebSignatureSerializer(app.config['SECRET_KEY'])
