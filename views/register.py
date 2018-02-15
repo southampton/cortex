@@ -180,7 +180,10 @@ def api_installer_notify():
 			abort(404)
 
 		# Mark as done
-		g.redis.setex("vm/" + system['vmware_uuid'].lower() + "/" + "notify", 28800, "done")
+		if 'warnings' in request.form and int(request.form['warnings']) > 0:
+			g.redis.setex("vm/" + system['vmware_uuid'].lower() + "/" + "notify", 28800, "done-with-warnings")
+		else:
+			g.redis.setex("vm/" + system['vmware_uuid'].lower() + "/" + "notify", 28800, "done")
 
 		return "OK"
 	else:

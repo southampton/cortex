@@ -18,6 +18,17 @@
 </div>
 
 <style type="text/css">
+.bootstrap-select
+{
+	width: 80% !important;
+}
+
+{# Fixes slider tooltips appearing on top of bootstrap-select dropdowns -#}
+.tooltip
+{
+	z-index: 100;
+}
+
 .blocks .btn
 {
 	width: 2.5em;
@@ -112,8 +123,8 @@ div.specdetails
 		</div>
 	</div>
 
-	<div class="row" style="margin-top: 1.0em">
-		<div class="col-md-4">
+	<div class="row">
+		<div class="col-md-3">
 			<h4>4. Choose Image</h4>
 			<div style="margin-left:1em">
 				<select class="selectpicker" name="template" id="template">
@@ -123,8 +134,9 @@ div.specdetails
 {%- endfor %}
 				</select>
 			</div>
-
-			<h4 style="margin-top:2.2em">5. Choose Environment</h4>
+		</div>
+		<div class="col-md-3">
+			<h4>5. Choose Environment</h4>
 			<div style="margin-left:1em">
 				<select class="selectpicker" name="environment" id="environment">
 					<option></option>
@@ -133,24 +145,38 @@ div.specdetails
 {%- endfor %}
 				</select>
 			</div>
-
-			<h4 style="margin-top:2.2em">6. Choose Location Cluster</h4>
+		</div>
+		<div class="col-md-3">
+			<h4>6. Choose Location Cluster</h4>
 			<div style="margin-left:1em">
 				<select class="selectpicker" name="cluster" id="cluster">
 					<option></option>
 {% for cluster in clusters -%}
-					<option value="{{ cluster.name }}">{{cluster.name}}</option>
+					<option value="{{ cluster.name }}">{{ cluster.name }}</option>
+{%- endfor %}
+				</select>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<h4>7. Choose Network</h4>
+			<div style="margin-left:1em">
+				<select class="selectpicker" name="network" id="network">
+					<option></option>
+{% for network in networks_order -%}
+					<option value="{{ network }}">{{ network_names[network] }}</option>
 {%- endfor %}
 				</select>
 			</div>
 		</div>
 
+	</div>
+
+	<div class="row" style="margin-top: 1.0em">
 		<div class="col-md-4">
-			<h4>7. Expiry date (optional)</h4>
+			<h4>8. Expiry date (optional)</h4>
 			<div style="margin-left: 1em">
-				<p>Set the date that this VM will be automatically powered off.</p>
 				<div class='input-group date' id='expirypicker'>
-					<input type='text' class="form-control" id="expiry" name="expiry" placeholder="YYYY-MM-DD" />
+					<input type='text' class="form-control" id="expiry" name="expiry" placeholder="Date of automatic power off: YYYY-MM-DD" />
 					<span class="input-group-addon">
 						<span class="glyphicon glyphicon-calendar"></span>
 					</span>
@@ -166,8 +192,10 @@ div.specdetails
 					});
 				</script>
 			</div>
+		</div>
 
-			<h4>8. Summary</h4>
+		<div class="col-md-4">
+			<h4>9. Summary</h4>
 			<div style="margin-left: 1em">
 				<p>A VM will be created with the following specifications. The calculated cost is also shown below.</p>
 				<div style="font-size: 120%">
@@ -184,8 +212,9 @@ div.specdetails
 				</div>
 			</div>
 		</div>
+
 		<div class="col-md-4">
-			<h4>9. Create</h4>
+			<h4>10. Create</h4>
 			<div style="margin:0 0 0.5em 1.0em">
 				<input type="checkbox" name="send_mail" id="send_mail" style="margin-right:0.4em" checked="checked" /><label for="send_mail" style="position:relative;top:-2px">Notify me by e-mail when done</label>
 			</div>

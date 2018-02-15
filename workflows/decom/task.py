@@ -181,7 +181,7 @@ def action_tsm_decom(action, helper):
 
 def action_rhn5_delete(action, helper):
 	try:
-		(rhn,key) = corpus.rhn5_connect()
+		(rhn,key) = helper.lib.rhn5_connect()
 		rhn.system.deleteSystem(key, int(action['data']['id']))
 		return True
 	except Exception as e:

@@ -109,7 +109,7 @@ def standard():
 
 	if request.method == 'GET':
 		## Show form
-		return workflow.render_template("standard.html", clusters=clusters, environments=environments, os_names=workflow.config['OS_DISP_NAMES'], os_order=workflow.config['OS_ORDER'], title="Create Standard Virtual Machine")
+		return workflow.render_template("standard.html", clusters=clusters, environments=environments, os_names=workflow.config['OS_DISP_NAMES'], os_order=workflow.config['OS_ORDER'], network_names=workflow.config['NETWORK_NAMES'], networks_order=workflow.config['NETWORK_ORDER'], title="Create Standard Virtual Machine")
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
@@ -125,6 +125,7 @@ def standard():
 			purpose  = request.form['purpose']
 			comments = request.form['comments']
 			sendmail = 'send_mail' in request.form
+			network  = request.form['network']
 
 			# Validate the data (common between standard / sandbox)
 			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, workflow.config['OS_ORDER'], [e['id'] for e in environments])
@@ -132,6 +133,10 @@ def standard():
 			# Validate cluster against the list we've got
 			if cluster not in [c['name'] for c in clusters]:
 				raise ValueError('Invalid cluster selected')
+
+			# Validate network against the list we've got
+			if network not in workflow.config['NETWORK_NAMES']:
+				raise ValueError('Invalid network selected')
 
 		except ValueError as e:
 			flash(str(e), 'alert-danger')
@@ -157,6 +162,7 @@ def standard():
 		options['sendmail'] = sendmail
 		options['wfconfig'] = workflow.config
 		options['expiry'] = expiry
+		options['network'] = network
 		if 'NOTIFY_EMAILS' in app.config:
 			options['notify_emails'] = app.config['NOTIFY_EMAILS']
 		else:

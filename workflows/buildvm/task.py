@@ -11,9 +11,9 @@ def run(helper, options):
 		prefix = options['wfconfig']['PREFIX']
 		vcenter_tag = options['wfconfig']['VCENTER_TAG']
 		domain = options['wfconfig']['DOMAIN']
-		network = options['wfconfig']['NETWORK']
-		gateway = options['wfconfig']['GATEWAY']
-		netmask = options['wfconfig']['NETMASK']
+		network = options['wfconfig']['NETWORKS'][options['network']]
+		gateway = options['wfconfig']['GATEWAYS'][options['network']]
+		netmask = options['wfconfig']['NETMASKS'][options['network']]
 		dns_servers = options['wfconfig']['DNS_SERVERS']
 		dns_domain = options['wfconfig']['DNS_DOMAIN']
 		puppet_cert_domain = options['wfconfig']['PUPPET_CERT_DOMAIN']
@@ -23,7 +23,7 @@ def run(helper, options):
 		win_os_domain = options['wfconfig']['WIN_OS_DOMAIN']
 		win_dev_os_domain = options['wfconfig']['WIN_DEV_OS_DOMAIN']
 		sn_location = options['wfconfig']['SN_LOCATION']
-		network_name = options['wfconfig']['NETWORK_NAME']
+		network_name = options['wfconfig']['NETWORK_NAMES'][options['network']]
 		cluster_storage_pools = options['wfconfig']['CLUSTER_STORAGE_POOLS']
 		cluster_rpool = options['wfconfig']['CLUSTER_RPOOL']
 		notify_emails = options['notify_emails']
@@ -360,7 +360,7 @@ def run(helper, options):
 			helper.event('guest_installer_progress', 'Waiting for in-guest installation to start')
 
 			# Wait for the in-guest installer to set the state to 'progress' or 'done'
-			wait_response = helper.lib.wait_for_guest_notify(vm, ['inprogress', 'done'])
+			wait_response = helper.lib.wait_for_guest_notify(vm, ['inprogress', 'done', 'done-with-warnings'])
 
 			# When it returns, end the event
 			if wait_response is None or wait_response not in ['inprogress', 'done']:
@@ -374,14 +374,19 @@ def run(helper, options):
 		# Start another event
 		helper.event('guest_installer_done', 'Waiting for in-guest installation to finish')
 
-		# Wait for the in-guest installer to set the state to 'progress' or 'done'
-		wait_response = helper.lib.wait_for_guest_notify(vm, ['done'])
+		# Wait for the in-guest installer to set the state to 'done' or 'done-with-warnings'
+		wait_response = helper.lib.wait_for_guest_notify(vm, ['done', 'done-with-warnings'])
 
 		# When it returns, end the event
-		if wait_response is None or wait_response not in ['done']:
+		if wait_response is None or wait_response not in ['done', 'done-with-warnings']:
 			helper.end_event(success=False, description='Timed out waiting for in-guest installation to finish')
 		else:
-			helper.end_event(success=True, description='In-guest installation finished')
+			# Flag if there were warnings
+			warning = False
+			if wait_response == 'done-with-warnings':
+				warning = True
+
+			helper.end_event(success=True, warning=warning, description='In-guest installation finished')
 
 
 
