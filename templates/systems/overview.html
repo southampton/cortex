@@ -142,17 +142,17 @@ tr > td:first-child {
 						<tr><td>Spec:</td><td>{{ system.vmware_cpus or 'unknown' }} vCPU, {{ system.vmware_ram or 'unknown' }} MB RAM</td></tr>
 						<tr><td>OS:</td><td>{{ system.vmware_os or 'unknown' }}</td></tr>
 						<tr><td>CPU Usage:</td><td id="cpu_usage"></td></tr>
-						<tr><td>RAM Usage:</td><td id="mem_usage"></td></tr>
+						<tr><td>Active RAM Usage:</td><td id="mem_usage"></td></tr>
 					</table>
 				</div>
 				<div class="col-md-8">
 					<div class="col-md-6">
 						<div id="chart_cpu"></div>
-						<h4>CPU</h4>
+						<h4>Estimated CPU Usage</h4>
 					</div>
 					<div class="col-md-6">
 						<div id="chart_mem"></div>
-						<h4>Memory</h4>
+						<h4>Active Memory Usage</h4>
 					</div>
 {#
 					<div class="col-md-4">
@@ -201,10 +201,11 @@ tr > td:first-child {
 			</div>
 			<div class="modal-body">
 				<p class="warn-pwr-off"><span class="fa fa-warning"></span> The system appears to already be powered off.</p>
-				<p>Powering the system off will make it unavialalble until it is powered on again.</p>
-				<p>You can either issue a soft or hard request.</p>
-				<p>A soft request will trigger an OS shutdown event.</p>
-				<p>A hard request will power of the system immediately.</p>
+				<p>Powering the system off will make it unavailable until it is powered on again. You can either issue a soft or hard request:</p>
+				<ul>
+					<li>A soft request will trigger a graceful OS shutdown event</li>
+					<li>A hard request will power of the system immediately without shutting down first</li>
+				</ul>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -231,7 +232,7 @@ tr > td:first-child {
 				<h4 class="modal-title">Reset system</h4>
 			</div>
 			<div class="modal-body">
-				<p>Reset the system.</p>
+				<p>Are you sure you wish to reset the system?</p>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -441,8 +442,8 @@ function update_data(data) {
 		)
 	);
 
-	$('#cpu_usage').text(data.cpu.overall_usage + "/" + data.cpu.entitlement + "Mhz (" + +(Math.round((data.cpu.overall_usage / data.cpu.entitlement * 100) + "e+2") + "e-2") + "%)");
-	$('#mem_usage').text(data.mem.overall_usage + "/" + data.mem.entitlement + "MB (" + +(Math.round((data.cpu.overall_usage / data.mem.entitlement * 100) + "e+2") + "e-2") + "%)");
+	$('#cpu_usage').text(data.cpu.overall_usage + "/" + data.cpu.entitlement + "MHz (" + +(Math.round((data.cpu.overall_usage / data.cpu.entitlement * 100) + "e+2") + "e-2") + "%)");
+	$('#mem_usage').text(data.mem.overall_usage + "/" + data.mem.entitlement + "MB (" + +(Math.round((data.mem.overall_usage / data.mem.entitlement * 100) + "e+2") + "e-2") + "%)");
 	$('#uptime').text(secondsToString(data.uptime));
 
 	chart_mem.internal.config.gauge_max = data.mem.entitlement;
