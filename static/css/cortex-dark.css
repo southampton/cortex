@@ -329,49 +329,49 @@ i.icon-favourites:hover
 .bg-primary
 {
 	color: #FFFFFF;
-	background-color: #484848;
+	background-color: #242448;
 }
 
 .bg-success
 {
 	color: #FFFFFF;
-	background-color: #484848;
+	background-color: #244824;
 }
 
 .bg-green
 {
 	color: #FFFFFF;
-	background-color: #484848;
+	background-color: #244824;
 }
 
 .bg-dorange
 {
 	color: #FFFFFF;
-	background-color: #484848;
+	background-color: #483624;
 }
 
 .bg-lorange
 {
 	color: #FFFFFF;
-	background-color: #484848;
+	background-color: #484824;
 }
 
 .bg-purple
 {
 	color: #FFFFFF;
-	background-color: #484848;
+	background-color: #482448;
 }
 
 .bg-lblue
 {
 	color: #FFFFFF;
-	background-color: #484848;
+	background-color: #242448;
 }
 
 .bg-teal
 {
 	color: #FFFFFF;
-	background-color: #484848;
+	background-color: #244848;
 }
 
 /* Popover menu stuff */
@@ -435,4 +435,35 @@ legend
 	vertical-align: middle;
 }
 
+.c3-tooltip
+{
+	-webkit-box-shadow: 7px 7px 12px -9px #000;
+	-moz-box-shadow: 7px 7px 12px -9px #000;
+	box-shadow: 7px 7px 12px -9px #000;
+}
 
+.c3-tooltip td
+{
+	background-color: #333;
+}
+
+.c3-tooltip tr
+{
+	border: 1px solid #1c1c1c;
+}
+
+.c3-legend-item text
+{
+	fill: #eee;
+}
+
+.c3-axis text
+{
+	fill: #ccc;
+}
+
+.c3-axis g.tick line,
+.c3-axis path.domain
+{
+	stroke: #444;
+}
