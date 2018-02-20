@@ -48,16 +48,17 @@ def sandbox():
 		# Form validation
 		try:
 			# Extract all the parameters
+			cluster  = request.form['cluster']
 			purpose  = request.form['purpose']
 			comments = request.form['comments']
 			sendmail = 'send_mail' in request.form
 
 			# Validate the data (common between standard / sandbox)
-			(sockets, cores, ram, disk, template, cluster, env, expiry) = validate_data(request, workflow.config['SB_OS_ORDER'], [e['id'] for e in environments])
+			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, workflow.config['SB_OS_ORDER'], [e['id'] for e in environments])
 
 			# Validate cluster against the list we've got
 			if cluster not in [c['name'] for c in clusters]:
-				raise ValueError('Invalid cluster selected')
+				raise ValueError('Invalid cluster selected (' + str(cluster) + ")")
 
 		except ValueError as e:
 			flash(str(e), 'alert-danger')
@@ -113,7 +114,7 @@ def standard():
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
-		if 'sockets' not in request.form or 'cores' not in request.form or 'ram' not in request.form or 'disk' not in request.form or 'template' not in request.form or 'cluster' not in request.form or 'environment' not in request.form:
+		if 'sockets' not in request.form or 'cores' not in request.form or 'ram' not in request.form or 'disk' not in request.form or 'template' not in request.form or 'cluster' not in request.form or 'environment' not in request.form or 'network' not in request.form:
 			flash('You must select options for all questions before creating', 'alert-danger')
 			return redirect(url_for('standard'))
 

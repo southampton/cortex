@@ -19,8 +19,8 @@ def sysrequests():
 	"""Shows the list of system requests to the user."""
 
 	# Check user permissions
-	#if not does_user_have_permission("sysrequests.all.view"):
-#		abort(403)
+	if not does_user_have_permission("sysrequests.all.view"):
+		abort(403)
 
 	# Get the list of active classes (used to populate the tab bar)
 	statuses = ((0, 'Pending'), (1, 'Rejected'), (2, 'Approved'))

@@ -91,7 +91,7 @@ def run(helper, options):
 		system_dbid = system_info.values()[0]
 
 		# End the event
-		helper.end_event(description="Allocated system name " + system_name)
+		helper.end_event(description="Allocated system name: " + system_name)
 
 
 
@@ -197,7 +197,7 @@ def run(helper, options):
 	helper.lib.vmware_task_complete(task, "Failed to set vCPU configuration")
 
 	# End the event
-	helper.end_event(description="VM vCPU configuation saved")
+	helper.end_event(description="VM vCPU configuation saved: " + str(options['sockets']) + " sockets, " + str(options['cores']) + " cores per socket")
 
 
 
@@ -211,7 +211,7 @@ def run(helper, options):
 	helper.lib.vmware_task_complete(task, "Failed to set RAM configuration")
 
 	# End the event
-	helper.end_event(description="VM RAM configuation saved")
+	helper.end_event(description="VM RAM configuation saved: " + str(options['ram']) + " GiB")
 
 
 
@@ -227,7 +227,7 @@ def run(helper, options):
 		helper.lib.vmware_task_complete(task, "Could not add data disk to VM")
 
 		# End the event
-		helper.end_event(description="Data disk added to VM")
+		helper.end_event(description="Data disk added to VM: " + str(options['disk']) + " GiB")
 
 
 
@@ -325,7 +325,7 @@ def run(helper, options):
 		helper.lib.set_link_ids(system_dbid, cmdb_id=sys_id, vmware_uuid=vm.config.uuid)
 
 		# End the event
-		helper.end_event(success=True, description="Created ServiceNow CMDB CI " + str(cmdb_id))
+		helper.end_event(success=True, description="Created ServiceNow CMDB CI: " + str(cmdb_id))
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
 
