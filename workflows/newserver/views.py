@@ -8,9 +8,9 @@ import cortex.views
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 
 workflow = CortexWorkflow(__name__)
-workflow.add_permission('newserver', 'Create system record')
+workflow.add_permission('newserver', 'Create System Record')
 
-@workflow.route("create",title='Create system record', order=30, permission="newserver", methods=['GET', 'POST'])
+@workflow.route("create",title='Create System Record', order=30, permission="newserver", methods=['GET', 'POST'])
 def allocateserver():
 
 	# Get the list of enabled classes
@@ -33,7 +33,7 @@ def allocateserver():
 
 	if request.method == 'GET':
 		## Show form
-		return workflow.render_template("create.html", title="Create system record", classes=server_classes, default_class=workflow.config['DEFAULT_CLASS'], environments=environments, networks=networks, default_network=workflow.config['DEFAULT_NETWORK_ID'], oses=oses, domains=domains, default_domain=workflow.config['DEFAULT_DOMAIN'])
+		return workflow.render_template("create.html", title="Create System Record", classes=server_classes, default_class=workflow.config['DEFAULT_CLASS'], environments=environments, networks=networks, default_network=workflow.config['DEFAULT_NETWORK_ID'], oses=oses, domains=domains, default_domain=workflow.config['DEFAULT_DOMAIN'])
 
 	elif request.method == 'POST':
 		if 'purpose' not in request.form or 'comments' not in request.form or 'class' not in request.form or 'os' not in request.form or 'environment' not in request.form or 'network' not in request.form or 'domain' not in request.form:
