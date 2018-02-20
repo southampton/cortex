@@ -73,7 +73,7 @@ class SNPuppetConnector:
 			sn_server_data["dns_domain"] = facts["networking"]["domain"]
 			sn_server_data["ip_address"] = facts["ipaddress"]
 			sn_server_data["cpu_count"] = facts["processors"]["physicalcount"]
-			sn_server_data["cpu_core_count"] = facts["processors"]["count"]	
+			sn_server_data["cpu_core_count"] = int(facts["processors"]["count"]) / int(facts["processors"]["physicalcount"])
 
 			# Sum the disks
 			total_disk_space = 0
