@@ -847,6 +847,8 @@ def systems_vmware_json():
 
 	# Get total number of VMs that match query
 	if search is not None:
+		# escape wildcards
+		search = search.replace('%', '\%').replace('_', '\_')
 		curd.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `name` LIKE %s', ("%" + search + "%",))
 		filtered_count = curd.fetchone()['count']
 	else:
@@ -857,6 +859,8 @@ def systems_vmware_json():
 	query = 'SELECT `name`, `uuid` FROM `vmware_cache_vm` '
 	query_params = ()
 	if search is not None:
+		# escape wildcards
+		search = search.replace('%', '\%').replace('_', '\_')
 		query = query + 'WHERE `name` LIKE %s '
 		query_params = ("%" + search + "%",)
 
