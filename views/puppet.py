@@ -572,10 +572,12 @@ def puppet_search():
 		return abort(400)
 
 	q.strip();
-	
+	# escape wildcards
+	q = q.replace('%', '\%').replace('_', '\_')
+
 	#Search for the text
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT DISTINCT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`  FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` WHERE `puppet_nodes`.`classes` LIKE %s OR `puppet_nodes`.`variables` LIKE %s ORDER BY `puppet_nodes`.`certname`', ('%' + q + '%', '%' + q + '%'))
+	curd.execute('''SELECT DISTINCT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`  FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` WHERE `puppet_nodes`.`classes` LIKE %s OR `puppet_nodes`.`variables` LIKE %s ORDER BY `puppet_nodes`.`certname`''', ('%' + q + '%', '%' + q + '%'))
 	results = curd.fetchall()
-	
+
 	return render_template('puppet/search.html', active='puppet', data=results, title="Puppet search")

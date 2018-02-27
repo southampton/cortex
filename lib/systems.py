@@ -148,6 +148,8 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 	# If a search term is specified...
 	if search is not None:
 		# Build a filter string
+		# escape wildcards
+		search = search.replace('%', '\%').replace('_', '\_')
 		like_string = '%' + search + '%'
 
 		# If a class name was specified already, we need to AND the query,
@@ -202,7 +204,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 		else:
 			query = query + "WHERE "
 		query = query + ' `id` IN (SELECT DISTINCT `system_id` FROM `system_perms`)'
-			
+
 	if only_allocated_by:
 		if class_name is not None or search is not None or hide_inactive == True or only_other or show_expired or show_nocmdb or show_perms_only:
 			query = query + " AND "
@@ -210,7 +212,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 			query = query + "WHERE "
 		query = query + ' `allocation_who`=%s'
 		params = params + (only_allocated_by,)
-	
+
 	if show_favourites_for:
 		if class_name is not None or search is not None or hide_inactive == True or only_other or show_expired or show_nocmdb or show_perms_only or only_allocated_by:
 			query = query + " AND "
