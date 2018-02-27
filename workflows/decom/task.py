@@ -68,7 +68,7 @@ def action_vm_delete(action, helper):
 	# Wait for the task to complete
 	if not helper.lib.vmware_task_wait(task):
 		raise helper.lib.TaskFatalError(message="Failed to delete the VM. Check vCenter for more information")
-
+	helper.lib.delete_system_from_cache(action['data']['uuid'])
 	return True
 
 ################################################################################
