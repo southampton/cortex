@@ -1420,9 +1420,16 @@ class Corpus(object):
 	############################################################################
 
 	def vmware_vm_delete(self, vm):
-		"""Deletes off a virtual machine."""
+		"""Deletes a virtual machine. It may be desirarble to then remove the vm
+		from the cache using delete_system_from_cache."""
 
 		return vm.Destroy_Task()
+
+	############################################################################
+
+	def delete_system_from_cache(self, vmware_uuid):
+		cur = self.db.cursor()
+		cur.execute("DELETE FROM `systems` WHERE `vmware_uuid`=%s", (vmware_uuid,))
 
 	############################################################################
 
