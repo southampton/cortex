@@ -1429,7 +1429,7 @@ class Corpus(object):
 
 	def delete_system_from_cache(self, vmware_uuid):
 		cur = self.db.cursor()
-		cur.execute("DELETE FROM `systems` WHERE `vmware_uuid`=%s", (vmware_uuid))
+		cur.execute("DELETE FROM `systems` WHERE `vmware_uuid`=%s", (vmware_uuid,))
 
 	############################################################################
 
