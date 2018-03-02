@@ -1,0 +1,33 @@
+# Environments that objects can be created in, with individual suffixes and load balancers
+ENVS=[
+	{'id': 'prod', 'name': 'Production',  'suffix': '',      'nlb': 'myprodbalancer.domain'},
+	{'id': 'test', 'name': 'Test',        'suffix': '-test', 'nlb': 'mydevtestbalancer.domain'},
+	{'id': 'dev',  'name': 'Development', 'suffix': '-dev',  'nlb': 'mydevtestbalancer.domain'}
+]
+
+# Username and password to access the load balancers
+NLB_USERNAME='admin'
+NLB_PASSWORD='password'
+
+# SSL Providers, along with the chain certificate file to use on the F5 BigIPs
+SSL_PROVIDERS=[
+	{'id': 'mysslprovider', 'name': 'My SSL Provider', 'nlb-chain-file': 'MySSLProviderIntermediate.crt'},
+]
+
+# The default SSL provider id (from the SSL_PROVIDERS dictionary)
+DEFAULT_SSL_PROVIDER='mysslprovider'
+
+# The default partition to create objects in
+DEFAULT_PARTITION='Common'
+
+# Prefixes for different object types
+VIRTUAL_SERVER_PREFIX='virtual-'
+POOL_PREFIX='pool-'
+SSL_PROFILE_PREFIX='sslprofile-'
+IRULE_PREFIX='irule-'
+
+# When doing a DNS lookup that is given just as a hostname, add on this domain suffix
+DEFAULT_DOMAIN='domain'
+
+# For DNS lookups: Consider hostname.anything_in_this_list to be a local domain, so add on DEFAULT_DOMAIN
+KNOWN_DOMAINS_SUFFIXES=['test', 'dev']
