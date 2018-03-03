@@ -23,33 +23,19 @@ workflow.add_permission('nlbweb.create', 'Creates NLB Web Service')
 # IPv4 Address Regex
 ipv4_re = re.compile(r"^((([0-9])|([1-9][0-9])|(1[0-9][0-9])|(2[0-4][0-9])|(25[0-5]))\.){3}((([0-9])|([1-9][0-9])|(1[0-9][0-9])|(2[0-4][0-9])|(25[0-5])))$")
 
-@workflow.route('create', title='Create NLB Web Service', order=40, permission="nlbweb.create")
+@workflow.route('create', title='Create NLB Web Service', order=40, permission="nlbweb.create", methods=['GET', 'POST'])
 def nlbweb_create():
 	# Get the workflow settings
 	wfconfig = workflow.config
 
-	## Show form
-	return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], partition=wfconfig['DEFAULT_PARTITION'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'])
+	# Turn envs in to a dict
+	envs_dict = { env['id']: env for env in wfconfig['ENVS'] }
 
-@workflow.route('validate', title='Create NLB Web Service', permission="nlbweb.create", methods=['POST'], menu=False)
-def nlbweb_validate():
-	# Get the workflow settings
-	wfconfig = workflow.config
-	
-	# If we've got the confirmation, start the task:
-	if 'confirm' in request.form and int(request.form['confirm']) == 1:
-		options = {}
-		options['wfconfig'] = wfconfig
+	if request.method == 'GET':
+		## Show form
+		return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], partition=wfconfig['DEFAULT_PARTITION'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'], envs_dict=envs_dict)
 
-		# Connect to NeoCortex and start the task
-		neocortex = cortex.lib.core.neocortex_connect()
-		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates the necessary objects on the NLB to run a basic HTTP(S) website / service")
-
-		# Redirect to the status page for the task
-		return redirect(url_for('task_status', id=task_id))
-
-	# We've not got confirmation, figure out what we're about to do:
-	else:
+	elif request.method == 'POST':
 		valid_form = True
 		form_fields = {}
 
@@ -105,6 +91,10 @@ def nlbweb_validate():
 		if len(form_fields['fqdn']) == 0:
 			flash('You must enter a fully-qualified domain name for the service', 'alert-danger')
 			valid_form = False
+		else:
+			if '.' not in form_fields['fqdn']:
+				flash('The domain name of the service must be fully qualified', 'alert-danger')
+				valid_form = False
 		if len(form_fields['ip']) > 0:
 			if ipv4_re.match(form_fields['ip']) is None:
 				flash('Invalid IPv4 service address', 'alert-danger')
@@ -229,14 +219,21 @@ def nlbweb_validate():
 				if ipv4_re.match(form_fields['node_ips'][i]) is None:
 					flash('You must specify a valid IPv4 address for every back-end node', 'alert-danger')
 					valid_form = False
+					break
 
 		if not valid_form:
-			return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], partition=wfconfig['DEFAULT_PARTITION'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'], values=form_fields)
+			# Turn envs in to a dict
+			envs_dict = { env['id']: env for env in wfconfig['ENVS'] }
+
+			return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], partition=wfconfig['DEFAULT_PARTITION'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'], values=form_fields, envs_dict=envs_dict)
 
 		# We've now validate the inputs. Now let's figure out what we need to do
 
+		# Lowercase the FQDN
+		form_fields['fqdn'] = form_fields['fqdn'].lower()
+
 		# Extract certificate details
-		details = {'ssl': 0}
+		details = {'ssl': 0, 'warnings': []}
 		if form_fields['enable_ssl']:
 			details['ssl'] = 1
 			details['ssl_key_size'] = openssl_ssl_key.bits()
@@ -269,7 +266,39 @@ def nlbweb_validate():
 						elif name[0] == 6:  # URI
 							details['ssl_cert_subjectAltName'].append('URI:' + name[1])
 
+			# Ensure SSL key size is of appropriate length
+			if int(details['ssl_key_size']) < wfconfig['SSL_MIN_KEY_SIZE']:
+				details['warnings'].append('SSL private key is only ' + str(details['ssl_key_size']) + ' bits in length. Consider increasing it to at least ' + str(wfconfig['SSL_MIN_KEY_SIZE']) + ' bits')
+
+			# Ensure certificate subject CN matches service FQDN
+			if details['ssl_cert_subject_cn'].lower() != form_fields['fqdn']:
+				details['warnings'].append('SSL certificate CN does not match service FQDN')
+
+			# Ensure subjectAltName exists, and that the FQDN of the service is contained within
+			if 'ssl_cert_subjectAltName' in details:
+				if 'DNS:' + form_fields['fqdn'] not in details['ssl_cert_subjectAltName']:
+					details['warnings'].append('SSL certificate subjectAltName does not contain the service FQDN')
+			else:
+				details['warnings'].append('SSL certificate does not have a subjectAltName field')
+
 		return render_template(__name__ + "::validate.html", title="Create NLB Web Service", details=details)
+
+@workflow.route('validate', title='Create NLB Web Service', permission="nlbweb.create", methods=['POST'], menu=False)
+def nlbweb_validate():
+	# Get the workflow settings
+	wfconfig = workflow.config
+	
+	# If we've got the confirmation, start the task:
+	if 'confirm' in request.form and int(request.form['confirm']) == 1:
+		options = {}
+		options['wfconfig'] = wfconfig
+
+		# Connect to NeoCortex and start the task
+		neocortex = cortex.lib.core.neocortex_connect()
+		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates the necessary objects on the NLB to run a basic HTTP(S) website / service")
+
+		# Redirect to the status page for the task
+		return redirect(url_for('task_status', id=task_id))
 
 @workflow.route('dnslookup', permission="nlbweb.create", menu=False)
 def nlbweb_dns_lookup():
