@@ -34,7 +34,7 @@ td.na
 }
 </style>
 
-<form method="POST" action="{{ url_for('nlbweb_validate') }}" role="form">
+<form id="nlb_form" method="POST" action="{{ url_for('nlbweb_validate') }}" role="form">
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 	<div class="row">
 		<div class="col-md-6">
@@ -58,7 +58,7 @@ td.na
 				</div>
 				<div class="col-md-6 form-group">
 					<label for="suffix">Object Name Suffix:</label>
-					<input class="form-control" name="suffix" id="suffix" readonly="readonly" />
+					<input class="form-control" id="suffix" readonly="readonly" />
 				</div>
 				<div class="col-md-12 form-group">
 					<label for="partition">NLB Partition:</label>
@@ -79,7 +79,7 @@ td.na
 				</div>
 				<div class="col-md-4 form-group">
 					<label for="http_port">Service HTTP Port:</label>
-					<input class="form-control" name="http_port" id="http_port" placeholder="The port number for HTTP" value="80" />
+					<input class="form-control" type="number" name="http_port" id="http_port" placeholder="The port number for HTTP" value="80" />
 				</div>
 				<div class="col-md-4 form-group">
 					<label for="">Enable SSL:</label><br/>
@@ -87,11 +87,11 @@ td.na
 				</div>
 				<div class="col-md-4 form-group">
 					<label for="https_port">Service HTTPS Port:</label>
-					<input class="form-control" name="https_port" id="https_port" placeholder="The port number for HTTPS" value="443" />
+					<input class="form-control" type="number" name="https_port" id="https_port" placeholder="The port number for HTTPS" value="443" />
 				</div>
 				<div class="col-md-12 form-group">
-					<label for="monitor">Monitor URL:</label>
-					<input class="form-control" name="monitor" id="monitor" placeholder="The path on the site to check for a HTTP/1.1 200 OK response" value="/" />
+					<label for="monitor_url">Monitor URL:</label>
+					<input class="form-control" name="monitor_url" id="monitor_url" placeholder="The path on the site to check for a HTTP/1.1 200 OK response" value="/" />
 				</div>
 				<div class="col-md-12 form-group">
 					<label for="monitor_response">Monitor Response:</label>
@@ -117,8 +117,8 @@ td.na
 			<textarea class="form-control" id="ssl_cert" name="ssl_cert" style="width:100%;max-width:100%;min-width:100%;height:6em" placeholder="Paste PEM-encoded X509 certificate here"></textarea>
 		</div>
 		<div class="col-md-12">
-			<label for="monitor">SSL Certificate Provider:</label>
-			<select class="form-control" name="env" id="env">
+			<label for="ssl_provider">SSL Certificate Provider:</label>
+			<select class="form-control" name="ssl_provider" id="ssl_provider">
 				<option value="*SELF">Self-signed</option>
 {%- for ssl_provider in ssl_providers %}
 				<option value="{{ ssl_provider['id'] }}"{% if ssl_provider['id'] == default_ssl_provider %} selected="selected"{% endif %}>{{ ssl_provider['name'] }} (NLB Chain File: {{ ssl_provider['nlb-chain-file'] }})</option>
@@ -141,6 +141,10 @@ td.na
 				</thead>
 				<tbody id="node_table_body">
 					<tr id="node_template" style="display:none">
+						<input type="hidden" class="nti_host" value="" />
+						<input type="hidden" class="nti_http_port" value="" />
+						<input type="hidden" class="nti_https_port" value="" />
+						<input type="hidden" class="nti_ip" value="" />
 						<td class="node_row_host"></td>
 						<td class="node_row_http_port"></td>
 						<td class="node_row_https_port"></td>
@@ -150,11 +154,11 @@ td.na
 				</tbody>
 				<tfoot>
 					<tr>
-						<td><input class="form-control node-input-box" id="node_name" placeholder="New Node Hostname" /></td>
-						<td style="width:10em"><input class="form-control node-input-box" id="node_http_port" placeholder="New Node HTTP Port" value="80" /></td>
-						<td style="width:10em"><input class="form-control node-input-box" id="node_https_port" placeholder="New Node HTTPS Port" value="443" /></td>
-						<td><input class="form-control node-input-box" id="node_ip" placeholder="New Node IP Address (optional - can take from DNS)" /></td>
-						<td style="width:0px"><button type="button" class="btn btn-sm btn-success" id="add_node">Add</button></td>
+						<td><input class="form-control node-input-box" id="new_node_name" placeholder="New Node Hostname" /></td>
+						<td style="width:10em"><input class="form-control node-input-box" type="number" id="node_http_port" placeholder="New Node HTTP Port" value="80" /></td>
+						<td style="width:10em"><input class="form-control node-input-box" type="number" id="node_https_port" placeholder="New Node HTTPS Port" value="443" /></td>
+						<td><input class="form-control node-input-box" id="new_node_ip" placeholder="New Node IP Address (optional - can take from DNS)" /></td>
+						<td style="width:1px"><button type="button" class="btn btn-sm btn-success" id="add_node">Add</button></td>
 					</tr>
 				</tfoot>
 			</table>
@@ -211,17 +215,34 @@ function addNode(host, ip, http_port, https_port)
 	var row = $('#node_template').clone(true);
 	$('#node_table_body').append(row);
 	row.css('display', '');
+
+	// Set the body of the table row
 	row.find('td.node_row_host').html(host.trim());
 	row.find('td.node_row_http_port').html(http_port.trim());
 	row.find('td.node_row_https_port').html(https_port.trim());
 	row.find('td.node_row_ip').html(ip.trim());
-	$('#node_name').val('');
-	$('#node_ip').val('');
-	$('#node_name').focus();
+
+	// Set the value of the inputs on the row
+	row.find('input.nti_host').val(host.trim());
+	row.find('input.nti_http_port').val(http_port.trim());
+	row.find('input.nti_https_port').val(https_port.trim());
+	row.find('input.nti_ip').val(ip.trim());
+
+	// Set the name of the inputs on the tow
+	row.find('input.nti_host').attr('name', 'node_host[]');
+	row.find('input.nti_http_port').attr('name', 'node_http_port[]');
+	row.find('input.nti_https_port').attr('name', 'node_https_port[]');
+	row.find('input.nti_ip').attr('name', 'node_ip[]');
+
+	// Clear values (but not port numbers, as they're likely to be the
+	// same for each row) and then focus back on the node name again
+	$('#new_node_name').val('');
+	$('#new_node_ip').val('');
+	$('#new_node_name').focus();
 }
 $('#add_node').click(function() {
-	var host = $('#node_name').val().trim();
-	var ip = $('#node_ip').val().trim();
+	var host = $('#new_node_name').val().trim();
+	var ip = $('#new_node_ip').val().trim();
 	var http_port = $('#node_http_port').val().trim();
 	var https_port = $('#node_https_port').val().trim();
 	if (host == "")
@@ -234,7 +255,7 @@ $('#add_node').click(function() {
 	{
 		$('#add_node').attr('disabled', 'disabled');
 		$.ajax({
-			url: '{{ url_for('nlbweb_dns_lookup') }}?host=' + $('#node_name').val().trim(),
+			url: '{{ url_for('nlbweb_dns_lookup') }}?host=' + host,
 			success: function(data, textStatus) {
 				if (data['success'] !== undefined && data['success'] == 1)
 				{

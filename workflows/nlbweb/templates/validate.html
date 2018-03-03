@@ -10,8 +10,39 @@
 </div>
 
 <div class="row">
-	<div class="col-md-12">
-		Validation results
+{%- if details.ssl == 1 %}
+		<div class="col-md-4">
+			<h4>Subject</h4>
+			<strong>Common Name:</strong> {{ details['ssl_cert_subject_cn'] }}<br />
+			<strong>Organisational Unit Name:</strong> {{ details['ssl_cert_subject_ou'] }}<br />
+			<strong>Organisation:</strong> {{ details['ssl_cert_subject_o'] }}<br />
+			<strong>Locality:</strong> {{ details['ssl_cert_subject_l'] }}<br />
+			<strong>State:</strong> {{ details['ssl_cert_subject_st'] }}<br />
+			<strong>Country:</strong> {{ details['ssl_cert_subject_c'] }}<br />
+		</div>
+		<div class="col-md-4">
+			<h4>Issuer</h4>
+			<strong>Common Name:</strong> {{ details['ssl_cert_issuer_cn'] }}<br />
+			<strong>Organisational Unit Name:</strong> {{ details['ssl_cert_issuer_ou'] }}<br />
+			<strong>Organisation:</strong> {{ details['ssl_cert_issuer_o'] }}<br />
+			<strong>Locality:</strong> {{ details['ssl_cert_issuer_l'] }}<br />
+			<strong>State:</strong> {{ details['ssl_cert_issuer_st'] }}<br />
+			<strong>Country:</strong> {{ details['ssl_cert_issuer_c'] }}<br />
+		</div>
+		<div class="col-md-4">
+			<h4>Details</h4>
+			<strong>Valid After:</strong> {{ details['ssl_cert_notbefore'] }}<br />
+			<strong>Valid Until:</strong> {{ details['ssl_cert_notafter'] }}<br />
+			<strong>Private Key Size:</strong> {{ details['ssl_key_size'] }} bit<br />
+			<strong>Subject Alternate Names:</strong>
+{%-     if details['ssl_cert_subjectAltName'] | length > 0 %}
+				<ul>
+{%-         for entry in details['ssl_cert_subjectAltName'] %}
+					<li>{{ entry }} </li>
+{%-         endfor %}
+{%-     endif %}
+		</div>
+{%- endif %}
 	</div>
 </div>
 {% endblock %}
