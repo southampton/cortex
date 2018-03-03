@@ -1,8 +1,8 @@
 # Environments that objects can be created in, with individual suffixes and load balancers
 ENVS=[
-	{'id': 'prod', 'name': 'Production',  'suffix': '',      'nlb': 'myprodbalancer.domain'},
-	{'id': 'test', 'name': 'Test',        'suffix': '-test', 'nlb': 'mydevtestbalancer.domain'},
-	{'id': 'dev',  'name': 'Development', 'suffix': '-dev',  'nlb': 'mydevtestbalancer.domain'}
+	{'id': 'prod', 'name': 'Production',  'suffix': '',      'nlb': 'myprodbalancer.domain',    'network': '192.168.100.0/24'},
+	{'id': 'test', 'name': 'Test',        'suffix': '-test', 'nlb': 'mydevtestbalancer.domain', 'network': '192.168.110.0/24'},
+	{'id': 'dev',  'name': 'Development', 'suffix': '-dev',  'nlb': 'mydevtestbalancer.domain', 'network': '192.168.120.0/24'}
 ]
 
 # Username and password to access the load balancers
@@ -25,6 +25,7 @@ VIRTUAL_SERVER_PREFIX='virtual-'
 POOL_PREFIX='pool-'
 SSL_PROFILE_PREFIX='sslprofile-'
 IRULE_PREFIX='irule-'
+MONITOR_PREFIX='monitor-'
 
 # When doing a DNS lookup that is given just as a hostname, add on this domain suffix
 DEFAULT_DOMAIN='domain'
@@ -45,3 +46,5 @@ SSL_EXPECTED_SUBJECT_L = None
 SSL_EXPECTED_SUBJECT_ST = None
 SSL_EXPECTED_SUBJECT_C = None
 
+# When creating SSL Client Profiles, use the given profile as a parent
+SSL_CLIENT_PROFILE_PARENT = '/Common/clientssl'

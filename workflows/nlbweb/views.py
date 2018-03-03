@@ -12,7 +12,7 @@ import re, datetime
 import socket
 
 # For NLB API
-import requests
+from f5.bigip import ManagementRoot
 
 # For certificate validation
 import OpenSSL as openssl
@@ -30,6 +30,9 @@ def nlbweb_create():
 
 	# Turn envs in to a dict
 	envs_dict = { env['id']: env for env in wfconfig['ENVS'] }
+
+	# Turn SSL providers in to a dict
+	ssl_providers_dict = { ssl_provider['id']: ssl_provider for ssl_provider in wfconfig['SSL_PROVIDERS'] }
 
 	if request.method == 'GET':
 		## Show form
@@ -229,10 +232,15 @@ def nlbweb_create():
 
 		# We've now done some basic validation on the inputs
 
+		# Build an array of nodes
+		back_end_nodes = []
+		for i in range(0, len(form_fields['node_hosts'])):
+			back_end_nodes.append({'hostname': form_fields['node_hosts'][i], 'http_port': form_fields['node_http_ports'][i], 'https_port': form_fields['node_https_ports'][i], 'ip': form_fields['node_ips'][i]})
+
 		# Lowercase the FQDN
 		form_fields['fqdn'] = form_fields['fqdn'].lower()
 
-		details = {'ssl': 0, 'warnings': []}
+		details = {'ssl': 0, 'warnings': [], 'actions': []}
 		if form_fields['enable_ssl']:
 			# Extract certificate details
 			details['ssl'] = 1
@@ -272,12 +280,12 @@ def nlbweb_create():
 
 			# Ensure certificate subject CN matches service FQDN
 			if details['ssl_cert_subject_cn'].lower() != form_fields['fqdn']:
-				details['warnings'].append('SSL certificate CN does not match service FQDN')
+				details['warnings'].append('SSL certificate subject CN (' + str(details['ssl_cert_subject_cn']) + ') does not match service FQDN (' + str(form_fields['fqdn']) + ')')
 
 			# Ensure subjectAltName exists, and that the FQDN of the service is contained within
 			if 'ssl_cert_subjectAltName' in details:
 				if 'DNS:' + form_fields['fqdn'] not in details['ssl_cert_subjectAltName']:
-					details['warnings'].append('SSL certificate subjectAltName does not contain the service FQDN')
+					details['warnings'].append('SSL certificate subjectAltName does not contain the service FQDN (' + str(form_fields['fqdn']) + ')')
 			else:
 				details['warnings'].append('SSL certificate does not have a subjectAltName field')
 
@@ -308,7 +316,183 @@ def nlbweb_create():
 			if 'SSL_EXPECTED_SUBJECT_C' in wfconfig and wfconfig['SSL_EXPECTED_SUBJECT_C'] is not None and details['ssl_cert_subject_c'] != wfconfig['SSL_EXPECTED_SUBJECT_C']:
 				details['warnings'].append('SSL certificate subject Country does not match expected "' + str(wfconfig['SSL_EXPECTED_SUBJECT_C']) + '"')
 
-		# That's everything validated: now check the NLB to validate against that
+		## That's everything validated: now check the NLB to validate against that
+
+		# Work out if we need to create HTTP objects and/or HTTPS objects
+		need_http_objects = not form_fields['enable_ssl'] or (form_fields['enable_ssl'] and not form_fields['redirect_http'])
+		need_https_objects = form_fields['enable_ssl']
+
+		# Work out if the port numbers for HTTP / HTTPS on all the nodes are the same
+		identical_http_ports = all([back_end_node['http_port'] == back_end_nodes[0]['http_port'] for back_end_node in back_end_nodes])
+		if identical_http_ports:
+			http_port_suffix = '-' + back_end_nodes[0]['http_port']
+		else:
+			http_port_suffix = '-http'
+		identical_https_ports = all([back_end_node['https_port'] == back_end_nodes[0]['https_port'] for back_end_node in back_end_nodes])
+		if identical_https_ports:
+			https_port_suffix = '-' + back_end_nodes[0]['https_port']
+		else:
+			https_port_suffix = '-https'
+
+		# Generate the names we think we need: pool name. Suffixed with
+		# either -$http(s)_port if all the port numbers of the nodes are
+		# the same or -http and -https if they differ
+		pool_name_base = wfconfig['POOL_PREFIX'] + form_fields['short_service'] + envs_dict[form_fields['env']]['suffix']
+		pool_name_http = pool_name_base + http_port_suffix
+		pool_name_https = pool_name_base + https_port_suffix
+		monitor_name_http = wfconfig['MONITOR_PREFIX'] + form_fields['short_service'] + envs_dict[form_fields['env']]['suffix'] + http_port_suffix
+		monitor_name_https = wfconfig['MONITOR_PREFIX'] + form_fields['short_service'] + envs_dict[form_fields['env']]['suffix'] + https_port_suffix
+		virtual_server_base = wfconfig['VIRTUAL_SERVER_PREFIX'] + form_fields['short_service'] + envs_dict[form_fields['env']]['suffix']
+		virtual_server_http = virtual_server_base + '-' + str(form_fields['http_port'])
+
+		if need_https_objects:
+			virtual_server_https = virtual_server_base + '-' + str(form_fields['https_port'])
+			ssl_profile_name = wfconfig['SSL_PROFILE_PREFIX'] + form_fields['fqdn']
+			ssl_cert_file = form_fields['fqdn'] + '.crt'
+			ssl_key_file = form_fields['fqdn'] + '.key'
+
+		# Set up an action to allocate an IP from Infoblox if we haven't specified one
+		if form_fields['ip'] == '':
+			details['actions'].append({
+				'action_description': 'Allocate an IP address from ' + str(envs_dict[form_fields['env']]['network']) + ' in Infoblox',
+				'id': 'allocate_ip',
+				'network': envs_dict[form_fields['env']]['network']})
+
+		# Connect to the NLB
+		bigip = ManagementRoot(envs_dict[form_fields['env']]['nlb'], wfconfig['NLB_USERNAME'], wfconfig['NLB_PASSWORD'])
+
+		# Check if any of the nodes are already present on the NLB
+		for back_end_node in back_end_nodes:
+			back_end_node_name = back_end_node['hostname'].lower()
+
+			# Check if a node of the same name exists
+			if bigip.tm.ltm.nodes.node.exists(name=back_end_node_name, partition=form_fields['partition']):
+				# If it exists, load the object
+				nlb_node = bigip.tm.ltm.nodes.node.load(name=back_end_node_name, partition=form_fields['partition'])
+
+				# Check the IP of the existing object to see if we need to create or not
+				if back_end_node['ip'] != nlb_node.address:
+					details['warnings'].append('CONFLICT: Node ' + back_end_node['hostname'] + ' already exists with different IP')
+				else:
+					details['warnings'].append('SKIPPED: Node ' + back_end_node['hostname'] + ' already exists with correct IP. Not creating.')
+			else:
+				details['actions'].append({
+					'action_description': 'Create node ' + back_end_node['hostname'],
+					'id': 'create_node',
+					'name': back_end_node['hostname'],
+					'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' Node',
+					'ip': back_end_node['ip'],
+					'partition': form_fields['partition']})
+
+		# Check if the HTTP monitor already exists
+		if need_http_objects:
+			if bigip.tm.ltm.monitor.https.http.exists(name=monitor_name_http, partition=form_fields['partition']):
+				details['warnings'].append('SKIPPED: Monitor ' + monitor_name_http + ' already exists. Not creating.')
+			else:
+				details['actions'].append({
+					'action_description': 'Create HTTP monitor ' + monitor_name_http,
+					'id': 'create_monitor',
+					'name': monitor_name_http,
+					'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' HTTP Monitor',
+					'parent': 'http',
+					'url': form_fields['monitor_url'],
+					'response': form_fields['monitor_response'],
+					'partition': form_fields['partition']})
+
+		# Check if the HTTPS monitor already exists
+		if need_https_objects:
+			if bigip.tm.ltm.monitor.https_s.https.exists(name=monitor_name_https, partition=form_fields['partition']):
+				details['warnings'].append('SKIPPED: Monitor ' + monitor_name_https + ' already exists. Not creating.')
+			else:
+				details['actions'].append({
+					'action_description': 'Create HTTPS monitor ' + monitor_name_https,
+					'id': 'create_monitor',
+					'name': monitor_name_https,
+					'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' HTTPS Monitor',
+					'parent': 'https',
+					'url': form_fields['monitor_url'],
+					'response': form_fields['monitor_response'],
+					'partition': form_fields['partition']})
+
+		# Check if the HTTP pool already exists. 
+		if need_http_objects:
+			if bigip.tm.ltm.pools.pool.exists(name=pool_name_http, partition=form_fields['partition']):
+				details['warnings'].append('SKIPPED: Pool ' + pool_name_http + ' already exists. Not creating.')
+			else:
+				details['actions'].append({
+					'action_description': 'Create HTTP Pool ' + pool_name_http,
+					'id': 'create_pool',
+					'name': pool_name_http,
+					'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' HTTP Pool',
+					'monitor': monitor_name_http,
+					'members': [back_end_node['hostname'] + ':' + back_end_node['http_port'] for back_end_node in back_end_nodes],
+					'partition': form_fields['partition']})
+
+		# Check if the HTTPS pool already exists
+		if need_https_objects:
+			if bigip.tm.ltm.pools.pool.exists(name=pool_name_https, partition=form_fields['partition']):
+				details['warnings'].append('SKIPPED: Pool ' + pool_name_https + ' already exists. Not creating.')
+			else:
+				details['actions'].append({
+					'action_description': 'Create HTTPS Pool ' + pool_name_https,
+					'id': 'create_pool',
+					'name': pool_name_https,
+					'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' HTTPS Pool',
+					'monitor': monitor_name_https,
+					'members': [back_end_node['hostname'] + ':' + back_end_node['https_port'] for back_end_node in back_end_nodes],
+					'partition': form_fields['partition']})
+
+		# Check if the SSL Profile already exists
+		if need_https_objects:
+			if bigip.tm.ltm.profile.client_ssls.client_ssl.exists(name=ssl_profile_name, partition=form_fields['partition']):
+				details['warnings'].append('SKIPPED: SSL Client Profile ' + ssl_profile_name + ' already exists. Not creating.')
+			else:
+				details['actions'].append({
+					'action_description': 'Create SSL Client Profile ' + ssl_profile_name,
+					'id': 'create_ssl_client_profile',
+					'name': ssl_profile_name,
+					'key': ssl_key_file,
+					'cert': ssl_cert_file,
+					'chain': ssl_providers_dict[form_fields['ssl_provider']]['nlb-chain-file'],
+					'parent': wfconfig['SSL_CLIENT_PROFILE_PARENT'],
+					'partition': form_fields['partition']})
+
+		# Check to see if the HTTP virtual server already exists
+		if bigip.tm.ltm.virtuals.virtual.exists(name=virtual_server_http, partition=form_fields['partition']):
+			details['warnings'].append('SKIPPED: Virtual Server ' + virtual_server_http + ' already exists. Not creating.')
+		else:
+			new_action = {
+				'action_description': 'Create HTTP Virtual Server ' + virtual_server_http,
+				'id': 'create_virtual_server',
+				'name': virtual_server_http,
+				'ip': form_fields['ip'],
+				'port': form_fields['http_port'],
+				'irules': [],
+				'partition': form_fields['partition']
+			}
+			if form_fields['redirect_http']:
+				new_action['irules'].append('/Common/_sys_https_redirect')
+			details['actions'].append(new_action)
+		
+		# Check to see if the HTTPS virtual server already exists
+		if need_https_objects:
+			if bigip.tm.ltm.virtuals.virtual.exists(name=virtual_server_https, partition=form_fields['partition']):
+				details['warnings'].append('SKIPPED: Virtual Server ' + virtual_server_https + ' already exists. Not creating.')
+			else:
+				new_action = {
+					'action_description': 'Create HTTPS Virtual Server ' + virtual_server_https,
+					'id': 'create_virtual_server',
+					'name': virtual_server_https,
+					'ip': form_fields['ip'],
+					'port': form_fields['https_port'],
+					'irules': [],
+					'ssl_client_profile': ssl_profile_name,
+					'partition': form_fields['partition']
+				}
+				if form_fields['encrypt_backend']:
+					new_action['ssl_server_profile'] = 'serverssl'
+				details['actions'].append(new_action)
+
 
 		# Show the user the details, warnings, and what we're going to do
 		return render_template(__name__ + "::validate.html", title="Create NLB Web Service", details=details)
