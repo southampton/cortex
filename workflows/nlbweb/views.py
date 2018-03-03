@@ -227,14 +227,14 @@ def nlbweb_create():
 
 			return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], partition=wfconfig['DEFAULT_PARTITION'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'], values=form_fields, envs_dict=envs_dict)
 
-		# We've now validate the inputs. Now let's figure out what we need to do
+		# We've now done some basic validation on the inputs
 
 		# Lowercase the FQDN
 		form_fields['fqdn'] = form_fields['fqdn'].lower()
 
-		# Extract certificate details
 		details = {'ssl': 0, 'warnings': []}
 		if form_fields['enable_ssl']:
+			# Extract certificate details
 			details['ssl'] = 1
 			details['ssl_key_size'] = openssl_ssl_key.bits()
 			details['ssl_cert_subject_cn'] = openssl_ssl_cert.get_subject().CN
@@ -281,6 +281,36 @@ def nlbweb_create():
 			else:
 				details['warnings'].append('SSL certificate does not have a subjectAltName field')
 
+			# Get current UTC time so we can validate certificate timestamp
+			utc_now = datetime.datetime.utcnow()
+
+			# Ensure certificate has started
+			if utc_now < details['ssl_cert_notbefore']:
+				details['warnings'].append('SSL certificate is not valid yet')
+
+			# Ensure certificate is not expired
+			if utc_now > details['ssl_cert_notafter']:
+				details['warnings'].append('SSL certificate has expired')
+
+			# Ensure certificate won't expire within a given threshold
+			if utc_now + datetime.timedelta(days=wfconfig['SSL_MIN_REMAINING_TIME']) > details['ssl_cert_notafter']:
+				details['warnings'].append('SSL certificate expires soon. Consider getting a new certificate')
+
+			# Check the details of the certificate to ensure they're what we would expect
+			if 'SSL_EXPECTED_SUBJECT_OU' in wfconfig and wfconfig['SSL_EXPECTED_SUBJECT_OU'] is not None and details['ssl_cert_subject_ou'] != wfconfig['SSL_EXPECTED_SUBJECT_OU']:
+				details['warnings'].append('SSL certificate subject Organisational Unit does not match expected "' + str(wfconfig['SSL_EXPECTED_SUBJECT_OU']) + '"')
+			if 'SSL_EXPECTED_SUBJECT_O' in wfconfig and wfconfig['SSL_EXPECTED_SUBJECT_O'] is not None and details['ssl_cert_subject_o'] != wfconfig['SSL_EXPECTED_SUBJECT_O']:
+				details['warnings'].append('SSL certificate subject Organisation does not match expected "' + str(wfconfig['SSL_EXPECTED_SUBJECT_O']) + '"')
+			if 'SSL_EXPECTED_SUBJECT_L' in wfconfig and wfconfig['SSL_EXPECTED_SUBJECT_L'] is not None and details['ssl_cert_subject_l'] != wfconfig['SSL_EXPECTED_SUBJECT_L']:
+				details['warnings'].append('SSL certificate subject Locality does not match expected "' + str(wfconfig['SSL_EXPECTED_SUBJECT_L']) + '"')
+			if 'SSL_EXPECTED_SUBJECT_ST' in wfconfig and wfconfig['SSL_EXPECTED_SUBJECT_ST'] is not None and details['ssl_cert_subject_st'] != wfconfig['SSL_EXPECTED_SUBJECT_ST']:
+				details['warnings'].append('SSL certificate subject State does not match expected "' + str(wfconfig['SSL_EXPECTED_SUBJECT_ST']) + '"')
+			if 'SSL_EXPECTED_SUBJECT_C' in wfconfig and wfconfig['SSL_EXPECTED_SUBJECT_C'] is not None and details['ssl_cert_subject_c'] != wfconfig['SSL_EXPECTED_SUBJECT_C']:
+				details['warnings'].append('SSL certificate subject Country does not match expected "' + str(wfconfig['SSL_EXPECTED_SUBJECT_C']) + '"')
+
+		# That's everything validated: now check the NLB to validate against that
+
+		# Show the user the details, warnings, and what we're going to do
 		return render_template(__name__ + "::validate.html", title="Create NLB Web Service", details=details)
 
 @workflow.route('validate', title='Create NLB Web Service', permission="nlbweb.create", methods=['POST'], menu=False)

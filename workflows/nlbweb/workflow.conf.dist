@@ -34,3 +34,14 @@ KNOWN_DOMAINS_SUFFIXES=['test', 'dev']
 
 # Minimum SSL key size to accept
 SSL_MIN_KEY_SIZE = 2048
+
+# Minimum time remaining on SSL certificate (in days)
+SSL_MIN_REMAINING_TIME = 90
+
+# Expected SSL certificate subject parts (can be None)
+SSL_EXPECTED_SUBJECT_OU = None
+SSL_EXPECTED_SUBJECT_O = None
+SSL_EXPECTED_SUBJECT_L = None
+SSL_EXPECTED_SUBJECT_ST = None
+SSL_EXPECTED_SUBJECT_C = None
+
