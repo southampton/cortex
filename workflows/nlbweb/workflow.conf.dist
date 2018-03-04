@@ -27,6 +27,7 @@ POOL_PREFIX='pool-'
 SSL_PROFILE_PREFIX='sslprofile-'
 IRULE_PREFIX='irule-'
 MONITOR_PREFIX='monitor-'
+HTTP_PROFILE_PREFIX='profile-'
 
 # When doing a DNS lookup that is given just as a hostname, add on this domain
 # suffix

@@ -357,6 +357,7 @@ def nlbweb_create():
 		monitor_name_https = wfconfig['MONITOR_PREFIX'] + form_fields['short_service'] + envs_dict[form_fields['env']]['suffix'] + https_port_suffix
 		virtual_server_base = wfconfig['VIRTUAL_SERVER_PREFIX'] + form_fields['short_service'] + envs_dict[form_fields['env']]['suffix']
 		virtual_server_http = virtual_server_base + '-' + str(form_fields['http_port'])
+		http_profile_name = wfconfig['HTTP_PROFILE_PREFIX'] + form_fields['short_service'] + envs_dict[form_fields['env']]['suffix']
 
 		if need_https_objects:
 			virtual_server_https = virtual_server_base + '-' + str(form_fields['https_port'])
@@ -470,6 +471,39 @@ def nlbweb_create():
 					new_action['chain'] = ssl_providers_dict[form_fields['ssl_provider']]['nlb-chain-file']
 				if form_fields['ssl_cipher_string'] != '':
 					new_action['cipher_string'] = form_fields['ssl_cipher_string']
+				details['actions'].append(new_action)
+
+		# Determine if we need to create an HTTP profile
+		create_http_profile = False
+		if form_fields['outage_page']:
+			# An outage page always requires a custom HTTP profile
+			create_http_profile = True
+		else:
+			# If we're using X-Forwarded-For and the config doesn't
+			# give us a parent HTTP profile, then we also need to
+			# create a HTTP profile
+			if form_fields['use_xforwardedfor'] and wfconfig['HTTP_PROFILE_XFORWARDEDFOR'] is None:
+				create_http_profile = True
+
+		# Check to see if the HTTP profile already exists
+		if create_http_profile:
+			if bigip.tm.ltm.profile.https.http.exists(name=http_profile_name, partition=form_fields['partition']):
+				details['warnings'].append('SKIPPED: HTTP Profile ' + http_profile_name + ' already exists. Not creating.')
+			else:
+				new_action = {
+					'action_description': 'Create HTTP Profile ' + http_profile_name,
+					'id': 'create_http_profile',
+					'name': http_profile_name,
+					'partition': form_fields['partition']
+				}
+				if form_fields['use_xforwardedfor']:
+					if wfconfig['HTTP_PROFILE_XFORWARDEDFOR'] is None:
+						new_action['parent'] = wfconfig['HTTP_PROFILE_DEFAULT']
+						new_action['x-forwarded-for'] = True
+					else:
+						new_action['parent'] = wfconfig['HTTP_PROFILE_XFORWARDEDFOR']
+				if form_fields['outage_page'] != '':
+					new_action['outage_page'] = form_fields['outage_page']
 				details['actions'].append(new_action)
 
 		# Check to see if the HTTP virtual server already exists
