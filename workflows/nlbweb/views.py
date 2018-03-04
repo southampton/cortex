@@ -467,7 +467,9 @@ def nlbweb_create():
 					'partition': form_fields['partition']
 				}
 				if form_fields['ssl_provider'] != '*SELF':
-					new_action = ssl_providers_dict[form_fields['ssl_provider']]['nlb-chain-file']
+					new_action['chain'] = ssl_providers_dict[form_fields['ssl_provider']]['nlb-chain-file']
+				if form_fields['ssl_cipher_string'] != '':
+					new_action['cipher_string'] = form_fields['ssl_cipher_string']
 				details['actions'].append(new_action)
 
 		# Check to see if the HTTP virtual server already exists
