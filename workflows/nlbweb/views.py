@@ -323,7 +323,8 @@ def nlbweb_create():
 				if not details['ssl_cert_self_signed']:
 					details['warnings'].append('Self-signed certificate provider chosen on non-self-signed cert! No chain will be added to SSL profile. Check the certificate and SSL provider')
 				else:
-					details['warnings'].append('Self-signed certificate. Not recommended for production use')
+					if wfconfig['SSL_SELF_SIGNED_WARNING']:
+						details['warnings'].append('Self-signed certificate. Not recommended for production use')
 			else:
 				if details['ssl_cert_self_signed']:
 					details['warnings'].append('Self-signed certificate detected, which does not match chosen SSL provider. Check the certificate and SSL provider')
