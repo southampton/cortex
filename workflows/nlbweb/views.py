@@ -267,6 +267,9 @@ def nlbweb_create():
 			details['ssl_cert_issuer_st'] = openssl_ssl_cert.get_issuer().ST
 			details['ssl_cert_issuer_c'] = openssl_ssl_cert.get_issuer().C
 
+			# Determine if the certificate is self-signed
+			details['ssl_cert_self_signed'] = details['ssl_cert_subject_ou'] == details['ssl_cert_issuer_ou'] and details['ssl_cert_subject_ou'] == details['ssl_cert_issuer_ou'] and details['ssl_cert_subject_ou'] == details['ssl_cert_issuer_ou'] and details['ssl_cert_subject_ou'] == details['ssl_cert_issuer_ou'] and details['ssl_cert_subject_ou'] == details['ssl_cert_issuer_ou']
+
 			# Process certificate extensions
 			for i in range(0, openssl_ssl_cert.get_extension_count()):
 				ext = openssl_ssl_cert.get_extension(i)
@@ -322,6 +325,15 @@ def nlbweb_create():
 				details['warnings'].append('SSL certificate subject State does not match expected "' + str(wfconfig['SSL_EXPECTED_SUBJECT_ST']) + '"')
 			if 'SSL_EXPECTED_SUBJECT_C' in wfconfig and wfconfig['SSL_EXPECTED_SUBJECT_C'] is not None and details['ssl_cert_subject_c'] != wfconfig['SSL_EXPECTED_SUBJECT_C']:
 				details['warnings'].append('SSL certificate subject Country does not match expected "' + str(wfconfig['SSL_EXPECTED_SUBJECT_C']) + '"')
+
+			if form_fields['ssl_provider'] == '*SELF':
+				if not details['ssl_cert_self_signed']:
+					details['warnings'].append('Self-signed certificate provider chosen on non-self-signed cert! No chain will be added to SSL profile. Check the certificate and SSL provider')
+				else:
+					details['warnings'].append('Self-signed certificate. Not recommended for production use')
+			else:
+				if details['ssl_cert_self_signed']:
+					details['warnings'].append('Self-signed certificate detected, which does not match chosen SSL provider. Check the certificate and SSL provider')
 
 		## That's everything validated: now check the NLB to validate against that
 
@@ -454,17 +466,18 @@ def nlbweb_create():
 			if bigip.tm.ltm.profile.client_ssls.client_ssl.exists(name=ssl_profile_name, partition=form_fields['partition']):
 				details['warnings'].append('SKIPPED: SSL Client Profile ' + ssl_profile_name + ' already exists. Not creating.')
 			else:
-				details['actions'].append({
+				new_action = {
 					'action_description': 'Create SSL Client Profile ' + ssl_profile_name,
 					'id': 'create_ssl_client_profile',
 					'name': ssl_profile_name,
 					'key': ssl_key_file,
 					'cert': ssl_cert_file,
 					'parent': wfconfig['SSL_CLIENT_PROFILE_PARENT'],
-					'partition': form_fields['partition']})
-
+					'partition': form_fields['partition']
+				}
 				if form_fields['ssl_provider'] != '*SELF':
-					details['actions']['chain'] = ssl_providers_dict[form_fields['ssl_provider']]['nlb-chain-file']
+					new_action = ssl_providers_dict[form_fields['ssl_provider']]['nlb-chain-file']
+				details['actions'].append(new_action)
 
 		# Check to see if the HTTP virtual server already exists
 		if bigip.tm.ltm.virtuals.virtual.exists(name=virtual_server_http, partition=form_fields['partition']):

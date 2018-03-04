@@ -46,6 +46,7 @@
 		<strong>State:</strong> {{ details['ssl_cert_issuer_st'] }}<br />
 		<strong>Country:</strong> {{ details['ssl_cert_issuer_c'] }}<br />
 		<h4>SSL Certificate Details</h4>
+		<strong>Is Self-Signed:</strong> {{ details['ssl_cert_self_signed'] }}<br />
 		<strong>Valid After:</strong> {{ details['ssl_cert_notbefore'] }}<br />
 		<strong>Valid Until:</strong> {{ details['ssl_cert_notafter'] }}<br />
 		<strong>Private Key Size:</strong> {{ details['ssl_key_size'] }} bit<br />
