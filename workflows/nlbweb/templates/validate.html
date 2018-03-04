@@ -26,8 +26,10 @@
 		<p>The list below details the actions that Cortex will perform to create the service. Please verify that these are the actions you wish Cortex to perform before continuing.
 		<ul>
 {%-     for action in details['actions'] %}
-			<li><strong>{{ action.id }}:</strong> {{ action.action_description }}<br />
-			<code>{{ action }}</code></li>
+			<li>
+				<strong>{{ action.pop('id') }}:</strong> {{ action.pop('action_description') }}<br />
+				{% with a = action.pop('content', '') %}<code>{{ action }}</code>{% endwith %}
+			</li>
 {%-     endfor %}
 		</ul>
 {%- else %}

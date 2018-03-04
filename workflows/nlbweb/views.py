@@ -563,7 +563,8 @@ def nlbweb_create():
 				details['actions'].append(new_action)
 
 		# If after all that there are no actions, log a warning
-		details['warnings'].append('No actions to perform. Is the service already set up?')
+		if len(details['actions']) == 0:
+			details['warnings'].append('No actions to perform. Is the service already set up?')
 
 		# Show the user the details, warnings, and what we're going to do
 		return render_template(__name__ + "::validate.html", title="Create NLB Web Service", details=details)
