@@ -231,6 +231,19 @@ def nlbweb_create():
 					valid_form = False
 					break
 
+		# Connect to the NLB now as we need the NLB to validate the
+		# iRule list, which if they fail is a fatal error
+		bigip = ManagementRoot(envs_dict[form_fields['env']]['nlb'], wfconfig['NLB_USERNAME'], wfconfig['NLB_PASSWORD'])
+
+		# Get the list of HTTP and HTTPS iRules and validate that they all exist
+		try:
+			http_irules = parse_irule_list(form_fields['http_irules'], bigip)
+			https_irules = parse_irule_list(form_fields['https_irules'], bigip)
+		except ValueError as e:
+			# parse_irule_list returns a ValueError with the message to alert on
+			flash(str(e), 'alert-danger')
+			valid_form = False
+
 		if not valid_form:
 			# Turn envs in to a dict
 			envs_dict = { env['id']: env for env in wfconfig['ENVS'] }
@@ -352,7 +365,7 @@ def nlbweb_create():
 			https_port_suffix = '-' + back_end_nodes[0]['https_port']
 		else:
 			https_port_suffix = '-https'
-
+		
 		# Generate the names we think we need: pool name. Suffixed with
 		# either -$http(s)_port if all the port numbers of the nodes are
 		# the same or -http and -https if they differ
@@ -376,9 +389,6 @@ def nlbweb_create():
 				'action_description': 'Allocate an IP address from ' + str(envs_dict[form_fields['env']]['network']) + ' in Infoblox',
 				'id': 'allocate_ip',
 				'network': envs_dict[form_fields['env']]['network']})
-
-		# Connect to the NLB
-		bigip = ManagementRoot(envs_dict[form_fields['env']]['nlb'], wfconfig['NLB_USERNAME'], wfconfig['NLB_PASSWORD'])
 
 		# Check if any of the nodes are already present on the NLB
 		for back_end_node in back_end_nodes:
@@ -489,7 +499,7 @@ def nlbweb_create():
 				'name': virtual_server_http,
 				'ip': form_fields['ip'],
 				'port': form_fields['http_port'],
-				'irules': [],
+				'irules': http_irules,
 				'partition': form_fields['partition']
 			}
 			if form_fields['redirect_http']:
@@ -507,7 +517,7 @@ def nlbweb_create():
 					'name': virtual_server_https,
 					'ip': form_fields['ip'],
 					'port': form_fields['https_port'],
-					'irules': [],
+					'irules': https_irules,
 					'ssl_client_profile': ssl_profile_name,
 					'partition': form_fields['partition']
 				}
@@ -657,3 +667,44 @@ def decode_subject_alt_name(byte_string):
 
 	else:
 		raise ValueError('subjectAltName does not start with ASN1 sequence')
+
+def parse_irule_list(irules_text, bigip):
+	# On empty string, return empty list
+	if len(irules_text) == 0:
+		return []
+
+	# Split the space-separated string and filter out empty values
+	irules_list = filter(lambda x: x != '', irules_text.split(' '))
+
+	# Start a results list
+	result = []
+
+	# Iterate over all the rules in the list
+	for irule in irules_list:
+		# All the names should start with a slash and can be at minimum four 
+		# characters long (e.g. /a/b)
+		if len(irule) < 4 or irule[0] != '/':
+			raise ValueError('Invalid iRule name: ' + irule)
+
+		# Split the iRule into partition and name
+		irule_split = irule.split('/')
+
+		# We should have three entries: ['', partition_name, rule_name]
+		if len(irule_split) != 3:
+			raise ValueError('Invalid iRule name: ' + irule)
+
+		# Grab the appropriate values
+		irule_partition = irule_split[1]
+		irule_name = irule_split[2]
+
+		# Both the partition name and the iRule name should be non-empty
+		if len(irule_name) == 0 or len(irule_partition) == 0:
+			raise ValueError('Invalid iRule name: ' + irule)
+		
+		# The name looks to be at least semi-valid. See if it exists
+		if bigip.tm.ltm.rules.rule.exists(name=irule_name, partition=irule_partition):
+			result.append(irule)
+		else:
+			raise ValueError('iRule does not exist: ' + irule)
+
+	return result
