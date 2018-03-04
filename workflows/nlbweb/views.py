@@ -22,6 +22,7 @@ workflow.add_permission('nlbweb.create', 'Creates NLB Web Service')
 
 # IPv4 Address Regex
 ipv4_re = re.compile(r"^((([0-9])|([1-9][0-9])|(1[0-9][0-9])|(2[0-4][0-9])|(25[0-5]))\.){3}((([0-9])|([1-9][0-9])|(1[0-9][0-9])|(2[0-4][0-9])|(25[0-5])))$")
+short_service_re = re.compile(r"^[a-zA-Z0-9-]*$")
 
 @workflow.route('create', title='Create NLB Web Service', order=40, permission="nlbweb.create", methods=['GET', 'POST'])
 def nlbweb_create():
@@ -84,7 +85,7 @@ def nlbweb_create():
 		if len(form_fields['short_service']) == 0:
 			flash('You must enter a short service name', 'alert-danger')
 			valid_form = False
-		if ' ' in form_fields['short_service']:
+		if short_service_re.match(form_fields['short_service']) is None:
 			flash('Short service name can only contain numbers, letters and dashes', 'alert-danger')
 			valid_form = False
 		if len(form_fields['env']) == 0:
