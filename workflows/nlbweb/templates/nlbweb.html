@@ -251,7 +251,44 @@ $('.node-input-box').keydown(function(event) {
 		event.preventDefault();
 	}
 });
-function addNode(host, ip, http_port, https_port)
+function incHostNumber(host)
+{
+	// Split the host into prefix/number[zeros,integer]/suffix
+	var host_split = /^(?<prefix>[^0-9]*)(?<number>(?<zeros>0*)(?<integer>[1-9][0-9]*))(?<suffix>[^0-9]*)$/.exec(host);
+
+	// If the regex fails, return an empty string
+	if (host_split == null)
+	{
+		return "";
+	}
+
+	// Grab the parts
+	try
+	{
+		var prefix = host_split.groups.prefix;
+		var number = host_split.groups.number;
+		var integer = host_split.groups.integer;
+		var suffix = host_split.groups.suffix;
+
+		// Get the new integer as a string
+		var new_number = "" + (parseInt(integer) + 1)
+
+		// Pad the integer out with zeros to match what it was before
+		while (new_number.length < number.length)
+		{
+			new_number = "0" + new_number;
+		}
+
+		// Return the new value
+		return prefix + new_number + suffix;
+	}
+	catch (e)
+	{
+	}
+
+	return "";
+}
+function addNode(host, ip, http_port, https_port, orig_host)
 {
 	var row = $('#node_template').clone(true);
 	$('#node_table_body').append(row);
@@ -277,7 +314,7 @@ function addNode(host, ip, http_port, https_port)
 
 	// Clear values (but not port numbers, as they're likely to be the
 	// same for each row) and then focus back on the node name again
-	$('#new_node_name').val('');
+	$('#new_node_name').val(incHostNumber(orig_host.trim()));
 	$('#new_node_ip').val('');
 	$('#new_node_name').focus();
 }
@@ -300,7 +337,7 @@ $('#add_node').click(function() {
 			success: function(data, textStatus) {
 				if (data['success'] !== undefined && data['success'] == 1)
 				{
-					addNode(data['hostname'], data['ip'], http_port, https_port);
+					addNode(data['hostname'], data['ip'], http_port, https_port, host);
 				}
 				else
 				{
@@ -316,7 +353,7 @@ $('#add_node').click(function() {
 	}
 	else
 	{
-		addNode(host, ip, http_port, https_port)
+		addNode(host, ip, http_port, https_port, host);
 	}
 });
 $('.remove-node').click(function() {
