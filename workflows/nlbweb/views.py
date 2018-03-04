@@ -70,6 +70,13 @@ def nlbweb_create():
 		form_fields['node_https_ports'] = request.form.getlist('node_https_port[]')
 		form_fields['node_ips'] = request.form.getlist('node_ip[]')
 
+		# Get the advanced options
+		form_fields['outage_page'] = request.form.get('outage_page', '').strip()
+		form_fields['http_irules'] = request.form.get('http_irules', '').strip()
+		form_fields['https_irules'] = request.form.get('https_irules', '').strip()
+		form_fields['ssl_cipher_string'] = request.form.get('ssl_cipher_string', '').strip()
+		form_fields['use_xforwardedfor'] = 'use_xforwardedfor' in request.form
+
 		# Service parameter validation
 		if len(form_fields['service']) == 0:
 			flash('You must enter a service name', 'alert-danger')

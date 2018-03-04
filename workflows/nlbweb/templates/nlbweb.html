@@ -177,6 +177,28 @@ td.na
 			</table>
 		</div>
 	</div>
+	<h3 style="margin-top:0px"><a data-toggle="collapse" data-target="#advanced">Advanced Options <span class="caret"></span></a></h3>
+	<div class="row collapse" id="advanced">
+		<div class="col-md-12 form-group">
+			<label for="outage_page">Outage Page URL:</label>
+			<input class="form-control" name="outage_page" id="outage_page" placeholder="The URL of the page to redirect to if the service is unavailable. Creates a specific HTTP profile." {% if 'outage_page' in values %}value="{{ values['outage_page'] }}" {% endif %}/>
+		</div>
+		<div class="col-md-6 form-group">
+			<label for="http_irules">Additional HTTP iRules:</label>
+			<input class="form-control" name="http_irules" id="http_irules" placeholder="Space-separated list of iRules to add to the HTTP Virtual Server" {% if 'http_irules' in values %}value="{{ values['http_irules'] }}" {% endif %}/>
+		</div>
+		<div class="col-md-6 form-group">
+			<label for="https_irules">Additional HTTPS iRules:</label>
+			<input class="form-control" name="https_irules" id="https_irules" placeholder="Space-separated list of iRules to add to the HTTPS Virtual Server" {% if 'https_irules' in values %}value="{{ values['https_irules'] }}" {% endif %}/>
+		</div>
+		<div class="col-md-12 form-group">
+			<label for="ssl_cipher_string">SSL Cipher String:</label>
+			<input class="form-control" name="ssl_cipher_string" id="ssl_cipher_string" placeholder="A custom SSL cipher string to use on the SSL client profile. Leave blank to use the default." {% if 'ssl_cipher_string' in values %}value="{{ values['ssl_cipher_string'] }}" {% endif %}/>
+		</div>
+		<div class="col-md-12">
+			<label for="use_xforwardedfor"><input type="checkbox" id="use_xforwardedfor" name="use_xforwardedfor" {% if 'use_xforwardedfor' not in values or ('use_xforwardedfor' in values and values['use_xforwardedfor']) %}checked="checked" {% endif %}/> Add in an X-Forwarded-For header to relay the client's IP address to the backend</label>
+		</div>
+	</div>
 	<h3>Validate and Create</h3>
 	<div class="row">
 		<div class="col-md-12">
