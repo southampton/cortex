@@ -74,7 +74,11 @@
 	<div class="col-md-12">
 		<p class="lead text-center">After reading and fully understanding everything above, and subject to appropriate change control, if you are happy to proceed with the creation of the service on the load balancer, please&nbsp;click&nbsp;the&nbsp;<strong>Create&nbsp;Service</strong>&nbsp;button below to start the task. If there were warnings, you must click <strong>Acknowledge&nbsp;Warnings</strong> first.</p>
 		<div class="text-center">
-			<input type="submit" class="btn btn-lg btn-success" value="Create Service" name="submit" id="submit" {% if 'warnings' in details and details['warnings']|length > 0 %}disabled="disabled" {% endif %}/>
+			<form method="POST" action="validate">
+				<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+				<input type="hidden" name="actions" value="{{ json_data }}" />
+				<input type="submit" class="btn btn-lg btn-success" value="Create Service" name="submit" id="submit" {% if 'warnings' in details and details['warnings']|length > 0 %}disabled="disabled" {% endif %}/>
+			</form>
 		</div>
 	</div>
 </div>

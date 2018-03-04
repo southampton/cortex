@@ -3,7 +3,8 @@
 def run(helper, options):
 
 	# Configuration of task
-	config = options['wfconfig'i]
+	config = options['wfconfig']
+	actions = options['actions']
 
 	## Allocate a hostname #################################################
 

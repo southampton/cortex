@@ -17,6 +17,9 @@ from f5.bigip import ManagementRoot
 # For certificate validation
 import OpenSSL as openssl
 
+# For securely passing the actions list via the browser
+from itsdangerous import JSONWebSignatureSerializer
+
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('nlbweb.create', 'Creates NLB Web Service')
 
@@ -566,8 +569,12 @@ def nlbweb_create():
 		if len(details['actions']) == 0:
 			details['warnings'].append('No actions to perform. Is the service already set up?')
 
+		# Turn the actions list into a signed JSON document via itsdangerous
+		signer = JSONWebSignatureSerializer(app.config['SECRET_KEY'])
+		json_data = signer.dumps(details['actions'])
+
 		# Show the user the details, warnings, and what we're going to do
-		return render_template(__name__ + "::validate.html", title="Create NLB Web Service", details=details)
+		return render_template(__name__ + "::validate.html", title="Create NLB Web Service", details=details, json_data=json_data)
 
 @workflow.route('validate', title='Create NLB Web Service', permission="nlbweb.create", methods=['POST'], menu=False)
 def nlbweb_validate():
@@ -575,9 +582,16 @@ def nlbweb_validate():
 	wfconfig = workflow.config
 	
 	# If we've got the confirmation, start the task:
-	if 'confirm' in request.form and int(request.form['confirm']) == 1:
+	if 'submit' in request.form and 'actions' in request.form:
 		options = {}
 		options['wfconfig'] = wfconfig
+
+		## Decode the actions data 
+		signer = JSONWebSignatureSerializer(app.config['SECRET_KEY'])
+		try:
+			options['actions'] = signer.loads(request.form['actions'])
+		except itsdangerous.BadSignature as ex:
+			abort(400)
 
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.lib.core.neocortex_connect()
@@ -585,6 +599,8 @@ def nlbweb_validate():
 
 		# Redirect to the status page for the task
 		return redirect(url_for('task_status', id=task_id))
+	else:
+		return abort(400)
 
 @workflow.route('dnslookup', permission="nlbweb.create", menu=False)
 def nlbweb_dns_lookup():
