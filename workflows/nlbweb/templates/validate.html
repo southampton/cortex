@@ -15,20 +15,24 @@
 		<h4 class="text-warning">Warnings</h4>
 		<p>There were some inconsistencies in either the information provided or with the current load balancer configuration. Please read the following warnings to ensure that continuing will not cause any unexpected consequences. Once you have read them, to be able to proceed with creation, please click the <strong>Acknowledge Warnings</strong> button.</p>
 		<ul>
-{%- for warning in details['warnings'] %}
+{%-     for warning in details['warnings'] %}
 			<li>{{ warning }}</li>
-{%- endfor %}
+{%-     endfor %}
 		</ul>
 		<p class="text-center"><button class="btn btn-sm btn-warning" id="acknowledge-warnings">Acknowledge Warnings</button></p>
 {%- endif %}
 		<h4>Actions</h4>
+{%- if details['actions']|length > 0 %}
 		<p>The list below details the actions that Cortex will perform to create the service. Please verify that these are the actions you wish Cortex to perform before continuing.
 		<ul>
-{%- for action in details['actions'] %}
+{%-     for action in details['actions'] %}
 			<li><strong>{{ action.id }}:</strong> {{ action.action_description }}<br />
 			<code>{{ action }}</code></li>
-{%- endfor %}
+{%-     endfor %}
 		</ul>
+{%- else %}
+		<p>There are no actions to complete. This likely means that the service is already set up on the load balancer.</p>
+{%- endif %}
 	</div>
 {%- if details.ssl == 1 %}
 	<div class="col-md-3">
@@ -63,6 +67,7 @@
 	</div>
 {%- endif %}
 </div>
+{%- if details['actions']|length > 0 %}
 <div class="row">
 	<div class="col-md-12">
 		<p class="lead text-center">After reading and fully understanding everything above, and subject to appropriate change control, if you are happy to proceed with the creation of the service on the load balancer, please&nbsp;click&nbsp;the&nbsp;<strong>Create&nbsp;Service</strong>&nbsp;button below to start the task. If there were warnings, you must click <strong>Acknowledge&nbsp;Warnings</strong> first.</p>
@@ -71,10 +76,13 @@
 		</div>
 	</div>
 </div>
+{%- endif %}
 <script>
 $('#acknowledge-warnings').click(function (event) {
 	$('#acknowledge-warnings').removeClass('btn-warning').addClass('btn-success').attr('disabled', 'disabled').html('Warnings Acknowledged');
+{%- if details['actions']|length > 0 %}
 	$('#submit').removeAttr('disabled');
+{%- endif %}
 });
 </script>
 {% endblock %}

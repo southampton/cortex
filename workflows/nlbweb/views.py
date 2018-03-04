@@ -453,6 +453,26 @@ def nlbweb_create():
 					'members': [back_end_node['hostname'] + ':' + back_end_node['https_port'] for back_end_node in back_end_nodes],
 					'partition': form_fields['partition']})
 
+		if need_https_objects:
+			if bigip.tm.sys.crypto.keys.key.exists(name=ssl_key_file, partition=form_fields['partition']):
+				details['warnings'].append('SKIPPED: SSL Private Key ' + ssl_key_file + ' already exists. Not creating.')
+			else:
+				details['actions'].append({
+					'action_description': 'Upload private key ' + ssl_key_file,
+					'id': 'upload_key',
+					'filename': ssl_key_file,
+					'content': form_fields['ssl_key'],
+					'partition': form_fields['partition']})
+			if bigip.tm.sys.crypto.certs.cert.exists(name=ssl_cert_file, partition=form_fields['partition']):
+				details['warnings'].append('SKIPPED: SSL Certificate ' + ssl_cert_file + ' already exists. Not creating.')
+			else:
+				details['actions'].append({
+					'action_description': 'Upload certificate ' + ssl_cert_file,
+					'id': 'upload_cert',
+					'filename': ssl_cert_file,
+					'content': form_fields['ssl_key'],
+					'partition': form_fields['partition']})
+				
 		# Check if the SSL Profile already exists
 		if need_https_objects:
 			if bigip.tm.ltm.profile.client_ssls.client_ssl.exists(name=ssl_profile_name, partition=form_fields['partition']):
@@ -542,6 +562,8 @@ def nlbweb_create():
 					new_action['ssl_server_profile'] = 'serverssl'
 				details['actions'].append(new_action)
 
+		# If after all that there are no actions, log a warning
+		details['warnings'].append('No actions to perform. Is the service already set up?')
 
 		# Show the user the details, warnings, and what we're going to do
 		return render_template(__name__ + "::validate.html", title="Create NLB Web Service", details=details)
