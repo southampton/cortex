@@ -43,40 +43,19 @@ def nlbweb_create():
 		valid_form = True
 		form_fields = {}
 
-		# Get service parameters
-		form_fields['service'] = request.form.get('service', '').strip()
-		form_fields['short_service'] = request.form.get('short_service', '').strip()
-		form_fields['env'] = request.form.get('env', '').strip()
-		form_fields['partition'] = request.form.get('partition', '').strip()
+		# Get parameters from form, stripped with defaults
+		for field in ['service', 'short_service', 'env', 'partition', 'fqdn', 'ip', 'http_port', 'https_port', 'monitor_url', 'monitor_response', 'ssl_key', 'ssl_cert', 'ssl_provider', 'outage_page', 'http_irules', 'https_irules', 'ssl_cipher_string']:
+			form_fields[field] = request.form.get(field, '').strip()
 
-		# Get service access parameters
-		form_fields['fqdn'] = request.form.get('fqdn', '').strip()
-		form_fields['ip'] = request.form.get('ip', '').strip()
-		form_fields['http_port'] = request.form.get('http_port', '').strip()
-		form_fields['https_port'] = request.form.get('https_port', '').strip()
-		form_fields['enable_ssl'] = 'enable_ssl' in request.form
-		form_fields['monitor_url'] = request.form.get('monitor_url', '').strip()
-		form_fields['monitor_response'] = request.form.get('monitor_response', '').strip()
+		# Get parameters from form - checkboxes
+		for field in ['enable_ssl', 'redirect_http', 'encrypt_backend', 'use_xforwardedfor']:
+			form_fields[field] = field in request.form
 
-		# Get SSL options
-		form_fields['redirect_http'] = 'redirect_http' in request.form
-		form_fields['encrypt_backend'] = 'encrypt_backend' in request.form
-		form_fields['ssl_key'] = request.form.get('ssl_key', '').strip()
-		form_fields['ssl_cert'] = request.form.get('ssl_cert', '').strip()
-		form_fields['ssl_provider'] = request.form.get('ssl_provider', '').strip()
-
-		# Get the nodes
+		# Get parameters from form - nodes
 		form_fields['node_hosts'] = request.form.getlist('node_host[]')
 		form_fields['node_http_ports'] = request.form.getlist('node_http_port[]')
 		form_fields['node_https_ports'] = request.form.getlist('node_https_port[]')
 		form_fields['node_ips'] = request.form.getlist('node_ip[]')
-
-		# Get the advanced options
-		form_fields['outage_page'] = request.form.get('outage_page', '').strip()
-		form_fields['http_irules'] = request.form.get('http_irules', '').strip()
-		form_fields['https_irules'] = request.form.get('https_irules', '').strip()
-		form_fields['ssl_cipher_string'] = request.form.get('ssl_cipher_string', '').strip()
-		form_fields['use_xforwardedfor'] = 'use_xforwardedfor' in request.form
 
 		# Service parameter validation
 		if len(form_fields['service']) == 0:
