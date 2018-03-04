@@ -460,9 +460,11 @@ def nlbweb_create():
 					'name': ssl_profile_name,
 					'key': ssl_key_file,
 					'cert': ssl_cert_file,
-					'chain': ssl_providers_dict[form_fields['ssl_provider']]['nlb-chain-file'],
 					'parent': wfconfig['SSL_CLIENT_PROFILE_PARENT'],
 					'partition': form_fields['partition']})
+
+				if form_fields['ssl_provider'] != '*SELF':
+					details['actions']['chain'] = ssl_providers_dict[form_fields['ssl_provider']]['nlb-chain-file']
 
 		# Check to see if the HTTP virtual server already exists
 		if bigip.tm.ltm.virtuals.virtual.exists(name=virtual_server_http, partition=form_fields['partition']):
