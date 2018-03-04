@@ -545,6 +545,7 @@ def nlbweb_dns_lookup():
 	result = {'success': 0}
 	try:
 		result['ip'] = socket.gethostbyname(host)
+		result['hostname'] = host
 		result['success'] = 1
 	except Exception, e:
 		pass

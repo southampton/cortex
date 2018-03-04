@@ -34,7 +34,7 @@ DEFAULT_DOMAIN='domain'
 
 # For DNS lookups: Consider hostname.anything_in_this_list to be a local domain,
 # so add on DEFAULT_DOMAIN
-KNOWN_DOMAINS_SUFFIXES=['test', 'dev']
+KNOWN_DOMAIN_SUFFIXES=['test', 'dev']
 
 # Minimum SSL key size to accept
 SSL_MIN_KEY_SIZE = 2048

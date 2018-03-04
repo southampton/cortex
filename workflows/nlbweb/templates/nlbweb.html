@@ -300,7 +300,7 @@ $('#add_node').click(function() {
 			success: function(data, textStatus) {
 				if (data['success'] !== undefined && data['success'] == 1)
 				{
-					addNode(host, data['ip'], http_port, https_port);
+					addNode(data['hostname'], data['ip'], http_port, https_port);
 				}
 				else
 				{
