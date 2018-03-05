@@ -179,8 +179,7 @@ def decom_step2(id):
 					if entry.lower() == host.lower():
 						ldap_dn_data[dn]['sudoHost'].pop(idx)
 						ldap_dn_data[dn]['action'] = 'modify'
-						ldap_dn_data[dn]['count'] += 1
-						ldap_dn_data[dn]['remove'].append(host)
+						ldap_dn_data[dn]['remove'].append(entry)
 
 		# Determine if any of the DNs are now empty
 		for dn in ldap_dn_data:
@@ -190,9 +189,9 @@ def decom_step2(id):
 		# Print out actions
 		for dn in ldap_dn_data:
 			if ldap_dn_data[dn]['action'] == 'modify':
-				actions.append({'id': 'sudoldap.update', 'desc': 'Updates an entry in sudoldap to remove sudoHost attribute(s)', 'detail': 'Update CN=' + ldap_dn_data[dn]['cn'] + ' to remove ' + str(ldap_dn_data[dn]['count']) + ' entries: ' + ', '.join(ldap_dn_data[dn]['remove']), 'data': {'dn': dn, 'value': ldap_dn_data[dn]['sudoHost']}})
+				actions.append({'id': 'sudoldap.update', 'desc': 'Updates an entry in sudoldap to remove sudoHost attribute(s)', 'detail': 'Update CN=' + ldap_dn_data[dn]['cn'] + ' to remove ' + str(len(ldap_dn_data[dn]['remove'])) + ' entries: ' + ', '.join(ldap_dn_data[dn]['remove']), 'data': {'dn': dn, 'value': ldap_dn_data[dn]['remove']}})
 			elif ldap_dn_data[dn]['action'] == 'delete':
-				actions.append({'id': 'sudoldap.delete', 'desc': 'Deletes an entry in sudoldap because we\'ve removed all its sudoHost attributes', 'detail': 'Delete ' + ldap_dn_data[dn]['cn'] + ' as removing ' + str(ldap_dn_data[dn]['count']) + ' entries empties it', 'data': {'dn': dn, 'value': ldap_dn_data[dn]['sudoHost']}})
+				actions.append({'id': 'sudoldap.delete', 'desc': 'Deletes an object in sudoldap because we\'ve removed its last sudoHost attribute', 'detail': 'Delete CN=' + ldap_dn_data[dn]['cn'] + ' as removing ' + str(len(ldap_dn_data[dn]['remove'])) + ' entries empties it', 'data': {'dn': dn, 'value': ldap_dn_data[dn]['sudoHost']}})
 			
 	except Exception as ex:
 		flash('Warning - An error occurred when communication with ' + str(workflow.config['SUDO_LDAP_URL']) + ': ' + str(ex), 'alert-warning')

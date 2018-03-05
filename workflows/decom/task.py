@@ -1,4 +1,5 @@
 import requests
+import ldap
 
 def run(helper, options):
 
@@ -27,7 +28,11 @@ def run(helper, options):
 			r = action_tsm_decom(action, helper)
 		elif action['id'] == "rhn5.delete":
 			r = action_rhn5_delete(action, helper)
-
+		elif action['id'] == "sudoldap.update":
+			r = action_sudoldap_update(action, helper, options['wfconfig'])
+		elif action['id'] == "sudoldap.delete":
+			r = action_sudoldap_delete(action, helper, options['wfconfig'])
+			
 		# End the event (don't change the description) if the action
 		# succeeded. The action_* functions either raise Exceptions or
 		# end the events with a failure message on errors.
@@ -187,3 +192,31 @@ def action_rhn5_delete(action, helper):
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to delete the system object in RHN5")
 		return False
+
+################################################################################
+
+def action_sudoldap_update(action, helper, wfconfig):
+	try:
+		# Connect to LDAP
+		l = ldap.initialize(wfconfig['SUDO_LDAP_URL'])
+		l.bind_s(wfconfig['SUDO_LDAP_USER'], wfconfig['SUDO_LDAP_PASS'])
+
+		# Replace the value of sudoHost with the calculated list
+		for entry in action['data']['value']:
+			l.modify_s(action['data']['dn'], [(ldap.MOD_DELETE, 'sudoHost', str(entry))])
+	except Exception as e:
+		helper.end_event(success=False, description="Failed to update the object in sudoldap: " + str(e))
+		return False
+
+################################################################################
+
+def action_sudoldap_delete(action, helper, wfconfig):
+	try:
+		# Connect to LDAP
+		l = ldap.initialize(wfconfig['SUDO_LDAP_URL'])
+		l.bind_s(wfconfig['SUDO_LDAP_USER'], wfconfig['SUDO_LDAP_PASS'])
+		
+		# Delete the entry
+		l.delete_s(action['data']['dn'])
+	except Exception as e:
+		helper.end_event(success=False, description="Failed to delete the object in sudoldap")
