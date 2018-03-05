@@ -143,9 +143,12 @@ def decom_step2(id):
 	except Exception as ex:
 		flash("Warning - An error occured when communicating with RHN: " + str(ex), "alert-warning")
 
-	# If there are actions to be performed, add on an action to raise a ticket to ESM (but not for Sandbox!)
-	if len(actions) > 0 and system['class'] != "play":
-		actions.append({'id': 'ticket.ops', 'desc': 'Raises a ticket with operations to perform manual steps, such as removal from monitoring', 'detail': 'Creates a ticket in ServiceNow and assigns it to ' + workflow.config['TICKET_TEAM'], 'data': {'hostname': system['name']}})
+	# If the config says nothing about creating a ticket, or the config 
+	# says to create a ticket:
+	if 'TICKET_CREATE' not in workflow.config or workflow.config['TICKET_CREATE'] is True:
+		# If there are actions to be performed, add on an action to raise a ticket to ESM (but not for Sandbox!)
+		if len(actions) > 0 and system['class'] != "play":
+			actions.append({'id': 'ticket.ops', 'desc': 'Raises a ticket with operations to perform manual steps, such as removal from monitoring', 'detail': 'Creates a ticket in ServiceNow and assigns it to ' + workflow.config['TICKET_TEAM'], 'data': {'hostname': system['name']}})
 
 	# Turn the actions list into a signed JSON document via itsdangerous
 	signer = JSONWebSignatureSerializer(app.config['SECRET_KEY'])
