@@ -135,3 +135,7 @@ RUBRIK_API_PASS = ''
 
 # Puppet Module Documentation Location
 PUPPET_MODULE_DOCS_URL = None
+
+# UI Banner
+# uncomment the following line to enable the banner
+#BANNER_MESSAGE='This is a development instance'
