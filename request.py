@@ -150,5 +150,9 @@ def context_processor():
 				injectdata['theme'] = "dark"
 		except Exception as ex:
 			pass
+	try:
+		injectdata['banner_message'] = app.config['BANNER_MESSAGE']
+	except KeyError:
+		pass
 
 	return injectdata
