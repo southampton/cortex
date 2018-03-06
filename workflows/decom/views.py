@@ -9,6 +9,7 @@ from flask import Flask, request, session, redirect, url_for, flash, g, abort, r
 from pyVmomi import vim
 from itsdangerous import JSONWebSignatureSerializer
 import requests
+import ldap
 
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('systems.all.decom', 'Decommission any system')
@@ -142,6 +143,59 @@ def decom_step2(id):
 				actions.append({'id': 'rhn5.delete', 'desc': 'Delete the RHN Satellite object', 'detail': rsys['name'] + ', RHN ID <a target="_blank" href="' + rhnurl + str(rsys['id']) + '">' + str(rsys['id']) + "</a>", 'data': {'id': rsys['id']}})
 	except Exception as ex:
 		flash("Warning - An error occured when communicating with RHN: " + str(ex), "alert-warning")
+
+	## Check sudoldap for sudoHost entries
+	try:
+		# Connect to LDAP
+		l = ldap.initialize(workflow.config['SUDO_LDAP_URL'])
+		l.bind_s(workflow.config['SUDO_LDAP_USER'], workflow.config['SUDO_LDAP_PASS'])
+
+		# This contains our list of changes and keeps track of sudoHost entries
+		ldap_dn_data = {}
+
+		# Iterate over the search domains
+		for domain_suffix in workflow.config['SUDO_LDAP_SEARCH_DOMAINS']:
+			# Prefix '.' to our domain suffix if necessary
+			if domain_suffix != '' and domain_suffix[0] != '.':
+				domain_suffix = '.' + domain_suffix
+
+			# Get our host entry
+			host = system['name'] + domain_suffix
+
+			formatted_filter = workflow.config['SUDO_LDAP_FILTER'].format(host)
+			results = l.search_s(workflow.config['SUDO_LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, formatted_filter)
+
+			for result in results:
+				dn = result[0]
+
+				# Store the sudoHosts for each DN we find
+				if dn not in ldap_dn_data:
+					ldap_dn_data[dn] = {'cn': result[1]['cn'][0], 'sudoHost': result[1]['sudoHost'], 'action': 'none', 'count': 0, 'remove': []}
+
+				# Keep track of what things will look like after a deletion (so
+				# we can track when a sudoHosts entry becomes empty and as such
+				# the entry should be deleted)
+				for idx, entry in enumerate(ldap_dn_data[dn]['sudoHost']):
+					if entry.lower() == host.lower():
+						ldap_dn_data[dn]['sudoHost'].pop(idx)
+						ldap_dn_data[dn]['action'] = 'modify'
+						ldap_dn_data[dn]['remove'].append(entry)
+
+		# Determine if any of the DNs are now empty
+		for dn in ldap_dn_data:
+			if len(ldap_dn_data[dn]['sudoHost']) == 0:
+				ldap_dn_data[dn]['action'] = 'delete'
+
+		# Print out actions
+		for dn in ldap_dn_data:
+			if ldap_dn_data[dn]['action'] == 'modify':
+				for entry in ldap_dn_data[dn]['remove']:
+					actions.append({'id': 'sudoldap.update', 'desc': 'Remove sudoHost attribute value ' + entry + ' from ' + ldap_dn_data[dn]['cn'], 'detail': 'Update object ' + dn + ' on ' + workflow.config['SUDO_LDAP_URL'], 'data': {'dn': dn, 'value': entry}})
+			elif ldap_dn_data[dn]['action'] == 'delete':
+				actions.append({'id': 'sudoldap.delete', 'desc': 'Delete ' + ldap_dn_data[dn]['cn'] + ' because we\'ve removed its last sudoHost attribute', 'detail': 'Delete ' + dn + ' on ' + workflow.config['SUDO_LDAP_URL'], 'data': {'dn': dn, 'value': ldap_dn_data[dn]['sudoHost']}})
+			
+	except Exception as ex:
+		flash('Warning - An error occurred when communication with ' + str(workflow.config['SUDO_LDAP_URL']) + ': ' + str(ex), 'alert-warning')
 
 	# If the config says nothing about creating a ticket, or the config 
 	# says to create a ticket:
