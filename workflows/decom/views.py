@@ -189,9 +189,10 @@ def decom_step2(id):
 		# Print out actions
 		for dn in ldap_dn_data:
 			if ldap_dn_data[dn]['action'] == 'modify':
-				actions.append({'id': 'sudoldap.update', 'desc': 'Updates an entry in sudoldap to remove sudoHost attribute(s)', 'detail': 'Update CN=' + ldap_dn_data[dn]['cn'] + ' to remove ' + str(len(ldap_dn_data[dn]['remove'])) + ' entries: ' + ', '.join(ldap_dn_data[dn]['remove']), 'data': {'dn': dn, 'value': ldap_dn_data[dn]['remove']}})
+				for entry in ldap_dn_data[dn]['remove']:
+					actions.append({'id': 'sudoldap.update', 'desc': 'Remove sudoHost attribute value ' + entry + ' from ' + ldap_dn_data[dn]['cn'], 'detail': 'Update object ' + dn + ' on ' + workflow.config['SUDO_LDAP_URL'], 'data': {'dn': dn, 'value': entry}})
 			elif ldap_dn_data[dn]['action'] == 'delete':
-				actions.append({'id': 'sudoldap.delete', 'desc': 'Deletes an object in sudoldap because we\'ve removed its last sudoHost attribute', 'detail': 'Delete CN=' + ldap_dn_data[dn]['cn'] + ' as removing ' + str(len(ldap_dn_data[dn]['remove'])) + ' entries empties it', 'data': {'dn': dn, 'value': ldap_dn_data[dn]['sudoHost']}})
+				actions.append({'id': 'sudoldap.delete', 'desc': 'Delete ' + ldap_dn_data[dn]['cn'] + ' because we\'ve removed its last sudoHost attribute', 'detail': 'Delete ' + dn + ' on ' + workflow.config['SUDO_LDAP_URL'], 'data': {'dn': dn, 'value': ldap_dn_data[dn]['sudoHost']}})
 			
 	except Exception as ex:
 		flash('Warning - An error occurred when communication with ' + str(workflow.config['SUDO_LDAP_URL']) + ': ' + str(ex), 'alert-warning')

@@ -202,8 +202,7 @@ def action_sudoldap_update(action, helper, wfconfig):
 		l.bind_s(wfconfig['SUDO_LDAP_USER'], wfconfig['SUDO_LDAP_PASS'])
 
 		# Replace the value of sudoHost with the calculated list
-		for entry in action['data']['value']:
-			l.modify_s(action['data']['dn'], [(ldap.MOD_DELETE, 'sudoHost', str(entry))])
+		l.modify_s(action['data']['dn'], [(ldap.MOD_DELETE, 'sudoHost', str(action['data']['value']))])
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to update the object in sudoldap: " + str(e))
 		return False
