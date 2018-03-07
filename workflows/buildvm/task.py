@@ -358,8 +358,7 @@ def run(helper, options):
 				try:
 					helper.lib.servicenow_add_ci_relationship(rel_parent, rel_child, rel_type)
 				except Exception as e:
-					raise(e)
-					#fails += 1
+					fails += 1
 
 			# Log the event ending dependant on how well that went
 			if fails == 0:
