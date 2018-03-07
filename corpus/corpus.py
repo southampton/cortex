@@ -1232,6 +1232,26 @@ class Corpus(object):
 
 	################################################################################
 
+	def servicenow_add_ci_relationship(self, parent_sys_id, child_sys_id, rel_type_sys_id):
+		# Build JSON data about the relationship to create
+		json_data = { 'parent': parent_sys_id, 'child': child_sys_id, 'type': rel_type_sys_id }
+
+		# Post the request
+		r = requests.post('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_rel_ci', auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=json_data)
+		if r is None:
+			raise Exception("Could not create CI relationship in ServiceNow. Request failed")
+
+		if r.status_code < 200 or r.status_code > 299:
+			raise Exception("Could not create CI relationship in ServiceNow. ServiceNow returned error code " + str(r.status_code))
+
+		try:
+			response_json = r.json()
+			return response_json['result']['sys_id']
+		except Exception as e:
+			raise Exception("Could not create CI relationship. Error: " + str(e))
+
+	################################################################################
+
 	def servicenow_get_ci_relationships(self, sys_id):
 		# Get the CI details. This checks that it exists and whether it's 
 		# virtual or not	

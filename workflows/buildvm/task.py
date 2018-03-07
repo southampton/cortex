@@ -333,6 +333,47 @@ def run(helper, options):
 
 	## Link ticket to CI (standard VM only) ################################
 
+	if workflow == 'standard' and 'CREATE_CI_RELS' in options['wfconfig'] and len(options['wfconfig']['CREATE_CI_RELS']) > 0:
+		helper.event("sn_create_ci_rels", "Creating default ServiceNow CMDB CI relationships")
+		if sys_id is not None:
+			fails = 0
+			for rel in options['wfconfig']['CREATE_CI_RELS']:
+				# Extract relationship details
+				rel_parent = rel['parent']
+				rel_child = rel['child']
+				rel_type = rel['type']
+
+				# Check for config mistakes
+				if (rel_parent is None and rel_child is None) or rel_type is None:
+					fails += 1
+					continue
+
+				# Change parent/child to server CI sys_id where necessary
+				if rel_parent is None:
+					rel_parent = sys_id
+				if rel_child is None:
+					rel_child = sys_id
+
+				# Create the relationship
+				try:
+					helper.lib.servicenow_add_ci_relationship(rel_parent, rel_child, rel_type)
+				except Exception as e:
+					fails += 1
+
+			# Log the event ending dependant on how well that went
+			if fails == 0:
+				helper.end_event(success=True, description="Created " + str(len(options['wfconfig']['CREATE_CI_RELS'])) + " ServiceNow CI relationships")
+			elif fails == len(options['wfconfig']['CREATE_CI_RELS']):
+				helper.end_event(success=False, description="Failed to create any CI relationships")
+			else:
+				helper.end_event(success=False, warning=True, description="Failed to create " + str(fails) + "/" + str(len(options['wfconfig']['CREATE_CI_RELS'])) + " CI relationships")
+		else:
+			helper.end_event(success=False, description="Cannot create CMDB CI relationships - server CI creation failed")
+	
+
+
+	## Link ticket to CI (standard VM only) ################################
+
 	# If we succeeded in creating a CI, try linking the task
 	if workflow == 'standard' and sys_id is not None and options['task'] is not None and len(options['task'].strip()) != 0:
 		# Start the event
