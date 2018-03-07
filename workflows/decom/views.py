@@ -71,7 +71,7 @@ def decom_step2(id):
 	if 'cmdb_id' in system:
 		if system['cmdb_id'] is not None:
 			if len(system['cmdb_id']) > 0:
-
+				# Add a task to mark the object as Deleted/Decommissioned
 				if system['cmdb_is_virtual']:
 					if system['cmdb_operational_status'] != u'Deleted':
 						actions.append({'id': 'cmdb.update', 'desc': 'Mark the system as Deleted in the CMDB', 'detail': system['cmdb_id'] + " on " + app.config['SN_HOST'], 'data': system['cmdb_id']})
@@ -79,7 +79,16 @@ def decom_step2(id):
 					if system['cmdb_operational_status'] != u'Decommissioned':
 						actions.append({'id': 'cmdb.update', 'desc': 'Mark the system as Decommissioned in the CMDB', 'detail': system['cmdb_id'] + " on " + app.config['SN_HOST'], 'data': system['cmdb_id']})
 
-	## Ask infoblox if a DNS host object exists for the name of the system
+				# Remove CI relationships if the exist
+				try:
+					rel_count = len(corpus.servicenow_get_ci_relationships(system['cmdb_id']))
+					if rel_count > 0:
+						actions.append({'id': 'cmdb.relationships.delete', 'desc': 'Remove ' + str(rel_count) + ' relationships from the CMDB CI', 'detail': str(rel_count) + ' entries from ' + system['cmdb_id'] + " on " + app.config['SN_HOST'], 'data': system['cmdb_id']})
+				except Exception as ex:
+					flash('Warning - An error occured when communicating with ServiceNow: ' + str(ex), 'alert-warning')
+
+
+	## Ask Infoblox if a DNS host object exists for the name of the system
 	try:
 		refs = corpus.infoblox_get_host_refs(system['name'] + ".soton.ac.uk")
 

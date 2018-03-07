@@ -191,6 +191,7 @@ class Corpus(object):
 				raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
 		else:
 			raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
+
 	################################################################################
 
 	def pad_system_name(self, prefix, number, digits):
@@ -668,6 +669,7 @@ class Corpus(object):
 		return template.Clone(folder=destfolder, name=vm_name, spec=clonespec)
 
 	############################################################################ 
+
 	def update_vm_cache(self, vm, tag):
 		"""Updates the VMware cache data with the information about the VM."""
 
@@ -1227,6 +1229,58 @@ class Corpus(object):
 		curd = self.db.cursor(mysql.cursors.DictCursor)
 		curd.execute('UPDATE `sncache_cmdb_ci` SET `operational_status` = %s WHERE `sys_id` = %s', (new_status, sys_id))
 		self.db.commit()
+
+	################################################################################
+
+	def servicenow_get_ci_relationships(self, sys_id):
+		# Get the CI details. This checks that it exists and whether it's 
+		# virtual or not	
+		r = requests.get('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_rel_ci?sysparm_query=child=' + sys_id + '^ORparent=' + sys_id, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json'})
+
+		# Check we got a valid response code
+		if r is not None:
+			# Special case: ServiceNow returns a 404 to indicate no results. No, 
+			# this isn't a good idea, but we have to work with it
+			if r.status_code == 404:
+				return []
+			elif r.status_code < 200 or r.status_code > 299:
+				raise Exception("Could not locate CI relationships in ServiceNow. ServiceNow returned error code " + str(r.status_code))
+		else:
+			raise Exception("Could not locate CI relationships in ServiceNow. Request failed")
+
+		# Decode the JSON, raising on failure
+		try:
+			results = r.json()
+		except Exception as e:
+			raise Exception("Could not remove CI relationships in ServiceNow. JSON parsing failed")
+
+		# Check we have what we need
+		if 'result' not in results:
+			raise Exception("Could no remove CI relationships in ServiceNow. Invalid result from ServiceNow")
+
+		# Return the number of results
+		return results['result']
+
+	################################################################################
+
+	def servicenow_remove_ci_relationships(self, sys_id):
+		# Get the CI relationship data from ServiceNow
+		results = self.servicenow_get_ci_relationships(sys_id)
+
+		# Delete all the relationships, keeping track of how many succeeded/failed
+		warnings = 0
+		successes = 0
+		for entry in results:
+			try:
+				r = requests.delete('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_rel_ci/' + entry['sys_id'], auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json'})
+				if r is None or (r.status_code < 200 or r.status_code > 299):
+					warnings += 1
+				else:
+					successes += 1
+			except Exception as e:
+				warnings += 1
+
+		return (successes, warnings)
 
 	################################################################################
 

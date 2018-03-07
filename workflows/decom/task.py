@@ -14,6 +14,8 @@ def run(helper, options):
 			r = action_vm_delete(action, helper)
 		elif action['id'] == "cmdb.update":
 			r = action_cmdb_update(action, helper)
+		elif action['id'] == "cmdb.relationships.delete":
+			r = action_cmdb_relationships_delete(action, helper)
 		elif action['id'] == "dns.delete":
 			r = action_dns_delete(action, helper)
 		elif action['id'] == "puppet.cortex.delete":
@@ -83,6 +85,28 @@ def action_cmdb_update(action, helper):
 		# This will raise an Exception if it fails, but it is not fatal
 		# to the decommissioning process
 		helper.lib.servicenow_mark_ci_deleted(action['data'])
+		return True
+	except Exception as e:
+		helper.end_event(success=False, description=str(e))
+		return False
+
+################################################################################
+
+def action_cmdb_relationships_delete(action, helper):
+	try:
+		# Remove the CI relationships
+		(successes, warnings) = helper.lib.servicenow_remove_ci_relationships(action['data'])
+
+		# Special action-end-cases
+		if successes == 0 and warnings == 0:
+			# This technically shouldn't happen unless somebody deletes them between the "Check System"
+			# stage and the task actually running
+			helper.end_event(success=True, warning=True, description="Found no CI relationships to remove")
+		elif successes == 0 and warnings > 0:
+			helper.end_event(success=False, description="Failed to remove any CI relationships")
+		elif successes > 0 and warnings > 0:
+			helper.end_event(success=True, warning=True, description="Failed to remove some CI relationships: " + str(successes) + " succeeded, " + str(warnings) + " failed")
+
 		return True
 	except Exception as e:
 		helper.end_event(success=False, description=str(e))
