@@ -25,9 +25,9 @@
 				<form method="POST" class="form">
 					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}" />
 					<div class="col-sm-12">
-					{% for label, value in [('Inherit', 'Derived'), ('Unassigned', 'Unassigned'), ('Direct:', 'Direct')] -%}
+					{% for label, value in [('Clear Assignment', 'INHERIT'), ('Do Not Protect', 'UNPROTECTED'), ('SLA Domain:', 'direct')] -%}
 						<div class="radio">
-							<label><input {% if not does_user_have_permission('systems.all.edit.rubrik') %}disabled="disabled" {% endif %}type="radio" name="mode" value="{{ value|e }}"{{ ' checked' if vm.slaAssignment == value }}> {{ label|e }}</label>
+							<label><input {% if not does_user_have_permission('systems.all.edit.rubrik') %}disabled="disabled" {% endif %}type="radio" name="mode" value="{{ value|e }}"{{ ' checked' if vm.configuredSlaDomainId == value }}> {{ label|e }}</label>
 						</div>
 					{% endfor -%}
 					</div>
