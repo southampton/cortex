@@ -412,7 +412,13 @@ class Backup(MethodView):
 		except:
 			abort(500)
 
-		self.rubrik.update_vm(vm['id'], {'configuredSlaDomainId': request.form.get('sla_domain')})
+		mode = request.form.get('mode')
+		if mode in ('INHERIT', 'UNPROTECTED'):
+				self.rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
+		elif 'sla_domain' in request.form:
+			self.rubrik.update_vm(vm['id'], {'configuredSlaDomainId': request.form.get('sla_domain')})
+		else:
+			abort(400)
 
 		return self.get(id)
 
