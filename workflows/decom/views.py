@@ -114,7 +114,7 @@ def decom_step2(id):
 			if client['DECOMMISSIONED'] is None:
 				actions.append({'id': 'tsm.decom', 'desc': 'Decommission the system in TSM', 'detail': 'Node ' + client['NAME']  + ' on server ' + client['SERVER'], 'data': {'NAME': client['NAME'], 'SERVER': client['SERVER']}})
 	except requests.exceptions.HTTPError as e:
-		flash("Warning - An error occured when communicating with TSM: " + str(ex), "alert-warning")
+		flash("Warning - An error occured when communicating with TSM: " + str(e), "alert-warning")
 	except LookupError:
 		pass
 	except Exception as ex:
