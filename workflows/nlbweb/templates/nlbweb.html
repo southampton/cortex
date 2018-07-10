@@ -42,10 +42,6 @@ td.na
 					<label for="service">Service Name:</label>
 					<input class="form-control" name="service" id="service" placeholder="The human-readable name of the service you are creating to be used in NLB object descriptions e.g. Corporate Website" required="required" red="required"eutofocus {% if 'service' in values %}value="{{ values['service'] }}" {% endif %}/>
 				</div>
-				<div class="col-md-12 form-group">
-					<label for="short_service">Short Name:</label>
-					<input class="form-control" name="short_service" id="short_service" placeholder="A short name of the service to be used in the NLB object names. This should be all lowercase and contain no spaces. e.g. corp-web" required="required" {% if 'short_service' in values %}value="{{ values['short_service'] }} " {% endif %}/>
-				</div>
 				<div class="col-md-6 form-group">
 					<label for="env">Environment:</label>
 					<select class="form-control" name="env" id="env">
@@ -59,19 +55,19 @@ td.na
 					<input class="form-control" id="suffix" readonly="readonly" {% if 'env' in values %}value="{{ envs_dict[values['env']]['suffix'] }}" {% endif %}/>
 				</div>
 				<div class="col-md-12 form-group">
-					<label for="partition">NLB Partition:</label>
-					<input class="form-control" name="partition" id="partition" placeholder="The partition on the NLB to create objects in" required="required" value="{% if 'partition' in values %}{{ values['partition'] }}{% else %}{{ partition }}{% endif %}" />
+					<label for="fqdn">Service FQDN:</label>
+					<input class="form-control" name="fqdn" id="fqdn" placeholder="The fully-qualified hostname of the service. Used for the CN of certificates, and the Infoblox Host object." required="required" {% if 'fqdn' in values %}value="{{ values['fqdn'] }}" {% endif %}/>
+				</div>
+				<div class="col-md-12 form-group">
+					<label for="aliases">Service Aliases:</label>
+					<input class="form-control" name="aliases" id="aliases" placeholder="A space-separated list of service alias (used for DNS aliases and certificate subjectAltNames)" {% if 'aliases' in values %}value="{{ values['aliases'] }}" {% endif %}/>
 				</div>
 			</div>
 		</div>
 		<div class="col-md-6">
 			<div class="row">
 				<div class="col-md-12"><h3 style="margin-top:0px">Service Access</h3></div>
-				<div class="col-md-6 form-group">
-					<label for="fqdn">Service FQDN:</label>
-					<input class="form-control" name="fqdn" id="fqdn" placeholder="The fully-qualified hostname of the service" required="required" {% if 'fqdn' in values %}value="{{ values['fqdn'] }}" {% endif %}/>
-				</div>
-				<div class="col-md-6 form-group">
+				<div class="col-md-12 form-group">
 					<label for="ip">Service IP:</label>
 					<input class="form-control" name="ip" id="ip" placeholder="The IP address of the service. Leave blank to auto-allocate" {% if 'ip' in values %}value="{{ values['ip'] }}" {% endif %}/>
 				</div>
@@ -106,20 +102,26 @@ td.na
 		<div class="col-md-12">
 			<label for="encrypt_backend"><input type="checkbox" id="encrypt_backend" name="encrypt_backend" {% if 'encrypt_backend' not in values or ('encrypt_backend' in values and values['encrypt_backend']) %}checked="checked" {% endif %}/> Encrypt Traffic To Backend. This will encrypt the traffic between the NLB and the back-end servers</label>
 		</div>
+		<div class="col-md-12">
+			<label for="enable_hsts"><input type="checkbox" id="enable_hsts" name="enable_hsts" {% if 'enable_hsts' in values and values['enable_hsts'] %}checked="checked" {% endif %}/> Enable HTTP Strict Transport Secruity (HSTS). This will force the browser to always use HTTPS after the first request, regardless of what the user requests</label>
+		</div>
+		<div class="col-md-12">
+			<label for="generate_letsencrypt"><input type="checkbox" id="generate_letsencrypt" name="generate_letsencrypt" {% if 'generate_letsencrypt' in values and values['generate_letsencrypt'] %}checked="checked" {% endif %}/> Generate a new certificate via Let's Encrypt</label>
+		</div>
 		<div class="col-md-6 form-group">
 			<label for="ssl_key">SSL Private Key:</label>
-			<textarea class="form-control" id="ssl_key" name="ssl_key" style="width:100%;max-width:100%;min-width:100%;height:6em" placeholder="Paste PEM-encoded RSA private key here"{% if 'enable_ssl' not in values or ('enable_ssl' in values and values['enable_ssl']) %} required="required"{% endif %}>{% if 'ssl_key' in values %}{{ values['ssl_key'] }}{% endif %}</textarea>
+			<textarea class="form-control" id="ssl_key" name="ssl_key" style="width:100%;max-width:100%;min-width:100%;height:6em" placeholder="Paste PEM-encoded RSA private key here"{% if 'enable_ssl' not in values or ('enable_ssl' in values and values['enable_ssl']) and 'generate_letsencrypt' not in values %} required="required"{% endif %}{% if 'generate_letsencrypt' in values and values['generate_letsencrypt'] %} disabled="disabled"{% endif %}>{% if 'ssl_key' in values %}{{ values['ssl_key'] }}{% endif %}</textarea>
 		</div>
 		<div class="col-md-6 form-group">
 			<label for="ssl_cert">SSL Certificate:</label>
-			<textarea class="form-control" id="ssl_cert" name="ssl_cert" style="width:100%;max-width:100%;min-width:100%;height:6em" placeholder="Paste PEM-encoded X509 certificate here"{% if 'enable_ssl' not in values or ('enable_ssl' in values and values['enable_ssl']) %} required="required"{% endif %}>{% if 'ssl_cert' in values %}{{ values['ssl_cert'] }}{% endif %}</textarea>
+			<textarea class="form-control" id="ssl_cert" name="ssl_cert" style="width:100%;max-width:100%;min-width:100%;height:6em" placeholder="Paste PEM-encoded X509 certificate here"{% if 'enable_ssl' not in values or ('enable_ssl' in values and values['enable_ssl']) and 'generate_letsencrypt' not in values %} required="required"{% endif %}{% if 'generate_letsencrypt' in values and values['generate_letsencrypt'] %} disabled="disabled"{% endif %}>{% if 'ssl_cert' in values %}{{ values['ssl_cert'] }}{% endif %}</textarea>
 		</div>
 		<div class="col-md-12">
 			<label for="ssl_provider">SSL Certificate Provider:</label>
-			<select class="form-control" name="ssl_provider" id="ssl_provider">
+			<select class="form-control" name="ssl_provider" id="ssl_provider"{% if 'generate_letsencrypt' in values and values['generate_letsencrypt'] %} disabled="disabled"{% endif %}>
 				<option value="*SELF"{% if 'ssl_provider' in values and values['ssl_provider'] == '*SELF' %} selected="selected"{% endif %}>Self-signed</option>
 {%- for ssl_provider in ssl_providers %}
-				<option value="{{ ssl_provider['id'] }}"{% if ('ssl_provider' in values and values['ssl_provider'] == ssl_provider['id']) or ssl_provider['id'] == default_ssl_provider %} selected="selected"{% endif %}>{{ ssl_provider['name'] }} (NLB Chain File: {{ ssl_provider['nlb-chain-file'] }})</option>
+				<option value="{{ ssl_provider['id'] }}"{% if ('ssl_provider' in values and values['ssl_provider'] == ssl_provider['id']) or ('ssl_provider' not in values and ssl_provider['id'] == default_ssl_provider) %} selected="selected"{% endif %}>{{ ssl_provider['name'] }} (NLB Chain File: {{ ssl_provider['nlb-chain-file'] }})</option>
 {%- endfor %}
 			</select>
 		</div>
@@ -192,8 +194,12 @@ td.na
 			<input class="form-control" name="https_irules" id="https_irules" placeholder="Space-separated list of iRules to add to the HTTPS Virtual Server" {% if 'https_irules' in values %}value="{{ values['https_irules'] }}" {% endif %}/>
 		</div>
 		<div class="col-md-12 form-group">
-			<label for="ssl_cipher_string">SSL Cipher String:</label>
-			<input class="form-control" name="ssl_cipher_string" id="ssl_cipher_string" placeholder="A custom SSL cipher string to use on the SSL client profile. Leave blank to use the default." {% if 'ssl_cipher_string' in values %}value="{{ values['ssl_cipher_string'] }}" {% endif %}/>
+			<label for="ssl_cipher_string">SSL Client Profile:</label>
+			<select class="form-control" name="ssl_client_profile" id="ssl_client_profile">
+{%- for profile in ssl_client_profiles %}
+				<option value="{{ profile.id }}"{% if ('ssl_client_profile' in values and values['ssl_client_profile'] == profile['id']) or ('ssl_client_profile' not in values and profile['id'] == default_ssl_client_profile) %} selected="selected"{% endif %}>{{ profile['name'] }}</option>
+{%- endfor %}
+			</select>
 		</div>
 		<div class="col-md-12">
 			<label for="use_xforwardedfor"><input type="checkbox" id="use_xforwardedfor" name="use_xforwardedfor" {% if 'use_xforwardedfor' not in values or ('use_xforwardedfor' in values and values['use_xforwardedfor']) %}checked="checked" {% endif %}/> Add in an X-Forwarded-For header to relay the client's IP address to the backend</label>
@@ -220,8 +226,16 @@ $('#enable_ssl').change(function() {
 		$('#ssl_options').css('display', '');
 		$('#https_port').removeAttr('disabled');
 		$('#https_port').attr('required', 'required');
-		$('#ssl_cert').attr('required', 'required');
-		$('#ssl_key').attr('required', 'required');
+		if ($('#generate_letsencrypt').is(':checked'))
+		{
+			$('#ssl_cert').removeAttr('required');
+			$('#ssl_key').removeAttr('required');
+		}
+		else
+		{
+			$('#ssl_cert').attr('required', 'required');
+			$('#ssl_key').attr('required', 'required');
+		}
 	}
 	else
 	{
@@ -233,16 +247,27 @@ $('#enable_ssl').change(function() {
 		$('#ssl_key').removeAttr('required');
 	}
 });
+$('#generate_letsencrypt').change(function() {
+	if ($(this).is(":checked"))
+	{
+		$('#ssl_cert').removeAttr('required');
+		$('#ssl_key').removeAttr('required');
+		$('#ssl_cert').attr('disabled', 'disabled');
+		$('#ssl_key').attr('disabled', 'disabled');
+		$('#ssl_provider').val('{{ letsencrypt_provider }}')
+		$('#ssl_provider').attr('disabled', 'disabled');
+	}
+	else
+	{
+		$('#ssl_cert').removeAttr('disabled');
+		$('#ssl_key').removeAttr('disabled');
+		$('#ssl_provider').removeAttr('disabled');
+		$('#ssl_cert').attr('required', 'required');
+		$('#ssl_key').attr('required', 'required');
+	}
+});
 $('#env').change(function() {
 	$('#suffix').val(env_suffix_map[$('#env').val()]);
-});
-$('#service').change(function() {
-	if ($('#short_service').val() == "")
-	{
-		//               |- Get the name in lowercase ----------| |-- replace bad chars w. dash -| |- remove leading/trailing dashes---|
-		var short_name = $('#service').val().trim().toLowerCase().replace(/[^A-Za-z0-9\-]+/g, '-').replace(/-*$/, '').replace(/^-*/, '')
-		$('#short_service').val(short_name);
-	}
 });
 $('.node-input-box').keydown(function(event) {
 	if (event.keyCode === 13)

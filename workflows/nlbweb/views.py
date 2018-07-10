@@ -25,7 +25,9 @@ workflow.add_permission('nlbweb.create', 'Creates NLB Web Service')
 
 # IPv4 Address Regex
 ipv4_re = re.compile(r"^((([0-9])|([1-9][0-9])|(1[0-9][0-9])|(2[0-4][0-9])|(25[0-5]))\.){3}((([0-9])|([1-9][0-9])|(1[0-9][0-9])|(2[0-4][0-9])|(25[0-5])))$")
-short_service_re = re.compile(r"^[a-zA-Z0-9-]*$")
+
+# FQDN regex
+fqdn_re = re.compile(r"^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}$")
 
 @workflow.route('create', title='Create NLB Web Service', order=40, permission="nlbweb.create", methods=['GET', 'POST'])
 def nlbweb_create():
@@ -38,21 +40,28 @@ def nlbweb_create():
 	# Turn SSL providers in to a dict
 	ssl_providers_dict = { ssl_provider['id']: ssl_provider for ssl_provider in wfconfig['SSL_PROVIDERS'] }
 
+	# Turn SSL client profiles in to a dict
+	ssl_client_profiles_dict = { profile['id']: profile for profile in wfconfig['SSL_CLIENT_PROFILES'] }
+
 	if request.method == 'GET':
 		## Show form
-		return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], partition=wfconfig['DEFAULT_PARTITION'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'], envs_dict=envs_dict)
+		return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'], envs_dict=envs_dict, letsencrypt_provider=wfconfig['LETSENCRYPT_PROVIDER_ID'], ssl_client_profiles=wfconfig['SSL_CLIENT_PROFILES'], default_ssl_client_profile=wfconfig['DEFAULT_SSL_CLIENT_PROFILE'])
 
 	elif request.method == 'POST':
 		valid_form = True
 		form_fields = {}
 
 		# Get parameters from form, stripped with defaults
-		for field in ['service', 'short_service', 'env', 'partition', 'fqdn', 'ip', 'http_port', 'https_port', 'monitor_url', 'monitor_response', 'ssl_key', 'ssl_cert', 'ssl_provider', 'outage_page', 'http_irules', 'https_irules', 'ssl_cipher_string']:
+		for field in ['service', 'env', 'fqdn', 'aliases', 'ip', 'http_port', 'https_port', 'monitor_url', 'monitor_response', 'ssl_key', 'ssl_cert', 'ssl_provider', 'outage_page', 'http_irules', 'https_irules', 'ssl_client_profile']:
 			form_fields[field] = request.form.get(field, '').strip()
 
 		# Get parameters from form - checkboxes
-		for field in ['enable_ssl', 'redirect_http', 'encrypt_backend', 'use_xforwardedfor']:
+		for field in ['enable_ssl', 'redirect_http', 'encrypt_backend', 'use_xforwardedfor', 'generate_letsencrypt', 'enable_hsts']:
 			form_fields[field] = field in request.form
+
+		# Refactor: these are fixed
+		form_fields['short_service'] = form_fields['fqdn']
+		form_fields['partition'] = wfconfig['DEFAULT_PARTITION']
 
 		# Get parameters from form - nodes
 		form_fields['node_hosts'] = request.form.getlist('node_host[]')
@@ -63,12 +72,6 @@ def nlbweb_create():
 		# Service parameter validation
 		if len(form_fields['service']) == 0:
 			flash('You must enter a service name', 'alert-danger')
-			valid_form = False
-		if len(form_fields['short_service']) == 0:
-			flash('You must enter a short service name', 'alert-danger')
-			valid_form = False
-		if short_service_re.match(form_fields['short_service']) is None:
-			flash('Short service name can only contain numbers, letters and dashes', 'alert-danger')
 			valid_form = False
 		if len(form_fields['env']) == 0:
 			flash('You must specify an environment', 'alert-danger')
@@ -88,6 +91,22 @@ def nlbweb_create():
 			if '.' not in form_fields['fqdn']:
 				flash('The domain name of the service must be fully qualified', 'alert-danger')
 				valid_form = False
+			elif fqdn_re.match(form_fields['fqdn']) is None:
+				flash('The specified service domain name is not valid', 'alert-danger')
+				valid_form = False
+		if len(form_fields['aliases']) > 0:
+			split_aliases = filter(lambda x: x != '', form_fields['aliases'].split(' '))
+			for alias in split_aliases:
+				if '.' not in alias:
+					flash('All service aliases must be fully qualified domain names', 'alert-danger')
+					valid_form = False
+					break
+				elif fqdn_re.match(alias) is None:
+					flash('All service alises must be valid domain names: ' + alias, 'alert-danger')
+					valid_form = False
+					break
+		else:
+			split_aliases = []
 		if len(form_fields['ip']) > 0:
 			if ipv4_re.match(form_fields['ip']) is None:
 				flash('Invalid IPv4 service address', 'alert-danger')
@@ -117,21 +136,21 @@ def nlbweb_create():
 		if len(form_fields['monitor_url']) == 0:
 			flash('You must enter a valid URL on the service to monitor', 'alert-danger')
 			valid_form = False
-		if form_fields['enable_ssl'] and len(form_fields['ssl_key']) == 0:
+		if form_fields['enable_ssl'] and not form_fields['generate_letsencrypt'] and len(form_fields['ssl_key']) == 0:
 			flash('You must provide an SSL private key', 'alert-danger')
 			valid_form = False
 		openssl_ssl_key = None
-		if form_fields['enable_ssl'] and len(form_fields['ssl_key']) > 0:
+		if form_fields['enable_ssl'] and not form_fields['generate_letsencrypt'] and len(form_fields['ssl_key']) > 0:
 			try:
 				openssl_ssl_key = openssl.crypto.load_privatekey(openssl.crypto.FILETYPE_PEM, form_fields['ssl_key'])
 			except Exception as e:
 				flash('Error reading SSL private key: ' + str(e), 'alert-danger')
 				valid_form = False
-		if form_fields['enable_ssl'] and len(form_fields['ssl_cert']) == 0:
+		if form_fields['enable_ssl'] and not form_fields['generate_letsencrypt'] and len(form_fields['ssl_cert']) == 0:
 			flash('You must provide an SSL certificate', 'alert-danger')
 			valid_form = False
 		openssl_ssl_cert = None
-		if form_fields['enable_ssl'] and len(form_fields['ssl_cert']) > 0:
+		if form_fields['enable_ssl'] and not form_fields['generate_letsencrypt'] and len(form_fields['ssl_cert']) > 0:
 			try:
 				openssl_ssl_cert = openssl.crypto.load_certificate(openssl.crypto.FILETYPE_PEM, form_fields['ssl_cert'])
 			except Exception as e:
@@ -146,11 +165,16 @@ def nlbweb_create():
 				except Exception as e:
 					flash('SSL key/certficate validation error. Do the key and certificate match? Details: ' + str(e), 'alert-danger')
 					valid_form = False
-		if form_fields['enable_ssl'] and len(form_fields['ssl_provider']) == 0:
+		if form_fields['enable_ssl'] and not form_fields['generate_letsencrypt'] and len(form_fields['ssl_provider']) == 0:
 			flash('You must provide an SSL certificate provider', 'alert-danger')
 			valid_form = False
-		if form_fields['enable_ssl'] and len(form_fields['ssl_provider']) > 0 and form_fields['ssl_provider'] != "*SELF" and form_fields['ssl_provider'] not in [provider['id'] for provider in wfconfig['SSL_PROVIDERS']]:
+		if form_fields['enable_ssl'] and not form_fields['generate_letsencrypt'] and len(form_fields['ssl_provider']) > 0 and form_fields['ssl_provider'] != "*SELF" and form_fields['ssl_provider'] not in [provider['id'] for provider in wfconfig['SSL_PROVIDERS']]:
 			flash('Invalid SSL provider', 'alert-danger')
+			valid_form = False
+		if form_fields['enable_ssl'] and form_fields['generate_letsencrypt']:
+			form_fields['ssl_provider'] = wfconfig['LETSENCRYPT_PROVIDER_ID']
+		if form_fields['enable_ssl'] and form_fields['ssl_client_profile'] not in [profile['id'] for profile in wfconfig['SSL_CLIENT_PROFILES']]:
+			flash('Invalid Parent SSL Client Profile', 'alert-danger')
 			valid_form = False
 
 		# Validate the hosts
@@ -216,7 +240,8 @@ def nlbweb_create():
 
 		# Connect to the NLB now as we need the NLB to validate the
 		# iRule list, which if they fail is a fatal error
-		bigip = ManagementRoot(envs_dict[form_fields['env']]['nlb'], wfconfig['NLB_USERNAME'], wfconfig['NLB_PASSWORD'])
+		bigip_host = envs_dict[form_fields['env']]['nlb']
+		bigip = ManagementRoot(bigip_host, wfconfig['NLB_USERNAME'], wfconfig['NLB_PASSWORD'])
 
 		# Get the list of HTTP and HTTPS iRules and validate that they all exist
 		try:
@@ -231,7 +256,7 @@ def nlbweb_create():
 			# Turn envs in to a dict
 			envs_dict = { env['id']: env for env in wfconfig['ENVS'] }
 
-			return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], partition=wfconfig['DEFAULT_PARTITION'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'], values=form_fields, envs_dict=envs_dict)
+			return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'], values=form_fields, envs_dict=envs_dict, letsencrypt_provider=wfconfig['LETSENCRYPT_PROVIDER_ID'], ssl_client_profiles=wfconfig['SSL_CLIENT_PROFILES'], default_ssl_client_profile=wfconfig['DEFAULT_SSL_CLIENT_PROFILE'])
 
 		# We've now done some basic validation on the inputs
 
@@ -243,10 +268,13 @@ def nlbweb_create():
 		# Lowercase the FQDN
 		form_fields['fqdn'] = form_fields['fqdn'].lower()
 
-		details = {'ssl': 0, 'warnings': [], 'actions': []}
+		details = {'ssl': 0, 'ssl_have_cert': False, 'warnings': [], 'actions': []}
 		if form_fields['enable_ssl']:
-			# Extract certificate details
 			details['ssl'] = 1
+
+		if form_fields['enable_ssl'] and not form_fields['generate_letsencrypt']:
+			# Extract certificate details
+			details['ssl_have_cert'] = True
 			details['ssl_key_size'] = openssl_ssl_key.bits()
 			details['ssl_cert_subject_cn'] = openssl_ssl_cert.get_subject().CN
 			details['ssl_cert_subject_ou'] = openssl_ssl_cert.get_subject().OU
@@ -362,6 +390,13 @@ def nlbweb_create():
 		virtual_server_http = virtual_server_base + '-' + str(form_fields['http_port'])
 		http_profile_name = wfconfig['HTTP_PROFILE_PREFIX'] + form_fields['short_service'] + envs_dict[form_fields['env']]['suffix']
 
+		if form_fields['enable_ssl'] and form_fields['generate_letsencrypt']:
+			details['actions'].append({
+				'action_description': 'Generate a Let\'s Encrypt certificate for ' + form_fields['fqdn'],
+				'id': 'generate_letsencrypt',
+				'fqdn': form_fields['fqdn'],
+				'sans': split_aliases})
+
 		if need_https_objects:
 			virtual_server_https = virtual_server_base + '-' + str(form_fields['https_port'])
 			ssl_profile_name = wfconfig['SSL_PROFILE_PREFIX'] + form_fields['fqdn']
@@ -373,7 +408,9 @@ def nlbweb_create():
 			details['actions'].append({
 				'action_description': 'Allocate an IP address from ' + str(envs_dict[form_fields['env']]['network']) + ' in Infoblox',
 				'id': 'allocate_ip',
-				'network': envs_dict[form_fields['env']]['network']})
+				'network': envs_dict[form_fields['env']]['network'],
+				'fqdn': form_fields['fqdn'],
+				'aliases': split_aliases})
 
 		# Check if any of the nodes are already present on the NLB
 		for back_end_node in back_end_nodes:
@@ -391,11 +428,12 @@ def nlbweb_create():
 					details['warnings'].append('SKIPPED: Node ' + back_end_node['hostname'] + ' already exists with correct IP. Not creating.')
 			else:
 				details['actions'].append({
-					'action_description': 'Create node ' + back_end_node['hostname'],
+					'action_description': 'Create node ' + back_end_node['hostname'] + ' on ' + bigip_host,
 					'id': 'create_node',
 					'name': back_end_node['hostname'],
 					'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' Node',
 					'ip': back_end_node['ip'],
+					'bigip': bigip_host,
 					'partition': form_fields['partition']})
 
 		# Check if the HTTP monitor already exists
@@ -404,13 +442,14 @@ def nlbweb_create():
 				details['warnings'].append('SKIPPED: Monitor ' + monitor_name_http + ' already exists. Not creating.')
 			else:
 				details['actions'].append({
-					'action_description': 'Create HTTP monitor ' + monitor_name_http,
+					'action_description': 'Create HTTP monitor ' + monitor_name_http + ' on ' + bigip_host,
 					'id': 'create_monitor',
 					'name': monitor_name_http,
 					'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' HTTP Monitor',
 					'parent': 'http',
 					'url': form_fields['monitor_url'],
 					'response': form_fields['monitor_response'],
+					'bigip': bigip_host,
 					'partition': form_fields['partition']})
 
 		# Check if the HTTPS monitor already exists
@@ -419,13 +458,14 @@ def nlbweb_create():
 				details['warnings'].append('SKIPPED: Monitor ' + monitor_name_https + ' already exists. Not creating.')
 			else:
 				details['actions'].append({
-					'action_description': 'Create HTTPS monitor ' + monitor_name_https,
+					'action_description': 'Create HTTPS monitor ' + monitor_name_https + ' on ' + bigip_host,
 					'id': 'create_monitor',
 					'name': monitor_name_https,
 					'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' HTTPS Monitor',
 					'parent': 'https',
 					'url': form_fields['monitor_url'],
 					'response': form_fields['monitor_response'],
+					'bigip': bigip_host,
 					'partition': form_fields['partition']})
 
 		# Check if the HTTP pool already exists. 
@@ -434,12 +474,13 @@ def nlbweb_create():
 				details['warnings'].append('SKIPPED: Pool ' + pool_name_http + ' already exists. Not creating.')
 			else:
 				details['actions'].append({
-					'action_description': 'Create HTTP Pool ' + pool_name_http,
+					'action_description': 'Create HTTP Pool ' + pool_name_http + ' on ' + bigip_host,
 					'id': 'create_pool',
 					'name': pool_name_http,
 					'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' HTTP Pool',
 					'monitor': monitor_name_http,
 					'members': [back_end_node['hostname'] + ':' + back_end_node['http_port'] for back_end_node in back_end_nodes],
+					'bigip': bigip_host,
 					'partition': form_fields['partition']})
 
 		# Check if the HTTPS pool already exists
@@ -448,33 +489,48 @@ def nlbweb_create():
 				details['warnings'].append('SKIPPED: Pool ' + pool_name_https + ' already exists. Not creating.')
 			else:
 				details['actions'].append({
-					'action_description': 'Create HTTPS Pool ' + pool_name_https,
+					'action_description': 'Create HTTPS Pool ' + pool_name_https + ' on ' + bigip_host,
 					'id': 'create_pool',
 					'name': pool_name_https,
 					'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' HTTPS Pool',
 					'monitor': monitor_name_https,
 					'members': [back_end_node['hostname'] + ':' + back_end_node['https_port'] for back_end_node in back_end_nodes],
+					'bigip': bigip_host,
 					'partition': form_fields['partition']})
 
 		if need_https_objects:
 			if bigip.tm.sys.crypto.keys.key.exists(name=ssl_key_file, partition=form_fields['partition']):
 				details['warnings'].append('SKIPPED: SSL Private Key ' + ssl_key_file + ' already exists. Not creating.')
 			else:
-				details['actions'].append({
-					'action_description': 'Upload private key ' + ssl_key_file,
+				new_action = {
+					'action_description': 'Upload private key ' + ssl_key_file + ' on ' + bigip_host,
 					'id': 'upload_key',
 					'filename': ssl_key_file,
-					'content': form_fields['ssl_key'],
-					'partition': form_fields['partition']})
+					'bigip': bigip_host,
+					'partition': form_fields['partition']
+				}
+				if form_fields['generate_letsencrypt']:
+					new_action['from_letsencrypt'] = True
+					new_action['action_description'] = new_action['action_description'] + ' (from Let\'s Encrypt)'
+				else:
+					new_action['content'] = form_fields['ssl_key']
+				details['actions'].append(new_action)
 			if bigip.tm.sys.crypto.certs.cert.exists(name=ssl_cert_file, partition=form_fields['partition']):
 				details['warnings'].append('SKIPPED: SSL Certificate ' + ssl_cert_file + ' already exists. Not creating.')
 			else:
-				details['actions'].append({
-					'action_description': 'Upload certificate ' + ssl_cert_file,
+				new_action = {
+					'action_description': 'Upload certificate ' + ssl_cert_file + ' on ' + bigip_host,
 					'id': 'upload_cert',
 					'filename': ssl_cert_file,
-					'content': form_fields['ssl_key'],
-					'partition': form_fields['partition']})
+					'bigip': bigip_host,
+					'partition': form_fields['partition']
+				}
+				if form_fields['generate_letsencrypt']:
+					new_action['from_letsencrypt'] = True
+					new_action['action_description'] = new_action['action_description'] + ' (from Let\'s Encrypt)'
+				else:
+					new_action['content'] = form_fields['ssl_cert']
+				details['actions'].append(new_action)
 				
 		# Check if the SSL Profile already exists
 		if need_https_objects:
@@ -482,18 +538,17 @@ def nlbweb_create():
 				details['warnings'].append('SKIPPED: SSL Client Profile ' + ssl_profile_name + ' already exists. Not creating.')
 			else:
 				new_action = {
-					'action_description': 'Create SSL Client Profile ' + ssl_profile_name,
+					'action_description': 'Create SSL Client Profile ' + ssl_profile_name + ' on ' + bigip_host,
 					'id': 'create_ssl_client_profile',
 					'name': ssl_profile_name,
 					'key': ssl_key_file,
 					'cert': ssl_cert_file,
-					'parent': wfconfig['SSL_CLIENT_PROFILE_PARENT'],
+					'parent': ssl_client_profiles_dict[form_fields['ssl_client_profile']]['profile'],
+					'bigip': bigip_host,
 					'partition': form_fields['partition']
 				}
 				if form_fields['ssl_provider'] != '*SELF':
 					new_action['chain'] = ssl_providers_dict[form_fields['ssl_provider']]['nlb-chain-file']
-				if form_fields['ssl_cipher_string'] != '':
-					new_action['cipher_string'] = form_fields['ssl_cipher_string']
 				details['actions'].append(new_action)
 
 		# Determine if we need to create an HTTP profile
@@ -514,9 +569,10 @@ def nlbweb_create():
 				details['warnings'].append('SKIPPED: HTTP Profile ' + http_profile_name + ' already exists. Not creating.')
 			else:
 				new_action = {
-					'action_description': 'Create HTTP Profile ' + http_profile_name,
+					'action_description': 'Create HTTP Profile ' + http_profile_name + ' on ' + bigip_host,
 					'id': 'create_http_profile',
 					'name': http_profile_name,
+					'bigip': bigip_host,
 					'partition': form_fields['partition']
 				}
 				if form_fields['use_xforwardedfor']:
@@ -534,12 +590,13 @@ def nlbweb_create():
 			details['warnings'].append('SKIPPED: Virtual Server ' + virtual_server_http + ' already exists. Not creating.')
 		else:
 			new_action = {
-				'action_description': 'Create HTTP Virtual Server ' + virtual_server_http,
+				'action_description': 'Create HTTP Virtual Server ' + virtual_server_http + ' on ' + bigip_host,
 				'id': 'create_virtual_server',
 				'name': virtual_server_http,
 				'ip': form_fields['ip'],
 				'port': form_fields['http_port'],
 				'irules': http_irules,
+				'bigip': bigip_host,
 				'partition': form_fields['partition']
 			}
 			if form_fields['redirect_http']:
@@ -552,17 +609,20 @@ def nlbweb_create():
 				details['warnings'].append('SKIPPED: Virtual Server ' + virtual_server_https + ' already exists. Not creating.')
 			else:
 				new_action = {
-					'action_description': 'Create HTTPS Virtual Server ' + virtual_server_https,
+					'action_description': 'Create HTTPS Virtual Server ' + virtual_server_https + ' on ' + bigip_host,
 					'id': 'create_virtual_server',
 					'name': virtual_server_https,
 					'ip': form_fields['ip'],
 					'port': form_fields['https_port'],
 					'irules': https_irules,
 					'ssl_client_profile': ssl_profile_name,
+					'bigip': bigip_host,
 					'partition': form_fields['partition']
 				}
 				if form_fields['encrypt_backend']:
 					new_action['ssl_server_profile'] = 'serverssl'
+				if form_fields['generate_letsencrypt']:
+					new_action['irules'].append(wfconfig['LETSENCRYPT_IRULE'])
 				details['actions'].append(new_action)
 
 		# If after all that there are no actions, log a warning

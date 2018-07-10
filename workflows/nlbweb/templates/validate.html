@@ -36,7 +36,7 @@
 		<p>There are no actions to complete. This likely means that the service is already set up on the load balancer.</p>
 {%- endif %}
 	</div>
-{%- if details.ssl == 1 %}
+{%- if details.ssl_have_cert == 1 %}
 	<div class="col-md-3">
 		<h4 style="margin-top:0px">SSL Certificate Subject</h4>
 		<strong>Common Name:</strong> {{ details['ssl_cert_subject_cn'] }}<br />
@@ -81,6 +81,9 @@
 			</form>
 		</div>
 	</div>
+</div>
+<div class="row">
+	{{ json_data }}
 </div>
 {%- endif %}
 <script>
