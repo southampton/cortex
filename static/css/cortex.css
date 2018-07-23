@@ -36,6 +36,34 @@ span.arrow {
   display: none;
 }
 
+.hidden-search {
+  display: none !important;
+
+}
+
+@media only screen and (min-width: 810px) and (max-width: 952px)  {
+	body {
+		padding-top: 110px;
+	}
+}
+
+@media only screen and (max-width: 810px)  {
+	body {
+		padding-top: 160px;
+	}
+}
+@media only screen and (max-width: 1410px)  {
+	.hidden-search {
+		display: block !important;
+	}
+	.navbar-search {
+		display: none;
+	}
+	.hide-when-narrow {
+		display: none;
+	}
+}
+
 @media (min-width: 768px) {
 	.sidebar
 	{
