@@ -125,7 +125,7 @@
 			</div>
 		</div>
 
-		<div class="navbar navbar-fixed-top navbar-default {%if not classic_layout %}visible-xs{%endif%}" role="navigation">
+		<div class="navbar navbar-fixed-top navbar-default {%if not classic_layout %}visible-xs{%endif%} navbar-expand-lg" role="navigation">
 			<div class="container-fluid">
 				<div class="navbar-header">
 					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
@@ -216,9 +216,10 @@
 						{%- endif %}
 					</ul>
 					<ul class="nav navbar-nav navbar-right">
-						<li{%if not classic_layout %} class="visible-xs"{%endif%}><a href="{{ url_for('dashboard') }}"><i class="fa fa-fw fa-dashboard"></i> Dashboard</a></li>
+						<li><a class="hidden-search" data-toggle="modal" data-target="#search"><i class="fa fa-fw fa-search"></i></a></li>
+						<li{%if not classic_layout %} class="visible-xs"{%endif%}><a href="{{ url_for('dashboard') }}"><i class="fa fa-fw fa-dashboard"></i> <span class="hide-when-narrow">Dashboard</span></a></li>
 						<li class="dropdown{%if active == 'user'%} active{%endif%}">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-fw fa-user"></i> {{ session.username }} <b class="caret"></b></a>
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-fw fa-user"></i> <span class="hide-when-narrow">{{ session.username }}</span><b class="caret"></b></a>
 							<ul class="dropdown-menu">
 								<li><a data-toggle="modal" data-target="#prefs" href="#"><i class="fa fa-fw fa-cog"></i> Preferences</a></li>
 								<li><a href="{{ url_for('user_groups') }}"><i class="fa fa-users fa-fw"></i> AD Groups</a></li>
