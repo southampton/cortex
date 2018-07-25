@@ -160,6 +160,20 @@ class Corpus(object):
 		self.db.commit()
 		return cur.lastrowid
 
+
+	################################################################################
+
+	def update_decom_date(self, system_id):
+		"""Update the decom date in Cortex to the current date."""
+
+		# Get a cursor to the database
+		cur = self.db.cursor(mysql.cursors.DictCursor)
+
+		cur.execute("UPDATE `systems` SET `decom_date` = NOW() WHERE `id` = %s", (system_id,)) 
+
+		self.db.commit()
+		
+
 	################################################################################
 
 	def pad_system_name(self, prefix, number, digits):
@@ -1503,7 +1517,8 @@ class Corpus(object):
 
 	def delete_system_from_cache(self, vmware_uuid):
 		cur = self.db.cursor()
-		cur.execute("DELETE FROM `systems` WHERE `vmware_uuid`=%s", (vmware_uuid,))
+		cur.execute("DELETE FROM `vmware_cache_vm` WHERE `uuid`=%s", (vmware_uuid,))
+		self.db.commit()
 
 	############################################################################
 

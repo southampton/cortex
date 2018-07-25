@@ -34,6 +34,8 @@ def run(helper, options):
 			r = action_sudoldap_update(action, helper, options['wfconfig'])
 		elif action['id'] == "sudoldap.delete":
 			r = action_sudoldap_delete(action, helper, options['wfconfig'])
+		elif action['id'] == "system.update_decom_date":
+			r = action_update_decom_date(action, helper) 
 			
 		# End the event (don't change the description) if the action
 		# succeeded. The action_* functions either raise Exceptions or
@@ -243,3 +245,11 @@ def action_sudoldap_delete(action, helper, wfconfig):
 		l.delete_s(action['data']['dn'])
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to delete the object in sudoldap")
+
+################################################################################
+
+def action_update_decom_date(action, helper):
+	try:
+		helper.lib.update_decom_date(action["data"]["system_id"])
+	except Exception as e:
+		helper.end_event(success=False, description="Failed to update the decommission date in Cortex")
