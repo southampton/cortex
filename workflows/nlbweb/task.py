@@ -17,7 +17,7 @@ def run(helper, options):
 		helper.event(action['id'], action['action_description'])
 
 		if action['id'] == 'generate_letsencrypt':
-			r = action_generate_letsencrypt(action, helper)
+			r = action_generate_letsencrypt(action, helper, config)
 		elif action['id'] == 'allocate_ip':
 			r = action_allocate_ip(action, helper)
 		elif action['id'] == 'create_node':
@@ -45,8 +45,30 @@ def run(helper, options):
 
 ################################################################################
 
-def action_generate_letsencrypt(action, helper):
-	return True
+def action_generate_letsencrypt(action, helper, config):
+	# Get the Infoblox host object reference for in the ACME Endpoint
+	ref = helper.lib.infoblox_get_host_refs(config['LETSENCRYPT_HOST_FQDN'], config['LETSENCRYPT_DNS_VIEW'])
+	if ref is None or (type(ref) is list and len(ref) == 0):
+		raise Exception('Failed to get host ref for Let\'s Encrypt ACME endpoint')
+	
+	# Add the alias to the host object temporarily for the FQDN
+	helper.lib.infoblox_add_host_record_alias(ref[0], action['fqdn'])
+
+	# Do we need to do the SANs too?
+	#helper.lib.infoblox_add_host_record_alias(ref[0], action['sans'])
+
+	# We might need to wait for the external nameservers to catch up
+	# time.sleep(15)
+
+	# Call the UoS ACME API to request the cert
+
+	# Call the UoS ACME API to get the key and cert
+
+	# Remove the aliases from the host object
+	helper.lib.infoblox.remove_host_record_alias(ref[0], action['fqdn'])
+	#helper.lib.infoblox_remove_host_record_alias(ref[0], action['sans'])
+
+	return False
 
 ################################################################################
 

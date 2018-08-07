@@ -204,6 +204,88 @@ class Corpus(object):
 
 	################################################################################
 
+	def infoblox_add_host_record_alias(self, ref, new_aliases):
+		"""Adds an alias (or aliases) to a host record in Infoblox."""
+
+		# Perform the GET request to get the current list of aliases
+		r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref) + "?_return_fields%2B=aliases", auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+		if r is None:
+			raise Exception("Failed to delete host record: request failed")
+
+		if r.status_code != 200:
+			raise Exception("Failed to get current aliases for host record. Infoblox returned error code " + str(r.status_code))
+
+		# Extract the list of aliases from JSON
+		try:
+			json_data = r.json()
+		except Exception as e:
+			raise Exception("Failed to decode JSON returned from Infoblox: " + str(e))
+
+		if 'aliases' in json_data:
+			aliases = r.json()['aliases']
+		else:
+			aliases = []
+
+		# Append the new alias(es)
+		if type(new_aliases) is str or type(new_aliases) is unicode:
+			aliases.append(new_aliases)
+		elif type(new_aliases) is list:
+			aliases.extend(new_aliases)
+
+		# Perform the PUT request on the given host record reference
+		r = requests.put("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref), data=json.dumps({'aliases': aliases}), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+		if r is None:
+			raise Exception("Failed to update host record: request failed")
+
+		if r.status_code != 200:
+			raise Exception("Failed to update host record. Infoblox returned error code " + str(r.status_code))
+
+	################################################################################
+
+	def infoblox_remove_host_record_alias(self, ref, remove_aliases):
+		"""Removes an alias (or aliases) to a host record in Infoblox."""
+
+		# Perform the GET request to get the current list of aliases
+		r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref) + "?_return_fields%2B=aliases", auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+		if r is None:
+			raise Exception("Failed to delete host record: request failed")
+
+		if r.status_code != 200:
+			raise Exception("Failed to get current aliases for host record. Infoblox returned error code " + str(r.status_code))
+
+		# Extract the list of aliases from JSON
+		try:
+			json_data = r.json()
+		except Exception as e:
+			raise Exception("Failed to decode JSON returned from Infoblox: " + str(e))
+
+		if 'aliases' in json_data:
+			aliases = r.json()['aliases']
+		else:
+			aliases = []
+
+		# Remove the alias(es)
+		if type(remove_aliases) is str or type(remove_aliases) is unicode:
+			aliases.remove(remove_aliases)
+		elif type(new_aliases) is list:
+			for alias in remove_aliases:
+				aliases.remove(alias)
+
+		# Perform the PUT request on the given host record reference
+		r = requests.put("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref), data=json.dumps({'aliases': aliases}), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+		if r is None:
+			raise Exception("Failed to update host record: request failed")
+
+		if r.status_code != 200:
+			raise Exception("Failed to update host record. Infoblox returned error code " + str(r.status_code))
+
+
+	################################################################################
+
 	def infoblox_delete_host_record_by_ref(self, ref):
 		"""Deletes a host record from Infoblox"""
 
@@ -218,12 +300,14 @@ class Corpus(object):
 
 	################################################################################
 
-	def infoblox_get_host_refs(self, fqdn):
+	def infoblox_get_host_refs(self, fqdn, view=None):
 		"""Returns a list of host references (Infoblox record IDs) from Infoblox
 		matching exactly the specified fully qualified domain name (FQDN). If no
 		records are found None is returned. If an error occurs LookupError is raised"""
 
 		payload = {'name:': fqdn}
+		if view is not None:
+			payload['view'] = view
 		r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/record:host", data=json.dumps(payload), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
 
 		results = []
