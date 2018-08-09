@@ -77,3 +77,24 @@ LETSENCRYPT_IRULE = '/Common/irule-acme-challenge'
 
 # The IP that is through the firewall to respond to automated certificate challenges
 LETSENCRYPT_HOST_IP = '192.168.100.1'
+
+# The hostname of the host object in Infoblox that corresponds to LETSENCRYPT_HOST_IP
+LETSENCRYPT_HOST_FQDN = 'acmehost.domain'
+
+# The DNS view (can be None for default view) to modify DNS entries in for initial Let's Encrypt ACME challenge
+LETSENCRYPT_DNS_VIEW = None
+
+# ACME API Server
+ACME_API_URL = 'http://' + LETSENCRYPT_HOST_FQDN + '/'
+
+# ACME API Client Secret (the X-Client-Secret header)
+ACME_API_SECRET = 'password'
+
+# DNS propagation wait time (seconds)
+DNS_WAIT_TIME = 30
+
+# HSTS maximum age (seconds)
+HSTS_MAX_AGE = 16070400
+
+# Whether HSTS should include subdomains
+HSTS_INCLUDE_SUBDOMAINS = True

@@ -362,10 +362,6 @@ def nlbweb_create():
 
 		## That's everything validated: now check the NLB to validate against that
 
-		# Work out if we need to create HTTP objects and/or HTTPS objects
-		need_http_objects = not form_fields['enable_ssl'] or (form_fields['enable_ssl'] and not form_fields['redirect_http'])
-		need_https_objects = form_fields['enable_ssl']
-
 		# Work out if the port numbers for HTTP / HTTPS on all the nodes are the same
 		identical_http_ports = all([back_end_node['http_port'] == back_end_nodes[0]['http_port'] for back_end_node in back_end_nodes])
 		if identical_http_ports:
@@ -397,11 +393,36 @@ def nlbweb_create():
 				'fqdn': form_fields['fqdn'],
 				'sans': split_aliases})
 
-		if need_https_objects:
+		if form_fields['enable_ssl']:
 			virtual_server_https = virtual_server_base + '-' + str(form_fields['https_port'])
 			ssl_profile_name = wfconfig['SSL_PROFILE_PREFIX'] + form_fields['fqdn']
 			ssl_cert_file = form_fields['fqdn'] + '.crt'
 			ssl_key_file = form_fields['fqdn'] + '.key'
+
+		# The logic of some of the objects we create here is as follows:
+		#
+		# +--------------------++------------------------------+
+		# | Variables          || Results                      |
+		# +-----+-------+------++------+-------+-------+-------+
+		# | SSL | REDIR | BACK || HTTP | HTTPS | HTTP  | HTTPS |
+		# | ON  | HTTP  | SSL  || POOL | POOL  | VS    | VS    |
+		# +-----+-------+------++------+-------+-------+-------+
+		# | 0   | -     | -    || 1    | 0     | 1     | 0     |
+		# | 1   | 0     | 0    || 1    | 0     | 1     | 1     |
+		# | 1   | 0     | 1    || 1    | 1     | 1     | 1 (S) | (S) = Server SSL Profile
+		# | 1   | 1     | 0    || 1    | 0     | 1 (R) | 1     | (R) = redirected to HTTPS by NLB
+		# | 1   | 1     | 1    || 0    | 1     | 1 (R) | 1 (S) |
+		# +-----+-------+------++------+-------+-------+-------+
+
+		# Determine if we need pools (and indeed monitors for those pools) for both 
+		# HTTP and HTTPS. We need an HTTP pool (and monitor) in the following situations:
+		#  - SSL is disabled (regardless of anything else)
+		#  - SSL is enabled, and we're not forcing a redirect from HTTP to HTTPS on the NLB
+		#  - SSL is enabled, we are forcing a redirect to HTTPS, but the backend is not encrypted
+		# We need an HTTPS pool (and monitor) in the situation of SSL being enabled and
+		# we're doing SSL to the backend (any redirect from HTTP to HTTPS is irrelevant)
+		create_http_pools = (not form_fields['enable_ssl']) or (form_fields['enable_ssl'] and not form_fields['redirect_http']) or (form_fields['enable_ssl'] and form_fields['redirect_http'] and not form_fields['encrypt_backend'])
+		create_https_pools = form_fields['enable_ssl'] and form_fields['encrypt_backend']
 
 		# Set up an action to allocate an IP from Infoblox if we haven't specified one
 		if form_fields['ip'] == '':
@@ -436,8 +457,8 @@ def nlbweb_create():
 					'bigip': bigip_host,
 					'partition': form_fields['partition']})
 
-		# Check if the HTTP monitor already exists
-		if need_http_objects:
+		if create_http_pools:
+			# Check if the HTTP monitor already exists
 			if bigip.tm.ltm.monitor.https.http.exists(name=monitor_name_http, partition=form_fields['partition']):
 				details['warnings'].append('SKIPPED: Monitor ' + monitor_name_http + ' already exists. Not creating.')
 			else:
@@ -445,6 +466,7 @@ def nlbweb_create():
 					'action_description': 'Create HTTP monitor ' + monitor_name_http + ' on ' + bigip_host,
 					'id': 'create_monitor',
 					'name': monitor_name_http,
+					'fqdn': form_fields['fqdn'],
 					'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' HTTP Monitor',
 					'parent': 'http',
 					'url': form_fields['monitor_url'],
@@ -452,8 +474,8 @@ def nlbweb_create():
 					'bigip': bigip_host,
 					'partition': form_fields['partition']})
 
-		# Check if the HTTPS monitor already exists
-		if need_https_objects:
+		if create_https_pools:
+			# Check if the HTTPS monitor already exists
 			if bigip.tm.ltm.monitor.https_s.https.exists(name=monitor_name_https, partition=form_fields['partition']):
 				details['warnings'].append('SKIPPED: Monitor ' + monitor_name_https + ' already exists. Not creating.')
 			else:
@@ -461,6 +483,7 @@ def nlbweb_create():
 					'action_description': 'Create HTTPS monitor ' + monitor_name_https + ' on ' + bigip_host,
 					'id': 'create_monitor',
 					'name': monitor_name_https,
+					'fqdn': form_fields['fqdn'],
 					'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' HTTPS Monitor',
 					'parent': 'https',
 					'url': form_fields['monitor_url'],
@@ -468,8 +491,8 @@ def nlbweb_create():
 					'bigip': bigip_host,
 					'partition': form_fields['partition']})
 
-		# Check if the HTTP pool already exists. 
-		if need_http_objects:
+		if create_http_pools:
+			# Check if the HTTP pool already exists. 
 			if bigip.tm.ltm.pools.pool.exists(name=pool_name_http, partition=form_fields['partition']):
 				details['warnings'].append('SKIPPED: Pool ' + pool_name_http + ' already exists. Not creating.')
 			else:
@@ -483,8 +506,8 @@ def nlbweb_create():
 					'bigip': bigip_host,
 					'partition': form_fields['partition']})
 
-		# Check if the HTTPS pool already exists
-		if need_https_objects:
+		if create_https_pools:
+			# Check if the HTTPS pool already exists
 			if bigip.tm.ltm.pools.pool.exists(name=pool_name_https, partition=form_fields['partition']):
 				details['warnings'].append('SKIPPED: Pool ' + pool_name_https + ' already exists. Not creating.')
 			else:
@@ -498,7 +521,7 @@ def nlbweb_create():
 					'bigip': bigip_host,
 					'partition': form_fields['partition']})
 
-		if need_https_objects:
+		if form_fields['enable_ssl']:
 			if bigip.tm.sys.crypto.keys.key.exists(name=ssl_key_file, partition=form_fields['partition']):
 				details['warnings'].append('SKIPPED: SSL Private Key ' + ssl_key_file + ' already exists. Not creating.')
 			else:
@@ -533,7 +556,7 @@ def nlbweb_create():
 				details['actions'].append(new_action)
 				
 		# Check if the SSL Profile already exists
-		if need_https_objects:
+		if form_fields['enable_ssl']:
 			if bigip.tm.ltm.profile.client_ssls.client_ssl.exists(name=ssl_profile_name, partition=form_fields['partition']):
 				details['warnings'].append('SKIPPED: SSL Client Profile ' + ssl_profile_name + ' already exists. Not creating.')
 			else:
@@ -553,8 +576,8 @@ def nlbweb_create():
 
 		# Determine if we need to create an HTTP profile
 		create_http_profile = False
-		if form_fields['outage_page']:
-			# An outage page always requires a custom HTTP profile
+		if form_fields['outage_page'] or (form_fields['enable_ssl'] and form_fields['enable_hsts']):
+			# HSTS or an outage page always requires a custom HTTP profile
 			create_http_profile = True
 		else:
 			# If we're using X-Forwarded-For and the config doesn't
@@ -573,7 +596,8 @@ def nlbweb_create():
 					'id': 'create_http_profile',
 					'name': http_profile_name,
 					'bigip': bigip_host,
-					'partition': form_fields['partition']
+					'partition': form_fields['partition'],
+					'hsts': form_fields['enable_hsts'],
 				}
 				if form_fields['use_xforwardedfor']:
 					if wfconfig['HTTP_PROFILE_XFORWARDEDFOR'] is None:
@@ -597,14 +621,27 @@ def nlbweb_create():
 				'port': form_fields['http_port'],
 				'irules': http_irules,
 				'bigip': bigip_host,
-				'partition': form_fields['partition']
+				'partition': form_fields['partition'],
+				'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' Virtual Server HTTP'
 			}
 			if form_fields['redirect_http']:
 				new_action['irules'].append('/Common/_sys_https_redirect')
+				new_action['http_profile'] = '/Common/http'
+			else:
+				new_action['pool'] = pool_name_http
+
+				# The HTTP profile only makes a difference (in our case) when
+				# we're not forcing to HTTPS
+				if create_http_profile:
+					new_action['http_profile'] = http_profile_name
+				else:
+					if form_fields['use_xforwardedfor']:
+						new_action['http_profile'] = wfconfig['HTTP_PROFILE_XFORWARDEDFOR']
+				
 			details['actions'].append(new_action)
 		
 		# Check to see if the HTTPS virtual server already exists
-		if need_https_objects:
+		if form_fields['enable_ssl']:
 			if bigip.tm.ltm.virtuals.virtual.exists(name=virtual_server_https, partition=form_fields['partition']):
 				details['warnings'].append('SKIPPED: Virtual Server ' + virtual_server_https + ' already exists. Not creating.')
 			else:
@@ -617,12 +654,24 @@ def nlbweb_create():
 					'irules': https_irules,
 					'ssl_client_profile': ssl_profile_name,
 					'bigip': bigip_host,
-					'partition': form_fields['partition']
+					'partition': form_fields['partition'],
+					'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' Virtual Server HTTPS',
 				}
 				if form_fields['encrypt_backend']:
 					new_action['ssl_server_profile'] = 'serverssl'
+					new_action['pool'] = pool_name_https
+				else:
+					new_action['pool'] = pool_name_http
 				if form_fields['generate_letsencrypt']:
 					new_action['irules'].append(wfconfig['LETSENCRYPT_IRULE'])
+				if create_http_profile:
+					new_action['http_profile'] = http_profile_name
+				else:
+					if form_fields['use_xforwardedfor']:
+						new_action['http_profile'] = wfconfig['HTTP_PROFILE_XFORWARDEDFOR']
+					else:
+						new_action['http_profile'] = '/Common/http'
+
 				details['actions'].append(new_action)
 
 		# If after all that there are no actions, log a warning

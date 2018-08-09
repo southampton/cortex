@@ -182,8 +182,10 @@ class Corpus(object):
 
 	################################################################################
 
-	def infoblox_create_host(self, name, subnet):
+	def infoblox_create_host(self, name, subnet, aliases = None):
 		payload = {'name': name, "ipv4addrs": [{"ipv4addr":"func:nextavailableip:" + subnet}],}
+		if aliases is not None and len(aliases) > 0:
+			payload['aliases'] = aliases
 		r = requests.post("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/record:host", data=json.dumps(payload), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
 
 		if r.status_code == 201:
@@ -211,7 +213,7 @@ class Corpus(object):
 		r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref) + "?_return_fields%2B=aliases", auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
 
 		if r is None:
-			raise Exception("Failed to delete host record: request failed")
+			raise Exception("Failed to get current aliases for host record: request failed")
 
 		if r.status_code != 200:
 			raise Exception("Failed to get current aliases for host record. Infoblox returned error code " + str(r.status_code))
@@ -227,20 +229,25 @@ class Corpus(object):
 		else:
 			aliases = []
 
-		# Append the new alias(es)
+		# Append the new alias(es) - only if they don't already exist
 		if type(new_aliases) is str or type(new_aliases) is unicode:
-			aliases.append(new_aliases)
+			if new_aliases not in aliases:
+				aliases.append(new_aliases)
 		elif type(new_aliases) is list:
-			aliases.extend(new_aliases)
+			for new_alias in new_aliases:
+				if new_alias not in aliases:
+					aliases.append(new_alias)
 
-		# Perform the PUT request on the given host record reference
-		r = requests.put("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref), data=json.dumps({'aliases': aliases}), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+		# If the number of aliases now is the same as it was before, there's no need to do the update
+		if len(aliases) != len(new_aliases):
+			# Perform the PUT request on the given host record reference
+			r = requests.put("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref), data=json.dumps({'aliases': aliases}), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
 
-		if r is None:
-			raise Exception("Failed to update host record: request failed")
+			if r is None:
+				raise Exception("Failed to update host record: request failed")
 
-		if r.status_code != 200:
-			raise Exception("Failed to update host record. Infoblox returned error code " + str(r.status_code))
+			if r.status_code != 200:
+				raise Exception("Failed to update host record. Infoblox returned error code " + str(r.status_code))
 
 	################################################################################
 
@@ -251,7 +258,7 @@ class Corpus(object):
 		r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref) + "?_return_fields%2B=aliases", auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
 
 		if r is None:
-			raise Exception("Failed to delete host record: request failed")
+			raise Exception("Failed to get current aliases for host record: request failed")
 
 		if r.status_code != 200:
 			raise Exception("Failed to get current aliases for host record. Infoblox returned error code " + str(r.status_code))
@@ -270,7 +277,7 @@ class Corpus(object):
 		# Remove the alias(es)
 		if type(remove_aliases) is str or type(remove_aliases) is unicode:
 			aliases.remove(remove_aliases)
-		elif type(new_aliases) is list:
+		elif type(remove_aliases) is list:
 			for alias in remove_aliases:
 				aliases.remove(alias)
 

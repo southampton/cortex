@@ -97,10 +97,10 @@ td.na
 	<h3 id="ssl_options_head"{% if 'enable_ssl' in values and not values['enable_ssl'] %} style="display:none"{% endif %}>SSL Options</h3>
 	<div class="row" id="ssl_options"{% if 'enable_ssl' in values and not values['enable_ssl'] %} style="display:none"{% endif %}>
 		<div class="col-md-12">
-			<label for="redirect_http"><input type="checkbox" id="redirect_http" name="redirect_http" {% if 'redirect_http' not in values or ('redirect_http' in values and values['redirect_http']) %}checked="checked" {% endif %}/> Redirect HTTP to HTTPS. This will add the _sys_https_redirect iRule to the HTTP virtual server, forcing all requests on HTTP to be redirected to their HTTPS equivalent. If ticked, an HTTP pool will <strong>not</strong> be created</label>
+			<label for="redirect_http"><input type="checkbox" id="redirect_http" name="redirect_http" {% if 'redirect_http' not in values or ('redirect_http' in values and values['redirect_http']) %}checked="checked" {% endif %}/> Redirect HTTP to HTTPS. This will add the _sys_https_redirect iRule to the HTTP virtual server, forcing all requests on HTTP to be redirected to their HTTPS equivalent</label>
 		</div>
 		<div class="col-md-12">
-			<label for="encrypt_backend"><input type="checkbox" id="encrypt_backend" name="encrypt_backend" {% if 'encrypt_backend' not in values or ('encrypt_backend' in values and values['encrypt_backend']) %}checked="checked" {% endif %}/> Encrypt Traffic To Backend. This will encrypt the traffic between the NLB and the back-end servers</label>
+			<label for="encrypt_backend"><input type="checkbox" id="encrypt_backend" name="encrypt_backend" {% if 'encrypt_backend' not in values or ('encrypt_backend' in values and values['encrypt_backend']) %}checked="checked" {% endif %}/> Pass Through Encrypted Traffic To Backend. This will encrypt the traffic between the NLB and the back-end servers when HTTPS is used</label>
 		</div>
 		<div class="col-md-12">
 			<label for="enable_hsts"><input type="checkbox" id="enable_hsts" name="enable_hsts" {% if 'enable_hsts' in values and values['enable_hsts'] %}checked="checked" {% endif %}/> Enable HTTP Strict Transport Secruity (HSTS). This will force the browser to always use HTTPS after the first request, regardless of what the user requests</label>
