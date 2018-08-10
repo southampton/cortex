@@ -750,6 +750,11 @@ def nlbweb_create():
 
 				details['actions'].append(new_action)
 
+		# If there is only one action which is generating/retrieving a 
+		# certificate, then drop the action
+		if len(details['actions']) == 1 and details['actions'][0]['id'] in ['generate_letsencrypt', 'retrieve_existing_letsencrypt']:
+			del details['actions'][0]
+
 		# If after all that there are no actions, log a warning
 		if len(details['actions']) == 0:
 			details['warnings'].append('No actions to perform. Is the service already set up?')
