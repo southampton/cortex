@@ -182,10 +182,23 @@ class Corpus(object):
 
 	################################################################################
 
-	def infoblox_create_host(self, name, subnet, aliases = None):
-		payload = {'name': name, "ipv4addrs": [{"ipv4addr":"func:nextavailableip:" + subnet}],}
+	def infoblox_create_host(self, name, subnet = None, aliases = None, ip = None):
+		payload = {'name': name}
+
+		if subnet is None and ip is None:
+			raise ValueError('The subnet and ip parameters cannot both be None')
+
+		# If an IP is not given, make Infoblox allocate it
+		if ip is None:
+			payload['ipv4addrs'] = [{'ipv4addr': 'func:nextavailableip:' + subnet}]
+		else:
+			payload['ipv4addrs'] = [{'ipv4addr': ip}]
+
+		# Add on host aliases (CNAMEs) if given
 		if aliases is not None and len(aliases) > 0:
 			payload['aliases'] = aliases
+
+		# Make the request to create the object
 		r = requests.post("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/record:host", data=json.dumps(payload), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
 
 		if r.status_code == 201:
@@ -304,6 +317,22 @@ class Corpus(object):
 
 		if r.status_code != 200:
 			raise Exception("Failed to delete host record. Infoblox returned error code " + str(r.status_code))
+
+	################################################################################
+
+	def infoblox_get_host_by_ref(self, ref):
+		"""Gets a host record from Infoblox by reference"""
+
+		# Get the object
+		r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+		if r is None:
+			raise Exception("Failed to get host record: request failed")
+
+		if r.status_code != 200:
+			raise Exception("Failed to get host record. Infoblox returned error code " + str(r.status_code))
+
+		return r.json()
 
 	################################################################################
 

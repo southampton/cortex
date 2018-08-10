@@ -5,8 +5,10 @@ from cortex.lib.workflow import CortexWorkflow
 import cortex.lib.core
 import cortex.lib.systems
 import cortex.views
+from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
-import re, datetime
+import re, datetime, requests
+from urlparse import urljoin
 
 # For DNS queries
 import socket
@@ -50,6 +52,9 @@ def nlbweb_create():
 	elif request.method == 'POST':
 		valid_form = True
 		form_fields = {}
+
+		# Load the Corpus library (for Infoblox helper functions)
+		corpus = Corpus(g.db, app.config)
 
 		# Get parameters from form, stripped with defaults
 		for field in ['service', 'env', 'fqdn', 'aliases', 'ip', 'http_port', 'https_port', 'monitor_url', 'monitor_response', 'ssl_key', 'ssl_cert', 'ssl_provider', 'outage_page', 'http_irules', 'https_irules', 'ssl_client_profile']:
@@ -252,6 +257,37 @@ def nlbweb_create():
 			flash(str(e), 'alert-danger')
 			valid_form = False
 
+		# Check if an Infoblox host record already exists
+		existing_host_ref = corpus.infoblox_get_host_refs(form_fields['fqdn'])
+		existing_host_ip = None
+		if existing_host_ref is not None:
+			last_ip = None
+
+			# Loop to check if all host objects have one single IP
+			# and it's the same across all of them
+			for ref in existing_host_ref:
+				# Get details about the host object
+				host_object = corpus.infoblox_get_host_by_ref(ref)
+
+				if len(host_object['ipv4addrs']) != 1:
+					# If there are multiple IPs, then bail with an error
+					flash('Host object for ' + form_fields['fqdn'] + ' already exists with multiple IPs.', 'alert-danger')
+					valid_form = False
+					break
+				else:
+					# Single IP, check to see if it's the same as the others
+					if last_ip is not None and last_ip != host_object['ipv4addrs'][0]['ipv4addr']:
+						# If a different IP is found, then bail with an error
+						flash('Host object for ' + form_fields['fqdn'] + ' already exists with multiple IPs.', 'alert-danger')
+						valid_form = False
+						break
+
+					# Store the IP for comparision with the next object
+					last_ip = host_object['ipv4addrs'][0]['ipv4addr']
+
+				# Store the IP for use later
+				existing_host_ip = last_ip
+
 		if not valid_form:
 			# Turn envs in to a dict
 			envs_dict = { env['id']: env for env in wfconfig['ENVS'] }
@@ -387,11 +423,21 @@ def nlbweb_create():
 		http_profile_name = wfconfig['HTTP_PROFILE_PREFIX'] + form_fields['short_service'] + envs_dict[form_fields['env']]['suffix']
 
 		if form_fields['enable_ssl'] and form_fields['generate_letsencrypt']:
-			details['actions'].append({
-				'action_description': 'Generate a Let\'s Encrypt certificate for ' + form_fields['fqdn'],
-				'id': 'generate_letsencrypt',
-				'fqdn': form_fields['fqdn'],
-				'sans': split_aliases})
+			# See if a Let's Encrypt certificate already exists
+			r = requests.get(urljoin(wfconfig['ACME_API_URL'], 'get_certificate') + '/' + form_fields['fqdn'], headers={'Content-Type': 'application/json', 'X-Client-Secret': wfconfig['ACME_API_SECRET']})
+			if r.status_code == 200:
+				details['actions'].append({
+					'action_description': 'Retrieve existing Let\'s Encrypt certificate for ' + form_fields['fqdn'],
+					'id': 'retrieve_existing_letsencrypt',
+					'fqdn': form_fields['fqdn']})
+				details['warnings'].append('CONFLICT: Let\'s Encrypt certificate for CN ' + form_fields['fqdn'] + ' already exists - re-using. Check the SANs afterwards to ensure they are correct!')
+				
+			else:
+				details['actions'].append({
+					'action_description': 'Generate a Let\'s Encrypt certificate for ' + form_fields['fqdn'],
+					'id': 'generate_letsencrypt',
+					'fqdn': form_fields['fqdn'],
+					'sans': split_aliases})
 
 		if form_fields['enable_ssl']:
 			virtual_server_https = virtual_server_base + '-' + str(form_fields['https_port'])
@@ -424,14 +470,35 @@ def nlbweb_create():
 		create_http_pools = (not form_fields['enable_ssl']) or (form_fields['enable_ssl'] and not form_fields['redirect_http']) or (form_fields['enable_ssl'] and form_fields['redirect_http'] and not form_fields['encrypt_backend'])
 		create_https_pools = form_fields['enable_ssl'] and form_fields['encrypt_backend']
 
-		# Set up an action to allocate an IP from Infoblox if we haven't specified one
-		if form_fields['ip'] == '':
-			details['actions'].append({
-				'action_description': 'Allocate an IP address from ' + str(envs_dict[form_fields['env']]['network']) + ' in Infoblox',
-				'id': 'allocate_ip',
-				'network': envs_dict[form_fields['env']]['network'],
-				'fqdn': form_fields['fqdn'],
-				'aliases': split_aliases})
+		# Check if an Infoblox host record already exists for us
+		if existing_host_ref is None:
+			# Set up an action to allocate an IP from Infoblox if we haven't specified one
+			if form_fields['ip'] == '':
+				details['actions'].append({
+					'action_description': 'Allocate an IP address from ' + str(envs_dict[form_fields['env']]['network']) + ' in Infoblox',
+					'id': 'allocate_ip',
+					'network': envs_dict[form_fields['env']]['network'],
+					'fqdn': form_fields['fqdn'],
+					'aliases': split_aliases})
+			else:
+				details['actions'].append({
+					'action_description': 'Create host object for ' + form_fields['fqdn'] + ' in Infoblox',
+					'id': 'create_host',
+					'ip': form_fields['ip'],
+					'fqdn': form_fields['fqdn'],
+					'aliases': split_aliases})
+		else:
+			if form_fields['ip'] == '':
+				# If we're auto-allocating an IP and the record already exists
+				# then use that one, and warn that we're changing
+				details['warnings'].append('SKIPPED: Host object for ' + form_fields['fqdn'] + ' already exists in Infoblox with IP ' + existing_host_ip + ' - using that instead of allocating')
+				form_fields['ip'] = existing_host_ip
+			else:
+				if form_fields['ip'] != existing_host_ip:
+					# If we're not auto-allocating, and the IPs differ, then
+					# we have to use the one that's there to not break things
+					details['warnings'].append('CONFLICT: Host object for ' + form_fields['fqdn'] + ' already exists in Infoblox with IP ' + existing_host_ip + ' - using that instead of ' + form_fields['ip'])
+					form_fields['ip'] = existing_host_ip
 
 		# Check if any of the nodes are already present on the NLB
 		for back_end_node in back_end_nodes:
@@ -617,13 +684,20 @@ def nlbweb_create():
 				'action_description': 'Create HTTP Virtual Server ' + virtual_server_http + ' on ' + bigip_host,
 				'id': 'create_virtual_server',
 				'name': virtual_server_http,
-				'ip': form_fields['ip'],
 				'port': form_fields['http_port'],
-				'irules': http_irules,
+				'irules': [],
 				'bigip': bigip_host,
 				'partition': form_fields['partition'],
 				'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' Virtual Server HTTP'
 			}
+
+			# This iRule must come first as it needs to take precedence over
+			# other iRules (particularly any HTTPS redirect)
+			if form_fields['generate_letsencrypt']:
+				new_action['irules'].append(wfconfig['LETSENCRYPT_IRULE'])
+
+			if form_fields['ip'] != '':
+				new_action['ip'] = form_fields['ip']
 			if form_fields['redirect_http']:
 				new_action['irules'].append('/Common/_sys_https_redirect')
 				new_action['http_profile'] = '/Common/http'
@@ -638,6 +712,9 @@ def nlbweb_create():
 					if form_fields['use_xforwardedfor']:
 						new_action['http_profile'] = wfconfig['HTTP_PROFILE_XFORWARDEDFOR']
 				
+			# Any other iRules come after the HTTPS redirect if the user chose it
+			new_action['irules'].extend(http_irules)
+
 			details['actions'].append(new_action)
 		
 		# Check to see if the HTTPS virtual server already exists
@@ -649,7 +726,6 @@ def nlbweb_create():
 					'action_description': 'Create HTTPS Virtual Server ' + virtual_server_https + ' on ' + bigip_host,
 					'id': 'create_virtual_server',
 					'name': virtual_server_https,
-					'ip': form_fields['ip'],
 					'port': form_fields['https_port'],
 					'irules': https_irules,
 					'ssl_client_profile': ssl_profile_name,
@@ -657,13 +733,13 @@ def nlbweb_create():
 					'partition': form_fields['partition'],
 					'description': form_fields['service'] + ' ' + envs_dict[form_fields['env']]['name'] + ' Virtual Server HTTPS',
 				}
+				if form_fields['ip'] != '':
+					new_action['ip'] = form_fields['ip']
 				if form_fields['encrypt_backend']:
 					new_action['ssl_server_profile'] = 'serverssl'
 					new_action['pool'] = pool_name_https
 				else:
 					new_action['pool'] = pool_name_http
-				if form_fields['generate_letsencrypt']:
-					new_action['irules'].append(wfconfig['LETSENCRYPT_IRULE'])
 				if create_http_profile:
 					new_action['http_profile'] = http_profile_name
 				else:

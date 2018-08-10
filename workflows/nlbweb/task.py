@@ -15,8 +15,7 @@ def run(helper, options):
 	# Validate we get a list
 	assert type(actions) is list, "actions list is not a Python list object"
 
-	## Allocate a hostname #################################################
-
+	# Dictionary passed to all functions (events) so they can share information
 	task_globals = {}
 
 	# Start the task
@@ -26,8 +25,12 @@ def run(helper, options):
 
 		if action['id'] == 'generate_letsencrypt':
 			r, task_globals = action_generate_letsencrypt(action, helper, config, task_globals)
+		elif action['id'] == 'retrieve_existing_letsencrypt':
+			r, task_globals = action_retrieve_letsencrypt(action, helper, config, task_globals)
 		elif action['id'] == 'allocate_ip':
 			r, task_globals = action_allocate_ip(action, helper, config, task_globals)
+		elif action['id'] == 'create_host':
+			r, task_globals = action_create_host(action, helper, config, task_globals)
 		elif action['id'] == 'create_node':
 			r, task_globals = action_create_node(action, helper, config, task_globals)
 		elif action['id'] == 'create_monitor':
@@ -101,19 +104,46 @@ def action_generate_letsencrypt(action, helper, config, task_globals):
 
 ################################################################################
 
+def action_retrieve_letsencrypt(action, helper, config, task_globals):
+	# Get the certificate
+	r = requests.get(urljoin(config['ACME_API_URL'], 'get_certificate') + '/' + action['fqdn'], headers={'Content-Type': 'application/json', 'X-Client-Secret': config['ACME_API_SECRET']})
+	if r is None:
+		raise Exception('Request to ACME Create Certificate Endpoint failed')
+	if r.status_code != 200:
+		raise Exception('Request to ACME Create Certificate Endpoint failed with error code ' + str(r.status_code) + ': ' + r.text)
+	js = r.json()
+	task_globals['le_cert'] = js['certificate_text']
+
+	# Get the private key
+	r = requests.get(urljoin(config['ACME_API_URL'], 'get_privatekey') + '/' + action['fqdn'], headers={'Content-Type': 'application/json', 'X-Client-Secret': config['ACME_API_SECRET']})
+	if r is None:
+		raise Exception('Request to ACME Create Certificate Endpoint failed')
+	if r.status_code != 200:
+		raise Exception('Request to ACME Create Certificate Endpoint failed with error code ' + str(r.status_code) + ': ' + r.text)
+	js = r.json()
+	task_globals['le_key'] = js['privatekey_text']
+
+	return True, task_globals
+
+################################################################################
+
 def action_allocate_ip(action, helper, config, task_globals):
 	# Allocate an IP address
 	ipv4addr = helper.lib.infoblox_create_host(action['fqdn'], action['network'], action['aliases'])
-
-	# Handle errors - this will stop the task
-	if ipv4addr is None:
-		raise Exception('Failed to allocate an IP address')
 
 	# End the event, logging what we allocated
 	helper.end_event(description="Allocated the IP address " + ipv4addr)
 
 	# Add the IP address to the task globals as it's needed elsewhere
 	task_globals['allocated_ip'] = ipv4addr
+
+	return True, task_globals
+
+################################################################################
+
+def action_create_host(action, helper, config, task_globals):
+	# Allocate an IP address
+	ipv4addr = helper.lib.infoblox_create_host(action['fqdn'], None, action['aliases'], action['ip'])
 
 	return True, task_globals
 
@@ -140,9 +170,9 @@ def action_create_monitor(action, helper, config, task_globals):
 	# Create the monitor
 	try:
 		if action['parent'] == 'http':
-			bigip.tm.ltm.monitor.https.http.create(name=action['name'], partition=action['partition'], description=action['description'], send='GET ' + action['url'] + ' HTTP/1.1\r\nHost: ' + action['fqdn'] + '\r\n\r\n', recv=action['response'])
+			bigip.tm.ltm.monitor.https.http.create(name=action['name'], partition=action['partition'], description=action['description'], send='GET ' + action['url'] + ' HTTP/1.1\\r\\nHost: ' + action['fqdn'] + '\\r\\n\\r\\n', recv=action['response'])
 		elif action['parent'] == 'https':
-			bigip.tm.ltm.monitor.https_s.https.create(name=action['name'], partition=action['partition'], description=action['description'], send = 'GET ' + action['url'] + ' HTTP/1.1\r\nHost: ' + action['fqdn'] + '\r\n\r\n', recv=action['response'])
+			bigip.tm.ltm.monitor.https_s.https.create(name=action['name'], partition=action['partition'], description=action['description'], send = 'GET ' + action['url'] + ' HTTP/1.1\\r\\nHost: ' + action['fqdn'] + '\\r\\n\\r\\n', recv=action['response'])
 		else:
 			raise Exception('Unknown monitor parent: ' + str(action['parent']))
 	except Exception as e:
