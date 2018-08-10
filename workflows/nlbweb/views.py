@@ -511,7 +511,7 @@ def nlbweb_create():
 
 				# Check the IP of the existing object to see if we need to create or not
 				if back_end_node['ip'] != nlb_node.address:
-					details['warnings'].append('CONFLICT: Node ' + back_end_node['hostname'] + ' already exists with different IP')
+					details['warnings'].append('CONFLICT: Node ' + back_end_node['hostname'] + ' already exists with different IP. Not updating.')
 				else:
 					details['warnings'].append('SKIPPED: Node ' + back_end_node['hostname'] + ' already exists with correct IP. Not creating.')
 			else:
@@ -527,7 +527,7 @@ def nlbweb_create():
 		if create_http_pools:
 			# Check if the HTTP monitor already exists
 			if bigip.tm.ltm.monitor.https.http.exists(name=monitor_name_http, partition=form_fields['partition']):
-				details['warnings'].append('SKIPPED: Monitor ' + monitor_name_http + ' already exists. Not creating.')
+				details['warnings'].append('SKIPPED: Monitor ' + monitor_name_http + ' already exists. Not creating or updating.')
 			else:
 				details['actions'].append({
 					'action_description': 'Create HTTP monitor ' + monitor_name_http + ' on ' + bigip_host,
@@ -544,7 +544,7 @@ def nlbweb_create():
 		if create_https_pools:
 			# Check if the HTTPS monitor already exists
 			if bigip.tm.ltm.monitor.https_s.https.exists(name=monitor_name_https, partition=form_fields['partition']):
-				details['warnings'].append('SKIPPED: Monitor ' + monitor_name_https + ' already exists. Not creating.')
+				details['warnings'].append('SKIPPED: Monitor ' + monitor_name_https + ' already exists. Not creating or updating.')
 			else:
 				details['actions'].append({
 					'action_description': 'Create HTTPS monitor ' + monitor_name_https + ' on ' + bigip_host,
@@ -561,7 +561,7 @@ def nlbweb_create():
 		if create_http_pools:
 			# Check if the HTTP pool already exists. 
 			if bigip.tm.ltm.pools.pool.exists(name=pool_name_http, partition=form_fields['partition']):
-				details['warnings'].append('SKIPPED: Pool ' + pool_name_http + ' already exists. Not creating.')
+				details['warnings'].append('SKIPPED: Pool ' + pool_name_http + ' already exists. Not creating or updating.')
 			else:
 				details['actions'].append({
 					'action_description': 'Create HTTP Pool ' + pool_name_http + ' on ' + bigip_host,
@@ -576,7 +576,7 @@ def nlbweb_create():
 		if create_https_pools:
 			# Check if the HTTPS pool already exists
 			if bigip.tm.ltm.pools.pool.exists(name=pool_name_https, partition=form_fields['partition']):
-				details['warnings'].append('SKIPPED: Pool ' + pool_name_https + ' already exists. Not creating.')
+				details['warnings'].append('SKIPPED: Pool ' + pool_name_https + ' already exists. Not creating or updating.')
 			else:
 				details['actions'].append({
 					'action_description': 'Create HTTPS Pool ' + pool_name_https + ' on ' + bigip_host,
@@ -590,7 +590,7 @@ def nlbweb_create():
 
 		if form_fields['enable_ssl']:
 			if bigip.tm.sys.crypto.keys.key.exists(name=ssl_key_file, partition=form_fields['partition']):
-				details['warnings'].append('SKIPPED: SSL Private Key ' + ssl_key_file + ' already exists. Not creating.')
+				details['warnings'].append('SKIPPED: SSL Private Key ' + ssl_key_file + ' already exists. Not creating or updating.')
 			else:
 				new_action = {
 					'action_description': 'Upload private key ' + ssl_key_file + ' on ' + bigip_host,
@@ -606,7 +606,7 @@ def nlbweb_create():
 					new_action['content'] = form_fields['ssl_key']
 				details['actions'].append(new_action)
 			if bigip.tm.sys.crypto.certs.cert.exists(name=ssl_cert_file, partition=form_fields['partition']):
-				details['warnings'].append('SKIPPED: SSL Certificate ' + ssl_cert_file + ' already exists. Not creating.')
+				details['warnings'].append('SKIPPED: SSL Certificate ' + ssl_cert_file + ' already exists. Not creating or updating.')
 			else:
 				new_action = {
 					'action_description': 'Upload certificate ' + ssl_cert_file + ' on ' + bigip_host,
@@ -625,7 +625,7 @@ def nlbweb_create():
 		# Check if the SSL Profile already exists
 		if form_fields['enable_ssl']:
 			if bigip.tm.ltm.profile.client_ssls.client_ssl.exists(name=ssl_profile_name, partition=form_fields['partition']):
-				details['warnings'].append('SKIPPED: SSL Client Profile ' + ssl_profile_name + ' already exists. Not creating.')
+				details['warnings'].append('SKIPPED: SSL Client Profile ' + ssl_profile_name + ' already exists. Not creating or updating.')
 			else:
 				new_action = {
 					'action_description': 'Create SSL Client Profile ' + ssl_profile_name + ' on ' + bigip_host,
@@ -656,7 +656,7 @@ def nlbweb_create():
 		# Check to see if the HTTP profile already exists
 		if create_http_profile:
 			if bigip.tm.ltm.profile.https.http.exists(name=http_profile_name, partition=form_fields['partition']):
-				details['warnings'].append('SKIPPED: HTTP Profile ' + http_profile_name + ' already exists. Not creating.')
+				details['warnings'].append('SKIPPED: HTTP Profile ' + http_profile_name + ' already exists. Not creating or updating.')
 			else:
 				new_action = {
 					'action_description': 'Create HTTP Profile ' + http_profile_name + ' on ' + bigip_host,
@@ -678,7 +678,7 @@ def nlbweb_create():
 
 		# Check to see if the HTTP virtual server already exists
 		if bigip.tm.ltm.virtuals.virtual.exists(name=virtual_server_http, partition=form_fields['partition']):
-			details['warnings'].append('SKIPPED: Virtual Server ' + virtual_server_http + ' already exists. Not creating.')
+			details['warnings'].append('SKIPPED: Virtual Server ' + virtual_server_http + ' already exists. Not creating or updating.')
 		else:
 			new_action = {
 				'action_description': 'Create HTTP Virtual Server ' + virtual_server_http + ' on ' + bigip_host,
@@ -720,7 +720,7 @@ def nlbweb_create():
 		# Check to see if the HTTPS virtual server already exists
 		if form_fields['enable_ssl']:
 			if bigip.tm.ltm.virtuals.virtual.exists(name=virtual_server_https, partition=form_fields['partition']):
-				details['warnings'].append('SKIPPED: Virtual Server ' + virtual_server_https + ' already exists. Not creating.')
+				details['warnings'].append('SKIPPED: Virtual Server ' + virtual_server_https + ' already exists. Not creating or updating.')
 			else:
 				new_action = {
 					'action_description': 'Create HTTPS Virtual Server ' + virtual_server_https + ' on ' + bigip_host,
