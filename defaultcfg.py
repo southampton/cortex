@@ -56,13 +56,14 @@ PREFERRED_URL_SCHEME       = 'http'
 PERMANENT_SESSION_LIFETIME = timedelta(days=7)
 
 ## LDAP AUTH
-LDAP_URI            = 'ldaps://localhost.localdomain'
-LDAP_SEARCH_BASE    = ''
-LDAP_USER_ATTRIBUTE = 'sAMAccountName'
-LDAP_ANON_BIND      = True
-LDAP_BIND_USER      = ''
-LDAP_BIND_PW        = ''
-LDAP_ADMIN_GROUP    = "CN=groupname,OU=localhost,DC=localdomain"
+LDAP_URI               = 'ldaps://localhost.localdomain'
+LDAP_USER_SEARCH_BASE  = ''
+LDAP_GROUP_SEARCH_BASE = ''
+LDAP_USER_ATTRIBUTE    = 'sAMAccountName'
+LDAP_ANON_BIND         = True
+LDAP_BIND_USER         = ''
+LDAP_BIND_PW           = ''
+LDAP_ADMIN_GROUP       = 'CN=groupname,OU=localhost,DC=localdomain'
 
 # Infoblox server
 INFOBLOX_HOST = ""
