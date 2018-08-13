@@ -35,7 +35,7 @@ def auth(username,password):
 
 	# Now search for the user object to bind as
 	try:
-		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + ldap.filter.escape_filter_chars(username))
+		results = l.search_s(app.config['LDAP_USER_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + ldap.filter.escape_filter_chars(username))
 	except ldap.LDAPError as e:
 		return False
 
@@ -75,7 +75,7 @@ def get_users_groups_from_ldap(username):
 
 	# Now search for the user object
 	try:
-		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
+		results = l.search_s(app.config['LDAP_USER_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
 	except ldap.LDAPError as e:
 		return None
 
@@ -139,7 +139,7 @@ def get_user_realname_from_ldap(username):
 	
 	# Now search for the user object
 	try:
-		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, app.config['LDAP_USER_ATTRIBUTE'] + "=" + username)
+		results = l.search_s(app.config['LDAP_USER_SEARCH_BASE'], ldap.SCOPE_SUBTREE, app.config['LDAP_USER_ATTRIBUTE'] + "=" + username)
 	except ldap.LDAPError as e:
 		return username
 
@@ -185,7 +185,7 @@ def does_group_exist(groupname):
 
 	# Now search for the user object to bind as
 	try:
-		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, "cn" + "=" + ldap.filter.escape_filter_chars(groupname))
+		results = l.search_s(app.config['LDAP_GROUP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, "cn" + "=" + ldap.filter.escape_filter_chars(groupname))
 	except ldap.LDAPError as e:
 		return False
 
