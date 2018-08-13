@@ -524,6 +524,8 @@ Username:             %s
 		  PRIMARY KEY (`username`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		cursor.execute("""TRUNCATE `ldap_group_cache_expire`""")
+
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_request` (
 		 `id` mediumint(11) NOT NULL AUTO_INCREMENT,
 		 `request_date` datetime NOT NULL,

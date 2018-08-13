@@ -111,7 +111,7 @@ def get_users_groups_from_ldap(username):
 							continue
 
 						curd.execute('INSERT INTO `ldap_group_cache` (`username`, `group_dn`, `group`) VALUES (%s, %s, %s)', (username, group.lower(), group_cn.lower()))
-						groups.append(group)
+						groups.append(group_cn.lower())
 
 					## Set the cache expiration
 					curd.execute('REPLACE INTO `ldap_group_cache_expire` (`username`, `expiry_date`) VALUES (%s,NOW() + INTERVAL 15 MINUTE)', (username,))
@@ -119,7 +119,8 @@ def get_users_groups_from_ldap(username):
 					## Commit the transaction
 					g.db.commit()
 
-					return groups
+					# Return a sorted list so that it matches what we get from MySQL
+					return sorted(groups)
 				else:
 					return None
 			else:
