@@ -93,7 +93,7 @@ def authenticate(username, password):
 
 ################################################################################
 
-def get_users_groups(username, from_cache=True):
+def get_users_groups(username=None, from_cache=True):
 	"""Returns a set (not a list) of groups that a user belongs to. The result is 
 	cached to improve performance and to lessen the impact on the LDAP server. The 
 	results are returned from the cache unless you set "from_cache" to be 
@@ -103,6 +103,13 @@ def get_users_groups(username, from_cache=True):
 	or where the user has no groups. It is not expeceted that a user will ever
 	be in no groups, and if they are, then they probably shouldn't be using cortex.
 	"""
+
+	# Default to using the current user
+	if username is None:
+		if 'username' in session:
+			username = session['username']
+		else:
+			return ValueError('username must be specified is there is no logged in user')
 
 	# We cache the groups a user has in MySQL because Active Directory is VERY
 	# slow and we don't want to have to wait for AD every time a user wants to
