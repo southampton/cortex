@@ -105,12 +105,12 @@ def get_users_groups_from_ldap(username):
 
 						matched = cn_regex.match(group)
 						if matched:
-							group = matched.group(2)
+							group_cn = matched.group(2)
 						else:
 							## didn't find the cn, so skip this 'group'
 							continue
 
-						curd.execute('INSERT INTO `ldap_group_cache` (`username`, `group`) VALUES (%s,%s)', (username,group.lower()))
+						curd.execute('INSERT INTO `ldap_group_cache` (`username`, `group_dn`, `group`) VALUES (%s, %s, %s)', (username, group.lower(), group_cn.lower()))
 						groups.append(group)
 
 					## Set the cache expiration
