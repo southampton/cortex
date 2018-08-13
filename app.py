@@ -509,10 +509,13 @@ Username:             %s
 		 PRIMARY KEY (`username`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		cursor.execute("""DROP TABLE `ldap_group_cache`""")
+
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `ldap_group_cache` (
 		 `username` varchar(64) NOT NULL,
+		 `group_dn` varchar(255) NOT NULL,
 		 `group` varchar(255) NOT NULL,
-		  PRIMARY KEY (`username`, `group`)
+		  PRIMARY KEY (`username`, `group_dn`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `ldap_group_cache_expire` (
