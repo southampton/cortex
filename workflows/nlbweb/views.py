@@ -47,7 +47,7 @@ def nlbweb_create():
 
 	if request.method == 'GET':
 		## Show form
-		return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'], envs_dict=envs_dict, letsencrypt_provider=wfconfig['LETSENCRYPT_PROVIDER_ID'], ssl_client_profiles=wfconfig['SSL_CLIENT_PROFILES'], default_ssl_client_profile=wfconfig['DEFAULT_SSL_CLIENT_PROFILE'])
+		return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'], envs_dict=envs_dict, letsencrypt_provider=wfconfig['LETSENCRYPT_PROVIDER_ID'], ssl_client_profiles=wfconfig['SSL_CLIENT_PROFILES'], default_ssl_client_profile=wfconfig['DEFAULT_SSL_CLIENT_PROFILE'], letsencrypt_enabled=wfconfig['LETSENCRYPT_ENABLED'])
 
 	elif request.method == 'POST':
 		valid_form = True
@@ -63,6 +63,10 @@ def nlbweb_create():
 		# Get parameters from form - checkboxes
 		for field in ['enable_ssl', 'redirect_http', 'encrypt_backend', 'use_xforwardedfor', 'generate_letsencrypt', 'enable_hsts']:
 			form_fields[field] = field in request.form
+
+		# If the Let's Encrypt functionality is disabled, force it to be
+		if 'generate_letsencrypt' in form_fields and not wfconfig['LETSENCRYPT_ENABLED']:
+			form_fields['generate_letsencrypt'] = False
 
 		# Refactor: these are fixed
 		form_fields['short_service'] = form_fields['fqdn']
@@ -292,7 +296,7 @@ def nlbweb_create():
 			# Turn envs in to a dict
 			envs_dict = { env['id']: env for env in wfconfig['ENVS'] }
 
-			return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'], values=form_fields, envs_dict=envs_dict, letsencrypt_provider=wfconfig['LETSENCRYPT_PROVIDER_ID'], ssl_client_profiles=wfconfig['SSL_CLIENT_PROFILES'], default_ssl_client_profile=wfconfig['DEFAULT_SSL_CLIENT_PROFILE'])
+			return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'], values=form_fields, envs_dict=envs_dict, letsencrypt_provider=wfconfig['LETSENCRYPT_PROVIDER_ID'], ssl_client_profiles=wfconfig['SSL_CLIENT_PROFILES'], default_ssl_client_profile=wfconfig['DEFAULT_SSL_CLIENT_PROFILE'], letsencrypt_enabled=wfconfig['LETSENCRYPT_ENABLED'])
 
 		# We've now done some basic validation on the inputs
 

@@ -103,11 +103,13 @@ td.na
 			<label for="encrypt_backend"><input type="checkbox" id="encrypt_backend" name="encrypt_backend" {% if 'encrypt_backend' not in values or ('encrypt_backend' in values and values['encrypt_backend']) %}checked="checked" {% endif %}/> Pass Through Encrypted Traffic To Backend. This will encrypt the traffic between the NLB and the back-end servers when HTTPS is used</label>
 		</div>
 		<div class="col-md-12">
-			<label for="enable_hsts"><input type="checkbox" id="enable_hsts" name="enable_hsts" {% if 'enable_hsts' in values and values['enable_hsts'] %}checked="checked" {% endif %}/> Enable HTTP Strict Transport Secruity (HSTS). This will force the browser to always use HTTPS after the first request, regardless of what the user requests</label>
+			<label for="enable_hsts"><input type="checkbox" id="enable_hsts" name="enable_hsts" {% if 'enable_hsts' in values and values['enable_hsts'] %}checked="checked" {% endif %}/> Enable HTTP Strict Transport Security (HSTS). This will force the browser to always use HTTPS after the first request, regardless of what the user requests</label>
 		</div>
+{%- if letsencrypt_enabled %}
 		<div class="col-md-12">
 			<label for="generate_letsencrypt"><input type="checkbox" id="generate_letsencrypt" name="generate_letsencrypt" {% if 'generate_letsencrypt' in values and values['generate_letsencrypt'] %}checked="checked" {% endif %}/> Generate a new certificate via Let's Encrypt</label>
 		</div>
+{%- endif %}
 		<div class="col-md-6 form-group">
 			<label for="ssl_key">SSL Private Key:</label>
 			<textarea class="form-control" id="ssl_key" name="ssl_key" style="width:100%;max-width:100%;min-width:100%;height:6em" placeholder="Paste PEM-encoded RSA private key here"{% if 'enable_ssl' not in values or ('enable_ssl' in values and values['enable_ssl']) and 'generate_letsencrypt' not in values %} required="required"{% endif %}{% if 'generate_letsencrypt' in values and values['generate_letsencrypt'] %} disabled="disabled"{% endif %}>{% if 'ssl_key' in values %}{{ values['ssl_key'] }}{% endif %}</textarea>

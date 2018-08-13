@@ -69,6 +69,9 @@ HTTP_PROFILE_DEFAULT = '/Common/http'
 # always create a new HTTP profile when using X-Forwarded-For
 HTTP_PROFILE_XFORWARDEDFOR = None
 
+# Whether the Let's Encrypt functionality is enabled
+LETSENCRYPT_ENABLED = False
+
 # The ID of the provider in the SSL_PROVIDERS list that is for Let's Encrypt
 LETSENCRYPT_PROVIDER_ID = 'lets_encrypt'
 
