@@ -121,7 +121,7 @@ def get_users_groups(username, from_cache=True):
 		curd.execute('SELECT 1 FROM `ldap_group_cache_expire` WHERE `username` = %s AND `expiry_date` > CURDATE()', (username,))
 		if curd.fetchone() is not None:
 			## The cache has not expired, return the list
-			curd.execute('SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s', (username,))
+			curd.execute('SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s ORDER BY `group`', (username,))
 			groupdict = curd.fetchall()
 			groups = []
 			for group in groupdict:
