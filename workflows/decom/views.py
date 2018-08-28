@@ -213,6 +213,8 @@ def decom_step2(id):
 		if len(actions) > 0 and system['class'] != "play":
 			actions.append({'id': 'ticket.ops', 'desc': 'Raises a ticket with operations to perform manual steps, such as removal from monitoring', 'detail': 'Creates a ticket in ServiceNow and assigns it to ' + workflow.config['TICKET_TEAM'], 'data': {'hostname': system['name']}})
 
+	# Add action to input the decom date.
+	actions.append({'id': 'system.update_decom_date', 'desc': 'Update the decommission date in Cortex', 'detail': 'Update the decommission date in Cortex and set it to the current date and time.', 'data': {'system_id': system['id']}})	
 	# Turn the actions list into a signed JSON document via itsdangerous
 	signer = JSONWebSignatureSerializer(app.config['SECRET_KEY'])
 	json_data = signer.dumps(actions)
