@@ -161,11 +161,11 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 
 		# Allow the search to match on name, allocation_comment or 
 		# allocation_who
-		query = query + "(`name` LIKE %s OR `allocation_comment` LIKE %s OR `allocation_who` LIKE %s OR `cmdb_environment` LIKE %s OR `allocation_who_realname` LIKE %s)"
+		query = query + "(`name` LIKE %s OR `allocation_comment` LIKE %s OR `allocation_who` LIKE %s OR `cmdb_environment` LIKE %s OR `allocation_who_realname` LIKE %s OR `vmware_ipaddr` LIKE %s)"
 
 		# Add the filter string to the parameters of the query. Add it 
 		# three times as there are three columns to match on.
-		params = params + (like_string, like_string, like_string, like_string, like_string)
+		params = params + (like_string, like_string, like_string, like_string, like_string, like_string)
 
 	# If hide_inactive is set to false, then exclude systems that are no longer In Service
 	if hide_inactive == True:
