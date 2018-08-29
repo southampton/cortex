@@ -231,12 +231,8 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 	# Validate the name of the column to sort by (this prevents errors and
 	# also prevents SQL from accidentally being injected). Add the column
 	# name on to the query
-	if order in ["id", "name", "number", "allocation_comment", "allocation_date", "allocation_who"]:
+	if order in ["id", "name", "number", "allocation_comment", "allocation_date", "allocation_who", 'cmdb_operational_status', 'cmdb_environment']:
 		query = query + "`" + order + "`"
-	elif order == "cmdb_operational_status":
-		query = query + "`cmdb_operational_status`"
-	elif order == "cmdb_environment":
-		query = query + "`cmdb_environment`"
 
 	# Determine which direction to order in, and add that on
 	if order_asc:
