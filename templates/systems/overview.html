@@ -130,7 +130,7 @@ tr > td:first-child {
 			<div class="panel-heading">
 				<h3 class="panel-title">System Status</h3>
 			</div>
-			<div class="panel-body row">
+			<div id="systemStatusPanel" class="panel-body row">
 				{% if system.vmware_uuid %}
 				<div class="col-md-4">
 					<div style="text-align:center">
@@ -354,6 +354,13 @@ $('.power-ctl-form').submit(function(e) {
 });
 
 function update_data(data) {
+	// Added some error handling, to display an error message if one was present.
+	// This halts processing.
+	if ('error' in data) {
+		$('#systemStatusPanel').html('<p class="col-md-12"><span class="fa fa-info"></span> '+data['error']+'</p>');
+		return false;
+	}
+
 	$('.power_state').text(data.guest_state + ' (' + data.power_state + ')');
 	if (data.power_state === "poweredOn") {
 		$('#power-icon').attr("class", "fa fa-play fa-stack-1x icon-on");
