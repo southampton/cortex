@@ -136,6 +136,9 @@ RUBRIK_API_PASS = ''
 # Puppet Module Documentation Location
 PUPPET_MODULE_DOCS_URL = None
 
+# Cortex API Config
+ERROR_404_HELP = False
+
 # UI Banner
 # uncomment the following line to enable the banner
 #BANNER_MESSAGE='This is a development instance'

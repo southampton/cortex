@@ -682,7 +682,12 @@ Username:             %s
 		  (1, "workflows.all"),
 		  (1, "sysrequests.all.view"),
 		  (1, "sysrequests.all.approve"),
-		  (1, "sysrequests.all.reject")""")
+		  (1, "sysrequests.all.reject"),
+		  (1, "api.get"),
+		  (1, "api.post"),
+		  (1, "api.put"),
+		  (1, "api.delete")
+		""")
 
 		## Close database connection
 		temp_db.close()
@@ -732,6 +737,11 @@ Username:             %s
 			{'name': 'sysrequests.all.approve',	       'desc': 'Approve any system request'},
 			{'name': 'sysrequests.all.reject',	       'desc': 'Reject any system request'},
 			{'name': 'control.all.vmware.power',	       'desc': 'Contol the power settings of any VM'},
+
+			{'name': 'api.get',			       'desc': 'Send GET requests to the Cortex API.'},
+			{'name': 'api.post',			       'desc': 'Send POST requests to the Cortex API.'},
+			{'name': 'api.put',			       'desc': 'Send PUT requests to the Cortex API.'},
+			{'name': 'api.delete',			       'desc': 'Send DELETE requests to the Cortex API.'},
 		]
 
 		self.workflow_permissions = []
