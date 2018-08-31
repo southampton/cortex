@@ -9,6 +9,8 @@ from flask import Flask, request, session, redirect, url_for, flash, g, abort, r
 from pyVmomi import vim
 from itsdangerous import JSONWebSignatureSerializer
 import requests
+import requests.exceptions
+from urlparse import urljoin
 import ldap
 
 workflow = CortexWorkflow(__name__)
@@ -137,21 +139,38 @@ def decom_step2(id):
 		except Exception as ex:
 			flash("Warning - An error occured when communicating with Active Directory: " + str(type(ex)) + " - " + str(ex), "alert-warning")
 
-	## Work out the URL for any RHN systems
-	rhnurl = app.config['RHN5_URL']
-	if not rhnurl.endswith("/"):
-		rhnurl = rhnurl + "/"
-	rhnurl = rhnurl + "rhn/systems/details/Overview.do?sid="
 
-	## Check if a record exists in RHN for this system
+	if 'RHN5_ENABLE_DECOM' in workflow.config and workflow.config['RHN5_ENABLE_DECOM']: 
+		## Work out the URL for any RHN systems
+		rhnurl = app.config['RHN5_URL']
+		if not rhnurl.endswith("/"):
+			rhnurl = rhnurl + "/"
+		rhnurl = rhnurl + "rhn/systems/details/Overview.do?sid="
+
+		## Check if a record exists in RHN for this system
+		try:
+			(rhn,key) = corpus.rhn5_connect()
+			rsystems = rhn.system.search.hostname(key,system['name'])
+			if len(rsystems) > 0:
+				for rsys in rsystems:
+					actions.append({'id': 'rhn5.delete', 'desc': 'Delete the RHN Satellite object', 'detail': rsys['name'] + ', RHN ID <a target="_blank" href="' + rhnurl + str(rsys['id']) + '">' + str(rsys['id']) + "</a>", 'data': {'id': rsys['id']}})
+		except Exception as ex:
+			flash("Warning - An error occured when communicating with RHN: " + str(ex), "alert-warning")
+
+	## Check if a record exists in SATELLITE 6 for this system.
 	try:
-		(rhn,key) = corpus.rhn5_connect()
-		rsystems = rhn.system.search.hostname(key,system['name'])
-		if len(rsystems) > 0:
-			for rsys in rsystems:
-				actions.append({'id': 'rhn5.delete', 'desc': 'Delete the RHN Satellite object', 'detail': rsys['name'] + ', RHN ID <a target="_blank" href="' + rhnurl + str(rsys['id']) + '">' + str(rsys['id']) + "</a>", 'data': {'id': rsys['id']}})
+		try:
+			rsys = corpus.satellite6_get_host(system['name'])
+		except request.exceptions.RequestException as ex:
+			# Check if the error was raised due to not being able to find the system.
+			if ex.response.status_code != 404:
+				flash("Warning - An error occured when communicating with Satellite 6: " + str(ex), "alert-warning")
+		else:
+			saturl = urljoin(app.config['SATELLITE6_URL'], 'hosts/{0}'.format(rsys['id'])) 
+			actions.append({'id': 'satellite6.delete', 'desc': 'Delete the host from Satellite 6', 'detail': '{0}, Satellite 6 ID <a target=""_blank" href="{1}">{2}</a>'.format(rsys['name'], saturl, sys['id']), 'data': {'id':rsys['id']}}
+				
 	except Exception as ex:
-		flash("Warning - An error occured when communicating with RHN: " + str(ex), "alert-warning")
+		flash("Warning - An error occured when communicating with Satellite 6: " + str(ex), "alert-warning")
 
 	## Check sudoldap for sudoHost entries
 	try:

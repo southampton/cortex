@@ -30,6 +30,8 @@ def run(helper, options):
 			r = action_tsm_decom(action, helper)
 		elif action['id'] == "rhn5.delete":
 			r = action_rhn5_delete(action, helper)
+		elif action['id'] == "satellite6.delete":
+			r = action_satellite6_delete(action, helper) 
 		elif action['id'] == "sudoldap.update":
 			r = action_sudoldap_update(action, helper, options['wfconfig'])
 		elif action['id'] == "sudoldap.delete":
@@ -219,6 +221,27 @@ def action_rhn5_delete(action, helper):
 		helper.end_event(success=False, description="Failed to delete the system object in RHN5")
 		return False
 
+def action_satellite6_delete(action, helper):
+	try:
+		try:
+			helper.lib.satellite6_disassociate_host(action['data']['id'])
+		except Exception as e:
+			helper.end_event(success=False, description="Failed to disassociate the host object with ID {0} from a VM in Satellite 6".format(action['data']['id']))
+			return False
+
+		try:
+			helper.lib.satellite6_delete_host(action['data']['id'])
+		except Exception as e:
+			helper.end_event(success=False, description="Failed to delete the host object with ID {0} in Satellite 6".format(action['data']['id']))
+			return False
+
+		# We disassociated and deleted successfully.
+		return True
+
+	except Exception as e:
+		helper.end_event(success=False, description="Failed to delete the host object in Satellite 6")
+		return False
+
 ################################################################################
 
 def action_sudoldap_update(action, helper, wfconfig):
@@ -229,6 +252,8 @@ def action_sudoldap_update(action, helper, wfconfig):
 
 		# Replace the value of sudoHost with the calculated list
 		l.modify_s(action['data']['dn'], [(ldap.MOD_DELETE, 'sudoHost', str(action['data']['value']))])
+		
+		return True
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to update the object in sudoldap: " + str(e))
 		return False
@@ -243,13 +268,17 @@ def action_sudoldap_delete(action, helper, wfconfig):
 		
 		# Delete the entry
 		l.delete_s(action['data']['dn'])
+		return True
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to delete the object in sudoldap")
+		return False
 
 ################################################################################
 
 def action_update_decom_date(action, helper):
 	try:
 		helper.lib.update_decom_date(action["data"]["system_id"])
+		return True
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to update the decommission date in Cortex")
+		return False

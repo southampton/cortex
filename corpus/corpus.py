@@ -1668,3 +1668,50 @@ class Corpus(object):
 			raise IOError(str(ex))
 
 	############################################################################
+	
+	def satellite6_get_host(name):
+
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(name)) 
+		r = requests.get(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS'])
+		)
+
+		r.raise_for_status()
+
+		return r.json()
+
+	############################################################################
+
+	def satellite6_disassociate_host(hostid):
+		
+		
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}/disassociate'.format(hostid))
+		r = requests.put(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+		) 
+
+		r.raise_for_status()
+
+		return r.json()
+
+	############################################################################
+
+	def satellite6_delete_host(hostid):
+
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(hostid))
+		
+		r = requests.delete(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+		) 
+
+		r.raise_for_status()
+
+		return r.json()
+
+	############################################################################
