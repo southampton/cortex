@@ -551,6 +551,11 @@ Username:             %s
 		except Exception, e:
 			pass
 
+		try:
+			cursor.execute("""ALTER TABLE `systems` ADD `build_count` mediumint(11) DEFAULT 0""")
+		except Exception, e:
+			pass
+
 		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT 
 		 `systems`.`id` AS `id`,
 		 `systems`.`type` AS `type`,
@@ -565,6 +570,7 @@ Username:             %s
 		 `systems`.`review_status` AS `review_status`,
 		 `systems`.`review_task` AS `review_task`,
 		 `systems`.`cmdb_id` AS `cmdb_id`,
+		 `systems`.`build_count` AS `build_count`,
 		 `sncache_cmdb_ci`.`sys_class_name` AS `cmdb_sys_class_name`,
 		 `sncache_cmdb_ci`.`name` AS `cmdb_name`,
 		 `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status`,
