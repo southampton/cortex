@@ -492,9 +492,11 @@ def run(helper, options):
 	## Send success email ##################################################
 
 	# Build the text of the message
-	message  = 'Cortex has finished building your VM. The details of the VM can be found below.\n'
-	message += '\n'
 	if workflow in ['standard', 'sandbox']:
+		subject = 'Cortex has finished building your VM, ' + str(system_name)
+
+		message  = 'Cortex has finished building your VM. The details of the VM can be found below.\n'
+		message += '\n'
 		if workflow == 'standard':
 			message += 'ServiceNow Task: ' + str(options['task']) + '\n'
 		message += 'Hostname: ' + str(system_name) + '.' + str(domain) + '\n'
@@ -519,20 +521,56 @@ def run(helper, options):
 		if os_type == helper.lib.OS_TYPE_BY_NAME['Windows']:
 			message += ' and to an appropriate OU in Active Directory'
 		message += '\n'
-	else:
-		message += 'Purpose: ' + str(options['purpose']) + '\n'
-		message += 'Operating System: ' + str(os_name) + '\n'
-		message += 'CPUs: ' + str(total_cpu) + '\n'
-		message += 'RAM: ' + str(options['ram']) + ' GiB\n'
-		message += 'CMDB ID: ' + str(cmdb_id) +'\n'
+	elif workflow == 'student':
+		subject = 'Your VM has been built and is ready to use'
+
+		if options['template'] == 'rhel7':
+			message  = 'Your Red Hat Enterprise Linux 7 VM is now built and is ready to be logged in to.\n'
+			message += 'You can access the VM via SSH, either directly from the terminal of another Linux\n'
+			message += 'machine using the ssh command, or from a Windows machine using an SSH client such\n'
+			message += 'as PuTTY. PuTTY is available from https://software.soton.ac.uk/. You can log in to\n'
+			message += 'your VM with the following details:\n'
+			message += '\n'
+			message += 'Hostname: ' + str(system_name) + '.' + str(domain) + '\n'
+			message += 'Hostname Alias: ' + dns_aliases[0] + '\n'
+			message += 'Username: ' + helper.username + '\n'
+			message += 'Password: ' + helper.lib.system_get_repeatable_password(system_dbid) + '\n'
+			message += '\n'
+			message += 'This password is also the password for the root account. Please change both\n'
+			message += 'passwords immediately. SSHing in directly as root is disabled by default.\n'
+			message += '\n'
+			message += 'As an introduction to the build and to Red Hat Enterprise Linux, please look at\n'
+			message += 'the README.UoS file in your home directory on the VM. You can view this file by\n'
+			message += 'running:\n'
+			message += '\n'
+			message += 'less /home/' + helper.username + '/README.UoS\n'
+		elif options['template'] == 'windows_server_2016':
+			message  = 'Your Windows Server 2016 VM is now built and is ready to be logged in to. You can\n'
+			message += 'access the VM via Remote Desktop, either using the Microsoft Remote Desktop\n'
+			message += 'client for Windows or Mac, or using a compatible client such as rdesktop, Remmina\n'
+			message += 'or xfreerdp for Linux. You can log in to your VM with the following details:\n'
+			message += '\n'
+			message += 'Hostname: ' + str(system_name) + '.' + str(domain) + '\n'
+			message += 'Hostname Alias: ' + dns_aliases[0] + '\n'
+			message += 'Username: ' + helper.username + '\n'
+			message += 'Password: ' + helper.lib.system_get_repeatable_password(system_dbid) + '\n'
+			message += '\n'
+			message += 'This password is also the password for the Administrator account. Please change\n'
+			message += 'both passwords immediately. You can do this by logging in as the user, sending\n'
+			message += 'a Ctrl-Alt-Delete to the VM and choosing the appropriate option from the menu.\n'
+
 		message += '\n'
-		message += 'The event log for the task can be found at https://' + str(helper.config['CORTEX_DOMAIN']) + '/task/status/' + str(helper.task_id) + '\n'
-		message += 'More information about the VM, can be found on the Cortex systems page at https://' + str(helper.config['CORTEX_DOMAIN']) + '/systems/edit/' + str(system_dbid) + '\n'
-		
+		message += 'IMPORTANT REMINDER: Your VM is not backed up in any way. It is entirely up to you\n'
+		message += 'to keep safe copies of all your work and the University will not accept any\n'
+		message += 'liability for data loss from this VM, for whatever reason. You cannot use loss of\n'
+		message += 'data as a reason for requesting "Special Considerations".\n'
+		message += '\n'
+		message += 'If you have any issues with your VM, please contact ServiceLine who will direct\n'
+		message += 'your query to the appropriate team.\n'
 
 	# Send the message to the user who started the task (if they want it)
 	if options['sendmail']:
-		helper.lib.send_email(helper.username, 'Cortex has finished building your VM, ' + str(system_name), message)
+		helper.lib.send_email(helper.username, subject, message)
 
 	# For standard VMs only, always notify people in the notify_emails list
 	if workflow == 'standard':

@@ -1655,15 +1655,13 @@ class Corpus(object):
 		# Get a cursor to the database
 		curd = self.db.cursor(mysql.cursors.DictCursor)
 
-		# We want the latest - not when the transaction started
-		curd.execute("SET TRANSACTION ISOLATION LEVEL READ COMMITTED")
-
-		# Get the task status
+		# Get the task status. The DB commit is required to start a new
+		# transaction so that the default transaction isolation level of
+		# "repeatable read" doesn't cause us any issues. It also releases
+		# any table locks from previous transactions.
+		self.db.commit()
 		curd.execute("SELECT `status` FROM `tasks` WHERE `id` = %s", (task,))
 		status = curd.fetchone()['status']
-
-		# Reset to default isolation level
-		curd.execute("SET TRANSACTION ISOLATION REPEATABLE READ")
 
 		# Return the row status
 		return status
