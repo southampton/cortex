@@ -195,7 +195,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 			query = query + " AND "
 		else:
 			query = query + "WHERE "
-		query = query + ' `id` IN (SELECT DISTINCT `system_id` FROM `system_perms`)'
+		query = query + ' `id` IN (SELECT DISTINCT `system_id` FROM `system_role_perms_view`)'
 
 	if only_allocated_by:
 		if class_name is not None or search is not None or hide_inactive == True or only_other or show_expired or show_nocmdb or show_perms_only:

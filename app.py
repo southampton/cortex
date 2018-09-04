@@ -653,6 +653,65 @@ Username:             %s
 		  CONSTRAINT `system_perms_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_roles` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `name` varchar(64) NOT NULL,
+		  `description` text NOT NULL,
+		  PRIMARY KEY (`id`),
+		  KEY (`name`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_role_perms` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `system_role_id` mediumint(11) NOT NULL,
+		  `perm` varchar(64) NOT NULL,
+		  PRIMARY KEY (`id`),
+		  UNIQUE (`system_role_id`, `perm`),
+		  CONSTRAINT `system_role_perms_ibfk_1` FOREIGN KEY (`system_role_id`) REFERENCES `system_roles` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_role_who` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `system_role_id` mediumint(11) NOT NULL,
+		  `who` varchar(128) NOT NULL,
+		  `type` tinyint(1) NOT NULL,
+		  PRIMARY KEY (`id`),
+		  UNIQUE (`system_role_id`, `who`, `type`),
+		  CONSTRAINT `system_role_who_ibfk_1` FOREIGN KEY (`system_role_id`) REFERENCES `system_roles` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_role_what` (
+		  `system_role_id` mediumint(11) NOT NULL,
+		  `system_id` mediumint(11) NOT NULL,
+		  PRIMARY KEY (`system_role_id`, `system_id`),
+		  CONSTRAINT `system_role_what_ibfk_1` FOREIGN KEY (`system_role_id`) REFERENCES `system_roles` (`id`) ON DELETE CASCADE,
+		  CONSTRAINT `system_role_what_ibfk_2` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE OR REPLACE VIEW `system_role_perms_view` AS
+		SELECT DISTINCT 
+		  `system_role_what`.`system_id`,
+		  `system_role_who`.`who`,
+		  `system_role_who`.`type`,
+		  `system_role_perms`.`perm`
+		FROM `system_roles`
+		LEFT JOIN `system_role_perms` ON `system_roles`.`id`=`system_role_perms`.`system_role_id`
+		LEFT JOIN `system_role_who` ON `system_roles`.`id`=`system_role_who`.`system_role_id`
+		LEFT JOIN `system_role_what` ON `system_roles`.`id`=`system_role_what`.`system_role_id`
+		WHERE 
+		  `system_role_what`.`system_id` IS NOT NULL AND
+		  `system_role_who`.`who` IS NOT NULL AND
+		  `system_role_who`.`type` IS NOT NULL AND
+		  `system_role_perms`.`perm` IS NOT NULL
+		UNION
+		SELECT DISTINCT
+		  `system_perms`.`system_id`,
+		  `system_perms`.`who`,
+		  `system_perms`.`type`,
+		  `system_perms`.`perm`
+		FROM `system_perms`;
+		""")
+
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_user_favourites` (
 		  `username` varchar(255),
 		  `system_id` mediumint(11) NOT NULL,

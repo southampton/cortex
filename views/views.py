@@ -64,7 +64,7 @@ def dashboard():
 	cortex.lib.user.get_users_groups()
 
 	# Get the list of systems the user is specifically allowed to view
-	curd.execute("SELECT * FROM `systems_info_view` WHERE `id` IN (SELECT `system_id` FROM `system_perms` WHERE (`type` = '0' AND `who` = %s AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail')) OR (`type` = '1' AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail') AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s)))", (session['username'], session['username']))
+	curd.execute("SELECT * FROM `systems_info_view` WHERE `id` IN (SELECT `system_id` FROM `system_role_perms_view` WHERE (`type` = '0' AND `who` = %s AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail')) OR (`type` = '1' AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail') AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s)))",(session['username'],session['username']))
 	systems = curd.fetchall()
 
 	# Recent systems

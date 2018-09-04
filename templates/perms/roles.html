@@ -1,6 +1,5 @@
 {% extends "layout.html" %}
 {% block body %}
-
 <div class="modal fade" id="create" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -38,7 +37,7 @@
 	<div class="pull-right">
 		<a data-toggle="modal" data-target="#create" class="btn btn-primary btn-sm"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs">Create role</span></a>
 	</div>
-	<h3><i class="fa fa-fw fa-user-secret"></i> Roles</h3>
+	<h3><i class="fa fa-fw fa-user-secret"></i> {{ title }}</h3>
 	<p class="text-muted">A role is a group of permissions. Users are given one or more roles which grant them the permissions assigned to those roles</p>
 </div>
 
@@ -55,7 +54,7 @@
 		<tr>
 			<td>{{ role.name }}</td>
 			<td>{{ role.description }}</td>
-			<td><a href="{{ url_for('perms_role',id=role.id) }}" class="btn btn-xs btn-default"><i class="fa fa-fw fa-edit"></i>Manage</a></td>
+			<td><a href="{{ url_for(manage_role_route,id=role.id) }}" class="btn btn-xs btn-default"><i class="fa fa-fw fa-edit"></i>Manage</a></td>
 		</tr>
 {%- endfor %}
 	</tbody>
