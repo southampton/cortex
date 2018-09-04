@@ -461,3 +461,8 @@ legend
 	text-align: center;
 	font-weight: bold;
 }
+
+.cortex-classic .banner
+{
+	margin-bottom: 1.0em;
+}

@@ -102,7 +102,7 @@ def run(helper, options):
 		helper.event("allocate_ipaddress", "Allocating an IP address from " + network)
 
 		# Allocate an IP address
-		ipv4addr = helper.lib.infoblox_create_host(system_name + "." + domain, network)
+		ipv4addr = helper.lib.infoblox_create_host(system_name + "." + domain, network, aliases=dns_aliases)
 
 		# Handle errors - this will stop the task
 		if ipv4addr is None:

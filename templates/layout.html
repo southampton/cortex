@@ -42,7 +42,7 @@
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}">
 		{%- endif %}
 	</head>
-	<body>
+	<body class="{{ "cortex-classic" if classic_layout else "cortex-normal" }}">
 	{%- if banner_message %}<div class="banner">{{ banner_message }}</div>{% endif %}
 {%- if menu.systems and menu.systems|length > 0 %}
 		<div id="search" class="modal" tabindex="-1" role="dialog">
