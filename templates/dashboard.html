@@ -57,7 +57,7 @@ a.server-link:hover { text-decoration: underline !important; }
 {%- endif -%}
 		{%- if syscount > 0 %}
 		<div class="panel panel-default">
-			<div class="panel-heading"><h3 class="panel-title">Your systems</h3></div>
+			<div class="panel-heading"><h3 class="panel-title">Your recent systems</h3></div>
 			<div class="panel-body">
 				<table class="table table-condensed table-striped" id="your-systems">
 					<thead>
@@ -115,6 +115,7 @@ a.server-link:hover { text-decoration: underline !important; }
 						<th>Purpose</th>
 						<th>Environment</th>
 						<th>Status</th>
+						<th>Allocation Date</th>
 						<th style="width: 1px"></th>
 					</tr>
 				</thead>
@@ -129,11 +130,25 @@ a.server-link:hover { text-decoration: underline !important; }
 						<td>{{ system.allocation_comment }}</td>
 						<td>{{ system.cmdb_environment }}</td>
 						<td>{{ system.cmdb_operational_status }}</td>
+						<td>{{ system.allocation_date }}</td>
 						<td><a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
 					</tr>
 {%- endfor %}
 				</tbody>
 			</table>
+			<script type="text/javascript">
+				dataTable = $('#recent-systems').DataTable({
+					"pageLength": 5,
+					"lengthMenu": [[5,10,15,50,100,-1], [5,10,15,50,100,'All']],
+					"order": [[4, 'desc']],
+					"columns": [null, null, null, null, null,{ "orderable": false, "targets": 0 }],
+					"searching": true,
+				});
+				$(window).resize(function() {
+					$('#recent-systems').css('width', '100%');
+					dataTable.columns.adjust();
+				});
+			</script>
 			</div>
 		</div>
 {%- endif %}
