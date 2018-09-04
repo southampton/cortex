@@ -13,7 +13,7 @@ import requests
 @app.route('/api/register', methods=['POST'])
 @app.disable_csrf_check
 def api_register_system():
-	"""API endpoint for when linux systems register with Cortex to obtain their
+	"""API endpoint for when systems register with Cortex to obtain their
        Puppet certificates, their Puppet environment, a satellite registration 
        key, etc. Clients can authenticate either via username/password, which
        is checked against LDAP, or via the VMware virtual machine UUID, which
@@ -59,38 +59,89 @@ def api_register_system():
 
 	else:
 		app.logger.error('Neither UUID or host+username+password sent to authenticate')
-
 		abort(401)
+
+	# Increment the build count - this is perhaps useful for tracking rebuilds,
+	# but also means we can generate a new unique password for each register,
+	# which means that a person can't find a VMs original password by running
+	# the register API call again
+	cortex.lib.systems.increment_build_count(system['id'])
 
 	# Build the node's fqdn
 	fqdn = hostname + '.soton.ac.uk'
 
-	# Contact the cortex-puppet-bridge server to get ssl certificates for this hostname
-	autosign_url = app.config['PUPPET_AUTOSIGN_URL']
-	if not autosign_url.endswith('/'):
-		autosign_url += '/'
-	autosign_url += 'getcert/' + fqdn
+	# Start building the response dictionary
+	cdata = {}
 
-	try:
-		r = requests.get(autosign_url, headers={'X-Auth-Token': app.config['PUPPET_AUTOSIGN_KEY']}, verify=app.config['PUPPET_AUTOSIGN_VERIFY'])
-	except Exception as ex:
-		app.logger.error("Error occured contacting cortex-puppet-autosign server:" + str(ex))
-		abort(500)
+	# Default to production environment (for Puppet / Satellite)
+	cdata['environment'] = 'production'
 
-	if r.status_code == 200:
+	# See if the system is linked to ServiceNow and we'll use that 
+	# environment. If it isn't linked then we can't do much, so just assume
+	# production (as above)
+	if 'cmdb_environment' in system:
+		envs = cortex.lib.core.get_cmdb_environments()
+		for env in envs:
+			if env['name'] == system['cmdb_environment']:
+				cdata['environment'] = env['puppet']
+
+	# Get the build identity from the request
+	if 'ident' in request.form:
+		ident = str(request.form['ident'])
+	else:
+		app.logger.warn('No build identity sent when attempting to register ' + hostname)
+		abort(400)
+
+	# Check that we know about the build identity
+	if ident not in app.config['REGISTER_ACTIONS']:
+		app.logger.warn('Unknown build identity (' + ident + ') sent when attempting to register ' + hostname)
+		abort(400)
+
+	# See if the build requires Puppet
+	if 'puppet' in app.config['REGISTER_ACTIONS'][ident] and app.config['REGISTER_ACTIONS'][ident]['puppet'] is True:
+		puppet_required = True
+	else:
+		puppet_required = False
+
+	# See if the build requires Satellite
+	if 'satellite' in app.config['REGISTER_ACTIONS'][ident] and app.config['REGISTER_ACTIONS'][ident]['satellite'] is True:
+		satellite_required = True
+	else:
+		satellite_required = False
+
+	# See if the build requires a random password
+	if 'password' in app.config['REGISTER_ACTIONS'][ident] and app.config['REGISTER_ACTIONS'][ident]['password'] is True:
+		password_required = True
+	else:
+		password_required = False
+
+	if puppet_required:
+		# Contact the cortex-puppet-bridge server to get ssl certificates for this hostname
+		autosign_url = app.config['PUPPET_AUTOSIGN_URL']
+		if not autosign_url.endswith('/'):
+			autosign_url += '/'
+		autosign_url += 'getcert/' + fqdn
+
 		try:
-			cdata = r.json()
+			r = requests.get(autosign_url, headers={'X-Auth-Token': app.config['PUPPET_AUTOSIGN_KEY']}, verify=app.config['PUPPET_AUTOSIGN_VERIFY'])
 		except Exception as ex:
-			app.logger.error("Error occured parsing response from cortex-puppet-autosign server:" + str(ex))
+			app.logger.error("Error occured contacting cortex-puppet-autosign server:" + str(ex))
 			abort(500)
 
-		for key in ['private_key', 'public_key', 'cert']:
-			if not key in cdata:
-				app.logger.error("Error occured parsing response from cortex-puppet-autosign server. Parameter '" + key + "' was not sent.")
+		if r.status_code == 200:
+			try:
+				cdata = r.json()
+			except Exception as ex:
+				app.logger.error("Error occured parsing response from cortex-puppet-autosign server:" + str(ex))
 				abort(500)
-	else:
-		app.logger.error("Error occured contacting cortex-puppet-autosign server. HTTP status code: '" + str(r.status_code) + "'")
-		abort(500)
+
+			for key in ['private_key', 'public_key', 'cert']:
+				if not key in cdata:
+					app.logger.error("Error occured parsing response from cortex-puppet-autosign server. Parameter '" + key + "' was not sent.")
+					abort(500)
+		else:
+			app.logger.error("Error occured contacting cortex-puppet-autosign server. HTTP status code: '" + str(r.status_code) + "'")
+			abort(500)
 			
 	# Systems authenticating by UUID also want to know their hostname and 
 	# IP address in order to configure themselves!
@@ -107,59 +158,54 @@ def api_register_system():
 		# Mark as done
 		g.redis.setex("vm/" + system['vmware_uuid'] + "/" + "notify", 28800, "inprogress")
 
-	# Default to production env for puppet
-	cdata['environment'] = 'production'
-	cdata['certname']    = fqdn
+	# Add on some other details which could be useful to post-install
+	cdata['user'] = system['allocation_who']
+
+	# If the build requires a random password
+
+	if password_required:
+		# This password is repeatable, but random so long as SECRET_KEY is not compromised
+		cdata['password'] = cortex.lib.systems.generate_repeatable_password(system['id'])
 
 	# Create puppet ENC entry if it does not already exist
-	create_entry = False
-	if 'puppet_certname' in system:
-		if system['puppet_certname'] == None:
+	if puppet_required:
+		cdata['certname'] = fqdn
+
+		create_entry = False
+		if 'puppet_certname' in system:
+			if system['puppet_certname'] == None:
+				create_entry = True
+		else:
 			create_entry = True
-	else:
-		create_entry = True
 
-	if create_entry:
-		## A system record exists but no puppet_nodes entry. We'll create one!
-		## However what do we set the puppet environment to? We could default to production
-		## but that sucks. So we'll see if the system is linked to ServiceNow and we'll
-		## use that. If it isn't linked then we can't do much.
-
-		if 'cmdb_environment' in system:
-			## We'll use this instead on 'production'
-			cmdb_envs = cortex.lib.core.get_cmdb_environments()
-			for cmdbenv in cmdb_envs:
-				if cmdbenv['name'] == system['cmdb_environment']:
-					cdata['environment'] = cmdbenv['puppet']
-
-		curd = g.db.cursor(mysql.cursors.DictCursor)
-		curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`) VALUES (%s, %s, %s)", (system['id'], fqdn, cdata['environment']))
-		g.db.commit()
-		app.logger.info('Created Puppet ENC entry for certname "' + fqdn + '"')
-	else:
-		if 'puppet_env' in system:
-			if system['puppet_env'] != None:
-				cdata['environment'] = system['puppet_env']
+		if create_entry:
+			# A system record exists but no puppet_nodes entry. We'll create one!
+			# We set the environment to what we determined above, which defaults
+			# to production, but updates from the CMDB
+			curd = g.db.cursor(mysql.cursors.DictCursor)
+			curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`) VALUES (%s, %s, %s)", (system['id'], fqdn, cdata['environment']))
+			g.db.commit()
+			app.logger.info('Created Puppet ENC entry for certname "' + fqdn + '"')
+		else:
+			if 'puppet_env' in system:
+				if system['puppet_env'] != None:
+					cdata['environment'] = system['puppet_env']
 
 	# Get the satellite registration key (if any)
-	if 'ident' in request.form:
-		ident = request.form['ident']
-
+	if satellite_required:
 		if ident in app.config['SATELLITE_KEYS']:
 			data = app.config['SATELLITE_KEYS'][ident]
 			if cdata['environment'] in data:
 				cdata['satellite_activation_key'] = data[cdata['environment']]
 			else:
-				app.logger.warn('No Satellite activation key configured for OS ident, ' + str(ident) + ' with environment ' + cdata['environment'])
+				app.logger.warn('No Satellite activation key configured for OS ident, ' + str(ident) + ' with environment ' + cdata['environment'] + ' - a Satellite activation key will not be returned')
 		else:
-			app.logger.warn('Unknown OS ident (' + str(ident) + ') provided - a Satellite activation key will not be returned')
-	else:
-		app.logger.warn('No OS ident provided - a Satellite activation key will not be returned')
+			app.logger.warn('No Satellite activation keys configured for OS ident (' + str(ident) + ') - a Satellite activation key will not be returned')
 
 	if interactive:
-		cortex.lib.core.log(__name__, "api.register.system", "New Linux system '" + fqdn + "' registered via the API by " + request.form['username'],username=request.form['username'])
+		cortex.lib.core.log(__name__, "api.register.system", "New system '" + fqdn + "' registered via the API by " + request.form['username'], username=request.form['username'])
 	else:
-		cortex.lib.core.log(__name__, "api.register.system", "New Linux system '" + fqdn + "' registered via the API by VM-UUID authentication")
+		cortex.lib.core.log(__name__, "api.register.system", "New system '" + fqdn + "' registered via the API by VM-UUID authentication")
 
 	return(jsonify(cdata))
 
