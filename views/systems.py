@@ -1026,19 +1026,22 @@ def systems_json():
 	favourites = []
 	favourites = cortex.lib.systems.get_system_favourites(session.get('username'))
 
+	show_allocated_and_perms=False
 	if does_user_have_permission("systems.all.view"):
 		only_allocated_by = None
 	else:
+		# Show the systems where the user has permissions AND the ones they allocated.
+		show_allocated_and_perms=True
 		only_allocated_by = session['username']
 
 
 	# Get number of systems that match the query, and the number of systems
 	# within the filter group
-	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
-	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
+	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
+	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
 
 	# Get results of query
-	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
+	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
 
 	# DataTables wants an array in JSON, so we build this here, returning
 	# only the columns we want. We format the date as a string as
