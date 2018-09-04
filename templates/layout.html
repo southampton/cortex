@@ -43,6 +43,7 @@
 		{%- endif %}
 	</head>
 	<body>
+	{%- if banner_message %}<div class="banner">{{ banner_message }}</div>{% endif %}
 {%- if menu.systems and menu.systems|length > 0 %}
 		<div id="search" class="modal" tabindex="-1" role="dialog">
 			<div class="modal-dialog">

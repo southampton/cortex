@@ -160,6 +160,20 @@ class Corpus(object):
 		self.db.commit()
 		return cur.lastrowid
 
+
+	################################################################################
+
+	def update_decom_date(self, system_id):
+		"""Update the decom date in Cortex to the current date."""
+
+		# Get a cursor to the database
+		cur = self.db.cursor(mysql.cursors.DictCursor)
+
+		cur.execute("UPDATE `systems` SET `decom_date` = NOW() WHERE `id` = %s", (system_id,)) 
+
+		self.db.commit()
+		
+
 	################################################################################
 
 	def pad_system_name(self, prefix, number, digits):
@@ -191,6 +205,7 @@ class Corpus(object):
 				raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
 		else:
 			raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
+
 	################################################################################
 
 	def pad_system_name(self, prefix, number, digits):
@@ -668,6 +683,7 @@ class Corpus(object):
 		return template.Clone(folder=destfolder, name=vm_name, spec=clonespec)
 
 	############################################################################ 
+
 	def update_vm_cache(self, vm, tag):
 		"""Updates the VMware cache data with the information about the VM."""
 
@@ -1230,6 +1246,78 @@ class Corpus(object):
 
 	################################################################################
 
+	def servicenow_add_ci_relationship(self, parent_sys_id, child_sys_id, rel_type_sys_id):
+		# Build JSON data about the relationship to create
+		json_data = { 'parent': parent_sys_id, 'child': child_sys_id, 'type': rel_type_sys_id }
+
+		# Post the request
+		r = requests.post('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_rel_ci', auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=json_data)
+		if r is None:
+			raise Exception("Could not create CI relationship in ServiceNow. Request failed")
+
+		if r.status_code < 200 or r.status_code > 299:
+			raise Exception("Could not create CI relationship in ServiceNow. ServiceNow returned error code " + str(r.status_code))
+
+		try:
+			response_json = r.json()
+			return response_json['result']['sys_id']
+		except Exception as e:
+			raise Exception("Could not create CI relationship. Error: " + str(e))
+
+	################################################################################
+
+	def servicenow_get_ci_relationships(self, sys_id):
+		# Get the CI details. This checks that it exists and whether it's 
+		# virtual or not	
+		r = requests.get('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_rel_ci?sysparm_query=child=' + sys_id + '^ORparent=' + sys_id, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json'})
+
+		# Check we got a valid response code
+		if r is not None:
+			# Special case: ServiceNow returns a 404 to indicate no results. No, 
+			# this isn't a good idea, but we have to work with it
+			if r.status_code == 404:
+				return []
+			elif r.status_code < 200 or r.status_code > 299:
+				raise Exception("Could not locate CI relationships in ServiceNow. ServiceNow returned error code " + str(r.status_code))
+		else:
+			raise Exception("Could not locate CI relationships in ServiceNow. Request failed")
+
+		# Decode the JSON, raising on failure
+		try:
+			results = r.json()
+		except Exception as e:
+			raise Exception("Could not remove CI relationships in ServiceNow. JSON parsing failed")
+
+		# Check we have what we need
+		if 'result' not in results:
+			raise Exception("Could no remove CI relationships in ServiceNow. Invalid result from ServiceNow")
+
+		# Return the number of results
+		return results['result']
+
+	################################################################################
+
+	def servicenow_remove_ci_relationships(self, sys_id):
+		# Get the CI relationship data from ServiceNow
+		results = self.servicenow_get_ci_relationships(sys_id)
+
+		# Delete all the relationships, keeping track of how many succeeded/failed
+		warnings = 0
+		successes = 0
+		for entry in results:
+			try:
+				r = requests.delete('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_rel_ci/' + entry['sys_id'], auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json'})
+				if r is None or (r.status_code < 200 or r.status_code > 299):
+					warnings += 1
+				else:
+					successes += 1
+			except Exception as e:
+				warnings += 1
+
+		return (successes, warnings)
+
+	################################################################################
+
 	def _connect_redis(self):
 		"""Connects to the Redis instance specified in the configuration and 
 		returns a StrictRedis object"""
@@ -1420,9 +1508,17 @@ class Corpus(object):
 	############################################################################
 
 	def vmware_vm_delete(self, vm):
-		"""Deletes off a virtual machine."""
+		"""Deletes a virtual machine. It may be desirarble to then remove the vm
+		from the cache using delete_system_from_cache."""
 
 		return vm.Destroy_Task()
+
+	############################################################################
+
+	def delete_system_from_cache(self, vmware_uuid):
+		cur = self.db.cursor()
+		cur.execute("DELETE FROM `vmware_cache_vm` WHERE `uuid`=%s", (vmware_uuid,))
+		self.db.commit()
 
 	############################################################################
 

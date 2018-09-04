@@ -451,4 +451,13 @@ legend
 	vertical-align: middle;
 }
 
-
+.banner
+{
+	width: 100%;
+	background-color: #ae0000;
+	font-size: 1.4em;
+	color: #ffffff;
+	padding: 0.1em;
+	text-align: center;
+	font-weight: bold;
+}

@@ -56,14 +56,12 @@ PREFERRED_URL_SCHEME       = 'http'
 PERMANENT_SESSION_LIFETIME = timedelta(days=7)
 
 ## LDAP AUTH
-LDAP_URI               = 'ldaps://localhost.localdomain'
-LDAP_USER_SEARCH_BASE  = ''
-LDAP_GROUP_SEARCH_BASE = ''
-LDAP_USER_ATTRIBUTE    = 'sAMAccountName'
-LDAP_ANON_BIND         = True
-LDAP_BIND_USER         = ''
-LDAP_BIND_PW           = ''
-LDAP_ADMIN_GROUP       = 'CN=groupname,OU=localhost,DC=localdomain'
+LDAP_URI            = 'ldaps://localhost.localdomain'
+LDAP_SEARCH_BASE    = ''
+LDAP_USER_ATTRIBUTE = 'sAMAccountName'
+LDAP_ANON_BIND      = True
+LDAP_BIND_USER      = ''
+LDAP_BIND_PW        = ''
 
 # Infoblox server
 INFOBLOX_HOST = ""
@@ -137,3 +135,7 @@ RUBRIK_API_PASS = ''
 
 # Puppet Module Documentation Location
 PUPPET_MODULE_DOCS_URL = None
+
+# UI Banner
+# uncomment the following line to enable the banner
+#BANNER_MESSAGE='This is a development instance'

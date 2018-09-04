@@ -37,10 +37,15 @@ def run(helper, options):
 		if result is not None:
 			cmdb_id = result["cmdb_id"]
 
-			if connector.push_facts(node, cmdb_id, vmware_ram=result["vmware_ram"]):
-				helper.end_event(description='Successfully pushed facts for node ' + str(node.name) + ' with CMDB ID ' + str(cmdb_id))
-			else:
-				helper.end_event(description='Failed to push facts for node ' + str(node.name), success=False)
+			# If there is no CMDB id then there would be nothing to update.
+			if cmdb_id is not None:
+				try:
+					# push the facts
+					connector.push_facts(node, cmdb_id, vmware_ram=result["vmware_ram"])
+				except Exception as e:
+					helper.end_event(description='Failed to push facts for node ' + str(node.name), success=False)
+				else:
+					helper.end_event(description='Successfully pushed facts for node ' + str(node.name) + ' with CMDB ID ' + str(cmdb_id))
 
 		else:
 			# No result found - the certname of this node is not in the cortex db.

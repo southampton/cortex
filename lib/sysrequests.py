@@ -77,6 +77,8 @@ def _build_requests_query(status = None, user = None, search = None, order = Non
 	# If a search term is specified...
 	if search is not None:
 		# Build a filter string
+		# escape wildcards
+		search = search.replace('%', '\%').replace('_', '\_')
 		like_string = '%' + search + '%'
 
 		# If a class name was specified already, we need to AND the query,

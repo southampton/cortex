@@ -18,6 +18,8 @@ def get_ci_count(search = None):
 	# If a search term is specified...
 	if search is not None:
 		# Build a filter string
+		# escape wildcards
+		search = search.replace('%', '\%').replace('_', '\_')
 		like_string = '%' + search + '%'
 
 		# Allow the search to match on name or u_number
@@ -51,6 +53,8 @@ def get_cis(limit_start = None, limit_length = None, search = None, order_by = "
 	# If a search term is specified...
 	if search is not None:
 		# Build a filter string
+		# escape wildcards
+		search = search.replace('%', '\%').replace('_', '\_')
 		like_string = '%' + search + '%'
 
 		# Allow the search to match on name, or u_number
