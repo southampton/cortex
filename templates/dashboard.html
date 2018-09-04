@@ -66,6 +66,7 @@ a.server-link:hover { text-decoration: underline !important; }
 							<th>Purpose</th>
 							<th>Environment</th>
 							<th>Status</th>
+							<th>Allocation Date</th>
 							<th style="width: 1px"></th>
 						</tr>
 					</thead>
@@ -80,6 +81,7 @@ a.server-link:hover { text-decoration: underline !important; }
 							<td>{{ system.allocation_comment }}</td>
 							<td>{{ system.cmdb_environment }}</td>
 							<td>{{ system.cmdb_operational_status }}</td>
+							<td>{{ system.allocation_date }}</td>
 							<td><a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
 						</tr>
 {%- endfor %}
@@ -87,9 +89,10 @@ a.server-link:hover { text-decoration: underline !important; }
 				</table>
 <script type="text/javascript">
 	dataTable = $('#your-systems').DataTable({
-		"pageLength": 10,
-		"order": [[0, 'asc']],
-		"columns": [null, null, null, null, { "orderable": false, "targets": 0 }],
+		"pageLength": 5,
+		"lengthMenu": [[5,10,15,50,100,-1], [5,10,15,50,100,'All']],
+		"order": [[4, 'desc']],
+		"columns": [null, null, null, null, null,{ "orderable": false, "targets": 0 }],
 		"searching": true,
 	});
 	$(window).resize(function() {
