@@ -81,6 +81,9 @@ CMDB_CACHED_CLASSES={'cmdb_ci_server': 'Server'}
 VMWARE={}
 VMWARE_CACHE_UPDATE_TIMEOUT = 1800
 
+# Do not raise exceptions if Cortex cannot talk to the vCenter
+HANDLE_UNAVAILABLE_VCENTER_GRACEFULLY = True
+
 # Neocortex is a daemon 
 NEOCORTEX_KEY='changeme'
 NEOCORTEX_SET_GID='nginx'

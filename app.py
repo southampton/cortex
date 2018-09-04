@@ -370,6 +370,7 @@ Username:             %s
 		  `review_status` tinyint(4) NOT NULL DEFAULT 0,
 		  `review_task` varchar(16) DEFAULT NULL,
 		  `expiry_date` datetime DEFAULT NULL,
+		  `decom_date` datetime DEFAULT NULL,
 		  PRIMARY KEY (`id`),
 		  KEY `class` (`class`),
 		  KEY `name` (`name`(255)),
@@ -509,10 +510,13 @@ Username:             %s
 		 PRIMARY KEY (`username`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		cursor.execute("""DROP TABLE `ldap_group_cache`""")
+
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `ldap_group_cache` (
 		 `username` varchar(64) NOT NULL,
+		 `group_dn` varchar(255) NOT NULL,
 		 `group` varchar(255) NOT NULL,
-		  PRIMARY KEY (`username`, `group`)
+		  PRIMARY KEY (`username`, `group_dn`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `ldap_group_cache_expire` (
@@ -520,6 +524,8 @@ Username:             %s
 		 `expiry_date` datetime DEFAULT NULL,
 		  PRIMARY KEY (`username`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""TRUNCATE `ldap_group_cache_expire`""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_request` (
 		 `id` mediumint(11) NOT NULL AUTO_INCREMENT,
@@ -556,6 +562,11 @@ Username:             %s
 		except Exception as e:
 			pass
 
+		try:
+			cursor.execute("""ALTER TABLE `systems` ADD `decom_date` datetime DEFAULT NULL""")
+		except Exception as e:
+			pass
+
 		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT 
 		 `systems`.`id` AS `id`,
 		 `systems`.`type` AS `type`,
@@ -564,6 +575,7 @@ Username:             %s
 		 `systems`.`name` AS `name`,
 		 `systems`.`allocation_date` AS `allocation_date`,
 		 `systems`.`expiry_date` AS `expiry_date`,
+		 `systems`.`decom_date` AS `decom_date`,
 		 `systems`.`allocation_who` AS `allocation_who`,
 		 `realname_cache`.`realname` AS `allocation_who_realname`,
 		 `systems`.`allocation_comment` AS `allocation_comment`,

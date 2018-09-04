@@ -158,6 +158,20 @@ class Corpus(object):
 		self.db.commit()
 		return cur.lastrowid
 
+
+	################################################################################
+
+	def update_decom_date(self, system_id):
+		"""Update the decom date in Cortex to the current date."""
+
+		# Get a cursor to the database
+		cur = self.db.cursor(mysql.cursors.DictCursor)
+
+		cur.execute("UPDATE `systems` SET `decom_date` = NOW() WHERE `id` = %s", (system_id,)) 
+
+		self.db.commit()
+		
+
 	################################################################################
 
 	def pad_system_name(self, prefix, number, digits):
@@ -1498,7 +1512,8 @@ class Corpus(object):
 
 	def delete_system_from_cache(self, vmware_uuid):
 		cur = self.db.cursor()
-		cur.execute("DELETE FROM `systems` WHERE `vmware_uuid`=%s", (vmware_uuid,))
+		cur.execute("DELETE FROM `vmware_cache_vm` WHERE `uuid`=%s", (vmware_uuid,))
+		self.db.commit()
 
 	############################################################################
 
@@ -1717,3 +1732,52 @@ class Corpus(object):
 	def system_get_repeatable_password(self, id):
 		system = self.get_system_by_id(id)
 		return base64.standard_b64encode(hashlib.sha256(system['name'] + '|' + str(system['build_count']) + '|' + str(system['allocation_date']) + '|' + system['allocation_who'] + '|' + self.config['SECRET_KEY']).digest())[0:16]
+
+	############################################################################
+
+	def satellite6_get_host(self, name):
+
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(name)) 
+		r = requests.get(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS'])
+		)
+
+		r.raise_for_status()
+
+		return r.json()
+
+	############################################################################
+
+	def satellite6_disassociate_host(self, hostid):
+		
+		
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}/disassociate'.format(hostid))
+		r = requests.put(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+		) 
+
+		r.raise_for_status()
+
+		return r.json()
+
+	############################################################################
+
+	def satellite6_delete_host(self, hostid):
+
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(hostid))
+		
+		r = requests.delete(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+		) 
+
+		r.raise_for_status()
+
+		return r.json()
+
+	############################################################################
