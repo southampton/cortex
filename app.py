@@ -548,12 +548,12 @@ Username:             %s
 
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `expiry_date` datetime DEFAULT NULL""")
-		except Exception, e:
+		except Exception as e:
 			pass
 
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `build_count` mediumint(11) DEFAULT 0""")
-		except Exception, e:
+		except Exception as e:
 			pass
 
 		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT 
