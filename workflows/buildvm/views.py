@@ -352,7 +352,7 @@ def validate_data(r, templates, envs):
 		expiry = r.form['expiry']
 		try:
 			expiry = datetime.datetime.strptime(expiry, '%Y-%m-%d')
-		except Exception, e:
+		except Exception as e:
 			raise ValueError('Expiry date must be specified in YYYY-MM-DD format')
 	else:
 		expiry = None
