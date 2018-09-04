@@ -8,6 +8,8 @@ import redis
 import ssl
 import xmlrpclib, httplib # for RHN5 API support
 import re
+import hashlib
+import base64
 
 # For email
 import smtplib
@@ -21,10 +23,6 @@ requests.packages.urllib3.disable_warnings()
 from pyVmomi import vim
 from pyVmomi import vmodl
 from pyVim.connect import SmartConnect, Disconnect
-
-# For checking if a cache_vm task is currently running
-# we talk about to neocortex via RPC
-import Pyro4
 
 from urlparse import urljoin
 from urllib import quote
@@ -319,9 +317,7 @@ class Corpus(object):
 	def vmware_task_wait(self, task):
 		"""Waits for vCenter task to finish"""
 
-		task_done = False
-
-		while not task_done:
+		while True:
 			if task.info.state == 'success':
 				return True
 
@@ -343,9 +339,7 @@ class Corpus(object):
 		does not return a variable.
 		"""
 
-		task_done = False
-
-		while not task_done:
+		while True:
 			if task.info.state == 'success':
 				return
 
@@ -439,12 +433,13 @@ class Corpus(object):
 			guiUnattended.timeZone = timezone
 
 			sysprepIdentity = vim.vm.customization.Identification()
-			sysprepIdentity.domainAdmin = domain_join_user
-			sysprepPassword = vim.vm.customization.Password()
-			sysprepPassword.plainText = True
-			sysprepPassword.value = domain_join_pass
-			sysprepIdentity.domainAdminPassword = sysprepPassword
-			sysprepIdentity.joinDomain = os_domain
+			if domain_join_user is not None and domain_join_pass is not None:
+				sysprepIdentity.domainAdmin = domain_join_user
+				sysprepPassword = vim.vm.customization.Password()
+				sysprepPassword.plainText = True
+				sysprepPassword.value = domain_join_pass
+				sysprepIdentity.domainAdminPassword = sysprepPassword
+				sysprepIdentity.joinDomain = os_domain
 
 			sysprepUserData = vim.vm.customization.UserData()
 			sysprepUserData.computerName = vim.vm.customization.VirtualMachineNameGenerator()
@@ -1666,5 +1661,123 @@ class Corpus(object):
 			return (client,key)
 		except Exception as ex:
 			raise IOError(str(ex))
+
+	############################################################################
+
+	def neocortex_task_get_status(self, task):
+		"""Returns the status of a NeoCortex task"""
+
+		# Get a cursor to the database
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+
+		# Get the task status. The DB commit is required to start a new
+		# transaction so that the default transaction isolation level of
+		# "repeatable read" doesn't cause us any issues. It also releases
+		# any table locks from previous transactions.
+		self.db.commit()
+		curd.execute("SELECT `status` FROM `tasks` WHERE `id` = %s", (task,))
+		status = curd.fetchone()['status']
+
+		# Return the row status
+		return status
+
+	############################################################################
+
+	def neocortex_task_wait(self, task):
+		"""Waits for a NeoCortex task to finish"""
+
+		while True:
+			# Get the task status
+			status = self.neocortex_task_get_status(task)
+
+			# Status of zero is in-progress, so only break out and 
+			# return the status when we're not that
+			if status is not None and int(status) != 0:
+				return status
+
+			## Let's not busy wait CPU 100%...
+			time.sleep(1)
+
+	############################################################################
+
+	def get_system_by_id(self, id):
+		# Query the database
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+		curd.execute("SELECT * FROM `systems_info_view` WHERE `id` = %s", (id,))
+
+		# Return the result
+		return curd.fetchone()
+
+	############################################################################
+
+	def get_system_by_name(self, name, must_have_vmware_uuid=False, must_have_snow_sys_id=False):
+		"""Gets all the information about a system by its hostname."""
+
+		# Build the query
+		query_parts = ["`name` = %s"]
+		if must_have_vmware_uuid:
+			query_parts.append("`vmware_uuid` IS NOT NULL")
+		if must_have_snow_sys_id:
+			query_parts.append("`cmdb_id` IS NOT NULL")
+		
+		# Query the database
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+		curd.execute("SELECT * FROM `systems_info_view` WHERE " + (" AND ".join(query_parts)) + " ORDER BY `allocation_date` DESC", (name,))
+
+		# Return the result
+		return curd.fetchone()
+
+	############################################################################
+
+	def system_get_repeatable_password(self, id):
+		system = self.get_system_by_id(id)
+		return base64.standard_b64encode(hashlib.sha256(system['name'] + '|' + str(system['build_count']) + '|' + str(system['allocation_date']) + '|' + system['allocation_who'] + '|' + self.config['SECRET_KEY']).digest())[0:16]
+
+	############################################################################
+
+	def satellite6_get_host(self, name):
+
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(name)) 
+		r = requests.get(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS'])
+		)
+
+		r.raise_for_status()
+
+		return r.json()
+
+	############################################################################
+
+	def satellite6_disassociate_host(self, hostid):
+		
+		
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}/disassociate'.format(hostid))
+		r = requests.put(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+		) 
+
+		r.raise_for_status()
+
+		return r.json()
+
+	############################################################################
+
+	def satellite6_delete_host(self, hostid):
+
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(hostid))
+		
+		r = requests.delete(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+		) 
+
+		r.raise_for_status()
+
+		return r.json()
 
 	############################################################################

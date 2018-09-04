@@ -89,24 +89,16 @@ def get_system_count(class_name = None, search = None, hide_inactive = True, onl
 def get_system_by_id(id):
 	"""Gets all the information about a system by its database ID."""
 
-	# Query the database
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute("SELECT * FROM `systems_info_view` WHERE `id` = %s", (id,))
-
-	# Return the result
-	return curd.fetchone()
+	corpus = Corpus(g.db, app.config)
+	return corpus.get_system_by_id(id)
 
 ################################################################################
 
-def get_system_by_name(name):
+def get_system_by_name(name, must_have_vmware_uuid=False, must_have_snow_sys_id=False):
 	"""Gets all the information about a system by its hostname."""
 
-	# Query the database
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute("SELECT * FROM `systems_info_view` WHERE `name` = %s", (name,))
-
-	# Return the result
-	return curd.fetchone()
+	corpus = Corpus(g.db, app.config)
+	return corpus.get_system_by_name(name, must_have_vmware_uuid, must_have_snow_sys_id)
 
 ################################################################################
 
@@ -231,12 +223,8 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 	# Validate the name of the column to sort by (this prevents errors and
 	# also prevents SQL from accidentally being injected). Add the column
 	# name on to the query
-	if order in ["name", "number", "allocation_comment", "allocation_date", "allocation_who"]:
+	if order in ["id", "name", "number", "allocation_comment", "allocation_date", "allocation_who", 'cmdb_operational_status', 'cmdb_environment']:
 		query = query + "`" + order + "`"
-	elif order == "cmdb_operational_status":
-		query = query + "`cmdb_operational_status`"
-	elif order == "cmdb_environment":
-		query = query + "`cmdb_environment`"
 
 	# Determine which direction to order in, and add that on
 	if order_asc:
@@ -338,3 +326,17 @@ def power_off(id):
 def reset(id):
 	vm = get_vm_by_system_id(id)
 	return vm.Reset()
+
+################################################################################
+
+def increment_build_count(id):
+	# Increment the build count
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('UPDATE `systems` SET `build_count` = `build_count` + 1 WHERE `id` = %s', (id,))
+	g.db.commit()
+
+################################################################################
+
+def generate_repeatable_password(id):
+	corpus = Corpus(g.db, app.config)
+	return corpus.system_get_repeatable_password(id)

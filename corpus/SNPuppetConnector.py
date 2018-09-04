@@ -294,7 +294,7 @@ class PuppetDB:
 		self.ssl_cert = ssl_cert
 		self.ssl_key = ssl_key
 		self.ssl_verify = ssl_verify
-		self.facts = None
+		self.facts = {}
 
 		# Connect
 		self.connect()
@@ -310,8 +310,8 @@ class PuppetDB:
 
 	def get_all_facts(self, node_object, cached=True):
 		"""Get facts about this node from puppet."""
-		if self.facts and cached:
-			return self.facts
+		if node_object.name in self.facts and cached:
+			return self.facts[node_object.name]
 		else:
 			facts = node_object.facts()
 			facts_dict = {}
@@ -319,7 +319,7 @@ class PuppetDB:
 				for fact in facts:
 					facts_dict[fact.name] = fact.value
 
-				self.facts = facts_dict
+				self.facts[node_object.name] = facts_dict
 
 			return facts_dict
 

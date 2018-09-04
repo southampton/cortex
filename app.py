@@ -510,10 +510,13 @@ Username:             %s
 		 PRIMARY KEY (`username`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		cursor.execute("""DROP TABLE `ldap_group_cache`""")
+
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `ldap_group_cache` (
 		 `username` varchar(64) NOT NULL,
+		 `group_dn` varchar(255) NOT NULL,
 		 `group` varchar(255) NOT NULL,
-		  PRIMARY KEY (`username`, `group`)
+		  PRIMARY KEY (`username`, `group_dn`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `ldap_group_cache_expire` (
@@ -521,6 +524,8 @@ Username:             %s
 		 `expiry_date` datetime DEFAULT NULL,
 		  PRIMARY KEY (`username`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""TRUNCATE `ldap_group_cache_expire`""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_request` (
 		 `id` mediumint(11) NOT NULL AUTO_INCREMENT,
@@ -549,7 +554,17 @@ Username:             %s
 
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `expiry_date` datetime DEFAULT NULL""")
-		except Exception, e:
+		except Exception as e:
+			pass
+
+		try:
+			cursor.execute("""ALTER TABLE `systems` ADD `build_count` mediumint(11) DEFAULT 0""")
+		except Exception as e:
+			pass
+
+		try:
+			cursor.execute("""ALTER TABLE `systems` ADD `decom_date` datetime DEFAULT NULL""")
+		except Exception as e:
 			pass
 
 		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT 
@@ -567,6 +582,7 @@ Username:             %s
 		 `systems`.`review_status` AS `review_status`,
 		 `systems`.`review_task` AS `review_task`,
 		 `systems`.`cmdb_id` AS `cmdb_id`,
+		 `systems`.`build_count` AS `build_count`,
 		 `sncache_cmdb_ci`.`sys_class_name` AS `cmdb_sys_class_name`,
 		 `sncache_cmdb_ci`.`name` AS `cmdb_name`,
 		 `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status`,
@@ -741,7 +757,12 @@ Username:             %s
 		  (1, "workflows.all"),
 		  (1, "sysrequests.all.view"),
 		  (1, "sysrequests.all.approve"),
-		  (1, "sysrequests.all.reject")""")
+		  (1, "sysrequests.all.reject"),
+		  (1, "api.get"),
+		  (1, "api.post"),
+		  (1, "api.put"),
+		  (1, "api.delete")
+		""")
 
 		## Close database connection
 		temp_db.close()
@@ -791,6 +812,11 @@ Username:             %s
 			{'name': 'sysrequests.all.approve',	       'desc': 'Approve any system request'},
 			{'name': 'sysrequests.all.reject',	       'desc': 'Reject any system request'},
 			{'name': 'control.all.vmware.power',	       'desc': 'Contol the power settings of any VM'},
+
+			{'name': 'api.get',			       'desc': 'Send GET requests to the Cortex API.'},
+			{'name': 'api.post',			       'desc': 'Send POST requests to the Cortex API.'},
+			{'name': 'api.put',			       'desc': 'Send PUT requests to the Cortex API.'},
+			{'name': 'api.delete',			       'desc': 'Send DELETE requests to the Cortex API.'},
 		]
 
 		self.workflow_permissions = []

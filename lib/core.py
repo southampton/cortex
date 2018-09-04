@@ -112,7 +112,7 @@ def task_get(id):
 def task_render_status(task, template):
 	# Get the events for the task
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute("SELECT `id`, `source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end` FROM `events` WHERE `related_id` = %s AND `source` = 'neocortex.task' ORDER BY `start`", (task['id'],))
+	curd.execute("SELECT `id`, `source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end` FROM `events` WHERE `related_id` = %s AND `source` = 'neocortex.task' ORDER BY `start`, `id`", (task['id'],))
 	events = curd.fetchall()
 
 	return make_response((render_template(template, id=task['id'], task=task, events=events, title="Task Status"), 200, {'Cache-Control': 'no-cache'}))
