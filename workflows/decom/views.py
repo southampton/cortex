@@ -161,13 +161,13 @@ def decom_step2(id):
 	try:
 		try:
 			rsys = corpus.satellite6_get_host(system['name'])
-		except request.exceptions.RequestException as ex:
+		except requests.exceptions.RequestException as ex:
 			# Check if the error was raised due to not being able to find the system.
 			if ex.response.status_code != 404:
 				flash("Warning - An error occured when communicating with Satellite 6: " + str(ex), "alert-warning")
 		else:
 			saturl = urljoin(app.config['SATELLITE6_URL'], 'hosts/{0}'.format(rsys['id'])) 
-			actions.append({'id': 'satellite6.delete', 'desc': 'Delete the host from Satellite 6', 'detail': '{0}, Satellite 6 ID <a target=""_blank" href="{1}">{2}</a>'.format(rsys['name'], saturl, sys['id']), 'data': {'id':rsys['id']}})
+			actions.append({'id': 'satellite6.delete', 'desc': 'Delete the host from Satellite 6', 'detail': '{0}, Satellite 6 ID <a target=""_blank" href="{1}">{2}</a>'.format(rsys['name'], saturl, rsys['id']), 'data': {'id':rsys['id']}})
 				
 	except Exception as ex:
 		flash("Warning - An error occured when communicating with Satellite 6: " + str(ex), "alert-warning")

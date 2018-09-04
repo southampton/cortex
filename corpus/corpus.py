@@ -1669,7 +1669,7 @@ class Corpus(object):
 
 	############################################################################
 	
-	def satellite6_get_host(name):
+	def satellite6_get_host(self, name):
 
 		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(name)) 
 		r = requests.get(
@@ -1684,7 +1684,7 @@ class Corpus(object):
 
 	############################################################################
 
-	def satellite6_disassociate_host(hostid):
+	def satellite6_disassociate_host(self, hostid):
 		
 		
 		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}/disassociate'.format(hostid))
@@ -1700,7 +1700,7 @@ class Corpus(object):
 
 	############################################################################
 
-	def satellite6_delete_host(hostid):
+	def satellite6_delete_host(self, hostid):
 
 		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(hostid))
 		
