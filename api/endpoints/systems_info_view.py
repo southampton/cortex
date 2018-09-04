@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, session
 from flask_restplus import Resource
 import math
 
@@ -45,10 +45,18 @@ class SystemsInfoViewCollection(Resource):
 		if does_user_have_permission("systems.all.view"):
 			only_allocated_by = None
 		else:
-			only_allocated_by = request.authorization.username
+			# Show the systems where the user has permissions AND the ones they allocated.
+			show_allocated_and_perms = True
+			if request.authorization:
+				only_allocated_by = request.authorization.username
+			else:
+				if 'username' in session:
+					only_allocated_by = session['username']
+				else:
+					raise InvalidPermissionException
 
-		total = cortex.lib.systems.get_system_count(class_name=class_name, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, only_allocated_by=only_allocated_by)
-		results = cortex.lib.systems.get_systems(class_name=class_name, order='id', limit_start=limit_start, limit_length=limit_length, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, only_allocated_by=only_allocated_by)
+		total = cortex.lib.systems.get_system_count(class_name=class_name, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by)
+		results = cortex.lib.systems.get_systems(class_name=class_name, order='id', limit_start=limit_start, limit_length=limit_length, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by)
 
 		if not results:
 			raise NoResultsFoundException

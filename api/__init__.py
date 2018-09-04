@@ -49,9 +49,9 @@ def api_login_required(require_permission=None):
 				# Log a successful login
 				cortex.lib.core.log(__name__, 'cortex.api.login', '' + session['username'] + ' logged in using ' + request.user_agent.string)
 
-				if require_permission is not None:
-					if not cortex.lib.user.does_user_have_permission('api.{0}'.format(require_permission)):
-						raise InvalidPermissionException
+			if require_permission is not None:
+				if not cortex.lib.user.does_user_have_permission('api.{0}'.format(require_permission)):
+					raise InvalidPermissionException
 			return f(*args, **kwargs)
 		return decorated_function
 	return decorator
