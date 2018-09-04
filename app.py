@@ -557,6 +557,11 @@ Username:             %s
 		except Exception, e:
 			pass
 
+		try:
+			cursor.execute("""ALTER TABLE `systems` ADD `decom_date` datetime DEFAULT NULL""")
+		except Exception as e:
+			pass
+
 		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT 
 		 `systems`.`id` AS `id`,
 		 `systems`.`type` AS `type`,
