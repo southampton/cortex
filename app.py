@@ -371,6 +371,7 @@ Username:             %s
 		  `review_task` varchar(16) DEFAULT NULL,
 		  `expiry_date` datetime DEFAULT NULL,
 		  `decom_date` datetime DEFAULT NULL,
+		  `built_for` varchar(64) DEFAULT NULL,
 		  PRIMARY KEY (`id`),
 		  KEY `class` (`class`),
 		  KEY `name` (`name`(255)),
@@ -566,6 +567,12 @@ Username:             %s
 			cursor.execute("""ALTER TABLE `systems` ADD `decom_date` datetime DEFAULT NULL""")
 		except Exception as e:
 			pass
+		
+		try:
+			cursor.execute("""ALTER TABLE `systems` ADD `built_for` varchar(64) DEFAULT NULL""")
+		except Exception as e:
+			pass
+
 
 		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT 
 		 `systems`.`id` AS `id`,
@@ -577,12 +584,14 @@ Username:             %s
 		 `systems`.`expiry_date` AS `expiry_date`,
 		 `systems`.`decom_date` AS `decom_date`,
 		 `systems`.`allocation_who` AS `allocation_who`,
-		 `realname_cache`.`realname` AS `allocation_who_realname`,
+		 `who_realname`.`realname` AS `allocation_who_realname`,
 		 `systems`.`allocation_comment` AS `allocation_comment`,
 		 `systems`.`review_status` AS `review_status`,
 		 `systems`.`review_task` AS `review_task`,
 		 `systems`.`cmdb_id` AS `cmdb_id`,
 		 `systems`.`build_count` AS `build_count`,
+		 `systems`.`built_for` AS `built_for`,
+		 `for_realname`.`realname` AS `built_for_realname`,
 		 `sncache_cmdb_ci`.`sys_class_name` AS `cmdb_sys_class_name`,
 		 `sncache_cmdb_ci`.`name` AS `cmdb_name`,
 		 `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status`,
@@ -613,7 +622,8 @@ Username:             %s
 		LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`
 		LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid`
 		LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` 
-		LEFT JOIN `realname_cache` ON `systems`.`allocation_who` = `realname_cache`.`username`""")
+		LEFT JOIN `realname_cache` AS  `who_realname` ON `systems`.`allocation_who` = `who_realname`.`username`
+		LEFT JOIN `realname_cache` AS  `for_realname` ON `systems`.`built_for` = `for_realname`.`username`""")
        	
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `roles` (
 		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,

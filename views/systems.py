@@ -504,6 +504,12 @@ def system(id):
 	else:
 		system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
 
+	if system['built_for_realname'] is not None:
+		system['built_for'] = system['built_for_realname'] + ' (' + system['built_for'] + ')'
+	else:	
+		if system['built_for'] is not None:
+			system['built_for'] = cortex.lib.user.get_user_realname(system['built_for']) + ' (' + system['built_for'] + ')'
+
 	return render_template('systems/view.html', system=system, system_class=system_class, active='systems', title=system['name'])
 
 ################################################################################
