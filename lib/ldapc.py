@@ -35,7 +35,7 @@ def auth(username,password):
 
 	# Now search for the user object to bind as
 	try:
-		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + ldap.filter.escape_filter_chars(username))
+		results = l.search_s(app.config['LDAP_USER_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + ldap.filter.escape_filter_chars(username))
 	except ldap.LDAPError as e:
 		return False
 
@@ -75,7 +75,7 @@ def get_users_groups_from_ldap(username):
 
 	# Now search for the user object
 	try:
-		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
+		results = l.search_s(app.config['LDAP_USER_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
 	except ldap.LDAPError as e:
 		return None
 
@@ -105,13 +105,13 @@ def get_users_groups_from_ldap(username):
 
 						matched = cn_regex.match(group)
 						if matched:
-							group = matched.group(2)
+							group_cn = matched.group(2)
 						else:
 							## didn't find the cn, so skip this 'group'
 							continue
 
-						curd.execute('INSERT INTO `ldap_group_cache` (`username`, `group`) VALUES (%s,%s)', (username,group.lower()))
-						groups.append(group)
+						curd.execute('INSERT INTO `ldap_group_cache` (`username`, `group_dn`, `group`) VALUES (%s, %s, %s)', (username, group.lower(), group_cn.lower()))
+						groups.append(group_cn.lower())
 
 					## Set the cache expiration
 					curd.execute('REPLACE INTO `ldap_group_cache_expire` (`username`, `expiry_date`) VALUES (%s,NOW() + INTERVAL 15 MINUTE)', (username,))
@@ -119,7 +119,8 @@ def get_users_groups_from_ldap(username):
 					## Commit the transaction
 					g.db.commit()
 
-					return groups
+					# Return a sorted list so that it matches what we get from MySQL
+					return sorted(groups)
 				else:
 					return None
 			else:
@@ -138,7 +139,7 @@ def get_user_realname_from_ldap(username):
 	
 	# Now search for the user object
 	try:
-		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, app.config['LDAP_USER_ATTRIBUTE'] + "=" + username)
+		results = l.search_s(app.config['LDAP_USER_SEARCH_BASE'], ldap.SCOPE_SUBTREE, app.config['LDAP_USER_ATTRIBUTE'] + "=" + username)
 	except ldap.LDAPError as e:
 		return username
 
@@ -184,7 +185,7 @@ def does_group_exist(groupname):
 
 	# Now search for the user object to bind as
 	try:
-		results = l.search_s(app.config['LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, "cn" + "=" + ldap.filter.escape_filter_chars(groupname))
+		results = l.search_s(app.config['LDAP_GROUP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, "cn" + "=" + ldap.filter.escape_filter_chars(groupname))
 	except ldap.LDAPError as e:
 		return False
 
