@@ -78,6 +78,9 @@ CMDB_CACHED_CLASSES={'cmdb_ci_server': 'Server'}
 # VMware configuration
 VMWARE={}
 
+# Do not raise exceptions if Cortex cannot talk to the vCenter
+HANDLE_UNAVAILABLE_VCENTER_GRACEFULLY = True
+
 # Neocortex is a daemon 
 NEOCORTEX_KEY='changeme'
 WORKFLOWS_DIR='/data/cortex/workflows/'
