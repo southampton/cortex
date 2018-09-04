@@ -184,28 +184,6 @@ class Corpus(object):
 
 	################################################################################
 
-	def infoblox_create_host(self, name, subnet):
-		payload = {'name': name, "ipv4addrs": [{"ipv4addr":"func:nextavailableip:" + subnet}],}
-		r = requests.post("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/record:host", data=json.dumps(payload), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
-
-		if r.status_code == 201:
-			objectid = str(r.json())
-			r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + objectid, auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
-
-			if r.status_code == 200:
-				response = r.json()
-
-				try:
-					return response['ipv4addrs'][0]['ipv4addr']
-				except Exception as ex:
-					raise RuntimeError("Malformed JSON response from Infoblox API")
-			else:
-				raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
-		else:
-			raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
-
-	################################################################################
-
 	def pad_system_name(self, prefix, number, digits):
 		"""Takes a class name ('prefix') a system number, and the number of
 		digits that class should have in its name and formats a string to that
@@ -216,8 +194,23 @@ class Corpus(object):
 
 	################################################################################
 
-	def infoblox_create_host(self, name, subnet):
-		payload = {'name': name, "ipv4addrs": [{"ipv4addr":"func:nextavailableip:" + subnet}],}
+	def infoblox_create_host(self, name, subnet = None, aliases = None, ip = None):
+		payload = {'name': name}
+
+		if subnet is None and ip is None:
+			raise ValueError('The subnet and ip parameters cannot both be None')
+
+		# If an IP is not given, make Infoblox allocate it
+		if ip is None:
+			payload['ipv4addrs'] = [{'ipv4addr': 'func:nextavailableip:' + subnet}]
+		else:
+			payload['ipv4addrs'] = [{'ipv4addr': ip}]
+
+		# Add on host aliases (CNAMEs) if given
+		if aliases is not None and len(aliases) > 0:
+			payload['aliases'] = aliases
+
+		# Make the request to create the object
 		r = requests.post("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/record:host", data=json.dumps(payload), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
 
 		if r.status_code == 201:
@@ -235,6 +228,93 @@ class Corpus(object):
 				raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
 		else:
 			raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
+
+	################################################################################
+
+	def infoblox_add_host_record_alias(self, ref, new_aliases):
+		"""Adds an alias (or aliases) to a host record in Infoblox."""
+
+		# Perform the GET request to get the current list of aliases
+		r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref) + "?_return_fields%2B=aliases", auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+		if r is None:
+			raise Exception("Failed to get current aliases for host record: request failed")
+
+		if r.status_code != 200:
+			raise Exception("Failed to get current aliases for host record. Infoblox returned error code " + str(r.status_code))
+
+		# Extract the list of aliases from JSON
+		try:
+			json_data = r.json()
+		except Exception as e:
+			raise Exception("Failed to decode JSON returned from Infoblox: " + str(e))
+
+		if 'aliases' in json_data:
+			aliases = r.json()['aliases']
+		else:
+			aliases = []
+
+		# Append the new alias(es) - only if they don't already exist
+		if type(new_aliases) is str or type(new_aliases) is unicode:
+			if new_aliases not in aliases:
+				aliases.append(new_aliases)
+		elif type(new_aliases) is list:
+			for new_alias in new_aliases:
+				if new_alias not in aliases:
+					aliases.append(new_alias)
+
+		# If the number of aliases now is the same as it was before, there's no need to do the update
+		if len(aliases) != len(new_aliases):
+			# Perform the PUT request on the given host record reference
+			r = requests.put("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref), data=json.dumps({'aliases': aliases}), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+			if r is None:
+				raise Exception("Failed to update host record: request failed")
+
+			if r.status_code != 200:
+				raise Exception("Failed to update host record. Infoblox returned error code " + str(r.status_code))
+
+	################################################################################
+
+	def infoblox_remove_host_record_alias(self, ref, remove_aliases):
+		"""Removes an alias (or aliases) to a host record in Infoblox."""
+
+		# Perform the GET request to get the current list of aliases
+		r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref) + "?_return_fields%2B=aliases", auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+		if r is None:
+			raise Exception("Failed to get current aliases for host record: request failed")
+
+		if r.status_code != 200:
+			raise Exception("Failed to get current aliases for host record. Infoblox returned error code " + str(r.status_code))
+
+		# Extract the list of aliases from JSON
+		try:
+			json_data = r.json()
+		except Exception as e:
+			raise Exception("Failed to decode JSON returned from Infoblox: " + str(e))
+
+		if 'aliases' in json_data:
+			aliases = r.json()['aliases']
+		else:
+			aliases = []
+
+		# Remove the alias(es)
+		if type(remove_aliases) is str or type(remove_aliases) is unicode:
+			aliases.remove(remove_aliases)
+		elif type(remove_aliases) is list:
+			for alias in remove_aliases:
+				aliases.remove(alias)
+
+		# Perform the PUT request on the given host record reference
+		r = requests.put("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref), data=json.dumps({'aliases': aliases}), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+		if r is None:
+			raise Exception("Failed to update host record: request failed")
+
+		if r.status_code != 200:
+			raise Exception("Failed to update host record. Infoblox returned error code " + str(r.status_code))
+
 
 	################################################################################
 
@@ -252,12 +332,30 @@ class Corpus(object):
 
 	################################################################################
 
-	def infoblox_get_host_refs(self, fqdn):
+	def infoblox_get_host_by_ref(self, ref):
+		"""Gets a host record from Infoblox by reference"""
+
+		# Get the object
+		r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+		if r is None:
+			raise Exception("Failed to get host record: request failed")
+
+		if r.status_code != 200:
+			raise Exception("Failed to get host record. Infoblox returned error code " + str(r.status_code))
+
+		return r.json()
+
+	################################################################################
+
+	def infoblox_get_host_refs(self, fqdn, view=None):
 		"""Returns a list of host references (Infoblox record IDs) from Infoblox
 		matching exactly the specified fully qualified domain name (FQDN). If no
 		records are found None is returned. If an error occurs LookupError is raised"""
 
 		payload = {'name:': fqdn}
+		if view is not None:
+			payload['view'] = view
 		r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/record:host", data=json.dumps(payload), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
 
 		results = []

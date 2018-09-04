@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+{% block head -%}
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+<div class="page-header">
+<h3>Create NLB Web Service</h3>
+</div>
+<div class="row">
+	<div class="col-md-{% if details.ssl == 1 %}9{% else %}12{% endif %}">
+		<h4 class="text-success" style="margin-top:0px">Validation Complete</h4>
+		<p>Cortex has finished reviewing the provided information and load balancer configuration and has determined what it needs to do to complete your request. Please review the following information carefully to make sure that Cortex is about to do exactly what you want, particularly if there are warnings shown below.</p>
+{%- if 'warnings' in details and details['warnings']|length > 0 %}
+		<h4 class="text-warning">Warnings</h4>
+		<p>There were some inconsistencies in either the information provided or with the current load balancer configuration. Please read the following warnings to ensure that continuing will not cause any unexpected consequences. Once you have read them, to be able to proceed with creation, please click the <strong>Acknowledge Warnings</strong> button.</p>
+		<ul>
+{%-     for warning in details['warnings'] %}
+			<li>{{ warning }}</li>
+{%-     endfor %}
+		</ul>
+		<p class="text-center"><button class="btn btn-sm btn-warning" id="acknowledge-warnings">Acknowledge Warnings</button></p>
+{%- endif %}
+		<h4>Actions</h4>
+{%- if details['actions']|length > 0 %}
+		<p>The list below details the actions that Cortex will perform to create the service. Please verify that these are the actions you wish Cortex to perform before continuing.
+		<ul>
+{%-     for action in details['actions'] %}
+			<li>
+				<strong>{{ action.pop('id') }}:</strong> {{ action.pop('action_description') }}<br />
+				{% with a = action.pop('content', '') %}<code>{{ action }}</code>{% endwith %}
+			</li>
+{%-     endfor %}
+		</ul>
+{%- else %}
+		<p>There are no actions to complete. This likely means that the service is already set up on the load balancer.</p>
+{%- endif %}
+	</div>
+{%- if details.ssl_have_cert == 1 %}
+	<div class="col-md-3">
+		<h4 style="margin-top:0px">SSL Certificate Subject</h4>
+		<strong>Common Name:</strong> {{ details['ssl_cert_subject_cn'] }}<br />
+		<strong>Organisational Unit Name:</strong> {{ details['ssl_cert_subject_ou'] }}<br />
+		<strong>Organisation:</strong> {{ details['ssl_cert_subject_o'] }}<br />
+		<strong>Locality:</strong> {{ details['ssl_cert_subject_l'] }}<br />
+		<strong>State:</strong> {{ details['ssl_cert_subject_st'] }}<br />
+		<strong>Country:</strong> {{ details['ssl_cert_subject_c'] }}<br />
+		<h4>SSL Certificate Issuer</h4>
+		<strong>Common Name:</strong> {{ details['ssl_cert_issuer_cn'] }}<br />
+		<strong>Organisational Unit Name:</strong> {{ details['ssl_cert_issuer_ou'] }}<br />
+		<strong>Organisation:</strong> {{ details['ssl_cert_issuer_o'] }}<br />
+		<strong>Locality:</strong> {{ details['ssl_cert_issuer_l'] }}<br />
+		<strong>State:</strong> {{ details['ssl_cert_issuer_st'] }}<br />
+		<strong>Country:</strong> {{ details['ssl_cert_issuer_c'] }}<br />
+		<h4>SSL Certificate Details</h4>
+		<strong>Is Self-Signed:</strong> {{ details['ssl_cert_self_signed'] }}<br />
+		<strong>Valid After:</strong> {{ details['ssl_cert_notbefore'] }}<br />
+		<strong>Valid Until:</strong> {{ details['ssl_cert_notafter'] }}<br />
+		<strong>Private Key Size:</strong> {{ details['ssl_key_size'] }} bit<br />
+{%- if 'ssl_cert_subjectAltName' in details %}
+		<strong>Subject Alternate Names:</strong>
+{%- endif %}
+{%-     if details['ssl_cert_subjectAltName'] | length > 0 %}
+		<ul>
+{%-         for entry in details['ssl_cert_subjectAltName'] %}
+			<li>{{ entry }} </li>
+{%-         endfor %}
+{%-     endif %}
+	</div>
+{%- endif %}
+</div>
+{%- if details['actions']|length > 0 %}
+<div class="row">
+	<div class="col-md-12">
+		<p class="lead text-center">After reading and fully understanding everything above, and subject to appropriate change control, if you are happy to proceed with the creation of the service on the load balancer, please&nbsp;click&nbsp;the&nbsp;<strong>Create&nbsp;Service</strong>&nbsp;button below to start the task. If there were warnings, you must click <strong>Acknowledge&nbsp;Warnings</strong> first.</p>
+		<div class="text-center">
+			<form method="POST" action="validate">
+				<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+				<input type="hidden" name="actions" value="{{ json_data }}" />
+				<input type="submit" class="btn btn-lg btn-success" value="Create Service" name="submit" id="submit" {% if 'warnings' in details and details['warnings']|length > 0 %}disabled="disabled" {% endif %}/>
+			</form>
+		</div>
+	</div>
+</div>
+{%- endif %}
+<script>
+$('#acknowledge-warnings').click(function (event) {
+	$('#acknowledge-warnings').removeClass('btn-warning').addClass('btn-success').attr('disabled', 'disabled').html('Warnings Acknowledged');
+{%- if details['actions']|length > 0 %}
+	$('#submit').removeAttr('disabled');
+{%- endif %}
+});
+</script>
+{% endblock %}
