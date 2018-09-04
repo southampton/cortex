@@ -30,11 +30,11 @@ def run(helper, options):
 
 					try:
 						helper.lib.vmware_vm_poweroff(vm)
-					except Exception, e:
+					except Exception as e:
 						failed = True
 						pass
 
-				except Exception, e:
+				except Exception as e:
 					failed = True				
 					pass
 
