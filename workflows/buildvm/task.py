@@ -32,6 +32,7 @@ def run(helper, options):
 		os_names = options['wfconfig']['OS_NAMES']
 		os_disks = options['wfconfig']['OS_DISKS']
 		vm_folder_name = None
+		dns_aliases = []
 	elif workflow == 'sandbox':
 		prefix = options['wfconfig']['SB_PREFIX']
 		vcenter_tag = options['wfconfig']['SB_VCENTER_TAG']
@@ -51,6 +52,7 @@ def run(helper, options):
 		os_names = options['wfconfig']['SB_OS_NAMES']
 		os_disks = options['wfconfig']['SB_OS_DISKS']
 		vm_folder_name = None
+		dns_aliases = []
 	elif workflow == 'student':
 		prefix = options['wfconfig']['STU_PREFIX']
 		vcenter_tag = options['wfconfig']['STU_VCENTER_TAG']
@@ -61,6 +63,11 @@ def run(helper, options):
 		win_os_domain = options['wfconfig']['STU_WIN_OS_DOMAIN']
 		win_dev_os_domain = options['wfconfig']['STU_WIN_DEV_OS_DOMAIN']
 		sn_location = options['wfconfig']['STU_SN_LOCATION']
+		dns_servers = options['wfconfig']['STU_DNS_SERVERS']
+		dns_domain = options['wfconfig']['STU_DNS_DOMAIN']
+		network = options['wfconfig']['STU_NETWORKS'][options['network']]
+		gateway = options['wfconfig']['STU_GATEWAYS'][options['network']]
+		netmask = options['wfconfig']['STU_NETMASKS'][options['network']]
 		network_name = options['wfconfig']['STU_NETWORK_NAMES'][options['network']]
 		cluster_storage_pools = options['wfconfig']['STU_CLUSTER_STORAGE_POOLS']
 		cluster_rpool = options['wfconfig']['STU_CLUSTER_RPOOL']
@@ -69,35 +76,28 @@ def run(helper, options):
 		os_names = options['wfconfig']['STU_OS_NAMES']
 		os_disks = options['wfconfig']['STU_OS_DISKS']
 		vm_folder_name = options['wfconfig']['STU_VM_FOLDER']
+		dns_aliases = options['dns_aliases']
 
 	## Allocate a hostname #################################################
-	# student vms don't need a name
-	if workflow == 'student':
-		system_name = options['hostname']
-		# Start the task
-		helper.event("allocate_name", "Allocating a system name")
 
-		# Allocate the name
-		system_dbid = helper.lib.insert_name(system_name, options['purpose'], helper.username, expiry=options['expiry'])
-	else:
-		# Start the task
-		helper.event("allocate_name", "Allocating a '" + prefix + "' system name")
+	# Start the task
+	helper.event("allocate_name", "Allocating a '" + prefix + "' system name")
 
-		# Allocate the name
-		system_info = helper.lib.allocate_name(prefix, options['purpose'], helper.username, expiry=options['expiry'])
+	# Allocate the name
+	system_info = helper.lib.allocate_name(prefix, options['purpose'], helper.username, expiry=options['expiry'])
 
-		# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
-		system_name = system_info.keys()[0]
-		system_dbid = system_info.values()[0]
+	# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
+	system_name = system_info.keys()[0]
+	system_dbid = system_info.values()[0]
 
-		# End the event
-		helper.end_event(description="Allocated system name: " + system_name)
+	# End the event
+	helper.end_event(description="Allocated system name: " + system_name)
 
 
 
 	## Allocate an IPv4 Address and create a host object (standard only) ###
 
-	if workflow == 'standard':
+	if workflow in ['standard', 'student']:
 		# Start the event
 		helper.event("allocate_ipaddress", "Allocating an IP address from " + network)
 
@@ -125,8 +125,8 @@ def run(helper, options):
 	os_name =       os_names[options['template']]
 	os_disk_size =  os_disks[options['template']]
 
-	# For RHEL6, RHEL7 or Ubuntu:
-	if options['template'] in ['rhel6', 'rhel7', 'rhel6c', 'ubuntu_14.04_lts']:
+	# For RHEL6, RHEL7:
+	if options['template'] in ['rhel6', 'rhel7', 'rhel6c']:
 		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
 		vm_spec = None
 
@@ -140,12 +140,13 @@ def run(helper, options):
 				vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='devdomain.soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
 			else:
 				vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_PROD_JOIN_USER'], domain_join_pass=helper.config['AD_PROD_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
-		elif workflow in ['sandbox', 'student']:
+		elif workflow == 'sandbox':
 			if options['env'] == 'dev':
 				vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain=win_dev_os_domain, timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
 			else:
 				vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain=win_os_domain, timezone=85, domain_join_user=helper.config['AD_PROD_JOIN_USER'], domain_join_pass=helper.config['AD_PROD_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
-
+		elif workflow == 'student':
+			vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, timezone=85, fullname=win_full_name, orgname=win_org_name)
 
 	# Anything else
 	else:
@@ -276,9 +277,9 @@ def run(helper, options):
 
 	# Set up the necessary values in redis
 	helper.lib.redis_set_vm_data(vm, "hostname", system_name)
-	if workflow == 'standard':
+	if ipv4addr is not None:
 		helper.lib.redis_set_vm_data(vm, "ipaddress", ipv4addr)
-	elif workflow in ['sandbox', 'student']:
+	else:
 		helper.lib.redis_set_vm_data(vm, "ipaddress", 'dhcp')
 
 	# Power on the VM
@@ -333,6 +334,47 @@ def run(helper, options):
 
 	## Link ticket to CI (standard VM only) ################################
 
+	if workflow == 'standard' and 'CREATE_CI_RELS' in options['wfconfig'] and len(options['wfconfig']['CREATE_CI_RELS']) > 0:
+		helper.event("sn_create_ci_rels", "Creating default ServiceNow CMDB CI relationships")
+		if sys_id is not None:
+			fails = 0
+			for rel in options['wfconfig']['CREATE_CI_RELS']:
+				# Extract relationship details
+				rel_parent = rel['parent']
+				rel_child = rel['child']
+				rel_type = rel['type']
+
+				# Check for config mistakes
+				if (rel_parent is None and rel_child is None) or rel_type is None:
+					fails += 1
+					continue
+
+				# Change parent/child to server CI sys_id where necessary
+				if rel_parent is None:
+					rel_parent = sys_id
+				if rel_child is None:
+					rel_child = sys_id
+
+				# Create the relationship
+				try:
+					helper.lib.servicenow_add_ci_relationship(rel_parent, rel_child, rel_type)
+				except Exception as e:
+					fails += 1
+
+			# Log the event ending dependant on how well that went
+			if fails == 0:
+				helper.end_event(success=True, description="Created " + str(len(options['wfconfig']['CREATE_CI_RELS'])) + " ServiceNow CI relationships")
+			elif fails == len(options['wfconfig']['CREATE_CI_RELS']):
+				helper.end_event(success=False, description="Failed to create any CI relationships")
+			else:
+				helper.end_event(success=False, warning=True, description="Failed to create " + str(fails) + "/" + str(len(options['wfconfig']['CREATE_CI_RELS'])) + " CI relationships")
+		else:
+			helper.end_event(success=False, description="Cannot create CMDB CI relationships - server CI creation failed")
+	
+
+
+	## Link ticket to CI (standard VM only) ################################
+
 	# If we succeeded in creating a CI, try linking the task
 	if workflow == 'standard' and sys_id is not None and options['task'] is not None and len(options['task'].strip()) != 0:
 		# Start the event
@@ -352,47 +394,46 @@ def run(helper, options):
 
 	## Wait for the VM to finish building ##################################
 
-	if workflow != 'student':
-		# Linux has separate events for installation starting and installation
-		# finishing, but windows only has installation finishing
-		if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
-			# Start the event
-			helper.event('guest_installer_progress', 'Waiting for in-guest installation to start')
+	# Linux has separate events for installation starting and installation
+	# finishing, but windows only has installation finishing
+	if os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
+		# Start the event
+		helper.event('guest_installer_progress', 'Waiting for in-guest installation to start')
 
-			# Wait for the in-guest installer to set the state to 'progress' or 'done'
-			wait_response = helper.lib.wait_for_guest_notify(vm, ['inprogress', 'done', 'done-with-warnings'])
-
-			# When it returns, end the event
-			if wait_response is None or wait_response not in ['inprogress', 'done']:
-				helper.end_event(success=False, description='Timed out waiting for in-guest installation to start')
-
-				# End the task here
-				return
-			else:
-				helper.end_event(success=True, description='In-guest installation started')
-
-		# Start another event
-		helper.event('guest_installer_done', 'Waiting for in-guest installation to finish')
-
-		# Wait for the in-guest installer to set the state to 'done' or 'done-with-warnings'
-		wait_response = helper.lib.wait_for_guest_notify(vm, ['done', 'done-with-warnings'])
+		# Wait for the in-guest installer to set the state to 'progress' or 'done'
+		wait_response = helper.lib.wait_for_guest_notify(vm, ['inprogress', 'done', 'done-with-warnings'])
 
 		# When it returns, end the event
-		if wait_response is None or wait_response not in ['done', 'done-with-warnings']:
-			helper.end_event(success=False, description='Timed out waiting for in-guest installation to finish')
-		else:
-			# Flag if there were warnings
-			warning = False
-			if wait_response == 'done-with-warnings':
-				warning = True
+		if wait_response is None or wait_response not in ['inprogress', 'done']:
+			helper.end_event(success=False, description='Timed out waiting for in-guest installation to start')
 
-			helper.end_event(success=True, warning=warning, description='In-guest installation finished')
+			# End the task here
+			return
+		else:
+			helper.end_event(success=True, description='In-guest installation started')
+
+	# Start another event
+	helper.event('guest_installer_done', 'Waiting for in-guest installation to finish')
+
+	# Wait for the in-guest installer to set the state to 'done' or 'done-with-warnings'
+	wait_response = helper.lib.wait_for_guest_notify(vm, ['done', 'done-with-warnings'])
+
+	# When it returns, end the event
+	if wait_response is None or wait_response not in ['done', 'done-with-warnings']:
+		helper.end_event(success=False, description='Timed out waiting for in-guest installation to finish')
+	else:
+		# Flag if there were warnings
+		warning = False
+		if wait_response == 'done-with-warnings':
+			warning = True
+
+		helper.end_event(success=True, warning=warning, description='In-guest installation finished')
 
 
 
 	## For Windows VMs, join groups and stuff ##############################
 
-	if os_type == helper.lib.OS_TYPE_BY_NAME['Windows']:
+	if workflow != 'student' and os_type == helper.lib.OS_TYPE_BY_NAME['Windows']:
 		# Put in Default OU (failure does not kill task)
 		try:
 			# Start the event
@@ -436,24 +477,26 @@ def run(helper, options):
 		except Exception as e:
 			helper.end_event(success=False, description='Failed to set Computer object attributes: ' + str(e))
 
-		# Wait for 60 seconds to allow time for the VM to come back up
-		# This feels like a bit of a hack currently, but we don't have
-		# a way currently of knowing if the VM is up.
-		helper.event('windows_delay', 'Wait and restart guest')
-		time.sleep(60)
+			# Wait for 60 seconds to allow time for the VM to come back up
+			# This feels like a bit of a hack currently, but we don't have
+			# a way currently of knowing if the VM is up.
+			helper.event('windows_delay', 'Wait and restart guest')
+			time.sleep(60)
 
-		# Restart the guest
-		helper.lib.vmware_vm_restart_guest(vm)
-		helper.end_event(success=True, description='Initiated guest restart')
+			# Restart the guest
+			helper.lib.vmware_vm_restart_guest(vm)
+			helper.end_event(success=True, description='Initiated guest restart')
 
 
 
 	## Send success email ##################################################
 
 	# Build the text of the message
-	message  = 'Cortex has finished building your VM. The details of the VM can be found below.\n'
-	message += '\n'
 	if workflow in ['standard', 'sandbox']:
+		subject = 'Cortex has finished building your VM, ' + str(system_name)
+
+		message  = 'Cortex has finished building your VM. The details of the VM can be found below.\n'
+		message += '\n'
 		if workflow == 'standard':
 			message += 'ServiceNow Task: ' + str(options['task']) + '\n'
 		message += 'Hostname: ' + str(system_name) + '.' + str(domain) + '\n'
@@ -478,20 +521,56 @@ def run(helper, options):
 		if os_type == helper.lib.OS_TYPE_BY_NAME['Windows']:
 			message += ' and to an appropriate OU in Active Directory'
 		message += '\n'
-	else:
-		message += 'Purpose: ' + str(options['purpose']) + '\n'
-		message += 'Operating System: ' + str(os_name) + '\n'
-		message += 'CPUs: ' + str(total_cpu) + '\n'
-		message += 'RAM: ' + str(options['ram']) + ' GiB\n'
-		message += 'CMDB ID: ' + str(cmdb_id) +'\n'
+	elif workflow == 'student':
+		subject = 'Your VM has been built and is ready to use'
+
+		if options['template'] == 'rhel7':
+			message  = 'Your Red Hat Enterprise Linux 7 VM is now built and is ready to be logged in to.\n'
+			message += 'You can access the VM via SSH, either directly from the terminal of another Linux\n'
+			message += 'machine using the ssh command, or from a Windows machine using an SSH client such\n'
+			message += 'as PuTTY. PuTTY is available from https://software.soton.ac.uk/. You can log in to\n'
+			message += 'your VM with the following details:\n'
+			message += '\n'
+			message += 'Hostname: ' + str(system_name) + '.' + str(domain) + '\n'
+			message += 'Hostname Alias: ' + dns_aliases[0] + '\n'
+			message += 'Username: ' + helper.username + '\n'
+			message += 'Password: ' + helper.lib.system_get_repeatable_password(system_dbid) + '\n'
+			message += '\n'
+			message += 'This password is also the password for the root account. Please change both\n'
+			message += 'passwords immediately. SSHing in directly as root is disabled by default.\n'
+			message += '\n'
+			message += 'As an introduction to the build and to Red Hat Enterprise Linux, please look at\n'
+			message += 'the README.UoS file in your home directory on the VM. You can view this file by\n'
+			message += 'running:\n'
+			message += '\n'
+			message += 'less /home/' + helper.username + '/README.UoS\n'
+		elif options['template'] == 'windows_server_2016':
+			message  = 'Your Windows Server 2016 VM is now built and is ready to be logged in to. You can\n'
+			message += 'access the VM via Remote Desktop, either using the Microsoft Remote Desktop\n'
+			message += 'client for Windows or Mac, or using a compatible client such as rdesktop, Remmina\n'
+			message += 'or xfreerdp for Linux. You can log in to your VM with the following details:\n'
+			message += '\n'
+			message += 'Hostname: ' + str(system_name) + '.' + str(domain) + '\n'
+			message += 'Hostname Alias: ' + dns_aliases[0] + '\n'
+			message += 'Username: ' + helper.username + '\n'
+			message += 'Password: ' + helper.lib.system_get_repeatable_password(system_dbid) + '\n'
+			message += '\n'
+			message += 'This password is also the password for the Administrator account. Please change\n'
+			message += 'both passwords immediately. You can do this by logging in as the user, sending\n'
+			message += 'a Ctrl-Alt-Delete to the VM and choosing the appropriate option from the menu.\n'
+
 		message += '\n'
-		message += 'The event log for the task can be found at https://' + str(helper.config['CORTEX_DOMAIN']) + '/task/status/' + str(helper.task_id) + '\n'
-		message += 'More information about the VM, can be found on the Cortex systems page at https://' + str(helper.config['CORTEX_DOMAIN']) + '/systems/edit/' + str(system_dbid) + '\n'
-		
+		message += 'IMPORTANT REMINDER: Your VM is not backed up in any way. It is entirely up to you\n'
+		message += 'to keep safe copies of all your work and the University will not accept any\n'
+		message += 'liability for data loss from this VM, for whatever reason. You cannot use loss of\n'
+		message += 'data as a reason for requesting "Special Considerations".\n'
+		message += '\n'
+		message += 'If you have any issues with your VM, please contact ServiceLine who will direct\n'
+		message += 'your query to the appropriate team.\n'
 
 	# Send the message to the user who started the task (if they want it)
 	if options['sendmail']:
-		helper.lib.send_email(helper.username, 'Cortex has finished building your VM, ' + str(system_name), message)
+		helper.lib.send_email(helper.username, subject, message)
 
 	# For standard VMs only, always notify people in the notify_emails list
 	if workflow == 'standard':

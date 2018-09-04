@@ -21,7 +21,7 @@ def csv_stream(cursor):
 	# Write CSV header
 	output = io.BytesIO()
 	writer = csv.writer(output)
-	writer.writerow(['Name', 'Comment', 'Allocated by', 'Allocation date', 'CI Operational Status', 'CMDB Link', 'CMDB OS', 'VMware OS'])
+	writer.writerow(['Name', 'Comment', 'Allocated By', 'Allocation Date', 'CI Operational Status', 'CMDB Link', 'CMDB OS', 'VMware OS', 'Decommission Date',])
 	yield output.getvalue()
 
 	# Write data
@@ -37,7 +37,7 @@ def csv_stream(cursor):
 			cmdb_url = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
 
 		# Write a row to the CSV output
-		outrow = [row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_url, row['cmdb_os'], row['vmware_os']]
+		outrow = [row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_url, row['cmdb_os'], row['vmware_os'], row['decom_date'],]
 
 		# For each element in the output row...
 		for i in range(0, len(outrow)):
@@ -89,24 +89,16 @@ def get_system_count(class_name = None, search = None, hide_inactive = True, onl
 def get_system_by_id(id):
 	"""Gets all the information about a system by its database ID."""
 
-	# Query the database
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute("SELECT * FROM `systems_info_view` WHERE `id` = %s", (id,))
-
-	# Return the result
-	return curd.fetchone()
+	corpus = Corpus(g.db, app.config)
+	return corpus.get_system_by_id(id)
 
 ################################################################################
 
-def get_system_by_name(name):
+def get_system_by_name(name, must_have_vmware_uuid=False, must_have_snow_sys_id=False):
 	"""Gets all the information about a system by its hostname."""
 
-	# Query the database
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute("SELECT * FROM `systems_info_view` WHERE `name` = %s", (name,))
-
-	# Return the result
-	return curd.fetchone()
+	corpus = Corpus(g.db, app.config)
+	return corpus.get_system_by_name(name, must_have_vmware_uuid, must_have_snow_sys_id)
 
 ################################################################################
 
@@ -161,11 +153,11 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 
 		# Allow the search to match on name, allocation_comment or 
 		# allocation_who
-		query = query + "(`name` LIKE %s OR `allocation_comment` LIKE %s OR `allocation_who` LIKE %s OR `cmdb_environment` LIKE %s OR `allocation_who_realname` LIKE %s)"
+		query = query + "(`name` LIKE %s OR `allocation_comment` LIKE %s OR `allocation_who` LIKE %s OR `cmdb_environment` LIKE %s OR `allocation_who_realname` LIKE %s OR `vmware_ipaddr` LIKE %s)"
 
 		# Add the filter string to the parameters of the query. Add it 
 		# three times as there are three columns to match on.
-		params = params + (like_string, like_string, like_string, like_string, like_string)
+		params = params + (like_string, like_string, like_string, like_string, like_string, like_string)
 
 	# If hide_inactive is set to false, then exclude systems that are no longer In Service
 	if hide_inactive == True:
@@ -203,7 +195,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 			query = query + " AND "
 		else:
 			query = query + "WHERE "
-		query = query + ' `id` IN (SELECT DISTINCT `system_id` FROM `system_perms`)'
+		query = query + ' `id` IN (SELECT DISTINCT `system_id` FROM `system_role_perms_view`)'
 
 	if only_allocated_by:
 		if class_name is not None or search is not None or hide_inactive == True or only_other or show_expired or show_nocmdb or show_perms_only:
@@ -231,12 +223,8 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 	# Validate the name of the column to sort by (this prevents errors and
 	# also prevents SQL from accidentally being injected). Add the column
 	# name on to the query
-	if order in ["name", "number", "allocation_comment", "allocation_date", "allocation_who"]:
+	if order in ["id", "name", "number", "allocation_comment", "allocation_date", "allocation_who", 'cmdb_operational_status', 'cmdb_environment']:
 		query = query + "`" + order + "`"
-	elif order == "cmdb_operational_status":
-		query = query + "`cmdb_operational_status`"
-	elif order == "cmdb_environment":
-		query = query + "`cmdb_environment`"
 
 	# Determine which direction to order in, and add that on
 	if order_asc:
@@ -338,3 +326,17 @@ def power_off(id):
 def reset(id):
 	vm = get_vm_by_system_id(id)
 	return vm.Reset()
+
+################################################################################
+
+def increment_build_count(id):
+	# Increment the build count
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('UPDATE `systems` SET `build_count` = `build_count` + 1 WHERE `id` = %s', (id,))
+	g.db.commit()
+
+################################################################################
+
+def generate_repeatable_password(id):
+	corpus = Corpus(g.db, app.config)
+	return corpus.system_get_repeatable_password(id)

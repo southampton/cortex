@@ -70,28 +70,28 @@ def puppet_enc_edit(node):
 		# Validate classes YAML
 		try:
 			data = yaml.load(classes)
-		except Exception, e:
+		except Exception as e:
 			flash('Invalid YAML syntax for classes: ' + str(e), 'alert-danger')
 			error = True
 
 		try:
 			if not data is None:
 				assert isinstance(data, dict)
-		except Exception, e:
+		except Exception as e:
 			flash('Invalid YAML syntax for classes: result was not a list of classes, did you forget a trailing colon? ' + str(e), 'alert-danger')
 			error = True
 
 		# Validate variables YAML
 		try:
 			data = yaml.load(variables)
-		except Exception, e:
+		except Exception as e:
 			flash('Invalid YAML syntax for variables: ' + str(e), 'alert-danger')
 			error = True
 
 		try:
 			if not data is None:
 				assert isinstance(data, dict)
-		except Exception, e:
+		except Exception as e:
 			flash('Invalid YAML syntax for variables: result was not a list of variables, did you forget a trailing colon? ' + str(e), 'alert-danger')
 			error = True
 
@@ -154,14 +154,14 @@ def puppet_enc_default():
 		# Validate classes YAML
 		try:
 			data = yaml.load(classes)
-		except Exception, e:
+		except Exception as e:
 			flash('Invalid YAML syntax: ' + str(e), 'alert-danger')
 			return render_template('puppet/default.html', classes=classes, active='puppet', title="Default Classes")
 
 		try:
 			if not data is None:
 				assert isinstance(data, dict)
-		except Exception, e:
+		except Exception as e:
 			flash('Invalid YAML syntax: result was not a list of classes, did you forget a trailing colon? ' + str(e), 'alert-danger')
 			return render_template('puppet/default.html', classes=classes, active='puppet', title="Default Classes")
 
@@ -197,8 +197,8 @@ def puppet_nodes():
 	# Get node statuses
 	try:
 		statuses = cortex.lib.puppet.puppetdb_get_node_statuses()
-	except Exception as ex:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
+	except Exception as e:
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
 
 	for row in results:
@@ -267,7 +267,7 @@ def puppet_groups():
 				g.db.commit()
 				cortex.lib.core.log(__name__, "puppet.group.deleted", "Deleted Puppet group '" + group_name + "'")
 				flash('Deleted Puppet group "' + group_name + '"', 'alert-success')
-			except Exception, e:
+			except Exception as e:
 				flash('Failed to delete Puppet group', 'alert-danger')
 
 			return redirect(url_for('puppet_groups'))
@@ -312,7 +312,7 @@ def puppet_group_edit(name):
 		# Validate classes YAML
 		try:
 			data = yaml.load(classes)
-		except Exception, e:
+		except Exception as e:
 			flash('Invalid YAML syntax for classes: ' + str(e), 'alert-danger')
 			group['classes'] = classes
 			return render_template('puppet/group.html', group=group, active='puppet', title=group['name'])
@@ -320,7 +320,7 @@ def puppet_group_edit(name):
 		try:
 			if not data is None:
 				assert isinstance(data, dict)
-		except Exception, e:
+		except Exception as e:
 			flash('Invalid YAML syntax: result was not a list of classes, did you forget a trailing colon? ' + str(e), 'alert-danger')
 			group['classes'] = classes
 			return render_template('puppet/group.html', group=group, active='puppet', title=group['name'])
@@ -357,15 +357,15 @@ def puppet_facts(node):
 		db     = cortex.lib.puppet.puppetdb_connect()
 		dbnode = db.node(node)
 		facts  = dbnode.facts()
-	except HTTPError, he:
+	except HTTPError as he:
 		# If we get a 404 from the PuppetDB API
 		if he.response.status_code == 404:
 			# We will continue to render the page, just with no facts and display a nice error
 			facts = None
 		else:
 			raise(he)
-	except Exception, e:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
+	except Exception as e:
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
 
 	# Turn the facts generator in to a dictionary
@@ -394,8 +394,8 @@ def puppet_dashboard():
 
 	try:
 		stats=cortex.lib.puppet.puppetdb_get_node_stats()
-	except Exception as ex:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
+	except Exception as e:
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
 	return render_template('puppet/dashboard.html', stats=stats,active='puppet', title="Puppet Dashboard")
 
@@ -425,8 +425,8 @@ def puppet_dashboard_status(status):
 	# Connect to PuppetDB
 	try:
 		db = cortex.lib.puppet.puppetdb_connect()
-	except Exception as ex:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
+	except Exception as e:
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
 	# Get information about all the nodes, including their status
 	nodes = db.nodes(with_status = True)
@@ -457,8 +457,8 @@ def puppet_radiator():
 	## No permissions check: this is accessible without logging in
 	try:
 		stats=cortex.lib.puppet.puppetdb_get_node_stats()
-	except Exception as ex:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
+	except Exception as e:
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
 	return render_template('puppet/radiator.html', stats=stats, active='puppet')
 
@@ -494,15 +494,15 @@ def puppet_reports(node):
 		# Connect to PuppetDB and get the reports
 		db = cortex.lib.puppet.puppetdb_connect()
 		reports = db.node(node).reports()
-	except HTTPError, he:
+	except HTTPError as he:
 		# If we get a 404 response from PuppetDB
 		if he.response.status_code == 404:
 			# Still display the page but with a nice error
 			reports = None
 		else:
 			raise(he)
-	except Exception, e:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
+	except Exception as e:
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
 
 	# Load the system data - we don't care if it fails (i.e its not in the systems table)
@@ -520,15 +520,15 @@ def puppet_report(report_hash):
 	# Connect to Puppet DB and query for a report with the given hash
 	try:
 		db = cortex.lib.puppet.puppetdb_connect()
-	except Exception as ex:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
+	except Exception as e:
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
 	reports = db.reports(query='["=", "hash", "' + report_hash + '"]')
 
 	# 'reports' is a generator. Get the next (first and indeed, only item) from the generator
 	try:
 		report = next(reports)
-	except StopIteration, e:
+	except StopIteration as e:
 		# If we get a StopIteration error, then we've not got any data
 		# returned from the reports generator, so the report didn't
 		# exist, hence we should 404

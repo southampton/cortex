@@ -52,6 +52,11 @@
 					<div class="form-group">
 						<label class="col-sm-3 control-label" for="expiry_date">Expiry Date:</label><div class="col-sm-9"><p class="form-control-static">{{ system.expiry_date or 'Not set' }}</p></div>
 					</div>
+					{% if system.decom_date %}
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="decom_date">Decommission Date:</label><div class="col-sm-9"><p class="form-control-static">{{ system.decom_date or 'Not set' }}</p></div>
+					</div>
+					{% endif %}
 				</div>
 			</div>
 		</div>

@@ -412,7 +412,13 @@ class Backup(MethodView):
 		except:
 			abort(500)
 
-		self.rubrik.update_vm(vm['id'], {'configuredSlaDomainId': request.form.get('sla_domain')})
+		mode = request.form.get('mode')
+		if mode in ('INHERIT', 'UNPROTECTED'):
+				self.rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
+		elif 'sla_domain' in request.form:
+			self.rubrik.update_vm(vm['id'], {'configuredSlaDomainId': request.form.get('sla_domain')})
+		else:
+			abort(400)
 
 		return self.get(id)
 
@@ -539,11 +545,6 @@ def system_status(id):
 	# Ensure that the system actually exists, and return a 404 if it doesn't
 	if system is None:
 		abort(404)
-	# get the VM
-	try:
-		vm = cortex.lib.systems.get_vm_by_system_id(id)
-	except ValueError as e:
-		abort(404)
 
 	data = {}
 	data['hostname'] = ''
@@ -551,6 +552,21 @@ def system_status(id):
 	data['search_domain'] = ''
 	routes = []
 	ipaddr = []
+
+	# get the VM
+	try:
+		vm = cortex.lib.systems.get_vm_by_system_id(id)
+	except ValueError as e:
+		abort(404)
+	except Exception as e:
+		# If we want to handle vCenter being unavailable gracefully.
+		if not app.config.get('HANDLE_UNAVAILABLE_VCENTER_GRACEFULLY', False):
+			raise e	
+		else:
+			vm = None
+			# Add an error field to the data we return, 
+			# so we can display a message on the template. 
+			data['error'] = 'Unable to retrieve system information, please check vCenter availability.'
 
 	if vm is not None and vm.guest is not None:
 		if vm.guest.ipStack is not None and len(vm.guest.ipStack) > 0:

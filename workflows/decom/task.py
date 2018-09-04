@@ -1,4 +1,5 @@
 import requests
+import ldap
 
 def run(helper, options):
 
@@ -13,6 +14,8 @@ def run(helper, options):
 			r = action_vm_delete(action, helper)
 		elif action['id'] == "cmdb.update":
 			r = action_cmdb_update(action, helper)
+		elif action['id'] == "cmdb.relationships.delete":
+			r = action_cmdb_relationships_delete(action, helper)
 		elif action['id'] == "dns.delete":
 			r = action_dns_delete(action, helper)
 		elif action['id'] == "puppet.cortex.delete":
@@ -27,7 +30,15 @@ def run(helper, options):
 			r = action_tsm_decom(action, helper)
 		elif action['id'] == "rhn5.delete":
 			r = action_rhn5_delete(action, helper)
-
+		elif action['id'] == "satellite6.delete":
+			r = action_satellite6_delete(action, helper) 
+		elif action['id'] == "sudoldap.update":
+			r = action_sudoldap_update(action, helper, options['wfconfig'])
+		elif action['id'] == "sudoldap.delete":
+			r = action_sudoldap_delete(action, helper, options['wfconfig'])
+		elif action['id'] == "system.update_decom_date":
+			r = action_update_decom_date(action, helper) 
+			
 		# End the event (don't change the description) if the action
 		# succeeded. The action_* functions either raise Exceptions or
 		# end the events with a failure message on errors.
@@ -78,6 +89,28 @@ def action_cmdb_update(action, helper):
 		# This will raise an Exception if it fails, but it is not fatal
 		# to the decommissioning process
 		helper.lib.servicenow_mark_ci_deleted(action['data'])
+		return True
+	except Exception as e:
+		helper.end_event(success=False, description=str(e))
+		return False
+
+################################################################################
+
+def action_cmdb_relationships_delete(action, helper):
+	try:
+		# Remove the CI relationships
+		(successes, warnings) = helper.lib.servicenow_remove_ci_relationships(action['data'])
+
+		# Special action-end-cases
+		if successes == 0 and warnings == 0:
+			# This technically shouldn't happen unless somebody deletes them between the "Check System"
+			# stage and the task actually running
+			helper.end_event(success=True, warning=True, description="Found no CI relationships to remove")
+		elif successes == 0 and warnings > 0:
+			helper.end_event(success=False, description="Failed to remove any CI relationships")
+		elif successes > 0 and warnings > 0:
+			helper.end_event(success=True, warning=True, description="Failed to remove some CI relationships: " + str(successes) + " succeeded, " + str(warnings) + " failed")
+
 		return True
 	except Exception as e:
 		helper.end_event(success=False, description=str(e))
@@ -186,4 +219,66 @@ def action_rhn5_delete(action, helper):
 		return True
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to delete the system object in RHN5")
+		return False
+
+def action_satellite6_delete(action, helper):
+	try:
+		try:
+			helper.lib.satellite6_disassociate_host(action['data']['id'])
+		except Exception as e:
+			helper.end_event(success=False, description="Failed to disassociate the host object with ID {0} from a VM in Satellite 6".format(action['data']['id']))
+			return False
+
+		try:
+			helper.lib.satellite6_delete_host(action['data']['id'])
+		except Exception as e:
+			helper.end_event(success=False, description="Failed to delete the host object with ID {0} in Satellite 6".format(action['data']['id']))
+			return False
+
+		# We disassociated and deleted successfully.
+		return True
+
+	except Exception as e:
+		helper.end_event(success=False, description="Failed to delete the host object in Satellite 6")
+		return False
+
+################################################################################
+
+def action_sudoldap_update(action, helper, wfconfig):
+	try:
+		# Connect to LDAP
+		l = ldap.initialize(wfconfig['SUDO_LDAP_URL'])
+		l.bind_s(wfconfig['SUDO_LDAP_USER'], wfconfig['SUDO_LDAP_PASS'])
+
+		# Replace the value of sudoHost with the calculated list
+		l.modify_s(action['data']['dn'], [(ldap.MOD_DELETE, 'sudoHost', str(action['data']['value']))])
+		
+		return True
+	except Exception as e:
+		helper.end_event(success=False, description="Failed to update the object in sudoldap: " + str(e))
+		return False
+
+################################################################################
+
+def action_sudoldap_delete(action, helper, wfconfig):
+	try:
+		# Connect to LDAP
+		l = ldap.initialize(wfconfig['SUDO_LDAP_URL'])
+		l.bind_s(wfconfig['SUDO_LDAP_USER'], wfconfig['SUDO_LDAP_PASS'])
+		
+		# Delete the entry
+		l.delete_s(action['data']['dn'])
+		return True
+	except Exception as e:
+		helper.end_event(success=False, description="Failed to delete the object in sudoldap")
+		return False
+
+################################################################################
+
+def action_update_decom_date(action, helper):
+	try:
+		helper.lib.update_decom_date(action["data"]["system_id"])
+		return True
+	except Exception as e:
+		helper.end_event(success=False, description="Failed to update the decommission date in Cortex")
 		return False

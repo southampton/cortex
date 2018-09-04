@@ -25,5 +25,9 @@ import cortex.views.user
 import cortex.views.perms
 import cortex.views.favourites
 
+# load blueprints
+from cortex.api import api_blueprint
+app.register_blueprint(api_blueprint)
+
 # load workflows - they have to be done here after app is created
 app.load_workflows()

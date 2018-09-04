@@ -8,6 +8,8 @@ import redis
 import ssl
 import xmlrpclib, httplib # for RHN5 API support
 import re
+import hashlib
+import base64
 
 # For email
 import smtplib
@@ -21,10 +23,6 @@ requests.packages.urllib3.disable_warnings()
 from pyVmomi import vim
 from pyVmomi import vmodl
 from pyVim.connect import SmartConnect, Disconnect
-
-# For checking if a cache_vm task is currently running
-# we talk about to neocortex via RPC
-import Pyro4
 
 from urlparse import urljoin
 from urllib import quote
@@ -159,6 +157,20 @@ class Corpus(object):
 
 		self.db.commit()
 		return cur.lastrowid
+
+
+	################################################################################
+
+	def update_decom_date(self, system_id):
+		"""Update the decom date in Cortex to the current date."""
+
+		# Get a cursor to the database
+		cur = self.db.cursor(mysql.cursors.DictCursor)
+
+		cur.execute("UPDATE `systems` SET `decom_date` = NOW() WHERE `id` = %s", (system_id,)) 
+
+		self.db.commit()
+		
 
 	################################################################################
 
@@ -403,9 +415,7 @@ class Corpus(object):
 	def vmware_task_wait(self, task):
 		"""Waits for vCenter task to finish"""
 
-		task_done = False
-
-		while not task_done:
+		while True:
 			if task.info.state == 'success':
 				return True
 
@@ -427,9 +437,7 @@ class Corpus(object):
 		does not return a variable.
 		"""
 
-		task_done = False
-
-		while not task_done:
+		while True:
 			if task.info.state == 'success':
 				return
 
@@ -523,12 +531,13 @@ class Corpus(object):
 			guiUnattended.timeZone = timezone
 
 			sysprepIdentity = vim.vm.customization.Identification()
-			sysprepIdentity.domainAdmin = domain_join_user
-			sysprepPassword = vim.vm.customization.Password()
-			sysprepPassword.plainText = True
-			sysprepPassword.value = domain_join_pass
-			sysprepIdentity.domainAdminPassword = sysprepPassword
-			sysprepIdentity.joinDomain = os_domain
+			if domain_join_user is not None and domain_join_pass is not None:
+				sysprepIdentity.domainAdmin = domain_join_user
+				sysprepPassword = vim.vm.customization.Password()
+				sysprepPassword.plainText = True
+				sysprepPassword.value = domain_join_pass
+				sysprepIdentity.domainAdminPassword = sysprepPassword
+				sysprepIdentity.joinDomain = os_domain
 
 			sysprepUserData = vim.vm.customization.UserData()
 			sysprepUserData.computerName = vim.vm.customization.VirtualMachineNameGenerator()
@@ -767,6 +776,7 @@ class Corpus(object):
 		return template.Clone(folder=destfolder, name=vm_name, spec=clonespec)
 
 	############################################################################ 
+
 	def update_vm_cache(self, vm, tag):
 		"""Updates the VMware cache data with the information about the VM."""
 
@@ -1329,6 +1339,78 @@ class Corpus(object):
 
 	################################################################################
 
+	def servicenow_add_ci_relationship(self, parent_sys_id, child_sys_id, rel_type_sys_id):
+		# Build JSON data about the relationship to create
+		json_data = { 'parent': parent_sys_id, 'child': child_sys_id, 'type': rel_type_sys_id }
+
+		# Post the request
+		r = requests.post('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_rel_ci', auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=json_data)
+		if r is None:
+			raise Exception("Could not create CI relationship in ServiceNow. Request failed")
+
+		if r.status_code < 200 or r.status_code > 299:
+			raise Exception("Could not create CI relationship in ServiceNow. ServiceNow returned error code " + str(r.status_code))
+
+		try:
+			response_json = r.json()
+			return response_json['result']['sys_id']
+		except Exception as e:
+			raise Exception("Could not create CI relationship. Error: " + str(e))
+
+	################################################################################
+
+	def servicenow_get_ci_relationships(self, sys_id):
+		# Get the CI details. This checks that it exists and whether it's 
+		# virtual or not	
+		r = requests.get('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_rel_ci?sysparm_query=child=' + sys_id + '^ORparent=' + sys_id, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json'})
+
+		# Check we got a valid response code
+		if r is not None:
+			# Special case: ServiceNow returns a 404 to indicate no results. No, 
+			# this isn't a good idea, but we have to work with it
+			if r.status_code == 404:
+				return []
+			elif r.status_code < 200 or r.status_code > 299:
+				raise Exception("Could not locate CI relationships in ServiceNow. ServiceNow returned error code " + str(r.status_code))
+		else:
+			raise Exception("Could not locate CI relationships in ServiceNow. Request failed")
+
+		# Decode the JSON, raising on failure
+		try:
+			results = r.json()
+		except Exception as e:
+			raise Exception("Could not remove CI relationships in ServiceNow. JSON parsing failed")
+
+		# Check we have what we need
+		if 'result' not in results:
+			raise Exception("Could no remove CI relationships in ServiceNow. Invalid result from ServiceNow")
+
+		# Return the number of results
+		return results['result']
+
+	################################################################################
+
+	def servicenow_remove_ci_relationships(self, sys_id):
+		# Get the CI relationship data from ServiceNow
+		results = self.servicenow_get_ci_relationships(sys_id)
+
+		# Delete all the relationships, keeping track of how many succeeded/failed
+		warnings = 0
+		successes = 0
+		for entry in results:
+			try:
+				r = requests.delete('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_rel_ci/' + entry['sys_id'], auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json'})
+				if r is None or (r.status_code < 200 or r.status_code > 299):
+					warnings += 1
+				else:
+					successes += 1
+			except Exception as e:
+				warnings += 1
+
+		return (successes, warnings)
+
+	################################################################################
+
 	def _connect_redis(self):
 		"""Connects to the Redis instance specified in the configuration and 
 		returns a StrictRedis object"""
@@ -1528,7 +1610,8 @@ class Corpus(object):
 
 	def delete_system_from_cache(self, vmware_uuid):
 		cur = self.db.cursor()
-		cur.execute("DELETE FROM `systems` WHERE `vmware_uuid`=%s", (vmware_uuid,))
+		cur.execute("DELETE FROM `vmware_cache_vm` WHERE `uuid`=%s", (vmware_uuid,))
+		self.db.commit()
 
 	############################################################################
 
@@ -1676,5 +1759,123 @@ class Corpus(object):
 			return (client,key)
 		except Exception as ex:
 			raise IOError(str(ex))
+
+	############################################################################
+
+	def neocortex_task_get_status(self, task):
+		"""Returns the status of a NeoCortex task"""
+
+		# Get a cursor to the database
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+
+		# Get the task status. The DB commit is required to start a new
+		# transaction so that the default transaction isolation level of
+		# "repeatable read" doesn't cause us any issues. It also releases
+		# any table locks from previous transactions.
+		self.db.commit()
+		curd.execute("SELECT `status` FROM `tasks` WHERE `id` = %s", (task,))
+		status = curd.fetchone()['status']
+
+		# Return the row status
+		return status
+
+	############################################################################
+
+	def neocortex_task_wait(self, task):
+		"""Waits for a NeoCortex task to finish"""
+
+		while True:
+			# Get the task status
+			status = self.neocortex_task_get_status(task)
+
+			# Status of zero is in-progress, so only break out and 
+			# return the status when we're not that
+			if status is not None and int(status) != 0:
+				return status
+
+			## Let's not busy wait CPU 100%...
+			time.sleep(1)
+
+	############################################################################
+
+	def get_system_by_id(self, id):
+		# Query the database
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+		curd.execute("SELECT * FROM `systems_info_view` WHERE `id` = %s", (id,))
+
+		# Return the result
+		return curd.fetchone()
+
+	############################################################################
+
+	def get_system_by_name(self, name, must_have_vmware_uuid=False, must_have_snow_sys_id=False):
+		"""Gets all the information about a system by its hostname."""
+
+		# Build the query
+		query_parts = ["`name` = %s"]
+		if must_have_vmware_uuid:
+			query_parts.append("`vmware_uuid` IS NOT NULL")
+		if must_have_snow_sys_id:
+			query_parts.append("`cmdb_id` IS NOT NULL")
+		
+		# Query the database
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+		curd.execute("SELECT * FROM `systems_info_view` WHERE " + (" AND ".join(query_parts)) + " ORDER BY `allocation_date` DESC", (name,))
+
+		# Return the result
+		return curd.fetchone()
+
+	############################################################################
+
+	def system_get_repeatable_password(self, id):
+		system = self.get_system_by_id(id)
+		return base64.standard_b64encode(hashlib.sha256(system['name'] + '|' + str(system['build_count']) + '|' + str(system['allocation_date']) + '|' + system['allocation_who'] + '|' + self.config['SECRET_KEY']).digest())[0:16]
+
+	############################################################################
+
+	def satellite6_get_host(self, name):
+
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(name)) 
+		r = requests.get(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS'])
+		)
+
+		r.raise_for_status()
+
+		return r.json()
+
+	############################################################################
+
+	def satellite6_disassociate_host(self, hostid):
+		
+		
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}/disassociate'.format(hostid))
+		r = requests.put(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+		) 
+
+		r.raise_for_status()
+
+		return r.json()
+
+	############################################################################
+
+	def satellite6_delete_host(self, hostid):
+
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(hostid))
+		
+		r = requests.delete(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+		) 
+
+		r.raise_for_status()
+
+		return r.json()
 
 	############################################################################
