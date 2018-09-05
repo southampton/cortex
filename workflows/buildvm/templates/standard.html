@@ -70,7 +70,13 @@ div.specdetails
 	text-align: left
 }
 </style>
-
+{%- if autocomplete_users %}
+<datalist id="autocompleteUsers">
+{%- for user in autocomplete_users %}
+        <option>{{user.username}}</option>
+{% endfor -%}
+</datalist>
+{% endif -%}
 <form method="POST" role="form">
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 	<div class="row">
@@ -84,6 +90,18 @@ div.specdetails
 			</div>
 			<div class="form-group col-md-12">
 				<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
+			</div>
+			<div class="form-group col-md-3">
+				<label for="primary_owner_who">Primary Owner:</label><input class="form-control" list="autocompleteUsers" autocomplete="off" id="primary_owner_who" name="primary_owner_who" placeholder="Primary owner's username" maxlength="64"/>
+			</div>
+			<div class="form-group col-md-3">
+				<label for="primary_owner_role">Primary Owner Role:</label><input class="form-control" id="primary_owner_role" name="primary_owner_role" placeholder="Primary owner's role" maxlength="64"/>
+			</div>
+			<div class="form-group col-md-3">
+				<label for="secondary_owner_who">Secondary Owner:</label><input class="form-control" list="autocompleteUsers" autocomplete="off" id="secondary_owner_who" name="secondary_owner_who" placeholder="Secondary owner's username" maxlength="64"/>
+			</div>
+			<div class="form-group col-md-3">
+				<label for="secondary_owner_role">Secondary Owner Role:</label><input class="form-control" id="secondary_owner_role" name="secondary_owner_role" placeholder="Secondary owner's role" maxlength="64"/>
 			</div>
 		</div>
 	</div>

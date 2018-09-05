@@ -145,6 +145,33 @@ class Corpus(object):
 
 	################################################################################
 
+	def update_system(self, system_id, **kwargs):
+		"""
+		Update a system in the systems table with the relevant fields from kwargs.
+		"""
+
+		allowed_fields = ['type','class','number','allocation_date','allocation_who','allocation_comment','cmdb_id','vmware_uuid','review_status','review_task','expiry_date','decom_date','primary_owner_who','primary_owner_role','secondary_owner_who','secondary_owner_role']
+
+		update_fields = []
+		params = ()
+		for field, value in kwargs.iteritems():
+			if field in allowed_fields:
+				update_fields.append(field)
+				params = params + (value,)
+
+
+		query = "UPDATE `systems` SET "
+		query = query + ", ".join("`{0}`=%s".format(f) for f in update_fields)
+		query = query + " WHERE `id`=%s"
+		params = params + (system_id,)	
+
+		# Get a cursor to the database
+                cur = self.db.cursor(mysql.cursors.DictCursor)	
+		cur.execute(query, params)
+		self.db.commit()
+
+	################################################################################
+
 	def insert_name(self, name, comment=None, username=None, expiry=None):
 		'''inserts a system name into cortex'''
 

@@ -78,6 +78,11 @@ def run(helper, options):
 		vm_folder_name = options['wfconfig']['STU_VM_FOLDER']
 		dns_aliases = options['dns_aliases']
 
+		# Override primary owner to match allocated_by
+		options['primary_owner_who'] = helper.username
+		options['primary_owner_role'] = 'Student'
+		
+
 	## Allocate a hostname #################################################
 
 	# Start the task
@@ -90,10 +95,18 @@ def run(helper, options):
 	system_name = system_info.keys()[0]
 	system_dbid = system_info.values()[0]
 
+
+	# Update the system with some options.
+	helper.lib.update_system(
+		system_dbid,
+		primary_owner_who = options.get('primary_owner_who', None),
+		primary_owner_role = options.get('primary_owner_role', None),
+		secondary_owner_who = options.get('secondary_owner_who', None),
+		secondary_owner_role = options.get('secondary_owner_role', None),	
+	)
+
 	# End the event
 	helper.end_event(description="Allocated system name: " + system_name)
-
-
 
 	## Allocate an IPv4 Address and create a host object (standard only) ###
 
