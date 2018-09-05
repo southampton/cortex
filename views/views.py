@@ -50,10 +50,15 @@ def dashboard():
 	row = curd.fetchone()
 	task_progress_count = row['count']
 
-	# Get number of failed tasks in the last 3 hours
-	curd.execute('SELECT COUNT(*) AS `count` FROM `tasks` WHERE `status` = %s AND `end` > DATE_SUB(NOW(), INTERVAL 3 HOUR)', (2,))
+	# Get number of failed tasks in the last 8 hours
+	curd.execute('SELECT COUNT(*) AS `count` FROM `tasks` WHERE `status` = %s AND `end` > DATE_SUB(NOW(), INTERVAL 8 HOUR)', (2,))
 	row = curd.fetchone()
 	task_failed_count = row['count']
+
+	# Get number of warning tasks in the last 8 hours
+	curd.execute('SELECT COUNT(*) AS `count` FROM `tasks` WHERE `status` = %s AND `end` > DATE_SUB(NOW(), INTERVAL 8 HOUR)', (3,))
+	row = curd.fetchone()
+	task_warning_count = row['count']
 
 	# Get tasks for user
 	curd.execute('SELECT `id`, `module`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` = %s ORDER BY `start` DESC LIMIT 5', (session['username'],))
@@ -92,6 +97,7 @@ def dashboard():
 		ci_count=ci_count, 
 		task_progress_count=task_progress_count, 
 		task_failed_count=task_failed_count, 
+		task_warning_count=task_warning_count,
 		tasks=tasks, 
 		types=types, 
 		title="Dashboard",
