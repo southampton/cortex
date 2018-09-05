@@ -444,6 +444,13 @@ def run(helper, options):
 
 
 
+	## For Linux VMs, on Satellite 6, associate ############################
+
+	if workflow == 'student' and os_type == helper.lib.OS_TYPE_BY_NAME['Linux']:
+		helper.event('associate_satellite_6', 'Associating VM with Satellite 6 host object')
+		helper.lib.satellite6_associate_host(system_dbid, options['cluster'])
+		helper.end_event('VM associated with Satellite 6 host object')
+
 	## For Windows VMs, join groups and stuff ##############################
 
 	if workflow != 'student' and os_type == helper.lib.OS_TYPE_BY_NAME['Windows']:

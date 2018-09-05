@@ -1906,3 +1906,32 @@ class Corpus(object):
 		return r.json()
 
 	############################################################################
+
+	def satellite6_associate_host(self, system_id, cluster_name):
+		# Get the system
+		system = self.get_system_by_id(system_id)
+
+		# Get the VM
+		vm = self.vmware_get_vm_by_uuid(system['vmware_uuid'], system['vmware_vcenter'])
+
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(system['name']))
+
+		# Associate the Host with a Compute Resource (i.e. Data Center)
+		r = requests.put(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth = (self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+			json = { 'host': { 'compute_resource_id': self.config['SATELLITE6_CLUSTER_COMPUTE_RESOURCE'][cluster_name] } }
+		) 
+
+		r.raise_for_status()
+
+		# Associate the Host with a VM
+		r = requests.put(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth = (self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+			json = { 'host': { 'uuid': vm.config.instanceUuid } }
+		) 
+
+		r.raise_for_status()
