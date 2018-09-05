@@ -499,10 +499,10 @@ def system(id):
 	if system['puppet_certname']:
 		system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
 
-	if system['allocation_who_realname'] is not None:
-		system['allocation_who'] = system['allocation_who_realname'] + ' (' + system['allocation_who'] + ')'
-	else:
-		system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
+	# Generate a 'pretty' display name. This is the format '<realname> (<username>)'
+	system['allocation_who'] = cortex.lib.systems.generate_pretty_display_name(system['allocation_who'], system['allocation_who_realname'])
+	system['primary_owner_who'] = cortex.lib.systems.generate_pretty_display_name(system['primary_owner_who'], system['primary_owner_who_realname'])
+	system['secondary_owner_who'] = cortex.lib.systems.generate_pretty_display_name(system['secondary_owner_who'], system['secondary_owner_who_realname'])
 
 	return render_template('systems/view.html', system=system, system_class=system_class, active='systems', title=system['name'])
 
@@ -662,16 +662,29 @@ def system_edit(id):
 	if request.method == 'GET' or request.method == 'HEAD':
 		system_class = cortex.lib.classes.get(system['class'])
 		system['review_status_text'] = cortex.lib.systems.REVIEW_STATUS_BY_ID[system['review_status']]
+		autocomplete_users = cortex.lib.user.get_user_list_from_cache()
 
 		if system['puppet_certname']:
 			system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
 
-		return render_template('systems/edit.html', system=system, system_class=system_class, active='systems', title=system['name'])
+		return render_template('systems/edit.html', system=system, system_class=system_class,  autocomplete_users= autocomplete_users, active='systems', title=system['name'])
 
 	elif request.method == 'POST':
 		try:
 			# Get a cursor to the database
 			curd = g.db.cursor(mysql.cursors.DictCursor)
+
+			# Extract the owners from the form.
+			if does_user_have_system_permission(id,"edit.owners","systems.all.edit.owners"):
+				primary_owner_who = request.form.get('primary_owner_who', None)
+				primary_owner_role = request.form.get('primary_owner_role', None)
+				secondary_owner_who = request.form.get('secondary_owner_who', None)
+				secondary_owner_role = request.form.get('secondary_owner_role', None)
+			else:
+				primary_owner_who = system['primary_owner_who']
+				primary_owner_role = system['primary_owner_role']
+				secondary_owner_who = system['secondary_owner_who']
+				secondary_owner_role = system['secondary_owner_role']
 
 			# Extract CMDB ID from form
 			if does_user_have_system_permission(id,"edit.cmdb","systems.all.edit.cmdb"):
@@ -759,7 +772,7 @@ def system_edit(id):
 				review_task = system['review_task']
 
 			# Update the system
-			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, expiry_date, id))
+			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, id))
 			g.db.commit();
 			cortex.lib.core.log(__name__, "systems.edit", "System '" + system['name'] + "' edited, id " + str(id), related_id=id)
 

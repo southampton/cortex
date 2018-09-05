@@ -5,6 +5,7 @@ import MySQLdb as mysql
 from flask import Flask, request, redirect, session, url_for, abort, render_template, flash, g
 import io, csv
 from cortex.corpus import Corpus
+import cortex.lib.user
 
 REVIEW_STATUS_BY_NAME = {'NONE': 0, 'REQUIRED': 1, 'REVIEW': 2, 'NOT_REQUIRED': 3}
 REVIEW_STATUS_BY_ID   = {0: 'Not reviewed', 1: 'Required', 2: 'Under review', 3: 'Not required' }
@@ -352,3 +353,16 @@ def increment_build_count(id):
 def generate_repeatable_password(id):
 	corpus = Corpus(g.db, app.config)
 	return corpus.system_get_repeatable_password(id)
+
+################################################################################
+
+def generate_pretty_display_name(who, who_realname):
+	if who is not None and len(who) > 0:
+		if who_realname is not None:
+			return '{0} ({1})'.format(who_realname, who)
+		else:
+			return '{0} ({1})'.format(cortex.lib.user.get_user_realname(who), who)
+	else:
+		# If we weren't given a 'who' return None.
+		return None
+		

@@ -177,6 +177,17 @@ def get_user_realname(username, from_cache=True):
 
 #############################################################################
 
+def get_user_list_from_cache():
+	"""Returns a list of usernames and realnames from the realname_cache,
+	this is used for autocompletion."""
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute("SELECT `username`, `realname` FROM `realname_cache`;")
+	users = curd.fetchall()
+	curd.close()
+	return users
+
+#############################################################################
+
 def does_user_have_permission(perm, user=None):
 	"""Returns a boolean indicating if a user has a certain permission or
 	one of a list of permissions.

@@ -2,6 +2,7 @@
 
 from cortex import app
 from cortex.lib.workflow import CortexWorkflow
+from cortex.lib.user import get_user_list_from_cache
 import cortex.lib.core
 import datetime
 from flask import Flask, request, session, redirect, url_for, flash, g, abort
@@ -36,8 +37,9 @@ def sandbox():
 	environments = cortex.lib.core.get_cmdb_environments()
 
 	if request.method == 'GET':
+		autocomplete_users = get_user_list_from_cache()
 		## Show form
-		return workflow.render_template("sandbox.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_cluster=workflow.config['SB_DEFAULT_CLUSTER'], default_env=workflow.config['SB_DEFAULT_ENV'], os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'])
+		return workflow.render_template("sandbox.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_cluster=workflow.config['SB_DEFAULT_CLUSTER'], default_env=workflow.config['SB_DEFAULT_ENV'], os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'], autocomplete_users=autocomplete_users)
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
@@ -52,6 +54,10 @@ def sandbox():
 			purpose  = request.form['purpose']
 			comments = request.form['comments']
 			sendmail = 'send_mail' in request.form
+			primary_owner_who = request.form.get('primary_owner_who', None)
+                        primary_owner_role = request.form.get('primary_owner_role', None)
+                        secondary_owner_who = request.form.get('secondary_owner_who', None)
+                        secondary_owner_role = request.form.get('secondary_owner_role', None)
 
 			# Validate the data (common between standard / sandbox)
 			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, workflow.config['SB_OS_ORDER'], [e['id'] for e in environments])
@@ -83,6 +89,10 @@ def sandbox():
 		options['expiry'] = expiry
 		options['sendmail'] = sendmail
 		options['wfconfig'] = workflow.config
+		options['primary_owner_who'] = primary_owner_who
+                options['primary_owner_role'] = primary_owner_role
+                options['secondary_owner_who'] = secondary_owner_who
+                options['secondary_owner_role'] = secondary_owner_role
 
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.lib.core.neocortex_connect()
@@ -109,8 +119,9 @@ def standard():
 	environments = cortex.lib.core.get_cmdb_environments()
 
 	if request.method == 'GET':
+		autocomplete_users = get_user_list_from_cache()
 		## Show form
-		return workflow.render_template("standard.html", clusters=clusters, environments=environments, os_names=workflow.config['OS_DISP_NAMES'], os_order=workflow.config['OS_ORDER'], network_names=workflow.config['NETWORK_NAMES'], networks_order=workflow.config['NETWORK_ORDER'], title="Create Standard Virtual Machine")
+		return workflow.render_template("standard.html", clusters=clusters, environments=environments, os_names=workflow.config['OS_DISP_NAMES'], os_order=workflow.config['OS_ORDER'], network_names=workflow.config['NETWORK_NAMES'], networks_order=workflow.config['NETWORK_ORDER'], autocomplete_users=autocomplete_users, title="Create Standard Virtual Machine")
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
@@ -127,6 +138,10 @@ def standard():
 			comments = request.form['comments']
 			sendmail = 'send_mail' in request.form
 			network  = request.form['network']
+			primary_owner_who = request.form.get('primary_owner_who', None)
+			primary_owner_role = request.form.get('primary_owner_role', None)
+			secondary_owner_who = request.form.get('secondary_owner_who', None)
+			secondary_owner_role = request.form.get('secondary_owner_role', None)
 
 			# Validate the data (common between standard / sandbox)
 			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, workflow.config['OS_ORDER'], [e['id'] for e in environments])
@@ -164,6 +179,11 @@ def standard():
 		options['wfconfig'] = workflow.config
 		options['expiry'] = expiry
 		options['network'] = network
+		options['primary_owner_who'] = primary_owner_who
+		options['primary_owner_role'] = primary_owner_role
+		options['secondary_owner_who'] = secondary_owner_who
+		options['secondary_owner_role'] = secondary_owner_role
+
 		if 'NOTIFY_EMAILS' in app.config:
 			options['notify_emails'] = app.config['NOTIFY_EMAILS']
 		else:
