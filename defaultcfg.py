@@ -162,6 +162,10 @@ RHN5_CERT = "/usr/share/rhn/RHN-ORG-TRUSTED-SSL-CERT"
 SATELLITE6_URL  = 'https://rhn6.yourdomain.tld'
 SATELLITE6_USER = 'admin'
 SATELLITE6_PASS = 'admin'
+# Associations between VMware clusters and Compute Resources in Satellite 6.
+SATELLITE6_CLUSTER_COMPUTE_RESOURCE = {
+	"CLUSTER1": 1
+}
 
 # Rubrik
 RUBRIK_API_URL_BASE = ''
