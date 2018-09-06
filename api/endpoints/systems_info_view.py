@@ -41,6 +41,7 @@ class SystemsInfoViewCollection(Resource):
 		only_other = False
 		show_expired = False
 		show_nocmdb = False
+		show_allocated_and_perms = False
 
 		if does_user_have_permission("systems.all.view"):
 			only_allocated_by = None
