@@ -22,7 +22,14 @@ def csv_stream(cursor):
 	# Write CSV header
 	output = io.BytesIO()
 	writer = csv.writer(output)
-	writer.writerow(['Name', 'Comment', 'Allocated By', 'Allocation Date', 'CI Operational Status', 'CMDB Link', 'CMDB OS', 'VMware OS', 'Decommission Date',])
+	writer.writerow([
+		'ID', 'Type', 'Class', 'Number', 'Name', 'Allocation Date', 'Expiry Date', 'Decom Date', 'Allocation Who', 'Allocation Who Realname', 'Allocation Comment',
+		'Review Status', 'Review Task', 'Cmdb Id', 'Build Count', 'Primary Owner Who', 'Primary Owner Role', 'Primary Owner Who Realname', 'Secondary Owner Who',
+		'Secondary Owner Role', 'Secondary Owner Who Realname', 'Cmdb Sys Class Name', 'Cmdb Name', 'Cmdb Operational Status', 'Cmdb U Number', 'Cmdb Environment',
+		'Cmdb Description', 'Cmdb Comments', 'Cmdb Os', 'Cmdb Short Description', 'Cmdb Is Virtual', 'Vmware Name', 'Vmware Vcenter', 'Vmware Uuid', 'Vmware Cpus',
+		'Vmware Ram', 'Vmware Guest State', 'Vmware Os', 'Vmware Hwversion', 'Vmware Ipaddr', 'Vmware Tools Version Status', 'Vmware Hostname', 'Puppet Certname',
+		'Puppet Env', 'Puppet Include Default', 'Puppet Classes', 'Puppet Variables'
+	])
 	yield output.getvalue()
 
 	# Write data
@@ -38,7 +45,7 @@ def csv_stream(cursor):
 			cmdb_url = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
 
 		# Write a row to the CSV output
-		outrow = [row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_url, row['cmdb_os'], row['vmware_os'], row['decom_date'],]
+		outrow = [row['id'], row['type'], row['class'], row['number'], row['name'], row['allocation_date'], row['expiry_date'], row['decom_date'], row['allocation_who'], row['allocation_who_realname'], row['allocation_comment'], row['review_status'], row['review_task'], row['cmdb_id'], row['build_count'], row['primary_owner_who'], row['primary_owner_role'], row['primary_owner_who_realname'], row['secondary_owner_who'], row['secondary_owner_role'], row['secondary_owner_who_realname'], row['cmdb_sys_class_name'], row['cmdb_name'], row['cmdb_operational_status'], row['cmdb_u_number'], row['cmdb_environment'], row['cmdb_description'], row['cmdb_comments'], row['cmdb_os'], row['cmdb_short_description'], row['cmdb_is_virtual'], row['vmware_name'], row['vmware_vcenter'], row['vmware_uuid'], row['vmware_cpus'], row['vmware_ram'], row['vmware_guest_state'], row['vmware_os'], row['vmware_hwversion'], row['vmware_ipaddr'], row['vmware_tools_version_status'], row['vmware_hostname'], row['puppet_certname'], row['puppet_env'], row['puppet_include_default'], row['puppet_classes'], row['puppet_variables']]
 
 		# For each element in the output row...
 		for i in range(0, len(outrow)):
