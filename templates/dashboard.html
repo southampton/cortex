@@ -259,6 +259,11 @@ a.server-link:hover { text-decoration: underline !important; }
 			<strong><i class="fa fa-fw fa-bar-chart"></i> {{ total_vm_ram | filesizeformat(binary=True) }}</strong> RAM allocated <br/>
 			<strong><i class="fa fa-fw fa-line-chart"></i> {{ total_ram_usage | filesizeformat(binary=True) }}</strong> RAM usage
 		</div>
+		<div class="dashblock bg-purple">
+			<strong><i class="fa fa-fw fa-download"></i> {{ stats['changed'] }}</strong> Puppet nodes changed<br/>
+			<strong><i class="fa fa-fw fa-times"></i> {{ stats['failed'] }}</strong> Puppet nodes failed
+		</div>
+
 	</div>
 </div>
 {%- endif %}
