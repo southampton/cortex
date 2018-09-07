@@ -370,6 +370,7 @@ Username:             %s
 		  `review_status` tinyint(4) NOT NULL DEFAULT 0,
 		  `review_task` varchar(16) DEFAULT NULL,
 		  `expiry_date` datetime DEFAULT NULL,
+		  `build_count` mediumint(11) DEFAULT 0,
 		  `decom_date` datetime DEFAULT NULL,
 		  `primary_owner_who` varchar(64) DEFAULT NULL,
 		  `primary_owner_role` varchar(64) DEFAULT NULL,
