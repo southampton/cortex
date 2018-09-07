@@ -17,8 +17,8 @@ class PuppetDBConnector:
 	def connect(self):
 		self.db = pypuppetdb.connect(self.host, port=self.port, ssl_cert=self.ssl_cert, ssl_key=self.ssl_key, ssl_verify=self.ssl_verify)
 
-	def get_nodes(self):
-		return self.db.nodes()
+	def get_nodes(self, with_status = False):
+		return self.db.nodes(with_status=with_status)
 
 	def get_node(self, node_name):
 		return self.db.node(node_name)
