@@ -103,7 +103,38 @@ a.server-link:hover { text-decoration: underline !important; }
 			</div>
 		</div>
 {%- endif %}
+		<div class="panel panel-default">
+			<div class="panel-heading"><h3 class="panel-title">Your recent tasks</h3></div>
+			<div class="panel-body">
+{%- if tasks and tasks|length > 0 %}
+				<table class="table table-condensed table-striped" id="tasks" style="margin-bottom:0">
+					<thead>
+						<tr>
+							<th>Details</th>
+							<th>Start Time</th>
+							<th>End Time</th>
+							<th>Status</th>
+							<th width="1px"></th>
+						</tr>
+					</thead>
+					<tbody>
+						{%- for task in tasks %}
+						<tr>
+							<td>{% if task.description %}<abbr title="{{ task.description }}">{% endif %}{{ task.module }}{% if task.description %}</abbr>{% endif %}</td>
+							<td>{{ task.start or '' }}</td>
+							<td>{{ task.end or '' }}</td>
+							<td>{% if task.status == 0 %}<span style="color:#22c">In Progress</span>{% elif task.status == 1 %}<span style="color:#2c2">Finished</span>{% elif task.status == 2 %}<span style="color:#c22">Failed</span>{% elif task.status == 3 %}<span style="color:#c82">Warnings</span>{% else %}Unknown{% endif %}</td>
+							<td><a class="btn btn-xs btn-default" href="{{ url_for('task_status', id=task.id) }}"><i class="fa fa-fw fa-search"></i></a></td>
+						</tr>
+						{%- endfor %}
+					</tbody>
+				</table>
+{%- else %}
+				<div class="text-center" style="padding:2px">You have no recent tasks to view</div>
+{%- endif %}
 
+			</div>
+		</div>
 {%- if does_user_have_permission('systems.all.view') %}
 		<div class="panel panel-default">
 			<div class="panel-heading"><h3 class="panel-title">Recently created systems</h3></div>
@@ -152,38 +183,6 @@ a.server-link:hover { text-decoration: underline !important; }
 			</div>
 		</div>
 {%- endif %}
-		<div class="panel panel-default">
-			<div class="panel-heading"><h3 class="panel-title">Your recent tasks</h3></div>
-			<div class="panel-body">
-{%- if tasks and tasks|length > 0 %}
-				<table class="table table-condensed table-striped" id="tasks" style="margin-bottom:0">
-					<thead>
-						<tr>
-							<th>Details</th>
-							<th>Start Time</th>
-							<th>End Time</th>
-							<th>Status</th>
-							<th width="1px"></th>
-						</tr>
-					</thead>
-					<tbody>
-						{%- for task in tasks %}
-						<tr>
-							<td>{% if task.description %}<abbr title="{{ task.description }}">{% endif %}{{ task.module }}{% if task.description %}</abbr>{% endif %}</td>
-							<td>{{ task.start or '' }}</td>
-							<td>{{ task.end or '' }}</td>
-							<td>{% if task.status == 0 %}<span style="color:#22c">In Progress</span>{% elif task.status == 1 %}<span style="color:#2c2">Finished</span>{% elif task.status == 2 %}<span style="color:#c22">Failed</span>{% elif task.status == 3 %}<span style="color:#c82">Warnings</span>{% else %}Unknown{% endif %}</td>
-							<td><a class="btn btn-xs btn-default" href="{{ url_for('task_status', id=task.id) }}"><i class="fa fa-fw fa-search"></i></a></td>
-						</tr>
-						{%- endfor %}
-					</tbody>
-				</table>
-{%- else %}
-				<div class="text-center" style="padding:2px">You have no recent tasks to view</div>
-{%- endif %}
-
-			</div>
-		</div>
 {%- if does_user_have_permission('systems.all.view') %}
 	</div>
 	<div class="col-md-3 hidden-xs hidden-sm">
