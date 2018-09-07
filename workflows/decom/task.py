@@ -1,5 +1,6 @@
 import requests
 import ldap
+from urlparse import urljoin
 
 def run(helper, options):
 
@@ -36,6 +37,8 @@ def run(helper, options):
 			r = action_sudoldap_update(action, helper, options['wfconfig'])
 		elif action['id'] == "sudoldap.delete":
 			r = action_sudoldap_delete(action, helper, options['wfconfig'])
+		elif action['id'] == "graphite.delete":
+			r = action_graphite_delete(action, helper, options['wfconfig'])
 		elif action['id'] == "system.update_decom_date":
 			r = action_update_decom_date(action, helper) 
 			
@@ -282,3 +285,21 @@ def action_update_decom_date(action, helper):
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to update the decommission date in Cortex")
 		return False
+
+################################################################################
+
+def action_graphite_delete(action, helper, wfconfig):
+	try:
+		# Make the REST call to delete the metrics
+		url = urljoin('https://' + wfconfig['GRAPHITE_DELETE_HOST'] + '/host/', action['data']['host'])
+		r = requests.delete(url, auth=(wfconfig['GRAPHITE_DELETE_USER'], wfconfig['GRAPHITE_DELETE_PASSWORD']))
+
+		if r.status_code != 200:
+			helper.end_event(success=False, description="Failed to remove metrics from Graphite. CarbonHTTPInterface returned error code " + str(r.status_code))
+			return False
+
+		return True
+	except Exception as e:
+		helper.end_event(success=False, description="Failed to remove the metrics from Graphite: " + str(e))
+		return False
+
