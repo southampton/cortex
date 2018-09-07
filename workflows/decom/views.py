@@ -225,6 +225,20 @@ def decom_step2(id):
 	except Exception as ex:
 		flash('Warning - An error occurred when communication with ' + str(workflow.config['SUDO_LDAP_URL']) + ': ' + str(ex), 'alert-warning')
 
+	## Check graphite for monitoring entries
+	try:
+		for suffix in workflow.config['GRAPHITE_DELETE_SUFFIXES']:
+			host = system['name'] + suffix
+			url = urljoin('https://' + workflow.config['GRAPHITE_DELETE_HOST'] + '/host/', system['name'] + suffix)
+			r = requests.get(url, auth=(workflow.config['GRAPHITE_DELETE_USER'], workflow.config['GRAPHITE_DELETE_PASSWORD']))
+			if r.status_code == 200:
+				js = r.json()
+				if type(js) is list and len(js) > 0:
+					actions.append({'id': 'graphite.delete', 'desc': 'Remove metrics from Graphite / Grafana', 'detail': 'Delete ' + ','.join(js) + ' from ' + workflow.config['GRAPHITE_DELETE_HOST'], 'data': {'host': host}})
+
+	except Exception as ex:
+		flash('Warning - An error occurred when communication with ' + str(workflow.config['GRAPHITE_DELETE_URL']) + ': ' + str(ex), 'alert-warning')
+
 	# If the config says nothing about creating a ticket, or the config 
 	# says to create a ticket:
 	if 'TICKET_CREATE' not in workflow.config or workflow.config['TICKET_CREATE'] is True:
