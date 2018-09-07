@@ -113,6 +113,11 @@ PUPPET_AUTOSIGN_URL='https://yourserver.tld/getcert'
 PUPPET_AUTOSIGN_KEY='changeme'
 PUPPET_AUTOSIGN_VERIFY=False
 
+# Graphite
+GRAPHITE_URL='graphite.yourdomain.tld'
+GRAPHITE_USER='user'
+GRAPHITE_PASS='pass'
+
 # Red Hat Satellite Keys
 SATELLITE_KEYS = {
 	'el7s' : {
