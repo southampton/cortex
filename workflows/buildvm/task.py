@@ -81,7 +81,7 @@ def run(helper, options):
 		# Override primary owner to match allocated_by
 		options['primary_owner_who'] = helper.username
 		options['primary_owner_role'] = 'Student'
-		
+
 
 	## Allocate a hostname #################################################
 

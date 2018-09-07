@@ -145,7 +145,7 @@ def standard():
 			dns_aliases = request.form.get('dns_aliases', None)
 
 
-			if dns_aliases is not None and len(dns_aliases) >= 0:
+			if dns_aliases is not None and len(dns_aliases) > 0:
 				dns_aliases = dns_aliases.split(',')
 			else:
 				dns_aliases = []
