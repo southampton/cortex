@@ -32,7 +32,7 @@ def run(helper, options):
 		os_names = options['wfconfig']['OS_NAMES']
 		os_disks = options['wfconfig']['OS_DISKS']
 		vm_folder_name = None
-		dns_aliases = []
+		dns_aliases = options['dns_aliases']
 	elif workflow == 'sandbox':
 		prefix = options['wfconfig']['SB_PREFIX']
 		vcenter_tag = options['wfconfig']['SB_VCENTER_TAG']

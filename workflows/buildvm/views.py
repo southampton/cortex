@@ -142,6 +142,13 @@ def standard():
 			primary_owner_role = request.form.get('primary_owner_role', None)
 			secondary_owner_who = request.form.get('secondary_owner_who', None)
 			secondary_owner_role = request.form.get('secondary_owner_role', None)
+			dns_aliases = request.form.get('dns_aliases', None)
+
+
+			if dns_aliases is not None and len(dns_aliases) >= 0:
+				dns_aliases = dns_aliases.split(',')
+			else:
+				dns_aliases = []
 
 			# Validate the data (common between standard / sandbox)
 			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, workflow.config['OS_ORDER'], [e['id'] for e in environments])
@@ -183,6 +190,7 @@ def standard():
 		options['primary_owner_role'] = primary_owner_role
 		options['secondary_owner_who'] = secondary_owner_who
 		options['secondary_owner_role'] = secondary_owner_role
+		options['dns_aliases'] = dns_aliases
 
 		if 'NOTIFY_EMAILS' in app.config:
 			options['notify_emails'] = app.config['NOTIFY_EMAILS']
