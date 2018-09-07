@@ -224,22 +224,24 @@ def decom_step2(id):
 					actions.append({'id': 'sudoldap.delete', 'desc': 'Delete ' + ldap_dn_data[dn]['cn'] + ' because we\'ve removed its last sudoHost attribute', 'detail': 'Delete ' + dn + ' on ' + workflow.config['SUDO_LDAP_URL'], 'data': {'dn': dn, 'value': ldap_dn_data[dn]['sudoHost']}})
 				
 		except Exception as ex:
-			flash('Warning - An error occurred when communication with ' + str(workflow.config['SUDO_LDAP_URL']) + ': ' + str(ex), 'alert-warning')
+			flash('Warning - An error occurred when communicating with ' + str(workflow.config['SUDO_LDAP_URL']) + ': ' + str(ex), 'alert-warning')
 
 	## Check graphite for monitoring entries
 	if 'GRAPHITE_DELETE_ENABLE' in workflow.config and workflow.config['GRAPHITE_DELETE_ENABLE']:
 		try:
 			for suffix in workflow.config['GRAPHITE_DELETE_SUFFIXES']:
 				host = system['name'] + suffix
-				url = urljoin('https://' + workflow.config['GRAPHITE_DELETE_HOST'] + '/host/', system['name'] + suffix)
-				r = requests.get(url, auth=(workflow.config['GRAPHITE_DELETE_USER'], workflow.config['GRAPHITE_DELETE_PASSWORD']))
+				url = urljoin(app.config['GRAPHITE_URL'], '/host/' + system['name'] + suffix)
+				r = requests.get(url, auth=(app.config['GRAPHITE_USER'], app.config['GRAPHITE_PASS']))
 				if r.status_code == 200:
 					js = r.json()
 					if type(js) is list and len(js) > 0:
-						actions.append({'id': 'graphite.delete', 'desc': 'Remove metrics from Graphite / Grafana', 'detail': 'Delete ' + ','.join(js) + ' from ' + workflow.config['GRAPHITE_DELETE_HOST'], 'data': {'host': host}})
+						actions.append({'id': 'graphite.delete', 'desc': 'Remove metrics from Graphite / Grafana', 'detail': 'Delete ' + ','.join(js) + ' from ' + app.config['GRAPHITE_URL'], 'data': {'host': host}})
+				else:
+					flash('Warning - CarbonHTTPInterface returned error code ' + str(r.status_code), 'alert-warning')
 
 		except Exception as ex:
-			flash('Warning - An error occurred when communication with ' + str(workflow.config['GRAPHITE_DELETE_URL']) + ': ' + str(ex), 'alert-warning')
+			flash('Warning - An error occurred when communicating with ' + str(app.config['GRAPHITE_URL']) + ': ' + str(ex), 'alert-warning')
 
 	# If the config says nothing about creating a ticket, or the config 
 	# says to create a ticket:
