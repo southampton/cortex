@@ -291,8 +291,8 @@ def action_update_decom_date(action, helper):
 def action_graphite_delete(action, helper, wfconfig):
 	try:
 		# Make the REST call to delete the metrics
-		url = urljoin('https://' + wfconfig['GRAPHITE_DELETE_HOST'] + '/host/', action['data']['host'])
-		r = requests.delete(url, auth=(wfconfig['GRAPHITE_DELETE_USER'], wfconfig['GRAPHITE_DELETE_PASSWORD']))
+		url = urljoin(helper.config['GRAPHITE_URL'], '/host/' + action['data']['host'])
+		r = requests.delete(url, auth=(helper.config['GRAPHITE_USER'], helper.config['GRAPHITE_PASS']))
 
 		if r.status_code != 200:
 			helper.end_event(success=False, description="Failed to remove metrics from Graphite. CarbonHTTPInterface returned error code " + str(r.status_code))

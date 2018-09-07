@@ -114,7 +114,7 @@ PUPPET_AUTOSIGN_KEY='changeme'
 PUPPET_AUTOSIGN_VERIFY=False
 
 # Graphite
-GRAPHITE_URL='graphite.yourdomain.tld'
+GRAPHITE_URL='https://graphite.yourdomain.tld'
 GRAPHITE_USER='user'
 GRAPHITE_PASS='pass'
 
