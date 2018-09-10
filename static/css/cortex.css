@@ -105,11 +105,11 @@ body
 {
 	vertical-align: middle;
 }
-.list-group-item span
+.list-group-item span.sidebar-hidden
 {
 	display: none;
 }
-#layout-row.active .list-group-item span
+#layout-row.active .list-group-item span.sidebar-hidden
 {
 	display: inline;
 	padding-left: 10px;
