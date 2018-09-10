@@ -143,13 +143,14 @@ def context_processor():
 		except Exception as ex:
 			pass
 
-	# Determine theme for the user
-	if 'username' in session:
+		# Determine theme for the user
 		try:
 			if g.redis.get('user:' + session['username'] + ":preferences:interface:theme") == "dark":
 				injectdata['theme'] = "dark"
 		except Exception as ex:
 			pass
+
+	# Add the banner message.
 	try:
 		injectdata['banner_message'] = app.config['BANNER_MESSAGE']
 	except KeyError:
