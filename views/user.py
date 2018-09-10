@@ -154,6 +154,11 @@ def preferences():
 		# if they dont want a different theme then don't store a preference at all
 		g.redis.delete("user:" + session['username'] + ":preferences:interface:theme")
 
+	sidebar_expand = False
+	if 'sidebar_expand' in request.form and request.form['sidebar_expand'] == 'yes':
+		g.redis.set('user:' + session['username'] + ':preferences:interface:sidebar', 'expand')
+	else:
+		g.redis.delete('user:' + session['username'] + ':preferences:interface:sidebar')
 
 	flash("Your preferences have been saved","alert-success")
 	return redirect(url_for('dashboard'))

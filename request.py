@@ -132,11 +132,14 @@ def context_processor():
 		perms.append({'link': url_for('system_perms_roles'), 'title': 'System Permission Roles', 'icon': 'fa-user-secret'})
 		perms.append({'link': url_for('systems_withperms'), 'title': 'Systems with permissions', 'icon': 'fa-list'})
 
+	# Set injectdata default options.
 	injectdata['menu'] = { 'systems': systems, 'favourites': favourites, 'vmware': vmware, 'puppet': puppet, 'admin': admin, 'perms': perms }
-
-	# Determine the layout mode for the user
 	injectdata['classic_layout'] = False
+	injectdata['sidebar_expand'] = False
+
 	if 'username' in session:
+
+		# Determine the layout mode for the user
 		try:
 			if g.redis.get('user:' + session['username'] + ":preferences:interface:layout") == "classic":
 				injectdata['classic_layout'] = True
@@ -147,6 +150,13 @@ def context_processor():
 		try:
 			if g.redis.get('user:' + session['username'] + ":preferences:interface:theme") == "dark":
 				injectdata['theme'] = "dark"
+		except Exception as ex:
+			pass
+
+		# Determine whether to expand sidebar.
+		try:
+			if g.redis.get('user:' + session['username'] + ':preferences:interface:sidebar') == 'expand':
+				injectdata['sidebar_expand'] = True
 		except Exception as ex:
 			pass
 
