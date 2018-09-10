@@ -71,7 +71,7 @@ a.server-link:hover { text-decoration: underline !important; }
 						</tr>
 					</thead>
 					<tbody>
-{%- for system in systems %}
+						{%- for system in systems %}
 						<tr>
 							<td>{% if system.vmware_guest_state == "poweredOn"%} <i title="VM Powered On" class="fa fa-fw fa-play icon-state icon-on"></i>
 								{% elif system.vmware_guest_state == "poweredOff"%} <i title="VM Powered Off" class="fa fa-fw fa-stop icon-state icon-off"></i>
@@ -84,29 +84,29 @@ a.server-link:hover { text-decoration: underline !important; }
 							<td>{{ system.allocation_date }}</td>
 							<td><a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
 						</tr>
-{%- endfor %}
+						{%- endfor %}
 					</tbody>
 				</table>
-<script type="text/javascript">
-	dataTable = $('#your-systems').DataTable({
-		"pageLength": 5,
-		"lengthMenu": [[5,10,15,50,100,-1], [5,10,15,50,100,'All']],
-		"order": [[4, 'desc']],
-		"columns": [null, null, null, null, null,{ "orderable": false, "targets": 0 }],
-		"searching": true,
-	});
-	$(window).resize(function() {
-		$('#your-systems').css('width', '100%');
-		dataTable.columns.adjust();
-	});
-</script>
+				<script type="text/javascript">
+					dataTable = $('#your-systems').DataTable({
+						"pageLength": 5,
+						"lengthMenu": [[5,10,15,50,100,-1], [5,10,15,50,100,'All']],
+						"order": [[4, 'desc']],
+						"columns": [null, null, null, null, null,{ "orderable": false, "targets": 0 }],
+						"searching": true,
+					});
+					$(window).resize(function() {
+						$('#your-systems').css('width', '100%');
+						dataTable.columns.adjust();
+					});
+				</script>
 			</div>
 		</div>
-{%- endif %}
+		{%- endif %}
 		<div class="panel panel-default">
 			<div class="panel-heading"><h3 class="panel-title">Your recent tasks</h3></div>
 			<div class="panel-body">
-{%- if tasks and tasks|length > 0 %}
+				{%- if tasks and tasks|length > 0 %}
 				<table class="table table-condensed table-striped" id="tasks" style="margin-bottom:0">
 					<thead>
 						<tr>
@@ -129,13 +129,13 @@ a.server-link:hover { text-decoration: underline !important; }
 						{%- endfor %}
 					</tbody>
 				</table>
-{%- else %}
+				{%- else %}
 				<div class="text-center" style="padding:2px">You have no recent tasks to view</div>
-{%- endif %}
-
+				{%- endif %}
 			</div>
 		</div>
-{%- if does_user_have_permission('systems.all.view') %}
+
+		{%- if does_user_have_permission('systems.all.view') %}
 		<div class="panel panel-default">
 			<div class="panel-heading"><h3 class="panel-title">Recently created systems</h3></div>
 			<div class="panel-body">
@@ -151,7 +151,7 @@ a.server-link:hover { text-decoration: underline !important; }
 					</tr>
 				</thead>
 				<tbody>
-{%- for system in recent_systems %}
+					{%- for system in recent_systems %}
 					<tr>
 						<td>{% if system.vmware_guest_state == "poweredOn"%} <i title="VM Powered On" class="fa fa-fw fa-play icon-state icon-on"></i>
 							{% elif system.vmware_guest_state == "poweredOff"%} <i title="VM Powered Off" class="fa fa-fw fa-stop icon-state icon-off"></i>
@@ -164,7 +164,7 @@ a.server-link:hover { text-decoration: underline !important; }
 						<td>{{ system.allocation_date }}</td>
 						<td><a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
 					</tr>
-{%- endfor %}
+					{%- endfor %}
 				</tbody>
 			</table>
 			<script type="text/javascript">
@@ -182,7 +182,7 @@ a.server-link:hover { text-decoration: underline !important; }
 			</script>
 			</div>
 		</div>
-{%- endif %}
+		{%- endif %}
 {%- if does_user_have_permission('systems.all.view') %}
 	</div>
 	<div class="col-md-3 hidden-xs hidden-sm">
