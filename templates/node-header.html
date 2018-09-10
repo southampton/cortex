@@ -1,5 +1,4 @@
 {% macro header(system,active="overview") -%}
-
 <div style="margin-bottom: 20px">
 	<ul class="nav nav-tabs">
 		<li style="padding: 2px 15px; font-size: 28px;"><i class="fa fa-fw fa-server"></i> {{ system.name }}</li>
@@ -12,7 +11,6 @@
 		<li role="presentation" class="disabled"><a>Rubrik</a></li>
 		{% endif -%}
 		<li role="presentation"{% if active == "actions" %} class="active"{%endif%}><a href="{{url_for('system_actions',id=system.id)}}">Actions</a></li>
-
 		{% if system.puppet_certname -%}
 		{% if does_user_have_system_permission(system.id, "edit.puppet", "systems.all.edit.puppet") -%}
 		<li role="presentation"{% if active == "puppet_classify" %} class="active"{%endif%}><a href="{{url_for('puppet_enc_edit',node=system.puppet_certname)}}">Classify</a></li>
@@ -26,12 +24,9 @@
 		<li role="presentation" class="disabled"><a>Reports</a></li>
 		<li role="presentation" class="disabled"><a>Facts</a></li>
 		{% endif -%}
-
 		{% if does_user_have_permission("admin.permissions") -%}
 		<li role="presentation"{% if active == "perms" %} class="active"{%endif%}><a href="{{url_for('perms_system',id=system.id)}}">Permissions</a></li>
 		{% endif -%}
-<!--		<li role="presentation"{% if active == "satellite" %} class="active"{%endif%}><a href="#profile">Satellite</a></li>-->
-		
 		{%- if system.cmdb_id and does_user_have_system_permission(system.id, "view.detail", "systems.all.view") %}
 		<li role="presentation"><a href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank">ServiceNow <i class="fa fa-fw fa-external-link"></i></a></li>
 		{% else %}
