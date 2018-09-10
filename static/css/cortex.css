@@ -1,16 +1,15 @@
+/*
+ * cortex.css
+ * Global Cortex CSS Styles
+ */
 @import url(vendor/Orbitron-Fonts.css);
 
-.navbar-brand
+body
 {
-	font-family: 'Orbitron', cursive;
-	font-weight: 600;
-	/*font-size: 30px;*/
-	text-shadow: 0px 0px 10px rgba(150, 150, 150, 1);
-	color: #999999 !important;
-	position: relative;
-	top: 3px;
+	padding-bottom: 0px;
 }
 
+/* Main */
 #main
 {
 	padding-right: 40px;
@@ -25,15 +24,22 @@
 	{
 		margin-left: 55px;
 	}
+	#layout-row.active #main
+	{
+		margin-left: 150px;
+	}
 }
 
-span.arrow {
-  float: right;
-  margin-top: 7px;
-}
-
-.sidebar {
-  display: none;
+/* Nav */
+.navbar-brand
+{
+	font-family: 'Orbitron', cursive;
+	font-weight: 600;
+	/*font-size: 30px;*/
+	text-shadow: 0px 0px 10px rgba(150, 150, 150, 1);
+	color: #999999 !important;
+	position: relative;
+	top: 3px;
 }
 
 .hidden-search {
@@ -64,6 +70,11 @@ span.arrow {
 	}
 }
 
+/* Sidebar */
+.sidebar {
+  display: none;
+}
+
 @media (min-width: 768px) {
 	.sidebar
 	{
@@ -81,9 +92,33 @@ span.arrow {
 	}
 }
 
-body
+/* Sidebar Collapseable */
+#sidebar-small
 {
-	padding-bottom: 0px;
+	width: 55px;
+}
+#layout-row.active #sidebar-small
+{
+	width: 150px;
+}
+#layout-row.active .list-group-item i
+{
+	vertical-align: middle;
+}
+.list-group-item span
+{
+	display: none;
+}
+#layout-row.active .list-group-item span
+{
+	display: inline;
+	padding-left: 10px;
+}
+
+/* General */
+span.arrow {
+  float: right;
+  margin-top: 7px;
 }
 
 .control-label
@@ -352,43 +387,6 @@ i.icon-favourites:hover
 {
 	color: gold !important;
 }
-/* Additional bg-classes for dashboard */
-
-.bg-green
-{
-	color: #FFFFFF;
-	background-color: #94c140;
-}
-
-.bg-dorange
-{
-	color: #FFFFFF;
-	background-color: #ec663c;
-}
-
-.bg-lorange
-{
-	color: #FFFFFF;
-	background-color: #ffa63c;
-}
-
-.bg-purple
-{
-	color: #FFFFFF;
-	background-color: #9c4274;
-}
-
-.bg-lblue
-{
-	color: #FFFFFF;
-	background-color: #12b0c5;
-}
-
-.bg-teal
-{
-	color: #FFFFFF;
-	background-color: #47bbb3;
-}
 
 /* Popover menu stuff */
 .popover-content-nopad
@@ -406,6 +404,11 @@ i.icon-favourites:hover
 	bottom: 0; 
 	width: 50px;
 	margin-bottom: 0px;
+}
+
+#layout-row.active .list-group-bottom
+{
+	width: 145px;
 }
 
 .list-group-menu > a
@@ -454,7 +457,7 @@ legend
 .banner
 {
 	width: 100%;
-	background-color: #ae0000;
+	background-color: #800000;
 	font-size: 1.4em;
 	color: #ffffff;
 	padding: 0.1em;

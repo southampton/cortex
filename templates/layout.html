@@ -7,22 +7,19 @@
 		<title>{% if title %}{{ title }} - {% endif %}Cortex</title>
 		<link rel="icon" type="image/png" href="{{ url_for('static', filename='images/cortex-v3.png') }}">
 		<link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/cortex-v3.png') }}">
+		
 		{#- CSS #}
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/font-awesome.min.css') }}">
 		{%- if theme == "dark" %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap-dark.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-dark.min.css') }}">
 		{%- else %}
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap.min.css') }}">
 		{%- endif %}
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/dataTables.bootstrap.min.css') }}">
 		{%- if classic_layout %}
-		<style type="text/css">
-		body
-		{
-			padding-top: 70px;
-		}
-		</style> 
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-classic.css') }}">
 		{%- endif %}
+
 		{#- JavaScript #}
 		<script src="{{ url_for('static', filename='js/vendor/jquery.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/vendor/bootstrap.min.js') }}"></script>
@@ -36,15 +33,16 @@
 		<script type="text/javascript" src="{{ url_for('static', filename='js/cortex.js') }}"></script>
 		{%- block head %}{% endblock %}
 		{#- This must come after 'block head' to allow us to do global customisations #}
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}">
 		{%- if theme == "dark" %}
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-dark.css') }}">
 		{%- else %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-normal.css') }}">
 		{%- endif %}
 	</head>
 	<body class="{{ "cortex-classic" if classic_layout else "cortex-normal" }}">
-	{%- if banner_message %}<div class="banner">{{ banner_message }}</div>{% endif %}
-{%- if menu.systems and menu.systems|length > 0 %}
+		{%- if banner_message %}<div class="banner">{{ banner_message }}</div>{% endif %}
+		{%- if menu.systems and menu.systems|length > 0 %}
 		<div id="search" class="modal" tabindex="-1" role="dialog">
 			<div class="modal-dialog">
 				<div class="modal-content">
@@ -66,8 +64,8 @@
 				</div>
 			</div>
 		</div>
-{%- endif %}
-{%- if menu.puppet and menu.puppet|length > 0 %}
+		{%- endif %}
+		{%- if menu.puppet and menu.puppet|length > 0 %}
 		<div id="puppet-search" class="modal" tabindex="-1" role="dialog">
 			<div class="modal-dialog">
 				<div class="modal-content">
@@ -90,7 +88,7 @@
 				</div>
 			</div>
 		</div>
-{%- endif %}
+		{%- endif %}
 		<div id="prefs" class="modal fade" tabindex="-1" role="dialog">
 			<div class="modal-dialog">
 				<div class="modal-content">
@@ -100,7 +98,7 @@
 							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 							<h4 class="modal-title">Preferences</h4>
 						</div>
-						<div class="modal-body" style="padding-bottom: 40px">
+						<div class="modal-body" style="padding-bottom: 100px">
 							<div class="form-group">
 								<div class="col-sm-10">
 									<div class="checkbox">
@@ -113,6 +111,12 @@
 											<input type="checkbox" name="theme" value="dark" {%if theme == "dark" %}checked="checked"{%endif%}>
 											Use dark theme<br/>
 										</label>
+										<br/>
+										<label>
+											<input type="checkbox" name="sidebar_expand" value="yes" {%if sidebar_expand %}checked="checked"{%endif%}>
+											Expand the vertical sidebar to include text for each item. (Vertical layout only)<br/>
+										</label>
+
 									</div>
 								</div>
 							</div>
@@ -238,147 +242,145 @@
 			</div>
 		</div>
 
-		{%if not classic_layout %}
+		{% if not classic_layout -%}
 		<div class="container-fluid">
-			<div class="row">
-				<div id="sidebar-small" class="sidebar" style="width: 55px" >
+			<div id="layout-row" class="row {{' active' if sidebar_expand }}">
+				<div id="sidebar-small" class="sidebar">
 					<div class="list-group list-group-menu">
-						<a href="{{ url_for('dashboard') }}" class="list-group-item{%if active == 'dashboard'%} menu-active{%endif%}"><i class="fa fa-fw fa-dashboard fa-2x"></i></a>
+						<a href="{{ url_for('dashboard') }}" class="list-group-item{%if active == 'dashboard'%} menu-active{%endif%}">
+							<i class="fa fa-fw fa-dashboard fa-2x"></i><span>Dashboard</span>
+						</a>
 						<a tabindex="0" role="button" data-toggle="modal" data-target="#search" class="list-group-item" data-placement="right">
-							<i class="fa fa-fw fa-search fa-2x"></i>
+							<i class="fa fa-fw fa-search fa-2x"></i><span>Search</span>
 						</a>	
 						{%- if menu.favourites and menu.favourites|length > 0 %}
 						<a href="{{ menu.favourites[0].link }}" tabindex="0" role="button" data-mpop="favourites-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'favourites'%} menu-active{%endif%}">
-						<i class="fa fa-fw fa-star fa-2x"></i>
+						<i class="fa fa-fw fa-star fa-2x"></i><span>Favourites</span>
 						</a>
 						{%- endif %}
 						{%- if menu.systems and menu.systems|length > 0 %}
 						<a href="{{ menu.systems[0].link }}" tabindex="0" role="button" data-mpop="systems-menu"tle="Systems" data-container="body" class="list-group-item enable-menu-popover{%if active == 'systems'%} menu-active{%endif%}">
-						<i class="fa fa-fw fa-server fa-2x"></i>
+						<i class="fa fa-fw fa-server fa-2x"></i><span>Systems</span>
 						</a>
 						{%- endif %}
 						{%- if workflows and workflows|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="workflows-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'workflows'%} menu-active{%endif%}"><i class="fa fa-fw fa-plus-circle fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="workflows-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'workflows'%} menu-active{%endif%}"><i class="fa fa-fw fa-plus-circle fa-2x"></i><span>Workflows</span></a>
 						{%- endif %}
 						{%- if menu.vmware and menu.vmware|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="vmware-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'vmware'%} menu-active{%endif%}"><i class="fa fa-fw fa-line-chart fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="vmware-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'vmware'%} menu-active{%endif%}"><i class="fa fa-fw fa-line-chart fa-2x"></i><span>VMware</span></a>
 						{%- endif %}
 						{%- if menu.puppet and menu.puppet|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="puppet-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%}"><i class="fa fa-fw fa-magic fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="puppet-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%}"><i class="fa fa-fw fa-magic fa-2x"></i><span>Puppet</span></a>
 						{%- endif %}
 						{%- if menu.perms and menu.perms|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="perms-menu" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%}"><i class="fa fa-fw fa-lock fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="perms-menu" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%}"><i class="fa fa-fw fa-lock fa-2x"></i><span>Permissions</span></a>
 						{%- endif %}
 						{%- if menu.admin and menu.admin|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="settings-menu"  data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%}"><i class="fa fa-fw fa-sliders fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="settings-menu"  data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%}"><i class="fa fa-fw fa-sliders fa-2x"></i><span>Advanced</span></a>
 						{%- endif %}
-						<a href="{{ url_for('about') }}" class="list-group-item {%if active == 'about'%} menu-active{%endif%}"><i class="fa fa-fw fa-info-circle fa-2x"></i></a>
+						<a href="{{ url_for('about') }}" class="list-group-item {%if active == 'about'%} menu-active{%endif%}"><i class="fa fa-fw fa-info-circle fa-2x"></i><span>About</span></a>
 					</div>
 					<div class="list-group list-group-bottom list-group-menu">
-						<a tabindex="0" role="button" data-mpop="user-menu" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'user'%} menu-active{%endif%}"><i class="fa fa-fw fa-user fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="user-menu" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'user'%} menu-active{%endif%}"><i class="fa fa-fw fa-user fa-2x"></i><span>{{session.get('username','User')}}</span></a>
 					</div>
 				</div>
-
 				<div id="main" class="main">
 		{%- else %}
 		<div class="container-fluid">
 		{%- endif %}
-{%- for category, message in get_flashed_messages(with_categories=true) %}
-					<div class="alert alert-dismissable {{category}}"><button type="button" class="close" data-dismiss="alert">×</button>{{message}}</div>
-{%- endfor -%}
-					{% block body %}{% endblock -%}
-
-{%- if not classic_layout %}
-				</div>
-			</div>
+			{%- for category, message in get_flashed_messages(with_categories=true) %}
+				<div class="alert alert-dismissable {{category}}"><button type="button" class="close" data-dismiss="alert">×</button>{{message}}</div>
+			{%- endfor -%}
+			{% block body %}{% endblock -%}
+		{%- if not classic_layout %}
+		</div></div></div>
+		{%- else %}
 		</div>
-{%- else %}
-		</div>
-{%- endif %}
-{%- if not classic_layout %}
-	{#- Popup menus (popover content is loaded via the id) #}
-	
-	{%- if menu.favourites and menu.favourites|length > 0 %}
-	<div id="favourites-menu" class="hidden">
-	<ul class="list-group list-group-popover">
-		{% for item in menu.favourites -%}
-		<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
-		{%- endfor %}
-	</ul>
-	</div>
-	{%- endif %}
-	
-	{%- if menu.systems and menu.systems|length > 0 %}
-	<div id="systems-menu" class="hidden">
-	<ul class="list-group list-group-popover">
-		{% for item in menu.systems -%}
-		<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
-		{%- endfor %}
-	</ul>
-	</div>
-	{%- endif %}
-
-	{%- if workflows and workflows|length > 0 %}
-	<div id="workflows-menu" class="hidden">
-	<ul class="list-group list-group-popover">
-		{% for func in workflows|sort(attribute='order') -%}
-		<a class="list-group-item" href="{{ url_for(func.name)}}"><i class="fa fa-plus-circle fa-fw"></i> {{ func.title }}</a>
-		{%- endfor %}
-	</ul>
-	</div>
-	{%- endif %}
-
-	{%- if menu.vmware and menu.vmware|length > 0 %}
-	<div id="vmware-menu" class="hidden">
-	<ul class="list-group list-group-popover">
-		{% for item in menu.vmware -%}
-		<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
-		{%- endfor %}
-	</ul>
-	</div>
-	{%- endif %}
-
-	{%- if menu.puppet and menu.puppet|length > 0 %}
-	<div id="puppet-menu" class="hidden">
-	<ul class="list-group list-group-popover">
-		{% for item in menu.puppet -%}
-		{% if item.link == "*puppet_search" -%}
-		<a tabindex="0" role="button" data-toggle="modal" data-target="#puppet-search" class="list-group-item" data-placement="right"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
-		{% else -%}
-		<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 		{%- endif %}
-		{%- endfor %}
-	</ul>
-	</div>
-	{%- endif %}
 
-	{%- if menu.perms and menu.perms|length > 0 %}
-	<div id="perms-menu" class="hidden">
-	<ul class="list-group list-group-popover">
-		{% for item in menu.perms -%}
-		<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
-		{%- endfor %}
-	</ul>
-	</div>
-	{%- endif %}
+	{%- if not classic_layout %}
+	{#- Popup menus (popover content is loaded via the id) #}
+		{%- if menu.favourites and menu.favourites|length > 0 %}
+			<div id="favourites-menu" class="hidden">
+			<ul class="list-group list-group-popover">
+				{% for item in menu.favourites -%}
+				<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
+				{%- endfor %}
+			</ul>
+			</div>
+		{%- endif %}
+		
+		{%- if menu.systems and menu.systems|length > 0 %}
+			<div id="systems-menu" class="hidden">
+			<ul class="list-group list-group-popover">
+				{% for item in menu.systems -%}
+				<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
+				{%- endfor %}
+			</ul>
+			</div>
+		{%- endif %}
 
-	{%- if menu.admin and menu.admin|length > 0 %}
-	<div id="settings-menu" class="hidden">
-	<ul class="list-group list-group-popover">
-		{% for item in menu.admin -%}
-		<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
-		{%- endfor %}
-	</ul>
-	</div>
+		{%- if workflows and workflows|length > 0 %}
+			<div id="workflows-menu" class="hidden">
+			<ul class="list-group list-group-popover">
+				{% for func in workflows|sort(attribute='order') -%}
+				<a class="list-group-item" href="{{ url_for(func.name)}}"><i class="fa fa-plus-circle fa-fw"></i> {{ func.title }}</a>
+				{%- endfor %}
+			</ul>
+			</div>
+		{%- endif %}
 
-	{%- endif %}
-	<div id="user-menu" class="hidden">
-	<ul class="list-group list-group-popover">
-		<a class="list-group-item" data-toggle="modal" data-target="#prefs" href="#"><i class="fa fa-fw fa-cog"></i> Preferences</a>
-		<a class="list-group-item" href="{{ url_for('user_groups') }}"><i class="fa fa-users fa-fw"></i> AD Groups</a>
-		<a class="list-group-item" href="{{ url_for('logout') }}"><i class="fa fa-sign-out fa-fw"></i> Sign Out</a>
-	</ul>
-	</div>
+		{%- if menu.vmware and menu.vmware|length > 0 %}
+			<div id="vmware-menu" class="hidden">
+			<ul class="list-group list-group-popover">
+				{% for item in menu.vmware -%}
+				<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
+				{%- endfor %}
+			</ul>
+			</div>
+		{%- endif %}
+
+		{%- if menu.puppet and menu.puppet|length > 0 %}
+			<div id="puppet-menu" class="hidden">
+			<ul class="list-group list-group-popover">
+				{% for item in menu.puppet -%}
+				{% if item.link == "*puppet_search" -%}
+				<a tabindex="0" role="button" data-toggle="modal" data-target="#puppet-search" class="list-group-item" data-placement="right"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
+				{% else -%}
+				<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
+				{%- endif %}
+				{%- endfor %}
+			</ul>
+			</div>
+		{%- endif %}
+
+		{%- if menu.perms and menu.perms|length > 0 %}
+			<div id="perms-menu" class="hidden">
+			<ul class="list-group list-group-popover">
+				{% for item in menu.perms -%}
+				<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
+				{%- endfor %}
+			</ul>
+			</div>
+		{%- endif %}
+
+		{%- if menu.admin and menu.admin|length > 0 %}
+			<div id="settings-menu" class="hidden">
+			<ul class="list-group list-group-popover">
+				{% for item in menu.admin -%}
+				<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
+				{%- endfor %}
+			</ul>
+			</div>
+		{%- endif %}
+		
+		<div id="user-menu" class="hidden">
+		<ul class="list-group list-group-popover">
+			<a class="list-group-item" data-toggle="modal" data-target="#prefs" href="#"><i class="fa fa-fw fa-cog"></i> Preferences</a>
+			<a class="list-group-item" href="{{ url_for('user_groups') }}"><i class="fa fa-users fa-fw"></i> AD Groups</a>
+			<a class="list-group-item" href="{{ url_for('logout') }}"><i class="fa fa-sign-out fa-fw"></i> Sign Out</a>
+		</ul>
+		</div>
 	{%- endif %}
 	</body>
 </html>

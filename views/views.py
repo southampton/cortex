@@ -92,6 +92,11 @@ def dashboard():
 	curd.execute("SELECT SUM(`memoryMB`) AS `total` FROM `vmware_cache_vm`")
 	total_vm_ram = (curd.fetchone()['total'] or 0) * 1024 * 1024
 
+	try:
+		stats=cortex.lib.puppet.puppetdb_get_node_stats()
+	except Exception:
+		pass
+
 	return render_template('dashboard.html', active="dashboard", 
 		vm_count=vm_count, 
 		ci_count=ci_count, 
@@ -102,11 +107,12 @@ def dashboard():
 		types=types, 
 		title="Dashboard",
 		systems=systems,
-		syscount = len(systems),
+		syscount=len(systems),
 		recent_systems=recent_systems,
-		total_ram = total_ram,
-		total_ram_usage = total_ram_usage,
-		total_vm_ram = total_vm_ram)
+		total_ram=total_ram,
+		total_ram_usage=total_ram_usage,
+		total_vm_ram=total_vm_ram,
+		stats=stats)
 
 ################################################################################
 
