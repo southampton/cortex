@@ -100,7 +100,7 @@
 							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 							<h4 class="modal-title">Preferences</h4>
 						</div>
-						<div class="modal-body" style="padding-bottom: 40px">
+						<div class="modal-body" style="padding-bottom: 100px">
 							<div class="form-group">
 								<div class="col-sm-10">
 									<div class="checkbox">
@@ -113,6 +113,12 @@
 											<input type="checkbox" name="theme" value="dark" {%if theme == "dark" %}checked="checked"{%endif%}>
 											Use dark theme<br/>
 										</label>
+										<br/>
+										<label>
+											<input type="checkbox" name="sidebar_expand" value="yes" {%if sidebar_expand %}checked="checked"{%endif%}>
+											Expand the vertical sidebar to include text for each item. (Vertical layout only)<br/>
+										</label>
+
 									</div>
 								</div>
 							</div>
@@ -240,42 +246,44 @@
 
 		{%if not classic_layout %}
 		<div class="container-fluid">
-			<div class="row">
-				<div id="sidebar-small" class="sidebar" style="width: 55px" >
+			<div id="layout-row" class="row {{' active' if sidebar_expand }}">
+				<div id="sidebar-small" class="sidebar">
 					<div class="list-group list-group-menu">
-						<a href="{{ url_for('dashboard') }}" class="list-group-item{%if active == 'dashboard'%} menu-active{%endif%}"><i class="fa fa-fw fa-dashboard fa-2x"></i></a>
+						<a href="{{ url_for('dashboard') }}" class="list-group-item{%if active == 'dashboard'%} menu-active{%endif%}">
+							<i class="fa fa-fw fa-dashboard fa-2x"></i><span>Dashboard</span>
+						</a>
 						<a tabindex="0" role="button" data-toggle="modal" data-target="#search" class="list-group-item" data-placement="right">
-							<i class="fa fa-fw fa-search fa-2x"></i>
+							<i class="fa fa-fw fa-search fa-2x"></i><span>Search</span>
 						</a>	
 						{%- if menu.favourites and menu.favourites|length > 0 %}
 						<a href="{{ menu.favourites[0].link }}" tabindex="0" role="button" data-mpop="favourites-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'favourites'%} menu-active{%endif%}">
-						<i class="fa fa-fw fa-star fa-2x"></i>
+						<i class="fa fa-fw fa-star fa-2x"></i><span>Favourites</span>
 						</a>
 						{%- endif %}
 						{%- if menu.systems and menu.systems|length > 0 %}
 						<a href="{{ menu.systems[0].link }}" tabindex="0" role="button" data-mpop="systems-menu"tle="Systems" data-container="body" class="list-group-item enable-menu-popover{%if active == 'systems'%} menu-active{%endif%}">
-						<i class="fa fa-fw fa-server fa-2x"></i>
+						<i class="fa fa-fw fa-server fa-2x"></i><span>Systems</span>
 						</a>
 						{%- endif %}
 						{%- if workflows and workflows|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="workflows-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'workflows'%} menu-active{%endif%}"><i class="fa fa-fw fa-plus-circle fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="workflows-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'workflows'%} menu-active{%endif%}"><i class="fa fa-fw fa-plus-circle fa-2x"></i><span>Workflows</span></a>
 						{%- endif %}
 						{%- if menu.vmware and menu.vmware|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="vmware-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'vmware'%} menu-active{%endif%}"><i class="fa fa-fw fa-line-chart fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="vmware-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'vmware'%} menu-active{%endif%}"><i class="fa fa-fw fa-line-chart fa-2x"></i><span>VMware</span></a>
 						{%- endif %}
 						{%- if menu.puppet and menu.puppet|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="puppet-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%}"><i class="fa fa-fw fa-magic fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="puppet-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%}"><i class="fa fa-fw fa-magic fa-2x"></i><span>Puppet</span></a>
 						{%- endif %}
 						{%- if menu.perms and menu.perms|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="perms-menu" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%}"><i class="fa fa-fw fa-lock fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="perms-menu" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%}"><i class="fa fa-fw fa-lock fa-2x"></i><span>Permissions</span></a>
 						{%- endif %}
 						{%- if menu.admin and menu.admin|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="settings-menu"  data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%}"><i class="fa fa-fw fa-sliders fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="settings-menu"  data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%}"><i class="fa fa-fw fa-sliders fa-2x"></i><span>Advanced</span></a>
 						{%- endif %}
-						<a href="{{ url_for('about') }}" class="list-group-item {%if active == 'about'%} menu-active{%endif%}"><i class="fa fa-fw fa-info-circle fa-2x"></i></a>
+						<a href="{{ url_for('about') }}" class="list-group-item {%if active == 'about'%} menu-active{%endif%}"><i class="fa fa-fw fa-info-circle fa-2x"></i><span>About</span></a>
 					</div>
 					<div class="list-group list-group-bottom list-group-menu">
-						<a tabindex="0" role="button" data-mpop="user-menu" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'user'%} menu-active{%endif%}"><i class="fa fa-fw fa-user fa-2x"></i></a>
+						<a tabindex="0" role="button" data-mpop="user-menu" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'user'%} menu-active{%endif%}"><i class="fa fa-fw fa-user fa-2x"></i><span>{{session.get('username','User')}}</span></a>
 					</div>
 				</div>
 
