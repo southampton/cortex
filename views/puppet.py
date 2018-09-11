@@ -203,12 +203,14 @@ def puppet_nodes():
 
 	for row in results:
 		if row['certname'] in statuses:
-			row['status'] = statuses[row['certname']]
+			row['status'] = statuses[row['certname']]['status']
+			row['clientnoop'] = statuses[row['certname']]['clientnoop']
 		else:
 			row['status'] = 'unknown'
+			row['clientnoop'] = 'unknown'
 
 	# Render
-	return render_template('puppet/nodes.html', active='puppet', data=results, title="Puppet Nodes")
+	return render_template('puppet/nodes.html', active='puppet', data=results, title="Puppet Nodes", hide_unknown=True)
 
 ################################################################################
 
@@ -494,6 +496,7 @@ def puppet_reports(node):
 		# Connect to PuppetDB and get the reports
 		db = cortex.lib.puppet.puppetdb_connect()
 		reports = db.node(node).reports()
+		
 	except HTTPError as he:
 		# If we get a 404 response from PuppetDB
 		if he.response.status_code == 404:
