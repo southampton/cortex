@@ -120,10 +120,19 @@ def systems_search():
 		return abort(400)
 
 	# Search for the system
-	
-	system = cortex.lib.systems.get_system_by_name(query)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-	if system is not None:
+	if 'imfeelinglucky' in request.args and request.args.get('imfeelinglucky') == 'yes':
+		# Use a LIKE query.
+		curd.execute("SELECT * FROM `systems_info_view` WHERE `name` LIKE %s", ('%{0}%'.format(query),))
+	else:
+		# Search by exact name matches only.
+		curd.execute("SELECT * FROM `systems_info_view` WHERE `name`=%s", (query,))
+
+	system = curd.fetchone()
+	
+	# Check if there was only 1 result.
+	if curd.rowcount == 1 and system is not None:
 		# If we found the system, redirect to the system page
 		return redirect(url_for('system', id=system['id']))
 	else:
