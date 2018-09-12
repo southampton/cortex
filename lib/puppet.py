@@ -176,6 +176,16 @@ def puppetdb_connect():
 
 	# Connect to PuppetDB
 	return cortex_puppet_connect(app.config['PUPPETDB_HOST'], port=app.config['PUPPETDB_PORT'], ssl_cert=app.config['PUPPETDB_SSL_CERT'], ssl_key=app.config['PUPPETDB_SSL_KEY'], ssl_verify=app.config['PUPPETDB_SSL_VERIFY'])
+
+################################################################################
+
+def puppetdb_query(endpoint, db=None, **kwargs):
+	"""Peform direct queries against the PuppetDB"""
+	
+	if db is None:
+		db = puppetdb_connect()
+
+	return db._query(endpoint, **kwargs)
 	
 ################################################################################
 
