@@ -47,10 +47,13 @@ def run(helper, options):
 			# Count number of nodes (we can't do len(nodes) as it's a generator)
 			count += 1
 
-			if node.status in stats:
-				stats[node.status] += 1
+			if node.fact('clientnoop').value:
+				stats['noop'] += 1
 			else:
-				unknown += 1
+				if node.status in stats:
+					stats[node.status] += 1
+				else:
+					unknown += 1
 
 		# Put the remaining stats in our dictionary
 		stats['count'] = count

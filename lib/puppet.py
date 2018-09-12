@@ -9,6 +9,60 @@ import pypuppetdb
 
 ################################################################################
 
+class CortexPuppetBaseAPI(pypuppetdb.BaseAPI):
+	"""
+	Override pypuppetdb.BaseAPI to prvoide better reporting.
+	"""
+
+	def reports(self, **kwargs):
+		reports = self._query('reports', **kwargs)
+		for report in reports:
+			yield CortexPuppetReport( 
+				api=self,
+				node=report['certname'],
+				hash_=report['hash'],
+				start=report['start_time'],
+				end=report['end_time'],
+				received=report['receive_time'],
+				version=report['configuration_version'],
+				format_=report['report_format'],
+				agent_version=report['puppet_version'],
+				transaction=report['transaction_uuid'],
+				environment=report['environment'],
+				status=report['status'],
+				noop=report.get('noop'),
+				noop_pending=report.get('noop_pending'),
+				metrics=report['metrics']['data'],
+				logs=report['logs']['data'],
+				code_id=report.get('code_id'),
+				catalog_uuid=report.get('catalog_uuid'),
+				cached_catalog_status=report.get('cached_catalog_status')
+			)
+
+class CortexPuppetReport(pypuppetdb.types.Report):
+	"""
+	Override pypuppetdb.types.Report to make the noop status available.
+	"""
+
+	def __init__(self, api, node, hash_, start, end, received, version, format_, agent_version, transaction, status=None, metrics={}, logs={}, environment=None, noop=False, noop_pending=False, code_id=None, catalog_uuid=None, cached_catalog_status=None, producer=None):
+		# Call super init.
+		super(CortexPuppetReport, self).__init__(api, node, hash_, start, end, received, version, format_, agent_version, transaction, status, metrics, logs, environment, noop, noop_pending, code_id, catalog_uuid, cached_catalog_status, producer)
+		# Set noop
+		self.noop=noop
+		
+def cortex_puppet_connect(host='localhost', port=8080, ssl_verify=False, ssl_key=None, ssl_cert=None, timeout=10, protocol=None, url_path='/', username=None, password=None, token=None):
+	"""
+	Cortex custom connect method for connecting to the PuppetDB API.
+	"""
+	return CortexPuppetBaseAPI(
+		host=host, port=port,
+		timeout=timeout, ssl_verify=ssl_verify, ssl_key=ssl_key,
+		ssl_cert=ssl_cert, protocol=protocol, url_path=url_path,
+		username=username, password=password, token=token
+	)
+
+################################################################################
+
 def generate_node_config(certname):
 	"""Generates a YAML document describing the configuration of a particular
 	node given as 'certname'."""
@@ -121,8 +175,18 @@ def puppetdb_connect():
 	application configuration."""
 
 	# Connect to PuppetDB
-	return pypuppetdb.connect(app.config['PUPPETDB_HOST'], port=app.config['PUPPETDB_PORT'], ssl_cert=app.config['PUPPETDB_SSL_CERT'], ssl_key=app.config['PUPPETDB_SSL_KEY'], ssl_verify=app.config['PUPPETDB_SSL_VERIFY'])
+	return cortex_puppet_connect(app.config['PUPPETDB_HOST'], port=app.config['PUPPETDB_PORT'], ssl_cert=app.config['PUPPETDB_SSL_CERT'], ssl_key=app.config['PUPPETDB_SSL_KEY'], ssl_verify=app.config['PUPPETDB_SSL_VERIFY'])
 
+################################################################################
+
+def puppetdb_query(endpoint, db=None, **kwargs):
+	"""Peform direct queries against the PuppetDB"""
+	
+	if db is None:
+		db = puppetdb_connect()
+
+	return db._query(endpoint, **kwargs)
+	
 ################################################################################
 
 def puppetdb_get_node_statuses(db=None):
@@ -137,7 +201,10 @@ def puppetdb_get_node_statuses(db=None):
 	# Iterate over nodes, counting statuses
 	statuses = {}
 	for node in nodes:
-		statuses[node.name] = node.status
+		statuses[node.name] = {
+			'status': node.status,
+			'clientnoop': node.fact('clientnoop').value
+		}
 
 	return statuses
 
@@ -186,11 +253,15 @@ def puppetdb_get_node_stats(db = None):
 		# Count number of nodes (we can't do len(nodes) as it's a generator)
 		count += 1
 
-		# Count the status types
-		if node.status in stats:
-			stats[node.status] += 1
+		# Check if the node is in noop.
+		if node.fact('clientnoop').value:
+			stats['noop'] += 1
 		else:
-			unknown += 1
+			# Count the status types
+			if node.status in stats:
+				stats[node.status] += 1
+			else:
+				unknown += 1
 
 	# Put the remaining stats in our dictionary
 	stats['count'] = count

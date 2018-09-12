@@ -4,6 +4,7 @@ from cortex import app
 import cortex.lib.core
 import cortex.lib.user
 import cortex.lib.vmware
+import cortex.lib.puppet
 from cortex.lib.user import does_user_have_permission
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
@@ -92,10 +93,11 @@ def dashboard():
 	curd.execute("SELECT SUM(`memoryMB`) AS `total` FROM `vmware_cache_vm`")
 	total_vm_ram = (curd.fetchone()['total'] or 0) * 1024 * 1024
 
-	try:
-		stats=cortex.lib.puppet.puppetdb_get_node_stats()
-	except Exception:
-		pass
+	# Puppet Stats
+	stats = {
+		'failed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname", ["=", "latest_report_status", "failed"]]')),
+		'changed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname", ["=", "latest_report_status", "changed"]]')),
+	}
 
 	return render_template('dashboard.html', active="dashboard", 
 		vm_count=vm_count, 
