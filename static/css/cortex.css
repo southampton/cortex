@@ -469,3 +469,13 @@ legend
 {
 	margin-bottom: 1.0em;
 }
+
+/* Puppet CSS */
+.puppet-header
+{
+	margin-bottom: 20px;
+}
+.puppet-header h3 span
+{
+	color: #555555;
+}

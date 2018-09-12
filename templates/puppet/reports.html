@@ -1,7 +1,9 @@
 {% extends "layout.html" %}
 {% block body %}
 {% import 'node-header.html' as node %}
-{{ node.header(system,active="puppet_reports" ) }}
+{% import 'puppet/header.html' as puppeth %}
+{{ node.header(system,active="puppet" ) }}
+{{ puppeth.header(system,active="puppet_reports",title="Reports" ) }}
 
 <table class="table table-condensed table-striped" id="data">
 	<thead>
