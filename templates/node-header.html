@@ -14,15 +14,21 @@
 		{% if system.puppet_certname -%}
 		{% if does_user_have_system_permission(system.id, "edit.puppet", "systems.all.edit.puppet") -%}
 		<li role="presentation"{% if active == "puppet_classify" %} class="active"{%endif%}><a href="{{url_for('puppet_enc_edit',node=system.puppet_certname)}}">Classify</a></li>
+		{% else -%}
+		<li role="presentation" class="disabled"><a>Classify</a></li>
 		{% endif -%}
 		{% if does_user_have_system_permission(system.id, "view.puppet", "systems.all.view.puppet") -%}
 		<li role="presentation"{% if active == "puppet_reports" %} class="active"{%endif%}><a href="{{url_for('puppet_reports',node=system.puppet_certname)}}">Reports</a></li>
 		<li role="presentation"{% if active == "puppet_facts" %} class="active"{%endif%}><a href="{{url_for('puppet_facts',node=system.puppet_certname)}}">Facts</a></li>
 		{% endif -%}
 		{% else -%}
-		<li role="presentation" class="disabled"><a>Classify</a></li>
 		<li role="presentation" class="disabled"><a>Reports</a></li>
 		<li role="presentation" class="disabled"><a>Facts</a></li>
+		{% endif -%}
+		{% if does_user_have_system_permission(system.id, "view.puppet.catalog", "systems.all.view.puppet.catalog") -%}
+		<li role="presentation"{% if active == "puppet_catalog" %} class="active"{%endif%}><a href="{{url_for('puppet_catalog',node=system.puppet_certname)}}">Catalog</a></li>
+		{% else -%}
+		<li role="presentation" class="disabled"><a>Catalog</a></li>
 		{% endif -%}
 		{% if does_user_have_permission("admin.permissions") -%}
 		<li role="presentation"{% if active == "perms" %} class="active"{%endif%}><a href="{{url_for('perms_system',id=system.id)}}">Permissions</a></li>

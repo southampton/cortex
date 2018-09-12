@@ -369,16 +369,12 @@ def puppet_facts(node):
 	except Exception as e:
 		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
-
 	# Turn the facts generator in to a dictionary
 	facts_dict = {}
 
 	if facts != None:
 		for fact in facts:
 			facts_dict[fact.name] = fact.value
-
-	# Load the system data - we don't care if it fails (i.e its not in the systems table)
-	system = cortex.lib.systems.get_system_by_puppet_certname(node)
 
 	# Render
 	return render_template('puppet/facts.html', facts=facts_dict, node=dbnode, active='puppet', title=node + " - Puppet Facts", nodename=node, pactive="facts", system=system)
@@ -507,10 +503,6 @@ def puppet_reports(node):
 	except Exception as e:
 		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
-
-	# Load the system data - we don't care if it fails (i.e its not in the systems table)
-	system = cortex.lib.systems.get_system_by_puppet_certname(node)
-
 	return render_template('puppet/reports.html', reports=reports, active='puppet', title=node + " - Puppet Reports", nodename=node, pactive="reports", system=system)
 
 ################################################################################
@@ -584,3 +576,45 @@ def puppet_search():
 	results = curd.fetchall()
 
 	return render_template('puppet/search.html', active='puppet', data=results, title="Puppet search")
+
+##############################################################################
+
+@app.route('/puppet/catalog/<node>')
+@cortex.lib.user.login_required
+def puppet_catalog(node):
+	"""Show the Puppet catalog for a given node."""
+
+	# Get the system
+	system = cortex.lib.systems.get_system_by_puppet_certname(node)
+	
+	if system == None:
+		abort(404)
+
+	## Check if the user is allowed to edit the Puppet configuration
+	if not does_user_have_system_permission(system['id'],"view.puppet.catalog","systems.all.view.puppet.catalog"):
+		abort(403)
+
+	dbnode = None
+	catalog = None
+	try:
+		# Connect to PuppetDB, get the node information and then it's catalog.
+		db = cortex.lib.puppet.puppetdb_connect()
+		dbnode = db.node(node)
+		catalog = db.catalog(node)
+	except HTTPError as he:
+		# If we get a 404 from the PuppetDB API
+		if he.response.status_code == 404:
+			catalog = None
+		else:
+			raise(he)
+	except Exception as e:
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
+
+	catalog_dict = {}
+	
+	if catalog != None:
+		for res in catalog.get_resources():
+			catalog_dict[str(res)] = res.parameters
+			
+	# Render
+	return render_template('puppet/catalog.html', catalog=catalog_dict, node=dbnode, active='puppet', title=node + " - Puppet Catalog", nodename=node, pactive="catalog", system=system)	
