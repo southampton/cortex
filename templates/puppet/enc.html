@@ -4,6 +4,7 @@
 {% endblock %}
 {% block body %}
 {% import 'node-header.html' as node %}
+{% import 'puppet/header.html' as puppeth %}
 <div class="modal fade" id="modalyaml" tabindex="-1" role="dialog">
 	<div class="modal-dialog modal-lg" role="document">
 		<div class="modal-content">
@@ -75,7 +76,8 @@ $(document).ready(function()
 });
 </script>
 
-{{ node.header(system,active="puppet_classify" ) }}
+{{ node.header(system,active="puppet" ) }}
+{{ puppeth.header(system,active="puppet_classify",title="Classify" ) }}
 
 <form class="form-horizontal" method="POST" role="form">
 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
