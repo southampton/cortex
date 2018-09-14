@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% block body %}
 <div class="page-header">
+	<button id="hide_unknown" type="button" class="btn btn-sm pull-right {% if hide_unknown %}btn-success active{%else%}btn-danger{%endif%}" style="margin-left:4px" title="Hide Unknown Puppet Nodes" data-toggle="popover" data-trigger="hover" data-placement="left" data-content="When ticked, nodes that have a status of 'unknown' are hidden. This is mainly nodes that are present in Cortex's Puppet nodes table but have no entries in the PuppetDB."><i class="fa fa-fw {% if hide_unknown %}fa-check-square-o{%else%}fa-square-o{%endif%}"></i> Hide Unknown Puppet Nodes</button>
 <h3><i class="fa fa-fw fa-server"></i> Puppet Nodes</h3>
 <p class="text-muted">Puppet in Cortex only affects servers registered with the "Puppet 2016" Puppet Master, existing servers will not appear below until they are migrated.</p>
 </div>
@@ -10,7 +11,8 @@
 			<th>System Name</th>
 			<th>Puppet Certificate Name</th>
 			<th>Puppet Environment</th>
-			<th>Node Status</th>
+			<th>Puppet Client Noop</th>
+			<th>Node Last Report Status</th>
 			<th></th>
 		</tr>
 	</thead>
@@ -20,6 +22,7 @@
 			<td><a href="{{url_for('puppet_enc_edit',node=node.certname) }}">{{ node.name }}</a></td>
 			<td>{{ node.certname }}</td>
 			<td>{{ node.env }}</td>
+			<td>{{ node.clientnoop }}</td>
 			<td class="status-{{ node.status }}"><a href="{{ url_for('puppet_dashboard_status', status=node.status) }}">{{ node.status }}</a></td>
 			<td><a href="{{url_for('puppet_enc_edit',node=node.certname) }}" class="btn btn-default btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a></td>
 		</tr>
@@ -27,11 +30,35 @@
 	</tbody>
 </table>
 <script type="text/javascript">
-$('#data').DataTable({
-	"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
-	"pageLength": 15,
-	"order": [[0, 'asc']],
-	"columns": [null, null, null, null, { "orderable": false, "targets": 0 }]
+// Define variable for nodes table.
+var nodes;
+$(function() {
+	$.fn.dataTableExt.afnFiltering.push(function(oSettings, aData, iDataIndex) {
+		if($('#hide_unknown').hasClass('btn-success')) {
+			if(aData[4] == 'unknown') {
+				return false;
+			} else {
+				return true;
+			}
+		} else {
+			return true;
+		}
+	});
+	nodes = $('#data').DataTable({
+		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
+		"pageLength": 15,
+		"order": [[0, 'asc']],
+		"columns": [null, null, null, null, null, { "orderable": false, "targets": 0 }]
+	});
+	$('#hide_unknown').on('click', function(){
+		$('#hide_unknown').toggleClass('btn-success');
+		$('#hide_unknown').toggleClass('btn-danger');
+		$('#hide_unknown').toggleClass('active');
+		$('#hide_unknown i').toggleClass('fa-check-square-o');
+		$('#hide_unknown i').toggleClass('fa-square-o');
+		nodes.draw();
+	});
+	$('[data-toggle="popover"]').popover()
 });
 </script>
 {% endblock %}
