@@ -17,7 +17,7 @@
 		{%- endif %}
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/dataTables.bootstrap.min.css') }}">
 		{%- if classic_layout %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-classic.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-classic.css') }}?version=4.0">
 		{%- endif %}
 
 		{#- JavaScript #}
@@ -30,14 +30,14 @@
 		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/jquery.dataTables.min.js') }}"></script>
 		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/dataTables.bootstrap.min.js') }}"></script>
 		<script type="text/javascript" src="{{ url_for('static', filename='js/mousetrap.min.js') }}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='js/cortex.js') }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='js/cortex.js') }}?version=4.0"></script>
 		{%- block head %}{% endblock %}
 		{#- This must come after 'block head' to allow us to do global customisations #}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}?version=4.0">
 		{%- if theme == "dark" %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-dark.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-dark.css') }}?version=4.0">
 		{%- else %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-normal.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-normal.css') }}?version=4.0">
 		{%- endif %}
 	</head>
 	<body class="{{ "cortex-classic" if classic_layout else "cortex-normal" }}">
