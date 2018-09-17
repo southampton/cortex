@@ -1,0 +1,103 @@
+# Environments that objects can be created in, with individual suffixes and 
+# load balancers
+ENVS=[
+	{'id': 'prod', 'name': 'Production',  'suffix': '',      'nlb': 'myprodbalancer.domain',    'network': '192.168.100.0/24'},
+	{'id': 'test', 'name': 'Test',        'suffix': '-test', 'nlb': 'mydevtestbalancer.domain', 'network': '192.168.110.0/24'},
+	{'id': 'dev',  'name': 'Development', 'suffix': '-dev',  'nlb': 'mydevtestbalancer.domain', 'network': '192.168.120.0/24'}
+]
+
+# Username and password to access the load balancers
+NLB_USERNAME='admin'
+NLB_PASSWORD='password'
+
+# SSL Providers, along with the chain certificate file to use on the F5 BigIPs
+SSL_PROVIDERS=[
+	{'id': 'mysslprovider', 'name': 'My SSL Provider', 'nlb-chain-file': 'MySSLProviderIntermediate.crt'},
+	{'id': 'lets_encrypt',  'name': 'Let\'s Encrypt Authority X3', 'nlb-chain-file': 'LetsEncryptX3.crt'}
+]
+
+# The default SSL provider id (from the SSL_PROVIDERS dictionary)
+DEFAULT_SSL_PROVIDER='mysslprovider'
+
+# The default partition to create objects in
+DEFAULT_PARTITION='Common'
+
+# Prefixes for different object types
+VIRTUAL_SERVER_PREFIX='virtual-'
+POOL_PREFIX='pool-'
+SSL_PROFILE_PREFIX='sslprofile-'
+IRULE_PREFIX='irule-'
+MONITOR_PREFIX='monitor-'
+HTTP_PROFILE_PREFIX='profile-'
+
+# When doing a DNS lookup that is given just as a hostname, add on this domain
+# suffix
+DEFAULT_DOMAIN='domain'
+
+# For DNS lookups: Consider hostname.anything_in_this_list to be a local domain,
+# so add on DEFAULT_DOMAIN
+KNOWN_DOMAIN_SUFFIXES=['test', 'dev']
+
+# Minimum SSL key size to accept
+SSL_MIN_KEY_SIZE = 2048
+
+# Minimum time remaining on SSL certificate (in days)
+SSL_MIN_REMAINING_TIME = 90
+
+# Expected SSL certificate subject parts (can be None)
+SSL_EXPECTED_SUBJECT_OU = None
+SSL_EXPECTED_SUBJECT_O = None
+SSL_EXPECTED_SUBJECT_L = None
+SSL_EXPECTED_SUBJECT_ST = None
+SSL_EXPECTED_SUBJECT_C = None
+
+# When creating SSL Client Profiles, use one of these as the parent
+SSL_CLIENT_PROFILE_PARENT = [
+	{'id': 'clientssl', 'name': 'F5 BigIP Client SSL Default', 'profile': '/Common/clientssl'}
+]
+
+# The default SSL Client Profile (as an ID from SSL_CLIENT_PROFILES)
+DEFAULT_SSL_CLIENT_PROFILE = 'clientssl'
+
+# Whether to warn about the use of self-signed certificates
+SSL_SELF_SIGNED_WARNING = True
+
+# The default HTTP profile to inherit from
+HTTP_PROFILE_DEFAULT = '/Common/http'
+
+# The HTTP profile to inherit from when using X-Forwarded-For. Set to None to 
+# always create a new HTTP profile when using X-Forwarded-For
+HTTP_PROFILE_XFORWARDEDFOR = None
+
+# Whether the Let's Encrypt functionality is enabled
+LETSENCRYPT_ENABLED = False
+
+# The ID of the provider in the SSL_PROVIDERS list that is for Let's Encrypt
+LETSENCRYPT_PROVIDER_ID = 'lets_encrypt'
+
+# The iRule to add to the virtual server for Let's Encrypt
+LETSENCRYPT_IRULE = '/Common/irule-acme-challenge'
+
+# The IP that is through the firewall to respond to automated certificate challenges
+LETSENCRYPT_HOST_IP = '192.168.100.1'
+
+# The hostname of the host object in Infoblox that corresponds to LETSENCRYPT_HOST_IP
+LETSENCRYPT_HOST_FQDN = 'acmehost.domain'
+
+# The DNS view (can be None for default view) to modify DNS entries in for initial Let's Encrypt ACME challenge
+LETSENCRYPT_DNS_VIEW = None
+
+# ACME API Server
+ACME_API_URL = 'http://' + LETSENCRYPT_HOST_FQDN + '/'
+
+# ACME API Client Secret (the X-Client-Secret header)
+ACME_API_SECRET = 'password'
+
+# DNS propagation wait time (seconds)
+DNS_WAIT_TIME = 30
+
+# HSTS maximum age (seconds)
+HSTS_MAX_AGE = 16070400
+
+# Whether HSTS should include subdomains
+HSTS_INCLUDE_SUBDOMAINS = True

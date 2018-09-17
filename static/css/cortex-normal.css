@@ -1,0 +1,41 @@
+/* Additional bg-classes for dashboard */
+.bg-green
+{
+	color: #FFFFFF;
+	background-color: #94c140;
+}
+
+.bg-dorange
+{
+	color: #FFFFFF;
+	background-color: #ec663c;
+}
+
+.bg-lorange
+{
+	color: #FFFFFF;
+	background-color: #ffa63c;
+}
+
+.bg-purple
+{
+	color: #FFFFFF;
+	background-color: #9c4274;
+}
+
+.bg-lblue
+{
+	color: #FFFFFF;
+	background-color: #12b0c5;
+}
+
+.bg-teal
+{
+	color: #FFFFFF;
+	background-color: #47bbb3;
+}
+
+.banner
+{
+	background-color: #ae0000;
+}

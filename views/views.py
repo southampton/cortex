@@ -4,6 +4,7 @@ from cortex import app
 import cortex.lib.core
 import cortex.lib.user
 import cortex.lib.vmware
+import cortex.lib.puppet
 from cortex.lib.user import does_user_have_permission
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
@@ -50,10 +51,15 @@ def dashboard():
 	row = curd.fetchone()
 	task_progress_count = row['count']
 
-	# Get number of failed tasks in the last 3 hours
-	curd.execute('SELECT COUNT(*) AS `count` FROM `tasks` WHERE `status` = %s AND `end` > DATE_SUB(NOW(), INTERVAL 3 HOUR)', (2,))
+	# Get number of failed tasks in the last 8 hours
+	curd.execute('SELECT COUNT(*) AS `count` FROM `tasks` WHERE `status` = %s AND `end` > DATE_SUB(NOW(), INTERVAL 8 HOUR)', (2,))
 	row = curd.fetchone()
 	task_failed_count = row['count']
+
+	# Get number of warning tasks in the last 8 hours
+	curd.execute('SELECT COUNT(*) AS `count` FROM `tasks` WHERE `status` = %s AND `end` > DATE_SUB(NOW(), INTERVAL 8 HOUR)', (3,))
+	row = curd.fetchone()
+	task_warning_count = row['count']
 
 	# Get tasks for user
 	curd.execute('SELECT `id`, `module`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` = %s ORDER BY `start` DESC LIMIT 5', (session['username'],))
@@ -64,7 +70,7 @@ def dashboard():
 	cortex.lib.user.get_users_groups()
 
 	# Get the list of systems the user is specifically allowed to view
-	curd.execute("SELECT * FROM `systems_info_view` WHERE `id` IN (SELECT `system_id` FROM `system_perms` WHERE (`type` = '0' AND `who` = %s AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail')) OR (`type` = '1' AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail') AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s)))", (session['username'], session['username']))
+	curd.execute("SELECT * FROM `systems_info_view` WHERE (`id` IN (SELECT `system_id` FROM `system_role_perms_view` WHERE (`type` = '0' AND `who` = %s AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail')) OR (`type` = '1' AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail') AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s))) OR `allocation_who`=%s) AND ((`cmdb_id` IS NOT NULL AND `cmdb_operational_status` = 'In Service') OR `vmware_uuid` IS NOT NULL) ORDER BY `allocation_date` DESC LIMIT 100;",(session['username'],session['username'], session['username']))
 	systems = curd.fetchall()
 
 	# Recent systems
@@ -87,20 +93,28 @@ def dashboard():
 	curd.execute("SELECT SUM(`memoryMB`) AS `total` FROM `vmware_cache_vm`")
 	total_vm_ram = (curd.fetchone()['total'] or 0) * 1024 * 1024
 
+	# Puppet Stats
+	stats = {
+		'failed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname", ["=", "latest_report_status", "failed"]]')),
+		'changed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname", ["=", "latest_report_status", "changed"]]')),
+	}
+
 	return render_template('dashboard.html', active="dashboard", 
 		vm_count=vm_count, 
 		ci_count=ci_count, 
 		task_progress_count=task_progress_count, 
 		task_failed_count=task_failed_count, 
+		task_warning_count=task_warning_count,
 		tasks=tasks, 
 		types=types, 
 		title="Dashboard",
 		systems=systems,
-		syscount = len(systems),
+		syscount=len(systems),
 		recent_systems=recent_systems,
-		total_ram = total_ram,
-		total_ram_usage = total_ram_usage,
-		total_vm_ram = total_vm_ram)
+		total_ram=total_ram,
+		total_ram_usage=total_ram_usage,
+		total_vm_ram=total_vm_ram,
+		stats=stats)
 
 ################################################################################
 

@@ -120,10 +120,19 @@ def systems_search():
 		return abort(400)
 
 	# Search for the system
-	
-	system = cortex.lib.systems.get_system_by_name(query)
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-	if system is not None:
+	if 'imfeelinglucky' in request.args and request.args.get('imfeelinglucky') == 'yes':
+		# Use a LIKE query.
+		curd.execute("SELECT * FROM `systems_info_view` WHERE `name` LIKE %s", ('%{0}%'.format(query),))
+	else:
+		# Search by exact name matches only.
+		curd.execute("SELECT * FROM `systems_info_view` WHERE `name`=%s", (query,))
+
+	system = curd.fetchone()
+	
+	# Check if there was only 1 result.
+	if curd.rowcount == 1 and system is not None:
 		# If we found the system, redirect to the system page
 		return redirect(url_for('system', id=system['id']))
 	else:
@@ -499,10 +508,10 @@ def system(id):
 	if system['puppet_certname']:
 		system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
 
-	if system['allocation_who_realname'] is not None:
-		system['allocation_who'] = system['allocation_who_realname'] + ' (' + system['allocation_who'] + ')'
-	else:
-		system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
+	# Generate a 'pretty' display name. This is the format '<realname> (<username>)'
+	system['allocation_who'] = cortex.lib.systems.generate_pretty_display_name(system['allocation_who'], system['allocation_who_realname'])
+	system['primary_owner_who'] = cortex.lib.systems.generate_pretty_display_name(system['primary_owner_who'], system['primary_owner_who_realname'])
+	system['secondary_owner_who'] = cortex.lib.systems.generate_pretty_display_name(system['secondary_owner_who'], system['secondary_owner_who_realname'])
 
 	return render_template('systems/view.html', system=system, system_class=system_class, active='systems', title=system['name'])
 
@@ -545,11 +554,6 @@ def system_status(id):
 	# Ensure that the system actually exists, and return a 404 if it doesn't
 	if system is None:
 		abort(404)
-	# get the VM
-	try:
-		vm = cortex.lib.systems.get_vm_by_system_id(id)
-	except ValueError as e:
-		abort(404)
 
 	data = {}
 	data['hostname'] = ''
@@ -557,6 +561,21 @@ def system_status(id):
 	data['search_domain'] = ''
 	routes = []
 	ipaddr = []
+
+	# get the VM
+	try:
+		vm = cortex.lib.systems.get_vm_by_system_id(id)
+	except ValueError as e:
+		abort(404)
+	except Exception as e:
+		# If we want to handle vCenter being unavailable gracefully.
+		if not app.config.get('HANDLE_UNAVAILABLE_VCENTER_GRACEFULLY', False):
+			raise e	
+		else:
+			vm = None
+			# Add an error field to the data we return, 
+			# so we can display a message on the template. 
+			data['error'] = 'Unable to retrieve system information, please check vCenter availability.'
 
 	if vm is not None and vm.guest is not None:
 		if vm.guest.ipStack is not None and len(vm.guest.ipStack) > 0:
@@ -652,16 +671,29 @@ def system_edit(id):
 	if request.method == 'GET' or request.method == 'HEAD':
 		system_class = cortex.lib.classes.get(system['class'])
 		system['review_status_text'] = cortex.lib.systems.REVIEW_STATUS_BY_ID[system['review_status']]
+		autocomplete_users = cortex.lib.user.get_user_list_from_cache()
 
 		if system['puppet_certname']:
 			system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
 
-		return render_template('systems/edit.html', system=system, system_class=system_class, active='systems', title=system['name'])
+		return render_template('systems/edit.html', system=system, system_class=system_class,  autocomplete_users= autocomplete_users, active='systems', title=system['name'])
 
 	elif request.method == 'POST':
 		try:
 			# Get a cursor to the database
 			curd = g.db.cursor(mysql.cursors.DictCursor)
+
+			# Extract the owners from the form.
+			if does_user_have_system_permission(id,"edit.owners","systems.all.edit.owners"):
+				primary_owner_who = request.form.get('primary_owner_who', None)
+				primary_owner_role = request.form.get('primary_owner_role', None)
+				secondary_owner_who = request.form.get('secondary_owner_who', None)
+				secondary_owner_role = request.form.get('secondary_owner_role', None)
+			else:
+				primary_owner_who = system['primary_owner_who']
+				primary_owner_role = system['primary_owner_role']
+				secondary_owner_who = system['secondary_owner_who']
+				secondary_owner_role = system['secondary_owner_role']
 
 			# Extract CMDB ID from form
 			if does_user_have_system_permission(id,"edit.cmdb","systems.all.edit.cmdb"):
@@ -749,7 +781,7 @@ def system_edit(id):
 				review_task = system['review_task']
 
 			# Update the system
-			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, expiry_date, id))
+			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, id))
 			g.db.commit();
 			cortex.lib.core.log(__name__, "systems.edit", "System '" + system['name'] + "' edited, id " + str(id), related_id=id)
 
@@ -853,6 +885,8 @@ def systems_vmware_json():
 
 	# Get total number of VMs that match query
 	if search is not None:
+		# escape wildcards
+		search = search.replace('%', '\%').replace('_', '\_')
 		curd.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `name` LIKE %s', ("%" + search + "%",))
 		filtered_count = curd.fetchone()['count']
 	else:
@@ -863,6 +897,8 @@ def systems_vmware_json():
 	query = 'SELECT `name`, `uuid` FROM `vmware_cache_vm` '
 	query_params = ()
 	if search is not None:
+		# escape wildcards
+		search = search.replace('%', '\%').replace('_', '\_')
 		query = query + 'WHERE `name` LIKE %s '
 		query_params = ("%" + search + "%",)
 
@@ -1012,19 +1048,22 @@ def systems_json():
 	favourites = []
 	favourites = cortex.lib.systems.get_system_favourites(session.get('username'))
 
+	show_allocated_and_perms=False
 	if does_user_have_permission("systems.all.view"):
 		only_allocated_by = None
 	else:
+		# Show the systems where the user has permissions AND the ones they allocated.
+		show_allocated_and_perms=True
 		only_allocated_by = session['username']
 
 
 	# Get number of systems that match the query, and the number of systems
 	# within the filter group
-	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
-	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
+	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
+	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
 
 	# Get results of query
-	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
+	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
 
 	# DataTables wants an array in JSON, so we build this here, returning
 	# only the columns we want. We format the date as a string as

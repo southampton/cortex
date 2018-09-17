@@ -5,6 +5,7 @@ import MySQLdb as mysql
 from flask import Flask, request, redirect, session, url_for, abort, render_template, flash, g
 import io, csv
 from cortex.corpus import Corpus
+import cortex.lib.user
 
 REVIEW_STATUS_BY_NAME = {'NONE': 0, 'REQUIRED': 1, 'REVIEW': 2, 'NOT_REQUIRED': 3}
 REVIEW_STATUS_BY_ID   = {0: 'Not reviewed', 1: 'Required', 2: 'Under review', 3: 'Not required' }
@@ -21,7 +22,14 @@ def csv_stream(cursor):
 	# Write CSV header
 	output = io.BytesIO()
 	writer = csv.writer(output)
-	writer.writerow(['Name', 'Comment', 'Allocated by', 'Allocation date', 'CI Operational Status', 'CMDB Link', 'CMDB OS', 'VMware OS'])
+	writer.writerow([
+		'ID', 'Type', 'Class', 'Number', 'Name', 'Allocation Date', 'Expiry Date', 'Decom Date', 'Allocation Who', 'Allocation Who Realname', 'Allocation Comment',
+		'Review Status', 'Review Task', 'Cmdb Id', 'Build Count', 'Primary Owner Who', 'Primary Owner Role', 'Primary Owner Who Realname', 'Secondary Owner Who',
+		'Secondary Owner Role', 'Secondary Owner Who Realname', 'Cmdb Sys Class Name', 'Cmdb Name', 'Cmdb Operational Status', 'Cmdb U Number', 'Cmdb Environment',
+		'Cmdb Description', 'Cmdb Comments', 'Cmdb Os', 'Cmdb Short Description', 'Cmdb Is Virtual', 'Vmware Name', 'Vmware Vcenter', 'Vmware Uuid', 'Vmware Cpus',
+		'Vmware Ram', 'Vmware Guest State', 'Vmware Os', 'Vmware Hwversion', 'Vmware Ipaddr', 'Vmware Tools Version Status', 'Vmware Hostname', 'Puppet Certname',
+		'Puppet Env', 'Puppet Include Default', 'Puppet Classes', 'Puppet Variables'
+	])
 	yield output.getvalue()
 
 	# Write data
@@ -37,7 +45,7 @@ def csv_stream(cursor):
 			cmdb_url = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
 
 		# Write a row to the CSV output
-		outrow = [row['name'], row['allocation_comment'], row['allocation_who'], row['allocation_date'], row['cmdb_operational_status'], cmdb_url, row['cmdb_os'], row['vmware_os']]
+		outrow = [row['id'], row['type'], row['class'], row['number'], row['name'], row['allocation_date'], row['expiry_date'], row['decom_date'], row['allocation_who'], row['allocation_who_realname'], row['allocation_comment'], row['review_status'], row['review_task'], row['cmdb_id'], row['build_count'], row['primary_owner_who'], row['primary_owner_role'], row['primary_owner_who_realname'], row['secondary_owner_who'], row['secondary_owner_role'], row['secondary_owner_who_realname'], row['cmdb_sys_class_name'], row['cmdb_name'], row['cmdb_operational_status'], row['cmdb_u_number'], row['cmdb_environment'], row['cmdb_description'], row['cmdb_comments'], row['cmdb_os'], row['cmdb_short_description'], row['cmdb_is_virtual'], row['vmware_name'], row['vmware_vcenter'], row['vmware_uuid'], row['vmware_cpus'], row['vmware_ram'], row['vmware_guest_state'], row['vmware_os'], row['vmware_hwversion'], row['vmware_ipaddr'], row['vmware_tools_version_status'], row['vmware_hostname'], row['puppet_certname'], row['puppet_env'], row['puppet_include_default'], row['puppet_classes'], row['puppet_variables']]
 
 		# For each element in the output row...
 		for i in range(0, len(outrow)):
@@ -60,7 +68,7 @@ def csv_stream(cursor):
 
 ################################################################################
 
-def get_system_count(class_name = None, search = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only=False, only_allocated_by=None, show_favourites_for=None):
+def get_system_count(class_name = None, search = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only=False, show_allocated_and_perms=False, only_allocated_by=None, show_favourites_for=None):
 	"""Returns the number of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost)"""
 
 	## BUILD THE QUERY
@@ -70,7 +78,7 @@ def get_system_count(class_name = None, search = None, hide_inactive = True, onl
 	query = 'SELECT COUNT(*) AS `count` FROM `systems_info_view` '
 
 	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
-	query_where = _build_systems_query(class_name, search, None, None, None, None, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, only_allocated_by, show_favourites_for)
+	query_where = _build_systems_query(class_name, search, None, None, None, None, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms, only_allocated_by, show_favourites_for)
 	query = query + query_where[0]
 	params = params + query_where[1]
 
@@ -89,24 +97,16 @@ def get_system_count(class_name = None, search = None, hide_inactive = True, onl
 def get_system_by_id(id):
 	"""Gets all the information about a system by its database ID."""
 
-	# Query the database
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute("SELECT * FROM `systems_info_view` WHERE `id` = %s", (id,))
-
-	# Return the result
-	return curd.fetchone()
+	corpus = Corpus(g.db, app.config)
+	return corpus.get_system_by_id(id)
 
 ################################################################################
 
-def get_system_by_name(name):
+def get_system_by_name(name, must_have_vmware_uuid=False, must_have_snow_sys_id=False):
 	"""Gets all the information about a system by its hostname."""
 
-	# Query the database
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute("SELECT * FROM `systems_info_view` WHERE `name` = %s", (name,))
-
-	# Return the result
-	return curd.fetchone()
+	corpus = Corpus(g.db, app.config)
+	return corpus.get_system_by_name(name, must_have_vmware_uuid, must_have_snow_sys_id)
 
 ################################################################################
 
@@ -135,7 +135,7 @@ def get_system_by_vmware_uuid(name):
 
 ################################################################################
 
-def _build_systems_query(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, only_allocated_by=None, show_favourites_for = None):
+def _build_systems_query(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, show_allocated_and_perms=False, only_allocated_by=None, show_favourites_for = None):
 	params = ()
 
 	query = ""
@@ -148,6 +148,8 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 	# If a search term is specified...
 	if search is not None:
 		# Build a filter string
+		# escape wildcards
+		search = search.replace('%', '\%').replace('_', '\_')
 		like_string = '%' + search + '%'
 
 		# If a class name was specified already, we need to AND the query,
@@ -159,11 +161,11 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 
 		# Allow the search to match on name, allocation_comment or 
 		# allocation_who
-		query = query + "(`name` LIKE %s OR `allocation_comment` LIKE %s OR `allocation_who` LIKE %s OR `cmdb_environment` LIKE %s OR `allocation_who_realname` LIKE %s)"
+		query = query + "(`name` LIKE %s OR `allocation_comment` LIKE %s OR `allocation_who` LIKE %s OR `cmdb_environment` LIKE %s OR `allocation_who_realname` LIKE %s OR `vmware_ipaddr` LIKE %s)"
 
 		# Add the filter string to the parameters of the query. Add it 
 		# three times as there are three columns to match on.
-		params = params + (like_string, like_string, like_string, like_string, like_string)
+		params = params + (like_string, like_string, like_string, like_string, like_string, like_string)
 
 	# If hide_inactive is set to false, then exclude systems that are no longer In Service
 	if hide_inactive == True:
@@ -201,16 +203,28 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 			query = query + " AND "
 		else:
 			query = query + "WHERE "
-		query = query + ' `id` IN (SELECT DISTINCT `system_id` FROM `system_perms`)'
-			
-	if only_allocated_by:
+		query = query + ' `id` IN (SELECT DISTINCT `system_id` FROM `system_role_perms_view`)'
+	
+	if show_allocated_and_perms:
 		if class_name is not None or search is not None or hide_inactive == True or only_other or show_expired or show_nocmdb or show_perms_only:
+			query = query + " AND "
+		else:
+			query = query + "WHERE "
+
+		query = query + "((`id` IN (SELECT `system_id` FROM `system_role_perms_view` WHERE (`type` = '0' AND `who` = %s AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail')) OR (`type` = '1' AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail') AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s)))) OR `allocation_who`=%s)"
+		params = params + (only_allocated_by, only_allocated_by, only_allocated_by)
+
+		# Ignore the only_allocated_by.
+		only_allocated_by = None
+
+	if only_allocated_by:
+		if class_name is not None or search is not None or hide_inactive == True or only_other or show_expired or show_nocmdb or show_perms_only or show_allocated_and_perms:
 			query = query + " AND "
 		else:
 			query = query + "WHERE "
 		query = query + ' `allocation_who`=%s'
 		params = params + (only_allocated_by,)
-	
+
 	if show_favourites_for:
 		if class_name is not None or search is not None or hide_inactive == True or only_other or show_expired or show_nocmdb or show_perms_only or only_allocated_by:
 			query = query + " AND "
@@ -229,12 +243,8 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 	# Validate the name of the column to sort by (this prevents errors and
 	# also prevents SQL from accidentally being injected). Add the column
 	# name on to the query
-	if order in ["name", "number", "allocation_comment", "allocation_date", "allocation_who"]:
+	if order in ["id", "name", "number", "allocation_comment", "allocation_date", "allocation_who", 'cmdb_operational_status', 'cmdb_environment']:
 		query = query + "`" + order + "`"
-	elif order == "cmdb_operational_status":
-		query = query + "`cmdb_operational_status`"
-	elif order == "cmdb_environment":
-		query = query + "`cmdb_environment`"
 
 	# Determine which direction to order in, and add that on
 	if order_asc:
@@ -265,7 +275,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 
 ################################################################################
 
-def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, return_cursor = False, only_allocated_by = None, show_favourites_for = None):
+def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, return_cursor = False, show_allocated_and_perms=False, only_allocated_by = None, show_favourites_for = None):
 	"""Returns the list of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost), and ordered (defaults to "name")"""
 
 	## BUILD THE QUERY
@@ -275,7 +285,7 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 	query = "SELECT * FROM `systems_info_view` "
 
 	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
-	query_where = _build_systems_query(class_name, search, order, order_asc, limit_start, limit_length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, only_allocated_by, show_favourites_for)
+	query_where = _build_systems_query(class_name, search, order, order_asc, limit_start, limit_length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms, only_allocated_by, show_favourites_for)
 	query       = query + query_where[0]
 	params      = params + query_where[1]
 
@@ -336,3 +346,30 @@ def power_off(id):
 def reset(id):
 	vm = get_vm_by_system_id(id)
 	return vm.Reset()
+
+################################################################################
+
+def increment_build_count(id):
+	# Increment the build count
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('UPDATE `systems` SET `build_count` = `build_count` + 1 WHERE `id` = %s', (id,))
+	g.db.commit()
+
+################################################################################
+
+def generate_repeatable_password(id):
+	corpus = Corpus(g.db, app.config)
+	return corpus.system_get_repeatable_password(id)
+
+################################################################################
+
+def generate_pretty_display_name(who, who_realname):
+	if who is not None and len(who) > 0:
+		if who_realname is not None:
+			return '{0} ({1})'.format(who_realname, who)
+		else:
+			return '{0} ({1})'.format(cortex.lib.user.get_user_realname(who), who)
+	else:
+		# If we weren't given a 'who' return None.
+		return None
+		

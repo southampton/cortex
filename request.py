@@ -129,26 +129,41 @@ def context_processor():
 	perms = []
 	if does_user_have_permission("admin.permissions"):
 		perms.append({'link': url_for('perms_roles'), 'title': 'Permission Roles', 'icon': 'fa-user-secret'})
+		perms.append({'link': url_for('system_perms_roles'), 'title': 'System Permission Roles', 'icon': 'fa-user-secret'})
 		perms.append({'link': url_for('systems_withperms'), 'title': 'Systems with permissions', 'icon': 'fa-list'})
-		#perms.append({'link': url_for('perms_roles'), 'title': 'User lookup', 'icon': 'fa-users'})
 
+	# Set injectdata default options.
 	injectdata['menu'] = { 'systems': systems, 'favourites': favourites, 'vmware': vmware, 'puppet': puppet, 'admin': admin, 'perms': perms }
-
-	# Determine the layout mode for the user
 	injectdata['classic_layout'] = False
+	injectdata['sidebar_expand'] = False
+
 	if 'username' in session:
+
+		# Determine the layout mode for the user
 		try:
 			if g.redis.get('user:' + session['username'] + ":preferences:interface:layout") == "classic":
 				injectdata['classic_layout'] = True
 		except Exception as ex:
 			pass
 
-	# Determine theme for the user
-	if 'username' in session:
+		# Determine theme for the user
 		try:
 			if g.redis.get('user:' + session['username'] + ":preferences:interface:theme") == "dark":
 				injectdata['theme'] = "dark"
 		except Exception as ex:
 			pass
+
+		# Determine whether to expand sidebar.
+		try:
+			if g.redis.get('user:' + session['username'] + ':preferences:interface:sidebar') == 'expand':
+				injectdata['sidebar_expand'] = True
+		except Exception as ex:
+			pass
+
+	# Add the banner message.
+	try:
+		injectdata['banner_message'] = app.config['BANNER_MESSAGE']
+	except KeyError:
+		pass
 
 	return injectdata

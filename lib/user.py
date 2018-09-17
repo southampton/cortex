@@ -177,6 +177,17 @@ def get_user_realname(username, from_cache=True):
 
 #############################################################################
 
+def get_user_list_from_cache():
+	"""Returns a list of usernames and realnames from the realname_cache,
+	this is used for autocompletion."""
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute("SELECT `username`, `realname` FROM `realname_cache`;")
+	users = curd.fetchall()
+	curd.close()
+	return users
+
+#############################################################################
+
 def does_user_have_permission(perm, user=None):
 	"""Returns a boolean indicating if a user has a certain permission or
 	one of a list of permissions.
@@ -298,10 +309,10 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 
 	app.logger.debug("Checking system permissions for user " + str(user) + " on system " + str(system_id))
 
-	# Query the system_perms table to see if the user has the system
+	# Query the system_role_perms_view table to see if the user has the system
 	# explicitly given access to them
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT 1 FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (system_id, user, ROLE_WHO_USER, sysperm))
+	curd.execute('SELECT 1 FROM `system_role_perms_view` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (system_id, user, ROLE_WHO_USER, sysperm))
 
 	# If a row is returned then they have the permission
 	if len(curd.fetchall()) > 0:
@@ -312,17 +323,15 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 
 	# Iterate over the groups, checking each group for the permission
 	for group in ldap_groups:
-		# Query the system_perms table to see if the permission is granted
+		# Query the system_role_perms_view table to see if the permission is granted
 		# to the group the user is in
-		curd.execute('SELECT 1 FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (system_id, group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
+		curd.execute('SELECT 1 FROM `system_role_perms_view` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (system_id, group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
 
 		# If a row is returned then they have access to the workflow
 		if len(curd.fetchall()) > 0:
 			return True
 
 	return False
-
-################################################################################
 
 #############################################################################
 
@@ -344,10 +353,10 @@ def does_user_have_any_system_permission(sysperm,user=None):
 
 	app.logger.debug("Checking to see if " + str(user) + " has system permission " + sysperm + " on any system")
 
-	# Query the system_perms table to see if the user has the system
+	# Query the system_role_perms_view table to see if the user has the system
 	# explicitly given access to them
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT 1 FROM `system_perms` WHERE `who` = %s AND `type` = %s AND `perm` = %s', (user, ROLE_WHO_USER, sysperm))
+	curd.execute('SELECT 1 FROM `system_role_perms_view` WHERE `who` = %s AND `type` = %s AND `perm` = %s', (user, ROLE_WHO_USER, sysperm))
 
 	# If a row is returned then they have the permission
 	if len(curd.fetchall()) > 0:
@@ -359,9 +368,9 @@ def does_user_have_any_system_permission(sysperm,user=None):
 
 	# Iterate over the groups, checking each group for the permission
 	for group in ldap_groups:
-		# Query the system_perms table to see if the permission is granted
+		# Query the system_role_perms_view table to see if the permission is granted
 		# to the group the user is in
-		curd.execute('SELECT 1 FROM `system_perms` WHERE `who` = %s AND `type` = %s AND `perm` = %s', (group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
+		curd.execute('SELECT 1 FROM `system_role_perms_view` WHERE `who` = %s AND `type` = %s AND `perm` = %s', (group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
 
 		# If a row is returned then they have access to the workflow
 		if len(curd.fetchall()) > 0:

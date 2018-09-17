@@ -8,6 +8,8 @@ import redis
 import ssl
 import xmlrpclib, httplib # for RHN5 API support
 import re
+import hashlib
+import base64
 
 # For email
 import smtplib
@@ -21,10 +23,6 @@ requests.packages.urllib3.disable_warnings()
 from pyVmomi import vim
 from pyVmomi import vmodl
 from pyVim.connect import SmartConnect, Disconnect
-
-# For checking if a cache_vm task is currently running
-# we talk about to neocortex via RPC
-import Pyro4
 
 from urlparse import urljoin
 from urllib import quote
@@ -147,6 +145,33 @@ class Corpus(object):
 
 	################################################################################
 
+	def update_system(self, system_id, **kwargs):
+		"""
+		Update a system in the systems table with the relevant fields from kwargs.
+		"""
+
+		allowed_fields = ['type','class','number','allocation_date','allocation_who','allocation_comment','cmdb_id','vmware_uuid','review_status','review_task','expiry_date','decom_date','primary_owner_who','primary_owner_role','secondary_owner_who','secondary_owner_role']
+
+		update_fields = []
+		params = ()
+		for field, value in kwargs.iteritems():
+			if field in allowed_fields:
+				update_fields.append(field)
+				params = params + (value,)
+
+
+		query = "UPDATE `systems` SET "
+		query = query + ", ".join("`{0}`=%s".format(f) for f in update_fields)
+		query = query + " WHERE `id`=%s"
+		params = params + (system_id,)	
+
+		# Get a cursor to the database
+                cur = self.db.cursor(mysql.cursors.DictCursor)	
+		cur.execute(query, params)
+		self.db.commit()
+
+	################################################################################
+
 	def insert_name(self, name, comment=None, username=None, expiry=None):
 		'''inserts a system name into cortex'''
 
@@ -160,6 +185,20 @@ class Corpus(object):
 		self.db.commit()
 		return cur.lastrowid
 
+
+	################################################################################
+
+	def update_decom_date(self, system_id):
+		"""Update the decom date in Cortex to the current date."""
+
+		# Get a cursor to the database
+		cur = self.db.cursor(mysql.cursors.DictCursor)
+
+		cur.execute("UPDATE `systems` SET `decom_date` = NOW() WHERE `id` = %s", (system_id,)) 
+
+		self.db.commit()
+		
+
 	################################################################################
 
 	def pad_system_name(self, prefix, number, digits):
@@ -172,8 +211,33 @@ class Corpus(object):
 
 	################################################################################
 
-	def infoblox_create_host(self, name, subnet):
-		payload = {'name': name, "ipv4addrs": [{"ipv4addr":"func:nextavailableip:" + subnet}],}
+	def pad_system_name(self, prefix, number, digits):
+		"""Takes a class name ('prefix') a system number, and the number of
+		digits that class should have in its name and formats a string to that
+		specification. For example, if prefix is 'test', number is '12' and
+		'digits' is 5, then this returns 'test00012'"""
+
+		return ("%s%0" + str(int(digits)) + "d") % (prefix, number)
+
+	################################################################################
+
+	def infoblox_create_host(self, name, subnet = None, aliases = None, ip = None):
+		payload = {'name': name}
+
+		if subnet is None and ip is None:
+			raise ValueError('The subnet and ip parameters cannot both be None')
+
+		# If an IP is not given, make Infoblox allocate it
+		if ip is None:
+			payload['ipv4addrs'] = [{'ipv4addr': 'func:nextavailableip:' + subnet}]
+		else:
+			payload['ipv4addrs'] = [{'ipv4addr': ip}]
+
+		# Add on host aliases (CNAMEs) if given
+		if aliases is not None and len(aliases) > 0:
+			payload['aliases'] = aliases
+
+		# Make the request to create the object
 		r = requests.post("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/record:host", data=json.dumps(payload), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
 
 		if r.status_code == 201:
@@ -191,37 +255,93 @@ class Corpus(object):
 				raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
 		else:
 			raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
-	################################################################################
-
-	def pad_system_name(self, prefix, number, digits):
-		"""Takes a class name ('prefix') a system number, and the number of
-		digits that class should have in its name and formats a string to that
-		specification. For example, if prefix is 'test', number is '12' and
-		'digits' is 5, then this returns 'test00012'"""
-
-		return ("%s%0" + str(int(digits)) + "d") % (prefix, number)
 
 	################################################################################
 
-	def infoblox_create_host(self, name, subnet):
-		payload = {'name': name, "ipv4addrs": [{"ipv4addr":"func:nextavailableip:" + subnet}],}
-		r = requests.post("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/record:host", data=json.dumps(payload), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+	def infoblox_add_host_record_alias(self, ref, new_aliases):
+		"""Adds an alias (or aliases) to a host record in Infoblox."""
 
-		if r.status_code == 201:
-			objectid = str(r.json())
-			r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + objectid, auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+		# Perform the GET request to get the current list of aliases
+		r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref) + "?_return_fields%2B=aliases", auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
 
-			if r.status_code == 200:
-				response = r.json()
+		if r is None:
+			raise Exception("Failed to get current aliases for host record: request failed")
 
-				try:
-					return response['ipv4addrs'][0]['ipv4addr']
-				except Exception as ex:
-					raise RuntimeError("Malformed JSON response from Infoblox API")
-			else:
-				raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
+		if r.status_code != 200:
+			raise Exception("Failed to get current aliases for host record. Infoblox returned error code " + str(r.status_code))
+
+		# Extract the list of aliases from JSON
+		try:
+			json_data = r.json()
+		except Exception as e:
+			raise Exception("Failed to decode JSON returned from Infoblox: " + str(e))
+
+		if 'aliases' in json_data:
+			aliases = r.json()['aliases']
 		else:
-			raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
+			aliases = []
+
+		# Append the new alias(es) - only if they don't already exist
+		if type(new_aliases) is str or type(new_aliases) is unicode:
+			if new_aliases not in aliases:
+				aliases.append(new_aliases)
+		elif type(new_aliases) is list:
+			for new_alias in new_aliases:
+				if new_alias not in aliases:
+					aliases.append(new_alias)
+
+		# If the number of aliases now is the same as it was before, there's no need to do the update
+		if len(aliases) != len(new_aliases):
+			# Perform the PUT request on the given host record reference
+			r = requests.put("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref), data=json.dumps({'aliases': aliases}), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+			if r is None:
+				raise Exception("Failed to update host record: request failed")
+
+			if r.status_code != 200:
+				raise Exception("Failed to update host record. Infoblox returned error code " + str(r.status_code))
+
+	################################################################################
+
+	def infoblox_remove_host_record_alias(self, ref, remove_aliases):
+		"""Removes an alias (or aliases) to a host record in Infoblox."""
+
+		# Perform the GET request to get the current list of aliases
+		r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref) + "?_return_fields%2B=aliases", auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+		if r is None:
+			raise Exception("Failed to get current aliases for host record: request failed")
+
+		if r.status_code != 200:
+			raise Exception("Failed to get current aliases for host record. Infoblox returned error code " + str(r.status_code))
+
+		# Extract the list of aliases from JSON
+		try:
+			json_data = r.json()
+		except Exception as e:
+			raise Exception("Failed to decode JSON returned from Infoblox: " + str(e))
+
+		if 'aliases' in json_data:
+			aliases = r.json()['aliases']
+		else:
+			aliases = []
+
+		# Remove the alias(es)
+		if type(remove_aliases) is str or type(remove_aliases) is unicode:
+			aliases.remove(remove_aliases)
+		elif type(remove_aliases) is list:
+			for alias in remove_aliases:
+				aliases.remove(alias)
+
+		# Perform the PUT request on the given host record reference
+		r = requests.put("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref), data=json.dumps({'aliases': aliases}), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+		if r is None:
+			raise Exception("Failed to update host record: request failed")
+
+		if r.status_code != 200:
+			raise Exception("Failed to update host record. Infoblox returned error code " + str(r.status_code))
+
 
 	################################################################################
 
@@ -239,12 +359,30 @@ class Corpus(object):
 
 	################################################################################
 
-	def infoblox_get_host_refs(self, fqdn):
+	def infoblox_get_host_by_ref(self, ref):
+		"""Gets a host record from Infoblox by reference"""
+
+		# Get the object
+		r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/" + str(ref), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+
+		if r is None:
+			raise Exception("Failed to get host record: request failed")
+
+		if r.status_code != 200:
+			raise Exception("Failed to get host record. Infoblox returned error code " + str(r.status_code))
+
+		return r.json()
+
+	################################################################################
+
+	def infoblox_get_host_refs(self, fqdn, view=None):
 		"""Returns a list of host references (Infoblox record IDs) from Infoblox
 		matching exactly the specified fully qualified domain name (FQDN). If no
 		records are found None is returned. If an error occurs LookupError is raised"""
 
 		payload = {'name:': fqdn}
+		if view is not None:
+			payload['view'] = view
 		r = requests.get("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/record:host", data=json.dumps(payload), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
 
 		results = []
@@ -304,9 +442,7 @@ class Corpus(object):
 	def vmware_task_wait(self, task):
 		"""Waits for vCenter task to finish"""
 
-		task_done = False
-
-		while not task_done:
+		while True:
 			if task.info.state == 'success':
 				return True
 
@@ -328,9 +464,7 @@ class Corpus(object):
 		does not return a variable.
 		"""
 
-		task_done = False
-
-		while not task_done:
+		while True:
 			if task.info.state == 'success':
 				return
 
@@ -424,12 +558,13 @@ class Corpus(object):
 			guiUnattended.timeZone = timezone
 
 			sysprepIdentity = vim.vm.customization.Identification()
-			sysprepIdentity.domainAdmin = domain_join_user
-			sysprepPassword = vim.vm.customization.Password()
-			sysprepPassword.plainText = True
-			sysprepPassword.value = domain_join_pass
-			sysprepIdentity.domainAdminPassword = sysprepPassword
-			sysprepIdentity.joinDomain = os_domain
+			if domain_join_user is not None and domain_join_pass is not None:
+				sysprepIdentity.domainAdmin = domain_join_user
+				sysprepPassword = vim.vm.customization.Password()
+				sysprepPassword.plainText = True
+				sysprepPassword.value = domain_join_pass
+				sysprepIdentity.domainAdminPassword = sysprepPassword
+				sysprepIdentity.joinDomain = os_domain
 
 			sysprepUserData = vim.vm.customization.UserData()
 			sysprepUserData.computerName = vim.vm.customization.VirtualMachineNameGenerator()
@@ -668,6 +803,7 @@ class Corpus(object):
 		return template.Clone(folder=destfolder, name=vm_name, spec=clonespec)
 
 	############################################################################ 
+
 	def update_vm_cache(self, vm, tag):
 		"""Updates the VMware cache data with the information about the VM."""
 
@@ -1230,6 +1366,78 @@ class Corpus(object):
 
 	################################################################################
 
+	def servicenow_add_ci_relationship(self, parent_sys_id, child_sys_id, rel_type_sys_id):
+		# Build JSON data about the relationship to create
+		json_data = { 'parent': parent_sys_id, 'child': child_sys_id, 'type': rel_type_sys_id }
+
+		# Post the request
+		r = requests.post('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_rel_ci', auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=json_data)
+		if r is None:
+			raise Exception("Could not create CI relationship in ServiceNow. Request failed")
+
+		if r.status_code < 200 or r.status_code > 299:
+			raise Exception("Could not create CI relationship in ServiceNow. ServiceNow returned error code " + str(r.status_code))
+
+		try:
+			response_json = r.json()
+			return response_json['result']['sys_id']
+		except Exception as e:
+			raise Exception("Could not create CI relationship. Error: " + str(e))
+
+	################################################################################
+
+	def servicenow_get_ci_relationships(self, sys_id):
+		# Get the CI details. This checks that it exists and whether it's 
+		# virtual or not	
+		r = requests.get('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_rel_ci?sysparm_query=child=' + sys_id + '^ORparent=' + sys_id, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json'})
+
+		# Check we got a valid response code
+		if r is not None:
+			# Special case: ServiceNow returns a 404 to indicate no results. No, 
+			# this isn't a good idea, but we have to work with it
+			if r.status_code == 404:
+				return []
+			elif r.status_code < 200 or r.status_code > 299:
+				raise Exception("Could not locate CI relationships in ServiceNow. ServiceNow returned error code " + str(r.status_code))
+		else:
+			raise Exception("Could not locate CI relationships in ServiceNow. Request failed")
+
+		# Decode the JSON, raising on failure
+		try:
+			results = r.json()
+		except Exception as e:
+			raise Exception("Could not remove CI relationships in ServiceNow. JSON parsing failed")
+
+		# Check we have what we need
+		if 'result' not in results:
+			raise Exception("Could no remove CI relationships in ServiceNow. Invalid result from ServiceNow")
+
+		# Return the number of results
+		return results['result']
+
+	################################################################################
+
+	def servicenow_remove_ci_relationships(self, sys_id):
+		# Get the CI relationship data from ServiceNow
+		results = self.servicenow_get_ci_relationships(sys_id)
+
+		# Delete all the relationships, keeping track of how many succeeded/failed
+		warnings = 0
+		successes = 0
+		for entry in results:
+			try:
+				r = requests.delete('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_rel_ci/' + entry['sys_id'], auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json'})
+				if r is None or (r.status_code < 200 or r.status_code > 299):
+					warnings += 1
+				else:
+					successes += 1
+			except Exception as e:
+				warnings += 1
+
+		return (successes, warnings)
+
+	################################################################################
+
 	def _connect_redis(self):
 		"""Connects to the Redis instance specified in the configuration and 
 		returns a StrictRedis object"""
@@ -1420,9 +1628,17 @@ class Corpus(object):
 	############################################################################
 
 	def vmware_vm_delete(self, vm):
-		"""Deletes off a virtual machine."""
+		"""Deletes a virtual machine. It may be desirarble to then remove the vm
+		from the cache using delete_system_from_cache."""
 
 		return vm.Destroy_Task()
+
+	############################################################################
+
+	def delete_system_from_cache(self, vmware_uuid):
+		cur = self.db.cursor()
+		cur.execute("DELETE FROM `vmware_cache_vm` WHERE `uuid`=%s", (vmware_uuid,))
+		self.db.commit()
 
 	############################################################################
 
@@ -1572,3 +1788,150 @@ class Corpus(object):
 			raise IOError(str(ex))
 
 	############################################################################
+
+	def neocortex_task_get_status(self, task):
+		"""Returns the status of a NeoCortex task"""
+
+		# Get a cursor to the database
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+
+		# Get the task status. The DB commit is required to start a new
+		# transaction so that the default transaction isolation level of
+		# "repeatable read" doesn't cause us any issues. It also releases
+		# any table locks from previous transactions.
+		self.db.commit()
+		curd.execute("SELECT `status` FROM `tasks` WHERE `id` = %s", (task,))
+		status = curd.fetchone()['status']
+
+		# Return the row status
+		return status
+
+	############################################################################
+
+	def neocortex_task_wait(self, task):
+		"""Waits for a NeoCortex task to finish"""
+
+		while True:
+			# Get the task status
+			status = self.neocortex_task_get_status(task)
+
+			# Status of zero is in-progress, so only break out and 
+			# return the status when we're not that
+			if status is not None and int(status) != 0:
+				return status
+
+			## Let's not busy wait CPU 100%...
+			time.sleep(1)
+
+	############################################################################
+
+	def get_system_by_id(self, id):
+		# Query the database
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+		curd.execute("SELECT * FROM `systems_info_view` WHERE `id` = %s", (id,))
+
+		# Return the result
+		return curd.fetchone()
+
+	############################################################################
+
+	def get_system_by_name(self, name, must_have_vmware_uuid=False, must_have_snow_sys_id=False):
+		"""Gets all the information about a system by its hostname."""
+
+		# Build the query
+		query_parts = ["`name` = %s"]
+		if must_have_vmware_uuid:
+			query_parts.append("`vmware_uuid` IS NOT NULL")
+		if must_have_snow_sys_id:
+			query_parts.append("`cmdb_id` IS NOT NULL")
+		
+		# Query the database
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+		curd.execute("SELECT * FROM `systems_info_view` WHERE " + (" AND ".join(query_parts)) + " ORDER BY `allocation_date` DESC", (name,))
+
+		# Return the result
+		return curd.fetchone()
+
+	############################################################################
+
+	def system_get_repeatable_password(self, id):
+		system = self.get_system_by_id(id)
+		return base64.standard_b64encode(hashlib.sha256(system['name'] + '|' + str(system['build_count']) + '|' + str(system['allocation_date']) + '|' + system['allocation_who'] + '|' + self.config['SECRET_KEY']).digest())[0:16]
+
+	############################################################################
+
+	def satellite6_get_host(self, name):
+
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(name)) 
+		r = requests.get(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS'])
+		)
+
+		r.raise_for_status()
+
+		return r.json()
+
+	############################################################################
+
+	def satellite6_disassociate_host(self, hostid):
+		
+		
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}/disassociate'.format(hostid))
+		r = requests.put(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+		) 
+
+		r.raise_for_status()
+
+		return r.json()
+
+	############################################################################
+
+	def satellite6_delete_host(self, hostid):
+
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(hostid))
+		
+		r = requests.delete(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+		) 
+
+		r.raise_for_status()
+
+		return r.json()
+
+	############################################################################
+
+	def satellite6_associate_host(self, system_id, cluster_name):
+		# Get the system
+		system = self.get_system_by_id(system_id)
+
+		# Get the VM
+		vm = self.vmware_get_vm_by_uuid(system['vmware_uuid'], system['vmware_vcenter'])
+
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(system['name']))
+
+		# Associate the Host with a Compute Resource (i.e. Data Center)
+		r = requests.put(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth = (self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+			json = { 'host': { 'compute_resource_id': self.config['SATELLITE6_CLUSTER_COMPUTE_RESOURCE'][cluster_name] } }
+		) 
+
+		r.raise_for_status()
+
+		# Associate the Host with a VM
+		r = requests.put(
+			url,
+			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			auth = (self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+			json = { 'host': { 'uuid': vm.config.instanceUuid } }
+		) 
+
+		r.raise_for_status()

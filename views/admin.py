@@ -76,6 +76,8 @@ def admin_tasks_json(tasktype):
 
 	# Add on search string if we have one
 	if search:
+		# escape wildcards
+		search = search.replace('%', '\%').replace('_', '\_')
 		where_clause = where_clause + " AND (`module` LIKE %s OR `username` LIKE %s) "
 		params = params + ('%' + search + '%', '%' + search + '%')
 
@@ -228,6 +230,8 @@ def admin_events_json(event_source):
 
 	# Add on search string if we have one
 	if search:
+		# escape wildcards
+		search = search.replace('%', '\%').replace('_', '\_')
 		where_clause = where_clause + " AND (`name` LIKE %s OR `source` LIKE %s OR `desc` LIKE %s OR `username` LIKE %s OR `ipaddr` LIKE %s) "
 		params = params + ('%' + search + '%', '%' + search + '%', '%' + search + '%', '%' + search + '%', '%' + search + '%')
 

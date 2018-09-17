@@ -1,0 +1,390 @@
+{% extends "layout.html" %}
+{% block head -%}
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+<div class="page-header">
+{#- Commenting this out currently as it's not done yet -#}
+{#- <button class="btn btn-sm btn-primary pull-right">Load from file</button> -#}
+<h3>Create NLB Web Service</h3>
+<p class="text-muted">This workflow simplifies the creation of creating web services that are accessed via the NLB. It creates all the necessary objects on the load balancers.</p>
+</div>
+<style type="text/css">
+.submit
+{
+	padding-bottom: 2em;
+	margin-left: 1em;
+}
+
+.btn-submit
+{
+	font-size: 2em;
+}
+
+td.head
+{
+	font-weight: bold;
+}
+
+td.na
+{
+	color: #aaa;
+}
+</style>
+<form id="nlb_form" method="POST" role="form">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+	<div class="row">
+		<div class="col-md-6">
+			<div class="row">
+				<div class="col-md-12"><h3 style="margin-top:0px">Service Details</h3></div>
+				<div class="col-md-12 form-group">
+					<label for="service">Service Name:</label>
+					<input class="form-control" name="service" id="service" placeholder="The human-readable name of the service you are creating to be used in NLB object descriptions e.g. Corporate Website" required="required" red="required"eutofocus {% if 'service' in values %}value="{{ values['service'] }}" {% endif %}/>
+				</div>
+				<div class="col-md-6 form-group">
+					<label for="env">Environment:</label>
+					<select class="form-control" name="env" id="env">
+{%- for env in envs %}
+						<option value="{{ env['id'] }}"{% if 'env' in values and values['env'] == env['id'] %} selected="selected"{% endif %}>{{ env['name'] }} (created on {{ env['nlb'] }})</option>
+{%- endfor %}
+					</select>
+				</div>
+				<div class="col-md-6 form-group">
+					<label for="suffix">Object Name Suffix:</label>
+					<input class="form-control" id="suffix" readonly="readonly" {% if 'env' in values %}value="{{ envs_dict[values['env']]['suffix'] }}" {% endif %}/>
+				</div>
+				<div class="col-md-12 form-group">
+					<label for="fqdn">Service FQDN:</label>
+					<input class="form-control" name="fqdn" id="fqdn" placeholder="The fully-qualified hostname of the service. Used for the CN of certificates, and the Infoblox Host object." required="required" {% if 'fqdn' in values %}value="{{ values['fqdn'] }}" {% endif %}/>
+				</div>
+				<div class="col-md-12 form-group">
+					<label for="aliases">Service Aliases:</label>
+					<input class="form-control" name="aliases" id="aliases" placeholder="A space-separated list of service alias (used for DNS aliases and certificate subjectAltNames)" {% if 'aliases' in values %}value="{{ values['aliases'] }}" {% endif %}/>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-6">
+			<div class="row">
+				<div class="col-md-12"><h3 style="margin-top:0px">Service Access</h3></div>
+				<div class="col-md-12 form-group">
+					<label for="ip">Service IP:</label>
+					<input class="form-control" name="ip" id="ip" placeholder="The IP address of the service. Leave blank to auto-allocate" {% if 'ip' in values %}value="{{ values['ip'] }}" {% endif %}/>
+				</div>
+				<div class="col-md-4 form-group">
+					<label for="http_port">Service HTTP Port:</label>
+					<input class="form-control" type="number" name="http_port" id="http_port" placeholder="The port number for HTTP" min="1" max="65535" required="required" value="{% if 'http_port' in values %}{{ values['http_port'] }}{% else %}80{% endif %}" />
+				</div>
+				<div class="col-md-4 form-group">
+					<label for="">Enable SSL:</label><br/>
+					<label for="enable_ssl" style="top:0.5em;position:relative"><input type="checkbox" id="enable_ssl" name="enable_ssl" {% if 'enable_ssl' not in values or ('enable_ssl' in values and values['enable_ssl']) %}checked="checked" {% endif %}/> Create SSL virtual host</label>
+				</div>
+				<div class="col-md-4 form-group">
+					<label for="https_port">Service HTTPS Port:</label>
+					<input class="form-control" type="number" name="https_port" id="https_port" placeholder="The port number for HTTPS" min="1" max="65535"{% if 'enable_ssl' not in values or ('enable_ssl' in values and values['enable_ssl']) %} required="required"{% else %} disabled="disabled"{% endif %} value="{% if 'https_port' in values %}{{ values['https_port'] }}{% else %}443{% endif %}" />
+				</div>
+				<div class="col-md-12 form-group">
+					<label for="monitor_url">Monitor URL:</label>
+					<input class="form-control" name="monitor_url" id="monitor_url" placeholder="The path on the site to check for a HTTP/1.1 200 OK response" required="required" value="{% if 'monitor_url' in values %}{{ values['monitor_url'] }}{% else %}/{% endif %}" />
+				</div>
+				<div class="col-md-12 form-group">
+					<label for="monitor_response">Monitor Response:</label>
+					<input class="form-control" name="monitor_response" id="monitor_response" placeholder="The text to search for in the HTTP response" {% if 'monitor_response' in values %}value="{{ values['monitor_response'] }}" {% endif %}/>
+				</div>
+			</div>
+		</div>
+	</div>
+	<h3 id="ssl_options_head"{% if 'enable_ssl' in values and not values['enable_ssl'] %} style="display:none"{% endif %}>SSL Options</h3>
+	<div class="row" id="ssl_options"{% if 'enable_ssl' in values and not values['enable_ssl'] %} style="display:none"{% endif %}>
+		<div class="col-md-12">
+			<label for="redirect_http"><input type="checkbox" id="redirect_http" name="redirect_http" {% if 'redirect_http' not in values or ('redirect_http' in values and values['redirect_http']) %}checked="checked" {% endif %}/> Redirect HTTP to HTTPS. This will add the _sys_https_redirect iRule to the HTTP virtual server, forcing all requests on HTTP to be redirected to their HTTPS equivalent</label>
+		</div>
+		<div class="col-md-12">
+			<label for="encrypt_backend"><input type="checkbox" id="encrypt_backend" name="encrypt_backend" {% if 'encrypt_backend' not in values or ('encrypt_backend' in values and values['encrypt_backend']) %}checked="checked" {% endif %}/> Pass Through Encrypted Traffic To Backend. This will encrypt the traffic between the NLB and the back-end servers when HTTPS is used</label>
+		</div>
+		<div class="col-md-12">
+			<label for="enable_hsts"><input type="checkbox" id="enable_hsts" name="enable_hsts" {% if 'enable_hsts' in values and values['enable_hsts'] %}checked="checked" {% endif %}/> Enable HTTP Strict Transport Security (HSTS). This will force the browser to always use HTTPS after the first request, regardless of what the user requests</label>
+		</div>
+{%- if letsencrypt_enabled %}
+		<div class="col-md-12">
+			<label for="generate_letsencrypt"><input type="checkbox" id="generate_letsencrypt" name="generate_letsencrypt" {% if 'generate_letsencrypt' in values and values['generate_letsencrypt'] %}checked="checked" {% endif %}/> Generate a new certificate via Let's Encrypt</label>
+		</div>
+{%- endif %}
+		<div class="col-md-6 form-group">
+			<label for="ssl_key">SSL Private Key:</label>
+			<textarea class="form-control" id="ssl_key" name="ssl_key" style="width:100%;max-width:100%;min-width:100%;height:6em" placeholder="Paste PEM-encoded RSA private key here"{% if 'enable_ssl' not in values or ('enable_ssl' in values and values['enable_ssl']) and 'generate_letsencrypt' not in values %} required="required"{% endif %}{% if 'generate_letsencrypt' in values and values['generate_letsencrypt'] %} disabled="disabled"{% endif %}>{% if 'ssl_key' in values %}{{ values['ssl_key'] }}{% endif %}</textarea>
+		</div>
+		<div class="col-md-6 form-group">
+			<label for="ssl_cert">SSL Certificate:</label>
+			<textarea class="form-control" id="ssl_cert" name="ssl_cert" style="width:100%;max-width:100%;min-width:100%;height:6em" placeholder="Paste PEM-encoded X509 certificate here"{% if 'enable_ssl' not in values or ('enable_ssl' in values and values['enable_ssl']) and 'generate_letsencrypt' not in values %} required="required"{% endif %}{% if 'generate_letsencrypt' in values and values['generate_letsencrypt'] %} disabled="disabled"{% endif %}>{% if 'ssl_cert' in values %}{{ values['ssl_cert'] }}{% endif %}</textarea>
+		</div>
+		<div class="col-md-12">
+			<label for="ssl_provider">SSL Certificate Provider:</label>
+			<select class="form-control" name="ssl_provider" id="ssl_provider"{% if 'generate_letsencrypt' in values and values['generate_letsencrypt'] %} disabled="disabled"{% endif %}>
+				<option value="*SELF"{% if 'ssl_provider' in values and values['ssl_provider'] == '*SELF' %} selected="selected"{% endif %}>Self-signed</option>
+{%- for ssl_provider in ssl_providers %}
+				<option value="{{ ssl_provider['id'] }}"{% if ('ssl_provider' in values and values['ssl_provider'] == ssl_provider['id']) or ('ssl_provider' not in values and ssl_provider['id'] == default_ssl_provider) %} selected="selected"{% endif %}>{{ ssl_provider['name'] }} (NLB Chain File: {{ ssl_provider['nlb-chain-file'] }})</option>
+{%- endfor %}
+			</select>
+		</div>
+	</div>
+	<h3>Back-end Nodes</h3>
+	<div class="row">
+		<div class="col-md-12">
+			<table class="table table-condensed table-striped">
+				<thead>
+					<tr>
+						<th>Hostname</th>
+						<th>HTTP Port</th>
+						<th>HTTPS Port</th>
+						<th>IP</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody id="node_table_body">
+					<tr id="node_template" style="display:none">
+						<input type="hidden" class="nti_host" value="" />
+						<input type="hidden" class="nti_http_port" value="" />
+						<input type="hidden" class="nti_https_port" value="" />
+						<input type="hidden" class="nti_ip" value="" />
+						<td class="node_row_host"></td>
+						<td class="node_row_http_port"></td>
+						<td class="node_row_https_port"></td>
+						<td class="node_row_ip"></td>
+						<td><button type="button" class="btn btn-xs btn-danger remove-node">Remove</button></td>
+					</tr>
+{%- if 'node_hosts' in values and 'node_http_ports' in values and 'node_https_ports' in values and 'node_ips' in values -%}
+{%-     for i in range(0, values['node_hosts']|length) %}
+					<tr>
+						<input type="hidden" class="nti_host" name="node_host[]" value="{{ values['node_hosts'][i] }}" />
+						<input type="hidden" class="nti_http_port" name="node_http_port[]" value="{{ values['node_http_ports'][i] }}" />
+						<input type="hidden" class="nti_https_port" name="node_https_port[]" value="{{ values['node_https_ports'][i] }}" />
+						<input type="hidden" class="nti_ip" name="node_ip[]" value="{{ values['node_ips'][i] }}" />
+						<td class="node_row_host">{{ values['node_hosts'][i] }}</td>
+						<td class="node_row_http_port">{{ values['node_http_ports'][i] }}</td>
+						<td class="node_row_https_port">{{ values['node_https_ports'][i] }}</td>
+						<td class="node_row_ip">{{ values['node_ips'][i] }}</td>
+						<td><button type="button" class="btn btn-xs btn-danger remove-node">Remove</button></td>
+					<td>
+{%-     endfor %}
+{%- endif %}
+				</tbody>
+				<tfoot>
+					<tr>
+						<td><input class="form-control node-input-box" id="new_node_name" placeholder="New Node Hostname" /></td>
+						<td style="width:10em"><input class="form-control node-input-box" type="number" min="1" max="65535" id="node_http_port" placeholder="New Node HTTP Port" value="80" /></td>
+						<td style="width:10em"><input class="form-control node-input-box" type="number" min="1" max="65535" id="node_https_port" placeholder="New Node HTTPS Port" value="443" /></td>
+						<td><input class="form-control node-input-box" id="new_node_ip" placeholder="New Node IP Address (optional - can take from DNS)" /></td>
+						<td style="width:1px"><button type="button" class="btn btn-sm btn-success" id="add_node">Add</button></td>
+					</tr>
+				</tfoot>
+			</table>
+		</div>
+	</div>
+	<h3 style="margin-top:0px"><a data-toggle="collapse" data-target="#advanced">Advanced Options <span class="caret"></span></a></h3>
+	<div class="row collapse" id="advanced">
+		<div class="col-md-12 form-group">
+			<label for="outage_page">Outage Page URL:</label>
+			<input class="form-control" name="outage_page" id="outage_page" placeholder="The URL of the page to redirect to if the service is unavailable. Creates a specific HTTP profile." {% if 'outage_page' in values %}value="{{ values['outage_page'] }}" {% endif %}/>
+		</div>
+		<div class="col-md-6 form-group">
+			<label for="http_irules">Additional HTTP iRules:</label>
+			<input class="form-control" name="http_irules" id="http_irules" placeholder="Space-separated list of iRules to add to the HTTP Virtual Server" {% if 'http_irules' in values %}value="{{ values['http_irules'] }}" {% endif %}/>
+		</div>
+		<div class="col-md-6 form-group">
+			<label for="https_irules">Additional HTTPS iRules:</label>
+			<input class="form-control" name="https_irules" id="https_irules" placeholder="Space-separated list of iRules to add to the HTTPS Virtual Server" {% if 'https_irules' in values %}value="{{ values['https_irules'] }}" {% endif %}/>
+		</div>
+		<div class="col-md-12 form-group">
+			<label for="ssl_cipher_string">SSL Client Profile:</label>
+			<select class="form-control" name="ssl_client_profile" id="ssl_client_profile">
+{%- for profile in ssl_client_profiles %}
+				<option value="{{ profile.id }}"{% if ('ssl_client_profile' in values and values['ssl_client_profile'] == profile['id']) or ('ssl_client_profile' not in values and profile['id'] == default_ssl_client_profile) %} selected="selected"{% endif %}>{{ profile['name'] }}</option>
+{%- endfor %}
+			</select>
+		</div>
+		<div class="col-md-12">
+			<label for="use_xforwardedfor"><input type="checkbox" id="use_xforwardedfor" name="use_xforwardedfor" {% if 'use_xforwardedfor' not in values or ('use_xforwardedfor' in values and values['use_xforwardedfor']) %}checked="checked" {% endif %}/> Add in an X-Forwarded-For header to relay the client's IP address to the backend</label>
+		</div>
+	</div>
+	<h3>Validate and Create</h3>
+	<div class="row">
+		<div class="col-md-12">
+			<p style="text-align:center">Once you have populated all the necessary information about the service, click the button below to progress to the next stage. Some checks will be performed against the NLB to ensure that objects don't already exist. There will be one more confirmation before the service is actually created.</p>
+			<p style="text-align:center"><input type="submit" class="btn btn-lg btn-success" value="validate" name="submit" id="submit" /></p>
+		</div>
+	</div>
+</form>
+<script type="text/javascript">
+var env_suffix_map = {
+{%- for env in envs %}
+	'{{ env.id }}': '{{ env.suffix }}',
+{%- endfor %}
+}
+$('#enable_ssl').change(function() {
+	if ($(this).is(":checked"))
+	{
+		$('#ssl_options_head').css('display', '');
+		$('#ssl_options').css('display', '');
+		$('#https_port').removeAttr('disabled');
+		$('#https_port').attr('required', 'required');
+		if ($('#generate_letsencrypt').is(':checked'))
+		{
+			$('#ssl_cert').removeAttr('required');
+			$('#ssl_key').removeAttr('required');
+		}
+		else
+		{
+			$('#ssl_cert').attr('required', 'required');
+			$('#ssl_key').attr('required', 'required');
+		}
+	}
+	else
+	{
+		$('#ssl_options_head').css('display', 'none');
+		$('#ssl_options').css('display', 'none');
+		$('#https_port').attr('disabled', 'disabled');
+		$('#https_port').removeAttr('required');
+		$('#ssl_cert').removeAttr('required');
+		$('#ssl_key').removeAttr('required');
+	}
+});
+$('#generate_letsencrypt').change(function() {
+	if ($(this).is(":checked"))
+	{
+		$('#ssl_cert').removeAttr('required');
+		$('#ssl_key').removeAttr('required');
+		$('#ssl_cert').attr('disabled', 'disabled');
+		$('#ssl_key').attr('disabled', 'disabled');
+		$('#ssl_provider').val('{{ letsencrypt_provider }}')
+		$('#ssl_provider').attr('disabled', 'disabled');
+	}
+	else
+	{
+		$('#ssl_cert').removeAttr('disabled');
+		$('#ssl_key').removeAttr('disabled');
+		$('#ssl_provider').removeAttr('disabled');
+		$('#ssl_cert').attr('required', 'required');
+		$('#ssl_key').attr('required', 'required');
+	}
+});
+$('#env').change(function() {
+	$('#suffix').val(env_suffix_map[$('#env').val()]);
+});
+$('.node-input-box').keydown(function(event) {
+	if (event.keyCode === 13)
+	{
+		$("#add_node").click();
+		event.preventDefault();
+	}
+});
+function incHostNumber(host)
+{
+	// Split the host into prefix/number[zeros,integer]/suffix
+	var host_split = /^(?<prefix>[^0-9]*)(?<number>(?<zeros>0*)(?<integer>[1-9][0-9]*))(?<suffix>[^0-9]*)$/.exec(host);
+
+	// If the regex fails, return an empty string
+	if (host_split == null)
+	{
+		return "";
+	}
+
+	// Grab the parts
+	try
+	{
+		var prefix = host_split.groups.prefix;
+		var number = host_split.groups.number;
+		var integer = host_split.groups.integer;
+		var suffix = host_split.groups.suffix;
+
+		// Get the new integer as a string
+		var new_number = "" + (parseInt(integer) + 1)
+
+		// Pad the integer out with zeros to match what it was before
+		while (new_number.length < number.length)
+		{
+			new_number = "0" + new_number;
+		}
+
+		// Return the new value
+		return prefix + new_number + suffix;
+	}
+	catch (e)
+	{
+	}
+
+	return "";
+}
+function addNode(host, ip, http_port, https_port, orig_host)
+{
+	var row = $('#node_template').clone(true);
+	$('#node_table_body').append(row);
+	row.css('display', '');
+
+	// Set the body of the table row
+	row.find('td.node_row_host').html(host.trim());
+	row.find('td.node_row_http_port').html(http_port.trim());
+	row.find('td.node_row_https_port').html(https_port.trim());
+	row.find('td.node_row_ip').html(ip.trim());
+
+	// Set the value of the inputs on the row
+	row.find('input.nti_host').val(host.trim());
+	row.find('input.nti_http_port').val(http_port.trim());
+	row.find('input.nti_https_port').val(https_port.trim());
+	row.find('input.nti_ip').val(ip.trim());
+
+	// Set the name of the inputs on the tow
+	row.find('input.nti_host').attr('name', 'node_host[]');
+	row.find('input.nti_http_port').attr('name', 'node_http_port[]');
+	row.find('input.nti_https_port').attr('name', 'node_https_port[]');
+	row.find('input.nti_ip').attr('name', 'node_ip[]');
+
+	// Clear values (but not port numbers, as they're likely to be the
+	// same for each row) and then focus back on the node name again
+	$('#new_node_name').val(incHostNumber(orig_host.trim()));
+	$('#new_node_ip').val('');
+	$('#new_node_name').focus();
+}
+$('#add_node').click(function() {
+	var host = $('#new_node_name').val().trim();
+	var ip = $('#new_node_ip').val().trim();
+	var http_port = $('#node_http_port').val().trim();
+	var https_port = $('#node_https_port').val().trim();
+	if (host == "")
+	{
+		alert('You must enter a hostname');
+		$('#node_name').focus();
+		return;
+	}
+	if (ip == "")
+	{
+		$('#add_node').attr('disabled', 'disabled');
+		$.ajax({
+			url: '{{ url_for('nlbweb_dns_lookup') }}?host=' + host,
+			success: function(data, textStatus) {
+				if (data['success'] !== undefined && data['success'] == 1)
+				{
+					addNode(data['hostname'], data['ip'], http_port, https_port, host);
+				}
+				else
+				{
+					alert('DNS lookup for ' + host + ' failed. Please provide an IP address.')
+					$('#node_ip').focus();
+				}
+				$('#add_node').removeAttr('disabled');
+			},
+			error: function() {
+				$('#add_node').removeAttr('disabled');
+			}
+		});
+	}
+	else
+	{
+		addNode(host, ip, http_port, https_port, host);
+	}
+});
+$('.remove-node').click(function() {
+	$(this).closest('tr').remove();
+});
+</script>
+{% endblock %}

@@ -13,13 +13,10 @@ class SNPuppetConnector:
 	FILESYSTEMS_TABLE = "cmdb_ci_file_system"
 	NETWORK_ADAPTER_TABLE = "cmdb_ci_network_adapter"
 
-	def __init__(self, 
-		sn_host, sn_version, sn_user, sn_pass,
-		puppet_host, puppet_port, puppet_ssl_cert, puppet_ssl_key, puppet_ssl_verify
-	):
+	def __init__(self, sn_host, sn_version, sn_user, sn_pass, puppet_connector):
 		# Create the ServiceNowAPI / PuppetDB Objects.
 		self.sn = ServiceNowAPI(sn_host, sn_version, sn_user, sn_pass)
-		self.puppet = PuppetDB(puppet_host, puppet_port, puppet_ssl_cert, puppet_ssl_key, puppet_ssl_verify)
+		self.puppet = puppet_connector
 
 	def message(self, message, category=None):
 		"""
@@ -27,18 +24,6 @@ class SNPuppetConnector:
 		"""
 		syslog.syslog(message)
 
-	def get_nodes_from_puppet(self):
-		"""
-		Return all the node objects from puppet.
-		"""
-		return	self.puppet.nodes()
-
-	def get_node_from_puppet(self, node_name):
-		"""
-		Return the node object with the given node name.
-		"""
-		return self.puppet.node(node_name)
-	
 	def push_facts(self, node, cmdb_id, **kwargs):
 		"""
 		Push facts from Puppet to ServiceNow
@@ -46,20 +31,10 @@ class SNPuppetConnector:
 			cmbd_id - ServiceNow Sys ID
 		"""
 
-		# Get the ID for the server.
-		node_sys_id = cmdb_id
-
-		if node_sys_id is not None:
-			if not self.push_server_facts(node, node_sys_id, **kwargs): return False
-			if not self.push_networking_facts(node, node_sys_id, **kwargs): return False
-			if not self.push_disk_facts(node, node_sys_id, **kwargs): return False
-			if not self.push_mountpoint_facts(node, node_sys_id, **kwargs): return False
-
-			return True
-			
-		else:
-			return False
-		
+		self.push_server_facts(node, cmdb_id, **kwargs)
+		self.push_networking_facts(node, cmdb_id, **kwargs)
+		self.push_disk_facts(node, cmdb_id, **kwargs)
+		self.push_mountpoint_facts(node, cmdb_id, **kwargs)
 
 	def push_server_facts(self, node, node_sys_id, **kwargs):
 		"""
@@ -93,13 +68,11 @@ class SNPuppetConnector:
 				response = self.sn.put(self.LINUX_SERVER_TABLE, node_sys_id, data=sn_server_data)
 			except HTTPError as e:
 				self.message("Could not update %s. Error: %s" %(node.name, str(e)), "error")
-				return False
+				raise
 
 		except KeyError as e:
 			self.message("Error adding server data. Error: %s" %(str(e)), "error")
-			return False
-
-		return True
+			raise
 
 	def push_networking_facts(self, node, node_sys_id, **kwargs):
 		"""
@@ -134,12 +107,11 @@ class SNPuppetConnector:
 							response = self.sn.post(self.NETWORK_ADAPTER_TABLE, data=sn_interface_data)
 						except HTTPError as e:
 							self.message("Could not add interface %s. Error: %s" %(interface_name, str(e)), "error")
-							return False
+							raise
 					else:
 						# HTTP Error.
 						self.message("Could not add interface %s. Error: %s" %(interface_name, str(e)), "error")
-						return False
-
+						raise
 				else:
 					# PUT request needed.
 					try:
@@ -147,13 +119,11 @@ class SNPuppetConnector:
 						response = self.sn.put(self.NETWORK_ADAPTER_TABLE, adapter_id, data=sn_interface_data)
 					except HTTPError as e:
 						self.message("Could not update interface %s. Error: %s" %(interface_name, str(e)), "error")
-						return False
+						raise
 
 		except KeyError as e:
 			self.message("Error adding network interfaces. Error: %s" %(str(e)), "error")
-			return False
-
-		return True
+			raise
 
 	def push_disk_facts(self, node, node_sys_id, **kwargs):
 		"""
@@ -181,11 +151,11 @@ class SNPuppetConnector:
 							response = self.sn.post(self.DISKS_TABLE, data=sn_disk_data)
 						except HTTPError as e:
 							self.message("Could not add disk %s. Error: %s" %(disk_name, str(e)), "error")
-							return False
+							raise
 					else:
 						# HTTP Error.
 						self.message("Could not add disk %s. Error: %s" %(disk_name, str(e)), "error")
-						return False
+						raise
 
 				else:
 					# PUT request needed.
@@ -194,12 +164,10 @@ class SNPuppetConnector:
 						response = self.sn.put(self.DISKS_TABLE, disk_id, data=sn_disk_data)
 					except HTTPError as e:
 						self.message("Could not update disk %s. Error: %s" %(disk_name, str(e)), "error")
-						return False
+						raise
 		except KeyError:
 			self.message("Error adding disks. Error: %s" %(str(e)), "error")
-			return False
-
-		return True
+			raise
 
 	def push_mountpoint_facts(self, node, node_sys_id, **kwargs):
 		"""
@@ -231,11 +199,11 @@ class SNPuppetConnector:
 							response = self.sn.post(self.FILESYSTEMS_TABLE, data=sn_mountpoint_data)
 						except HTTPError as e:
 							self.message("Could not add mountpoint %s. Error: %s" %(mountpoint_name, str(e)), "error")
-							return False
+							raise
 					else:
 						# HTTP Error.
 						self.message("Could not add mountpoint %s. Error: %s" %(mountpoint_name, str(e)), "error")
-						return False
+						raise
 
 				else:
 					# PUT request needed.
@@ -244,12 +212,11 @@ class SNPuppetConnector:
 						response = self.sn.put(self.FILESYSTEMS_TABLE, mountpoint_id, data=sn_mountpoint_data)
 					except HTTPError as e:
 						self.message("Could not update mountpoint %s. Error: %s" %(mountpoint_name, str(e)), "error")
-						return False
+						raise
 		except KeyError:
 			self.message("Error adding mountpoints. Error: %s" %(str(e)), "error")
-			return False
+			raise
 
-		return True
 
 class ServiceNowAPI():
 
@@ -303,64 +270,3 @@ class ServiceNowAPI():
 		response.raise_for_status()
 
 		return response.json()
-
-class PuppetDB:
-
-	def __init__(self, host, port, ssl_cert, ssl_key, ssl_verify):
-		self.host = host
-		self.port = port
-		self.ssl_cert = ssl_cert
-		self.ssl_key = ssl_key
-		self.ssl_verify = ssl_verify
-		self.facts = {}
-
-		# Connect
-		self.connect()
-
-	def connect(self):
-		self.db = pypuppetdb.connect(self.host, port=self.port, ssl_cert=self.ssl_cert, ssl_key=self.ssl_key, ssl_verify=self.ssl_verify)
-
-	def nodes(self):
-		return self.db.nodes()
-
-	def node(self, node_name):
-		return self.db.node(node_name)
-
-	def get_all_facts(self, node_object, cached=True):
-		"""Get facts about this node from puppet."""
-		if node_object.name in self.facts and cached:
-			return self.facts[node_object.name]
-		else:
-			facts = node_object.facts()
-			facts_dict = {}
-			if facts is not None:
-				for fact in facts:
-					facts_dict[fact.name] = fact.value
-
-				self.facts[node_object.name] = facts_dict
-
-			return facts_dict
-
-	def get_network_facts(self, node_object, cached=True):
-		"""Get network facts from puppet."""
-		facts = self.get_all_facts(node_object, cached)
-		try:
-			return facts["networking"]
-		except KeyError:
-			return {}
-
-	def get_disk_facts(self, node_object, cached=True):
-		"""Get disk facts from puppet."""
-		facts = self.get_all_facts(node_object, cached)
-		try:
-			return facts["disks"]
-		except KeyError:
-			return {}
-
-	def get_mountpoint_facts(self, node_object, cached=True):
-		"""Get mountpoint facts from puppet."""
-		facts = self.get_all_facts(node_object, cached)
-		try:
-			return facts["mountpoints"]
-		except KeyError:
-			return {}

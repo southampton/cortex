@@ -1,0 +1,68 @@
+{% extends "layout.html" %}
+
+{#- This macro renders a sequence of items, recursing to renderlist and renderdict as necessary -#}
+{%- macro renderlist(l) %}
+<ul class="catalog">
+{%- for item in l %}
+{%-     if item is mapping -%}
+	{{ renderdict(item) }}
+{%-     elif item is sequence and item is not string -%}
+	{{ renderlist(item) }}
+{%-     else -%}
+	<li>{{ item }}</li>
+{%-     endif -%}
+{%- endfor %}
+</ul>
+{% endmacro %}
+{#- This macro renders a dictionary of items, recursing to renderlist and renderdict as necessary -#}
+{%- macro renderdict(d) %}
+<ul class="catalog">
+{%- for key,value in d|dictsort %}
+	<li><strong>{{ key }}:&nbsp;</strong> 
+{%-     if d[key] is mapping -%}
+		{{ renderdict(d[key]) }}
+{%-     elif d[key] is sequence and d[key] is not string -%}
+		{{ renderlist(d[key]) }}
+{%-     else -%}
+		{{ d[key] }}
+{%-     endif -%}
+	</li>
+{%- endfor %}
+</ul>
+{% endmacro %}
+{% block body %}
+{% import 'node-header.html' as nodeh %}
+{% import 'puppet/header.html' as puppeth %}
+
+<style type="text/css">
+.catalog
+{
+	font-family: monospace;
+}
+</style>
+
+{{ nodeh.header(system,active="puppet" ) }}
+{{ puppeth.header(system,active="puppet_catalog", title="Catalog") }}
+
+{%- if node %}
+<p class="text-muted pull-right text-right"><strong>Environment:</strong> {{ node.catalog_environment }}<br/> <strong>Catalog generated at:</strong> {{ node.catalog_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+{%- endif %}
+
+{%- if catalog %}
+<div style="overflow-x: scroll">
+	<ul class="catalog">
+	{%- for key,value in catalog|dictsort %}
+		<li><strong>{{ key }}:&nbsp;</strong> 
+	{%-     if value is mapping -%}
+			{{ renderdict(value) }}
+	{%-     else -%}
+			{{ value }}
+	{%-     endif -%}
+		</li>
+	{%- endfor %}
+	</ul>
+</div>
+{% else %}
+<p>No catalog found. If you think this is an error then check that the node is registered with Puppet and that the Puppet Agent is functioning on the host.</p>
+{%- endif %}
+{% endblock %}

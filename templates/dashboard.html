@@ -57,7 +57,7 @@ a.server-link:hover { text-decoration: underline !important; }
 {%- endif -%}
 		{%- if syscount > 0 %}
 		<div class="panel panel-default">
-			<div class="panel-heading"><h3 class="panel-title">Your systems</h3></div>
+			<div class="panel-heading"><h3 class="panel-title">Your recent systems</h3></div>
 			<div class="panel-body">
 				<table class="table table-condensed table-striped" id="your-systems">
 					<thead>
@@ -66,11 +66,12 @@ a.server-link:hover { text-decoration: underline !important; }
 							<th>Purpose</th>
 							<th>Environment</th>
 							<th>Status</th>
+							<th>Allocation Date</th>
 							<th style="width: 1px"></th>
 						</tr>
 					</thead>
 					<tbody>
-{%- for system in systems %}
+						{%- for system in systems %}
 						<tr>
 							<td>{% if system.vmware_guest_state == "poweredOn"%} <i title="VM Powered On" class="fa fa-fw fa-play icon-state icon-on"></i>
 								{% elif system.vmware_guest_state == "poweredOff"%} <i title="VM Powered Off" class="fa fa-fw fa-stop icon-state icon-off"></i>
@@ -80,64 +81,32 @@ a.server-link:hover { text-decoration: underline !important; }
 							<td>{{ system.allocation_comment }}</td>
 							<td>{{ system.cmdb_environment }}</td>
 							<td>{{ system.cmdb_operational_status }}</td>
+							<td>{{ system.allocation_date }}</td>
 							<td><a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
 						</tr>
-{%- endfor %}
+						{%- endfor %}
 					</tbody>
 				</table>
-<script type="text/javascript">
-	dataTable = $('#your-systems').DataTable({
-		"pageLength": 10,
-		"order": [[0, 'asc']],
-		"columns": [null, null, null, null, { "orderable": false, "targets": 0 }],
-		"searching": true,
-	});
-	$(window).resize(function() {
-		$('#your-systems').css('width', '100%');
-		dataTable.columns.adjust();
-	});
-</script>
+				<script type="text/javascript">
+					dataTable = $('#your-systems').DataTable({
+						"pageLength": 5,
+						"lengthMenu": [[5,10,15,50,100,-1], [5,10,15,50,100,'All']],
+						"order": [[4, 'desc']],
+						"columns": [null, null, null, null, null,{ "orderable": false, "targets": 0 }],
+						"searching": true,
+					});
+					$(window).resize(function() {
+						$('#your-systems').css('width', '100%');
+						dataTable.columns.adjust();
+					});
+				</script>
 			</div>
 		</div>
-{%- endif %}
-
-{%- if does_user_have_permission('systems.all.view') %}
-		<div class="panel panel-default">
-			<div class="panel-heading"><h3 class="panel-title">Recently created systems</h3></div>
-			<div class="panel-body">
-			<table class="table table-condensed table-striped" id="recent-systems">
-				<thead>
-					<tr>
-						<th>Name</th>
-						<th>Purpose</th>
-						<th>Environment</th>
-						<th>Status</th>
-						<th style="width: 1px"></th>
-					</tr>
-				</thead>
-				<tbody>
-{%- for system in recent_systems %}
-					<tr>
-						<td>{% if system.vmware_guest_state == "poweredOn"%} <i title="VM Powered On" class="fa fa-fw fa-play icon-state icon-on"></i>
-							{% elif system.vmware_guest_state == "poweredOff"%} <i title="VM Powered Off" class="fa fa-fw fa-stop icon-state icon-off"></i>
-							{% elif system.vmware_guest_state == "suspended"%} <i title="VM Suspended" class="fa fa-fw fa-pause icon-state icon-pause"></i>
-							{% else %} <i title="Not linked to VMware" class="fa fa-fw fa-dot-circle-o icon-state icon-unknown"></i>
-							{% endif %} <a class="server-link" href="{{ url_for('system_overview',id=system.id) }}">{{ system.name }}</a></td>
-						<td>{{ system.allocation_comment }}</td>
-						<td>{{ system.cmdb_environment }}</td>
-						<td>{{ system.cmdb_operational_status }}</td>
-						<td><a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
-					</tr>
-{%- endfor %}
-				</tbody>
-			</table>
-			</div>
-		</div>
-{%- endif %}
+		{%- endif %}
 		<div class="panel panel-default">
 			<div class="panel-heading"><h3 class="panel-title">Your recent tasks</h3></div>
 			<div class="panel-body">
-{%- if tasks and tasks|length > 0 %}
+				{%- if tasks and tasks|length > 0 %}
 				<table class="table table-condensed table-striped" id="tasks" style="margin-bottom:0">
 					<thead>
 						<tr>
@@ -160,12 +129,60 @@ a.server-link:hover { text-decoration: underline !important; }
 						{%- endfor %}
 					</tbody>
 				</table>
-{%- else %}
+				{%- else %}
 				<div class="text-center" style="padding:2px">You have no recent tasks to view</div>
-{%- endif %}
-
+				{%- endif %}
 			</div>
 		</div>
+
+		{%- if does_user_have_permission('systems.all.view') %}
+		<div class="panel panel-default">
+			<div class="panel-heading"><h3 class="panel-title">Recently created systems</h3></div>
+			<div class="panel-body">
+			<table class="table table-condensed table-striped" id="recent-systems">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Purpose</th>
+						<th>Environment</th>
+						<th>Status</th>
+						<th>Allocation Date</th>
+						<th style="width: 1px"></th>
+					</tr>
+				</thead>
+				<tbody>
+					{%- for system in recent_systems %}
+					<tr>
+						<td>{% if system.vmware_guest_state == "poweredOn"%} <i title="VM Powered On" class="fa fa-fw fa-play icon-state icon-on"></i>
+							{% elif system.vmware_guest_state == "poweredOff"%} <i title="VM Powered Off" class="fa fa-fw fa-stop icon-state icon-off"></i>
+							{% elif system.vmware_guest_state == "suspended"%} <i title="VM Suspended" class="fa fa-fw fa-pause icon-state icon-pause"></i>
+							{% else %} <i title="Not linked to VMware" class="fa fa-fw fa-dot-circle-o icon-state icon-unknown"></i>
+							{% endif %} <a class="server-link" href="{{ url_for('system_overview',id=system.id) }}">{{ system.name }}</a></td>
+						<td>{{ system.allocation_comment }}</td>
+						<td>{{ system.cmdb_environment }}</td>
+						<td>{{ system.cmdb_operational_status }}</td>
+						<td>{{ system.allocation_date }}</td>
+						<td><a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
+					</tr>
+					{%- endfor %}
+				</tbody>
+			</table>
+			<script type="text/javascript">
+				dataTable = $('#recent-systems').DataTable({
+					"pageLength": 5,
+					"lengthMenu": [[5,10,15,50,100,-1], [5,10,15,50,100,'All']],
+					"order": [[4, 'desc']],
+					"columns": [null, null, null, null, null,{ "orderable": false, "targets": 0 }],
+					"searching": true,
+				});
+				$(window).resize(function() {
+					$('#recent-systems').css('width', '100%');
+					dataTable.columns.adjust();
+				});
+			</script>
+			</div>
+		</div>
+		{%- endif %}
 {%- if does_user_have_permission('systems.all.view') %}
 	</div>
 	<div class="col-md-3 hidden-xs hidden-sm">
@@ -234,13 +251,19 @@ a.server-link:hover { text-decoration: underline !important; }
 		</div>
 		<div class="dashblock bg-dorange">
 			<strong><i class="fa fa-fw fa-cog"></i> {{ task_progress_count }}</strong> Tasks in progress<br/>
-			<strong><i class="fa fa-fw fa-exclamation-triangle"></i> {{ task_failed_count }}</strong> Recent failed tasks
+			<strong><i class="fa fa-fw fa-exclamation-triangle"></i> {{ task_warning_count }}</strong> Recent tasks with warnings<br/>
+			<strong><i class="fa fa-fw fa-times"></i> {{ task_failed_count }}</strong> Recent failed tasks
 		</div>
 		<div class="dashblock bg-success">
 			<strong><i class="fa fa-fw fa-database"></i> {{ total_ram | filesizeformat(binary=True) }}</strong> RAM total<br/>
 			<strong><i class="fa fa-fw fa-bar-chart"></i> {{ total_vm_ram | filesizeformat(binary=True) }}</strong> RAM allocated <br/>
 			<strong><i class="fa fa-fw fa-line-chart"></i> {{ total_ram_usage | filesizeformat(binary=True) }}</strong> RAM usage
 		</div>
+		<div class="dashblock bg-purple">
+			<strong><i class="fa fa-fw fa-download"></i> {{ stats['changed'] }}</strong> Puppet nodes changed<br/>
+			<strong><i class="fa fa-fw fa-times"></i> {{ stats['failed'] }}</strong> Puppet nodes failed
+		</div>
+
 	</div>
 </div>
 {%- endif %}
