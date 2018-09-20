@@ -435,12 +435,19 @@ def puppet_dashboard_status(status):
 	# Iterate over nodes and do the filtering
 	if status != 'all':
 		for node in nodes:
-			# If the status matches...
-			if node.status == status:
-				nodes_of_type.append(node)
-			# Or if the required status is 'unknown' and it's not one of the normal statii
-			elif status == 'unknown' and node.status not in ['unchanged', 'changed', 'noop', 'failed']:
-				nodes_of_type.append(node)
+			if node.noop:
+				if status == 'noop':
+					# If we are looking for noop boxes.
+					nodes_of_type.append(node)
+				# We don't want to include noop boxes in any of the other categories regardless of status.
+			# Otherwise check the status.
+			else:
+				# If the status matches...
+				if node.status == status:
+					nodes_of_type.append(node)
+				# Or if the required status is 'unknown' and it's not one of the normal statii
+				elif status == 'unknown' and node.status not in ['unchanged', 'changed', 'noop', 'failed']:
+					nodes_of_type.append(node)
 	else:
 		nodes_of_type=nodes
 
