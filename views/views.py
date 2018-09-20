@@ -95,8 +95,8 @@ def dashboard():
 
 	# Puppet Stats
 	stats = {
-		'failed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname", ["=", "latest_report_status", "failed"]]')),
-		'changed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname", ["=", "latest_report_status", "changed"]]')),
+		'failed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname",["and",["=", "latest_report_status", "failed"],["=", "latest_report_noop", false]]]')),
+		'changed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname",["and",["=", "latest_report_status", "changed"],["=", "latest_report_noop", false]]]')),
 	}
 
 	return render_template('dashboard.html', active="dashboard", 
