@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% block body %}
 {% import 'node-header.html' as node %}
+{% import 'puppet/header.html' as puppeth %}
 
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/Lato-Fonts.css') }}">
 <style type="text/css">
@@ -50,7 +51,8 @@
 	text-align: center;
 }
 </style>
-{{ node.header(system,active="puppet_reports" ) }}
+{{ node.header(system,active="puppet" ) }}
+{{ puppeth.header(system,active="puppet_reports",title="Reports" ) }}
 <p class="text-muted pull-right">Received: <span class="date">{{ report.received.strftime('%Y/%m/%d %H:%M:%S') }}</span>. Run time: {{ report.run_time }}</p>
 <div class="row">
 </div>
