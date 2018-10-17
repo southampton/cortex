@@ -350,6 +350,11 @@ Username:             %s
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
+		try:
+			cursor.execute("""CREATE INDEX `related_events_key` ON `events` (`related_id`)""")
+		except Exception as ex:
+			pass
+
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `kv_settings` (
 		  `key` varchar(64) NOT NULL,
 		  `value` text,
@@ -589,8 +594,6 @@ Username:             %s
 			cursor.execute("""ALTER TABLE `systems` ADD `secondary_owner_role` varchar(64) DEFAULT NULL""")
 		except Exception as e:
 			pass
-
-
 
 		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT 
 		 `systems`.`id` AS `id`,
