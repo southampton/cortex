@@ -37,6 +37,7 @@ def run(helper, options):
 		prefix = options['wfconfig']['SB_PREFIX']
 		vcenter_tag = options['wfconfig']['SB_VCENTER_TAG']
 		domain = options['wfconfig']['SB_DOMAIN']
+		dns_domain = options['wfconfig']['SB_DNS_DOMAIN']
 		puppet_cert_domain = options['wfconfig']['SB_PUPPET_CERT_DOMAIN']
 		win_full_name = options['wfconfig']['SB_WIN_FULL_NAME']
 		win_org_name = options['wfconfig']['SB_WIN_ORG_NAME']
