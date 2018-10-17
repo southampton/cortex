@@ -519,7 +519,7 @@ def run(helper, options):
 		message += '\n'
 		if workflow == 'standard':
 			message += 'ServiceNow Task: ' + str(options['task']) + '\n'
-		message += 'Hostname: ' + str(system_name) + '.' + str(domain) + '\n'
+		message += 'Hostname: ' + str(system_name) + '.' + str(dns_domain) + '\n'
 		if ipv4addr is not None:
 			message += 'IP Address: ' + str(ipv4addr) + '\n'
 		message += 'VMware Cluster: ' + str(options['cluster']) + '\n'
