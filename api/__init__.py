@@ -76,9 +76,11 @@ def invalid_permission_handler(e):
 # Add the namespaces.
 
 from cortex.api.endpoints.systems_info_view import systems_info_view_namespace
+from cortex.api.endpoints.tasks import tasks_namespace
 
 api_manager.namespaces.pop(0)
 api_manager.add_namespace(systems_info_view_namespace)
+api_manager.add_namespace(tasks_namespace)
 
 # Create an API Blueprint.
 api_blueprint = Blueprint('api', __name__, url_prefix='/api')
