@@ -98,19 +98,17 @@ def fqdn_strip_domain(fqdn):
 
 ################################################################################
 
-def tasks_where_query(module = None, username = None, status = None):
-
+def tasks_where_query(*args, **kwargs):
+	# Build the query parts
 	query_parts = []
 	query_params = []
-	if module is not None:
-		query_parts.append("`module` = %s")
-		query_params.append(module)
-	if username is not None:
-		query_parts.append("`username` = %s")
-		query_params.append(username)
-	if status is not None:
-		query_parts.append("`status` = %s")
-		query_params.append(status)
+	for key in kwargs:
+		if key in ['module', 'username', 'status']:
+			if kwargs[key] is not None:
+				query_parts.append("`" + key + "` = %s")
+				query_params.append(kwargs[key])
+		else:
+			raise TypeError("tasks_where_query() got an unexpected keyword argument '" + key + "'")
 
 	if len(query_parts) > 0:
 		return (" WHERE " + " AND ".join(query_parts), tuple(query_params))
@@ -119,23 +117,23 @@ def tasks_where_query(module = None, username = None, status = None):
 
 ################################################################################
 
-def tasks_count(module = None, username = None, status = None):
+def tasks_count(*args, **kwargs):
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-	(where_clause, query_params) = tasks_where_query(module, username, status)
+	(where_clause, query_params) = tasks_where_query(**kwargs)
 	curd.execute("SELECT COUNT(*) AS `count` FROM `tasks`" + where_clause, tuple(query_params))
 
 	return curd.fetchone()['count']
 
 ################################################################################
 
-def tasks_get(module = None, username = None, status = None, order = None, limit_start = None, limit_length = None):
+def tasks_get(order = None, limit_start = None, limit_length = None, *args, **kwargs):
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Build the query
-	(where_clause, query_params) = tasks_where_query(module, username, status)
+	(where_clause, query_params) = tasks_where_query(**kwargs)
 	query = "SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks`" + where_clause
 
 	if order in ['id', 'module', 'username', 'start', 'end', 'status', 'description']:
