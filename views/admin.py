@@ -7,6 +7,7 @@ from flask import Flask, request, session, redirect, url_for, flash, g, abort, r
 import re
 import MySQLdb as mysql
 import datetime
+import json
 
 ################################################################################
 
@@ -285,6 +286,45 @@ def admin_events(src="all"):
 
 	# Render the page
 	return render_template('admin/events.html', active='admin', title="Events", event_source=src, json_source=url_for('admin_events_json', event_source=src))
+
+################################################################################
+
+@app.route('/admin/specs', methods=['GET', 'POST'])
+@cortex.lib.user.login_required
+def admin_specs():
+	"""Displays a page to edit VM spec settings for the standard VM."""
+
+	# Get the list of tasks from NeoCortex
+        curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	vm_spec_json = {}
+	if request.method == 'POST':
+		if 'specs' in request.form:
+			try:
+				vm_spec_json = json.loads(request.form['specs'])
+			except ValueError:
+				flash("The JSON you submitted was invalid, your changes have not been saved.", "alert-danger")
+				return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=request.form['specs'])
+			else:
+				curd.execute('INSERT INTO `kv_settings` (`key`, `value`) VALUES (%s, %s) ON DUPLICATE KEY UPDATE `value`=%s;', ('vm.specs', json.dumps(vm_spec_json),json.dumps(vm_spec_json))) 
+				g.db.commit()
+		
+
+	# Get the VM Specs from the DB
+	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('vm.specs',))
+	res = curd.fetchone()
+	if res is not None:
+		try:
+			vm_spec_json = json.loads(res['value'])
+		except ValueError:
+			flash("Could not parse JSON from the database.", "alert-danger")
+			vm_spec_json = {}
+	else:
+		vm_spec_json = {}
+		
+	
+	# Render the page
+	return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=json.dumps(vm_spec_json, sort_keys=True, indent=4))
 
 ################################################################################
 
