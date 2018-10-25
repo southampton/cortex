@@ -95,6 +95,59 @@ def fqdn_strip_domain(fqdn):
 	# n.b split always returns a list with 1 entry even if the seperator isnt found
 	return fqdn.split('.')[0]
 
+
+################################################################################
+
+def tasks_where_query(module = None, username = None, status = None):
+
+	query_parts = []
+	query_params = []
+	if module is not None:
+		query_parts.append("`module` = %s")
+		query_params.append(module)
+	if username is not None:
+		query_parts.append("`username` = %s")
+		query_params.append(username)
+	if status is not None:
+		query_parts.append("`status` = %s")
+		query_params.append(status)
+
+	if len(query_parts) > 0:
+		return (" WHERE " + " AND ".join(query_parts), tuple(query_params))
+	else:
+		return ("", ())
+
+################################################################################
+
+def tasks_count(module = None, username = None, status = None):
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	(where_clause, query_params) = tasks_where_query(module, username, status)
+	curd.execute("SELECT COUNT(*) AS `count` FROM `tasks`" + where_clause, tuple(query_params))
+
+	return curd.fetchone()['count']
+
+################################################################################
+
+def tasks_get(module = None, username = None, status = None, order = None, limit_start = None, limit_length = None):
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Build the query
+	(where_clause, query_params) = tasks_where_query(module, username, status)
+	query = "SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks`" + where_clause
+
+	if order in ['id', 'module', 'username', 'start', 'end', 'status', 'description']:
+		query = query + " ORDER BY `" + order + "`"
+
+	if limit_start is not None and limit_length is not None:
+		query = query + " LIMIT " + str(int(limit_start)) + "," + str(int(limit_length))
+
+	# Get the task
+	curd.execute(query, tuple(query_params))
+	return curd.fetchall()
+
 ################################################################################
 
 def task_get(id):
