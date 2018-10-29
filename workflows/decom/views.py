@@ -91,15 +91,23 @@ def decom_step2(id):
 
 
 	## Ask Infoblox if a DNS host object exists for the name of the system
-	try:
-		refs = corpus.infoblox_get_host_refs(system['name'] + ".soton.ac.uk")
+	if 'DNS_DOMAINS' in workflow.config and workflow.config['DNS_DOMAINS'] is not None:
+		# Ensure we have a list
+		dns_domains = workflow.config['DNS_DOMAINS']
+		if type(dns_domains) is str:
+			dns_domains = [dns_domains]
 
-		if refs is not None:
-			for ref in refs:
-				actions.append({'id': 'dns.delete', 'desc': 'Delete the DNS record ' + ref.split(':')[-1], 'detail': 'Delete the name ' + system['name'] + '.soton.ac.uk - Infoblox reference: ' + ref, 'data': ref})
+		# Iterate over domains
+		for domain in dns_domains:
+			try:
+				refs = corpus.infoblox_get_host_refs(system['name'] + '.' + str(domain))
 
-	except Exception as ex:
-		flash("Warning - An error occured when communicating with Infoblox: " + str(type(ex)) + " - " + str(ex),"alert-warning")
+				if refs is not None:
+					for ref in refs:
+						actions.append({'id': 'dns.delete', 'desc': 'Delete the DNS record ' + ref.split(':')[-1], 'detail': 'Delete the name ' + system['name'] + '.' + str(domain) + ' - Infoblox reference: ' + ref, 'data': ref})
+
+			except Exception as ex:
+				flash('Warning - An error occured when communicating with Infoblox: ' + str(type(ex)) + ' - ' + str(ex), 'alert-warning')
 
 	## Check if a puppet record exists
 	if 'puppet_certname' in system:
