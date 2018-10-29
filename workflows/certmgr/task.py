@@ -17,7 +17,7 @@ def run(helper, options):
 	elif options['provider']['type'] == 'acme':
 		result = create_acme_cert(helper, options)
 
-# Code for uploading to NLB
+# Uploads a certificate and key pair to the load balancers
 def upload_cert_key_to_nlb(helper, options, cert, key):
 	# Generate filenames
 	key_filename = options['fqdn'] + '.key'
@@ -39,6 +39,44 @@ def upload_cert_key_to_nlb(helper, options, cert, key):
 		helper.end_event(description='Uploaded certificate to load balancer ' + options['nlb']['hostname'])
 	except Exception as e:
 		helper.end_event(description='Error uploading data to load balancer: ' + str(e), success=False)
+
+# Creates an SSL profile on the load balancers
+def create_ssl_profile(helper, options, chain_cn=None):
+	# Name is /<parition>/<prefix><fqdn><suffix>
+	profile_name = '/' + options['nlb']['partition'] + '/' + (str(options['wfconfig']['CLIENT_SSL_PROFILE_PREFIX']) if 'CLIENT_SSL_PROFILE_PREFIX' in options['wfconfig'] else '') + options['fqdn'] + (str(options['wfconfig']['CLIENT_SSL_PROFILE_SUFFIX']) if 'CLIENT_SSL_PROFILE_SUFFIX' in options['wfconfig'] else '')
+
+	helper.event('create_ssl_profile', 'Creating client SSL profile ' + profile_name + ' on ' + options['nlb']['hostname'])
+
+	cert_key_chain = {
+		'name': options['fqdn'] + '_',
+		'cert': '/' + options['nlb']['partition'] + '/' + options['fqdn'] + '.crt',
+		'key': '/' + options['nlb']['partition'] + '/' + options['fqdn'] + '.key'
+	}
+
+	# Add in the chain cert and update the name
+	if chain_cn is not None:
+		if chain_cn in options['wfconfig']['NLB_INTERMEDIATE_CN_FILES']:
+			cert_key_chain['chain'] = options['wfconfig']['NLB_INTERMEDIATE_CN_FILES'][chain_cn]
+			cert_key_chain['name'] = cert_key_chain['name'] + chain_cn.replace(' ', '').replace('\'', '')
+		else:
+			cert_key_chain['name'] = cert_key_chain['name'] + 'missingchain'
+	else:
+		cert_key_chain['name'] = cert_key_chain['name'] + 'selfsigned'
+
+	# Add in OCSP stapling parameters if required
+	if chain_cn in options['wfconfig']['NLB_INTERMEDIATE_CN_OCSP_STAPLING_PARAMS']:
+		cert_key_chain['ocspStaplingParams'] = options['wfconfig']['NLB_INTERMEDIATE_CN_OCSP_STAPLING_PARAMS'][chain_cn]
+
+	ssl_profile = {
+		'name': profile_name,
+		'defaultsFrom': options['nlb']['parent-ssl-profile'],
+		'certKeyChain': [cert_key_chain]
+	}
+
+	bigip = ManagementRoot(options['nlb']['hostname'], options['nlb']['username'], options['nlb']['password'])
+	bigip.tm.ltm.profile.client_ssls.client_ssl.create(**ssl_profile)
+
+	helper.end_event(description='Creating client SSL profile ' + profile_name + ' on ' + options['nlb']['hostname'], success=True)
 
 # For ACME-challenge certificates
 def create_acme_cert(helper, options):
@@ -84,17 +122,19 @@ def create_acme_cert(helper, options):
 	helper.event('prep_download', description="Preparing certificates for download")
 
 	# Get the certificates
-	helper.lib.rdb.setex("certmgr/" + str(helper.task_id) + "/certificate", 3600, acme_response['certificate_text'])
-	helper.lib.rdb.setex("certmgr/" + str(helper.task_id) + "/private", 3600, acme_response['privatekey_text'])
+	helper.lib.rdb.setex("certmgr/" + str(helper.task_id) + "/certificate", 3600, acme_response['certificate'])
+	helper.lib.rdb.setex("certmgr/" + str(helper.task_id) + "/private", 3600, acme_response['privatekey'])
 	helper.lib.rdb.setex("certmgr/" + str(helper.task_id) + "/chain", 3600, acme_response['chain'])
 
 	helper.end_event(description='Certificates ready for download', success=True)
 
-	# Upload to NLB if required
-	if options['provider']['upload_nlb']:
-		upload_cert_key_to_nlb(helper, options, acme_response['certificate_text'], acme_response['privatekey_text'])
+	# If we need to create an SSL profile...
+	if options['create_ssl_profile']:
+		# Upload to NLB if required
+		if options['provider']['nlb_upload']:
+			upload_cert_key_to_nlb(helper, options, acme_response['certificate'], acme_response['privatekey'])
 
-	# Create SSL Profile
+		create_ssl_profile(helper, options, acme_response['chain_cn'])
 
 # For self-signed certificates
 def create_self_signed_cert(helper, options):
@@ -150,6 +190,10 @@ def create_self_signed_cert(helper, options):
 
 	helper.end_event(description='Certificates ready for download', success=True)
 
-	# Upload to NLB if required
-	if options['provider']['nlb_upload']:
-		upload_cert_key_to_nlb(helper, options, pem_cert, pem_key)
+	# If we need to create an SSL profile...
+	if options['create_ssl_profile']:
+		# Upload to NLB if required
+		if options['provider']['nlb_upload']:
+			upload_cert_key_to_nlb(helper, options, pem_cert, pem_key)
+		
+		create_ssl_profile(helper, options)
