@@ -53,8 +53,9 @@ NLBS=[
 # - id: A unique identifier for the ACME server
 # - hostname: The hostname of the server for API access
 # - api_token: The pre-shared token to use for accessing the API
+# - verify_ssl: Whether to verify the certificate when doing TLS to the ACME server
 ACME_SERVERS=[
-	{'id': 'acme_prod', 'hostname': 'acme.mydomain.tld', 'api_token': 'password'},
+	{'id': 'acme_prod', 'hostname': 'acme.mydomain.tld', 'api_token': 'password', 'verify_ssl': True},
 ]
 
 # A map of CNs of direct provider certificates to the associated file on the NLB
@@ -69,28 +70,31 @@ CLIENT_SSL_PROFILE_PREFIX='ssl-'
 CLIENT_SSL_PROFILE_SUFFIX=''
 
 # Self-signed certificate parameters: country
-CERT_SELF_SIGNED_C = 'GB'
+CERT_SELF_SIGNED_C='GB'
 
 # Self-signed certificate parameters: state
-CERT_SELF_SIGNED_ST = 'MyState'
+CERT_SELF_SIGNED_ST='MyState'
 
 # Self-signed certificate parameters: locality
-CERT_SELF_SIGNED_L = 'MyCity'
+CERT_SELF_SIGNED_L='MyCity'
 
 # Self-signed certificate parameters: organisation
-CERT_SELF_SIGNED_O = 'MyOrganisation'
+CERT_SELF_SIGNED_O='MyOrganisation'
 
 # Self-signed certificate parameters: organisational unit
-CERT_SELF_SIGNED_OU = 'MyDepartment'
+CERT_SELF_SIGNED_OU='MyDepartment'
 
 # The IP that is through the firewall to respond to automated certificate challenges
-ACME_HOST_IP = '192.168.1.1'
+ACME_HOST_IP='192.168.1.1'
 
 # The hostname of the host object in Infoblox that corresponds to LETSENCRYPT_HOST_IP
-ACME_HOST_FQDN = 'acme-external.mydomain.tld'
+ACME_HOST_FQDN='acme-external.mydomain.tld'
 
 # The DNS view (can be None for default view) to modify DNS entries in for initial Let's Encrypt ACME challenge
-ACME_DNS_VIEW = 'External'
+ACME_DNS_VIEW='External'
 
 # DNS propagation wait time (seconds)
-DNS_WAIT_TIME = 15
+DNS_WAIT_TIME=15
+
+# Amount of time Cortex will store the cert and key in redis
+CERT_CACHE_TIME=3600

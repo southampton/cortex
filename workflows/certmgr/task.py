@@ -40,6 +40,13 @@ def upload_cert_key_to_nlb(helper, options, cert, key):
 	except Exception as e:
 		helper.end_event(description='Error uploading data to load balancer: ' + str(e), success=False)
 
+def redis_cache_cert(helper, options, cert, key, chain=None):
+	prefix = 'certmgr/' + str(helper.task_id) + '/'
+	helper.lib.rdb.setex(prefix + "certificate", options['wfconfig']['CERT_CACHE_TIME'], cert)
+	helper.lib.rdb.setex(prefix + "private", options['wfconfig']['CERT_CACHE_TIME'], key)
+	if chain is not None:
+		helper.lib.rdb.setex(prefix + "chain", options['wfconfig']['CERT_CACHE_TIME'], chain)
+
 # Creates an SSL profile on the load balancers
 def create_ssl_profile(helper, options, chain_cn=None):
 	# Name is /<parition>/<prefix><fqdn><suffix>
@@ -105,7 +112,7 @@ def create_acme_cert(helper, options):
 
 	# Call the UoS ACME API to request the cert
 	helper.event('generate_acme_cert', 'Requesting certificate for ' + options['fqdn'] + ' from ACME server')
-	r = requests.post('http://' + options['acme']['hostname'] + '/create_certificate', json={'fqdn': options['fqdn'], 'sans': options['aliases']}, headers={'Content-Type': 'application/json', 'X-Client-Secret': options['acme']['api_token']})
+	r = requests.post('https://' + options['acme']['hostname'] + '/create_certificate', json={'fqdn': options['fqdn'], 'sans': options['aliases']}, headers={'Content-Type': 'application/json', 'X-Client-Secret': options['acme']['api_token']}, verify=options['acme']['verify_ssl'])
 	if r is None:
 		raise Exception('Request to ACME Create Certificate Endpoint failed')
 	if r.status_code != 200:
@@ -119,13 +126,9 @@ def create_acme_cert(helper, options):
 	helper.lib.infoblox_remove_host_record_alias(ref[0], options['aliases'])
 	helper.end_event(description='Removed aliases to ACME host object in Infoblox', success=True)
 
+	# Cache the certificates
 	helper.event('prep_download', description="Preparing certificates for download")
-
-	# Get the certificates
-	helper.lib.rdb.setex("certmgr/" + str(helper.task_id) + "/certificate", 3600, acme_response['certificate'])
-	helper.lib.rdb.setex("certmgr/" + str(helper.task_id) + "/private", 3600, acme_response['privatekey'])
-	helper.lib.rdb.setex("certmgr/" + str(helper.task_id) + "/chain", 3600, acme_response['chain'])
-
+	redis_cache_cert(helper, options, acme_response['certificate'], acme_response['privatekey'], acme_response['chain'])
 	helper.end_event(description='Certificates ready for download', success=True)
 
 	# If we need to create an SSL profile...
@@ -185,8 +188,8 @@ def create_self_signed_cert(helper, options):
 	pem_cert = openssl.crypto.dump_certificate(openssl.crypto.FILETYPE_PEM, cert)
 	pem_key = openssl.crypto.dump_privatekey(openssl.crypto.FILETYPE_PEM, key)
 
-	helper.lib.rdb.setex("certmgr/" + str(helper.task_id) + "/certificate", 3600, pem_cert)
-	helper.lib.rdb.setex("certmgr/" + str(helper.task_id) + "/private", 3600, pem_key)
+	# Cache
+	redis_cache_cert(helper, options, pem_cert, pem_key, None)
 
 	helper.end_event(description='Certificates ready for download', success=True)
 

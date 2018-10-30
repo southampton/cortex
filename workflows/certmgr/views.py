@@ -22,7 +22,7 @@ import OpenSSL as openssl
 # For securely passing the actions list via the browser
 from itsdangerous import JSONWebSignatureSerializer
 
-workflow = CortexWorkflow(__name__)
+workflow = CortexWorkflow(__name__, check_config={'PROVIDERS': list, 'DEFAULT_PROVIDER': str, 'ENVS': list, 'DEFAULT_ENV': str, 'KEY_SIZES': list, 'DEFAULT_KEY_SIZE': int, 'LENGTHS': list, 'DEFAULT_LENGTH': int, 'NLBS': list, 'ACME_SERVERS': list, 'NLB_INTERMEDIATE_CN_FILES': dict, 'NLB_INTERMEDIATE_CN_OCSP_STAPLING_PARAMS': dict, 'CLIENT_SSL_PROFILE_PREFIX': str, 'CLIENT_SSL_PROFILE_SUFFIX': str, 'CERT_SELF_SIGNED_C': str, 'CERT_SELF_SIGNED_ST': str, 'CERT_SELF_SIGNED_L': str, 'CERT_SELF_SIGNED_O': str, 'CERT_SELF_SIGNED_OU': str, 'ACME_HOST_IP': str, 'ACME_HOST_FQDN': str, 'ACME_DNS_VIEW': str, 'DNS_WAIT_TIME': int, 'CERT_CACHE_TIME': int})
 workflow.add_permission('certmgr.create', 'Create SSL Certificate')
 
 # FQDN regex
@@ -47,12 +47,13 @@ def get_certificate_from_redis(task):
 	pem_cert = None
 	pem_key = None
 	pem_chain = None
+	prefix = 'certmgr/' + str(task['id']) + '/'
 
-	if g.redis.exists('certmgr/' + str(task['id']) + '/certificate') and g.redis.exists('certmgr/' + str(task['id']) + '/private'):
-		pem_cert = g.redis.get('certmgr/' + str(task['id']) + '/certificate')
-		pem_key = g.redis.get('certmgr/' + str(task['id']) + '/private')
-		if g.redis.exists('certmgr/' + str(task['id']) + '/chain'):
-			pem_chain = g.redis.get('certmgr/' + str(task['id']) + '/chain')
+	if g.redis.exists(prefix + 'certificate') and g.redis.exists(prefix + 'private'):
+		pem_cert = g.redis.get(prefix + 'certificate')
+		pem_key = g.redis.get(prefix + 'private')
+		if g.redis.exists(prefix + 'chain'):
+			pem_chain = g.redis.get(prefix + 'chain')
 
 	return (pem_cert, pem_key, pem_chain)
 
@@ -230,4 +231,3 @@ def certmgr_create():
 
 		# Redirect to the download page
 		return redirect(url_for('certmgr_download', task=task_id))
-
