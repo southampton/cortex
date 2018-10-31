@@ -294,7 +294,6 @@ def admin_events(src="all"):
 def admin_specs():
 	"""Displays a page to edit VM spec settings for the standard VM."""
 
-	# Get the list of tasks from NeoCortex
         curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Defaults

@@ -8,6 +8,7 @@ import datetime
 from flask import Flask, request, session, redirect, url_for, flash, g, abort
 import MySQLdb as mysql
 import re
+import json
 from cortex.corpus import Corpus
 
 workflow = CortexWorkflow(__name__)
@@ -120,8 +121,31 @@ def standard():
 
 	if request.method == 'GET':
 		autocomplete_users = get_user_list_from_cache()
+
+		# Grab the KV Data for vm.specs and vm.specs.config
+        	curd = g.db.cursor(mysql.cursors.DictCursor)
+		# Get the VM Specs from the DB
+		curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('vm.specs',))
+		res = curd.fetchone()
+		if res is not None:
+			try:
+				vm_spec_json = json.loads(res['value'])
+			except ValueError:
+				vm_spec_json = None
+		else:
+			vm_spec_json = None
+		curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('vm.specs.config',))
+		res = curd.fetchone()
+		if res is not None:
+			try:
+				vm_spec_config_json = json.loads(res['value'])
+			except ValueError:
+				vm_spec_config_json = None
+		else:
+			vm_spec_config_json = None
+
 		## Show form
-		return workflow.render_template("standard.html", clusters=clusters, environments=environments, os_names=workflow.config['OS_DISP_NAMES'], os_order=workflow.config['OS_ORDER'], network_names=workflow.config['NETWORK_NAMES'], networks_order=workflow.config['NETWORK_ORDER'], autocomplete_users=autocomplete_users, title="Create Standard Virtual Machine")
+		return workflow.render_template("standard.html", clusters=clusters, environments=environments, os_names=workflow.config['OS_DISP_NAMES'], os_order=workflow.config['OS_ORDER'], network_names=workflow.config['NETWORK_NAMES'], networks_order=workflow.config['NETWORK_ORDER'], autocomplete_users=autocomplete_users, vm_spec_json=vm_spec_json, vm_spec_config_json=vm_spec_config_json, title="Create Standard Virtual Machine")
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
