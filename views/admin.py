@@ -297,19 +297,10 @@ def admin_specs():
 	# Get the list of tasks from NeoCortex
         curd = g.db.cursor(mysql.cursors.DictCursor)
 
+	# Defaults
 	vm_spec_json = {}
-	if request.method == 'POST':
-		if 'specs' in request.form:
-			try:
-				vm_spec_json = json.loads(request.form['specs'])
-			except ValueError:
-				flash("The JSON you submitted was invalid, your changes have not been saved.", "alert-danger")
-				return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=request.form['specs'])
-			else:
-				curd.execute('INSERT INTO `kv_settings` (`key`, `value`) VALUES (%s, %s) ON DUPLICATE KEY UPDATE `value`=%s;', ('vm.specs', json.dumps(vm_spec_json),json.dumps(vm_spec_json))) 
-				g.db.commit()
-		
-
+	vm_specconfig_json = {}
+	
 	# Get the VM Specs from the DB
 	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('vm.specs',))
 	res = curd.fetchone()
@@ -321,10 +312,43 @@ def admin_specs():
 			vm_spec_json = {}
 	else:
 		vm_spec_json = {}
-		
 	
+	# Get the VM Specs Config from the DB.
+	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('vm.specs.config',))
+	res = curd.fetchone()
+	if res is not None:
+		try:
+			vm_spec_config_json = json.loads(res['value'])
+		except ValueError:
+			flash("Could not parse JSON from the database.", "alert-danger")
+			vm_spec_config_json = {}
+	else:
+		vm_spec_config_json = {}
+
+
+	if request.method == 'POST':
+		if 'specs' in request.form:
+			try:
+				vm_spec_json = json.loads(request.form['specs'])
+			except ValueError:
+				flash("The JSON you submitted was invalid, your changes have not been saved.", "alert-danger")
+				return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=request.form['specs'], vm_spec_config_json=json.dumps(vm_spec_config_json, sort_keys=True, indent=4))
+			else:
+				curd.execute('INSERT INTO `kv_settings` (`key`, `value`) VALUES (%s, %s) ON DUPLICATE KEY UPDATE `value`=%s;', ('vm.specs', json.dumps(vm_spec_json),json.dumps(vm_spec_json))) 
+				g.db.commit()
+
+		if 'specsconfig' in request.form:
+			try:
+				vm_spec_config_json = json.loads(request.form['specsconfig'])
+			except ValueError:
+				flash("The JSON you submitted was invalid, your changes have not been saved.", "alert-danger")
+				return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=json.dumps(vm_spec_json, sort_keys=True, indent=4), vm_spec_config_json=request.form['specsconfig'])
+			else:
+				curd.execute('INSERT INTO `kv_settings` (`key`, `value`) VALUES (%s, %s) ON DUPLICATE KEY UPDATE `value`=%s;', ('vm.specs.config', json.dumps(vm_spec_config_json),json.dumps(vm_spec_config_json))) 
+				g.db.commit()
+		
 	# Render the page
-	return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=json.dumps(vm_spec_json, sort_keys=True, indent=4))
+	return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=json.dumps(vm_spec_json, sort_keys=True, indent=4), vm_spec_config_json=json.dumps(vm_spec_config_json, sort_keys=True, indent=4))
 
 ################################################################################
 
