@@ -8,6 +8,7 @@ import cortex.lib.puppet
 from cortex.lib.user import does_user_have_permission
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
 import os 
+import datetime
 import MySQLdb as mysql
 
 ################################################################################
@@ -94,9 +95,11 @@ def dashboard():
 	total_vm_ram = (curd.fetchone()['total'] or 0) * 1024 * 1024
 
 	# Puppet Stats
+	# Get the current time minus 2 hours.
+	now_minus_2 = datetime.datetime.now() - datetime.timedelta(hours=2)
 	stats = {
-		'failed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname",["and",["=", "latest_report_status", "failed"],["=", "latest_report_noop", false]]]')),
-		'changed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname",["and",["=", "latest_report_status", "changed"],["=", "latest_report_noop", false]]]')),
+		'failed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract","certname",["and",["=", "latest_report_status", "failed"], ["=", "latest_report_noop", false], [">", "report_timestamp", "{0}"]]]'.format(now_minus_2.isoformat()))),
+		'changed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname",["and",["=", "latest_report_status", "changed"],["=", "latest_report_noop", false], [">", "report_timestamp", "{0}"]]]'.format(now_minus_2.isoformat()))),
 	}
 
 	return render_template('dashboard.html', active="dashboard", 
