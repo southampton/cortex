@@ -13,6 +13,9 @@ class CortexWorkflow(object):
 		self.name = name
 		self.config = {}
 
+		if 'DISABLED_WORKFLOWS' in app.config and name in app.config['DISABLED_WORKFLOWS']:
+			raise Exception('Workflow is disabled in configuration')
+
 		if load_config:
 			# Load settings for this workflow
 			cfgfile = os.path.join(app.config['WORKFLOWS_DIR'], self.name, "workflow.conf") 
