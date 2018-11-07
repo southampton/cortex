@@ -279,7 +279,7 @@ var specs = {
 		"cores": 1,
 		"ram": 2,
 		"disk": 100,
-		"cost": 100,
+		"cost": 10000,
 	},
 	"spec2": {
 		"name": "VM Specification 2",
@@ -287,7 +287,7 @@ var specs = {
 		"cores": 1,
 		"ram": 4,
 		"disk": 200,
-		"cost": 200,
+		"cost": 20000,
 	},
 	"spec3": {
 		"name": "VM Specification 3",
@@ -295,7 +295,7 @@ var specs = {
 		"cores": 2,
 		"ram": 8,
 		"disk": 400,
-		"cost": 400,
+		"cost": 40000,
 	},
 	"spec4": {
 		"name": "VM Specification 4",
@@ -303,7 +303,7 @@ var specs = {
 		"cores": 4,
 		"ram": 16,
 		"disk": 800,
-		"cost": 800,
+		"cost": 80000,
 	},
 };
 {% endif %}
@@ -318,9 +318,9 @@ var specs_order = ["spec1", "spec2", "spec3", "spec4"]
 {% endif %}
 
 // Cost in pounds for additional things
-var cost_per_vcpu = {{ vm_spec_config_json.get('cost_per_vcpu',30) }};
-var cost_per_gb_ram = {{ vm_spec_config_json.get('cost_per_gb_ram',15) }};
-var cost_per_gb_disk = {{ vm_spec_config_json.get('cost_per_gb_disk',0.3) }};
+var cost_per_vcpu = {{ vm_spec_config_json.get('cost_per_vcpu',3000) }};
+var cost_per_gb_ram = {{ vm_spec_config_json.get('cost_per_gb_ram',1500) }};
+var cost_per_gb_disk = {{ vm_spec_config_json.get('cost_per_gb_disk', 30) }};
 
 /*****************************************************************************/
 
