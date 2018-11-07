@@ -2,6 +2,7 @@
 
 from cortex import app
 import cortex.lib.core
+import cortex.lib.admin
 from cortex.lib.user import does_user_have_permission
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
 import re
@@ -294,36 +295,23 @@ def admin_events(src="all"):
 def admin_specs():
 	"""Displays a page to edit VM spec settings for the standard VM."""
 
-        curd = g.db.cursor(mysql.cursors.DictCursor)
-
 	# Defaults
 	vm_spec_json = {}
 	vm_specconfig_json = {}
 	
 	# Get the VM Specs from the DB
-	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('vm.specs',))
-	res = curd.fetchone()
-	if res is not None:
-		try:
-			vm_spec_json = json.loads(res['value'])
-		except ValueError:
-			flash("Could not parse JSON from the database.", "alert-danger")
-			vm_spec_json = {}
-	else:
+	try:
+		vm_spec_json = cortex.lib.admin.get_kv_setting('vm.specs', load_as_json=True)
+	except ValueError:
+		flash("Could not parse JSON from the database.", "alert-danger")
 		vm_spec_json = {}
-	
+		
 	# Get the VM Specs Config from the DB.
-	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('vm.specs.config',))
-	res = curd.fetchone()
-	if res is not None:
-		try:
-			vm_spec_config_json = json.loads(res['value'])
-		except ValueError:
-			flash("Could not parse JSON from the database.", "alert-danger")
-			vm_spec_config_json = {}
-	else:
+	try:
+		vm_spec_config_json = cortex.lib.admin.get_kv_setting('vm.specs.config', load_as_json=True)
+	except ValueError:
+		flash("Could not parse JSON from the database.", "alert-danger")
 		vm_spec_config_json = {}
-
 
 	if request.method == 'POST':
 		if 'specs' in request.form:
@@ -333,8 +321,7 @@ def admin_specs():
 				flash("The JSON you submitted was invalid, your changes have not been saved.", "alert-danger")
 				return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=request.form['specs'], vm_spec_config_json=json.dumps(vm_spec_config_json, sort_keys=True, indent=4))
 			else:
-				curd.execute('INSERT INTO `kv_settings` (`key`, `value`) VALUES (%s, %s) ON DUPLICATE KEY UPDATE `value`=%s;', ('vm.specs', json.dumps(vm_spec_json),json.dumps(vm_spec_json))) 
-				g.db.commit()
+				cortex.lib.admin.set_kv_setting('vm.specs', json.dumps(vm_spec_json))
 
 		if 'specsconfig' in request.form:
 			try:
@@ -343,8 +330,7 @@ def admin_specs():
 				flash("The JSON you submitted was invalid, your changes have not been saved.", "alert-danger")
 				return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=json.dumps(vm_spec_json, sort_keys=True, indent=4), vm_spec_config_json=request.form['specsconfig'])
 			else:
-				curd.execute('INSERT INTO `kv_settings` (`key`, `value`) VALUES (%s, %s) ON DUPLICATE KEY UPDATE `value`=%s;', ('vm.specs.config', json.dumps(vm_spec_config_json),json.dumps(vm_spec_config_json))) 
-				g.db.commit()
+				cortex.lib.admin.set_kv_setting('vm.specs.config', json.dumps(vm_spec_config_json))
 		
 	# Render the page
 	return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=json.dumps(vm_spec_json, sort_keys=True, indent=4), vm_spec_config_json=json.dumps(vm_spec_config_json, sort_keys=True, indent=4))

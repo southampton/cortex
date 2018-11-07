@@ -4,6 +4,7 @@ from cortex import app
 from cortex.lib.workflow import CortexWorkflow
 from cortex.lib.user import get_user_list_from_cache
 import cortex.lib.core
+import cortex.lib.admin
 import datetime
 from flask import Flask, request, session, redirect, url_for, flash, g, abort
 import MySQLdb as mysql
@@ -122,27 +123,19 @@ def standard():
 	if request.method == 'GET':
 		autocomplete_users = get_user_list_from_cache()
 
-		# Grab the KV Data for vm.specs and vm.specs.config
-        	curd = g.db.cursor(mysql.cursors.DictCursor)
 		# Get the VM Specs from the DB
-		curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('vm.specs',))
-		res = curd.fetchone()
-		if res is not None:
-			try:
-				vm_spec_json = json.loads(res['value'])
-			except ValueError:
-				vm_spec_json = None
-		else:
-			vm_spec_json = None
-		curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('vm.specs.config',))
-		res = curd.fetchone()
-		if res is not None:
-			try:
-				vm_spec_config_json = json.loads(res['value'])
-			except ValueError:
-				vm_spec_config_json = None
-		else:
-			vm_spec_config_json = None
+		try:
+			vm_spec_json = cortex.lib.admin.get_kv_setting('vm.specs', load_as_json=True)
+		except ValueError:
+			flash("Could not parse JSON from the database.", "alert-danger")
+			vm_spec_json = {}
+			
+		# Get the VM Specs Config from the DB.
+		try:
+			vm_spec_config_json = cortex.lib.admin.get_kv_setting('vm.specs.config', load_as_json=True)
+		except ValueError:
+			flash("Could not parse JSON from the database.", "alert-danger")
+			vm_spec_config_json = {}
 
 		## Show form
 		return workflow.render_template("standard.html", clusters=clusters, environments=environments, os_names=workflow.config['OS_DISP_NAMES'], os_order=workflow.config['OS_ORDER'], network_names=workflow.config['NETWORK_NAMES'], networks_order=workflow.config['NETWORK_ORDER'], autocomplete_users=autocomplete_users, vm_spec_json=vm_spec_json, vm_spec_config_json=vm_spec_config_json, title="Create Standard Virtual Machine")
@@ -371,17 +364,12 @@ def standard():
 
 def validate_data(r, templates, envs):
 
-	# Grab the KV Data for vm.specs and vm.specs.config
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('vm.specs.config',))
-	res = curd.fetchone()
-	if res is not None:
-		try:
-			vm_spec_config_json = json.loads(res['value'])
-		except ValueError:
-			vm_spec_config_json = None
-	else:
-		vm_spec_config_json = None
+	# Get the VM Specs Config from the DB.
+	try:
+		vm_spec_config_json = cortex.lib.admin.get_kv_setting('vm.specs.config', load_as_json=True)
+	except ValueError:
+		flash("Could not parse JSON from the database.", "alert-danger")
+		vm_spec_config_json = {}
 
 
 	# Pull data out of request
