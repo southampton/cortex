@@ -4,10 +4,12 @@ from cortex import app
 from cortex.lib.workflow import CortexWorkflow
 from cortex.lib.user import get_user_list_from_cache
 import cortex.lib.core
+import cortex.lib.admin
 import datetime
 from flask import Flask, request, session, redirect, url_for, flash, g, abort
 import MySQLdb as mysql
 import re
+import json
 from cortex.corpus import Corpus
 
 workflow = CortexWorkflow(__name__)
@@ -120,8 +122,23 @@ def standard():
 
 	if request.method == 'GET':
 		autocomplete_users = get_user_list_from_cache()
+
+		# Get the VM Specs from the DB
+		try:
+			vm_spec_json = cortex.lib.admin.get_kv_setting('vm.specs', load_as_json=True)
+		except ValueError:
+			flash("Could not parse JSON from the database.", "alert-danger")
+			vm_spec_json = {}
+			
+		# Get the VM Specs Config from the DB.
+		try:
+			vm_spec_config_json = cortex.lib.admin.get_kv_setting('vm.specs.config', load_as_json=True)
+		except ValueError:
+			flash("Could not parse JSON from the database.", "alert-danger")
+			vm_spec_config_json = {}
+
 		## Show form
-		return workflow.render_template("standard.html", clusters=clusters, environments=environments, os_names=workflow.config['OS_DISP_NAMES'], os_order=workflow.config['OS_ORDER'], network_names=workflow.config['NETWORK_NAMES'], networks_order=workflow.config['NETWORK_ORDER'], autocomplete_users=autocomplete_users, title="Create Standard Virtual Machine")
+		return workflow.render_template("standard.html", clusters=clusters, environments=environments, os_names=workflow.config['OS_DISP_NAMES'], os_order=workflow.config['OS_ORDER'], network_names=workflow.config['NETWORK_NAMES'], networks_order=workflow.config['NETWORK_ORDER'], autocomplete_users=autocomplete_users, vm_spec_json=vm_spec_json, vm_spec_config_json=vm_spec_config_json, title="Create Standard Virtual Machine")
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
@@ -346,6 +363,15 @@ def standard():
 ## Common data validation / form extraction
 
 def validate_data(r, templates, envs):
+
+	# Get the VM Specs Config from the DB.
+	try:
+		vm_spec_config_json = cortex.lib.admin.get_kv_setting('vm.specs.config', load_as_json=True)
+	except ValueError:
+		flash("Could not parse JSON from the database.", "alert-danger")
+		vm_spec_config_json = {}
+
+
 	# Pull data out of request
 	sockets  = r.form['sockets']
 	cores	 = r.form['cores']
@@ -355,19 +381,31 @@ def validate_data(r, templates, envs):
 	env	 = r.form['environment']
 
 	sockets = int(sockets)
-	if not 1 <= sockets <= 16:
+	if vm_spec_config_json is not None and 'slider-sockets' in vm_spec_config_json and vm_spec_config_json['slider-sockets'].get('min', None) is not None and vm_spec_config_json['slider-sockets'].get('max', None) is not None:
+		if not vm_spec_config_json['slider-sockets']['min'] <= ram <= vm_spec_config_json['slider-sockets']['max']:
+			raise ValueError('Invalid number of sockets selected')
+	elif not 1 <= sockets <= 16:
 		raise ValueError('Invalid number of sockets selected')
 
 	cores = int(cores)
-	if not 1 <= cores <= 16:
+	if vm_spec_config_json is not None and 'slider-cores' in vm_spec_config_json and vm_spec_config_json['slider-cores'].get('min', None) is not None and vm_spec_config_json['slider-cores'].get('max', None) is not None:
+		if not vm_spec_config_json['slider-cores']['min'] <= ram <= vm_spec_config_json['slider-cores']['max']:
+			raise ValueError('Invalid number of cores per socket selected')
+	elif not 1 <= cores <= 16:
 		raise ValueError('Invalid number of cores per socket selected')
 
 	ram = int(ram)
-	if not 2 <= ram <= 32:
+	if vm_spec_config_json is not None and 'slider-ram' in vm_spec_config_json and vm_spec_config_json['slider-ram'].get('min', None) is not None and vm_spec_config_json['slider-ram'].get('max', None) is not None:
+		if not vm_spec_config_json['slider-ram']['min'] <= ram <= vm_spec_config_json['slider-ram']['max']:
+			raise ValueError('Invalid amount of RAM selected')		
+	elif not 2 <= ram <= 32:
 		raise ValueError('Invalid amount of RAM selected')
 
 	disk = int(disk)
-	if not 100 <= disk <= 2000:
+	if vm_spec_config_json is not None and 'slider-disk' in vm_spec_config_json and vm_spec_config_json['slider-disk'].get('min', None) is not None and vm_spec_config_json['slider-disk'].get('max', None) is not None:
+		if not vm_spec_config_json['slider-disk']['min'] <= ram <= vm_spec_config_json['slider-disk']['max']:
+			raise ValueError('Invalid disk capacity selected')
+	elif not 100 <= disk <= 2000:
 		raise ValueError('Invalid disk capacity selected')
 
 	if template not in templates:
