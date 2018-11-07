@@ -330,7 +330,12 @@ def admin_specs():
 				flash("The JSON you submitted was invalid, your changes have not been saved.", "alert-danger")
 				return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=json.dumps(vm_spec_json, sort_keys=True, indent=4), vm_spec_config_json=request.form['specsconfig'])
 			else:
-				cortex.lib.admin.set_kv_setting('vm.specs.config', json.dumps(vm_spec_config_json))
+				
+				# Do some simple validation.
+				if 'spec-order' in vm_spec_config_json and not all(s in vm_spec_json for s in vm_spec_config_json['spec-order']):
+					flash("You have specified a 'spec-order' which contains specification names not in the 'VM Specification JSON'. Your changes have not been saved.", "alert-warning")
+				else:
+					cortex.lib.admin.set_kv_setting('vm.specs.config', json.dumps(vm_spec_config_json))
 		
 	# Render the page
 	return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=json.dumps(vm_spec_json, sort_keys=True, indent=4), vm_spec_config_json=json.dumps(vm_spec_config_json, sort_keys=True, indent=4))
