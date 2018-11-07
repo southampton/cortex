@@ -370,6 +370,20 @@ def standard():
 ## Common data validation / form extraction
 
 def validate_data(r, templates, envs):
+
+	# Grab the KV Data for vm.specs and vm.specs.config
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('vm.specs.config',))
+	res = curd.fetchone()
+	if res is not None:
+		try:
+			vm_spec_config_json = json.loads(res['value'])
+		except ValueError:
+			vm_spec_config_json = None
+	else:
+		vm_spec_config_json = None
+
+
 	# Pull data out of request
 	sockets  = r.form['sockets']
 	cores	 = r.form['cores']
@@ -379,19 +393,31 @@ def validate_data(r, templates, envs):
 	env	 = r.form['environment']
 
 	sockets = int(sockets)
-	if not 1 <= sockets <= 16:
+	if vm_spec_config_json is not None and 'slider-sockets' in vm_spec_config_json and vm_spec_config_json['slider-sockets'].get('min', None) is not None and vm_spec_config_json['slider-sockets'].get('max', None) is not None:
+		if not vm_spec_config_json['slider-sockets']['min'] <= ram <= vm_spec_config_json['slider-sockets']['max']:
+			raise ValueError('Invalid number of sockets selected')
+	elif not 1 <= sockets <= 16:
 		raise ValueError('Invalid number of sockets selected')
 
 	cores = int(cores)
-	if not 1 <= cores <= 16:
+	if vm_spec_config_json is not None and 'slider-cores' in vm_spec_config_json and vm_spec_config_json['slider-cores'].get('min', None) is not None and vm_spec_config_json['slider-cores'].get('max', None) is not None:
+		if not vm_spec_config_json['slider-cores']['min'] <= ram <= vm_spec_config_json['slider-cores']['max']:
+			raise ValueError('Invalid number of cores per socket selected')
+	elif not 1 <= cores <= 16:
 		raise ValueError('Invalid number of cores per socket selected')
 
 	ram = int(ram)
-	if not 2 <= ram <= 32:
+	if vm_spec_config_json is not None and 'slider-ram' in vm_spec_config_json and vm_spec_config_json['slider-ram'].get('min', None) is not None and vm_spec_config_json['slider-ram'].get('max', None) is not None:
+		if not vm_spec_config_json['slider-ram']['min'] <= ram <= vm_spec_config_json['slider-ram']['max']:
+			raise ValueError('Invalid amount of RAM selected')		
+	elif not 2 <= ram <= 32:
 		raise ValueError('Invalid amount of RAM selected')
 
 	disk = int(disk)
-	if not 100 <= disk <= 2000:
+	if vm_spec_config_json is not None and 'slider-disk' in vm_spec_config_json and vm_spec_config_json['slider-disk'].get('min', None) is not None and vm_spec_config_json['slider-disk'].get('max', None) is not None:
+		if not vm_spec_config_json['slider-disk']['min'] <= ram <= vm_spec_config_json['slider-disk']['max']:
+			raise ValueError('Invalid disk capacity selected')
+	elif not 100 <= disk <= 2000:
 		raise ValueError('Invalid disk capacity selected')
 
 	if template not in templates:
