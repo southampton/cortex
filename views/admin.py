@@ -295,6 +295,10 @@ def admin_events(src="all"):
 def admin_specs():
 	"""Displays a page to edit VM spec settings for the standard VM."""
 
+	# Check user permissions
+	if not does_user_have_permission("specs.view"):
+		abort(403)
+
 	# Defaults
 	vm_spec_json = {}
 	vm_specconfig_json = {}
@@ -314,6 +318,11 @@ def admin_specs():
 		vm_spec_config_json = {}
 
 	if request.method == 'POST':
+
+		# Check user permissions
+		if not does_user_have_permission("specs.edit"):
+			abort(403)
+
 		if 'specs' in request.form:
 			try:
 				vm_spec_json = json.loads(request.form['specs'])
