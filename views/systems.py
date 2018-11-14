@@ -123,8 +123,10 @@ def systems_search():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	if 'imfeelinglucky' in request.args and request.args.get('imfeelinglucky') == 'yes':
+		# Use this rather than .format due to Unicode problems.
+		like_query = '%' + query + '%'
 		# Use a LIKE query.
-		curd.execute("SELECT * FROM `systems_info_view` WHERE `name` LIKE %s", ('%{0}%'.format(query),))
+		curd.execute("SELECT * FROM `systems_info_view` WHERE `name` LIKE %s", (like_query,))
 	else:
 		# Search by exact name matches only.
 		curd.execute("SELECT * FROM `systems_info_view` WHERE `name`=%s", (query,))
