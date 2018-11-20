@@ -2,11 +2,13 @@
 
 from cortex import app
 import cortex.lib.core
+import cortex.lib.admin
 from cortex.lib.user import does_user_have_permission
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
 import re
 import MySQLdb as mysql
 import datetime
+import json
 
 ################################################################################
 
@@ -285,6 +287,67 @@ def admin_events(src="all"):
 
 	# Render the page
 	return render_template('admin/events.html', active='admin', title="Events", event_source=src, json_source=url_for('admin_events_json', event_source=src))
+
+################################################################################
+
+@app.route('/admin/specs', methods=['GET', 'POST'])
+@cortex.lib.user.login_required
+def admin_specs():
+	"""Displays a page to edit VM spec settings for the standard VM."""
+
+	# Check user permissions
+	if not does_user_have_permission("specs.view"):
+		abort(403)
+
+	# Defaults
+	vm_spec_json = {}
+	vm_specconfig_json = {}
+	
+	# Get the VM Specs from the DB
+	try:
+		vm_spec_json = cortex.lib.admin.get_kv_setting('vm.specs', load_as_json=True)
+	except ValueError:
+		flash("Could not parse JSON from the database.", "alert-danger")
+		vm_spec_json = {}
+		
+	# Get the VM Specs Config from the DB.
+	try:
+		vm_spec_config_json = cortex.lib.admin.get_kv_setting('vm.specs.config', load_as_json=True)
+	except ValueError:
+		flash("Could not parse JSON from the database.", "alert-danger")
+		vm_spec_config_json = {}
+
+	if request.method == 'POST':
+
+		# Check user permissions
+		if not does_user_have_permission("specs.edit"):
+			abort(403)
+
+		if 'specs' in request.form:
+			try:
+				vm_spec_json = json.loads(request.form['specs'])
+			except ValueError:
+				flash("The JSON you submitted was invalid, your changes have not been saved.", "alert-danger")
+				return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=request.form['specs'], vm_spec_config_json=json.dumps(vm_spec_config_json, sort_keys=True, indent=4))
+			else:
+				cortex.lib.admin.set_kv_setting('vm.specs', json.dumps(vm_spec_json))
+
+		if 'specsconfig' in request.form:
+			try:
+				vm_spec_config_json = json.loads(request.form['specsconfig'])
+			except ValueError:
+				flash("The JSON you submitted was invalid, your changes have not been saved.", "alert-danger")
+				return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=json.dumps(vm_spec_json, sort_keys=True, indent=4), vm_spec_config_json=request.form['specsconfig'])
+			else:
+				
+				# Do some simple validation.
+				if 'spec-order' in vm_spec_config_json and not all(s in vm_spec_json for s in vm_spec_config_json['spec-order']):
+					flash("You have specified a 'spec-order' which contains specification names not in the 'VM Specification JSON'. Your changes have not been saved.", "alert-warning")
+				else:
+					cortex.lib.admin.set_kv_setting('vm.specs.config', json.dumps(vm_spec_config_json))
+		
+	# Render the page
+	return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=json.dumps(vm_spec_json, sort_keys=True, indent=4), vm_spec_config_json=json.dumps(vm_spec_config_json, sort_keys=True, indent=4))
 
 ################################################################################
 

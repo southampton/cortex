@@ -1,0 +1,42 @@
+# Whether to raise a ticket for a manual steps
+TICKET_CREATE=False
+
+# The name of the team in ServiceNow to open against
+TICKET_TEAM="Operations Team"
+
+# The ServiceNow sys_id of the user who opens the ticket
+TICKET_OPENER_SYS_ID=""
+
+# The domains to search in for the hostname for DNS objects to delete. Can be a string or a list of strings
+DNS_DOMAINS=["mydomain.tld"]
+
+# Whether to enable the deleting of metricsfrom Graphite
+GRAPHITE_DELETE_ENABLE=True
+
+# A list of suffixes to append to the hostname when searching for the metrics in Graphite
+GRAPHITE_DELETE_SUFFIXES="_mydomain_tld"
+
+# Whether to enable decom from Satellite 5
+RHN5_ENABLE_DECOM=False
+
+# Whether to enable the deletion of entries for a sudoldap service
+SUDO_LDAP_ENABLE=False
+
+# The URL of the sudoldap server
+SUDO_LDAP_URL='ldaps://sudo.mydomain.tld:636'
+
+# The DN of the user to authenticate against sudoldap with
+SUDO_LDAP_USER='cn=manager,dc=sudo,dc=mydomain,dc=tld'
+
+# The password of the user specified in SUDO_LDAP_USER
+SUDO_LDAP_PASS=''
+
+# The filter to use when searching LDAP. Use {0} for the name of the object being searched for
+SUDO_LDAP_FILTER='(&(objectClass=sudoRole)(sudoHost={0}))'
+
+# The DN of the base in the LDAP tree to search from
+SUDO_LDAP_SEARCH_BASE='OU=sudoers,dc=sudo,dc=mydomain,dc=tld'
+
+# The domains to add to the hostname for objects to search (no leading dots required)
+SUDO_LDAP_SEARCH_DOMAINS=['', 'mydomain.tld']
+
