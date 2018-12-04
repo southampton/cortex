@@ -145,11 +145,19 @@ REVIEW_TASK_PARENT_SYS_ID=""
 # Notification e-mails for new VM creation
 NOTIFY_EMAILS = []
 
-# Regular expression of system names to not put in to VM expiration e-mails
-SYSTEM_EXPIRE_NOTIFY_IGNORE_NAMES = r'^$'
-
-# Notification e-mail address 
-SYSTEM_EXPIRE_NOTIFY_EMAILS = []
+# Messages to send to primary/secondary owners when VMs are about to expire. This is a dictionary
+# keyed on an arbitrary identifier to a value of a dictionary of the following: 
+#  - regex: Required. The regex to match system names on
+#  - description: Required. The description of the expiry report (to use in Task descriptions in Cortex)
+#  - message_start: Optional. The start of the message to send to the user.
+#  - message_system: Required. Each line to add for each system due to expire. Can contain {allocator}, {primary_owner}, {secondary_owner}, {name}, {description}, {allocation_date}, {expiry_date}, {days_left}, {os}, {link}, {power_status}, {cmdb_description}, {cmdb_environment}, {cmdb_operational_status}, {cmdb_u_number}, {cmdb_link}
+#  - message_end: Optional. The end of the message to send to the user.
+#  - when_days: Required. An array of numbers which specify at what point to notify the user (in days remaining to expiry). If a negative number is given, this means "less than x days".
+#  - who: Required. An array of people to notify. Each element is either an e-mail address, or @PRIMARY, @SECONDARY, or @ALLOCATOR, for the primary owner, secondary owner or the person who allocated it
+#  - weekly_on: Optional. A list of days of when to notify the user. Each item can be one of: MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY.
+# Example:
+# { 'notify_all': { 'regex': r'.*', 'description': 'My Expiry Notification Report', 'message_start': 'The following VMs will expire soon:\n\n', 'message_system': ' - {name} in {days_left} day(s)\n', 'message_end': '\nPlease review whether these VMs are still required.', 'when_days': [-3, 7, 14, 28], 'who': ['@ALLOCATOR', 'ithelpdesk@yourdomain.tld'] }
+SYSTEM_EXPIRE_NOTIFY_CONFIG = {}
 
 # TSM config
 TSM_API_URL_BASE = 'https://tsm.yourdomain.tld'
