@@ -47,7 +47,7 @@ def run(helper, options):
 			# If the name matches the regex for the report
 			if vm_re.match(system['name']) is not None:
 				# Calculate in how many days the system expires
-				expiry_days = (system['expiry_date'] - datetime.now()).days
+				expiry_days = (system['expiry_date'] - datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)).days
 
 				# Config validation
 				if type(report_config['when_days']) is not list:
