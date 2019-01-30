@@ -38,7 +38,7 @@ def admin_tasks_json(tasktype):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Extract stuff from DataTables requests
-	(draw, start, length, order_column, order_asc, search) = _extract_datatables()
+	(draw, start, length, order_column, order_asc, search, hide_frequent) = _extract_datatables()
 
 	# Choose the order column
 	if order_column == 0:
@@ -75,6 +75,12 @@ def admin_tasks_json(tasktype):
 		where_clause = '`username` = "scheduler"'
 	else:
 		abort(404)
+
+	# Define some tasks we will hide if hide_frequent is True
+	frequent_tasks = ['_sync_puppet_stats_graphite']
+	frequent_tasks_str = '"' + ('","'.join(frequent_tasks)) + '"'
+	if frequent_tasks and hide_frequent:
+		where_clause = where_clause + " AND (`module` NOT IN (" + frequent_tasks_str + ")) "
 
 	# Add on search string if we have one
 	if search:
@@ -186,7 +192,7 @@ def admin_events_json(event_source):
 	cur = g.db.cursor()
 
 	# Extract stuff from DataTables requests
-	(draw, start, length, order_column, order_asc, search) = _extract_datatables()
+	(draw, start, length, order_column, order_asc, search, hide_frequent) = _extract_datatables()
 
 	# Choose the order column
 	if order_column == 0:
@@ -229,6 +235,17 @@ def admin_events_json(event_source):
 		where_clause = "`source` = 'neocortex.task'"
 	else:
 		where_clause = "1=1"
+
+	# Define some events we will hide if hide_frequent is True
+	frequent_events = [
+		'_sync_puppet_stats_graphite.post_graphite',
+		'_sync_puppet_stats_graphite.puppet_nodes',
+		'_sync_puppet_stats_graphite.puppetdb_connect',
+		'_sync_puppet_stats_graphite.sync_puppet_stats_graphite_config_check'
+	]
+	frequent_events_str = '"' + ('","'.join(frequent_events)) + '"'
+	if frequent_events and hide_frequent:
+		where_clause = where_clause + " AND (`name` NOT IN (" + frequent_events_str + ")) "
 
 	# Add on search string if we have one
 	if search:
@@ -623,4 +640,11 @@ def _extract_datatables():
 			else:
 				search = request.form['search[value]']
 
-	return (draw, start, length, order_column, order_asc, search)
+	# Handle the hide_frequent parameter. This is a custom field added in
+	# in order to filter out frequent tasks/events from dataTables.
+	hide_frequent = False
+	if 'hide_frequent' in request.form:
+		if request.form['hide_frequent'] == "1":
+			hide_frequent = True
+
+	return (draw, start, length, order_column, order_asc, search, hide_frequent)
