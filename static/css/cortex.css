@@ -470,6 +470,26 @@ legend
 	margin-bottom: 1.0em;
 }
 
+/* Dashboard */
+.dashblock a:link, .dashblock a:visited, .dashblock a:hover, .dashblock a:active {
+	text-decoration: none;
+	color: #fff;
+}
+
+/* Page Header Button Group Divider*/
+.divider-left {
+	margin-left:10px;
+	padding-left:10px;
+	border-left:1px solid #eeeeee;
+}
+
+.btn-filter:focus {
+	outline: 0;
+}
+.btn-filter:active {
+	outline: none;
+}
+
 /* Puppet CSS */
 .puppet-header
 {

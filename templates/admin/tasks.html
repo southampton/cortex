@@ -2,8 +2,14 @@
 {% block body %}
 <div class="page-header">
 <h3>
-	<div class="pull-right" style="margin-left:10px;padding-left:10px;border-left:1px solid #eeeeee">
-		<button id="hide_frequent" type="button" class="btn btn-sm btn-success active" {{ 'disabled' if not json_source }}><i class="fa fa-fw fa-check-square-o"></i> Hide Frequent Tasks</button>
+	<div class="pull-right divider-left">
+		<button id="hide_frequent" type="button" class="btn btn-sm btn-success btn-filter active" {{ 'disabled' if not json_source }}><i class="fa fa-fw fa-check-square-o"></i> Hide Frequent Tasks</button>
+	</div>
+
+	<div class="pull-right divider-left">
+		<button id="filter_succeeded" type="button" class="btn btn-sm btn-filter {{ 'btn-success active' if filters.get('filter_succeeded', '1') == '1' else 'btn-default' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_succeeded', '1') == '1' else 'fa-square-o' }}"></i> Succeeded</button>
+		<button id="filter_warnings" type="button" class="btn btn-sm btn-filter {{ 'btn-success active' if filters.get('filter_warnings', '1') == '1' else 'btn-default' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_warnings', '1') == '1' else 'fa-square-o' }}"></i> Warnings</button>
+		<button id="filter_failed" type="button" class="btn btn-sm btn-filter {{ 'btn-success active' if filters.get('filter_failed', '1') == '1' else 'btn-default' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_failed', '1') == '1' else 'fa-square-o' }}"></i> Failed</button>
 	</div>
 	<div class="pull-right">
 		<a class="btn btn-sm {% if tasktype == 'all' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_tasks') }}">All</a>
@@ -72,6 +78,9 @@ The list below shows all past and present system-started tasks
 			"type": "POST",
 			"data": function (d) {
 				d.hide_frequent = ($('#hide_frequent').hasClass('btn-success') ? "1" : "0");
+				d.filter_succeeded = ($('#filter_succeeded').hasClass('btn-success') ? "1" : "0");
+				d.filter_warnings = ($('#filter_warnings').hasClass('btn-success') ? "1" : "0");
+				d.filter_failed = ($('#filter_failed').hasClass('btn-success') ? "1" : "0");
 			}
 		},
 		"rowCallback": function(row, data, index) {
@@ -87,18 +96,43 @@ The list below shows all past and present system-started tasks
 	});
 
 {%- if json_source %}
-	$('#hide_frequent').click(function() {
-                $('#hide_frequent').toggleClass('btn-success');
-                $('#hide_frequent').toggleClass('btn-danger');
-                $('#hide_frequent').toggleClass('active');
-                $('#hide_frequent i').toggleClass('fa-check-square-o');
-                $('#hide_frequent i').toggleClass('fa-square-o');
-                $('#tasksWrapper').fadeOut(150, function() {
+
+	function toggleFilterButton (buttonID, toggleClass='btn-danger') {
+		$(buttonID).toggleClass('btn-success');
+                $(buttonID).toggleClass(toggleClass);
+                $(buttonID).toggleClass('active');
+                $(`${buttonID} i`).toggleClass('fa-check-square-o');
+                $(`${buttonID} i`).toggleClass('fa-square-o');
+	}
+
+	function reloadTable () {
+		$('#tasksWrapper').fadeOut(150, function() {
                         tasksTable.ajax.reload(function() {
                                 $('#tasksWrapper').fadeIn(150);
                         });
                 });
+	}
+
+	$('#hide_frequent').click(function() {
+		toggleFilterButton('#hide_frequent', )
+		reloadTable()
         });
+
+	$('#filter_succeeded').click(function() {
+		toggleFilterButton('#filter_succeeded', 'btn-default')
+		reloadTable()
+        });
+	$('#filter_warnings').click(function() {
+		toggleFilterButton('#filter_warnings', 'btn-default')
+		reloadTable()
+        });
+
+	$('#filter_failed').click(function() {
+		toggleFilterButton('#filter_failed', 'btn-default')
+		reloadTable()
+        });
+
+
 {%- endif %}
 </script>
 {% endblock %}

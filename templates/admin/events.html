@@ -3,7 +3,7 @@
 <div class="page-header">
 <h3>
 	<div class="pull-right" style="margin-left:10px;padding-left:10px;border-left:1px solid #eeeeee">
-		<button id="hide_frequent" type="button" class="btn btn-sm btn-success active" {{ 'disabled' if not json_source }}><i class="fa fa-fw fa-check-square-o"></i> Hide Frequent Tasks</button>
+		<button id="hide_frequent" type="button" class="btn btn-sm btn-success btn-filter active" {{ 'disabled' if not json_source }}><i class="fa fa-fw fa-check-square-o"></i> Hide Frequent Tasks</button>
 	</div>
 	<div class="pull-right">
 		<a class="btn btn-sm {% if event_source == 'all' %}btn-primary{% else %}btn-default{% endif %}" href="{{ url_for('admin_events') }}">All</a>
