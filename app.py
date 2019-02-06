@@ -905,12 +905,13 @@ Username:             %s
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_cost` (
 		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
 		  `system_id` mediumint(11) NOT NULL,
-		  `cost_date` datetime DEFAULT NULL,
-		  `cost_code` varchar(256),
-		  `cost` decimal(13,2),
-		  `paid` tinyint(4),
+		  `cost_date` datetime NOT NULL,
+		  `cost_code` varchar(256) NOT NULL,
+		  `cost` decimal(13,2) NOT NULL,
+		  `paid` tinyint(1) DEFAULT 0,
 		  `paid_date` datetime DEFAULT NULL,
-		  `notes` text NOT NULL,
+		  `notes` text DEFAULT NULL,
+		  `related_ticket` varchar(256) DEFAULT NULL,
 		  PRIMARY KEY (`id`),
 		  CONSTRAINT `system_cost_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
