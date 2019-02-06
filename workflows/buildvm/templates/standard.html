@@ -20,7 +20,7 @@
 <style type="text/css">
 .bootstrap-select
 {
-	width: 80% !important;
+	width: 100% !important;
 }
 
 {# Fixes slider tooltips appearing on top of bootstrap-select dropdowns -#}
@@ -226,6 +226,8 @@ div.specdetails
 					});
 				</script>
 			</div>
+		</div>
+		<div class="col-md-4">
 			<h4>9. Infoblox Host Alias (optional)</h4>
 			<div style="margin-left: 1em">
 				<div class="form-group">
@@ -233,7 +235,9 @@ div.specdetails
 				</div>
 			</div>
 		</div>
+	</div>
 
+	<div class="row" style="margin-top: 1.0em">
 		<div class="col-md-4">
 			<h4>10. Summary</h4>
 			<div style="margin-left: 1em">
@@ -252,9 +256,69 @@ div.specdetails
 				</div>
 			</div>
 		</div>
+		
+		<div class="col-md-5">
+			<h4>11. System Charging</h4>
+			<div style="margin:0 0 0.5em 1.0em">
+				<input type="checkbox" name="enable_costing" id="enable_costing" style="margin-right:0.4em" checked="checked" /><label for="enable_costing" style="position:relative;top:-2px">Enable charging on this system</label>
+			</div>
+			<div class="row">
+				<div class="col-md-12">
+					<div class="col-md-6">
+						<div class="form-group">
+							<label for="cost_duration" style="position:relative;top:-2px">Calculate cost based on a duration of:</label>
+							<select class="selectpicker" name="cost_duration" id="cost_duration">
+								<option value="1">1 Year</option>
+								<option value="2">2 Year</option>
+								<option value="3">3 Year</option>
+								<option value="4">4 Year</option>
+								<option value="5">5 Year</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="cost_notes" style="position:relative;top:-2px">Notes:</label>
+							<textarea class="form-control" rows="6" id="cost_notes"></textarea>
+						</div>
+					</div>
+					<div class="col-md-6">
+						<div class="form-group">
+							<label for="cost">Cost:</label>
+							<div class="input-group">
+								<span class="input-group-addon">£</span>
+								<input class="form-control" id="cost" name="cost" step='0.01' placeholder="System Cost"/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="cost_code">Cost Code:</label><input class="form-control" id="cost_code" name="cost_code" placeholder="Cost Code"/>
+						</div>
+						<div class="form-group">
+							<input type="checkbox" name="cost_paid" id="cost_paid" style="margin-right:0.4em"/><label for="cost_paid" style="position:relative;top:-2px">Mark this cost as paid.</label>
+						</div>
+						<div class='input-group date' id='cost_paidpicker'>
+							<input type='text' class="form-control" id="cost_paid_date" name="cost_paid_date" placeholder="Date of payment received: YYYY-MM-DD" disabled/>
+							<span class="input-group-addon">
+								<span class="glyphicon glyphicon-calendar"></span>
+							</span>
+						</div>
+						<script>
+							$(function () {
+								$('#cost_paidpicker').datetimepicker({
+									viewMode: 'days',
+									format: 'YYYY-MM-DD',
+									minDate: moment(),
+									useCurrent: false,
+								});
+							});
+						</script>
 
-		<div class="col-md-4">
-			<h4>11. Create</h4>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+		<div class="col-md-3">
+			<h4>12. Create</h4>
 			<div style="margin:0 0 0.5em 1.0em">
 				<input type="checkbox" name="send_mail" id="send_mail" style="margin-right:0.4em" checked="checked" /><label for="send_mail" style="position:relative;top:-2px">Notify me by e-mail when done</label>
 			</div>
@@ -364,6 +428,8 @@ function updateTotals()
 		$('#ram_cost').text(parseFloat(ram_cost / 100).toFixed(2));
 		$('#disk_cost').text(parseFloat(disk_cost / 100).toFixed(2));
 
+		// Update System Charging section with total cost.
+		$('#cost').val(($('#val_cost').text() * $('#cost_duration').val()).toFixed(2))
 	}
 }
 
@@ -411,7 +477,7 @@ $(document).ready(function()
 	$('#disk').slider({tooltip: 'always'});
 
 	// Update the totals when the inputs change
-	$('input').change(function() { updateTotals(); });
+	$('input, #cost_duration').change(function() { updateTotals(); });
 	$('input[type=radio]').change(function() {
 		var spec = $('label.active input[name=spec]');
 		var spec = specs[$(spec[0]).val()];
@@ -425,6 +491,29 @@ $(document).ready(function()
 	// Perform initial update of values
 	updateTotals();
 });
+
+// Callback for clicking the Enable Costings button.
+$('#enable_costing').click(function (e) {
+	$('#cost_duration').prop('disabled', function(i, v) { return !v; });
+	$('*[data-id="cost_duration"]').prop('disabled', function(i, v) { return !v; });
+	$('#cost_notes').prop('disabled', function(i, v) { return !v; });
+	$('#cost').prop('disabled', function(i, v) { return !v; });
+	$('#cost_code').prop('disabled', function(i, v) { return !v; });
+	$('#cost_paid').prop('disabled', function(i, v) { return !v; });
+	if ($(this).is(":checked")) {
+		if ($('#cost_paid').is(":checked")) {
+			$('#cost_paid_date').prop('disabled', false);
+		} else {
+			$('#cost_paid_date').prop('disabled', true);
+		}
+	} else {
+		$('#cost_paid_date').prop('disabled', true);
+	}
+})
+
+$('#cost_paid').click(function (e) {
+	$('#cost_paid_date').prop('disabled', function(i, v) { return !v; });
+})
 
 // Callback for clicking Create button
 $('#create').click(function(e) {
