@@ -291,7 +291,7 @@ div.specdetails
 						</div>
 						<div class="form-group">
 							<label for="cost_notes" style="position:relative;top:-2px">Notes:</label>
-							<textarea class="form-control" rows="6" id="cost_notes"></textarea>
+							<textarea class="form-control" rows="10" id="cost_notes" name="cost_notes" style="resize: none;"></textarea>
 						</div>
 					</div>
 					<div class="col-md-5">
@@ -305,6 +305,10 @@ div.specdetails
 						<div class="form-group">
 							<label for="cost_code">Cost Code:</label><input class="form-control" id="cost_code" name="cost_code" placeholder="Cost Code"/>
 						</div>
+						<div class="form-group">
+							<label for="cost_related_ticket">Related Ticket:</label><input class="form-control" id="cost_related_ticket" name="cost_related_ticket" placeholder="Related Ticket"/>
+						</div>
+
 						<div class="form-group">
 							<input type="checkbox" name="cost_paid" id="cost_paid" style="margin-right:0.4em"/><label for="cost_paid" style="position:relative;top:-2px">Mark this cost as paid.</label>
 						</div>
@@ -557,6 +561,11 @@ $('#create').click(function(e) {
 	else if ($("#cluster").val() == "")
 	{
 		alert('You must select a location cluster.');
+	}
+	else if ($("#cost_related_ticket").val().length > 0 && $("#cost_related_ticket").val().match(/^[ \t]*((PRJ)|(INC)|(C)|(REQ))TASK[0-9]+[ \t]*/) == null)
+	{
+		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345 or CTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident, or use the change task for the RFC you\'re performing.');
+		$('#cost_related_ticket').focus();
 	}
 	else
 	{

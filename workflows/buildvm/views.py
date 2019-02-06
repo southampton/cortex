@@ -147,7 +147,7 @@ def standard():
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
-		if 'sockets' not in request.form or 'cores' not in request.form or 'ram' not in request.form or 'disk' not in request.form or 'template' not in request.form or 'cluster' not in request.form or 'environment' not in request.form or 'network' not in request.form:
+		if not all(field in request.form for field in ['sockets', 'cores', 'ram', 'disk', 'template', 'cluster', 'environment', 'network']):
 			flash('You must select options for all questions before creating', 'alert-danger')
 			return redirect(url_for('standard'))
 
@@ -186,11 +186,40 @@ def standard():
 			if network not in workflow.config['NETWORK_NAMES']:
 				raise ValueError('Invalid network selected')
 
+			# Validate system charging
+			system_charging = None
+			if 'enable_costing' in request.form:
+				if all(field in request.form for field in ['cost_duration', 'cost', 'cost_code']):
+					cost_paid = 0
+					cost_paid_date = None
+					if 'cost_paid' in request.form:
+						cost_paid = 1						
+						if 'cost_paid_date' in request.form:
+							cost_paid_date = request.form['cost_paid_date']
+						else:
+							raise ValueError('Cost has been marked as paid but date of payment is invalid.')
+		
+
+					# Validation Succeeded
+					system_charging = {
+						'cost': request.form['cost'],
+						'cost_code': request.form['cost_code'],
+						'paid': cost_paid,
+						'paid_date': cost_paid_date,
+						'notes': request.form.get('cost_notes', None),
+						'related_ticket': request.form.get('cost_related_ticket', None)
+					}
+
+				else:
+					raise ValueError('Charging enabled for this system but system charging details are invalid.')
+					
+
 		except ValueError as e:
 			flash(str(e), 'alert-danger')
 			return redirect(url_for('standard'))
 
 		except Exception as e:
+			print(e)
 			flash('Submitted data invalid', 'alert-danger')
 			return redirect(url_for('standard'))
 
@@ -217,6 +246,7 @@ def standard():
 		options['secondary_owner_role'] = secondary_owner_role
 		options['dns_aliases'] = dns_aliases
 		options['vm_folder_name'] = vm_folder_name
+		options['system_charging'] = system_charging
 
 		if 'NOTIFY_EMAILS' in app.config:
 			options['notify_emails'] = app.config['NOTIFY_EMAILS']

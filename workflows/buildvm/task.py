@@ -33,6 +33,7 @@ def run(helper, options):
 		os_disks = options['wfconfig']['OS_DISKS']
 		vm_folder_name = options['vm_folder_name']
 		dns_aliases = options['dns_aliases']
+		system_charging = options['system_charging']
 	elif workflow == 'sandbox':
 		prefix = options['wfconfig']['SB_PREFIX']
 		vcenter_tag = options['wfconfig']['SB_VCENTER_TAG']
@@ -54,6 +55,7 @@ def run(helper, options):
 		os_disks = options['wfconfig']['SB_OS_DISKS']
 		vm_folder_name = None
 		dns_aliases = []
+		system_charging = None
 	elif workflow == 'student':
 		prefix = options['wfconfig']['STU_PREFIX']
 		vcenter_tag = options['wfconfig']['STU_VCENTER_TAG']
@@ -78,6 +80,7 @@ def run(helper, options):
 		os_disks = options['wfconfig']['STU_OS_DISKS']
 		vm_folder_name = options['wfconfig']['STU_VM_FOLDER']
 		dns_aliases = options['dns_aliases']
+		system_charging = None
 
 		# Override primary owner to match allocated_by
 		options['primary_owner_who'] = helper.username
@@ -509,6 +512,12 @@ def run(helper, options):
 			helper.end_event(success=True, description='Initiated guest restart')
 
 
+	## Add a Cost to the VM Charging for this system #######################
+	# system_id = system_dbid
+	if system_charging is not None:
+		helper.event('system_charging_create', 'Adding cost for this System to the charging table.')
+		helper.lib.add_system_charging(system_dbid, system_charging)
+		helper.end_event(success=True, description='Cost for this System added to the charging table.')
 
 	## Send success email ##################################################
 

@@ -1935,3 +1935,14 @@ class Corpus(object):
 		) 
 
 		r.raise_for_status()
+
+	############################################################################
+
+	def add_system_charging(self, system_id, system_charging):
+
+		# Query the database
+                curd = self.db.cursor(mysql.cursors.DictCursor)
+		curd.execute('INSERT INTO `system_cost` (`system_id`, `cost_date`, `cost_code`, `cost`, `paid`, `paid_date`, `notes`, `related_ticket`) VALUES (%s, NOW(), %s, %s, %s, %s, %s, %s)', (system_id, system_charging['cost_code'], system_charging['cost'], system_charging['paid'], system_charging['paid_date'], system_charging['notes'], system_charging['related_ticket']))
+		# Commit
+		self.db.commit()		
+
