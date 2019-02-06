@@ -31,7 +31,7 @@ def run(helper, options):
 		os_templates = options['wfconfig']['OS_TEMPLATES']
 		os_names = options['wfconfig']['OS_NAMES']
 		os_disks = options['wfconfig']['OS_DISKS']
-		vm_folder_name = None
+		vm_folder_name = options['vm_folder_name']
 		dns_aliases = options['dns_aliases']
 	elif workflow == 'sandbox':
 		prefix = options['wfconfig']['SB_PREFIX']
