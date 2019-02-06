@@ -756,6 +756,19 @@ Username:             %s
 		  CONSTRAINT `system_user_favourites_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_cost` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `system_id` mediumint(11) NOT NULL,
+		  `cost_date` datetime DEFAULT NULL,
+		  `cost_code` varchar(256),
+		  `cost` decimal(13,2),
+		  `paid` tinyint(4),
+		  `paid_date` datetime DEFAULT NULL,
+		  `notes` text NOT NULL,
+		  PRIMARY KEY (`id`),
+		  CONSTRAINT `system_cost_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
 		cursor.execute("""DROP TABLE IF EXISTS `workflow_perms`""")
 
 		# Ensure we have a default administrator role with appropriate permissions
