@@ -1,0 +1,141 @@
+{% extends "layout.html" %}
+{% block head -%}
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/bootstrap-datetimepicker.min.css') }}">
+		<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}"></script> 
+		<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script> 
+		<script src="{{ url_for('static', filename='js/vendor/bootstrap-datetimepicker.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+{% import 'node-header.html' as node %}
+
+{{ node.header(system,active="cost" ) }}
+
+<div class="puppet-header">
+	<h3>
+		{% if does_user_have_system_permission(system.id, "edit.cost", "systems.all.edit.cost") -%}
+		<div class="pull-right">
+			<button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#addChargeModal">Add Charge</button>
+		</div>
+		{% endif -%}
+		<span><i class="fa fa-fw fa-gbp"></i> System Charging</span>
+	</h3>
+	<div class="text-muted">
+	The charges Cortex knows about are listed below.
+	</div>
+</div>
+
+
+{%- if costs %}
+<table class="table table-striped">
+	<thead>
+		<tr>
+			<td>Cost Date</td>
+			<td>Cost Code</td>
+			<td>Cost</td>
+			<td>Paid</td>
+			<td>Paid Date</td>
+			<td>Related Ticket</td>
+			<td>Notes</td>
+		</tr>
+	</thead>
+	<tbody>
+	{%- for row in costs %}
+		<tr>
+			<td>{{ row['cost_date'] }}</td>
+			<td>{{ row['cost_code'] }}</td>
+			<td>£{{ row['cost'] }}</td>
+			<td><i class="fa fa-fw fa-{{ 'check' if row['paid'] == 1 else 'times' }}"></i></td>
+			<td>{{ row['paid_date'] if row['paid_date'] else 'This charge has not been marked as paid.' }}</td>
+			<td>{{ row['related_ticket'] }}</td>
+			<td><button type="button" class="btn btn-default" data-container="body" data-toggle="popover" data-placement="left" data-content="{{ row['notes'] }}">Notes</button></td>
+		</tr>
+	{% endfor -%}
+	</thead>
+</table>
+{%- else %}
+<div class="list-group-item"><p class="list-group-item-text">No system charging information is available for this system.</p></div>
+{%- endif %}
+
+{# System Charging Modal #}
+{%- if does_user_have_system_permission(system.id, "edit.cost", "systems.all.edit.cost") %}
+<div class="modal fade" id="addChargeModal" tabindex="-1" role="dialog" aria-labelledby="addChargeModalLabel">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<form action="{{ url_for('system_cost', id=system.id) }}" method="POST">
+			<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title" id="addChargeModalLabel">Add Charge for {{ system['name'] }}</h4>
+			</div>
+			<div class="modal-body">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="col-md-7">
+							<div class="form-group">
+								<label for="cost_notes" style="position:relative;top:-2px">Notes:</label>
+								<textarea class="form-control" rows="13" id="cost_notes" name="cost_notes" style="resize: none;"></textarea>
+							</div>
+						</div>
+						<div class="col-md-5">
+							<div class="form-group">
+								<label for="cost">Cost:</label>
+								<div class="input-group">
+									<span class="input-group-addon">£</span>
+									<input class="form-control" id="cost" name="cost" step='0.01' placeholder="System Cost"/>
+								</div>
+							</div>
+							<div class="form-group">
+								<label for="cost_code">Cost Code:</label><input class="form-control" id="cost_code" name="cost_code" placeholder="Cost Code"/>
+							</div>
+							<div class="form-group">
+								<label for="cost_related_ticket">Related Ticket:</label><input class="form-control" id="cost_related_ticket" name="cost_related_ticket" placeholder="e.g. CTASK0123456 or PRJTASK0987654"/>
+							</div>
+
+							<div class="form-group">
+								<input type="checkbox" name="cost_paid" id="cost_paid" style="margin-right:0.4em"/><label for="cost_paid" style="position:relative;top:-2px">Mark this cost as paid.</label>
+							</div>
+							<div class='input-group date' id='cost_paidpicker'>
+								<input type='text' class="form-control" id="cost_paid_date" name="cost_paid_date" placeholder="Date of payment received: YYYY-MM-DD" disabled/>
+								<span class="input-group-addon">
+									<span class="glyphicon glyphicon-calendar"></span>
+								</span>
+							</div>
+							<script>
+								$(function () {
+									$('#cost_paidpicker').datetimepicker({
+										viewMode: 'days',
+										format: 'YYYY-MM-DD',
+										minDate: moment(),
+										useCurrent: false,
+									});
+								});
+							</script>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+				<button type="submit" class="btn btn-primary">Save changes</button>
+			</div>
+			</form>
+		</div>
+	</div>
+</div>
+{% endif -%}
+
+<script>
+$(document).ready(function()
+{
+	$(function () {
+	  $('[data-toggle="popover"]').popover()
+	})
+	$('#cost_paid').click(function (e) {
+		$('#cost_paid_date').prop('disabled', function(i, v) { return !v; });
+	})
+});
+
+</script>
+
+{% endblock %}
+

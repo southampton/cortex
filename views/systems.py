@@ -1135,6 +1135,63 @@ def systems_json():
 
 ################################################################################
 
+@app.route('/systems/cost/<int:id>', methods=['GET', 'POST'])
+@cortex.lib.user.login_required
+def system_cost(id):
+	if not does_user_have_system_permission(id,"view.cost","systems.all.view.cost"):
+		abort(403)
+
+	# Get the system
+	system = cortex.lib.systems.get_system_by_id(id)
+
+	# Ensure that the system actually exists, and return a 404 if it doesn't
+	if system is None:
+		abort(404)
+
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	if request.method == 'POST':
+		# Validate system charging
+		try:
+			system_charging = {}
+			if all(field in request.form and len(request.form[field]) > 0 for field in ['cost', 'cost_code']):
+				# Add the required fields.
+				system_charging['cost_code'] = request.form['cost_code']
+				system_charging['cost'] = request.form['cost']
+				system_charging['cost_paid'] = 0
+				system_charging['cost_paid_date'] = None
+				if 'cost_paid' in request.form:
+					system_charging['cost_paid'] = 1
+					if 'cost_paid_date' in request.form:
+						system_charging['cost_paid_date'] = request.form['cost_paid_date']
+					else:
+						raise ValueError('Cost has been marked as paid but date of payment is invalid.')
+	
+				# Optional Fields
+				for field in ['cost_notes', 'cost_related_ticket']:
+					if field in request.form and len(request.form[field]) <= 0:
+						system_charging[field] = None
+					else:
+						system_charging[field] = request.form.get(field, None)
+
+				# Validation Succeeded
+				curd.execute('INSERT INTO `system_cost` (`system_id`, `cost_date`, `cost_code`, `cost`, `paid`, `paid_date`, `notes`, `related_ticket`) VALUES (%s, NOW(), %s, %s, %s, %s, %s, %s)', (system['id'], system_charging['cost_code'], system_charging['cost'], system_charging['cost_paid'], system_charging['cost_paid_date'], system_charging['cost_notes'], system_charging['cost_related_ticket']))
+				g.db.commit()
+
+			else:
+				raise ValueError('System Charging details are invalid. Cost and Cost Code cannot be empty.')
+
+		except ValueError as e:
+			flash(str(e), 'alert-danger')
+		
+	# Search for the system costing
+	curd.execute('SELECT * FROM `system_cost` WHERE `system_id`=%s ORDER BY `cost_date` DESC', (system['id'],))
+	costs = curd.fetchall()
+
+	return render_template('systems/cost.html', system=system, active='cost', costs=costs, title=system['name'])
+
+################################################################################
+
 def _systems_extract_datatables():
 	# Validate and extract 'draw' parameter. This parameter is simply a counter
 	# that DataTables uses internally.

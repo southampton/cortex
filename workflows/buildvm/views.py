@@ -192,7 +192,7 @@ def standard():
 			# Validate system charging
 			system_charging = None
 			if 'enable_costing' in request.form:
-				if all(field in request.form for field in ['cost_duration', 'cost', 'cost_code']):
+				if all(field in request.form and len(request.form[field]) > 0 for field in ['cost', 'cost_code']):
 					cost_paid = 0
 					cost_paid_date = None
 					if 'cost_paid' in request.form:
