@@ -197,8 +197,14 @@ def standard():
 						if 'cost_paid_date' in request.form:
 							cost_paid_date = request.form['cost_paid_date']
 						else:
-							raise ValueError('Cost has been marked as paid but date of payment is invalid.')
-		
+							raise ValueError('Cost has been marked as paid but date of payment is invalid.')		
+
+					notes = None
+					if 'cost_notes' in request.form and len(request.form['cost_notes']) > 0:
+						notes = request.form.get('cost_notes', None)
+					related_ticket = None
+					if 'cost_related_ticket' in request.form and len(request.form['cost_related_ticket']) > 0:
+						related_ticket = request.form.get('cost_related_ticket', None)
 
 					# Validation Succeeded
 					system_charging = {
@@ -206,8 +212,8 @@ def standard():
 						'cost_code': request.form['cost_code'],
 						'paid': cost_paid,
 						'paid_date': cost_paid_date,
-						'notes': request.form.get('cost_notes', None),
-						'related_ticket': request.form.get('cost_related_ticket', None)
+						'notes': notes,
+						'related_ticket': related_ticket,
 					}
 
 				else:
