@@ -125,7 +125,7 @@ def get_users_groups(username=None, from_cache=True):
 		curd = g.db.cursor(mysql.cursors.DictCursor)
 
 		## Get from the cache (if it hasn't expired)
-		curd.execute('SELECT 1 FROM `ldap_group_cache_expire` WHERE `username` = %s AND `expiry_date` > CURDATE()', (username,))
+		curd.execute('SELECT 1 FROM `ldap_group_cache_expire` WHERE `username` = %s AND `expiry_date` > NOW()', (username,))
 		if curd.fetchone() is not None:
 			## The cache has not expired, return the list
 			curd.execute('SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s ORDER BY `group`', (username,))
@@ -137,7 +137,7 @@ def get_users_groups(username=None, from_cache=True):
 			return groups
 
 		else:
-			## teh cache has expired, return them from LDAP directly (but also cache)
+			## The cache has expired, return them from LDAP directly (but also cache)
 			return cortex.lib.ldapc.get_users_groups_from_ldap(username)
 
 #############################################################################
