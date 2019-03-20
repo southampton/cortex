@@ -57,8 +57,7 @@ def admin_tasks_json(tasktype):
 		order_by = "start"
 	elif order_column == 3:
 		order_by = "end"
-	elif order_column == 4:
-		order_by = "elapsed"
+	# Skip col 4 as this doesn't allow ordering.
 	elif order_column == 5:
 		order_by = "username"
 	elif order_column == 6:
