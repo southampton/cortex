@@ -1,4 +1,4 @@
-from flask import Blueprint, Response, request, session
+from flask import Blueprint, Response, request, session, redirect
 from flask_restplus import Api
 from functools import wraps
 import json
@@ -82,6 +82,13 @@ api_manager.add_namespace(systems_info_view_namespace)
 
 # Create an API Blueprint.
 api_blueprint = Blueprint('api', __name__, url_prefix='/api')
+
+# Hacky way to fix a weird redirect issue.
+@api_blueprint.route('/')
+@api_blueprint.route('')
+def handle_redirect():
+	return redirect('/api/docs')
+
 # Init the restplus api manager.
 api_manager.init_app(api_blueprint)
 
