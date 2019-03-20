@@ -2,6 +2,15 @@
 {% block body %}
 <div class="page-header">
 <h3>
+	<div class="pull-right divider-left">
+		<button id="hide_frequent" type="button" class="btn btn-sm btn-success btn-filter active" {{ 'disabled' if not json_source }}><i class="fa fa-fw fa-check-square-o"></i> Hide Frequent Tasks</button>
+	</div>
+
+	<div class="pull-right divider-left">
+		<button id="filter_succeeded" type="button" class="btn btn-sm btn-filter {{ 'btn-success active' if filters.get('filter_succeeded', '1') == '1' else 'btn-default' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_succeeded', '1') == '1' else 'fa-square-o' }}"></i> Succeeded</button>
+		<button id="filter_warnings" type="button" class="btn btn-sm btn-filter {{ 'btn-success active' if filters.get('filter_warnings', '1') == '1' else 'btn-default' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_warnings', '1') == '1' else 'fa-square-o' }}"></i> Warnings</button>
+		<button id="filter_failed" type="button" class="btn btn-sm btn-filter {{ 'btn-success active' if filters.get('filter_failed', '1') == '1' else 'btn-default' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_failed', '1') == '1' else 'fa-square-o' }}"></i> Failed</button>
+	</div>
 	<div class="pull-right">
 		<a class="btn btn-sm {% if tasktype == 'all' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_tasks') }}">All</a>
 		<a class="btn btn-sm {% if tasktype == 'active' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_tasks_active') }}">Active</a>
@@ -23,37 +32,39 @@ The list below shows all past and present system-started tasks
 </div>
 </div>
 
-<table class="table table-condensed table-striped" id="tasks">
-	<thead>
-		<tr>
-			<th>ID</th>
-			<th>Module</th>
-			<th>Start Time</th>
-			<th>End Time</th>
-			<th>Elapsed</th>
-			<th>User</th>
-			<th>Status</th>
-			<th></th>
-		</tr>
-	</thead>
-	<tbody>
+<div id="tasksWrapper">
+	<table class="table table-condensed table-striped" id="tasks">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>Module</th>
+				<th>Start Time</th>
+				<th>End Time</th>
+				<th>Elapsed</th>
+				<th>User</th>
+				<th>Status</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
 {%- for task in tasks %}
-		<tr>
-			<td>{{ task.id }}</td>
-			<td>{% if task.description %}<abbr title="{{ task.description }}">{% endif %}{{ task.module }}{% if task.description %}</abbr>{% endif %}</td>
-			<td>{{ task.start }}</td>
-			<td>{{ task.end or '' }}</td>
-			<td>{% if task.start and task.end %}{{ task.end - task.start }}{% endif %}</td>
-			<td>{{ task.username }}</td>
-			<td>{% if task.status == 0 %}<span style="color:#22c">In Progress</span>{% elif task.status == 1 %}<span style="color:#2c2">Succeeded</span>{% elif task.status == 2 %}<span style="color:#c22">Failed</span>{% elif task.status == 3 %}<span style="color:#c82">Warnings</span>{% else %}Unknown{% endif %}</td>
-			<td><a class="btn btn-xs btn-default" href="{{ url_for('task_status', id=task.id) }}"><i class="fa fa-fw fa-info"></i> Details</a></td>
-		</tr>
+			<tr>
+				<td>{{ task.id }}</td>
+				<td>{% if task.description %}<abbr title="{{ task.description }}">{% endif %}{{ task.module }}{% if task.description %}</abbr>{% endif %}</td>
+				<td>{{ task.start }}</td>
+				<td>{{ task.end or '' }}</td>
+				<td>{% if task.start and task.end %}{{ task.end - task.start }}{% endif %}</td>
+				<td>{{ task.username }}</td>
+				<td>{% if task.status == 0 %}<span style="color:#22c">In Progress</span>{% elif task.status == 1 %}<span style="color:#2c2">Succeeded</span>{% elif task.status == 2 %}<span style="color:#c22">Failed</span>{% elif task.status == 3 %}<span style="color:#c82">Warnings</span>{% else %}Unknown{% endif %}</td>
+				<td><a class="btn btn-xs btn-default" href="{{ url_for('task_status', id=task.id) }}"><i class="fa fa-fw fa-info"></i> Details</a></td>
+			</tr>
 {%- endfor %}
-	</tbody>
-</table>
+		</tbody>
+	</table>
+</div>
 
 <script type="text/javascript">
-	$('#tasks').DataTable({
+	var tasksTable = $('#tasks').DataTable({
 		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 		"pageLength": 15,
 		"order": [[0, 'desc']],
@@ -65,6 +76,12 @@ The list below shows all past and present system-started tasks
 		"ajax": {
 			"url": "{{ json_source }}",
 			"type": "POST",
+			"data": function (d) {
+				d.hide_frequent = ($('#hide_frequent').hasClass('btn-success') ? "1" : "0");
+				d.filter_succeeded = ($('#filter_succeeded').hasClass('btn-success') ? "1" : "0");
+				d.filter_warnings = ($('#filter_warnings').hasClass('btn-success') ? "1" : "0");
+				d.filter_failed = ($('#filter_failed').hasClass('btn-success') ? "1" : "0");
+			}
 		},
 		"rowCallback": function(row, data, index) {
 			$('td:eq(1)', row).html('<abbr title="' + data[7] + '">' + data[1] + '</abbr>');
@@ -77,5 +94,45 @@ The list below shows all past and present system-started tasks
 		}
 {%- endif %}
 	});
+
+{%- if json_source %}
+
+	function toggleFilterButton (buttonID, toggleClass='btn-danger') {
+		$(buttonID).toggleClass('btn-success');
+                $(buttonID).toggleClass(toggleClass);
+                $(buttonID).toggleClass('active');
+                $(`${buttonID} i`).toggleClass('fa-check-square-o');
+                $(`${buttonID} i`).toggleClass('fa-square-o');
+	}
+
+	function reloadTable () {
+		$('#tasksWrapper').fadeOut(150, function() {
+                        tasksTable.ajax.reload(function() {
+                                $('#tasksWrapper').fadeIn(150);
+                        });
+                });
+	}
+
+	$('#hide_frequent').click(function() {
+		toggleFilterButton('#hide_frequent', )
+		reloadTable()
+        });
+
+	$('#filter_succeeded').click(function() {
+		toggleFilterButton('#filter_succeeded', 'btn-default')
+		reloadTable()
+        });
+	$('#filter_warnings').click(function() {
+		toggleFilterButton('#filter_warnings', 'btn-default')
+		reloadTable()
+        });
+
+	$('#filter_failed').click(function() {
+		toggleFilterButton('#filter_failed', 'btn-default')
+		reloadTable()
+        });
+
+
+{%- endif %}
 </script>
 {% endblock %}
