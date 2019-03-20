@@ -498,16 +498,15 @@ def run(helper, options):
 		except Exception as e:
 			helper.end_event(success=False, description='Failed to set Computer object attributes: ' + str(e))
 
-			# Wait for 60 seconds to allow time for the VM to come back up
-			# This feels like a bit of a hack currently, but we don't have
-			# a way currently of knowing if the VM is up.
-			helper.event('windows_delay', 'Wait and restart guest')
-			time.sleep(60)
+		# Wait for 60 seconds to allow time for the VM to come back up
+		# This feels like a bit of a hack currently, but we don't have
+		# a way currently of knowing if the VM is up.
+		helper.event('windows_delay', 'Wait and restart guest')
+		time.sleep(60)
 
-			# Restart the guest
-			helper.lib.vmware_vm_restart_guest(vm)
-			helper.end_event(success=True, description='Initiated guest restart')
-
+		# Restart the guest
+		helper.lib.vmware_vm_restart_guest(vm)
+		helper.end_event(success=True, description='Initiated guest restart')
 
 
 	## Send success email ##################################################
