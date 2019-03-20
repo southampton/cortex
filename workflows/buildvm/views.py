@@ -15,7 +15,6 @@ from cortex.corpus import Corpus
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('buildvm.sandbox', 'Create Sandbox VM')
 workflow.add_permission('buildvm.standard', 'Create Standard VM')
-#workflow.add_permission('buildvm.student', 'Create Student VM')
 
 ################################################################################
 ## Sandbox VM Workflow view handler
