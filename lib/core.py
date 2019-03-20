@@ -68,6 +68,19 @@ def vmware_list_clusters(tag):
 	else:
 		raise Exception("Invalid VMware tag")
 
+def vmware_list_folders(tag):
+	"""Return a list of folders from witihin a given vCenter. The tag
+	parameter defines an entry in the vCenter configuration dictionary that
+        is within the application configuration."""
+	
+	if tag in app.config['VMWARE']:
+                # SQL to grab the clusters from the cache
+                curd = g.db.cursor(mysql.cursors.DictCursor)
+                curd.execute("SELECT * FROM `vmware_cache_folders` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname'],))
+                return curd.fetchall()
+        else:
+                raise Exception("Invalid VMware tag")
+
 ################################################################################
 
 def is_valid_hostname(hostname):
