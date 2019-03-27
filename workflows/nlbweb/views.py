@@ -23,7 +23,7 @@ import OpenSSL as openssl
 from itsdangerous import JSONWebSignatureSerializer
 
 workflow = CortexWorkflow(__name__)
-workflow.add_permission('nlbweb.create', 'Creates NLB Web Service')
+workflow.add_permission('nlbweb.create', 'Create NLB Web Service')
 
 # IPv4 Address Regex
 ipv4_re = re.compile(r"^((([0-9])|([1-9][0-9])|(1[0-9][0-9])|(2[0-4][0-9])|(25[0-5]))\.){3}((([0-9])|([1-9][0-9])|(1[0-9][0-9])|(2[0-4][0-9])|(25[0-5])))$")
