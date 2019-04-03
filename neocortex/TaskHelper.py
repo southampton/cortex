@@ -17,9 +17,18 @@ class TaskHelper(object):
 
 	# Task / Event statuses
 	STATUS_PROGRESS = 0
-	STATUS_SUCCESS = 1
-	STATUS_FAILED = 2
-	STATUS_WARNED = 3
+	STATUS_SUCCESS  = 1
+	STATUS_FAILED   = 2
+	STATUS_WARNED   = 3
+
+	# Flash Message Category Map
+	CATEGORY_MAP = {
+		'message': { 'success': True, 'warning': False },
+		'success': { 'success': True, 'warning': False },
+		'warning': { 'success': True, 'warning': True },
+		'error'  : { 'success': False, 'warning': False },
+		'fatal'  : { 'success': False, 'warning': False },
+	}
 	
 	def __init__(self, config, workflow_name, task_id, username):
 		"""Initialises the TaskHelper object"""
@@ -175,3 +184,20 @@ class TaskHelper(object):
 		"""Returns the number of events within the task that have failed or finished with warnings."""
 
 		return self.event_problems
+
+	def flash(self, message, category='message'):
+		"""Wrapper for oneshot events to create a Flask flashing-like method."""
+
+		name = 'decom.flash.{}'.format(category.lower())
+		self.event(
+			name,
+			message,
+			oneshot=True,
+			success=self.CATEGORY_MAP.get(category.lower(), self.CATEGORY_MAP['message'])['success'],
+			warning=self.CATEGORY_MAP.get(category.lower(), self.CATEGORY_MAP['message'])['warning'],
+		)
+
+		# Fatal errors raise runtime errors.
+		if category.lower() == 'fatal':
+			raise RuntimeError(message)
+

@@ -112,7 +112,7 @@ def action_check_system(action, helper, wfconfig):
 					if rel_count > 0:
 						system_actions.append({'id': 'cmdb.relationships.delete', 'desc': 'Remove ' + str(rel_count) + ' relationships from the CMDB CI', 'detail': str(rel_count) + ' entries from ' + system['cmdb_id'] + " on " + helper.lib.config['SN_HOST'], 'data': system['cmdb_id']})
 				except Exception as ex:
-					helper.lib.task_helper.lib.task_flash(helper, helper, 'Warning - An error occured when communicating with ServiceNow: ' + str(ex), 'warning')
+					helper.flash('Warning - An error occured when communicating with ServiceNow: ' + str(ex), 'warning')
 
 
 	## Ask Infoblox if a DNS host object exists for the name of the system
@@ -132,7 +132,7 @@ def action_check_system(action, helper, wfconfig):
 						system_actions.append({'id': 'dns.delete', 'desc': 'Delete the DNS record ' + ref.split(':')[-1], 'detail': 'Delete the name ' + system['name'] + '.' + str(domain) + ' - Infoblox reference: ' + ref, 'data': ref})
 
 			except Exception as ex:
-				helper.lib.task_flash(helper, 'Warning - An error occured when communicating with Infoblox: ' + str(type(ex)) + ' - ' + str(ex), 'warning')
+				helper.flash('Warning - An error occured when communicating with Infoblox: ' + str(type(ex)) + ' - ' + str(ex), 'warning')
 
 	## Check if a puppet record exists
 	if 'puppet_certname' in system:
@@ -149,11 +149,11 @@ def action_check_system(action, helper, wfconfig):
 			if client['DECOMMISSIONED'] is None:
 				system_actions.append({'id': 'tsm.decom', 'desc': 'Decommission the system in TSM', 'detail': 'Node ' + client['NAME']  + ' on server ' + client['SERVER'], 'data': {'NAME': client['NAME'], 'SERVER': client['SERVER']}})
 	except requests.exceptions.HTTPError as e:
-		helper.lib.task_flash(helper, "Warning - An error occured when communicating with TSM: " + str(e), "warning")
+		helper.flash("Warning - An error occured when communicating with TSM: " + str(e), "warning")
 	except LookupError:
 		pass
 	except Exception as ex:
-		helper.lib.task_flash(helper, "Warning - An error occured when communicating with TSM: " + str(ex), "warning")
+		helper.flash("Warning - An error occured when communicating with TSM: " + str(ex), "warning")
 
 	# We need to check all (unique) AD domains as we register development
 	# Linux boxes to the production domain
@@ -170,7 +170,7 @@ def action_check_system(action, helper, wfconfig):
 					system_actions.append({'id': 'ad.delete', 'desc': 'Delete the Active Directory computer object', 'detail': system['name'] + ' on domain ' + helper.lib.config['WINRPC'][adenv]['domain'], 'data': {'hostname': system['name'], 'env': adenv}})
 
 		except Exception as ex:
-			helper.lib.task_flash(helper, "Warning - An error occured when communicating with Active Directory: " + str(type(ex)) + " - " + str(ex), "warning")
+			helper.flash("Warning - An error occured when communicating with Active Directory: " + str(type(ex)) + " - " + str(ex), "warning")
 
 
 	if 'RHN5_ENABLE_DECOM' in wfconfig and wfconfig['RHN5_ENABLE_DECOM']: 
@@ -188,7 +188,7 @@ def action_check_system(action, helper, wfconfig):
 				for rsys in rsystems:
 					system_actions.append({'id': 'rhn5.delete', 'desc': 'Delete the RHN Satellite object', 'detail': rsys['name'] + ', RHN ID <a target="_blank" href="' + rhnurl + str(rsys['id']) + '">' + str(rsys['id']) + "</a>", 'data': {'id': rsys['id']}})
 		except Exception as ex:
-			helper.lib.task_flash(helper, "Warning - An error occured when communicating with RHN: " + str(ex), "warning")
+			helper.flash("Warning - An error occured when communicating with RHN: " + str(ex), "warning")
 
 	## Check if a record exists in SATELLITE 6 for this system.
 	try:
@@ -197,13 +197,13 @@ def action_check_system(action, helper, wfconfig):
 		except requests.exceptions.RequestException as ex:
 			# Check if the error was raised due to not being able to find the system.
 			if ex.response.status_code != 404:
-				helper.lib.task_flash(helper, "Warning - An error occured when communicating with Satellite 6: " + str(ex), "warning")
+				helper.flash("Warning - An error occured when communicating with Satellite 6: " + str(ex), "warning")
 		else:
 			saturl = urljoin(helper.lib.config['SATELLITE6_URL'], 'hosts/{0}'.format(rsys['id'])) 
 			system_actions.append({'id': 'satellite6.delete', 'desc': 'Delete the host from Satellite 6', 'detail': '{0}, Satellite 6 ID <a target=""_blank" href="{1}">{2}</a>'.format(rsys['name'], saturl, rsys['id']), 'data': {'id':rsys['id']}})
 				
 	except Exception as ex:
-		helper.lib.task_flash(helper, "Warning - An error occured when communicating with Satellite 6: " + str(ex), "warning")
+		helper.flash("Warning - An error occured when communicating with Satellite 6: " + str(ex), "warning")
 
 	## Check sudoldap for sudoHost entries
 	if 'SUDO_LDAP_ENABLE' in wfconfig and wfconfig['SUDO_LDAP_ENABLE']:
@@ -257,7 +257,7 @@ def action_check_system(action, helper, wfconfig):
 					system_actions.append({'id': 'sudoldap.delete', 'desc': 'Delete ' + ldap_dn_data[dn]['cn'] + ' because we\'ve removed its last sudoHost attribute', 'detail': 'Delete ' + dn + ' on ' + wfconfig['SUDO_LDAP_URL'], 'data': {'dn': dn, 'value': ldap_dn_data[dn]['sudoHost']}})
 				
 		except Exception as ex:
-			helper.lib.task_flash(helper, 'Warning - An error occurred when communicating with ' + str(wfconfig['SUDO_LDAP_URL']) + ': ' + str(ex), 'warning')
+			helper.flash('Warning - An error occurred when communicating with ' + str(wfconfig['SUDO_LDAP_URL']) + ': ' + str(ex), 'warning')
 
 	## Check graphite for monitoring entries
 	if 'GRAPHITE_DELETE_ENABLE' in wfconfig and wfconfig['GRAPHITE_DELETE_ENABLE']:
@@ -271,10 +271,10 @@ def action_check_system(action, helper, wfconfig):
 					if type(js) is list and len(js) > 0:
 						system_actions.append({'id': 'graphite.delete', 'desc': 'Remove metrics from Graphite / Grafana', 'detail': 'Delete ' + ','.join(js) + ' from ' + helper.lib.config['GRAPHITE_URL'], 'data': {'host': host}})
 				else:
-					helper.lib.task_flash(helper, 'Warning - CarbonHTTPInterface returned error code ' + str(r.status_code), 'warning')
+					helper.flash('Warning - CarbonHTTPInterface returned error code ' + str(r.status_code), 'warning')
 
 		except Exception as ex:
-			helper.lib.task_flash(helper, 'Warning - An error occurred when communicating with ' + str(helper.lib.config['GRAPHITE_URL']) + ': ' + str(ex), 'warning')
+			helper.flash('Warning - An error occurred when communicating with ' + str(helper.lib.config['GRAPHITE_URL']) + ': ' + str(ex), 'warning')
 
 	# If the config says nothing about creating a ticket, or the config 
 	# says to create a ticket:
@@ -287,7 +287,7 @@ def action_check_system(action, helper, wfconfig):
 	system_actions.append({'id': 'system.update_decom_date', 'desc': 'Update the decommission date in Cortex', 'detail': 'Update the decommission date in Cortex and set it to the current date and time.', 'data': {'system_id': system['id']}})	
 
 	# A success message
-	helper.lib.task_flash(helper, 'Successfully completed a pre-decommission check of System ID: {} ({}). Found {} actions for decommissioning'.format(system_id, system['name'], len(system_actions)), 'success')
+	helper.flash('Successfully completed a pre-decommission check of System ID: {} ({}). Found {} actions for decommissioning'.format(system_id, system['name'], len(system_actions)), 'success')
 
 	helper.event('system.check.redis', 'Caching system actions in the Redis database')
 	if helper.lib.redis_cache_system_actions(helper.task_id, system_id, system_actions):

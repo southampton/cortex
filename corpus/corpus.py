@@ -1946,30 +1946,6 @@ class Corpus(object):
 
 	############################################################################
 
-	def task_flash(self, helper_ref, message, category='message'):
-		"""
-		A Flask flask-like function for use in tasks
-
-		Uses the TaskHelper to create and end events to show messages
-		on the Task Status screen.
-		"""
-
-		name = 'decom.flash.{}'.format(category.lower())
-
-		helper_ref.event(name, message)
-		if category.lower() == 'warning':
-			helper_ref.end_event(success=True, warning=True)
-		elif category.lower() == 'error':
-			helper_ref.end_event(success=False, warning=False)
-		elif category.lower() == 'fatal':
-			helper_ref.end_event(success=False, warning=False)
-			raise RuntimeError(message)
-		else:
-			# Assume the message was a success message.
-			helper_ref.end_event(success=True)
-
-	############################################################################
-
 	def redis_cache_system_actions(self, task_id, system_id, system_actions):
 
 		# Redis Key Prefix
