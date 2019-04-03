@@ -394,7 +394,7 @@ Username:             %s
 		  `username` varchar(64) NOT NULL,
 		  `start` datetime NOT NULL,
 		  `end` datetime DEFAULT NULL,
-		  `status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '0: in progress, 1: success, 2: failure',
+		  `status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '0: in progress, 1: success, 2: failure, 3: warning',
 		  `description` text,
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")

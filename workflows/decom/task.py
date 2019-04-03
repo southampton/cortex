@@ -1,6 +1,8 @@
+from pyVmomi import vim
 import requests
-import ldap
+import requests.exceptions
 from urlparse import urljoin
+import ldap
 
 def run(helper, options):
 
@@ -8,8 +10,9 @@ def run(helper, options):
 	for action in options['actions']:
 		# Start the event
 		helper.event(action['id'], action['desc'])
-
-		if action['id'] == "vm.poweroff":
+		if action['id'] == "system.check":
+			r = action_check_system(action, helper, options['wfconfig'])
+		elif action['id'] == "vm.poweroff":
 			r = action_vm_poweroff(action, helper)
 		elif action['id'] == "vm.delete":
 			r = action_vm_delete(action, helper)
@@ -47,6 +50,251 @@ def run(helper, options):
 		# end the events with a failure message on errors.
 		if r:
 			helper.end_event()
+		else:
+			raise RuntimeError("Action {} ({}) failed to complete successfully".format(action['desc'], action['id']))
+
+################################################################################
+
+def action_check_system(action, helper, wfconfig):
+
+	# Get System ID from action data.
+	system_id = action['data']['system_id']
+
+	# Actions to perform during decom stage.
+	system_actions = []
+
+	system = helper.lib.get_system_by_id(system_id)
+	if system is None:
+		helper.end_event(success=False, description='System ID: {} Not Found'.format(system_id))
+		return False
+	else:
+		helper.end_event(success=True, description='System ID: {} ({}) Found'.format(system_id, system['name']))
+
+	## Find the environment that this VM is in based off of the CMDB env
+	systemenv = None
+	if 'cmdb_environment' in system:
+		if system['cmdb_environment'] is not None:
+			for env in helper.lib.config['ENVIRONMENTS']:
+				if env['name'] == system['cmdb_environment']:
+					# We found the environment matching the system
+					systemenv = env
+					break
+
+	## Is the system linked to vmware?
+	if 'vmware_uuid' in system:
+		if system['vmware_uuid'] is not None:
+			if len(system['vmware_uuid']) > 0:
+				## The system is linked to vmware - e.g. a VM exists
+
+				vmobj = helper.lib.vmware_get_vm_by_uuid(system['vmware_uuid'],system['vmware_vcenter'])
+
+				if vmobj:
+					if vmobj.runtime.powerState == vim.VirtualMachine.PowerState.poweredOn:
+						system_actions.append({'id': 'vm.poweroff', 'desc': 'Power off the virtual machine ' + system['name'], 'detail': 'UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
+
+					system_actions.append({'id': 'vm.delete', 'desc': 'Delete the virtual machine ' + system['name'], 'detail': ' UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
+
+	## Is the system linked to service now?
+	if 'cmdb_id' in system:
+		if system['cmdb_id'] is not None:
+			if len(system['cmdb_id']) > 0:
+				# Add a task to mark the object as Deleted/Decommissioned
+				if system['cmdb_is_virtual']:
+					if system['cmdb_operational_status'] != u'Deleted':
+						system_actions.append({'id': 'cmdb.update', 'desc': 'Mark the system as Deleted in the CMDB', 'detail': system['cmdb_id'] + " on " + helper.lib.config['SN_HOST'], 'data': system['cmdb_id']})
+				else:
+					if system['cmdb_operational_status'] != u'Decommissioned':
+						system_actions.append({'id': 'cmdb.update', 'desc': 'Mark the system as Decommissioned in the CMDB', 'detail': system['cmdb_id'] + " on " + helper.lib.config['SN_HOST'], 'data': system['cmdb_id']})
+
+				# Remove CI relationships if the exist
+				try:
+					rel_count = len(helper.lib.servicenow_get_ci_relationships(system['cmdb_id']))
+					if rel_count > 0:
+						system_actions.append({'id': 'cmdb.relationships.delete', 'desc': 'Remove ' + str(rel_count) + ' relationships from the CMDB CI', 'detail': str(rel_count) + ' entries from ' + system['cmdb_id'] + " on " + helper.lib.config['SN_HOST'], 'data': system['cmdb_id']})
+				except Exception as ex:
+					helper.lib.task_helper.lib.task_flash(helper, helper, 'Warning - An error occured when communicating with ServiceNow: ' + str(ex), 'warning')
+
+
+	## Ask Infoblox if a DNS host object exists for the name of the system
+	if 'DNS_DOMAINS' in wfconfig and wfconfig['DNS_DOMAINS'] is not None:
+		# Ensure we have a list
+		dns_domains = wfconfig['DNS_DOMAINS']
+		if type(dns_domains) is str:
+			dns_domains = [dns_domains]
+
+		# Iterate over domains
+		for domain in dns_domains:
+			try:
+				refs = helper.lib.infoblox_get_host_refs(system['name'] + '.' + str(domain))
+
+				if refs is not None:
+					for ref in refs:
+						system_actions.append({'id': 'dns.delete', 'desc': 'Delete the DNS record ' + ref.split(':')[-1], 'detail': 'Delete the name ' + system['name'] + '.' + str(domain) + ' - Infoblox reference: ' + ref, 'data': ref})
+
+			except Exception as ex:
+				helper.lib.task_flash(helper, 'Warning - An error occured when communicating with Infoblox: ' + str(type(ex)) + ' - ' + str(ex), 'warning')
+
+	## Check if a puppet record exists
+	if 'puppet_certname' in system:
+		if system['puppet_certname'] is not None:
+			if len(system['puppet_certname']) > 0:
+				system_actions.append({'id': 'puppet.cortex.delete', 'desc': 'Delete the Puppet ENC configuration', 'detail': system['puppet_certname'] + ' on ' + helper.lib.config['CORTEX_DOMAIN'], 'data': system['id']})
+				system_actions.append({'id': 'puppet.master.delete', 'desc': 'Delete the system from the Puppet Master', 'detail': system['puppet_certname'] + ' on ' + helper.lib.config['PUPPET_MASTER'], 'data': system['puppet_certname']})
+
+	## Check if TSM backups exist
+	try:
+		tsm_clients = helper.lib.tsm_get_system(system['name'])
+		#if the TSM client is not decomissioned, then decomission it
+		for client in tsm_clients:
+			if client['DECOMMISSIONED'] is None:
+				system_actions.append({'id': 'tsm.decom', 'desc': 'Decommission the system in TSM', 'detail': 'Node ' + client['NAME']  + ' on server ' + client['SERVER'], 'data': {'NAME': client['NAME'], 'SERVER': client['SERVER']}})
+	except requests.exceptions.HTTPError as e:
+		helper.lib.task_flash(helper, "Warning - An error occured when communicating with TSM: " + str(e), "warning")
+	except LookupError:
+		pass
+	except Exception as ex:
+		helper.lib.task_flash(helper, "Warning - An error occured when communicating with TSM: " + str(ex), "warning")
+
+	# We need to check all (unique) AD domains as we register development
+	# Linux boxes to the production domain
+	tested_domains = set()
+	for adenv in helper.lib.config['WINRPC']:
+		try:
+			# If we've not tested this CortexWindowsRPC host before
+			if helper.lib.config['WINRPC'][adenv]['host'] not in tested_domains:
+				# Add it to the set of tested hosts
+				tested_domains.update([helper.lib.config['WINRPC'][adenv]['host']])
+
+				# If an AD object exists, append an action to delete it from that environment
+				if helper.lib.windows_computer_object_exists(adenv, system['name']):
+					system_actions.append({'id': 'ad.delete', 'desc': 'Delete the Active Directory computer object', 'detail': system['name'] + ' on domain ' + helper.lib.config['WINRPC'][adenv]['domain'], 'data': {'hostname': system['name'], 'env': adenv}})
+
+		except Exception as ex:
+			helper.lib.task_flash(helper, "Warning - An error occured when communicating with Active Directory: " + str(type(ex)) + " - " + str(ex), "warning")
+
+
+	if 'RHN5_ENABLE_DECOM' in wfconfig and wfconfig['RHN5_ENABLE_DECOM']: 
+		## Work out the URL for any RHN systems
+		rhnurl = helper.lib.config['RHN5_URL']
+		if not rhnurl.endswith("/"):
+			rhnurl = rhnurl + "/"
+		rhnurl = rhnurl + "rhn/systems/details/Overview.do?sid="
+
+		## Check if a record exists in RHN for this system
+		try:
+			(rhn,key) = helper.lib.rhn5_connect()
+			rsystems = rhn.system.search.hostname(key,system['name'])
+			if len(rsystems) > 0:
+				for rsys in rsystems:
+					system_actions.append({'id': 'rhn5.delete', 'desc': 'Delete the RHN Satellite object', 'detail': rsys['name'] + ', RHN ID <a target="_blank" href="' + rhnurl + str(rsys['id']) + '">' + str(rsys['id']) + "</a>", 'data': {'id': rsys['id']}})
+		except Exception as ex:
+			helper.lib.task_flash(helper, "Warning - An error occured when communicating with RHN: " + str(ex), "warning")
+
+	## Check if a record exists in SATELLITE 6 for this system.
+	try:
+		try:
+			rsys = helper.lib.satellite6_get_host(system['name'])
+		except requests.exceptions.RequestException as ex:
+			# Check if the error was raised due to not being able to find the system.
+			if ex.response.status_code != 404:
+				helper.lib.task_flash(helper, "Warning - An error occured when communicating with Satellite 6: " + str(ex), "warning")
+		else:
+			saturl = urljoin(helper.lib.config['SATELLITE6_URL'], 'hosts/{0}'.format(rsys['id'])) 
+			system_actions.append({'id': 'satellite6.delete', 'desc': 'Delete the host from Satellite 6', 'detail': '{0}, Satellite 6 ID <a target=""_blank" href="{1}">{2}</a>'.format(rsys['name'], saturl, rsys['id']), 'data': {'id':rsys['id']}})
+				
+	except Exception as ex:
+		helper.lib.task_flash(helper, "Warning - An error occured when communicating with Satellite 6: " + str(ex), "warning")
+
+	## Check sudoldap for sudoHost entries
+	if 'SUDO_LDAP_ENABLE' in wfconfig and wfconfig['SUDO_LDAP_ENABLE']:
+		try:
+			# Connect to LDAP
+			l = ldap.initialize(wfconfig['SUDO_LDAP_URL'])
+			l.bind_s(wfconfig['SUDO_LDAP_USER'], wfconfig['SUDO_LDAP_PASS'])
+
+			# This contains our list of changes and keeps track of sudoHost entries
+			ldap_dn_data = {}
+
+			# Iterate over the search domains
+			for domain_suffix in wfconfig['SUDO_LDAP_SEARCH_DOMAINS']:
+				# Prefix '.' to our domain suffix if necessary
+				if domain_suffix != '' and domain_suffix[0] != '.':
+					domain_suffix = '.' + domain_suffix
+
+				# Get our host entry
+				host = system['name'] + domain_suffix
+
+				formatted_filter = wfconfig['SUDO_LDAP_FILTER'].format(host)
+				results = l.search_s(wfconfig['SUDO_LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, formatted_filter)
+
+				for result in results:
+					dn = result[0]
+
+					# Store the sudoHosts for each DN we find
+					if dn not in ldap_dn_data:
+						ldap_dn_data[dn] = {'cn': result[1]['cn'][0], 'sudoHost': result[1]['sudoHost'], 'action': 'none', 'count': 0, 'remove': []}
+
+					# Keep track of what things will look like after a deletion (so
+					# we can track when a sudoHosts entry becomes empty and as such
+					# the entry should be deleted)
+					for idx, entry in enumerate(ldap_dn_data[dn]['sudoHost']):
+						if entry.lower() == host.lower():
+							ldap_dn_data[dn]['sudoHost'].pop(idx)
+							ldap_dn_data[dn]['action'] = 'modify'
+							ldap_dn_data[dn]['remove'].append(entry)
+
+			# Determine if any of the DNs are now empty
+			for dn in ldap_dn_data:
+				if len(ldap_dn_data[dn]['sudoHost']) == 0:
+					ldap_dn_data[dn]['action'] = 'delete'
+
+			# Print out system_actions
+			for dn in ldap_dn_data:
+				if ldap_dn_data[dn]['action'] == 'modify':
+					for entry in ldap_dn_data[dn]['remove']:
+						system_actions.append({'id': 'sudoldap.update', 'desc': 'Remove sudoHost attribute value ' + entry + ' from ' + ldap_dn_data[dn]['cn'], 'detail': 'Update object ' + dn + ' on ' + wfconfig['SUDO_LDAP_URL'], 'data': {'dn': dn, 'value': entry}})
+				elif ldap_dn_data[dn]['action'] == 'delete':
+					system_actions.append({'id': 'sudoldap.delete', 'desc': 'Delete ' + ldap_dn_data[dn]['cn'] + ' because we\'ve removed its last sudoHost attribute', 'detail': 'Delete ' + dn + ' on ' + wfconfig['SUDO_LDAP_URL'], 'data': {'dn': dn, 'value': ldap_dn_data[dn]['sudoHost']}})
+				
+		except Exception as ex:
+			helper.lib.task_flash(helper, 'Warning - An error occurred when communicating with ' + str(wfconfig['SUDO_LDAP_URL']) + ': ' + str(ex), 'warning')
+
+	## Check graphite for monitoring entries
+	if 'GRAPHITE_DELETE_ENABLE' in wfconfig and wfconfig['GRAPHITE_DELETE_ENABLE']:
+		try:
+			for suffix in wfconfig['GRAPHITE_DELETE_SUFFIXES']:
+				host = system['name'] + suffix
+				url = urljoin(helper.lib.config['GRAPHITE_URL'], '/host/' + system['name'] + suffix)
+				r = requests.get(url, auth=(helper.lib.config['GRAPHITE_USER'], helper.lib.config['GRAPHITE_PASS']))
+				if r.status_code == 200:
+					js = r.json()
+					if type(js) is list and len(js) > 0:
+						system_actions.append({'id': 'graphite.delete', 'desc': 'Remove metrics from Graphite / Grafana', 'detail': 'Delete ' + ','.join(js) + ' from ' + helper.lib.config['GRAPHITE_URL'], 'data': {'host': host}})
+				else:
+					helper.lib.task_flash(helper, 'Warning - CarbonHTTPInterface returned error code ' + str(r.status_code), 'warning')
+
+		except Exception as ex:
+			helper.lib.task_flash(helper, 'Warning - An error occurred when communicating with ' + str(helper.lib.config['GRAPHITE_URL']) + ': ' + str(ex), 'warning')
+
+	# If the config says nothing about creating a ticket, or the config 
+	# says to create a ticket:
+	if 'TICKET_CREATE' not in wfconfig or wfconfig['TICKET_CREATE'] is True:
+		# If there are actions to be performed, add on an action to raise a ticket to ESM (but not for Sandbox!)
+		if len(system_actions) > 0 and system['class'] != "play":
+			system_actions.append({'id': 'ticket.ops', 'desc': 'Raises a ticket with operations to perform manual steps, such as removal from monitoring', 'detail': 'Creates a ticket in ServiceNow and assigns it to ' + wfconfig['TICKET_TEAM'], 'data': {'hostname': system['name']}})
+
+	# Add action to input the decom date.
+	system_actions.append({'id': 'system.update_decom_date', 'desc': 'Update the decommission date in Cortex', 'detail': 'Update the decommission date in Cortex and set it to the current date and time.', 'data': {'system_id': system['id']}})	
+
+	# A success message
+	helper.lib.task_flash(helper, 'Successfully completed a pre-decommission check of System ID: {} ({}). Found {} actions for decommissioning'.format(system_id, system['name'], len(system_actions)), 'success')
+
+	helper.event('system.check.redis', 'Caching system actions in the Redis database')
+	if helper.lib.redis_cache_system_actions(helper.task_id, system_id, system_actions):
+		return True
+	else:
+		helper.end_event(success=False, description='Failed to cache system actions in the Redis database')
+		return False
 
 ################################################################################
 

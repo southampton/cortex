@@ -122,7 +122,7 @@ class TaskHelper(object):
 		return True
 
 	def end_event(self, success=True, description=None, warning=False):
-		"""Ends the currently running event, updating it's description and status as necessaru"""
+		"""Ends the currently running event, updating it's description and status as necessary"""
 
 		if self.event_id == -1:
 			return False
