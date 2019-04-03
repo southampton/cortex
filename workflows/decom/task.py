@@ -70,16 +70,6 @@ def action_check_system(action, helper, wfconfig):
 	else:
 		helper.end_event(success=True, description='System ID: {} ({}) Found'.format(system_id, system['name']))
 
-	## Find the environment that this VM is in based off of the CMDB env
-	systemenv = None
-	if 'cmdb_environment' in system:
-		if system['cmdb_environment'] is not None:
-			for env in helper.lib.config['ENVIRONMENTS']:
-				if env['name'] == system['cmdb_environment']:
-					# We found the environment matching the system
-					systemenv = env
-					break
-
 	## Is the system linked to vmware?
 	if 'vmware_uuid' in system:
 		if system['vmware_uuid'] is not None:
