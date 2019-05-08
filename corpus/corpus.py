@@ -27,6 +27,13 @@ from pyVim.connect import SmartConnect, Disconnect
 from urlparse import urljoin
 from urllib import quote
 
+# For signing
+from itsdangerous import JSONWebSignatureSerializer
+
+##
+## This needs major refactoring...
+##
+
 class Corpus(object):
 	"""Library functions used in both cortex and neocortex and workflow tasks"""
 
@@ -1936,3 +1943,21 @@ class Corpus(object):
 		) 
 
 		r.raise_for_status()
+
+	############################################################################
+
+	def redis_cache_system_actions(self, task_id, system_id, system_actions):
+
+		# Redis Key Prefix
+		prefix = 'decom/{}/'.format(task_id)
+
+		# Turn the actions list into a signed JSON document via itsdangerous
+		signer = JSONWebSignatureSerializer(self.config['SECRET_KEY'])
+		signed_system_actions = signer.dumps(system_actions)
+
+		# Add the signed actions to Redis.
+		self.rdb.setex(prefix + 'actions', 3600, signed_system_actions)
+		# Add the system_id to redis.
+		self.rdb.setex(prefix + 'system', 3600, str(system_id))
+
+		return True	
