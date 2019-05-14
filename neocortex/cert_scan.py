@@ -432,6 +432,11 @@ def run(helper, options):
 	cur = db.cursor(mysql.cursors.DictCursor)
 	cur._defer_warnings = True
 
+	# Get the current timestamp and use this for all the inserts in to the database
+	# so that all the records for this scan appear as the same timestamp as opposed
+	# to possibly over a couple of seconds
+	now = datetime.datetime.now()
+
 	# Iterate over the results, saving to the database
 	add_digests = set()
 	exception_count = 0
@@ -474,7 +479,7 @@ def run(helper, options):
 					for san in entry['sans']:
 						cur.execute("INSERT IGNORE INTO `certificate_sans` (`cert_digest`, `san`) VALUES (%s, %s)", (entry['digest'], san))
 
-				cur.execute("INSERT INTO `scan_result` (`host`, `port`, `cert_digest`, `when`, `chain_state`) VALUES (%s, %s, %s, NOW(), %s)", (entry['host'], entry['port'], entry['digest'], chain_check))
+				cur.execute("INSERT INTO `scan_result` (`host`, `port`, `cert_digest`, `when`, `chain_state`) VALUES (%s, %s, %s, %s, %s)", (entry['host'], entry['port'], entry['digest'], now, chain_check))
 				total_hits = total_hits + 1
 
 	db.commit()
