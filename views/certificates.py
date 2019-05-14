@@ -5,15 +5,19 @@ import cortex.lib.core
 from cortex.lib.user import does_user_have_permission, does_user_have_system_permission
 from cortex.lib.errors import stderr
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
-import os
+import datetime
 import MySQLdb as mysql
 
 ################################################################################
 
-@app.route('/ssl/certificates')
+@app.route('/certificates')
 @cortex.lib.user.login_required
-def ssl_certificates():
+def certificates():
 	"""Displays the certificates list."""
+
+	# Check user permissions
+	if not does_user_have_permission("certificates.view"):
+		abort(403)
 
 	# Get arguments with default
 	self_signed = request.args.get('self_signed', 'any')
@@ -49,12 +53,16 @@ def ssl_certificates():
 	curd.execute(query)
 	certificates = curd.fetchall()
 	
-	return render_template('ssl/certificates.html', active='ssl', title='SSL Certificates', certificates=certificates)
+	return render_template('certificates/certificates.html', active='certificates', title='Certificates', certificates=certificates)
 
-@app.route('/ssl/certificate/<digest>', methods=['GET', 'POST'])
+@app.route('/certificate/<digest>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
-def ssl_certificate_edit(digest):
+def certificate_edit(digest):
 	"""Displays information about a certificate."""
+
+	# Check user permissions
+	if not does_user_have_permission("certificates.view"):
+		abort(403)
 
 	if request.method == 'GET':
 		# Get the list of certificates
@@ -71,7 +79,7 @@ def ssl_certificate_edit(digest):
 		curd.execute('SELECT `host`, `port`, `when`, `chain_state` FROM `scan_result` WHERE `cert_digest` = %s', (digest,))
 		scan_results = curd.fetchall()
 
-		return render_template('ssl/certificate.html', active='ssl', title='SSL Certificates', certificate=certificate, sans=sans, scan_results=scan_results)
+		return render_template('certificates/certificate.html', active='certificates', title='Certificates', certificate=certificate, sans=sans, scan_results=scan_results)
 	elif request.method == 'POST':
 		# Check for an action
 		if 'action' in request.form:
@@ -88,6 +96,50 @@ def ssl_certificate_edit(digest):
 				except Exception as e:
 					flash('Failed to delete certificate: ' + str(e), category='alert-danger')
 
-				return redirect(url_for('ssl_certificates'))
+				return redirect(url_for('certificates'))
 		else:
 			return abort(400)
+
+@app.route('/certificates/statistics')
+@cortex.lib.user.login_required
+def certificate_statistics():
+	"""Displays some statistics about discovered certificates."""
+
+	# Check user permissions
+	if not does_user_have_permission("certificates.stats"):
+		abort(403)
+
+	# Get a cursor
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get the total number of discovered certificates
+	curd.execute('SELECT COUNT(*) AS `count` FROM `certificate`')
+	result = curd.fetchone()
+	total_certs = result['count']
+
+	# Get the top 10 certificate issuers
+	curd.execute('SELECT `issuerCN`, COUNT(*) AS `count` FROM `certificate` GROUP BY `issuerDN` ORDER BY `count` DESC LIMIT 10');
+	result = curd.fetchall()
+	cert_provider_stats = {}
+	for row in result:
+		cert_provider_stats[row['issuerCN']] = row['count']
+	cert_provider_stats['Other'] = total_certs - sum([cert_provider_stats[p] for p in cert_provider_stats])
+
+	# Get the number of certificates expiring per day for the next 30 days
+	cert_expiry_stats = []
+	date_start = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+	for day in range(0, 30):
+		day_start = (date_start + datetime.timedelta(days=day)).strftime("%Y-%m-%d")
+		day_end = (date_start + datetime.timedelta(days=day+1)).strftime("%Y-%m-%d")
+		curd.execute('SELECT COUNT(*) AS `count` FROM `certificate` WHERE DATE(`notAfter`) >= %s AND DATE(`notAfter`) < %s;', (day_start, day_end))
+		result = curd.fetchone()
+		cert_expiry_stats.append({'date': day_start, 'count': result['count']})
+
+	# Get the number of unique certificates seen per day
+	curd.execute('SELECT `when_date`, COUNT(*) AS `count` FROM (SELECT DATE(`when`) AS `when_date`, `cert_digest`, COUNT(*) FROM `scan_result` GROUP BY `when_date`, `cert_digest`) `inner` GROUP BY `when_date` ORDER BY `when_date`;')
+	result = curd.fetchall()
+	cert_seen_stats = {}
+	for row in result:
+		cert_seen_stats[row['when_date']] = row['count']
+
+	return render_template('certificates/statistics.html', active='certificates', title='Certificate Statistics', total_certs=total_certs, cert_provider_stats=cert_provider_stats, cert_expiry_stats=cert_expiry_stats, cert_seen_stats=cert_seen_stats)

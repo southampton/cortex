@@ -1,0 +1,136 @@
+{% extends "layout.html" %}
+{% block head %}
+<link href="{{ url_for('static', filename='css/vendor/c3.min.css') }}" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/c3.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/d3.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+<div class="page-header">
+<h3><i class="fa fa-pie-chart fa-fw"></i> Certificate Statistics</h3>
+</div>
+<div class="container" role="main">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Issuers</h3>
+			</div>
+			<div class="panel-body">
+				<div id="chart_issuers"></div>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Certificates Expiring In 30 Days</h3>
+			</div>
+			<div class="panel-body">
+				<div id="chart_expiring"></div>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Unique Certificates Discovered</h3>
+			</div>
+			<div class="panel-body">
+				<div id="chart_discovered"></div>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	var chart_issuers = c3.generate({
+		bindto: '#chart_issuers',
+		data: {
+			columns: [
+{%- for row in cert_provider_stats %}
+				[{{ row|tojson|safe }}, {{ cert_provider_stats[row] }}],
+{%- endfor %}
+			],
+			type: 'pie'
+		},
+		tooltip: {
+			format: {
+				value: function(value, ratio, id) {
+					return value + ", " + Math.round(ratio*1000)/10 + "%";
+				}
+			}
+		}
+	});
+	var chart_expiring = c3.generate({
+		bindto: '#chart_expiring',
+		data: {
+			columns: [
+				['Certificates Expiring', {%- for entry in cert_expiry_stats -%}{{ entry.count }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
+			],
+			type: 'bar',
+			onclick: function(e) { console.log(chart_expiring.categories()[e.index]); console.log(e.value); },
+		},
+		axis: {
+			x: {
+				label: {
+					text: '',
+					position: 'outer-center',
+				},
+				type: 'category',
+				categories: [{%- for entry in cert_expiry_stats -%}'{{ entry.date }}'{%- if not loop.last -%},{%- endif -%}{%- endfor -%}]
+			},
+			y: {
+				tick: {
+					format: d3.format("d")
+				}
+			},
+		},
+		legend: {
+			show: false
+		}
+		
+	});
+
+	// Note the 12:00:00 is to help prevent timezones drifting the date in to the wrong day
+	var chart_discovered = c3.generate({
+		bindto: '#chart_discovered',
+		data: {
+			x: 'x',
+			xFormat: '%Y-%m-%d %H:%M:%S',
+			columns: [
+				['x', {%- for row in cert_seen_stats -%}'{{ row }} 12:00:00'{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
+				['Certificates', {%- for row in cert_seen_stats -%}{{ cert_seen_stats[row] }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}]
+			]
+		},
+		transition: {
+			duration: 0
+		},
+		tooltip: {
+			format: {
+				title: function (x) { return x.toISOString().replace(/[TZ]/g, ' ').split(' ')[0]; }
+			}
+		},
+		legend: {
+			show: false
+		},
+		axis: {
+			x: {
+				type: 'timeseries',
+				fit: true,
+				tick: {
+					format: '%Y-%m-%d',
+					count: 60,
+					culling: {
+						max: 12
+					}
+				}
+			},
+			y: {
+				tick: {
+					format: d3.format("d")
+				},
+			}
+		}
+	});
+
+
+</script>
+{% endblock %}

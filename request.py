@@ -110,6 +110,13 @@ def context_processor():
 	if does_user_have_permission("puppet.nodes.view"):
 		puppet.append({'link': '*puppet_search', 'title': 'Configuration search', 'icon': 'fa-search'})
 
+	# Set up the certificates menu, based on permissions
+	certificates = []
+	if does_user_have_permission("certificates.view"):
+		certificates.append({'link': url_for('certificates'), 'title': 'Certificates', 'icon': 'fa-certificate'})
+	if does_user_have_permission("certificates.stats"):
+		certificates.append({'link': url_for('certificate_statistics'), 'title': 'Statistics', 'icon': 'fa-pie-chart'})
+
 	# Set up the Admin menu, based on permissions
 	admin = []
 	if does_user_have_permission("classes.view"):
@@ -135,7 +142,7 @@ def context_processor():
 		perms.append({'link': url_for('systems_withperms'), 'title': 'Systems with permissions', 'icon': 'fa-list'})
 
 	# Set injectdata default options.
-	injectdata['menu'] = { 'systems': systems, 'favourites': favourites, 'vmware': vmware, 'puppet': puppet, 'admin': admin, 'perms': perms }
+	injectdata['menu'] = { 'systems': systems, 'favourites': favourites, 'vmware': vmware, 'puppet': puppet, 'certificates': certificates, 'admin': admin, 'perms': perms }
 	injectdata['classic_layout'] = False
 	injectdata['sidebar_expand'] = False
 

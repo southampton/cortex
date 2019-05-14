@@ -494,7 +494,7 @@ def admin_maint():
 	"""Allows the user to kick off scheduled jobs on demand"""
 
 	# Check user permissions
-	if not does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow"]):
+	if not does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow", "maintenance.cert_scan"]):
 		abort(403)
 
 	# Connect to NeoCortex and the database
@@ -506,6 +506,7 @@ def admin_maint():
 	sncache_task_id  = None
 	vmexpire_task_id = None
 	sync_puppet_servicenow_id = None
+	cert_scan_id = None
 
 	if request.method == 'GET':
 		# See which tasks are already running
@@ -520,12 +521,14 @@ def admin_maint():
 				sncache_task_id = task['id']
 			elif task['name'] == '_sync_puppet_servicenow':
 				sync_puppet_servicenow_id = task['id']
+			elif task['name'] == '_cert_scan':
+				cert_scan_id = task['id']
 
 		# Render the page
 		return render_template('admin/maint.html', active='admin',
 			sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id,
 			vmexpire_task_id=vmexpire_task_id, sync_puppet_servicenow_id=sync_puppet_servicenow_id,
-			title="Maintenance Tasks"
+			cert_scan_id=cert_scan_id, title="Maintenance Tasks"
 		)
 
 	else:
@@ -556,6 +559,11 @@ def admin_maint():
 			if not does_user_have_permission("maintenance.sync_puppet_servicenow"):
 				abort(403)
 			task_id = neocortex.start_internal_task(session['username'], 'sync_puppet_servicenow.py', '_sync_puppet_servicenow', description="Sync Puppet facts with ServiceNow")
+		elif module == 'cert_scan':
+			# Check user permissions
+			if not does_user_have_permission("maintenance.cert_scan"):
+				abort(403)
+			task_id = neocortex.start_internal_task(session['username'], 'cert_scan.py', '_cert_scan', description="Scans configured subnets for certificates used for SSL/TLS")
 		else:
 			app.logger.warn('Unknown module name specified when starting task')
 			abort(400)

@@ -24,7 +24,7 @@ import cortex.views.register
 import cortex.views.user
 import cortex.views.perms
 import cortex.views.favourites
-import cortex.views.ssl
+import cortex.views.certificates
 
 # load blueprints
 from cortex.api import api_blueprint

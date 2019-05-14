@@ -828,6 +828,7 @@ Username:             %s
 		  (1, "maintenance.cmdb"), 
 		  (1, "maintenance.expire_vm"),
 		  (1, "maintenance.sync_puppet_servicenow"),
+		  (1, "maintenance.cert_scan"),
 		  (1, "api.register"),
 		  (1, "workflows.all"),
 		  (1, "sysrequests.all.view"),
@@ -836,7 +837,9 @@ Username:             %s
 		  (1, "api.get"),
 		  (1, "api.post"),
 		  (1, "api.put"),
-		  (1, "api.delete")
+		  (1, "api.delete"),
+		  (1, "certificates.view"),
+		  (1, "certificates.stats")
 		""")
 
 		## Close database connection
@@ -882,6 +885,7 @@ Username:             %s
 			{'name': 'maintenance.cmdb',		       'desc': 'Run CMDB maintenance tasks'},
 			{'name': 'maintenance.expire_vm',	       'desc': 'Run the Expire VM maintenance task'},
 			{'name': 'maintenance.sync_puppet_servicenow', 'desc': 'Run the Sync Puppet with Servicenow task'},
+			{'name': 'maintenance.cert_scan',              'desc': 'Run the Certificate Scan task'},
 			{'name': 'api.register',		       'desc': 'Manually register Linux machines (rebuilds / physical machines)'},
 			{'name': 'admin.permissions',		       'desc': 'Modify permissions'},
 			{'name': 'workflows.all',		       'desc': 'Use any workflow or workflow function'},
@@ -896,6 +900,9 @@ Username:             %s
 			{'name': 'api.post',			       'desc': 'Send POST requests to the Cortex API.'},
 			{'name': 'api.put',			       'desc': 'Send PUT requests to the Cortex API.'},
 			{'name': 'api.delete',			       'desc': 'Send DELETE requests to the Cortex API.'},
+
+			{'name': 'certificates.view',                  'desc': 'View the list of discovered certificates and their details.'},
+			{'name': 'certificates.stats',                 'desc': 'View the statistics about certificates.'},
 		]
 
 		self.workflow_permissions = []

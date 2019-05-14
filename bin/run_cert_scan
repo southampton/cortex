@@ -39,7 +39,7 @@ if __name__ == "__main__":
 		neocortex._pyroTimeout = 5
 
 		# Ping the server to ensure it's alive
-		task_id = neocortex.start_internal_task('scheduler', 'ssl_scan.py', '_ssl_scan', description="Scans configured subnets for SSL certificates")
+		task_id = neocortex.start_internal_task('scheduler', 'cert_scan.py', '_cert_scan', description="Scans configured subnets for certificates used for SSL/TLS")
 
 		print "job submitted with ID " + str(task_id)
 	except Exception as ex:

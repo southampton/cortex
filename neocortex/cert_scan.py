@@ -386,21 +386,21 @@ def callback_func(arg):
 
 			if new_percentage != last_percentage:
 				last_percentage = new_percentage
-				g_helper.update_event("Waiting for scan to finish - scanned {0}/{1} ({2})".format(total_results, total_searches, new_percentage))
+				g_helper.update_event("Scanning network for certificates: scanned {0}/{1} ({2})".format(total_results, total_searches, new_percentage))
 		except Exception as e:
 			# Catch all exceptions so we don't break the pool
 			pass
 
 def run(helper, options):
-	"""Run the SSL scan."""
+	"""Run the certificate scan."""
 
 	global total_results, total_searches, g_helper
 
 	# Start all the scans
-	helper.event('ssl_start_scan', 'Initialising SSL scan')
-	ip_pool = Pool(helper.config['SSL_SCAN_WORKERS'])
+	helper.event('cert_start_scan', 'Initialising certificate scan')
+	ip_pool = Pool(helper.config['CERT_SCAN_WORKERS'])
 	results = []
-	for ip_range in helper.config['SSL_SCAN_IP_RANGES']:
+	for ip_range in helper.config['CERT_SCAN_IP_RANGES']:
 		# Make sure this is a unicode object
 		ip_range = unicode(ip_range)
 
@@ -411,23 +411,23 @@ def run(helper, options):
 			ip_range_data = [ipaddress.ip_address(ip_range)]
 
 		for host in ip_range_data:
-			for port in helper.config['SSL_SCAN_PORTS']:
+			for port in helper.config['CERT_SCAN_PORTS']:
 				starttls = None
-				if port in helper.config['SSL_SCAN_PORTS_STARTTLS']:
-					starttls = helper.config['SSL_SCAN_PORTS_STARTTLS'][port]
+				if port in helper.config['CERT_SCAN_PORTS_STARTTLS']:
+					starttls = helper.config['CERT_SCAN_PORTS_STARTTLS'][port]
 				total_searches = total_searches + 1
-				results.append(ip_pool.apply_async(scan_ip, (host, port, helper.config['SSL_SCAN_THREAD_TIMEOUT'], starttls), callback=callback_func))
+				results.append(ip_pool.apply_async(scan_ip, (host, port, helper.config['CERT_SCAN_THREAD_TIMEOUT'], starttls), callback=callback_func))
 	helper.end_event(description='Initialised scanning of ' + str(total_searches) + ' ports')
 
 	# Wait for the scan to finish
-	helper.event('ssl_run_scan', 'Waiting for scan to finish')
+	helper.event('cert_run_scan', 'Scanning network for certificates')
 	g_helper = helper
 	ip_pool.close()
 	ip_pool.join()
 	helper.end_event(description='Scan completed')
 
 	# Connect to the database
-	helper.event('ssl_save_to_db', 'Writing to database...')
+	helper.event('cert_save_to_db', 'Writing to database...')
 	db = helper.db_connect()
 	cur = db.cursor(mysql.cursors.DictCursor)
 	cur._defer_warnings = True
@@ -481,12 +481,18 @@ def run(helper, options):
 	helper.end_event(description='Database updated: ' + str(total_hits) + ' hit(s), ' + str(new_certs) + ' new certificate(s), and ' + str(exception_count) + ' exception(s)')
 
 	## Remove certificates not seen in a scan in a configurable amount of time from the database
-	helper.event('ssl_expire_unseen', 'Expiring certificates not seen in ' + str(helper.config['SSL_SCAN_EXPIRE_NOT_SEEN']) + ' days')
+	helper.event('cert_expire_unseen', 'Expiring certificates not seen in ' + str(helper.config['CERT_SCAN_EXPIRE_NOT_SEEN']) + ' days')
 
 	# Note that we join on a nested select rather than doing a "`key` IN (nested select)" as this is significantly faster.
-	cur.execute('DELETE `certificate` FROM `certificate` INNER JOIN (SELECT `cert_digest` FROM `scan_result` GROUP BY `scan_result`.`cert_digest` HAVING MAX(`when`) < DATE_SUB(NOW(), INTERVAL ' + str(int(helper.config['SSL_SCAN_EXPIRE_NOT_SEEN'])) + ' DAY)) `inner_scan_result` ON `certificate`.`digest` = `inner_scan_result`.`cert_digest`')
+	cur.execute('DELETE `certificate` FROM `certificate` INNER JOIN (SELECT `cert_digest` FROM `scan_result` GROUP BY `scan_result`.`cert_digest` HAVING MAX(`when`) < DATE_SUB(NOW(), INTERVAL ' + str(int(helper.config['CERT_SCAN_EXPIRE_NOT_SEEN'])) + ' DAY)) `inner_scan_result` ON `certificate`.`digest` = `inner_scan_result`.`cert_digest`')
 	certs_removed = cur.rowcount
 	db.commit()
 
-	helper.end_event(description='Expired ' + str(certs_removed) + ' certificates not seen in ' + str(helper.config['SSL_SCAN_EXPIRE_NOT_SEEN']) + ' days')
+	helper.end_event(description='Expired ' + str(certs_removed) + ' certificates not seen in ' + str(helper.config['CERT_SCAN_EXPIRE_NOT_SEEN']) + ' days')
 
+	## Remove scan results not seen in a configurable amount of time from the database
+	helper.event('cert_expire_results', 'Expiring scan results older than ' + str(helper.config['CERT_SCAN_EXPIRE_RESULTS']) + ' days')
+	cur.execute('DELETE FROM `scan_result` WHERE `when` < DATE_SUB(NOW(), INTERVAL ' + str(int(helper.config['CERT_SCAN_EXPIRE_RESULTS'])) + ' DAY)')
+	results_removed = cur.rowcount
+	db.commit()
+	helper.end_event(description='Expired ' + str(results_removed) + ' results older than ' + str(helper.config['CERT_SCAN_EXPIRE_RESULTS']) + ' days')
