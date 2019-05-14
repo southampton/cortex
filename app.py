@@ -9,6 +9,7 @@ import random
 import string
 import logging
 import os.path
+import datetime
 from logging.handlers import SMTPHandler
 from logging.handlers import RotatingFileHandler
 from logging import Formatter
@@ -40,6 +41,7 @@ class CortexFlask(Flask):
 
 		# CSRF token function in templates
 		self.jinja_env.globals['csrf_token'] = self._generate_csrf_token
+		self.jinja_env.globals['utcnow'] = datetime.datetime.utcnow
 
 		# Load the __init__.py config defaults
 		self.config.from_object("cortex.defaultcfg")
@@ -755,6 +757,39 @@ Username:             %s
 		  UNIQUE (`username`, `system_id`),
 		  CONSTRAINT `system_user_favourites_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `certificate` (
+		  `digest` varchar(40) NOT NULL,
+		  `subjectHash` varchar(64),
+		  `subjectCN` text,
+		  `subjectDN` text,
+		  `notBefore` DATETIME,
+		  `notAfter` DATETIME,
+		  `issuerCN` text,
+		  `issuerDN` text,
+		  `notify` tinyint(1) NOT NULL DEFAULT TRUE,
+		  PRIMARY KEY (`digest`),
+		  INDEX `idx_subjectCN` (`subjectCN`(128))
+		) ENGINE=InnoDB DEFAULT CHARSET utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `certificate_sans` (
+		  `cert_digest` varchar(40) NOT NULL,
+		  `san` varchar(255) NOT NULL,
+		  PRIMARY KEY (cert_digest, san),
+		  FOREIGN KEY `ibfk_cert_digest` (`cert_digest`) REFERENCES `certificate` (`digest`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `scan_result` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `host` varchar(128) NOT NULL,
+		  `port` integer(4) NOT NULL,
+		  `cert_digest` varchar(40) NOT NULL,
+		  `when` DATETIME NOT NULL,
+		  `chain_state` tinyint(2) NOT NULL DEFAULT 0,
+		  PRIMARY KEY (`id`),
+		  FOREIGN KEY `ibfk_cert_digest` (`cert_digest`) REFERENCES `certificate` (`digest`) ON DELETE CASCADE,
+		  INDEX `idx_host` (`host`)
+		) ENGINE=InnoDB DEFAULT CHARSET utf8;""")
 
 		cursor.execute("""DROP TABLE IF EXISTS `workflow_perms`""")
 
