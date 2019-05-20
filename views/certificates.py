@@ -2,10 +2,9 @@
 
 from cortex import app
 import cortex.lib.core
-from cortex.lib.user import does_user_have_permission, does_user_have_system_permission
-from cortex.lib.errors import stderr
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
-import datetime
+from cortex.lib.user import does_user_have_permission
+from flask import Flask, request, redirect, url_for, flash, g, abort, render_template, Response
+import datetime, csv, io
 import MySQLdb as mysql
 
 ################################################################################
@@ -55,6 +54,71 @@ def certificates():
 	
 	return render_template('certificates/certificates.html', active='certificates', title='Certificates', certificates=certificates)
 
+################################################################################
+
+def certificates_download_csv_stream(cursor):
+	# Get the first row
+	row = cursor.fetchone()
+
+	# Write CSV header
+	output = io.BytesIO()
+	writer = csv.writer(output)
+	print str(['Digest', 'Subject CN', 'Subject DN', 'Issuer CN', 'Issuer DN', 'Not Valid Before', 'Not Valid After', 'Last Seen', 'Host Count', 'SANs'])
+	writer.writerow(['Digest', 'Subject CN', 'Subject DN', 'Issuer CN', 'Issuer DN', 'Not Valid Before', 'Not Valid After', 'Last Seen', 'Host Count', 'SANs'])
+	yield output.getvalue()
+
+	# Write data
+	while row is not None:
+		# There's no way to flush (and empty) a CSV writer, so we create
+		# a new one each time
+		output = io.BytesIO()
+		writer = csv.writer(output)
+
+		# Write a row to the CSV output
+		outrow = [row['digest'], row['subjectCN'], row['subjectDN'], row['issuerCN'], row['issuerDN'], row['notBefore'], row['notAfter'], row['lastSeen'], row['numHosts'], row['sans']]
+		print str(outrow)
+
+		# For each element in the output row...
+		for i in range(0, len(outrow)):
+			# ...if it's not None...
+			if outrow[i]:
+				# ...if the element is unicode...
+				if type(outrow[i]) == unicode:
+					# ...decode from utf-8 into a ASCII-compatible byte string
+					outrow[i] = outrow[i].encode('utf-8')
+				else:
+					# ...otherwise just chuck it out as a string
+					outrow[i] = str(outrow[i])
+
+		# Write the output row to the stream
+		writer.writerow(outrow)
+		yield output.getvalue()
+
+		# Iterate
+		row = cursor.fetchone()
+
+################################################################################
+
+@app.route('/certificates/download/csv')
+@cortex.lib.user.login_required
+def certificates_download_csv():
+	"""Downloads the list of certificates as a CSV file."""
+
+	# Check user permissions
+	if not does_user_have_permission("certificates.view"):
+		abort(403)
+
+	# Get the list of systems
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`subjectDN` AS `subjectDN`, `certificate`.`issuerCN` AS `issuerCN`, `certificate`.`issuerDN` AS `issuerDN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, MAX(`scan_result`.`when`) AS `lastSeen`, COUNT(DISTINCT `scan_result`.`host`) AS `numHosts`, (SELECT GROUP_CONCAT(`san`) FROM `certificate_sans` WHERE `cert_digest` = `certificate`.`digest`) AS `sans` FROM `certificate` LEFT JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest` GROUP BY `certificate`.`digest`;')
+
+	cortex.lib.core.log(__name__, "certificates.csv.download", "CSV of certificates downloaded")
+
+	# Return the response
+	return Response(certificates_download_csv_stream(curd), mimetype="text/csv", headers={'Content-Disposition': 'attachment; filename="certificates.csv"'})
+
+################################################################################
+
 @app.route('/certificate/<digest>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def certificate_edit(digest):
@@ -91,12 +155,31 @@ def certificate_edit(digest):
 					curd.execute('DELETE FROM `certificate` WHERE `digest` = %s', (digest,))
 					g.db.commit()
 
+					# Log
+					cortex.lib.core.log(__name__, "certificate.delete", "Certificate " + str(digest) + " deleted")
+
 					# Notify user
 					flash('Certificate deleted', category='alert-success')
 				except Exception as e:
 					flash('Failed to delete certificate: ' + str(e), category='alert-danger')
 
 				return redirect(url_for('certificates'))
+			# Toggle notifications action
+			elif request.form['action'] == 'toggle_notify':
+				try:
+					# Update the certificate notify parameter
+					curd = g.db.cursor(mysql.cursors.DictCursor)
+					curd.execute('UPDATE `certificate` SET `notify` = NOT(`notify`) WHERE `digest` = %s', (digest,))
+					g.db.commit()
+
+					# Log
+					cortex.lib.core.log(__name__, "certificate.notify", "Certificate " + str(digest) + " notification changed")
+				except Exception as e:
+					flash('Failed to change certificate notification: ' + str(e), category='alert-danger')
+
+				return redirect(url_for('certificate_edit', digest=digest))
+			else:
+				return abort(400)
 		else:
 			return abort(400)
 

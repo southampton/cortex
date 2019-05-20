@@ -1642,8 +1642,61 @@ class Corpus(object):
 
 	############################################################################
 
+	def servicenow_create_request(self, short_description, description, opened_by, assignment_group, request_type, requested_for=None):
+		"""Creates a request in ServiceNow"""
+
+		# Build some JSON
+		order_data = {}
+		order_data['sysparm_quantity'] = 1
+		if requested_for is not None:
+			order_data['sysparm_requested_for'] = requested_for
+		if opened_by is not None:
+			order_data['opened_by'] = opened_by
+
+		# Make an order to generate a request and request item
+		r = requests.post('https://' + self.config['SN_HOST'] + '/api/sn_sc/servicecatalog/items/' + request_type + '/order_now', auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=order_data)
+		if r is not None and r.status_code == 200:
+			json_response = r.json()
+			request_id = json_response['result']['request_id']
+		else:
+			error = "Failed to open a new request ticket"
+			if r is not None:
+				error = error + ". HTTP Response code: " + str(r.status_code)
+			raise Exception(error)
+
+		# Get the sys_id of the request item for the request we just made
+		r = requests.get('https://' + self.config['SN_HOST'] + '/api/now/v1/table/sc_req_item?sysparm_query=request='  + request_id, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'})
+		if r is not None and r.status_code == 200:
+			json_response = r.json()
+			req_item_id = json_response['result'][0]['sys_id']
+		else:
+			error = "Failed to locate created request item"
+			if r is not None:
+				error = error + ". HTTP Response code: " + str(r.status_code)
+			raise Exception(error)
+
+		# Build some JSON
+		item_data = {}
+		item_data['short_description'] = short_description
+		item_data['description'] = description
+		item_data['assignment_group'] = assignment_group
+
+		# Make a post request to ServiceNow to create the task
+		r = requests.put('https://' + self.config['SN_HOST'] + '/api/now/v1/table/sc_req_item/' + req_item_id, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=item_data)
+
+		# If we succeeded
+		if r is not None and r.status_code >= 200 and r.status_code <= 201:
+			return True
+		else:
+			error = "Failed to update request item"
+			if r is not None:
+				error = error + ". HTTP Response code: " + str(r.status_code)
+			raise Exception(error)
+
+	############################################################################
+
 	def servicenow_create_ticket(self, short_description, description, opened_by, assignment_group):
-		"""Raises a ticket on the CMDB"""
+		"""Raises an incident ticket in ServiceNow"""
 
 		# Build some JSON
 		task_data = {}
@@ -1661,8 +1714,8 @@ class Corpus(object):
 		else:
 			error = "Failed to open a new CMDB ticket"
 			if r is not None:
-				error = error + " HTTP Response code: " + str(r.status_code)
-			raise Exception()
+				error = error + ". HTTP Response code: " + str(r.status_code)
+			raise Exception(error)
 
 	############################################################################
 

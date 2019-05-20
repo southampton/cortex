@@ -1,8 +1,13 @@
 {% extends "layout.html" %}
 {% block body %}
 <div class="page-header">
-<h3><i class="fa fa-fw fa-shield"></i> Certificates</h3>
-<p class="text-muted">The list below shows both automatically detected and manually inserted certificates.</p>
+	<h3>
+		<div class="pull-right">
+			<a href="{{ url_for('certificates_download_csv') }}" class="btn btn-primary"><i class="fa fa-fw fa-download"></i> <span class="hidden-sm hidden-xs">Download CSV</span></a>
+		</div>
+		<i class="fa fa-fw fa-shield"></i> Certificates
+	</h3>
+	<p class="text-muted">The list below shows both automatically detected and manually inserted certificates.</p>
 </div>
 <table class="table table-condensed table-striped" id="data">
 	<thead>

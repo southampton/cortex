@@ -24,6 +24,15 @@
 
 <div class="page-header">
 	<div class="pull-right">
+		<form role="form" method="POST" style="display:inline">
+			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+			<input name="action" type="hidden" value="toggle_notify"/>
+{% if certificate.notify -%}
+			<button type="submit" class="btn btn-success"><i class="fa fa-fw fa-check-square-o"></i> <span class="hidden-sm hidden-xs">Notifications enabled</span></button>
+{% else -%}
+			<button type="submit" class="btn btn-danger"><i class="fa fa-fw fa-square-o"></i> <span class="hidden-sm hidden-xs">Notifications disabled</span></button>
+{% endif -%}
+		</form>
 		<a data-toggle="modal" data-target="#delete" class="btn btn-danger"><i class="fa fa-fw fa-trash"></i> <span class="hidden-sm hidden-xs">Delete certificate</span></a>
 	</div>
 	<h3><i class="fa fa-fw fa-shield"></i> Certificate</h3>

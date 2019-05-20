@@ -4,15 +4,13 @@ import MySQLdb as mysql
 import sys, copy, os, re
 import socket, datetime, sys, select, signal, ipaddress
 
-class EmailNotifier(object):
-	"""Notifies about certificate expiry via email."""
+class Notifier(object):
+	"""Base class for notifiers. Just generates the default message content."""
 
-	def __init__(self, helper, to_address):
+	def __init__(self, helper):
 		self.helper = helper
-		self.to_address = to_address
 
-	def notify(self, digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where):
-		subject = 'Certificate expiry notification'
+	def generate_message_content(self, digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where):
 		contents =            "The following certificate will expire soon. Please see the details below to see if it is required, and renew it if necessary.\n"
 		contents = contents + "\n"
 		contents = contents + "Subject CN: " + str(subject_cn) + "\n"
@@ -26,20 +24,40 @@ class EmailNotifier(object):
 		contents = contents + "\n"
 		contents = contents + "The certificate was discovered in the following locations:\n"
 		contents = contents + '\n'.join(where) + "\n"
+		contents = contents + "\n"
+		contents = contents + "Certificate information available at https://" + self.helper.config['CORTEX_DOMAIN'] + "/certificate/" + digest
 
+		return contents
+
+class EmailNotifier(Notifier):
+	"""Notifies about certificate expiry via email."""
+
+	def __init__(self, helper, to_address):
+		super(EmailNotifier, self).__init__(helper)
+		self.to_address = to_address
+
+	def notify(self, digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where):
+		subject = 'Certificate expiry notification'
+		contents = self.generate_message_content(digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where)
 		self.helper.lib.send_email(self.to_address, subject, contents)
 
-class TicketNotifier(object):
+class TicketNotifier(Notifier):
 	"""Creates a ticket about certificate expiry."""
 
-	def __init__(self, helper, ticket_type, team_name, opener_sys_id):
-		self.helper = helper
+	def __init__(self, helper, ticket_type, team_name, opener_sys_id, request_type=None):
+		super(TicketNotifier, self).__init__(helper)
 		self.ticket_type = ticket_type
 		self.team_name = team_name
 		self.opener_sys_id = opener_sys_id
+		self.request_type = request_type
 
 	def notify(self, digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where):
-		pass
+		short_description = 'Certificate expiry notification'
+		description = self.generate_message_content(digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where)
+		if self.ticket_type == 'incident':
+			self.helper.lib.servicenow_create_ticket(short_description, description, self.opener_sys_id, self.team_name)
+		elif self.ticket_type == 'request':
+			self.helper.lib.servicenow_create_request(short_description, description, self.opener_sys_id, self.team_name, self.request_type, self.opener_sys_id)
 
 def run(helper, options):
 	"""Iterates over the certificates stored in the database and notifies of ones soon to expire."""
@@ -78,10 +96,38 @@ def run(helper, options):
 		if notifyee['type'] == 'email':
 			notifier = EmailNotifier(helper, notifyee['to'])
 		elif notifyee['type'] in ('incident', 'request'):
-			notifier = TicketNotifier(helper, notifyee['type'], notifyee['team_name'], notifyee['opener_sys_id'])
+			if notifyee['type'] == 'request':
+				request_type = notifyee['request_type']
+			else:
+				request_type = None
+			notifier = TicketNotifier(helper, notifyee['type'], notifyee['team_name'], notifyee['opener_sys_id'], request_type)
 		else:
 			helper.end_event(description='Unknown notification type "' + str(notifyee['type']) + '" for notifyee ' + str(notifyee_num), success=False)
 			continue
+
+		# If we have an ignore_issuer_dn option, compile a regex for it
+		if 'ignore_issuer_dn' in notifyee:
+			# We can't have both of these options
+			if 'require_issuer_dn' in notifyee:
+				helper.end_event(description='Option require_issuer_dn conflicts with ignore_issuer_dn regex for notifyee ' + str(notifyee_num), success=False)
+				continue
+			try:
+				ignore_issuer_dn = re.compile(notifyee['ignore_issuer_dn'])
+			except Exception as e:
+				helper.end_event(description='Invalid ignore_issuer_dn regex for notifyee ' + str(notifyee_num), success=False)
+				continue
+		else:
+			ignore_issuer_dn = None
+
+		# If we have an require_issuer_dn option, compile a regex for it
+		if 'require_issuer_dn' in notifyee:
+			try:
+				require_issuer_dn = re.compile(notifyee['require_issuer_dn'])
+			except Exception as e:
+				helper.end_event(description='Invalid require_issuer_dn regex for notifyee ' + str(notifyee_num), success=False)
+				continue
+		else:
+			require_issuer_dn = None
 
 		# Get the notification times
 		days_left = notifyee['days_left']
@@ -98,18 +144,21 @@ def run(helper, options):
 			while row is not None:
 				# If we're supposed to be notifying on this certificate
 				if row['notify'] != 0:
-					# Keep a count of how many notifications we've sent to this notifyee
-					notifyee_cert_count = notifyee_cert_count + 1
+					# If we've not got a ignore_issuer_dn option, or if we do have one and this issuer DN doesn't match
+					# Additionally, if we've got a require_issuer_dn option, only match on rows where the issuer DN matches
+					if (ignore_issuer_dn is None or ignore_issuer_dn.search(row['issuerDN']) is None) and (require_issuer_dn is None or require_issuer_dn.search(row['issuerDN'])):
+						# Keep a count of how many notifications we've sent to this notifyee
+						notifyee_cert_count = notifyee_cert_count + 1
 
-					# Get the SANs for this certificate
-					cert_cur = db.cursor(mysql.cursors.DictCursor)
-					cert_cur.execute('SELECT `san` FROM `certificate_sans` WHERE `cert_digest` = %s', (row['digest'],))
-					sans = [cert_san['san'] for cert_san in cert_cur.fetchall()]
+						# Get the SANs for this certificate
+						cert_cur = db.cursor(mysql.cursors.DictCursor)
+						cert_cur.execute('SELECT `san` FROM `certificate_sans` WHERE `cert_digest` = %s', (row['digest'],))
+						sans = [cert_san['san'] for cert_san in cert_cur.fetchall()]
 
-					cert_cur.execute('SELECT `host`, `port` FROM `scan_result` WHERE `cert_digest`= %s AND `when` = (SELECT MAX(`when`) FROM `scan_result` WHERE `cert_digest` = %s)', (row['digest'], row['digest']))
-					where = [cert_where['host'] + ':' + str(cert_where['port']) for cert_where in cert_cur.fetchall()]
+						cert_cur.execute('SELECT `host`, `port` FROM `scan_result` WHERE `cert_digest`= %s AND `when` = (SELECT MAX(`when`) FROM `scan_result` WHERE `cert_digest` = %s)', (row['digest'], row['digest']))
+						where = [cert_where['host'] + ':' + str(cert_where['port']) for cert_where in cert_cur.fetchall()]
 
-					notifier.notify(row['digest'], row['subjectCN'], row['subjectDN'], row['issuerCN'], row['issuerDN'], row['notBefore'], row['notAfter'], days, sans, where)
+						notifier.notify(row['digest'], row['subjectCN'], row['subjectDN'], row['issuerCN'], row['issuerDN'], row['notBefore'], row['notAfter'], days, sans, where)
 				
 				row = cur.fetchone()
 
