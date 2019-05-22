@@ -226,6 +226,13 @@ def does_user_have_permission(perm, user=None):
 		app.logger.debug("User " + str(user) + " did not have permission(s) " + str(perm))
 		return False
 
+	# There are situations (such as when pages are displayed during an error 
+	# handler) that before_request isn't called, so in those cases assume no
+	# permissions
+	if 'db' not in g:
+		app.logger.warn('Database not present in permission check!')
+		return False
+
 	app.logger.debug("Calculating permissions for user " + str(user) + ": " + str(perm))
 
 	# Query role_who joined to role_perms to see which permissions a user
@@ -306,6 +313,13 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 	if perm is not None:
 		if does_user_have_permission(perm,user):
 			return True
+
+	# There are situations (such as when pages are displayed during an error 
+	# handler) that before_request isn't called, so in those cases assume no
+	# permissions
+	if 'db' not in g:
+		app.logger.warn('Database not present in system permission check!')
+		return False
 
 	app.logger.debug("Checking system permissions for user " + str(user) + " on system " + str(system_id))
 

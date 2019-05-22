@@ -6,6 +6,8 @@ from cortex.lib.user import does_user_have_permission
 from flask import Flask, request, redirect, url_for, flash, g, abort, render_template, Response
 import datetime, csv, io
 import MySQLdb as mysql
+import OpenSSL as openssl
+from cortex.corpus import x509utils
 
 ################################################################################
 
@@ -45,7 +47,7 @@ def certificates():
 		where_clause = ' WHERE ' + (' AND '.join(query_parts))
 
 	# Build query
-	query = 'SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, `certificate`.`issuerCN` AS `issuerCN`, MAX(`scan_result`.`when`) AS `lastSeen`, COUNT(DISTINCT `scan_result`.`host`) AS `numHosts` FROM `certificate` JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest`' + where_clause + ' GROUP BY `certificate`.`digest`'
+	query = 'SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, `certificate`.`issuerCN` AS `issuerCN`, MAX(`scan_result`.`when`) AS `lastSeen`, COUNT(DISTINCT `scan_result`.`host`) AS `numHosts` FROM `certificate` LEFT JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest`' + where_clause + ' GROUP BY `certificate`.`digest`'
 
 	# Get the list of certificates
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -53,6 +55,102 @@ def certificates():
 	certificates = curd.fetchall()
 	
 	return render_template('certificates/certificates.html', active='certificates', title='Certificates', certificates=certificates)
+
+################################################################################
+
+def add_openssl_certificate(cert):
+	digest = cert.digest('SHA1').replace(':', '').lower()
+	subject = cert.get_subject()
+	subjectHash = cert.subject_name_hash()
+	issuer = cert.get_issuer()
+	notAfter = x509utils.parse_zulu_time(cert.get_notAfter())
+	notBefore = x509utils.parse_zulu_time(cert.get_notBefore())
+	sans = x509utils.get_subject_alt_names(cert)
+
+	# Extract CN and DNs
+	if isinstance(subject, openssl.crypto.X509Name):
+		subjectCN = subject.CN
+		subjectDN = str(subject)[19:-2]
+	else:
+		subjectCN = None
+		subjectDN = None
+	if isinstance(issuer, openssl.crypto.X509Name):
+		issuerCN = issuer.CN
+		issuerDN = str(issuer)[19:-2]
+	else:
+		issuerCN = None
+		issuerDN = None
+
+	# Write the certificate to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('INSERT INTO `certificate` (`digest`, `subjectHash`, `subjectCN`, `subjectDN`, `notBefore`, `notAfter`, `issuerCN`, `issuerDN`, `notify`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 1)', (digest, subjectHash, subjectCN, subjectDN, notBefore, notAfter, issuerCN, issuerDN))
+	for san in sans:
+		curd.execute('INSERT INTO `certificate_sans` (`digest`, `san`) VALUES (%s, %s)', (digest, san))
+	g.db.commit()
+
+	return digest
+
+################################################################################
+
+@app.route('/certificates/add', methods=['GET', 'POST'])
+@cortex.lib.user.login_required
+def certificates_add():
+	"""Adds a certificate to the list of tracked certificates."""
+
+	if not does_user_have_permission("certificates.add"):
+		abort(403)
+
+	if request.method == 'GET':
+		# Just show the form
+		return render_template('certificates/add.html', active='certificates', title='Add Certificate')
+	elif request.method == 'POST':
+		# Extract the certificate from the request
+		if 'uploaded_cert' in request.files:
+			# Read the contents (maximum 1MB so we don't DoS ourselves with large files)
+			cert_data = request.files['uploaded_cert'].read(1048576)
+		elif 'pasted_cert' in request.form:
+			cert_data = request.form['pasted_cert']
+		else:
+			abort(400)
+			
+		last_exception = None
+		openssl_cert = None
+
+		# Try loading the certificate as PEM-encoded X509
+		try:
+			openssl_cert = openssl.crypto.load_certificate(openssl.crypto.FILETYPE_PEM, cert_data)
+		except Exception as e:
+			last_exception = e
+
+		# If that failed and a cert was uploaded rather than pasted,
+		# then try PKCS12 instead
+		if 'uploaded_cert' in request.files and openssl_cert is None:
+			try:
+				openssl_p12_cert = openssl.crypto.load_pkcs12(cert_data)
+				openssl_cert = openssl_p12_cert.get_certificate()
+				if openssl_cert is None:
+					openssl_cert = openssl_p12_cert.get_ca_certificates()[0]
+					if openssl_cert is None:
+						raise('No certificates found in PKCS12 file')
+			except Exception as e:
+				last_exception = e
+
+		# If we failed to read the certificate, return an error
+		if openssl_cert is None:
+			flash('Error reading certificate: ' + str(last_exception), 'alert-danger')
+			return render_template('certificates/add.html', active='certificates', title='Add Certificate')
+
+		try:
+			cert_digest = add_openssl_certificate(openssl_cert)
+		except Exception as e:
+			flash('Error adding certificate: ' + str(e), 'alert-danger')
+			return render_template('certificates/add.html', active='certificates', title='Add Certificate')
+
+		flash('Certificate added', category='alert-success')
+		return redirect(url_for('certificate_edit', digest=cert_digest))
+	else:
+		# Shouldn't get here
+		abort(400)
 
 ################################################################################
 
@@ -131,7 +229,7 @@ def certificate_edit(digest):
 	if request.method == 'GET':
 		# Get the list of certificates
 		curd = g.db.cursor(mysql.cursors.DictCursor)
-		curd.execute('SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`subjectDN` as `subjectDN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, `certificate`.`issuerCN` AS `issuerCN`, `certificate`.`issuerDN` as `issuerDN`, `certificate`.`notify`, MAX(`scan_result`.`when`) AS `lastSeen` FROM `certificate` JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest` WHERE `certificate`.`digest` = %s GROUP BY `certificate`.`digest`', (digest,))
+		curd.execute('SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`subjectDN` as `subjectDN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, `certificate`.`issuerCN` AS `issuerCN`, `certificate`.`issuerDN` as `issuerDN`, `certificate`.`notify`, MAX(`scan_result`.`when`) AS `lastSeen` FROM `certificate` LEFT JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest` WHERE `certificate`.`digest` = %s GROUP BY `certificate`.`digest`', (digest,))
 		certificate = curd.fetchone()
 
 		if certificate is None:

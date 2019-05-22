@@ -49,6 +49,10 @@ class CortexFlask(Flask):
 		# Load system config file
 		self.config.from_pyfile('/data/cortex/cortex.conf')
 
+		# Make TEMPLATES_AUTO_RELOAD work (we've touch the Jinja environment). See resolved Flask issue #1907
+		if 'TEMPLATES_AUTO_RELOAD' in self.config and self.config['TEMPLATES_AUTO_RELOAD']:
+			self.jinja_env.auto_reload = True
+
 		# Set up logging to file
 		if self.config['FILE_LOG'] == True:
 			file_handler = RotatingFileHandler(self.config['LOG_DIR'] + '/' + self.config['LOG_FILE'], 'a', self.config['LOG_FILE_MAX_SIZE'], self.config['LOG_FILE_MAX_FILES'])
@@ -839,7 +843,8 @@ Username:             %s
 		  (1, "api.put"),
 		  (1, "api.delete"),
 		  (1, "certificates.view"),
-		  (1, "certificates.stats")
+		  (1, "certificates.stats"),
+		  (1, "certificates.add")
 		""")
 
 		## Close database connection
@@ -901,8 +906,9 @@ Username:             %s
 			{'name': 'api.put',			       'desc': 'Send PUT requests to the Cortex API.'},
 			{'name': 'api.delete',			       'desc': 'Send DELETE requests to the Cortex API.'},
 
-			{'name': 'certificates.view',                  'desc': 'View the list of discovered certificates and their details.'},
-			{'name': 'certificates.stats',                 'desc': 'View the statistics about certificates.'},
+			{'name': 'certificates.view',                  'desc': 'View the list of discovered certificates and their details'},
+			{'name': 'certificates.stats',                 'desc': 'View the statistics about certificates'},
+			{'name': 'certificates.add',                   'desc': 'Adds a certificate to the list of tracked certificates'},
 		]
 
 		self.workflow_permissions = []

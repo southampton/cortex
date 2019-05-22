@@ -27,6 +27,8 @@ from pyVim.connect import SmartConnect, Disconnect
 from urlparse import urljoin
 from urllib import quote
 
+import x509utils
+
 class Corpus(object):
 	"""Library functions used in both cortex and neocortex and workflow tasks"""
 
@@ -51,9 +53,10 @@ class Corpus(object):
 			return self.message
 
 	def __init__(self, db, config):
-		self.db     = db
-		self.config = config
-		self.rdb    = self._connect_redis()
+		self.db        = db
+		self.config    = config
+		self.rdb       = self._connect_redis()
+		self.x509utils = x509utils
 
 		# Regex for TSM matches. Matches nodenames of the format:
 		#  FQDN
