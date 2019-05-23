@@ -79,8 +79,18 @@
 		</div>
 	</form>
 </div>
+<h3>Notes</h3>
+<div class="row">
+	<div class="col-sm-12">
+		<p>Additional notes about the certificate can be added in the box below.</p>
+		<textarea class="form-control" id="notes" name="notes" rows="3">{{ certificate.notes or "" }}</textarea>
+	</div>
+	<div class="col-sm-12" style="margin-top: 10px">
+		<button id="notes-save" class="btn btn-sm btn-success">Save Notes</button><span id="notes-info" style="padding-left:10px;display:none">Notes changed. Remember to save!</span>
+	</div>
+</div>
 <h3>Usage</h3>
-<p>The table below shows IP addresses and port numbers where this certificate has been detected as in use, and the times at which it was detected.</p>
+<p>The table below shows IP addresses and port numbers where this certificate has been detected as in use, and the times at which it was detected. Certificates that were manually added may show no results here if they're not used for SSL/TLS in a range scanned by Cortex.</p>
 <table class="table table-condensed table-striped" id="data">
 	<thead>
 		<tr>
@@ -110,5 +120,41 @@ $(function() {
 		"columns": [null, null, null]
 	});
 });
+$('#notes').keypress(function() {
+	var ni = $('#notes-info')
+	$('#notes-info').finish();
+	if (ni.css('display') == 'none')
+	{
+		$('#notes-info').removeClass('text-success text-danger text-warning');
+		$('#notes-info').addClass('text-warning');
+		$('#notes-info').text('Notes changed - remember to save!');
+		$('#notes-info').css('display', '');
+	}
+});
+$('#notes-save').click(function() {
+	$('#notes-info').removeClass('text-success text-danger text-warning');
+	$('#notes-info').text('Saving...');
+	$('#notes-info').finish();
+	$('#notes-info').css('display', '');
+	$.ajax({
+		method: 'POST',
+		data: { '_csrf_token': '{{ csrf_token() }}', 'notes': $('#notes').val(), 'action': 'save_notes' },
+		success: function() {
+			$('#notes-info').removeClass('text-success text-danger text-warning');
+			$('#notes-info').addClass('text-success');
+			$('#notes-info').text('Saved');
+			$('#notes-info').finish();
+			$('#notes-info').css('display', '');
+			$('#notes-info').delay(1500).fadeOut(1500);
+		},
+		error: function() {
+			$('#notes-info').removeClass('text-success text-danger text-warning');
+			$('#notes-info').addClass('text-danger');
+			$('#notes-info').text('Error saving notes');
+			$('#notes-info').finish();
+			$('#notes-info').css('display', '');
+		}
+	});
+})
 </script>
 {% endblock %}

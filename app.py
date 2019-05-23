@@ -772,6 +772,7 @@ Username:             %s
 		  `issuerCN` text,
 		  `issuerDN` text,
 		  `notify` tinyint(1) NOT NULL DEFAULT TRUE,
+		  `notes` TEXT NOT NULL,
 		  PRIMARY KEY (`digest`),
 		  INDEX `idx_subjectCN` (`subjectCN`(128))
 		) ENGINE=InnoDB DEFAULT CHARSET utf8;""")

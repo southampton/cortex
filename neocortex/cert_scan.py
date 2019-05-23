@@ -473,7 +473,7 @@ def run(helper, options):
 
 					# Stick it in the database
 					new_certs = 0
-					cur.execute("INSERT IGNORE INTO `certificate` (`digest`, `subjectHash`, `subjectCN`, `subjectDN`, `notBefore`, `notAfter`, `issuerCN`, `issuerDN`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (entry['digest'], entry['subject_hash'], entry['subject_cn'], entry['subject_dn'], entry['notBefore'], entry['notAfter'], entry['issuer_cn'], entry['issuer_dn']))
+					cur.execute("INSERT IGNORE INTO `certificate` (`digest`, `subjectHash`, `subjectCN`, `subjectDN`, `notBefore`, `notAfter`, `issuerCN`, `issuerDN`, `notes`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", (entry['digest'], entry['subject_hash'], entry['subject_cn'], entry['subject_dn'], entry['notBefore'], entry['notAfter'], entry['issuer_cn'], entry['issuer_dn'], ""))
 
 					# Stick the SANs in the database
 					for san in entry['sans']:
