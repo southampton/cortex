@@ -319,6 +319,9 @@ def scan_ip(host, port, timeout, starttls=None):
 		notafter_time = parse_zulu_time(peer_cert.get_notAfter())
 		notbefore_time = parse_zulu_time(peer_cert.get_notBefore())
 
+		# Get certificate details: key size
+		key_size = peer_cert.get_pubkey().bits()
+
 		# Get list of subjectAltNames
 		sans = []
 		for i in range(0, peer_cert.get_extension_count()):
@@ -345,7 +348,7 @@ def scan_ip(host, port, timeout, starttls=None):
 			else:
 				first_chain_cert = ""
 
-		result.update({'discovered': 1, 'protocol': sock.get_protocol_version_name(), 'cipher': sock.get_cipher_name(), 'notAfter': notafter_time, 'notBefore': notbefore_time, 'subject_cn': peer_cert_name, 'subject_dn': peer_cert_dn, 'issuer_cn': issuer_cert_name, 'issuer_dn': issuer_cert_dn, 'serial': peer_cert.get_serial_number(), 'subject_hash': peer_cert.subject_name_hash(), 'digest': peer_cert.digest('SHA1').replace(':', '').lower(), 'sans': sans, 'first_chain_cert': first_chain_cert})
+		result.update({'discovered': 1, 'protocol': sock.get_protocol_version_name(), 'cipher': sock.get_cipher_name(), 'notAfter': notafter_time, 'notBefore': notbefore_time, 'subject_cn': peer_cert_name, 'subject_dn': peer_cert_dn, 'issuer_cn': issuer_cert_name, 'issuer_dn': issuer_cert_dn, 'serial': peer_cert.get_serial_number(), 'subject_hash': peer_cert.subject_name_hash(), 'digest': peer_cert.digest('SHA1').replace(':', '').lower(), 'sans': sans, 'first_chain_cert': first_chain_cert, 'key_size': key_size})
 		return result
 
 	except socket.timeout as e1:
@@ -473,7 +476,7 @@ def run(helper, options):
 
 					# Stick it in the database
 					new_certs = 0
-					cur.execute("INSERT IGNORE INTO `certificate` (`digest`, `subjectHash`, `subjectCN`, `subjectDN`, `notBefore`, `notAfter`, `issuerCN`, `issuerDN`, `notes`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", (entry['digest'], entry['subject_hash'], entry['subject_cn'], entry['subject_dn'], entry['notBefore'], entry['notAfter'], entry['issuer_cn'], entry['issuer_dn'], ""))
+					cur.execute("INSERT IGNORE INTO `certificate` (`digest`, `subjectHash`, `subjectCN`, `subjectDN`, `notBefore`, `notAfter`, `issuerCN`, `issuerDN`, `notes`, `keySize`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (entry['digest'], entry['subject_hash'], entry['subject_cn'], entry['subject_dn'], entry['notBefore'], entry['notAfter'], entry['issuer_cn'], entry['issuer_dn'], "", entry['key_size']))
 
 					# Stick the SANs in the database
 					for san in entry['sans']:

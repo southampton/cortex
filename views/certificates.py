@@ -47,7 +47,7 @@ def certificates():
 		where_clause = ' WHERE ' + (' AND '.join(query_parts))
 
 	# Build query
-	query = 'SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`subjectDN` AS `subjectDN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, `certificate`.`issuerCN` AS `issuerCN`, `certificate`.`issuerDN` AS `issuerDN`, MAX(`scan_result`.`when`) AS `lastSeen`, COUNT(DISTINCT `scan_result`.`host`) AS `numHosts` FROM `certificate` LEFT JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest`' + where_clause + ' GROUP BY `certificate`.`digest`'
+	query = 'SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`subjectDN` AS `subjectDN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, `certificate`.`issuerCN` AS `issuerCN`, `certificate`.`issuerDN` AS `issuerDN`, MAX(`scan_result`.`when`) AS `lastSeen`, COUNT(DISTINCT `scan_result`.`host`) AS `numHosts`, `certificate`.`keySize` AS `keySize` FROM `certificate` LEFT JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest`' + where_clause + ' GROUP BY `certificate`.`digest`'
 
 	# Get the list of certificates
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -66,6 +66,7 @@ def add_openssl_certificate(cert):
 	notAfter = x509utils.parse_zulu_time(cert.get_notAfter())
 	notBefore = x509utils.parse_zulu_time(cert.get_notBefore())
 	sans = x509utils.get_subject_alt_names(cert)
+	keySize = cert.get_pubkey().bits()
 
 	# Extract CN and DNs
 	if isinstance(subject, openssl.crypto.X509Name):
@@ -83,7 +84,7 @@ def add_openssl_certificate(cert):
 
 	# Write the certificate to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('INSERT INTO `certificate` (`digest`, `subjectHash`, `subjectCN`, `subjectDN`, `notBefore`, `notAfter`, `issuerCN`, `issuerDN`, `notify`, `notes`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)', (digest, subjectHash, subjectCN, subjectDN, notBefore, notAfter, issuerCN, issuerDN, 1, ""))
+	curd.execute('INSERT INTO `certificate` (`digest`, `subjectHash`, `subjectCN`, `subjectDN`, `notBefore`, `notAfter`, `issuerCN`, `issuerDN`, `notify`, `notes`, `keySize`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "%s")', (digest, subjectHash, subjectCN, subjectDN, notBefore, notAfter, issuerCN, issuerDN, 1, "", keySize))
 	for san in sans:
 		curd.execute('INSERT INTO `certificate_sans` (`digest`, `san`) VALUES (%s, %s)', (digest, san))
 	g.db.commit()
@@ -161,7 +162,7 @@ def certificates_download_csv_stream(cursor):
 	# Write CSV header
 	output = io.BytesIO()
 	writer = csv.writer(output)
-	writer.writerow(['Digest', 'Subject CN', 'Subject DN', 'Issuer CN', 'Issuer DN', 'Not Valid Before', 'Not Valid After', 'Last Seen', 'Host Count', 'SANs', 'Notes'])
+	writer.writerow(['Digest', 'Subject CN', 'Subject DN', 'Issuer CN', 'Issuer DN', 'Not Valid Before', 'Not Valid After', 'Last Seen', 'Host Count', 'SANs', 'Notes', 'Key Size'])
 	yield output.getvalue()
 
 	# Write data
@@ -172,7 +173,7 @@ def certificates_download_csv_stream(cursor):
 		writer = csv.writer(output)
 
 		# Write a row to the CSV output
-		outrow = [row['digest'], row['subjectCN'], row['subjectDN'], row['issuerCN'], row['issuerDN'], row['notBefore'], row['notAfter'], row['lastSeen'], row['numHosts'], row['sans'], row['notes']]
+		outrow = [row['digest'], row['subjectCN'], row['subjectDN'], row['issuerCN'], row['issuerDN'], row['notBefore'], row['notAfter'], row['lastSeen'], row['numHosts'], row['sans'], row['notes'], row['keySize']]
 
 		# For each element in the output row...
 		for i in range(0, len(outrow)):
@@ -206,7 +207,7 @@ def certificates_download_csv():
 
 	# Get the list of systems
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`subjectDN` AS `subjectDN`, `certificate`.`issuerCN` AS `issuerCN`, `certificate`.`issuerDN` AS `issuerDN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, MAX(`scan_result`.`when`) AS `lastSeen`, COUNT(DISTINCT `scan_result`.`host`) AS `numHosts`, (SELECT GROUP_CONCAT(`san`) FROM `certificate_sans` WHERE `cert_digest` = `certificate`.`digest`) AS `sans`, `certificate`.`notes` AS `notes` FROM `certificate` LEFT JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest` GROUP BY `certificate`.`digest`;')
+	curd.execute('SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`subjectDN` AS `subjectDN`, `certificate`.`issuerCN` AS `issuerCN`, `certificate`.`issuerDN` AS `issuerDN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, MAX(`scan_result`.`when`) AS `lastSeen`, COUNT(DISTINCT `scan_result`.`host`) AS `numHosts`, (SELECT GROUP_CONCAT(`san`) FROM `certificate_sans` WHERE `cert_digest` = `certificate`.`digest`) AS `sans`, `certificate`.`notes` AS `notes`, `certificate`.`keySize` AS `keySize` FROM `certificate` LEFT JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest` GROUP BY `certificate`.`digest`;')
 
 	cortex.lib.core.log(__name__, "certificates.csv.download", "CSV of certificates downloaded")
 
@@ -227,7 +228,7 @@ def certificate_edit(digest):
 	if request.method == 'GET':
 		# Get the list of certificates
 		curd = g.db.cursor(mysql.cursors.DictCursor)
-		curd.execute('SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`subjectDN` as `subjectDN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, `certificate`.`issuerCN` AS `issuerCN`, `certificate`.`issuerDN` as `issuerDN`, `certificate`.`notify`, MAX(`scan_result`.`when`) AS `lastSeen`, `certificate`.`notes` AS `notes` FROM `certificate` LEFT JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest` WHERE `certificate`.`digest` = %s GROUP BY `certificate`.`digest`', (digest,))
+		curd.execute('SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`subjectDN` as `subjectDN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, `certificate`.`issuerCN` AS `issuerCN`, `certificate`.`issuerDN` as `issuerDN`, `certificate`.`notify`, MAX(`scan_result`.`when`) AS `lastSeen`, `certificate`.`notes` AS `notes`, `certificate`.`keySize` AS `keySize` FROM `certificate` LEFT JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest` WHERE `certificate`.`digest` = %s GROUP BY `certificate`.`digest`', (digest,))
 		certificate = curd.fetchone()
 
 		if certificate is None:
