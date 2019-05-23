@@ -1,4 +1,9 @@
 {% extends "layout.html" %}
+{% block head %}
+		<style type="text/css">
+			abbr[title] { border-bottom: none; cursor: pointer }
+		</style>
+{% endblock %}
 {% block body %}
 <div class="page-header">
 	<h3>
@@ -13,23 +18,23 @@
 <table class="table table-condensed table-striped" id="data">
 	<thead>
 		<tr>
-			<th>Subject CN</th>
-			<th>Issuer CN</th>
-			<th>Valid From</th>
-			<th>Expiry</th>
-			<th>Last Seen</th>
-			<th>Host Count</th>
+			<th title="The CN of the Subject of the certificate. Hover over a row to see the full DN.">Subject CN</th>
+			<th title="The CN of the CA that issued the certificate. Hover over a row to see the full DN.">Issuer CN</th>
+			<th title="The start date of the certificate. Hover over a row to see the full date and time.">Valid From</th>
+			<th title="The expiry date of the certificate. Hover over a row to see the full date and time.">Expiry</th>
+			<th title="The last time the certificate was seen during a scan. Hover over a row to see the full date and time.">Last Seen</th>
+			<th title="Number of unique locations (i.e. IP:Port) presenting this certificate on the network">Host Count</th>
 			<th></th>
 		</tr>
 	</thead>
 	<tbody>
 {%- for cert in certificates %}
 		<tr {% if cert.notAfter < utcnow() %}style="color: #c22" {% endif %}data-digest="{{ cert.digest }}">
-			<td>{{ cert.subjectCN }}</td>
-			<td>{{ cert.issuerCN }}</td>
-			<td>{{ cert.notBefore }}</td>
-			<td>{{ cert.notAfter }}</td>
-			<td>{{ cert.lastSeen }}</td>
+			<td><abbr title="{{ cert.subjectDN }}">{{ cert.subjectCN }}</abbr></td>
+			<td><abbr title="{{ cert.issuerDN }}">{{ cert.issuerCN }}</abbr></td>
+			<td>{% if cert.notBefore %}<abbr title="{{ cert.notBefore }}">{{ cert.notBefore.strftime("%Y-%m-%d") }}</abbr>{% else %}Unknown{% endif %}</td>
+			<td>{% if cert.notAfter %}<abbr title="{{ cert.notAfter }}">{{ cert.notAfter.strftime("%Y-%m-%d") }}</abbr>{% else %}Unknown{% endif %}</td>
+			<td>{% if cert.lastSeen %}<abbr title="{{ cert.lastSeen }}">{{ cert.lastSeen.strftime("%Y-%m-%d") }}</abbr>{% else %}Unknown{% endif %}</td>
 			<td>{{ cert.numHosts }}</td>
 			<td><a href="{{url_for('certificate_edit',digest=cert.digest) }}" class="btn btn-default btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a></td>
 		</tr>
@@ -44,6 +49,7 @@ $(function() {
 		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 		"pageLength": 15,
 		"order": [[0, 'asc']],
+		"stateSave": true,
 		"columns": [null, null, null, null, null, null, { "orderable": false, "targets": 0 }]
 	});
 });
