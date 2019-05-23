@@ -99,14 +99,16 @@
 	<thead>
 		<tr>
 			<th>Source</th>
+			<th>DNS Lookup</th>
 			<th>Detection timestamp</th>
 			<th>Chain state</th>
 		</tr>
 	</thead>
 	<tbody>
 {%- for result in scan_results %}
-		<tr {% if result.chain_state == 1 %}class="text-warning" {% elif result.chain_state == 2 %}class="text-danger" {% endif %}>
-			<td>{{ result.host }}:{{ result.port }}</td>
+		<tr class="scan_entry{% if result.chain_state == 1 %} text-warning{% elif result.chain_state == 2 %} text-danger{% endif %}">
+			<td class="scan_source">{{ result.host }}:{{ result.port }}</td>
+			<td class="scan_dns_lookup"></td>
 			<td>{{ result.when }}</td>
 			<td>{% if result.chain_state == 0 %}Correct{% elif result.chain_state == 1 %}Missing{% elif result.chain_state == 2 %}Invalid{% endif %}</td>
 		</tr>
@@ -116,13 +118,80 @@
 <script type="text/javascript">
 // Define variable for nodes table.
 var nodes;
+var dns_cache = {};
+function set_lookup_from_cache(el, ip, attempt)
+{
+	// If still pending
+	if (dns_cache[ip] == '*')
+	{
+		// If we've not retried too many times
+		if (attempt < 8)
+		{
+			// Wait and try again
+			window.setTimeout(function() { set_lookup_from_cache(el, ip, attempt + 1); }, attempt * 100);
+		}
+	}
+	else
+	{
+		// Entry ins now in cache, set it
+		$(el).find('td.scan_dns_lookup').text(dns_cache[ip]);
+	}
+}
+
+function do_dns_lookups()
+{
+	$('tr.scan_entry').each(function(idx, el) {
+		// Get the "source" column text
+		source = $(el).find('td.scan_source').text();
+
+		// If we've not already done a lookup
+		if ($(el).find('td.scan_dns_lookup').text() == "")
+		{
+			// Extract the IP
+			source_split = source.split(':');
+			ip = source_split.splice(0, source_split.length - 1).join(':');
+
+			// If the lookup is already in the cache (or pending)
+			if (ip in dns_cache)
+			{
+				// Attempt to read from the cache
+				set_lookup_from_cache(el, ip, 0);
+			}
+			else
+			{
+				// Note that we're already attempting this lookup
+				dns_cache[ip] = '*';
+
+				// Make the request
+				$.ajax({
+					method: 'GET',
+					url: '{{ url_for('certificate_ip_lookup') }}?ip=' + ip,
+					dataType: 'json',
+					success: function(data) {
+						if ('success' in data && data['success'] == 1)
+						{
+							$(el).find('td.scan_dns_lookup').text(data['hostname']);
+							dns_cache[data['ip']] = data['hostname']
+						}
+					}
+				});
+			}
+		}
+	});
+}
+
 $(function() {
 	nodes = $('#data').DataTable({
 		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 		"pageLength": 15,
-		"order": [[1, 'desc']],
-		"columns": [null, null, null]
+		"order": [[2, 'desc']],
+		"columns": [null, null, null, null]
 	});
+
+	$('#data').on('draw.dt', function() {
+		do_dns_lookups();
+	});
+	do_dns_lookups();
 });
 $('#notes').keypress(function() {
 	var ni = $('#notes-info')

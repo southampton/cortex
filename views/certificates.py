@@ -3,8 +3,8 @@
 from cortex import app
 import cortex.lib.core
 from cortex.lib.user import does_user_have_permission
-from flask import Flask, request, redirect, url_for, flash, g, abort, render_template, Response
-import datetime, csv, io
+from flask import Flask, request, redirect, url_for, flash, g, abort, render_template, Response, jsonify
+import datetime, csv, io, socket
 import MySQLdb as mysql
 import OpenSSL as openssl
 from cortex.corpus import x509utils
@@ -291,6 +291,8 @@ def certificate_edit(digest):
 		else:
 			return abort(400)
 
+################################################################################
+
 @app.route('/certificates/statistics')
 @cortex.lib.user.login_required
 def certificate_statistics():
@@ -334,3 +336,21 @@ def certificate_statistics():
 		cert_seen_stats[row['when_date']] = row['count']
 
 	return render_template('certificates/statistics.html', active='certificates', title='Certificate Statistics', total_certs=total_certs, cert_provider_stats=cert_provider_stats, cert_expiry_stats=cert_expiry_stats, cert_seen_stats=cert_seen_stats)
+
+################################################################################
+	
+@app.route('/certificates/ajax/iplookup')
+@cortex.lib.user.login_required
+def certificate_ip_lookup():
+	ip = request.args['ip']
+
+	result = {'success': 0}
+	try:
+		result['ip'] = ip
+		result['hostname'] = socket.gethostbyaddr(ip)[0]
+		result['success'] = 1
+	except Exception, e:
+		pass
+
+	return jsonify(result)
+
