@@ -22,7 +22,11 @@
 	<div class="col-md-12">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title">Certificates Expiring In 30 Days</h3>
+				<h3 class="panel-title">Certificates Expiring In <select id="days" name="days">
+{% for day_choice in [30, 60, 90, 180, 365, 730] -%}
+					<option value="{{ day_choice }}"{% if day_choice == days %} selected="selected"{% endif %}>{{ day_choice }}</option>
+{% endfor %}
+				</select> Days</h3>
 			</div>
 			<div class="panel-body">
 				<div id="chart_expiring"></div>
@@ -41,6 +45,9 @@
 	</div>
 </div>
 <script>
+	$('#days').change(function() {
+		window.location = "?days=" + $('#days').val()
+	});
 	var chart_issuers = c3.generate({
 		bindto: '#chart_issuers',
 		data: {
@@ -72,10 +79,16 @@
 			x: {
 				label: {
 					text: '',
-					position: 'outer-center',
 				},
 				type: 'category',
-				categories: [{%- for entry in cert_expiry_stats -%}'{{ entry.date }}'{%- if not loop.last -%},{%- endif -%}{%- endfor -%}]
+				categories: [{%- for entry in cert_expiry_stats -%}'{{ entry.date }}'{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
+				tick: {
+					multiline: false,
+					centered: true,
+					culling: { 
+						max: 15
+					},
+				}
 			},
 			y: {
 				tick: {
@@ -117,7 +130,6 @@
 				fit: true,
 				tick: {
 					format: '%Y-%m-%d',
-					count: 60,
 					culling: {
 						max: 12
 					}

@@ -332,6 +332,11 @@ def certificate_statistics():
 	if not does_user_have_permission("certificates.stats"):
 		abort(403)
 
+	if 'days' in request.args:
+		days = int(request.args['days'])
+	else:
+		days = 30
+
 	# Get a cursor
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
@@ -351,7 +356,7 @@ def certificate_statistics():
 	# Get the number of certificates expiring per day for the next 30 days
 	cert_expiry_stats = []
 	date_start = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-	for day in range(0, 30):
+	for day in range(0, days):
 		day_start = (date_start + datetime.timedelta(days=day)).strftime("%Y-%m-%d")
 		day_end = (date_start + datetime.timedelta(days=day+1)).strftime("%Y-%m-%d")
 		curd.execute('SELECT COUNT(*) AS `count` FROM `certificate` WHERE DATE(`notAfter`) >= %s AND DATE(`notAfter`) < %s;', (day_start, day_end))
@@ -365,7 +370,7 @@ def certificate_statistics():
 	for row in result:
 		cert_seen_stats[row['when_date']] = row['count']
 
-	return render_template('certificates/statistics.html', active='certificates', title='Certificate Statistics', total_certs=total_certs, cert_provider_stats=cert_provider_stats, cert_expiry_stats=cert_expiry_stats, cert_seen_stats=cert_seen_stats)
+	return render_template('certificates/statistics.html', active='certificates', title='Certificate Statistics', total_certs=total_certs, cert_provider_stats=cert_provider_stats, cert_expiry_stats=cert_expiry_stats, cert_seen_stats=cert_seen_stats, days=days)
 
 ################################################################################
 	
