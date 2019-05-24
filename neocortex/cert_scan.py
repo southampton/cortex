@@ -332,8 +332,13 @@ def run(helper, options):
 				# Default to valid chain
 				chain_check = 0
 				if entry['first_chain_cert'] is None:
-					# No certificate chain (also appears for self-signed)
-					chain_check = 1
+					if entry['subject_cn'] == entry['issuer_cn']:
+						# Self-signed
+						chain_check = 3
+					else:
+						# No certificate chain
+						chain_check = 1
+
 				else:
 					if entry['first_chain_cert'] != entry['issuer_cn']:
 						# Bad certificate chain

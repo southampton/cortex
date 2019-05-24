@@ -1,7 +1,10 @@
 {% extends "layout.html" %}
 {% block head %}
 		<style type="text/css">
-			abbr[title] { border-bottom: none; cursor: pointer }
+			abbr[title] { border-bottom: none; cursor: default }
+			a.cert-link { text-decoration: none !important; color: inherit }
+			a.cert-link abbr[title] { cursor: pointer }
+			a.cert-link:hover abbr[title] { cursor: pointer; text-decoration: underline !important }
 		</style>
 {% endblock %}
 {% block body %}
@@ -31,7 +34,7 @@
 	<tbody>
 {%- for cert in certificates %}
 		<tr {% if cert.notAfter < utcnow() %}class="text-danger" {% endif %}data-digest="{{ cert.digest }}">
-			<td><abbr title="{{ cert.subjectDN }}">{{ cert.subjectCN }}</abbr></td>
+			<td><a href="{{url_for('certificate_edit',digest=cert.digest) }}" class="cert-link"><abbr title="{{ cert.subjectDN }}">{{ cert.subjectCN }}</abbr></a></td>
 			<td><abbr title="{{ cert.issuerDN }}">{{ cert.issuerCN }}</abbr></td>
 			<td>{% if cert.notBefore %}<abbr title="{{ cert.notBefore }}">{{ cert.notBefore.strftime("%Y-%m-%d") }}</abbr>{% else %}Unknown{% endif %}</td>
 			<td>{% if cert.notAfter %}<abbr title="{{ cert.notAfter }}">{{ cert.notAfter.strftime("%Y-%m-%d") }}</abbr>{% else %}Unknown{% endif %}</td>

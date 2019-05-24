@@ -106,11 +106,11 @@
 	</thead>
 	<tbody>
 {%- for result in scan_results %}
-		<tr class="scan_entry{% if result.chain_state == 1 %} text-warning{% elif result.chain_state == 2 %} text-danger{% endif %}">
+		<tr class="scan_entry{% if result.chain_state == 1 or result.chain_state == 3 %} text-warning{% elif result.chain_state == 2 %} text-danger{% endif %}">
 			<td class="scan_source">{{ result.host }}:{{ result.port }}</td>
 			<td class="scan_dns_lookup"></td>
 			<td>{{ result.when }}</td>
-			<td>{% if result.chain_state == 0 %}Correct{% elif result.chain_state == 1 %}Missing{% elif result.chain_state == 2 %}Invalid{% endif %}</td>
+			<td>{% if result.chain_state == 0 %}Correct{% elif result.chain_state == 1 %}Missing{% elif result.chain_state == 2 %}Invalid{% elif result.chain_state == 3 %}Self-signed{% else %}Unknown{% endif %}</td>
 		</tr>
 {%- endfor %}
 	</tbody>
