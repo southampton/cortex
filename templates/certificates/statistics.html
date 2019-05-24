@@ -66,6 +66,7 @@
 			}
 		}
 	});
+
 	var chart_expiring = c3.generate({
 		bindto: '#chart_expiring',
 		data: {
@@ -92,9 +93,21 @@
 			},
 			y: {
 				tick: {
-					format: d3.format("d")
+					format: function(y) {
+						var tick = d3.format("d")(y);
+						if (y - Math.floor(y) > 0.001)  // I'm sorry.
+						{
+							return "";
+						}
+						return tick;
+					}
 				}
 			},
+		},
+		tooltip: {
+			format: {
+				value: function(y) { return y; }
+			}
 		},
 		legend: {
 			show: false
@@ -118,7 +131,8 @@
 		},
 		tooltip: {
 			format: {
-				title: function (x) { return x.toISOString().replace(/[TZ]/g, ' ').split(' ')[0]; }
+				title: function (x) { return x.toISOString().replace(/[TZ]/g, ' ').split(' ')[0]; },
+				value: function (y) { return y; }
 			}
 		},
 		legend: {
@@ -137,7 +151,14 @@
 			},
 			y: {
 				tick: {
-					format: d3.format("d")
+					format: function(y) {
+						var tick = d3.format("d")(y);
+						if (y - Math.floor(y) > 0.001)  // I'm sorry.
+						{
+							return "";
+						}
+						return tick;
+					}
 				},
 			}
 		}
