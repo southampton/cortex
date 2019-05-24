@@ -147,6 +147,9 @@ def certificates_add():
 			flash('Error adding certificate: ' + str(e), 'alert-danger')
 			return render_template('certificates/add.html', active='certificates', title='Add Certificate')
 
+		# Log which certificate was deleted
+		cortex.lib.core.log(__name__, "certificate.delete", "Certificate " + str(cert_digest) + " added")
+
 		flash('Certificate added', category='alert-success')
 		return redirect(url_for('certificate_edit', digest=cert_digest))
 	else:
@@ -247,13 +250,22 @@ def certificate_edit(digest):
 			# Delete Certificate action
 			if request.form['action'] == 'delete':
 				try:
+					# Get the certificate
+					curd = g.db.cursor(mysql.cursors.DictCursor)
+					curd.execute('SELECT `subjectDN` FROM `certificate` WHERE `digest` = %s', (digest,))
+					certificate = curd.fetchone()
+
+					# If the certificate was not found then notify the user
+					if certificate is None:
+						raise Exception('Certificate does not exist')
+
 					# Delete the certificate
 					curd = g.db.cursor(mysql.cursors.DictCursor)
 					curd.execute('DELETE FROM `certificate` WHERE `digest` = %s', (digest,))
 					g.db.commit()
 
-					# Log
-					cortex.lib.core.log(__name__, "certificate.delete", "Certificate " + str(digest) + " deleted")
+					# Log which certificate was deleted
+					cortex.lib.core.log(__name__, "certificate.delete", "Certificate " + str(digest) + " (" + str(certificate['subjectDN']) + ") deleted")
 
 					# Notify user
 					flash('Certificate deleted', category='alert-success')
@@ -264,25 +276,43 @@ def certificate_edit(digest):
 			# Toggle notifications action
 			elif request.form['action'] == 'toggle_notify':
 				try:
+					# Get the certificate
+					curd = g.db.cursor(mysql.cursors.DictCursor)
+					curd.execute('SELECT `subjectDN` FROM `certificate` WHERE `digest` = %s', (digest,))
+					certificate = curd.fetchone()
+
+					# If the certificate was not found then notify the user
+					if certificate is None:
+						raise Exception('Certificate does not exist')
+
 					# Update the certificate notify parameter
 					curd = g.db.cursor(mysql.cursors.DictCursor)
 					curd.execute('UPDATE `certificate` SET `notify` = NOT(`notify`) WHERE `digest` = %s', (digest,))
 					g.db.commit()
 
 					# Log
-					cortex.lib.core.log(__name__, "certificate.notify", "Certificate " + str(digest) + " notification changed")
+					cortex.lib.core.log(__name__, "certificate.notify", "Certificate " + str(digest) + " (" + str(certificate['subjectDN']) + ") notification changed")
 				except Exception as e:
 					flash('Failed to change certificate notification: ' + str(e), category='alert-danger')
 
 				return redirect(url_for('certificate_edit', digest=digest))
 			elif request.form['action'] == 'save_notes':
+				# Get the certificate
+				curd = g.db.cursor(mysql.cursors.DictCursor)
+				curd.execute('SELECT `subjectDN` FROM `certificate` WHERE `digest` = %s', (digest,))
+				certificate = curd.fetchone()
+
+				# If the certificate was not found then return appropriate response
+				if certificate is None:
+					abort(404)
+
 				# Update the certificate notify parameter
 				curd = g.db.cursor(mysql.cursors.DictCursor)
 				curd.execute('UPDATE `certificate` SET `notes` = %s WHERE `digest` = %s', (request.form['notes'], digest,))
 				g.db.commit()
 
 				# Log
-				cortex.lib.core.log(__name__, "certificate.notes", "Certificate " + str(digest) + " notes updated")
+				cortex.lib.core.log(__name__, "certificate.notes", "Certificate " + str(digest) + " (" + str(certificate['subjectDN']) + ") notes updated")
 
 				# Return empty 200 response
 				return ""
