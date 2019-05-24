@@ -28,12 +28,12 @@
 			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 			<input name="action" type="hidden" value="toggle_notify"/>
 {% if certificate.notify -%}
-			<button type="submit" class="btn btn-success"><i class="fa fa-fw fa-check-square-o"></i> <span class="hidden-sm hidden-xs">Notifications enabled</span></button>
+			<button type="submit" class="btn btn-success" title="Notifications enabled for this certificate. Click to disable."><i class="fa fa-fw fa-check-square-o"></i> <span class="hidden-sm hidden-xs">Notifications enabled</span></button>
 {% else -%}
-			<button type="submit" class="btn btn-danger"><i class="fa fa-fw fa-square-o"></i> <span class="hidden-sm hidden-xs">Notifications disabled</span></button>
+			<button type="submit" class="btn btn-danger" title="Notifications disabled for this certificate. Click to enable."><i class="fa fa-fw fa-square-o"></i> <span class="hidden-sm hidden-xs">Notifications disabled</span></button>
 {% endif -%}
 		</form>
-		<a data-toggle="modal" data-target="#delete" class="btn btn-danger"><i class="fa fa-fw fa-trash"></i> <span class="hidden-sm hidden-xs">Delete certificate</span></a>
+		<a data-toggle="modal" data-target="#delete" class="btn btn-danger" title="Remove this certificate from Cortex"><i class="fa fa-fw fa-trash"></i> <span class="hidden-sm hidden-xs">Delete certificate</span></a>
 	</div>
 	<h3><i class="fa fa-fw fa-shield"></i> Certificate</h3>
 	<p class="text-muted">The page shows information about a particular certificate.</p>
@@ -48,7 +48,7 @@
 			</div>
 			<div class="form-group">
 				<label class="col-sm-2 control-label">Subject&nbsp;DN:</label>
-				<div class="col-sm-10"><p class="form-control-static">{{ certificate.subjectDN }}</p></div>
+				<div class="col-sm-10" style="word-wrap:break-word"><p class="form-control-static">{{ certificate.subjectDN }}</p></div>
 			</div>
 			<div class="form-group">
 				<label class="col-sm-2 control-label">SANs:</label>
@@ -70,7 +70,7 @@
 			</div>
 			<div class="form-group">
 				<label class="col-sm-2 control-label">Issuer&nbsp;DN:</label>
-				<div class="col-sm-10 form-control-static">{{ certificate.issuerDN }}</div>
+				<div class="col-sm-10 form-control-static" style="word-wrap:break-word">{{ certificate.issuerDN }}</div>
 			</div>
 			<div class="form-group">
 				<label class="col-sm-2 control-label">Valid&nbsp;From:</label>
