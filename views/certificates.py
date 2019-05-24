@@ -54,7 +54,7 @@ def certificates():
 	curd.execute(query)
 	certificates = curd.fetchall()
 	
-	return render_template('certificates/certificates.html', active='certificates', title='Certificates', certificates=certificates)
+	return render_template('certificates/certificates.html', active='certificates', title='Certificates', certificates=certificates, self_signed=self_signed, validity=validity)
 
 ################################################################################
 
