@@ -29,6 +29,13 @@ from urllib import quote
 
 import x509utils
 
+# For signing
+from itsdangerous import JSONWebSignatureSerializer
+
+##
+## This needs major refactoring...
+##
+
 class Corpus(object):
 	"""Library functions used in both cortex and neocortex and workflow tasks"""
 
@@ -1641,6 +1648,7 @@ class Corpus(object):
 	def delete_system_from_cache(self, vmware_uuid):
 		cur = self.db.cursor()
 		cur.execute("DELETE FROM `vmware_cache_vm` WHERE `uuid`=%s", (vmware_uuid,))
+		cur.execute("UPDATE `systems` SET `vmware_uuid`=NULL WHERE `vmware_uuid`=%s", (vmware_uuid,))
 		self.db.commit()
 
 	############################################################################
@@ -1991,3 +1999,21 @@ class Corpus(object):
 		) 
 
 		r.raise_for_status()
+
+	############################################################################
+
+	def redis_cache_system_actions(self, task_id, system_id, system_actions):
+
+		# Redis Key Prefix
+		prefix = 'decom/{}/'.format(task_id)
+
+		# Turn the actions list into a signed JSON document via itsdangerous
+		signer = JSONWebSignatureSerializer(self.config['SECRET_KEY'])
+		signed_system_actions = signer.dumps(system_actions)
+
+		# Add the signed actions to Redis.
+		self.rdb.setex(prefix + 'actions', 3600, signed_system_actions)
+		# Add the system_id to redis.
+		self.rdb.setex(prefix + 'system', 3600, str(system_id))
+
+		return True	

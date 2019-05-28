@@ -21,8 +21,16 @@ def admin_tasks():
 	if not does_user_have_permission("tasks.view"):
 		abort(403)
 
+	# Check url for parameters from dashboard links.
+	filters = {
+		'filter_succeeded': request.args.get('filter_succeeded', "1"),
+		'filter_warnings': request.args.get('filter_warnings', "1"),
+		'filter_failed': request.args.get('filter_failed', "1")
+	}
+	print(filters)
+
 	# Render the page
-	return render_template('admin/tasks.html', active='admin', title="Tasks", tasktype='all', json_source=url_for('admin_tasks_json', tasktype='all'))
+	return render_template('admin/tasks.html', active='admin', title="Tasks", tasktype='all', json_source=url_for('admin_tasks_json', tasktype='all'), filters=filters)
 
 ################################################################################
 
@@ -38,7 +46,7 @@ def admin_tasks_json(tasktype):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Extract stuff from DataTables requests
-	(draw, start, length, order_column, order_asc, search) = _extract_datatables()
+	(draw, start, length, order_column, order_asc, search, hide_frequent, filters) = _extract_datatables()
 
 	# Choose the order column
 	if order_column == 0:
@@ -49,8 +57,7 @@ def admin_tasks_json(tasktype):
 		order_by = "start"
 	elif order_column == 3:
 		order_by = "end"
-	elif order_column == 4:
-		order_by = "elapsed"
+	# Skip col 4 as this doesn't allow ordering.
 	elif order_column == 5:
 		order_by = "username"
 	elif order_column == 6:
@@ -75,6 +82,22 @@ def admin_tasks_json(tasktype):
 		where_clause = '`username` = "scheduler"'
 	else:
 		abort(404)
+
+	# Apply filters
+	# Status: 1 = Succeeded 2 = Failed 3 = Warnings
+	if 'filter_succeeded' in filters and not filters['filter_succeeded']:
+		where_clause = where_clause + " AND (`status` != 1) " 
+	if 'filter_failed' in filters and not filters['filter_failed']:
+		where_clause = where_clause + " AND (`status` != 2) " 
+	if 'filter_warnings' in filters and not filters['filter_warnings']:
+		where_clause = where_clause + " AND (`status` != 3) " 
+
+
+	# Define some tasks we will hide if hide_frequent is True
+	frequent_tasks = ['_sync_puppet_stats_graphite']
+	frequent_tasks_str = '"' + ('","'.join(frequent_tasks)) + '"'
+	if frequent_tasks and hide_frequent:
+		where_clause = where_clause + " AND (`module` NOT IN (" + frequent_tasks_str + ")) "
 
 	# Add on search string if we have one
 	if search:
@@ -142,7 +165,7 @@ def admin_tasks_active():
 			tasks.append(task)
 
 	# Render the page
-	return render_template('admin/tasks.html', tasks=tasks, active='admin', title="Active Tasks", tasktype='active')
+	return render_template('admin/tasks.html', tasks=tasks, active='admin', title="Active Tasks", tasktype='active', filters={})
 
 ################################################################################
 
@@ -156,7 +179,7 @@ def admin_tasks_user():
 		abort(403)
 
 	# Render the page
-	return render_template('admin/tasks.html', active='admin', title="User Tasks", tasktype='user', json_source=url_for('admin_tasks_json', tasktype='user'))
+	return render_template('admin/tasks.html', active='admin', title="User Tasks", tasktype='user', json_source=url_for('admin_tasks_json', tasktype='user'), filters={})
 
 ################################################################################
 
@@ -170,7 +193,7 @@ def admin_tasks_system():
 		abort(403)
 
 	# Render the page
-	return render_template('admin/tasks.html', active='admin', title="System Tasks", tasktype='system', json_source=url_for('admin_tasks_json', tasktype='system'))
+	return render_template('admin/tasks.html', active='admin', title="System Tasks", tasktype='system', json_source=url_for('admin_tasks_json', tasktype='system'), filters={})
 
 ################################################################################
 
@@ -186,7 +209,7 @@ def admin_events_json(event_source):
 	cur = g.db.cursor()
 
 	# Extract stuff from DataTables requests
-	(draw, start, length, order_column, order_asc, search) = _extract_datatables()
+	(draw, start, length, order_column, order_asc, search, hide_frequent, filters) = _extract_datatables()
 
 	# Choose the order column
 	if order_column == 0:
@@ -229,6 +252,17 @@ def admin_events_json(event_source):
 		where_clause = "`source` = 'neocortex.task'"
 	else:
 		where_clause = "1=1"
+
+	# Define some events we will hide if hide_frequent is True
+	frequent_events = [
+		'_sync_puppet_stats_graphite.post_graphite',
+		'_sync_puppet_stats_graphite.puppet_nodes',
+		'_sync_puppet_stats_graphite.puppetdb_connect',
+		'_sync_puppet_stats_graphite.sync_puppet_stats_graphite_config_check'
+	]
+	frequent_events_str = '"' + ('","'.join(frequent_events)) + '"'
+	if frequent_events and hide_frequent:
+		where_clause = where_clause + " AND (`name` NOT IN (" + frequent_events_str + ")) "
 
 	# Add on search string if we have one
 	if search:
@@ -631,4 +665,21 @@ def _extract_datatables():
 			else:
 				search = request.form['search[value]']
 
-	return (draw, start, length, order_column, order_asc, search)
+	# Handle the hide_frequent parameter. This is a custom field added
+	# in order to filter out frequent tasks/events from dataTables.
+	hide_frequent = False
+	if 'hide_frequent' in request.form:
+		if request.form['hide_frequent'] == "1":
+			hide_frequent = True
+
+	
+	# Handle the filter parameters. These are custom fields added to
+	# filter tasks. This is not used on the events page currently.
+	filters = {}
+	for f in ['filter_succeeded', 'filter_warnings', 'filter_failed']:
+		if f in request.form and request.form[f] == "1":
+			filters[f] = True
+		else:
+			filters[f] = False
+
+	return (draw, start, length, order_column, order_asc, search, hide_frequent, filters)

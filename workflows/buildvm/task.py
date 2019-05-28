@@ -31,7 +31,8 @@ def run(helper, options):
 		os_templates = options['wfconfig']['OS_TEMPLATES']
 		os_names = options['wfconfig']['OS_NAMES']
 		os_disks = options['wfconfig']['OS_DISKS']
-		vm_folder_name = None
+		os_types = options['wfconfig']['OS_TYPES']
+		vm_folder_name = options['vm_folder_name']
 		dns_aliases = options['dns_aliases']
 	elif workflow == 'sandbox':
 		prefix = options['wfconfig']['SB_PREFIX']
@@ -52,6 +53,7 @@ def run(helper, options):
 		os_templates = options['wfconfig']['SB_OS_TEMPLATES']
 		os_names = options['wfconfig']['SB_OS_NAMES']
 		os_disks = options['wfconfig']['SB_OS_DISKS']
+		os_types = options['wfconfig']['SB_OS_TYPES']
 		vm_folder_name = None
 		dns_aliases = []
 	elif workflow == 'student':
@@ -76,6 +78,7 @@ def run(helper, options):
 		os_templates = options['wfconfig']['STU_OS_TEMPLATES']
 		os_names = options['wfconfig']['STU_OS_NAMES']
 		os_disks = options['wfconfig']['STU_OS_DISKS']
+		os_types = options['wfconfig']['STU_OS_TYPES']
 		vm_folder_name = options['wfconfig']['STU_VM_FOLDER']
 		dns_aliases = options['dns_aliases']
 
@@ -140,12 +143,12 @@ def run(helper, options):
 	os_disk_size =  os_disks[options['template']]
 
 	# For RHEL6, RHEL7:
-	if options['template'] in ['rhel6', 'rhel7', 'rhel6c']:
+	if options['template'] in os_types['Linux']:
 		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
 		vm_spec = None
 
 	# For Server 2012R2
-	elif options['template'] == 'windows_server_2012' or options['template'] == 'windows_server_2016' or options['template'] == 'windows_server_2016_core':
+	elif options['template'] in os_types['Windows']:
 		os_type = helper.lib.OS_TYPE_BY_NAME['Windows']
 
 		# Build a customisation spec depending on the environment to use the correct domain details
@@ -498,16 +501,15 @@ def run(helper, options):
 		except Exception as e:
 			helper.end_event(success=False, description='Failed to set Computer object attributes: ' + str(e))
 
-			# Wait for 60 seconds to allow time for the VM to come back up
-			# This feels like a bit of a hack currently, but we don't have
-			# a way currently of knowing if the VM is up.
-			helper.event('windows_delay', 'Wait and restart guest')
-			time.sleep(60)
+		# Wait for 60 seconds to allow time for the VM to come back up
+		# This feels like a bit of a hack currently, but we don't have
+		# a way currently of knowing if the VM is up.
+		helper.event('windows_delay', 'Wait and restart guest')
+		time.sleep(60)
 
-			# Restart the guest
-			helper.lib.vmware_vm_restart_guest(vm)
-			helper.end_event(success=True, description='Initiated guest restart')
-
+		# Restart the guest
+		helper.lib.vmware_vm_restart_guest(vm)
+		helper.end_event(success=True, description='Initiated guest restart')
 
 
 	## Send success email ##################################################

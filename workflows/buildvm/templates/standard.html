@@ -232,10 +232,21 @@ div.specdetails
 					<input class="form-control" id="dns_aliases" name="dns_aliases" placeholder="servicename.soton.ac.uk"/>
 				</div>
 			</div>
+			<h4>10. VMware Folder (optional)</h4>
+			<div style="margin-left: 1em">
+				<div class="form-group">
+					<select class="selectpicker" name="vm_folder_name" id="vm_folder_name">
+						<option></option>
+{% for folder in folders -%}
+                                        <option value="{{ folder }}">{{ folder }}</option>
+{%- endfor %}
+					</select>
+				</div>
+			</div>
 		</div>
 
 		<div class="col-md-4">
-			<h4>10. Summary</h4>
+			<h4>11. Summary</h4>
 			<div style="margin-left: 1em">
 				<p>A VM will be created with the following specifications. The calculated cost is also shown below.</p>
 				<div style="font-size: 120%">
@@ -254,7 +265,7 @@ div.specdetails
 		</div>
 
 		<div class="col-md-4">
-			<h4>11. Create</h4>
+			<h4>12. Create</h4>
 			<div style="margin:0 0 0.5em 1.0em">
 				<input type="checkbox" name="send_mail" id="send_mail" style="margin-right:0.4em" checked="checked" /><label for="send_mail" style="position:relative;top:-2px">Notify me by e-mail when done</label>
 			</div>
@@ -431,12 +442,12 @@ $('#create').click(function(e) {
 	// Validate
 	if ($("#task").val().length == 0)
 	{
-		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345 or CTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident, or use the change task for the RFC you\'re performing.');
+		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345, CTASK0012345 or REQTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident, or use the change task for the RFC you\'re performing.');
 		$('#task').focus();
 	}
-	else if ($("#task").val().match(/^[ \t]*((PRJ)|(INC)|(C))TASK[0-9]+[ \t]*/) == null)
+	else if ($("#task").val().match(/^[ \t]*((PRJ)|(INC)|(C)|(REQ))TASK[0-9]+[ \t]*/) == null)
 	{
-		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345 or CTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident, or use the change task for the RFC you\'re performing.');
+		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345, CTASK0012345 or REQTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident, or use the change task for the RFC you\'re performing.');
 		$('#task').focus();
 	}
 	else if ($('#purpose').val().length == 0)
