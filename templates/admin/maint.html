@@ -88,5 +88,23 @@
 		</div>
 	</div>
 {%- endif %}
+{%- if does_user_have_permission("maintenance.cert_scan") %}
+	<div class="col-md-4">
+		<div class="well mtask">
+			<h3><i class="fa fa-fa fa-upload"></i> Certificate Scan</h3>
+			<p>Scans the network for certificates</p>
+			<form method="POST">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input type="hidden" name="task_name" value="cert_scan"/>
+			{%- if cert_scan_id %}
+				<a href="{{url_for('task_status',id=cert_scan_id)}}" class="btn btn-primary form-control"><i class="fa fa-fw fa-cog fa-spin"></i> View in progress task</a>
+			{%- else %}
+			<button class="form-control btn btn-success" type="submit"><i class="fa fa-fw fa-play"></i> Start</button>
+			{%- endif %}
+			</form>
+		</div>
+	</div>
+{%- endif %}
+
 </div>
 {% endblock %}

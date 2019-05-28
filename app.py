@@ -9,6 +9,7 @@ import random
 import string
 import logging
 import os.path
+import datetime
 from logging.handlers import SMTPHandler
 from logging.handlers import RotatingFileHandler
 from logging import Formatter
@@ -40,12 +41,17 @@ class CortexFlask(Flask):
 
 		# CSRF token function in templates
 		self.jinja_env.globals['csrf_token'] = self._generate_csrf_token
+		self.jinja_env.globals['utcnow'] = datetime.datetime.utcnow
 
 		# Load the __init__.py config defaults
 		self.config.from_object("cortex.defaultcfg")
 
 		# Load system config file
 		self.config.from_pyfile('/data/cortex/cortex.conf')
+
+		# Make TEMPLATES_AUTO_RELOAD work (we've touch the Jinja environment). See resolved Flask issue #1907
+		if 'TEMPLATES_AUTO_RELOAD' in self.config and self.config['TEMPLATES_AUTO_RELOAD']:
+			self.jinja_env.auto_reload = True
 
 		# Set up logging to file
 		if self.config['FILE_LOG'] == True:
@@ -756,6 +762,41 @@ Username:             %s
 		  CONSTRAINT `system_user_favourites_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `certificate` (
+		  `digest` varchar(40) NOT NULL,
+		  `subjectHash` varchar(64),
+		  `subjectCN` text,
+		  `subjectDN` text,
+		  `notBefore` DATETIME,
+		  `notAfter` DATETIME,
+		  `issuerCN` text,
+		  `issuerDN` text,
+		  `notify` tinyint(1) NOT NULL DEFAULT TRUE,
+		  `notes` TEXT NOT NULL,
+		  `keySize` integer DEFAULT NULL,
+		  PRIMARY KEY (`digest`),
+		  INDEX `idx_subjectCN` (`subjectCN`(128))
+		) ENGINE=InnoDB DEFAULT CHARSET utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `certificate_sans` (
+		  `cert_digest` varchar(40) NOT NULL,
+		  `san` varchar(255) NOT NULL,
+		  PRIMARY KEY (cert_digest, san),
+		  FOREIGN KEY `ibfk_cert_digest` (`cert_digest`) REFERENCES `certificate` (`digest`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `scan_result` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `host` varchar(128) NOT NULL,
+		  `port` integer(4) NOT NULL,
+		  `cert_digest` varchar(40) NOT NULL,
+		  `when` DATETIME NOT NULL,
+		  `chain_state` tinyint(2) NOT NULL DEFAULT 0,
+		  PRIMARY KEY (`id`),
+		  FOREIGN KEY `ibfk_cert_digest` (`cert_digest`) REFERENCES `certificate` (`digest`) ON DELETE CASCADE,
+		  INDEX `idx_host` (`host`)
+		) ENGINE=InnoDB DEFAULT CHARSET utf8;""")
+
 		cursor.execute("""DROP TABLE IF EXISTS `workflow_perms`""")
 
 		# Ensure we have a default administrator role with appropriate permissions
@@ -793,6 +834,7 @@ Username:             %s
 		  (1, "maintenance.cmdb"), 
 		  (1, "maintenance.expire_vm"),
 		  (1, "maintenance.sync_puppet_servicenow"),
+		  (1, "maintenance.cert_scan"),
 		  (1, "api.register"),
 		  (1, "workflows.all"),
 		  (1, "sysrequests.all.view"),
@@ -801,7 +843,10 @@ Username:             %s
 		  (1, "api.get"),
 		  (1, "api.post"),
 		  (1, "api.put"),
-		  (1, "api.delete")
+		  (1, "api.delete"),
+		  (1, "certificates.view"),
+		  (1, "certificates.stats"),
+		  (1, "certificates.add")
 		""")
 
 		## Close database connection
@@ -847,6 +892,7 @@ Username:             %s
 			{'name': 'maintenance.cmdb',		       'desc': 'Run CMDB maintenance tasks'},
 			{'name': 'maintenance.expire_vm',	       'desc': 'Run the Expire VM maintenance task'},
 			{'name': 'maintenance.sync_puppet_servicenow', 'desc': 'Run the Sync Puppet with Servicenow task'},
+			{'name': 'maintenance.cert_scan',              'desc': 'Run the Certificate Scan task'},
 			{'name': 'api.register',		       'desc': 'Manually register Linux machines (rebuilds / physical machines)'},
 			{'name': 'admin.permissions',		       'desc': 'Modify permissions'},
 			{'name': 'workflows.all',		       'desc': 'Use any workflow or workflow function'},
@@ -861,6 +907,10 @@ Username:             %s
 			{'name': 'api.post',			       'desc': 'Send POST requests to the Cortex API.'},
 			{'name': 'api.put',			       'desc': 'Send PUT requests to the Cortex API.'},
 			{'name': 'api.delete',			       'desc': 'Send DELETE requests to the Cortex API.'},
+
+			{'name': 'certificates.view',                  'desc': 'View the list of discovered certificates and their details'},
+			{'name': 'certificates.stats',                 'desc': 'View the statistics about certificates'},
+			{'name': 'certificates.add',                   'desc': 'Adds a certificate to the list of tracked certificates'},
 		]
 
 		self.workflow_permissions = []

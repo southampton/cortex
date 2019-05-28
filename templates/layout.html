@@ -205,6 +205,16 @@
 							</ul>
 						</li>
 						{%- endif %}
+						{%- if menu.certificates and menu.certificates|length > 0 %}
+						<li class="{%if not classic_layout %}visible-xs {%endif%}dropdown{%if active == 'certificates'%} active{%endif%}">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Certificates <b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								{% for item in menu.certificates -%}
+								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
+								{%- endfor %}
+							</ul>
+						</li>
+						{%- endif %}
 						{%- if menu.perms and menu.perms|length > 0 %}
 						<li class="{%if not classic_layout %}visible-xs {%endif%}dropdown{%if active == 'perms'%} active{%endif%}">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Permissions <b class="caret"></b></a>
@@ -277,6 +287,9 @@
 						{%- endif %}
 						{%- if menu.puppet and menu.puppet|length > 0 %}
 						<a tabindex="0" role="button" data-mpop="puppet-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%}"><i class="fa fa-fw fa-magic fa-2x"></i><span class="sidebar-hidden">Puppet</span></a>
+						{%- endif %}
+						{%- if menu.certificates and menu.certificates|length > 0 %}
+						<a tabindex="0" role="button" data-mpop="certificates-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'certificates'%} menu-active{%endif%}"><i class="fa fa-fw fa-certificate fa-2x"></i><span class="sidebar-hidden">Certificates</span></a>
 						{%- endif %}
 						{%- if menu.perms and menu.perms|length > 0 %}
 						<a tabindex="0" role="button" data-mpop="perms-menu" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%}"><i class="fa fa-fw fa-lock fa-2x"></i><span class="sidebar-hidden">Permissions</span></a>
@@ -355,6 +368,16 @@
 				{% else -%}
 				<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 				{%- endif %}
+				{%- endfor %}
+			</ul>
+			</div>
+		{%- endif %}
+
+		{%- if menu.certificates and menu.certificates|length > 0 %}
+			<div id="certificates-menu" class="hidden">
+			<ul class="list-group list-group-popover">
+				{% for item in menu.certificates -%}
+				<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 				{%- endfor %}
 			</ul>
 			</div>

@@ -318,3 +318,40 @@ SNVM_NOTE_CREATION_FAILED = 'Your requested VM has failed to build. An administr
 
 # Work note for creation succeeded
 SNVM_NOTE_CREATION_SUCCEEDED = 'Your requested VM has now been built and is ready to use. You will receive a second e-mail containing details of how to access your VM shortly.'
+
+# Certificate scanning: Which ports to scan
+CERT_SCAN_PORTS = [443, 25, 243, 389]
+
+# Certificate scanning: Which ports to try STARTTLS on, and which implementation of STARTTLS to use (currently implemented: smtp, imap, ldap)
+CERT_SCAN_PORTS_STARTTLS = {25: 'smtp', 143: 'imap', 389: 'ldap'}
+
+# Certificate scanning: The number of worker processes to start
+CERT_SCAN_WORKERS = 50
+
+# Certificate scanning: The maximum amount of time a worker should spend on a single check
+CERT_SCAN_THREAD_TIMEOUT = 30
+
+# Certificate scanning: Expire certificates from the database if they've not been seen in a scan in this number of days
+CERT_SCAN_EXPIRE_NOT_SEEN = 90
+
+# Certificate scanning: Expire scan results from the database when they're older than this number of days
+CERT_SCAN_EXPIRE_RESULTS = 90
+
+# When and how to notify about expiring certs. Fields:
+# - days_left: The number of days left on the expiration when we notify. Can be an array.
+# - ignore_issuer_dn: Optional. Ignore certificates whose issuer DN matches this regex. Cannot be used with require_issuer_dn.
+# - require_issuer_dn: Optional. Match only certificates whose issuer DN matches this regex. Cannot be used with ignore_issuer_dn.
+# - type: The method used for notifying. Can be 'email', 'incident' or 'request'.
+# - team_name: For type=incident and type=request, the team to assign the ticket to
+# - opener_sys_id: For type=incident and type=request, the SNow sysid of the user opening the ticket
+# - request_type: For type=request, the SNow sysid of the request type
+# - to: For type=email the recipient address
+#
+# Example: Email root@mydomain on certificates with seven days left:
+# [{'days_left': 7, 'type': 'email', 'to': 'root@mydomain'}]
+#
+# Example: Email root@mydomain on certificates not from Let's Encrypt with thirty days left and raise an incident in ServiceNow for Let's Encrypt certificates with two days left:
+# [{'days_left': 2, 'type': 'incident', 'require_issuer_dn': ".*Let's Encrypt.*", 'team_name': 'Certificate Managers', 'opener_sys_id': 'af1d0283e83dfffa08e0b310ccc21901'}, {'days_left: 30, 'type': 'email' 'ignore_issuer_dn': ".*Let's Encrypt.*", 'to': 'root@mydomain'}]
+CERT_SCAN_NOTIFY=[]
+
+
