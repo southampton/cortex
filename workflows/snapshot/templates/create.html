@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block head -%}
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
+	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/bootstrap-datetimepicker.min.css') }}">
+	<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}"></script> 
+	<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script> 
+	<script src="{{ url_for('static', filename='js/vendor/bootstrap-datetimepicker.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+<div class="page-header">
+<h3>Create VMware Snapshot</h3>
+<p class="text-muted">This workflow automates the creation of VMware Snapshots.</p>
+</div>
+
+{% endblock %}
