@@ -118,8 +118,9 @@ def standard():
 
 	folders = []
 	for folder in cortex.lib.core.vmware_list_folders(workflow.config['VCENTER_TAG']):
-		if  folder['name'] not in workflow.config.get('HIDE_FOLDERS', []):
-			folders.append(folder['name'])
+		if folder['name'] not in workflow.config.get('HIDE_FOLDERS', []):
+			folders.append(folder)
+	folders.sort(key=lambda x: x['fully_qualified_path'])
 
 	# Get the list of environments
 	environments = cortex.lib.core.get_cmdb_environments()
@@ -164,15 +165,15 @@ def standard():
 			secondary_owner_who = request.form.get('secondary_owner_who', None)
 			secondary_owner_role = request.form.get('secondary_owner_role', None)
 			dns_aliases = request.form.get('dns_aliases', None)
-			vm_folder_name = request.form.get('vm_folder_name', None)
+			vm_folder_moid = request.form.get('vm_folder_moid', None)
 
 			if dns_aliases is not None and len(dns_aliases) > 0:
 				dns_aliases = dns_aliases.split(',')
 			else:
 				dns_aliases = []
 
-			if vm_folder_name is not None and len(vm_folder_name) <= 0:
-				vm_folder_name = None
+			if vm_folder_moid is not None and len(vm_folder_moid) <= 0:
+				vm_folder_moid = None
 
 			# Validate the data (common between standard / sandbox)
 			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, workflow.config['OS_ORDER'], [e['id'] for e in environments])

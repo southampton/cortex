@@ -235,10 +235,10 @@ div.specdetails
 			<h4>10. VMware Folder (optional)</h4>
 			<div style="margin-left: 1em">
 				<div class="form-group">
-					<select class="selectpicker" name="vm_folder_name" id="vm_folder_name">
+					<select class="selectpicker" name="vm_folder_moid" id="vm_folder_moid">
 						<option></option>
 {% for folder in folders -%}
-                                        <option value="{{ folder }}">{{ folder }}</option>
+                                        <option value="{{ folder['id'] }}">{{ folder['fully_qualified_path'] }}</option>
 {%- endfor %}
 					</select>
 				</div>
