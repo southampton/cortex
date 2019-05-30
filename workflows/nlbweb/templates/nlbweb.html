@@ -40,7 +40,7 @@ td.na
 				<div class="col-md-12"><h3 style="margin-top:0px">Service Details</h3></div>
 				<div class="col-md-12 form-group">
 					<label for="service">Service Name:</label>
-					<input class="form-control" name="service" id="service" placeholder="The human-readable name of the service you are creating to be used in NLB object descriptions e.g. Corporate Website" required="required" red="required"eutofocus {% if 'service' in values %}value="{{ values['service'] }}" {% endif %}/>
+					<input class="form-control" name="service" id="service" placeholder="The human-readable name of the service you are creating to be used in NLB object descriptions e.g. Corporate Website" required="required" autofocus {% if 'service' in values %}value="{{ values['service'] }}" {% endif %}/>
 				</div>
 				<div class="col-md-6 form-group">
 					<label for="env">Environment:</label>
