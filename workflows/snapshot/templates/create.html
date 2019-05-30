@@ -13,5 +13,120 @@
 <h3>Create VMware Snapshot</h3>
 <p class="text-muted">This workflow automates the creation of VMware Snapshots.</p>
 </div>
+<form id="snapshot_create_form" method="POST" role="form">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+	<div class="row">
+		<div class="col-md-12"><h3 style="margin-top:0px">Snapshot Details</h3></div>
+		<div class="col-md-12 form-group">
+			<label for="snapshot_name">Snapshot Name:<span class="required">*</span></label>
+			<input class="form-control" name="snapshot_name" id="snapshot_name" placeholder="Text to be used in the snapshot name field in VMware" required="required" autofocus {% if 'snapshot_name' in values %}value="{{ values['snapshot_name'] }}"{% endif %} />
+		</div>
+		<div class="col-md-6 form-group">
+			<label for="snapshot_task">ServiceNow Task:</label>
+			<input class="form-control" id="snapshot_task" name="snapshot_task" placeholder="e.g. INCTASK0123456, PRJTASK0987654 or CTASK012345" {% if 'snapshot_task' in values %}value="{{ values['snapshot_task'] }}"{% endif %} />
+		</div>
+		<div class="col-md-6 form-group">
+			<label for="snapshot_expiry">Expiry Date:<span class="required">*</span></label>
+			<div class='input-group date' id='expirypicker'>
+				<input type='text' class="form-control" id="snapshot_expiry" name="snapshot_expiry" placeholder="Date after this snapshot can be deleted: YYYY-MM-DD" required="required" {% if 'snapshot_expiry' in values %}value="{{ values['snapshot_expiry'] }}"{% endif %}/>
+				<span class="input-group-addon">
+					<span class="glyphicon glyphicon-calendar"></span>
+				</span>
+			</div>
+			<script>
+				$(function () {
+					$('#expirypicker').datetimepicker({
+						viewMode: 'days',
+						format: 'YYYY-MM-DD',
+						minDate: moment(),
+						useCurrent: false,
+					});
+				});
+			</script>		
+		</div>
+		<div class="col-md-12 form-group">
+			<label for="snapshot_comments">Comments:</label>
+			<input class="form-control" name="snapshot_comments" id="snapshot_comments" placeholder="Any other notes to be stored in the description field in VMware" {% if 'snapshot_comments' in values %}value="{{ values['snapshot_comments'] }}"{% endif %} />
+		</div>
+		<div class="col-md-12"><h3 style="margin-top:0px">Systems</h3></div>
+		<div class="col-md-12">
+			<table class="table table-condensed tabled-striped">
+				<thead>
+					<tr>
+						<th>System Name</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody id="system_table_body">
+					<tr id="system_row_template" style="display:none;">
+						<input type="hidden" class="system_server_name" value="">
+						<td class="system_row_name"></td>
+						<td><button type="button" class="btn btn-xs btn-danger remove_system">Remove</button></td>
+					</tr>
+				</tbody>
+				<tfoot>
+					<tr>
+						<td>
+							<select class="selectpicker" id="new_system_name" data-live-search="true" data-width="100%">
+								{%- for system in systems %}
+								<option value="{{ system['name'] }}">{{ system['name'] }} - {{ system['allocation_comment'] }}</option>
+								{% endfor -%}
+							</select>
+						</td>
+						<td style="width:1px"><button type="button" class="btn btn-sm btn-success" id="add_system">Add</button></td>
+					</tr>
+				</tfoot>
+			</table>
+		</div>
+		<div class="col-md-12"><h3 style="margin-top:0px">Create Snapshot</h3></div>
+		<div class="row">
+			<div class="col-md-12">
+				<p style="text-align:center"><input type="submit" class="btn btn-lg btn-success" value="Create Snapshot" name="submit" id="submit" /></p>				
+			</div>
+		</div>
+	</div>
+</form>
+<script type="text/javascript">
+$('#add_system').click(function() {
+	var name = $('#new_system_name').val().trim();
+	var text = $('#new_system_name option:selected').text().trim();
 
+	// Check the system hasn't already been added
+	if ($(`input.system_server_name[value="${name}"]`).length > 0) {
+		alert(`You've already added ${text} to the list of systems to snapshot!`);
+	} else {
+		var row = $('#system_row_template').clone(true);
+		$('#system_table_body').append(row);
+		
+		// Update row properties.
+		row.css('display', '');
+		row.removeAttr('id');
+		// Update row text.
+		row.find('td.system_row_name').html(text);
+		row.find('input.system_server_name').val(name);
+		// Add name attribute to the row.
+		row.find('input.system_server_name').attr('name', 'systems[]')
+	}
+});
+$('.remove_system').click(function() {
+	$(this).closest('tr').remove();
+});
+$('#submit').click(function(e) {
+	if (($('#snapshot_task').val().trim().length > 0) && ($('#snapshot_task').val().match(/^[ \t]*((((PRJ)|(INC)|(C)|(REQ))TASK)|((PRJ)|(REQ)|(INC)|(CHG)))[0-9]+[ \t]*/) == null)) {
+		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345, CTASK0012345 or REQTASK0012345.');
+		$('#snapshot_task').focus();
+	} else if ($('input[name="systems[]"]').length == 0) {
+		alert('You must select at least one system to snapshot!');
+	} else {
+		// Submit the form normally.
+		return true;
+	}
+
+	// Prevent the form from submitting.
+	e.preventDefault();
+	return false;
+
+
+});
+</script>
 {% endblock %}

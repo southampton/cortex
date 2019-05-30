@@ -499,3 +499,12 @@ legend
 {
 	color: #555555;
 }
+
+/* Required Inputs */
+span.required
+{
+	color: #f00;
+	font-weight: bold;
+	margin-left: 0.2em;
+}
+
