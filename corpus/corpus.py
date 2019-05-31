@@ -449,8 +449,11 @@ class Corpus(object):
 
 	################################################################################
 
-	def vmware_task_wait(self, task):
+	def vmware_task_wait(self, task, timeout = None):
 		"""Waits for vCenter task to finish"""
+
+		# Initialise our timer
+		timer = 0
 
 		while True:
 			if task.info.state == 'success':
@@ -462,8 +465,12 @@ class Corpus(object):
 			## other states are 'queued' and 'running'
 			## which we should just wait on.
 
+			if timeout is not None and timeout > 0 and timer > timeout:
+				return False
+
 			## lets not busy wait CPU 100%...
 			time.sleep(1)
+			timer = timer + 1
 
 	################################################################################
 
@@ -1001,17 +1008,33 @@ class Corpus(object):
 	def vmware_wait_for_poweron(self, vm, timeout=30):
 		"""Waits for a virtual machine to be marked as powered up by VMware."""
 
+		return self.vmware_wait_for_powerstate(vm, vim.VirtualMachinePowerState.poweredOn, timeout)
+
+	############################################################################
+	
+	def vmware_wait_for_poweroff(self, vm, timeout=30):
+		"""Waits for a virtual machine to be marked as powered up by VMware."""
+
+		return self.vmware_wait_for_powerstate(vm, vim.VirtualMachinePowerState.poweredOff, timeout)
+
+	############################################################################
+
+
+	def vmware_wait_for_powerstate(self, vm, powerstate, timeout=30):
+		"""Waits for a virtual machine to be marked as powerstate by VMware."""
+
 		# Initialise our timer
 		timer = 0
 
 		# While the VM is not marked as powered on, and our timer has not hit our timeout
-		while vm.runtime.powerState != vim.VirtualMachinePowerState.poweredOn and timer < timeout:
+		while vm.runtime.powerState != powerstate and timer < timeout:
 			# Wait
 			time.sleep(1)
 			timer = timer + 1
 
-		# Return whether the VM is powered up or not
-		return vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn
+		# Return whether the VM has reached this state or not.
+		return vm.runtime.powerState == powerstate
+
 
 	############################################################################
 

@@ -14,9 +14,19 @@ def snapshot_create():
 	if request.method == 'GET':
 	
 		# Get systems.
-		systems = get_systems(virtual_only=True)
+		systems = get_systems(order='id', order_asc=False, virtual_only=True)
 
-		return workflow.render_template('create.html', systems=systems)
+		values = {}
+		if 'systems' in request.args:
+			values['snapshot_systems'] = []
+			for system in request.args['systems'].strip(',').split(','):
+				try:
+					vm = next(i for i in systems if i['name'] == system)
+				except StopIteration:pass # System not in Systems List (Likely not a VM then).
+				else:
+					values['snapshot_systems'].append(vm)
+
+		return workflow.render_template('create.html', systems=systems, values=values)
 
 	elif request.method == 'POST':
 
@@ -26,6 +36,8 @@ def snapshot_create():
 		fields['expiry'] = request.form.get('snapshot_expiry', None)
 		fields['comments'] = request.form.get('snapshot_comments', '')
 		fields['username'] = session['username']
+		fields['memory'] = 'snapshot_memory' in request.form
+		fields['cold'] = 'snapshot_cold' in request.form
 
 		fields['systems'] = list(set(request.form.getlist('systems[]')))
 		

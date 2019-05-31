@@ -48,6 +48,12 @@
 			<label for="snapshot_comments">Comments:</label>
 			<input class="form-control" name="snapshot_comments" id="snapshot_comments" placeholder="Any other notes to be stored in the description field in VMware" {% if 'snapshot_comments' in values %}value="{{ values['snapshot_comments'] }}"{% endif %} />
 		</div>
+		<div class="col-md-12 form-group">
+			<label for="snapshot_memory"><input type="checkbox" id="snapshot_memory" name="snapshot_memory" {% if 'snapshot_memory' in values and values['snapshot_memory'] %}checked="checked"{% endif %}/> Snapshot the virtual machine's memory.</label>
+		</div>
+		<div class="col-md-12 form-group">
+			<label for="snapshot_cold"><input type="checkbox" id="snapshot_cold" name="snapshot_cold" {% if 'snapshot_cold' in values and values['snapshot_cold'] %}checked="checked"{% endif %}/> Power off the virtual machine before taking the snapshot.</label>
+		</div>
 		<div class="col-md-12"><h3 style="margin-top:0px">Systems</h3></div>
 		<div class="col-md-12">
 			<table class="table table-condensed tabled-striped">
@@ -63,6 +69,15 @@
 						<td class="system_row_name"></td>
 						<td><button type="button" class="btn btn-xs btn-danger remove_system">Remove</button></td>
 					</tr>
+					{%- if 'snapshot_systems' in values %}
+					{%- for system in values['snapshot_systems'] %}
+					<tr>
+						<input type="hidden" class="system_server_name" name="systems[]" value="{{ system['name'] }}">
+						<td class="system_row_name">{{ system['name'] }} - {{ system['allocation_comment'] }}</td>
+						<td><button type="button" class="btn btn-xs btn-danger remove_system">Remove</button></td>
+					</tr>
+					{% endfor -%}
+					{% endif -%}
 				</tbody>
 				<tfoot>
 					<tr>
@@ -87,6 +102,22 @@
 	</div>
 </form>
 <script type="text/javascript">
+$('#snapshot_memory').change(function() {
+	if ($(this).is(':checked')) {
+		$('#snapshot_cold').attr('checked', false);
+		$('#snapshot_cold').attr('disabled', true);
+	} else {
+		$('#snapshot_cold').removeAttr('disabled');
+	}
+});
+$('#snapshot_cold').change(function() {
+	if ($(this).is(':checked')) {
+		$('#snapshot_memory').attr('checked', false);
+		$('#snapshot_memory').attr('disabled', true);
+	} else {
+		$('#snapshot_memory').removeAttr('disabled');
+	}
+});
 $('#add_system').click(function() {
 	var name = $('#new_system_name').val().trim();
 	var text = $('#new_system_name option:selected').text().trim();

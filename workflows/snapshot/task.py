@@ -23,14 +23,35 @@ def run(helper, options):
 				continue
 			else:
 				helper.end_event(description='Found {} - {}'.format(system['name'], system['allocation_comment']))
-				helper.event('vm_snapshot', 'Attempting to snapshot VM')
 
+				memory = False
+				if options['fields']['cold']:
+					# Power Off
+					helper.event('vm_poweroff', 'Powering off {} for a cold snapshot'.format(name))
+
+					# Attempt to shutdown the guest.
+					task = vm.ShutdownGuest()
+					if not helper.lib.vmware_wait_for_poweroff(vm):
+						# Shutdown task failed.
+						if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
+							task = vm.PowerOffVM_Task()
+							if not helper.lib.vmware_task_wait(task, timeout=30):
+								raise RuntimeError('Failed to power off VM')
+
+					helper.end_event()
+				elif options['fields']['memory']:
+					# Snapshot the VM's memory:
+					memory = True
+
+
+				helper.event('vm_snapshot', 'Attempting to snapshot VM')
 				description_text = 'Delete After: {0}\nTaken By: {1}\nTask: {2}\nAdditional Comments: {3}\n'.format(options['fields']['expiry'], options['fields']['username'], options['fields']['task'], options['fields']['comments'])
+
 				task = helper.lib.vmware_vm_create_snapshot(
 					vm,
 					options['fields']['name'],
 					description_text,
-					memory=False,
+					memory=memory,
 					quiesce=False
 				)
 
@@ -38,7 +59,17 @@ def run(helper, options):
 					raise helper.lib.TaskFatalError(message='Failed to snapshot VM. ({})'.format(name))
 				
 				helper.end_event(description='Snapshot Complete')
-	
+
+				if options['fields']['cold']:
+					# Power On
+					helper.event('vm_poweron', 'Powering on {}'.format(name))
+					vm.PowerOn()
+
+					if helper.lib.vmware_wait_for_poweron(vm):
+						helper.end_event()
+					else:
+						helper.end_event(success=False, warning=True, description='Failed to power on {}'.format(name))
+					
 		else:
 			helper.end_event(success=False, warning=True, description='Failed to find {}'.format(name))
 			continue
