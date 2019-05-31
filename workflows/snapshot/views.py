@@ -7,6 +7,7 @@ from flask import request, session, redirect, url_for
 from datetime import datetime
 
 workflow = CortexWorkflow(__name__, check_config={})
+workflow.add_permission('snapshot.create', 'Create VMware Snapshots')
 
 @workflow.route('create', title='Create VMware Snapshot', order=40, permission="snapshot.create", methods=['GET', 'POST'])
 def snapshot_create():
@@ -52,3 +53,4 @@ def snapshot_create():
 		
 		# Redirect to the status page for the task
 		return redirect(url_for('task_status', id=task_id))
+
