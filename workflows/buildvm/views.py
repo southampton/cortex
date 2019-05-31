@@ -216,7 +216,7 @@ def standard():
 		options['secondary_owner_who'] = secondary_owner_who
 		options['secondary_owner_role'] = secondary_owner_role
 		options['dns_aliases'] = dns_aliases
-		options['vm_folder_name'] = vm_folder_name
+		options['vm_folder_moid'] = vm_folder_moid
 
 		if 'NOTIFY_EMAILS' in app.config:
 			options['notify_emails'] = app.config['NOTIFY_EMAILS']
