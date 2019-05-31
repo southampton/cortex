@@ -449,6 +449,23 @@ class Corpus(object):
 
 	################################################################################
 
+	def vmware_get_obj_by_id(self, content, vimtype, moId):
+		"""
+		Return an object by moId. Set parent to be
+		a Folder, Datacenter, ComputeResource or ResourcePool under
+		which to search for the object.
+		"""
+		obj = None
+		container = content.viewManager.CreateContainerView(content.rootFolder, vimtype, True)
+		for c in container.view:
+			if c._moId == moId:
+				obj = c
+				break
+
+		return obj
+
+	################################################################################
+
 	def vmware_task_wait(self, task):
 		"""Waits for vCenter task to finish"""
 
@@ -611,7 +628,7 @@ class Corpus(object):
 
 	################################################################################
 
-	def vmware_clone_vm(self, service_instance, vm_template, vm_name, vm_datacenter=None, vm_datastore=None, vm_folder=None, vm_cluster=None, vm_rpool=None, vm_network=None, vm_poweron=False, custspec=None, vm_datastore_cluster=None):
+	def vmware_clone_vm(self, service_instance, vm_template, vm_name, vm_datacenter=None, vm_datastore=None, vm_folder=None, vm_cluster=None, vm_rpool=None, vm_network=None, vm_poweron=False, custspec=None, vm_datastore_cluster=None, folder_is_moid=False):
 		"""This function connects to vcenter and clones a virtual machine. Only vm_template and
 		   vm_name are required parameters although this is unlikely what you'd want - please
 		   read the parameters and check if you want to use them.
@@ -638,7 +655,10 @@ class Corpus(object):
 
 		## VMware folder
 		if vm_folder:
-			destfolder = self.vmware_get_obj(content, [vim.Folder], vm_folder)
+			if folder_is_moid:
+				destfolder = self.vmware_get_obj_by_id(content, [vim.Folder], vm_folder)
+			else:
+				destfolder = self.vmware_get_obj(content, [vim.Folder], vm_folder)
 
 			if destfolder is None:
 				raise RuntimeError("Failed to locate destination folder, '" + vm_folder + "'")
