@@ -1,5 +1,4 @@
 from pyVmomi import vim
-from pyVim.task import WaitForTask
 
 def run(helper, options):
 
@@ -26,14 +25,18 @@ def run(helper, options):
 				helper.end_event(description='Found {} - {}'.format(system['name'], system['allocation_comment']))
 				helper.event('vm_snapshot', 'Attempting to snapshot VM')
 
-				desc_text = 'Delete After: {0}\nTaken By: {1}\nTask: {2}\nAdditional Comments: {3}\n'.format(options['fields']['expiry'], options['fields']['username'], options['fields']['task'], options['fields']['comments'])
-				WaitForTask(vm.CreateSnapshot(
-					options['fields']['name'], # Snapshot Name
-					desc_text,		   # Snapshot Description
-					False,			   # Quiesce
-					False,			   # Dump Memory
-				))
+				description_text = 'Delete After: {0}\nTaken By: {1}\nTask: {2}\nAdditional Comments: {3}\n'.format(options['fields']['expiry'], options['fields']['username'], options['fields']['task'], options['fields']['comments'])
+				task = helper.lib.vmware_vm_create_snapshot(
+					vm,
+					options['fields']['name'],
+					description_text,
+					memory=False,
+					quiesce=False
+				)
 
+				if not helper.lib.vmware_task_wait(task):
+					raise helper.lib.TaskFatalError(message='Failed to snapshot VM. ({})'.format(name))
+				
 				helper.end_event(description='Snapshot Complete')
 	
 		else:

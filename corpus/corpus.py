@@ -1172,6 +1172,12 @@ class Corpus(object):
 
 	############################################################################
 
+	def vmware_vm_create_snapshot(self, vm, name, description, memory=False, quiesce=False):
+		
+		return vm.CreateSnapshot_Task(name=name, description=description, memory=memory, quiesce=quiesce)
+
+	############################################################################
+
 	def set_link_ids(self, cortex_system_id, cmdb_id = None, vmware_uuid = None):
 		"""
 		Sets the identifiers that link a system from the Cortex `systems` 
