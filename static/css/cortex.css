@@ -507,4 +507,12 @@ span.required
 	font-weight: bold;
 	margin-left: 0.2em;
 }
-
+/* Maint Tasks */
+.mtask
+{
+	min-height: 160px;
+}
+.mtask h3
+{
+	margin-top: 0px;
+}
