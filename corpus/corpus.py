@@ -441,8 +441,10 @@ class Corpus(object):
 			result['ip'] = socket.gethostbyname(host)
 			result['hostname'] = host
 			result['success'] = 1
-		except Exception, e:
-			pass
+		except socket.gaierror as e:
+			result['error'] = 'name or service not known'
+		except Exception as e:
+			result['error'] = 'unknown'
 
 		return result
 
