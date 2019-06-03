@@ -354,4 +354,11 @@ CERT_SCAN_EXPIRE_RESULTS = 90
 # [{'days_left': 2, 'type': 'incident', 'require_issuer_dn': ".*Let's Encrypt.*", 'team_name': 'Certificate Managers', 'opener_sys_id': 'af1d0283e83dfffa08e0b310ccc21901'}, {'days_left: 30, 'type': 'email' 'ignore_issuer_dn': ".*Let's Encrypt.*", 'to': 'root@mydomain'}]
 CERT_SCAN_NOTIFY=[]
 
+# When doing a DNS lookup that is given just as a hostname, add on this domain
+# suffix
+DEFAULT_DOMAIN='domain'
+
+# For DNS lookups: Consider hostname.anything_in_this_list to be a local domain,
+# so add on DEFAULT_DOMAIN
+KNOWN_DOMAIN_SUFFIXES=['test', 'dev']
 
