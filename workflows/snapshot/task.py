@@ -2,8 +2,7 @@ from pyVmomi import vim
 
 def run(helper, options):
 
-	systems = options['fields']['systems']
-	for name in systems:
+	for name in options['values']['systems']:
 		
 		helper.event('vm_locate', 'Finding {}'.format(name))
 		system = helper.lib.get_system_by_name(name, must_have_vmware_uuid=True)
@@ -25,7 +24,7 @@ def run(helper, options):
 				helper.end_event(description='Found {} - {}'.format(system['name'], system['allocation_comment']))
 
 				memory = False
-				if options['fields']['cold']:
+				if options['values']['snapshot_cold']:
 					# Power Off
 					helper.event('vm_poweroff', 'Powering off {} for a cold snapshot'.format(name))
 
@@ -39,17 +38,17 @@ def run(helper, options):
 								raise RuntimeError('Failed to power off VM')
 
 					helper.end_event()
-				elif options['fields']['memory']:
+				elif options['values']['snapshot_memory']:
 					# Snapshot the VM's memory:
 					memory = True
 
 
 				helper.event('vm_snapshot', 'Attempting to snapshot VM')
-				description_text = 'Delete After: {0}\nTaken By: {1}\nTask: {2}\nAdditional Comments: {3}\n'.format(options['fields']['expiry'], options['fields']['username'], options['fields']['task'], options['fields']['comments'])
+				description_text = 'Delete After: {0}\nTaken By: {1}\nTask: {2}\nAdditional Comments: {3}\n'.format(options['values']['snapshot_expiry'], options['values']['snapshot_username'], options['values']['snapshot_task'], options['values']['snapshot_comments'])
 
 				task = helper.lib.vmware_vm_create_snapshot(
 					vm,
-					options['fields']['name'],
+					options['values']['snapshot_name'],
 					description_text,
 					memory=memory,
 					quiesce=False
@@ -60,7 +59,7 @@ def run(helper, options):
 				
 				helper.end_event(description='Snapshot Complete')
 
-				if options['fields']['cold']:
+				if options['values']['snapshot_cold']:
 					# Power On
 					helper.event('vm_poweron', 'Powering on {}'.format(name))
 					vm.PowerOn()
