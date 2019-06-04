@@ -27,6 +27,18 @@ from pyVim.connect import SmartConnect, Disconnect
 from urlparse import urljoin
 from urllib import quote
 
+import x509utils
+
+# For signing
+from itsdangerous import JSONWebSignatureSerializer
+
+# For DNS queries
+import socket
+
+##
+## This needs major refactoring...
+##
+
 class Corpus(object):
 	"""Library functions used in both cortex and neocortex and workflow tasks"""
 
@@ -51,9 +63,10 @@ class Corpus(object):
 			return self.message
 
 	def __init__(self, db, config):
-		self.db     = db
-		self.config = config
-		self.rdb    = self._connect_redis()
+		self.db        = db
+		self.config    = config
+		self.rdb       = self._connect_redis()
+		self.x509utils = x509utils
 
 		# Regex for TSM matches. Matches nodenames of the format:
 		#  FQDN
@@ -406,6 +419,37 @@ class Corpus(object):
 
 	################################################################################
 
+	def dns_lookup(self, host):
+		"""
+		Lookup host in DNS.
+		"""
+
+		add_default_domain = False
+		if host.find('.') == -1:
+			add_default_domain = True
+		else:
+			host_parts = host.split('.')
+			if len(host_parts) == 2:
+				if host_parts[1] in self.config['KNOWN_DOMAIN_SUFFIXES']:
+					add_default_domain = True
+
+		if add_default_domain:
+			host = host + '.' + self.config['DEFAULT_DOMAIN']
+
+		result = {'success': 0}
+		try:
+			result['ip'] = socket.gethostbyname(host)
+			result['hostname'] = host
+			result['success'] = 1
+		except socket.gaierror as e:
+			result['error'] = 'name or service not known'
+		except Exception as e:
+			result['error'] = 'unknown'
+
+		return result
+
+	################################################################################
+
 	def vmware_get_obj(self, content, vimtype, name):
 		"""
 		Return an object by name, if name is None the
@@ -439,8 +483,28 @@ class Corpus(object):
 
 	################################################################################
 
-	def vmware_task_wait(self, task):
+	def vmware_get_obj_by_id(self, content, vimtype, moId):
+		"""
+		Return an object by moId. Set parent to be
+		a Folder, Datacenter, ComputeResource or ResourcePool under
+		which to search for the object.
+		"""
+		obj = None
+		container = content.viewManager.CreateContainerView(content.rootFolder, vimtype, True)
+		for c in container.view:
+			if c._moId == moId:
+				obj = c
+				break
+
+		return obj
+
+	################################################################################
+
+	def vmware_task_wait(self, task, timeout = None):
 		"""Waits for vCenter task to finish"""
+
+		# Initialise our timer
+		timer = 0
 
 		while True:
 			if task.info.state == 'success':
@@ -452,8 +516,12 @@ class Corpus(object):
 			## other states are 'queued' and 'running'
 			## which we should just wait on.
 
+			if timeout is not None and timeout > 0 and timer > timeout:
+				return False
+
 			## lets not busy wait CPU 100%...
 			time.sleep(1)
+			timer = timer + 1
 
 	################################################################################
 
@@ -601,7 +669,7 @@ class Corpus(object):
 
 	################################################################################
 
-	def vmware_clone_vm(self, service_instance, vm_template, vm_name, vm_datacenter=None, vm_datastore=None, vm_folder=None, vm_cluster=None, vm_rpool=None, vm_network=None, vm_poweron=False, custspec=None, vm_datastore_cluster=None):
+	def vmware_clone_vm(self, service_instance, vm_template, vm_name, vm_datacenter=None, vm_datastore=None, vm_folder=None, vm_cluster=None, vm_rpool=None, vm_network=None, vm_poweron=False, custspec=None, vm_datastore_cluster=None, folder_is_moid=False):
 		"""This function connects to vcenter and clones a virtual machine. Only vm_template and
 		   vm_name are required parameters although this is unlikely what you'd want - please
 		   read the parameters and check if you want to use them.
@@ -628,7 +696,10 @@ class Corpus(object):
 
 		## VMware folder
 		if vm_folder:
-			destfolder = self.vmware_get_obj(content, [vim.Folder], vm_folder)
+			if folder_is_moid:
+				destfolder = self.vmware_get_obj_by_id(content, [vim.Folder], vm_folder)
+			else:
+				destfolder = self.vmware_get_obj(content, [vim.Folder], vm_folder)
 
 			if destfolder is None:
 				raise RuntimeError("Failed to locate destination folder, '" + vm_folder + "'")
@@ -991,17 +1062,33 @@ class Corpus(object):
 	def vmware_wait_for_poweron(self, vm, timeout=30):
 		"""Waits for a virtual machine to be marked as powered up by VMware."""
 
+		return self.vmware_wait_for_powerstate(vm, vim.VirtualMachinePowerState.poweredOn, timeout)
+
+	############################################################################
+	
+	def vmware_wait_for_poweroff(self, vm, timeout=30):
+		"""Waits for a virtual machine to be marked as powered up by VMware."""
+
+		return self.vmware_wait_for_powerstate(vm, vim.VirtualMachinePowerState.poweredOff, timeout)
+
+	############################################################################
+
+
+	def vmware_wait_for_powerstate(self, vm, powerstate, timeout=30):
+		"""Waits for a virtual machine to be marked as powerstate by VMware."""
+
 		# Initialise our timer
 		timer = 0
 
 		# While the VM is not marked as powered on, and our timer has not hit our timeout
-		while vm.runtime.powerState != vim.VirtualMachinePowerState.poweredOn and timer < timeout:
+		while vm.runtime.powerState != powerstate and timer < timeout:
 			# Wait
 			time.sleep(1)
 			timer = timer + 1
 
-		# Return whether the VM is powered up or not
-		return vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn
+		# Return whether the VM has reached this state or not.
+		return vm.runtime.powerState == powerstate
+
 
 	############################################################################
 
@@ -1159,6 +1246,12 @@ class Corpus(object):
 		obj = None
 		container = content.viewManager.CreateContainerView(content.rootFolder, vimtype, True)
 		return container.view
+
+	############################################################################
+
+	def vmware_vm_create_snapshot(self, vm, name, description, memory=False, quiesce=False):
+		
+		return vm.CreateSnapshot_Task(name=name, description=description, memory=memory, quiesce=quiesce)
 
 	############################################################################
 
@@ -1638,12 +1731,66 @@ class Corpus(object):
 	def delete_system_from_cache(self, vmware_uuid):
 		cur = self.db.cursor()
 		cur.execute("DELETE FROM `vmware_cache_vm` WHERE `uuid`=%s", (vmware_uuid,))
+		cur.execute("UPDATE `systems` SET `vmware_uuid`=NULL WHERE `vmware_uuid`=%s", (vmware_uuid,))
 		self.db.commit()
 
 	############################################################################
 
+	def servicenow_create_request(self, short_description, description, opened_by, assignment_group, request_type, requested_for=None):
+		"""Creates a request in ServiceNow"""
+
+		# Build some JSON
+		order_data = {}
+		order_data['sysparm_quantity'] = 1
+		if requested_for is not None:
+			order_data['sysparm_requested_for'] = requested_for
+		if opened_by is not None:
+			order_data['opened_by'] = opened_by
+
+		# Make an order to generate a request and request item
+		r = requests.post('https://' + self.config['SN_HOST'] + '/api/sn_sc/servicecatalog/items/' + request_type + '/order_now', auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=order_data)
+		if r is not None and r.status_code == 200:
+			json_response = r.json()
+			request_id = json_response['result']['request_id']
+		else:
+			error = "Failed to open a new request ticket"
+			if r is not None:
+				error = error + ". HTTP Response code: " + str(r.status_code)
+			raise Exception(error)
+
+		# Get the sys_id of the request item for the request we just made
+		r = requests.get('https://' + self.config['SN_HOST'] + '/api/now/v1/table/sc_req_item?sysparm_query=request='  + request_id, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'})
+		if r is not None and r.status_code == 200:
+			json_response = r.json()
+			req_item_id = json_response['result'][0]['sys_id']
+		else:
+			error = "Failed to locate created request item"
+			if r is not None:
+				error = error + ". HTTP Response code: " + str(r.status_code)
+			raise Exception(error)
+
+		# Build some JSON
+		item_data = {}
+		item_data['short_description'] = short_description
+		item_data['description'] = description
+		item_data['assignment_group'] = assignment_group
+
+		# Make a post request to ServiceNow to create the task
+		r = requests.put('https://' + self.config['SN_HOST'] + '/api/now/v1/table/sc_req_item/' + req_item_id, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=item_data)
+
+		# If we succeeded
+		if r is not None and r.status_code >= 200 and r.status_code <= 201:
+			return True
+		else:
+			error = "Failed to update request item"
+			if r is not None:
+				error = error + ". HTTP Response code: " + str(r.status_code)
+			raise Exception(error)
+
+	############################################################################
+
 	def servicenow_create_ticket(self, short_description, description, opened_by, assignment_group):
-		"""Raises a ticket on the CMDB"""
+		"""Raises an incident ticket in ServiceNow"""
 
 		# Build some JSON
 		task_data = {}
@@ -1661,8 +1808,8 @@ class Corpus(object):
 		else:
 			error = "Failed to open a new CMDB ticket"
 			if r is not None:
-				error = error + " HTTP Response code: " + str(r.status_code)
-			raise Exception()
+				error = error + ". HTTP Response code: " + str(r.status_code)
+			raise Exception(error)
 
 	############################################################################
 
@@ -1946,3 +2093,20 @@ class Corpus(object):
 		# Commit
 		self.db.commit()		
 
+	############################################################################
+
+	def redis_cache_system_actions(self, task_id, system_id, system_actions):
+
+		# Redis Key Prefix
+		prefix = 'decom/{}/'.format(task_id)
+
+		# Turn the actions list into a signed JSON document via itsdangerous
+		signer = JSONWebSignatureSerializer(self.config['SECRET_KEY'])
+		signed_system_actions = signer.dumps(system_actions)
+
+		# Add the signed actions to Redis.
+		self.rdb.setex(prefix + 'actions', 3600, signed_system_actions)
+		# Add the system_id to redis.
+		self.rdb.setex(prefix + 'system', 3600, str(system_id))
+
+		return True	

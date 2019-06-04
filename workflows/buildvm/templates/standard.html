@@ -77,7 +77,7 @@ div.specdetails
 {% endfor -%}
 </datalist>
 {% endif -%}
-<form method="POST" role="form">
+<form id="standard_buildvm" method="POST" role="form">
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 	<div class="row">
 		<div class="col-md-12">
@@ -239,10 +239,10 @@ div.specdetails
 			<h4>10. VMware Folder (optional)</h4>
 			<div style="margin-left: 1em">
 				<div class="form-group">
-					<select class="selectpicker" name="vm_folder_name" id="vm_folder_name">
+					<select class="selectpicker" name="vm_folder_moid" id="vm_folder_moid" data-live-search="true">
 						<option></option>
 {% for folder in folders -%}
-                                        <option value="{{ folder }}">{{ folder }}</option>
+                                        <option value="{{ folder['id'] }}">{{ folder['fully_qualified_path'] }}</option>
 {%- endfor %}
 					</select>
 				</div>
@@ -509,6 +509,7 @@ $(document).ready(function()
 	updateTotals();
 });
 
+<<<<<<< HEAD
 // Callback for clicking the Enable Costings button.
 $('#enable_costing').click(function (e) {
 	$('#cost_duration').prop('disabled', function(i, v) { return !v; });
@@ -534,15 +535,18 @@ $('#cost_paid').click(function (e) {
 
 // Callback for clicking Create button
 $('#create').click(function(e) {
+=======
+function validate(e)
+{
 	// Validate
 	if ($("#task").val().length == 0)
 	{
-		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345 or CTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident, or use the change task for the RFC you\'re performing.');
+		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345, CTASK0012345 or REQTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident, or use the change task for the RFC you\'re performing.');
 		$('#task').focus();
 	}
-	else if ($("#task").val().match(/^[ \t]*((PRJ)|(INC)|(C))TASK[0-9]+[ \t]*/) == null)
+	else if ($("#task").val().match(/^[ \t]*((PRJ)|(INC)|(C)|(REQ))TASK[0-9]+[ \t]*/) == null)
 	{
-		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345 or CTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident, or use the change task for the RFC you\'re performing.');
+		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345, CTASK0012345 or REQTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident, or use the change task for the RFC you\'re performing.');
 		$('#task').focus();
 	}
 	else if ($('#purpose').val().length == 0)
@@ -566,15 +570,43 @@ $('#create').click(function(e) {
 	{
 		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345 or CTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident, or use the change task for the RFC you\'re performing.');
 		$('#cost_related_ticket').focus();
-	}
+	}	
 	else
 	{
 		return true;
 	}
-
+	
 	// We've hit an error condition, don't allow the form to submit
 	e.preventDefault();
 	return false;
+}
+
+// Callback for clicking Create button
+$('#create').click(function(e) {
+
+	// Validate Page
+	validate(e)
+
+	// Validate Optional Stuff
+	var error = undefined;
+	if ($("#dns_aliases").val() != "")
+	{
+		e.preventDefault(); // Prevent form submitting.
+		$.ajax({
+			url: '/api/dns/' + $("#dns_aliases").val(),
+			success: function(data, textStatus) {
+				if ((data['success'] === undefined || data['success'] !== 0) || (data['error'] === undefined ||  data['error'] !== 'name or service not known'))
+				{
+					alert('DNS lookup for ' + $("#dns_aliases").val() + ' returned a result. Please choose an alias that doesn\'t exist.')
+				}else{
+					$('#standard_buildvm').submit(); // Submit on success.
+				}
+			},
+			error: function() {
+				alert('Failed to validate the Infoblox Host Alias against DNS, you can proceed but be warned.');
+			}
+		});
+	}
 });
 </script>
 {% endblock %}

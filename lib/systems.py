@@ -68,7 +68,7 @@ def csv_stream(cursor):
 
 ################################################################################
 
-def get_system_count(class_name = None, search = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only=False, show_allocated_and_perms=False, only_allocated_by=None, show_favourites_for=None):
+def get_system_count(class_name = None, search = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, show_allocated_and_perms = False, only_allocated_by = None, show_favourites_for = None, virtual_only = False):
 	"""Returns the number of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost)"""
 
 	## BUILD THE QUERY
@@ -78,7 +78,7 @@ def get_system_count(class_name = None, search = None, hide_inactive = True, onl
 	query = 'SELECT COUNT(*) AS `count` FROM `systems_info_view` '
 
 	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
-	query_where = _build_systems_query(class_name, search, None, None, None, None, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms, only_allocated_by, show_favourites_for)
+	query_where = _build_systems_query(class_name, search, None, None, None, None, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms, only_allocated_by, show_favourites_for, virtual_only)
 	query = query + query_where[0]
 	params = params + query_where[1]
 
@@ -135,7 +135,7 @@ def get_system_by_vmware_uuid(name):
 
 ################################################################################
 
-def _build_systems_query(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, show_allocated_and_perms=False, only_allocated_by=None, show_favourites_for = None):
+def _build_systems_query(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, show_allocated_and_perms = False, only_allocated_by = None, show_favourites_for = None, virtual_only = False):
 	params = ()
 
 	query = ""
@@ -226,12 +226,20 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 		params = params + (only_allocated_by,)
 
 	if show_favourites_for:
-		if class_name is not None or search is not None or hide_inactive == True or only_other or show_expired or show_nocmdb or show_perms_only or only_allocated_by:
+		if class_name is not None or search is not None or hide_inactive == True or only_other or show_expired or show_nocmdb or show_perms_only or show_allocated_and_perms or only_allocated_by:
 			query = query + " AND "
 		else:
 			query = query + "WHERE "
 		query = query + " `id` IN (SELECT `system_id` FROM `system_user_favourites` WHERE `username`=%s)"
 		params = params + (show_favourites_for,)
+
+	if virtual_only:
+		if class_name is not None or search is not None or hide_inactive == True or only_other or show_expired or show_nocmdb or show_perms_only or show_allocated_and_perms or only_allocated_by or virtual_only:
+			query = query + " AND "
+		else:
+			query = query + "WHERE "
+		query = query + " `vmware_uuid` IS NOT NULL"
+
 
 	# Handle the ordering of the rows
 	query = query + " ORDER BY ";
@@ -275,7 +283,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 
 ################################################################################
 
-def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, return_cursor = False, show_allocated_and_perms=False, only_allocated_by = None, show_favourites_for = None):
+def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, return_cursor = False, show_allocated_and_perms=False, only_allocated_by = None, show_favourites_for = None, virtual_only = False):
 	"""Returns the list of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost), and ordered (defaults to "name")"""
 
 	## BUILD THE QUERY
@@ -285,7 +293,7 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 	query = "SELECT * FROM `systems_info_view` "
 
 	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
-	query_where = _build_systems_query(class_name, search, order, order_asc, limit_start, limit_length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms, only_allocated_by, show_favourites_for)
+	query_where = _build_systems_query(class_name, search, order, order_asc, limit_start, limit_length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms, only_allocated_by, show_favourites_for, virtual_only)
 	query       = query + query_where[0]
 	params      = params + query_where[1]
 

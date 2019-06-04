@@ -368,48 +368,14 @@ def systems_new():
 
 ################################################################################
 
-class Backup(MethodView):
-	def __init__(self):
-		self.rubrik = cortex.lib.rubrik.Rubrik()
+@app.route('/systems/backup/<int:id>', methods=['GET', 'POST'])
+@cortex.lib.user.login_required
+def system_backup(id):
+	
+	rubrik = cortex.lib.rubrik.Rubrik()
 
-	@cortex.lib.user.login_required
-	def get(self, id):
-		# Check user permissions. User must have either systems.all.view.rubrik
-		if not does_user_have_permission("systems.all.view.rubrik"):
-			abort(403)
+	if request.method == 'POST':
 
-		# Get the name of the vm
-		system = cortex.lib.systems.get_system_by_id(id)
-		if not system:
-			abort(404)
-
-		try:
-			vm = self.rubrik.get_vm(system['name'])
-		except:
-			abort(500)
-
-		# If the VM was not found, return early
-		if vm is None:
-			return render_template('systems/backup.html', system=system, vm=None, title=system['name'])
-
-		# Get the list of all SLA Domains
-		sla_domains = self.rubrik.get_sla_domains()
-
-		# Get the SLA Domains and Snapshots for the VM
-		vm['effectiveSlaDomain'] = next((sla_domain for sla_domain in sla_domains['data'] if sla_domain['id'] == vm['effectiveSlaDomainId']), 'unknown')
-		vm['snapshots'] = self.rubrik.get_vm_snapshots(vm['id'])
-
-		# Try to limit to the most recent 10, ignoring the error if there are less
-		try:
-			vm['snapshots']['data'] = vm['snapshots']['data'][:10]
-		except (KeyError,):
-			pass
-
-		return render_template('systems/backup.html', system=system, sla_domains=sla_domains,
-				vm=vm, title=system['name'])
-
-	@cortex.lib.user.login_required
-	def post(self, id):
 		if not does_user_have_permission("systems.all.edit.rubrik"):
 			abort(403)
 
@@ -419,23 +385,50 @@ class Backup(MethodView):
 			abort(404)
 
 		try:
-			vm = self.rubrik.get_vm(system['name'])
+			vm = rubrik.get_vm(system['name'])
 		except:
 			abort(500)
 
 		mode = request.form.get('mode')
 		if mode in ('INHERIT', 'UNPROTECTED'):
-				self.rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
+				rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
 		elif 'sla_domain' in request.form:
-			self.rubrik.update_vm(vm['id'], {'configuredSlaDomainId': request.form.get('sla_domain')})
+			rubrik.update_vm(vm['id'], {'configuredSlaDomainId': request.form.get('sla_domain')})
 		else:
 			abort(400)
 
-		return self.get(id)
+	# Check user permissions. User must have either systems.all.view.rubrik
+	if not does_user_have_permission("systems.all.view.rubrik"):
+		abort(403)
 
-systems_view = Backup.as_view('system_backup')
-app.add_url_rule('/systems/backup/<int:id>', view_func=systems_view,
-		methods=['GET','POST'])
+	# Get the name of the vm
+	system = cortex.lib.systems.get_system_by_id(id)
+	if not system:
+		abort(404)
+
+	try:
+		vm = rubrik.get_vm(system['name'])
+	except:
+		abort(500)
+
+	# If the VM was not found, return early
+	if vm is None:
+		return render_template('systems/backup.html', system=system, vm=None, title=system['name'])
+
+	# Get the list of all SLA Domains
+	sla_domains = rubrik.get_sla_domains()
+
+	# Get the SLA Domains and Snapshots for the VM
+	vm['effectiveSlaDomain'] = next((sla_domain for sla_domain in sla_domains['data'] if sla_domain['id'] == vm['effectiveSlaDomainId']), 'unknown')
+	vm['snapshots'] = rubrik.get_vm_snapshots(vm['id'])
+
+	# Try to limit to the most recent 10, ignoring the error if there are less
+	try:
+		vm['snapshots']['data'] = vm['snapshots']['data'][:10]
+	except (KeyError,):
+		pass
+
+	return render_template('systems/backup.html', system=system, sla_domains=sla_domains, vm=vm, title=system['name'])
 
 ################################################################################
 

@@ -125,7 +125,7 @@ def get_users_groups(username=None, from_cache=True):
 		curd = g.db.cursor(mysql.cursors.DictCursor)
 
 		## Get from the cache (if it hasn't expired)
-		curd.execute('SELECT 1 FROM `ldap_group_cache_expire` WHERE `username` = %s AND `expiry_date` > CURDATE()', (username,))
+		curd.execute('SELECT 1 FROM `ldap_group_cache_expire` WHERE `username` = %s AND `expiry_date` > NOW()', (username,))
 		if curd.fetchone() is not None:
 			## The cache has not expired, return the list
 			curd.execute('SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s ORDER BY `group`', (username,))
@@ -137,7 +137,7 @@ def get_users_groups(username=None, from_cache=True):
 			return groups
 
 		else:
-			## teh cache has expired, return them from LDAP directly (but also cache)
+			## The cache has expired, return them from LDAP directly (but also cache)
 			return cortex.lib.ldapc.get_users_groups_from_ldap(username)
 
 #############################################################################
@@ -226,6 +226,13 @@ def does_user_have_permission(perm, user=None):
 		app.logger.debug("User " + str(user) + " did not have permission(s) " + str(perm))
 		return False
 
+	# There are situations (such as when pages are displayed during an error 
+	# handler) that before_request isn't called, so in those cases assume no
+	# permissions
+	if 'db' not in g:
+		app.logger.warn('Database not present in permission check!')
+		return False
+
 	app.logger.debug("Calculating permissions for user " + str(user) + ": " + str(perm))
 
 	# Query role_who joined to role_perms to see which permissions a user
@@ -306,6 +313,13 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 	if perm is not None:
 		if does_user_have_permission(perm,user):
 			return True
+
+	# There are situations (such as when pages are displayed during an error 
+	# handler) that before_request isn't called, so in those cases assume no
+	# permissions
+	if 'db' not in g:
+		app.logger.warn('Database not present in system permission check!')
+		return False
 
 	app.logger.debug("Checking system permissions for user " + str(user) + " on system " + str(system_id))
 

@@ -30,14 +30,6 @@ IRULE_PREFIX='irule-'
 MONITOR_PREFIX='monitor-'
 HTTP_PROFILE_PREFIX='profile-'
 
-# When doing a DNS lookup that is given just as a hostname, add on this domain
-# suffix
-DEFAULT_DOMAIN='domain'
-
-# For DNS lookups: Consider hostname.anything_in_this_list to be a local domain,
-# so add on DEFAULT_DOMAIN
-KNOWN_DOMAIN_SUFFIXES=['test', 'dev']
-
 # Minimum SSL key size to accept
 SSL_MIN_KEY_SIZE = 2048
 

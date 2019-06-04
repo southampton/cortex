@@ -23,7 +23,7 @@ import OpenSSL as openssl
 from itsdangerous import JSONWebSignatureSerializer
 
 workflow = CortexWorkflow(__name__)
-workflow.add_permission('nlbweb.create', 'Creates NLB Web Service')
+workflow.add_permission('nlbweb.create', 'Create NLB Web Service')
 
 # IPv4 Address Regex
 ipv4_re = re.compile(r"^((([0-9])|([1-9][0-9])|(1[0-9][0-9])|(2[0-4][0-9])|(25[0-5]))\.){3}((([0-9])|([1-9][0-9])|(1[0-9][0-9])|(2[0-4][0-9])|(25[0-5])))$")
@@ -798,28 +798,13 @@ def nlbweb_validate():
 
 @workflow.route('dnslookup', permission="nlbweb.create", menu=False)
 def nlbweb_dns_lookup():
+	
 	host = request.args['host']
-	add_default_domain = False
-	if host.find('.') == -1:
-		add_default_domain = True
-	else:
-		host_parts = host.split('.')
-		if len(host_parts) == 2:
-			if host_parts[1] in workflow.config['KNOWN_DOMAIN_SUFFIXES']:
-				add_default_domain = True
 
-	if add_default_domain:
-		host = host + '.' + workflow.config['DEFAULT_DOMAIN']
-
-	result = {'success': 0}
-	try:
-		result['ip'] = socket.gethostbyname(host)
-		result['hostname'] = host
-		result['success'] = 1
-	except Exception, e:
-		pass
-
-	return jsonify(result)
+	# Load the Corpus library (for Infoblox helper functions)
+	corpus = Corpus(g.db, app.config)
+	
+	return jsonify(corpus.dns_lookup(host))
 
 # Processes a Zulu time
 def parse_zulu_time(s):
