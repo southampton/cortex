@@ -84,17 +84,17 @@ CERT_SELF_SIGNED_O='MyOrganisation'
 # Self-signed certificate parameters: organisational unit
 CERT_SELF_SIGNED_OU='MyDepartment'
 
-# The IP that is through the firewall to respond to automated certificate challenges
-ACME_HOST_IP='192.168.1.1'
-
-# The hostname of the host object in Infoblox that corresponds to LETSENCRYPT_HOST_IP
-ACME_HOST_FQDN='acme-external.mydomain.tld'
-
 # The DNS view (can be None for default view) to modify DNS entries in for initial Let's Encrypt ACME challenge
 ACME_DNS_VIEW='External'
 
-# DNS propagation wait time (seconds)
-DNS_WAIT_TIME=15
+# Initial wait to let DNS catch up (seconds)
+DNS_PRE_WAIT_TIME=5
+
+# Timeout for waiting to DNS to actually catch up (not including pre-wait time) (seconds)
+DNS_WAIT_TIME=600
 
 # Amount of time Cortex will store the cert and key in redis
 CERT_CACHE_TIME=3600
+
+# External DNS server to check for records
+EXTERNAL_DNS_SERVER_IP='8.8.8.8'

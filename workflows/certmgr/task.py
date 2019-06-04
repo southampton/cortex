@@ -8,6 +8,9 @@ from f5.bigip import ManagementRoot
 # For certificate generation
 import OpenSSL as openssl
 
+# For DNS resolution
+import DNS
+
 def run(helper, options):
 	# Configuration of task
 	config = options['wfconfig']
@@ -92,7 +95,7 @@ def create_acme_cert(helper, options):
 
 	# Get the Infoblox host object reference for in the ACME Endpoint
 	helper.event('add_acme_dns', 'Adding aliases to ACME host object in Infoblox')
-	ref = helper.lib.infoblox_get_host_refs(config['ACME_HOST_FQDN'], config['ACME_DNS_VIEW'])
+	ref = helper.lib.infoblox_get_host_refs(options['acme']['acme_target_hostname'], config['ACME_DNS_VIEW'])
 	if ref is None or (type(ref) is list and len(ref) == 0):
 		raise Exception('Failed to get host ref for ACME endpoint')
 	
@@ -107,7 +110,9 @@ def create_acme_cert(helper, options):
 
 	# We might need to wait for the external nameservers to catch up
 	helper.event('dns_wait', 'Waiting for DNS updates')
-	time.sleep(config['DNS_WAIT_TIME'])
+	if 'DNS_PRE_WAIT_TIME' in config:
+		time.sleep(config['DNS_PRE_WAIT_TIME'])
+	wait_for_dns(config['EXTERNAL_DNS_SERVER_IP'], options['fqdn'], timeout=config['DNS_WAIT_TIME'], cname=options['acme']['acme_target_hostname'])
 	helper.end_event(success=True)
 
 	# Call the UoS ACME API to request the cert
@@ -200,3 +205,92 @@ def create_self_signed_cert(helper, options):
 			upload_cert_key_to_nlb(helper, options, pem_cert, pem_key)
 		
 		create_ssl_profile(helper, options)
+
+################################################################################
+
+def wait_for_dns(external_dns_server, fqdn, timeout=30, address=None, cname=None):
+	"""Waits for a DNS record to appear in all nameservers for the domain."""
+
+	# Input validation
+	if external_dns_server is None or len(external_dns_server) == 0:
+		raise ValueError("An 'external_dns_server' IP address must be specified")
+	if address is None and cname is None:
+		raise ValueError("A value for 'address' or 'cname' must be specified")
+
+	# Split the FQDN in to each of it's domain parts
+	split_fqdn = fqdn.split('.')
+
+	# Further input validation
+	if len(split_fqdn) <= 1:
+		raise ValueError("'fqdn' must specify a fully-qualified domain name")
+
+	# Search for NS records for each part recursively (e.g. for a.b.c.d, then b.c.d, then c.d, then d)
+	for i in range(len(split_fqdn) - 1):
+		# Rejoin the domain name
+		ns_fqdn_search = '.'.join(split_fqdn[i:])
+
+		# Perform the DNS request
+		r = DNS.DnsRequest(ns_fqdn_search, qtype='NS', server=[external_dns_server])
+		ns_res = r.req()
+
+		# If we got NS servers, then stop searching. The explicit check for NS records is
+		# required because doing an NS record search for a record that is a CNAME doesn't
+		# do what you might expect.
+		if ns_res.header['status'] == 'NOERROR' and len([answer for answer in ns_res.answers if answer['typename'] == 'NS']) > 0:
+			break
+	else:
+		# We reached the end of the list, and didn't find a valid NS record, so raise exception
+		raise Exception('Unable to find NS records for domain')
+
+	# Extract the list of NS servers we need to check
+	ns_list = [answer['data'] for answer in ns_res.answers if answer['typename'] == 'NS']
+
+	# Empty list of nameservers that contain the right result
+	completed_name_servers = []
+	start_time = time.time()
+
+	# Determine the query type
+	if address is not None:
+		# Determine if we're doing a v6 lookup
+		if ':' in address:
+			qtype = 'AAAA'
+
+			# The data we get back from DNS is "packed" (byte representation)
+			address = ipaddress.IPv6Address(unicode(address)).packed
+		else:
+			qtype = 'A'
+	elif cname is not None:
+		qtype = 'CNAME'
+
+		# CNAME checks needs to be case-insensitive
+		cname = cname.lower()
+
+	# Loop whilst we're waiting for all the nameservers to pick up, but don't exceed our timeout
+	while len(completed_name_servers) != len(ns_list) and time.time() - start_time < timeout:
+		# Iterate over all nameservers
+		for nameserver in ns_list:
+			# Skip past nameservers we've already validated
+			if nameserver in completed_name_servers:
+				continue
+
+			# Perform the DNS lookup
+			r = DNS.DnsRequest(fqdn, qtype=qtype, server=[nameserver])
+			res = r.req()
+
+			# If the query succeeded
+			if res.header['status'] == 'NOERROR':
+				# Iterate over the answers and make sure we have an A record for the address
+				for answer in res.answers:
+					if address is not None and answer['typename'] == qtype and answer['data'] == address:
+						completed_name_servers.append(nameserver)
+					elif cname is not None and answer['typename'] == qtype and answer['data'].lower() == cname: 
+						completed_name_servers.append(nameserver)
+
+		# If we've not got all nameservers, sleep a little
+		if len(completed_name_servers) != len(ns_list):
+			time.sleep(1)
+
+	# If we didn't ever succeed, raise an exception
+	if len(completed_name_servers) != len(ns_list):
+		raise Exception("Timeout whilst waiting for DNS records to update. Completed: " + str(completed_name_servers))
+
