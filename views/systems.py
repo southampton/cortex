@@ -1192,6 +1192,43 @@ def system_cost(id):
 
 ################################################################################
 
+@app.route('/systems/cost/<int:id>/edit/<int:cost_id>', methods=['POST'])
+@cortex.lib.user.login_required
+def system_cost_edit(id, cost_id):
+
+	if not does_user_have_system_permission(id,"edit.cost","systems.all.edit.cost"):
+		abort(403)
+
+	# Get the system
+	system = cortex.lib.systems.get_system_by_id(id)
+
+	# Ensure that the system actually exists, and return a 404 if it doesn't
+	if system is None:
+		abort(404)
+
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	query = 'UPDATE `system_cost` SET'
+	params = ()
+
+	if 'cost_paid' in request.form:
+		query += ' `paid`=%s, `paid_date`=%s'
+		if request.form['cost_paid'] in ['yes', 'true', 'enabled']:
+			params = params + (True, datetime.datetime.now(),)
+		else:
+			params = params + (False, None,)
+
+	query += ' WHERE `system_id`=%s AND `id`=%s'
+	params = params + (system['id'], cost_id,)
+
+	curd.execute(query, params)
+
+	g.db.commit()
+
+	return redirect(url_for('system_cost', id=id))
+
+################################################################################
+
 @app.route('/systems/cost/<int:id>/delete/<int:cost_id>', methods=['POST'])
 @cortex.lib.user.login_required
 def system_cost_delete(id, cost_id):
