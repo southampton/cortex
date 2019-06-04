@@ -74,10 +74,42 @@ def vmware_list_folders(tag):
         is within the application configuration."""
 	
 	if tag in app.config['VMWARE']:
-                # SQL to grab the clusters from the cache
                 curd = g.db.cursor(mysql.cursors.DictCursor)
+
+		# SQL to grab the datacenters from the cache into a dictionary
+                curd.execute("SELECT * FROM `vmware_cache_datacenters` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname'],))
+		result = curd.fetchall()
+		dcs_dict = {dc['id']: dc for dc in result}
+
+                # SQL to grab the clusters from the cache into a dictionary
                 curd.execute("SELECT * FROM `vmware_cache_folders` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname'],))
-                return curd.fetchall()
+                result = curd.fetchall()
+		folders_dict = {folder['id']: folder for folder in result}
+
+		folders = []
+		for folder_id in folders_dict:
+			# Start the fully qualified path with the name of the folder
+			fully_qualified = folders_dict[folder_id]['name']
+
+			# Recurse up the tree
+			recurse_folder = folders_dict[folder_id]
+			while recurse_folder['parent'] is not None:
+				try:
+					recurse_folder = folders_dict[recurse_folder['parent']]
+					if recurse_folder is not None:
+						# Add on the parent folder name to the front
+						fully_qualified = recurse_folder['name'] + "\\" + fully_qualified
+				except KeyError as e:
+					# We hit KeyErrors when we reach the "folder" that is the datecenter object
+					break
+
+			# Add the datacenter object name on the front
+			folders_dict[folder_id]['fully_qualified_path'] = dcs_dict[folders_dict[folder_id]['did']]['name'] + "\\" + fully_qualified
+
+			# Append this to our array
+			folders.append(folders_dict[folder_id])
+
+		return folders
         else:
                 raise Exception("Invalid VMware tag")
 

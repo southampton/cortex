@@ -24,7 +24,7 @@ class TasksCollection(Resource):
 	API Handler for multiple rows for tasks.
 	"""
 
-	@api_login_required('get')
+	@api_login_required()
 	@api_manager.expect(pagination_arguments, tasks_arguments)
 	@api_manager.marshal_with(page_tasks_serializer, mask='{page,pages,per_page,total,items}')
 	def get(self):
@@ -69,7 +69,7 @@ class TaskItem(Resource):
 	API Handler for a task in the tasks list.
 	"""
 
-	@api_login_required('get')
+	@api_login_required()
 	@api_manager.marshal_with(tasks_serializer)
 	def get(self, task_id):
 		"""
