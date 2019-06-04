@@ -323,7 +323,6 @@ div.specdetails
 								$('#cost_paidpicker').datetimepicker({
 									viewMode: 'days',
 									format: 'YYYY-MM-DD',
-									minDate: moment(),
 									useCurrent: false,
 								});
 							});
@@ -509,7 +508,6 @@ $(document).ready(function()
 	updateTotals();
 });
 
-<<<<<<< HEAD
 // Callback for clicking the Enable Costings button.
 $('#enable_costing').click(function (e) {
 	$('#cost_duration').prop('disabled', function(i, v) { return !v; });
@@ -518,6 +516,7 @@ $('#enable_costing').click(function (e) {
 	$('#cost').prop('disabled', function(i, v) { return !v; });
 	$('#cost_code').prop('disabled', function(i, v) { return !v; });
 	$('#cost_paid').prop('disabled', function(i, v) { return !v; });
+	$('#cost_related_ticket').prop('disabled', function(i, v) { return !v; });
 	if ($(this).is(":checked")) {
 		if ($('#cost_paid').is(":checked")) {
 			$('#cost_paid_date').prop('disabled', false);
@@ -533,9 +532,6 @@ $('#cost_paid').click(function (e) {
 	$('#cost_paid_date').prop('disabled', function(i, v) { return !v; });
 })
 
-// Callback for clicking Create button
-$('#create').click(function(e) {
-=======
 function validate(e)
 {
 	// Validate
