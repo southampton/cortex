@@ -500,7 +500,7 @@ class Corpus(object):
 
 	################################################################################
 
-	def vmware_task_wait(self, task):
+	def vmware_task_wait(self, task, timeout = None):
 		"""Waits for vCenter task to finish"""
 
 		# Initialise our timer
