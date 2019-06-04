@@ -32,6 +32,9 @@ import x509utils
 # For signing
 from itsdangerous import JSONWebSignatureSerializer
 
+# For DNS queries
+import socket
+
 ##
 ## This needs major refactoring...
 ##
@@ -413,6 +416,37 @@ class Corpus(object):
 				raise LookupError("Invalid data returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
 		else:
 			raise LookupError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
+
+	################################################################################
+
+	def dns_lookup(self, host):
+		"""
+		Lookup host in DNS.
+		"""
+
+		add_default_domain = False
+		if host.find('.') == -1:
+			add_default_domain = True
+		else:
+			host_parts = host.split('.')
+			if len(host_parts) == 2:
+				if host_parts[1] in self.config['KNOWN_DOMAIN_SUFFIXES']:
+					add_default_domain = True
+
+		if add_default_domain:
+			host = host + '.' + self.config['DEFAULT_DOMAIN']
+
+		result = {'success': 0}
+		try:
+			result['ip'] = socket.gethostbyname(host)
+			result['hostname'] = host
+			result['success'] = 1
+		except socket.gaierror as e:
+			result['error'] = 'name or service not known'
+		except Exception as e:
+			result['error'] = 'unknown'
+
+		return result
 
 	################################################################################
 
