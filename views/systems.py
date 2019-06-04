@@ -1164,6 +1164,30 @@ def system_cost(id):
 
 ################################################################################
 
+@app.route('/systems/cost/<int:id>/delete/<int:cost_id>', methods=['POST'])
+@cortex.lib.user.login_required
+def system_cost_delete(id, cost_id):
+
+	if not does_user_have_system_permission(id,"edit.cost","systems.all.edit.cost"):
+		abort(403)
+
+	# Get the system
+	system = cortex.lib.systems.get_system_by_id(id)
+
+	# Ensure that the system actually exists, and return a 404 if it doesn't
+	if system is None:
+		abort(404)
+
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Delete the cost.
+	curd.execute('DELETE FROM `system_cost` WHERE `system_id`=%s AND `id`=%s', (system['id'], cost_id))
+	g.db.commit()
+
+	return redirect(url_for('system_cost', id=id))
+
+################################################################################
+
 def _systems_extract_datatables():
 	# Validate and extract 'draw' parameter. This parameter is simply a counter
 	# that DataTables uses internally.
