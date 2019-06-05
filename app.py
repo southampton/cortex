@@ -405,12 +405,6 @@ Username:             %s
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
-		cursor.execute("""CREATE TABLE IF NOT EXISTS  `puppet_groups` (
-		  `name` varchar(255) NOT NULL,
-		  `classes` text NOT NULL,
-		  PRIMARY KEY (`name`)
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
-
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_nodes` (
 		  `id` mediumint(11) NOT NULL,
 		  `certname` varchar(255) NOT NULL,
@@ -822,8 +816,6 @@ Username:             %s
 		  (1, "puppet.nodes.view"), 
 		  (1, "puppet.default_classes.view"), 
 		  (1, "puppet.default_classes.edit"), 
-		  (1, "puppet.groups.view"), 
-		  (1, "puppet.groups.edit"), 
 		  (1, "classes.view"), 
 		  (1, "classes.edit"), 
 		  (1, "tasks.view"),
@@ -881,8 +873,6 @@ Username:             %s
 			{'name': 'puppet.nodes.view',		       'desc': 'View the list of Puppet nodes'},
 			{'name': 'puppet.default_classes.view',	       'desc': 'View the list of Puppet default classes'},
 			{'name': 'puppet.default_classes.edit',	       'desc': 'Modify the list of Puppet default classes'},
-			{'name': 'puppet.groups.view',		       'desc': 'View the list of Puppet groups'},
-			{'name': 'puppet.groups.edit',		       'desc': 'Modify Puppet groups'},
 			{'name': 'classes.view',		       'desc': 'View the list of system class definitions'},
 			{'name': 'classes.edit',		       'desc': 'Edit system class definitions'},
 			{'name': 'tasks.view',			       'desc': 'View the details of all tasks (not just your own)'},

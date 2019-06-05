@@ -179,8 +179,9 @@ def puppet_enc_default():
 ################################################################################
 
 @app.route('/puppet/nodes')
+@app.route('/puppet/nodes/status/<string:status>')
 @cortex.lib.user.login_required
-def puppet_nodes():
+def puppet_nodes(status = None):
 	"""Handles the Puppet nodes list page"""
 
 	# Check user permissions
@@ -191,7 +192,7 @@ def puppet_nodes():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get Puppet nodes from the database
-	curd.execute('SELECT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`  FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` ORDER BY `puppet_nodes`.`certname` ')
+	curd.execute('SELECT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`, `systems`.`allocation_comment` AS `allocation_comment` FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` ORDER BY `puppet_nodes`.`certname` ')
 	results = curd.fetchall()
 
 	# Get node statuses
@@ -200,7 +201,8 @@ def puppet_nodes():
 	except Exception as e:
 		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
-
+	
+	data = []
 	for row in results:
 		if row['certname'] in statuses:
 			row['status'] = statuses[row['certname']]['status']
@@ -209,132 +211,28 @@ def puppet_nodes():
 			row['status'] = 'unknown'
 			row['clientnoop'] = 'unknown'
 
+		if status == None or status == 'all':
+			data.append(row)
+		elif status == 'unchanged' and row['status'] == 'unchanged':
+			data.append(row)
+		elif status == 'changed' and row['status'] == 'changed':
+			data.append(row)
+		elif status == 'noop' and row['status'] == 'noop':
+			data.append(row)
+		elif status == 'failed' and row['status'] == 'failed':
+			data.append(row)
+		elif status == 'unknown' and row['status'] not in ['unchanged', 'changed', 'noop', 'failed']:
+			data.append(row)
+
+	# Page Title Map
+	title = 'Puppet Nodes'
+	page_title_map = {'unchanged': 'Normal', 'changed': 'Changed', 'noop': 'Disabled', 'failed': 'Failed', 'unknown': 'Unknown/Unreported', 'all': 'Registered'}
+
+	if status != None and status in page_title_map:
+		title = title + ' - {}'.format(page_title_map.get(status)) 
+
 	# Render
-	return render_template('puppet/nodes.html', active='puppet', data=results, title="Puppet Nodes", hide_unknown=True)
-
-################################################################################
-
-@app.route('/puppet/groups', methods=['GET', 'POST'])
-@cortex.lib.user.login_required
-def puppet_groups():
-	"""Handles the Puppet Groups page"""
-
-	# Check user permissions
-	if not does_user_have_permission("puppet.groups.view"):
-		abort(403)
-
-	# Get a cursor to the databaseo
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-
-	if request.method == 'GET':
-		# Get OS statistics
-		curd.execute('SELECT * FROM `puppet_groups`')
-		results = curd.fetchall()
-
-		return render_template('puppet/groups.html', active='puppet', data=results, title="Puppet Groups")
-	else:
-		# Check user permissions
-		if not does_user_have_permission("puppet.groups.edit"):
-			abort(403)
-
-		if request.form['action'] == 'add':
-			netgroup_name = request.form['netgroup_name']
-
-			if len(netgroup_name.strip()) == 0:
-				flash('Invalid netgroup name', 'alert-danger')
-				return redirect(url_for('puppet_groups'))
-
-			# Make sure that group hasnt already been imported
-			curd.execute('SELECT 1 FROM `puppet_groups` WHERE `name` = %s', (netgroup_name,))
-			found = curd.fetchone()
-			if found:
-				flash('That netgroup has already been imported as a Puppet Group', 'alert-warning')
-				return redirect(url_for('puppet_groups'))			
-
-			if not cortex.lib.netgroup.exists(netgroup_name):
-				flash('That netgroup does not exist', 'alert-danger')
-				return redirect(url_for('puppet_groups'))
-
-			curd.execute('INSERT INTO `puppet_groups` (`name`) VALUES (%s)', (netgroup_name,))
-			g.db.commit()
-			cortex.lib.core.log(__name__, "puppet.group.created", "Netgroup '" + netgroup_name + "' imported as a Puppet Group")
-
-			flash('The netgroup "' + netgroup_name + '" has imported as a Puppet Group', 'alert-success')
-			return redirect(url_for('puppet_groups'))
-		elif request.form['action'] == 'delete':
-			group_name = request.form['group']
-
-			try:
-				curd.execute('DELETE FROM `puppet_groups` WHERE `name` = %s', (group_name,))
-				g.db.commit()
-				cortex.lib.core.log(__name__, "puppet.group.deleted", "Deleted Puppet group '" + group_name + "'")
-				flash('Deleted Puppet group "' + group_name + '"', 'alert-success')
-			except Exception as e:
-				flash('Failed to delete Puppet group', 'alert-danger')
-
-			return redirect(url_for('puppet_groups'))
-
-################################################################################
-
-@app.route('/puppet/group/<name>', methods=['GET', 'POST'])
-@cortex.lib.user.login_required
-def puppet_group_edit(name):
-	"""Handles the Puppet group editing page (for assigning classes to a group)"""
-
-	# Check user permissions
-	if not does_user_have_permission("puppet.groups.view"):
-		abort(403)
-
-	# Get a cursor to the database
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-
-	# Get the group from the DB
-	curd.execute('SELECT * FROM `puppet_groups` WHERE `name` = %s', (name,))
-	group = curd.fetchone()
-	if not group:
-		flash('I could not find a Puppet Group with that name', 'alert-warning')
-		return redirect(url_for('puppet_groups'))
-
-	if group['classes'] is None:
-		group['classes'] = "# Classes to include can be entered here\n"
-
-	# On any GET request, just display the information
-	if request.method == 'GET':
-		return render_template('puppet/group.html', group=group, active='puppet', title=group['name'])
-
-	# On any POST request, validate the input and then save
-	elif request.method == 'POST':
-		# Check user permissions
-		if not does_user_have_permission("puppet.groups.edit"):
-			abort(403)
-
-		# Extract data from form
-		classes = request.form.get('classes', '')
-
-		# Validate classes YAML
-		try:
-			data = yaml.load(classes)
-		except Exception as e:
-			flash('Invalid YAML syntax for classes: ' + str(e), 'alert-danger')
-			group['classes'] = classes
-			return render_template('puppet/group.html', group=group, active='puppet', title=group['name'])
-
-		try:
-			if not data is None:
-				assert isinstance(data, dict)
-		except Exception as e:
-			flash('Invalid YAML syntax: result was not a list of classes, did you forget a trailing colon? ' + str(e), 'alert-danger')
-			group['classes'] = classes
-			return render_template('puppet/group.html', group=group, active='puppet', title=group['name'])
-
-		# Update the system
-		curd.execute('UPDATE `puppet_groups` SET `classes` = %s WHERE `name` = %s', (classes, name))
-		g.db.commit()
-		cortex.lib.core.log(__name__, "puppet.group.changed", "Puppet group '" + group_name + "' edited")
-
-		# Redirect back to the systems page
-		flash('Changes saved successfully', 'alert-success')
-		return redirect(url_for('puppet_group_edit', name=name))
+	return render_template('puppet/nodes.html', active='puppet', data=data, title=title, hide_unknown=True)
 
 ################################################################################
 
@@ -396,62 +294,6 @@ def puppet_dashboard():
 		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
 	return render_template('puppet/dashboard.html', stats=stats,active='puppet', title="Puppet Dashboard")
-
-################################################################################
-
-@app.route('/puppet/dashboard/status/<status>')
-@cortex.lib.user.login_required
-def puppet_dashboard_status(status):
-	"""This view is responsible for listing puppet nodes but only those matching
-	a certain status in PuppetDB."""
-
-	# Check user permissions (note this is the nodes permission rather than dashboard)
-	if not does_user_have_permission("puppet.nodes.view"):
-		abort(403)
-
-	# For the purposes of the dashboard, unreported is the same as unknown
-	if status == 'unreported':
-		status = 'unknown'
-
-	# Page Titles to use
-	page_title_map = {'unchanged': 'Normal', 'changed': 'Changed', 'noop': 'Disabled', 'failed': 'Failed', 'unknown': 'Unknown/Unreported', 'all': 'Registered'}
-
-	# If we have an invalid status, return 404
-	if status not in page_title_map:
-		abort(404)
-
-	# Connect to PuppetDB
-	try:
-		db = cortex.lib.puppet.puppetdb_connect()
-	except Exception as e:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
-
-	# Get information about all the nodes, including their status
-	nodes = db.nodes(with_status = True)
-
-	# Create a filterd array
-	nodes_of_type = []
-
-	# Iterate over nodes and do the filtering
-	if status != 'all':
-		for node in nodes:
-			if node.noop:
-				if status == 'noop':
-					# If we are looking for noop boxes.
-					nodes_of_type.append(node)
-				# We don't want to include noop boxes in any of the other categories regardless of status.
-			# Otherwise check the status.
-			else:
-				# If the status matches...
-				if node.status == status:
-					nodes_of_type.append(node)
-				# Or if the required status is 'unknown' and it's not one of the normal statii
-				elif status == 'unknown' and node.status not in ['unchanged', 'changed', 'noop', 'failed']:
-					nodes_of_type.append(node)
-	else:
-		nodes_of_type=nodes
-
-	return render_template('puppet/dashboard-status.html', active='puppet', title="Puppet Dashboard", nodes=nodes_of_type, status=page_title_map[status])
 
 ################################################################################
 
