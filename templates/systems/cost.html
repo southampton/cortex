@@ -48,15 +48,15 @@
 			<td>{{ row['paid_date'] if row['paid_date'] else 'This charge has not been marked as paid.' }}</td>
 			<td>{{ row['related_ticket'] }}</td>
 			<td style="width:250px;">
-				<button type="button" class="btn btn-default" data-container="body" data-toggle="popover" data-placement="left" data-content="{{ row['notes'] }}">Notes</button>
+				<button type="button" class="btn btn-default btn-xs" data-container="body" data-toggle="popover" data-placement="left" data-content="{{ row['notes'] }}">Notes</button>
 				<form class="form-inline" style="display:inline;" method="POST" action="{{ url_for('system_cost_edit', id=system.id, cost_id=row.id) }}">
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 					<input type="hidden" name="cost_paid" value="yes" />
-					<input type="submit" class="btn btn-success" value="Mark Paid" {{ 'disabled="disabled"' if row['paid'] }}>
+					<input type="submit" class="btn btn-success btn-xs" value="Mark Paid" {{ 'disabled="disabled"' if row['paid'] }}>
 				</form>
 				<form class="form-inline" style="display:inline;" method="POST" action="{{ url_for('system_cost_delete', id=system.id, cost_id=row.id) }}">
 					<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-					<input type="submit" class="btn btn-danger" value="Delete">
+					<input type="submit" class="btn btn-danger btn-xs" value="Delete">
 				</form>
 
 			</td>
