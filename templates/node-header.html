@@ -30,9 +30,7 @@
 		<li role="presentation"{% if active == "perms" %} class="active"{%endif%}><a href="{{url_for('perms_system',id=system.id)}}">Permissions</a></li>
 		{% endif -%}
 		{% if does_user_have_system_permission(system.id, "view.cost", "systems.all.view.cost") -%}
-		<li role="presentation"{% if active == "cost" %} class="active"{%endif%}><a href="{{url_for('system_cost',id=system.id)}}">System Charging</a></li>
-		{% else -%}
-		<li role="presentation"{% if active == "cost" %} class="active"{%endif%}><a href="{{url_for('system_cost',id=system.id)}}">System Charging</a></li>
+		<li role="presentation"{% if active == "cost" %} class="active"{%endif%}><a href="{{url_for('system_cost',id=system.id)}}">Charging</a></li>
 		{% endif -%}
 		{%- if system.cmdb_id and does_user_have_system_permission(system.id, "view.detail", "systems.all.view") %}
 		<li role="presentation"><a href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank">ServiceNow <i class="fa fa-fw fa-external-link"></i></a></li>
