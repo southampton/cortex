@@ -26,53 +26,69 @@ def run(helper, options):
 		)
 		helper.end_event(description='Successfully connected to PuppetDB.')
 
+		# get the environments from PuppetDB.
+		helper.event('puppet_environments', 'Getting environments from PuppetDB.')
+		environments = puppet.get_environments()
+		helper.end_event(description='Received environments from PuppetDB.')
+
+		# Initialise stats.
+		stats = {}
+		unknown = 0
+		for env in environments:
+			stats[env] = {
+				'count': 0,
+				'changed': 0,
+				'unchanged': 0,
+				'failed': 0,
+				'unreported': 0,
+				'noop': 0,
+				'unknown': 0,
+			}
+
 		# Get the nodes from PuppetDB.
 		helper.event('puppet_nodes', 'Getting nodes from PuppetDB.')
 		nodes = puppet.get_nodes(with_status = True)
 		helper.end_event(description='Received nodes from PuppetDB.')
 
-		# Initialise stats.
-		count = 0
-		unknown = 0
-		stats = {
-			'changed': 0,
-			'unchanged': 0,
-			'failed': 0,
-			'unreported': 0,
-			'noop': 0,
-		}
-
 		# Iterate over nodes.
 		for node in nodes:
-			# Count number of nodes (we can't do len(nodes) as it's a generator)
-			count += 1
 
-			if node.fact('clientnoop').value:
-				stats['noop'] += 1
-			else:
-				if node.status in stats:
-					stats[node.status] += 1
+			env = node.report_environment
+
+			if env in stats:	
+				# Count number of nodes (we can't do len(nodes) as it's a generator)
+				stats[env]['count'] += 1
+
+				if node.fact('clientnoop').value:
+					stats[env]['noop'] += 1
 				else:
-					unknown += 1
+					if node.status in stats[env]:
+						stats[env][node.status] += 1
+					else:
+						stats[env]['unknown'] += 1
+			else:
+				unknown += 1
 
-		# Put the remaining stats in our dictionary
-		stats['count'] = count
-		stats['unknown'] = unknown
-		
 		# Graphite URL and prefix.
 		url = urljoin(helper.config['GRAPHITE_URL'],'/post-graphite')
 		prefix = 'uos.puppet.stats.'
-		stime = " " + str(int(time.time()))
+		stime = str(int(time.time()))
 
 		# Post stats to graphite.
-		for key in stats:
-			helper.event('post_graphite', 'Posting PuppetDB stat "{0}" to Graphite.'.format(key))
-			try:
-				requests.post(url, data=(prefix + key + ' ' + str(stats[key]) + stime), auth=(helper.config['GRAPHITE_USER'], helper.config['GRAPHITE_PASS'])) 
-			except Exception as e:
-				helper.end_event(description='Failed to post "{0}" stat to Graphite. Exception: {1}'.format(key, str(e)), success=False)
-			else:
-				helper.end_event(description='Successfully sent "{0}" value {1} stat to Graphite.'.format(key, stats[key]))
+		post_data = ''
+		for env in stats:
+			for status in stats[env]:
+				post_data += prefix + env + '.' + status + ' ' + str(stats[env][status]) + ' ' + stime + '\n'
+
+		post_data += prefix + 'global.unknown ' + str(unknown) + ' ' + stime + '\n'
+			
+		helper.event('post_graphite', 'Posting PuppetDB Stats to Graphite')
+		try:
+			requests.post(url, data=post_data, auth=(helper.config['GRAPHITE_USER'], helper.config['GRAPHITE_PASS'])) 
+		except Exception as e:
+			helper.end_event(description='Failed to post stats to Graphite. Exception: {0}'.format(str(e)), success=False)
+		else:
+			helper.end_event(description='Successfully posted stats to Graphite.')
 	else:
 		helper.end_event(description='Task failed because the required configuration keys were not found.', success=False)
 
