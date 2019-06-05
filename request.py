@@ -101,8 +101,6 @@ def context_processor():
 		puppet.append({'link': url_for('puppet_dashboard'), 'title': 'Dashboard', 'icon': 'fa-dashboard'})
 	if does_user_have_permission("puppet.nodes.view"):
 		puppet.append({'link': url_for('puppet_nodes'), 'title': 'Nodes', 'icon': 'fa-server'})
-	if does_user_have_permission("puppet.groups.view"):
-		puppet.append({'link': url_for('puppet_groups'), 'title': 'Groups', 'icon': 'fa-object-group'})
 	if does_user_have_permission("puppet.default_classes.view"):
 		puppet.append({'link': url_for('puppet_enc_default'), 'title': 'Default classes', 'icon': 'fa-globe'})
 	if does_user_have_permission("puppet.dashboard.view"):

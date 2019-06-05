@@ -260,8 +260,8 @@ a.server-link:hover { text-decoration: underline !important; }
 			<strong><i class="fa fa-fw fa-line-chart"></i> {{ total_ram_usage | filesizeformat(binary=True) }}</strong> RAM usage
 		</div>
 		<div class="dashblock bg-purple">
-			<a href="{{ url_for('puppet_dashboard_status', status='changed') }}"><strong><i class="fa fa-fw fa-download"></i> {{ stats['changed'] }}</strong> Puppet nodes changed<br/></a>
-			<a href="{{ url_for('puppet_dashboard_status', status='failed') }}"><strong><i class="fa fa-fw fa-times"></i> {{ stats['failed'] }}</strong> Puppet nodes failed</a>
+			<a href="{{ url_for('puppet_nodes', status='changed') }}"><strong><i class="fa fa-fw fa-download"></i> {{ stats['changed'] }}</strong> Puppet nodes changed<br/></a>
+			<a href="{{ url_for('puppet_nodes', status='failed') }}"><strong><i class="fa fa-fw fa-times"></i> {{ stats['failed'] }}</strong> Puppet nodes failed</a>
 		</div>
 
 	</div>
