@@ -321,8 +321,11 @@ def system_perms_role(id):
 
 	## View list
 	if request.method == 'GET':
+
+		systems = cortex.lib.systems.get_systems(order='id', order_asc=False) 
+
 		# Render the page
-		return render_template('perms/role.html', active='perms', title="System Role", role=role, system_perms=app.system_permissions, rperms=plist)
+		return render_template('perms/role.html', active='perms', title="System Role", role=role, system_perms=app.system_permissions, rperms=plist, systems=systems)
 
 	## Edit role, delete role
 	elif request.method == 'POST':

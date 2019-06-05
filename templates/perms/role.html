@@ -1,4 +1,8 @@
 {% extends "layout.html" %}
+{% block head -%}
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
+	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+{% endblock %}
 {% block body %}
 
 <div class="modal fade" id="edit" role="dialog">
@@ -107,7 +111,11 @@
 					<div class="form-group">
 						<label class="col-sm-2 control-label">Name</label>
 						<div class="col-sm-10">
-							<input class="form-control" name="name" value="" placeholder="System name"/>
+							<select class="selectpicker" name="name" data-live-search="true" data-width="100%">
+								{%- for system in systems %}
+								<option value="{{ system['name'] }}">{{ system['name'] }} - {{ system['allocation_comment'] }}</option>
+								{% endfor -%}
+							</select>	
 						</div>
 					</div>
 				</div>
