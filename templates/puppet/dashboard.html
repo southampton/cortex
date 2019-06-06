@@ -54,7 +54,7 @@
 </div>
 <div class="row">
 	<div class="col-md-4">
-		<a href="{{ url_for('puppet_dashboard_status', status='all') }}">
+		<a href="{{ url_for('puppet_nodes', status='all') }}">
 		<div class="admin-block bg-purple">
 			<h1><i class="fa fa-fw fa-server"></i> {{ stats['count'] }}</h1>
 			<h2>Registered nodes</h2>
@@ -62,7 +62,7 @@
 		</a>
 	</div>
 	<div class="col-md-4">
-		<a href="{{ url_for('puppet_dashboard_status', status='unchanged') }}">
+		<a href="{{ url_for('puppet_nodes', status='unchanged') }}">
 		<div class="admin-block bg-success">
 			<h1><i class="fa fa-fw fa-check"></i> {{ stats['unchanged'] }}</h1>
 			<h2>Normal</h2>
@@ -70,7 +70,7 @@
 		</a>
 	</div>
 	<div class="col-md-4">
-		<a href="{{ url_for('puppet_dashboard_status', status='changed') }}">
+		<a href="{{ url_for('puppet_nodes', status='changed') }}">
 		<div class="admin-block bg-primary">
 			<h1><i class="fa fa-fw fa-cog"></i> {{ stats['changed'] }}</h1>
 			<h2>Changed</h2>
@@ -78,7 +78,7 @@
 		</a>
 	</div>
 	<div class="col-md-4">
-		<a href="{{ url_for('puppet_dashboard_status', status='noop') }}">
+		<a href="{{ url_for('puppet_nodes', status='noop') }}">
 		<div class="admin-block bg-warning">
 			<h1><i class="fa fa-fw fa-wrench"></i> {{ stats['noop'] }}</h1>
 			<h2>Disabled</h2>
@@ -86,7 +86,7 @@
 		</a>
 	</div>
 	<div class="col-md-4">
-		<a href="{{ url_for('puppet_dashboard_status', status='failed') }}">
+		<a href="{{ url_for('puppet_nodes', status='failed') }}">
 		<div class="admin-block bg-danger">
 			<h1><i class="fa fa-fw fa-exclamation-triangle"></i> {{ stats['failed'] }}</h1>
 			<h2>Failed</h2>
@@ -94,7 +94,7 @@
 		</a>
 	</div>
 	<div class="col-md-4">
-		<a href="{{ url_for('puppet_dashboard_status', status='unknown') }}">
+		<a href="{{ url_for('puppet_nodes', status='unknown') }}">
 		<div class="admin-block bg-default">
 			<h1><i class="fa fa-fw fa-question-circle"></i> {{ stats['unknown'] + stats['unreported'] }}</h1>
 			<h2>Unknown</h2>
