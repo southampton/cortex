@@ -209,28 +209,6 @@ def generate_node_config(certname):
 	else:
 		response['classes'] = {}
 
-	# Find all netgroups this node is a member of to load in their classes too
-	curd.execute("SELECT `name`, `classes` FROM `puppet_groups` ORDER BY `name`")
-	groups = curd.fetchall()
-
-	for group in groups:
-		if group['classes'] == None:
-			continue
-
-		if cortex.lib.netgroup.contains_host(certname,group['name']):
-
-			# Convert from YAML to python types for the classes for this group
-			group_classes = yaml.load(group['classes'])
-
-			# If there are classes within that
-			if not group_classes == None:
-				# Get the name of each class
-				for classname in group_classes:
-					# And if the class hasn't already been loaded by the node...
-					if not classname in response['classes']:
-						# import this class and its params too
-						response['classes'][classname] = group_classes[classname]
-
 	if node['include_default']:
 		# Load in global default classes too, unless we already loaded settings for those class names
 		for classname in default_classes:
