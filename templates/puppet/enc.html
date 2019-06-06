@@ -1,5 +1,7 @@
 {% extends "layout.html" %}
 {% block head %}
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
+	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
 {% include 'puppet/codemirror.html' %}
 {% endblock %}
 {% block body %}
@@ -95,7 +97,7 @@ $(document).ready(function()
 			</div>
 			<div class="form-group">
 				<label title="The Puppet environment that this node sits in (the actual name within Puppet is given in brackets)" class="col-sm-2 control-label" for="environment">Environment:</label>
-				<div class="col-sm-8 col-md-6 col-lg-4"> <select class="form-control" id="environment" name="environment">
+				<div class="col-sm-8 col-md-6 col-lg-4"> <select class="selectpicker form-control" id="environment" name="environment">
 {%- for environment in environments -%}
 {%- if environment.puppet %}
 					<option value="{{ environment.id }}"{% if system.puppet_env == environment.puppet %} selected="selected"{% endif %}>{{ environment.name }} ({{ environment.puppet }})</option>

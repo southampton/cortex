@@ -3,7 +3,7 @@
 <div class="page-header">
 	<button id="hide_unknown" type="button" class="btn btn-sm pull-right {% if hide_unknown %}btn-success active{%else%}btn-danger{%endif%}" style="margin-left:4px" title="Hide Unknown Puppet Nodes" data-toggle="popover" data-trigger="hover" data-placement="left" data-content="When ticked, nodes that have a status of 'unknown' are hidden. This is mainly nodes that are present in Cortex's Puppet nodes table but have no entries in the PuppetDB."><i class="fa fa-fw {% if hide_unknown %}fa-check-square-o{%else%}fa-square-o{%endif%}"></i> Hide Unknown Puppet Nodes</button>
 <h3><i class="fa fa-fw fa-server"></i> {{ title }}</h3>
-<p class="text-muted">Puppet in Cortex only affects servers registered with the "Puppet 2016" Puppet Master, existing servers will not appear below until they are migrated.</p>
+<p class="text-muted">The nodes listed below are registered with the Cortex Puppet ENC</p>
 </div>
 <table class="table table-condensed table-striped" id="data">
 	<thead>
