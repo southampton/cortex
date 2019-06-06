@@ -745,6 +745,15 @@ Username:             %s
 		  `system_role_who`.`who` IS NOT NULL AND
 		  `system_role_who`.`type` IS NOT NULL AND
 		  `system_role_perms`.`perm` IS NOT NULL
+		""")
+
+		cursor.execute("""CREATE OR REPLACE VIEW `system_perms_view` AS
+		SELECT DISTINCT
+		  `system_role_perms_view`.`system_id`,
+		  `system_role_perms_view`.`who`,
+		  `system_role_perms_view`.`type`,
+		  `system_role_perms_view`.`perm`
+		FROM `system_role_perms_view`
 		UNION
 		SELECT DISTINCT
 		  `system_perms`.`system_id`,
