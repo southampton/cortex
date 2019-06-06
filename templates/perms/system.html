@@ -109,7 +109,7 @@
 			{% for entry in system_perms %}
 				<li{% if loop.first %} class="active"{% endif%}>
 					<a href="#tab{{loop.index}}" data-toggle="pill">
-						{%if entry.type == 0 %}<i class="fa fa-fw fa-user"></i>{%elif entry.type == 1%}<i class="fa fa-fw fa-windows"></i>{%endif%} {{entry.who}}
+						{%if entry.type == 0 %}<i class="fa fa-fw fa-user"></i>{%elif entry.type == 1%}<i class="fa fa-fw fa-windows"></i>{%endif%} {{entry.who}} {%- if not entry['is_editable'] and 'system_role_id' in entry and 'system_role_name' in entry %} via System Role '{{ entry['system_role_name'] }}'{%- endif %}
 					</a>
 				</li>
 			{% endfor %}
@@ -128,7 +128,7 @@
 
 	<div class="panel panel-default" style="min-height: 600px">
 		<div class="panel-heading">
-			<h3 class="panel-title">Permissions for {%if entry.type == 0 %}user{%elif entry.type == 1%}Active Directory Group{%endif%} '{{entry.who}}' </h3>
+			<h3 class="panel-title">Permissions for {%if entry.type == 0 %}user{%elif entry.type == 1%}Active Directory Group{%endif%} '{{entry.who}}' {%- if not entry['is_editable'] and 'system_role_id' in entry and 'system_role_name' in entry %} via System Role '<a style="color:#158cba" ref="{{ url_for('system_perms_role', id=entry['system_role_id']) }}">{{ entry['system_role_name'] }}</a>'{%- endif %}</h3>
 		</div>
 		<div class="panel-body">
 
@@ -142,15 +142,23 @@
 					{% for perm in sysperms %}
 					<div class="checkbox">
 						<label>
-							<input type="checkbox" id="{{perm['name']}}" name="{{perm['name']}}" value="yes"{% if perm['name'] in entry['perms'] %} checked="checked"{%endif%}>
+							<input type="checkbox" id="{{perm['name']}}" name="{{perm['name']}}" value="yes"{% if perm['name'] in entry['perms'] %} checked="checked"{%endif%} {{ 'disabled="disabled"' if not entry['is_editable'] }}>
 							{{ perm['desc'] }}
 						</label>
 					</div>
 					{% endfor %}
 
 					</fieldset>
+					{%- if entry['is_editable'] -%}
 					<button type="submit" class="btn btn-success">Save changes to {%if entry.type == 0 %}user{%elif entry.type == 1%}Group{%endif%}</button>
 					<a data-toggle="modal" data-target="#remove" data-name="{{entry.who}}" data-type="{{entry.type}}" class="btn btn-danger">Remove {%if entry.type == 0 %}user{%elif entry.type == 1%}Group{%endif%}</a>
+					{%- else %}
+					{%- if 'system_role_id' in entry and 'system_role_name' in entry %}
+						<label>These permissions are controlled by the system permission role '{{ entry['system_role_name'] }}' <a href="{{ url_for('system_perms_role', id=entry['system_role_id']) }}">click here to edit</a>.
+					{%- else %}
+						<label>These permissions cannot be edited here!</label>
+					{% endif -%}
+					{% endif %}
 				</form>
 			</div>
 		</div>

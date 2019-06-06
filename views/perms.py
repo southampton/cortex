@@ -556,7 +556,7 @@ def perms_system(id):
 
 		for entry in results:
 			# Get perms for this system/user/type combo
-			curd.execute('SELECT `id`, `perm` FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s', (system['id'], entry['who'], entry['type']))
+			curd.execute('SELECT `perm` FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s', (system['id'], entry['who'], entry['type']))
 			perms = curd.fetchall()
 
 			# Create a object to add to the system_perms list.
@@ -570,7 +570,28 @@ def perms_system(id):
 			# Add the constructed object to the system_perms list.
 			system_perms.append(obj)
 
+		# Get the list of distinct users/groups/etc added to this system via a system role.
+		curd.execute('SELECT DISTINCT `system_role_id`, `system_role_name`, `type`, `who` FROM `system_role_perms_view` WHERE `system_id` = %s', (system['id'],))
+		results = curd.fetchall()
 		
+		for entry in results:
+			# Get perms for this system/user/type combo
+			curd.execute('SELECT `perm` FROM `system_role_perms_view` WHERE `system_id` = %s AND `who` = %s AND `type` = %s and `system_role_id`=%s and `system_role_name`=%s', (system['id'], entry['who'], entry['type'], entry['system_role_id'], entry['system_role_name']))
+			perms = curd.fetchall()
+
+			# Create a object to add to the system_perms list.
+			obj = {
+				'who': entry['who'],
+				'type': entry['type'],
+				'is_editable': False, # System Role Perms cannot be edited here!!
+				'system_role_id': entry['system_role_id'],
+				'system_role_name': entry['system_role_name'],
+				'perms': [p['perm'] for p in perms]
+			}
+
+			# Add the constructed object to the system_perms list.
+			system_perms.append(obj)
+
 		return render_template('perms/system.html', active='systems', title="Server permissions", system=system, system_perms=system_perms, sysperms=app.system_permissions)		
 
 	else:

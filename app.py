@@ -732,6 +732,8 @@ Username:             %s
 
 		cursor.execute("""CREATE OR REPLACE VIEW `system_role_perms_view` AS
 		SELECT DISTINCT 
+		  `system_roles`.`id` as `system_role_id`,
+		  `system_roles`.`name` as `system_role_name`,
 		  `system_role_what`.`system_id`,
 		  `system_role_who`.`who`,
 		  `system_role_who`.`type`,
