@@ -726,6 +726,8 @@ Username:             %s
 
 		cursor.execute("""CREATE OR REPLACE VIEW `system_role_perms_view` AS
 		SELECT DISTINCT 
+		  `system_roles`.`id` as `system_role_id`,
+		  `system_roles`.`name` as `system_role_name`,
 		  `system_role_what`.`system_id`,
 		  `system_role_who`.`who`,
 		  `system_role_who`.`type`,
@@ -739,6 +741,15 @@ Username:             %s
 		  `system_role_who`.`who` IS NOT NULL AND
 		  `system_role_who`.`type` IS NOT NULL AND
 		  `system_role_perms`.`perm` IS NOT NULL
+		""")
+
+		cursor.execute("""CREATE OR REPLACE VIEW `system_perms_view` AS
+		SELECT DISTINCT
+		  `system_role_perms_view`.`system_id`,
+		  `system_role_perms_view`.`who`,
+		  `system_role_perms_view`.`type`,
+		  `system_role_perms_view`.`perm`
+		FROM `system_role_perms_view`
 		UNION
 		SELECT DISTINCT
 		  `system_perms`.`system_id`,
@@ -858,6 +869,7 @@ Username:             %s
 			{'name': 'systems.all.view',		       'desc': 'View any system'},
 			{'name': 'systems.own.view',		       'desc': 'View systems allocated by the user'},
 			{'name': 'systems.all.view.puppet',	       'desc': 'View Puppet reports and facts on any system'},
+			{'name': 'systems.all.view.puppet.classify',   'desc': 'View Puppet classify on any system'},
 			{'name': 'systems.all.view.puppet.catalog',    'desc': 'View Puppet catalog on any system'},
 			{'name': 'systems.all.view.rubrik',            'desc': 'View Rubrik backups for any system'},
 			{'name': 'systems.all.edit.expiry',	       'desc': 'Modify the expiry date of any system'},
@@ -911,6 +923,7 @@ Username:             %s
 			{'name': 'view.overview',               'desc': 'View the system overview'},
 			{'name': 'view.detail',                 'desc': 'View the system details'},
 			{'name': 'view.puppet',                 'desc': 'View the system\'s Puppet reports and facts'},
+			{'name': 'view.puppet.classify',        'desc': 'View the system\'s Puppet classification'},
 			{'name': 'view.puppet.catalog',         'desc': 'View the system\'s Puppet catalog'},
 			{'name': 'edit.expiry',                 'desc': 'Change the expiry date of the system'},
 			{'name': 'edit.review',                 'desc': 'Change the review status of the system'},

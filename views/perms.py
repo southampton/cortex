@@ -6,7 +6,7 @@ import cortex.lib.user
 import cortex.lib.systems
 import cortex.lib.core
 from cortex.lib.user import does_user_have_permission
-from flask import request, session, redirect, url_for, flash, g, abort, render_template
+from flask import request, session, redirect, url_for, flash, g, abort, render_template, jsonify
 import re
 import MySQLdb as mysql
 
@@ -548,29 +548,51 @@ def perms_system(id):
 
 	if request.method == 'GET':
 
-		# Get the list of distinct users/groups/etc added to this system
+		system_perms = []
+
+		# Get the list of distinct users/groups/etc added to this system explicitly
 		curd.execute('SELECT DISTINCT `type`, `who` FROM `system_perms` WHERE `system_id` = %s', (system['id'],))
-		who = curd.fetchall()
+		results = curd.fetchall()
 
-		# We create a dictionary with the key being a tuple of the 'type' and 'who'
-		# with the value being a list of dictionaries, each dictionary having the
-		# id of the permission and the permission itself
-		perms_by_who = {}
-
-		# This is pretty nasty looking, but it works!
-		# it creates the above-explained structure.
-		for entry in who:
-			curd.execute('SELECT `id`, `perm` FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s', (system['id'], entry['who'], entry['type']))	
+		for entry in results:
+			# Get perms for this system/user/type combo
+			curd.execute('SELECT `perm` FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s', (system['id'], entry['who'], entry['type']))
 			perms = curd.fetchall()
 
-			permslist = []
-			for perm in perms:
-				permslist.append(perm['perm'])
+			# Create a object to add to the system_perms list.
+			obj = {
+				'who': entry['who'],
+				'type': entry['type'],
+				'is_editable': True,
+				'perms': [p['perm'] for p in perms]
+			}
 
-			perms_by_who[(entry['type'],entry['who'])] = permslist
+			# Add the constructed object to the system_perms list.
+			system_perms.append(obj)
 
+		# Get the list of distinct users/groups/etc added to this system via a system role.
+		curd.execute('SELECT DISTINCT `system_role_id`, `system_role_name`, `type`, `who` FROM `system_role_perms_view` WHERE `system_id` = %s', (system['id'],))
+		results = curd.fetchall()
+		
+		for entry in results:
+			# Get perms for this system/user/type combo
+			curd.execute('SELECT `perm` FROM `system_role_perms_view` WHERE `system_id` = %s AND `who` = %s AND `type` = %s and `system_role_id`=%s and `system_role_name`=%s', (system['id'], entry['who'], entry['type'], entry['system_role_id'], entry['system_role_name']))
+			perms = curd.fetchall()
 
-		return render_template('perms/system.html', active='systems', title="Server permissions", system=system, who=who, perms_by_who=perms_by_who, sysperms=app.system_permissions)		
+			# Create a object to add to the system_perms list.
+			obj = {
+				'who': entry['who'],
+				'type': entry['type'],
+				'is_editable': False, # System Role Perms cannot be edited here!!
+				'system_role_id': entry['system_role_id'],
+				'system_role_name': entry['system_role_name'],
+				'perms': [p['perm'] for p in perms]
+			}
+
+			# Add the constructed object to the system_perms list.
+			system_perms.append(obj)
+
+		return render_template('perms/system.html', active='systems', title="Server permissions", system=system, system_perms=system_perms, sysperms=app.system_permissions)		
 
 	else:
 		action = request.form['action']

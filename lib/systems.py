@@ -203,7 +203,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 			query = query + " AND "
 		else:
 			query = query + "WHERE "
-		query = query + ' `id` IN (SELECT DISTINCT `system_id` FROM `system_role_perms_view`)'
+		query = query + ' `id` IN (SELECT DISTINCT `system_id` FROM `system_perms_view`)'
 	
 	if show_allocated_and_perms:
 		if class_name is not None or search is not None or hide_inactive == True or only_other or show_expired or show_nocmdb or show_perms_only:
@@ -211,7 +211,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 		else:
 			query = query + "WHERE "
 
-		query = query + "((`id` IN (SELECT `system_id` FROM `system_role_perms_view` WHERE (`type` = '0' AND `who` = %s AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail')) OR (`type` = '1' AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail') AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s)))) OR `allocation_who`=%s)"
+		query = query + "((`id` IN (SELECT `system_id` FROM `system_perms_view` WHERE (`type` = '0' AND `who` = %s AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail')) OR (`type` = '1' AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail') AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s)))) OR `allocation_who`=%s)"
 		params = params + (only_allocated_by, only_allocated_by, only_allocated_by)
 
 		# Ignore the only_allocated_by.

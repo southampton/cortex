@@ -12,7 +12,7 @@
 		{% endif -%}
 		<li role="presentation"{% if active == "actions" %} class="active"{%endif%}><a href="{{url_for('system_actions',id=system.id)}}">Actions</a></li>
 		{% if system.puppet_certname -%}
-		{% if does_user_have_system_permission(system.id, "edit.puppet", "systems.all.edit.puppet") -%}
+		{% if does_user_have_system_permission(system.id, "edit.puppet", "systems.all.edit.puppet") or does_user_have_system_permission(system['id'],"view.puppet.classify","systems.all.view.puppet.classify") -%}
 		<li role="presentation"{% if active == "puppet" %} class="active"{%endif%}><a href="{{url_for('puppet_enc_edit',node=system.puppet_certname)}}">Puppet</a></li>
 		{% else -%}
 		{% if does_user_have_system_permission(system.id, "view.puppet", "systems.all.view.puppet") -%}

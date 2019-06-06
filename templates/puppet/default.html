@@ -37,8 +37,9 @@ $(document).ready(function() {
 				<textarea id="classes" name="classes">{{ classes }}</textarea>
 			</div>
 		</div>
-
+		{%- if does_user_have_permission("puppet.default_classes.edit") -%}
 		<button class="btn btn-primary" type="submit">Save Changes</button>
+		{% endif -%}
 	</div>
 	<div class="col-md-3">
 		<div class="panel panel-default">
