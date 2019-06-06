@@ -106,7 +106,7 @@ $(document).ready(function()
 			<div class="form-group">
 				<div class="col-sm-offset-2 col-sm-10">
 					<div class="checkbox" style="padding-top:0em">
-						<label title="Check to include the default classes that deploy are standard build" for="include_default"><input type="checkbox" id="include_default" name="include_default"{% if system.puppet_include_default %} checked="checked"{% endif %}/>Include the <a href="{{url_for('puppet_enc_default')}}">default classes</a></label>
+						<label title="Check to include the default classes that deploy are standard build" for="include_default"><input type="checkbox" id="include_default" name="include_default"{% if system.puppet_include_default %} checked="checked"{% endif %}/>Include the{%- if does_user_have_permission("puppet.default_classes.view") or does_user_have_permission("puppet.default_classes.edit") %} <a href="{{url_for('puppet_enc_default')}}">default classes</a>{%- else %} default classes{% endif -%}</label>
 					</div>
 				</div>
 			</div>
@@ -127,10 +127,12 @@ $(document).ready(function()
 				<textarea id="variables" name="variables" placholder="Global variables to include can be entered here">{{ system.puppet_variables or '' }}</textarea>
 			</div>
 		</div>
-
+		
+		{%- if does_user_have_system_permission(system['id'],"edit.puppet","systems.all.edit.puppet") %}
 		<div class="text-center">
 			<button class="btn btn-primary btn-lg" type="submit">Save Changes</button>
 		</div>
+		{% endif -%}
 	</div>
 	<div class="col-md-3">
 		<div class="panel panel-default">
