@@ -106,7 +106,7 @@
 			<h3 class="panel-title">Users and groups</h3>
 		</div>
 			<ul class="nav nav-pills nav-stacked">
-			{% for entry in who %}
+			{% for entry in system_perms %}
 				<li{% if loop.first %} class="active"{% endif%}>
 					<a href="#tab{{loop.index}}" data-toggle="pill">
 						{%if entry.type == 0 %}<i class="fa fa-fw fa-user"></i>{%elif entry.type == 1%}<i class="fa fa-fw fa-windows"></i>{%endif%} {{entry.who}}
@@ -123,7 +123,7 @@
 <div class="col-md-8">
 	<div class="tab-content">
 
-	{% for entry in who %}
+	{% for entry in system_perms %}
 		<div class="tab-pane{% if loop.first %} active{% endif%}" id="tab{{loop.index}}">
 
 	<div class="panel panel-default" style="min-height: 600px">
@@ -142,7 +142,7 @@
 					{% for perm in sysperms %}
 					<div class="checkbox">
 						<label>
-							<input type="checkbox" id="{{perm['name']}}" name="{{perm['name']}}" value="yes"{% if perm['name'] in perms_by_who[(entry['type'],entry['who'])] %} checked="checked"{%endif%}>
+							<input type="checkbox" id="{{perm['name']}}" name="{{perm['name']}}" value="yes"{% if perm['name'] in entry['perms'] %} checked="checked"{%endif%}>
 							{{ perm['desc'] }}
 						</label>
 					</div>
