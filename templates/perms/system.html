@@ -128,7 +128,7 @@
 
 	<div class="panel panel-default" style="min-height: 600px">
 		<div class="panel-heading">
-			<h3 class="panel-title">Permissions for {%if entry.type == 0 %}user{%elif entry.type == 1%}Active Directory Group{%endif%} '{{entry.who}}' {%- if not entry['is_editable'] and 'system_role_id' in entry and 'system_role_name' in entry %} via System Role '<a style="color:#158cba" ref="{{ url_for('system_perms_role', id=entry['system_role_id']) }}">{{ entry['system_role_name'] }}</a>'{%- endif %}</h3>
+			<h3 class="panel-title">Permissions for {%if entry.type == 0 %}user{%elif entry.type == 1%}Active Directory Group{%endif%} '{{entry.who}}' {%- if not entry['is_editable'] and 'system_role_id' in entry and 'system_role_name' in entry %} via System Role '<a style="color:#158cba" href="{{ url_for('system_perms_role', id=entry['system_role_id']) }}">{{ entry['system_role_name'] }}</a>'{%- endif %}</h3>
 		</div>
 		<div class="panel-body">
 
