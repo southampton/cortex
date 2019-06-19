@@ -11,10 +11,7 @@ def run(helper, options):
 	I.e. the number of changed / failed unchanged nodes etc.
 	"""
 	# Check config for Graphite stuff.
-	helper.event('sync_puppet_stats_graphite_config_check', 'Checking we have the required configuration.')
 	if all(key in helper.config for key in ['GRAPHITE_URL', 'GRAPHITE_USER', 'GRAPHITE_PASS']):
-		helper.end_event(description='Required config is present.')
-
 		# Create the PuppetDB object.
 		helper.event('puppetdb_connect', 'Connecting to PuppetDB.')
 		puppet = PuppetDBConnector.PuppetDBConnector(
@@ -89,6 +86,4 @@ def run(helper, options):
 			helper.end_event(description='Failed to post stats to Graphite. Exception: {0}'.format(str(e)), success=False)
 		else:
 			helper.end_event(description='Successfully posted stats to Graphite.')
-	else:
-		helper.end_event(description='Task failed because the required configuration keys were not found.', success=False)
 
