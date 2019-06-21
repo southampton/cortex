@@ -301,7 +301,9 @@ def puppet_dashboard():
 		stats=cortex.lib.puppet.puppetdb_get_node_stats()
 	except Exception as e:
 		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
-
+	
+	#return jsonify(stats)
+	
 	return render_template('puppet/dashboard.html', stats=stats,active='puppet', title="Puppet Dashboard")
 
 ################################################################################
