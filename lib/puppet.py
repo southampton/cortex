@@ -355,17 +355,3 @@ def puppetdb_get_node_stats(db = None):
 	
 	return stats
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
