@@ -313,10 +313,17 @@ def puppet_radiator():
 	## No permissions check: this is accessible without logging in
 	try:
 		stats=cortex.lib.puppet.puppetdb_get_node_stats()
+		
 	except Exception as e:
 		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
-	return render_template('puppet/radiator.html', stats=stats, active='puppet')
+	# create dictionary to hold the values the radiator needs
+	top_level_stats = {}
+	for s in stats:
+		#'count' value in the dictionary is the value we need
+		top_level_stats[s] = stats[s]['count']
+
+	return render_template('puppet/radiator.html', stats=top_level_stats, active='puppet')
 
 ################################################################################
 
@@ -327,8 +334,14 @@ def puppet_radiator_body():
 	iffy page refresh."""
 
 	## No permissions check: this is accessible without logging in
+	stats=cortex.lib.puppet.puppetdb_get_node_stats()
+	# create dictionary to hold the values the radiator needs
+	top_level_stats = {}
+	for s in stats:
+		#'count' value in the dictionary is the value we need
+		top_level_stats[s] = stats[s]['count']
 
-	return render_template('puppet/radiator-body.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet')
+	return render_template('puppet/radiator-body.html', stats=top_level_stats, active='puppet')
 
 ################################################################################
 
