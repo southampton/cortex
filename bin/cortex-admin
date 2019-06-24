@@ -70,13 +70,11 @@ def makeadmin(obj, user, role_id):
 	"""
 
 	cur = obj.db_cursor()
-
 	cur.execute("""SELECT * FROM `roles` WHERE `id`=%s""", (role_id,))
 	result = cur.fetchone()
 
 	if result:
 		click.echo('Adding User {} to Role \'{}\' (ID: {})'.format(user, result['name'], result['id']))
-	
 		try:
 			cur.execute("""INSERT INTO role_who (role_id, who, type) VALUES (%s, %s, 0)""", (role_id, user,))
 		except mysql.IntegrityError as e:
@@ -84,11 +82,9 @@ def makeadmin(obj, user, role_id):
 				click.echo('mysql.IntegrityError: {}\nThe user is likely already a member of this role!'.format(str(e)))
 			else:
 				click.echo('The user is already a member of this role!')
-
 		else:
 			obj.db_commit()
 			click.echo('Success!')		
-
 	else:
 		click.echo('Role ID: {} Does not exist!'.format(group_id))
 		sys.exit(1)
