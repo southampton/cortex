@@ -1,0 +1,139 @@
+#!/usr/bin/python
+
+import click
+import os
+import imp
+import sys
+import MySQLdb as mysql
+
+class CortexAdmin(object):
+
+	CONFIG_FILE = '/data/cortex/cortex.conf'
+
+	def __init__(self, verbose=False):
+
+		# Set Global Options
+		self.verbose = verbose
+		
+		self.config = self.load_config()
+		self.db = self.db_connect()
+
+	def load_config(self):
+		d = imp.new_module('config')
+		d.__file__ = self.CONFIG_FILE
+		try:
+			with open(self.CONFIG_FILE) as config_file:
+				exec(compile(config_file.read(), self.CONFIG_FILE, 'exec'), d.__dict__)
+		except IOError as e:
+			click.echo('Unable to load configuration file {}'.format(e.strerror))
+			sys.exit(1)
+
+		config = {}
+
+		for key in dir(d):
+			if key.isupper():
+				config[key] = getattr(d, key)
+
+		## ensure we have required config options
+		for wkey in ['MYSQL_HOST', 'MYSQL_PORT', 'MYSQL_USER', 'MYSQL_PASS', 'MYSQL_NAME']:
+			if not wkey in config.keys():
+				click.echo('Missing configuation option: {}'.format(wkey))
+				sys.exit(1)
+
+		return config	
+
+	def db_connect(self):
+
+		return mysql.connect(host=self.config['MYSQL_HOST'], port=self.config['MYSQL_PORT'], user=self.config['MYSQL_USER'], passwd=self.config['MYSQL_PASS'], db=self.config['MYSQL_NAME'])
+
+	def db_cursor(self):
+
+		return self.db.cursor(mysql.cursors.DictCursor)
+
+	def db_commit(self):
+		
+		self.db.commit()
+
+@click.group()
+@click.option('-v', '--verbose', type=bool, default=False, is_flag=True)
+@click.pass_context
+def cli(ctx, verbose):
+	ctx.obj = CortexAdmin(verbose)
+	
+@cli.command()
+@click.argument('user')
+@click.option('--role-id', default=1, help='Role ID in the Cortex database')
+@click.pass_obj
+def makeadmin(obj, user, role_id):
+	"""
+	Add USER to the Cortex Administrators Role
+	"""
+
+	cur = obj.db_cursor()
+
+	cur.execute("""SELECT * FROM `roles` WHERE `id`=%s""", (role_id,))
+	result = cur.fetchone()
+
+	if result:
+		click.echo('Adding User {} to Role \'{}\' (ID: {})'.format(user, result['name'], result['id']))
+	
+		try:
+			cur.execute("""INSERT INTO role_who (role_id, who, type) VALUES (%s, %s, 0)""", (role_id, user,))
+		except mysql.IntegrityError as e:
+			if obj.verbose:
+				click.echo('mysql.IntegrityError: {}\nThe user is likely already a member of this role!'.format(str(e)))
+			else:
+				click.echo('The user is already a member of this role!')
+
+		else:
+			obj.db_commit()
+			click.echo('Success!')		
+
+	else:
+		click.echo('Role ID: {} Does not exist!'.format(group_id))
+		sys.exit(1)
+
+@cli.command()
+@click.pass_obj
+def clean(obj):
+	"""
+	Clean the Cortex Database (Useful for setting up Dev Boxes)
+	"""
+
+	if click.confirm('This command will clean the Cortex database. Are you sure you wish to continue?'):
+		
+		cur = obj.db_cursor()
+
+		if click.confirm('Truncate the \'events\' and \'tasks\' tables?'):
+			cur.execute("""TRUNCATE `events`;""")
+			click.echo('Table \'events\' has been truncated')
+			cur.execute("""TRUNCATE `tasks`;""")
+			click.echo('Table \'tasks\' has been truncated')
+
+		if click.confirm('Set the expiry date to NULL for all Systems?'):
+			cur.execute("""UPDATE `systems` SET `expiry_date` = NULL;""")
+			click.echo('The expiry date has been set to NULL for all Systems')
+
+		obj.db_commit()
+
+@cli.command()
+@click.argument('name')
+@click.argument('lastid')
+@click.pass_obj
+def update_class(obj, name, lastid):
+	"""
+	Update the lastid for a given class
+	"""
+
+	cur = obj.db_cursor() 
+
+	cur.execute("""SELECT 1 FROM `classes` WHERE `name`=%s;""", (name,))
+	if cur.fetchone():
+		cur.execute("""UPDATE `classes` SET `lastid`=%s WHERE `name`=%s;""", (lastid, name,))
+		obj.db_commit()
+		click.echo('Success!')
+	else:
+		click.echo('Class {} not found.'.format(name))
+
+if __name__ == "__main__":
+	cli()
