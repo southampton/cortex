@@ -6,6 +6,11 @@ import imp
 import sys
 import MySQLdb as mysql
 
+CORTEX_PATH = '/data/cortex/cortex'
+sys.path.append(CORTEX_PATH)
+
+from corpus import Corpus
+
 class CortexAdmin(object):
 
 	CONFIG_FILE = '/data/cortex/cortex.conf'
@@ -17,6 +22,9 @@ class CortexAdmin(object):
 		
 		self.config = self.load_config()
 		self.db = self.db_connect()
+
+		# Corpus
+		self.corpus = Corpus(self.db, self.config)
 
 	def load_config(self):
 		d = imp.new_module('config')
@@ -130,6 +138,21 @@ def update_class(obj, name, lastid):
 		click.echo('Success!')
 	else:
 		click.echo('Class {} not found.'.format(name))
+
+@cli.command()
+@click.argument('name')
+@click.pass_obj
+def get_last_vm_password(obj, name):
+	"""
+	Get the last password for this system (Useful mainly for Student VMs)
+	"""
+	system = obj.corpus.get_system_by_name(name, must_have_vmware_uuid=True)
+	if system is None:
+		click.echo('System {} does not exist!'.format(system))
+		sys.exit(1)
+	else:
+		pw = obj.corpus.system_get_repeatable_password(system['id'])
+		click.echo(pw)
 
 if __name__ == "__main__":
 	cli()
