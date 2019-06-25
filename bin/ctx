@@ -7,13 +7,14 @@ import sys
 import MySQLdb as mysql
 
 CORTEX_PATH = '/data/cortex/cortex'
+CORTEX_CONFIG_FILE = '/data/cortex/cortex.conf'
+
+# Add Cortex to the path (required for Corpus).
 sys.path.append(CORTEX_PATH)
 
 from corpus import Corpus
 
 class CortexAdmin(object):
-
-	CONFIG_FILE = '/data/cortex/cortex.conf'
 
 	def __init__(self, verbose=False):
 
@@ -23,15 +24,17 @@ class CortexAdmin(object):
 		self.config = self.load_config()
 		self.db = self.db_connect()
 
-		# Corpus
 		self.corpus = Corpus(self.db, self.config)
 
 	def load_config(self):
+		"""
+		Load Cortex Config
+		"""
 		d = imp.new_module('config')
-		d.__file__ = self.CONFIG_FILE
+		d.__file__ = CORTEX_CONFIG_FILE
 		try:
-			with open(self.CONFIG_FILE) as config_file:
-				exec(compile(config_file.read(), self.CONFIG_FILE, 'exec'), d.__dict__)
+			with open(CORTEX_CONFIG_FILE) as config_file:
+				exec(compile(config_file.read(), CORTEX_CONFIG_FILE, 'exec'), d.__dict__)
 		except IOError as e:
 			click.echo('Unable to load configuration file {}'.format(e.strerror))
 			sys.exit(1)
@@ -51,30 +54,37 @@ class CortexAdmin(object):
 		return config	
 
 	def db_connect(self):
-
+		"""Return MySQL Connection Object"""
 		return mysql.connect(host=self.config['MYSQL_HOST'], port=self.config['MYSQL_PORT'], user=self.config['MYSQL_USER'], passwd=self.config['MYSQL_PASS'], db=self.config['MYSQL_NAME'])
 
 	def db_cursor(self):
-
+		"""Return MySQL (Dict) Cursor"""
 		return self.db.cursor(mysql.cursors.DictCursor)
 
 	def db_commit(self):
-		
+		"""Commit the DB Changes"""
 		self.db.commit()
 
-@click.group()
+################################################################################
+
+@click.group(context_settings={'help_option_names':['-h', '--help']})
 @click.option('-v', '--verbose', type=bool, default=False, is_flag=True)
 @click.pass_context
 def cli(ctx, verbose):
+	"""
+	Cortex Admin Tool
+	"""
 	ctx.obj = CortexAdmin(verbose)
 	
-@cli.command()
+################################################################################
+
+@cli.command('make-admin')
 @click.argument('user')
 @click.option('--role-id', default=1, help='Role ID in the Cortex database')
 @click.pass_obj
-def makeadmin(obj, user, role_id):
+def make_admin(obj, user, role_id):
 	"""
-	Add USER to the Cortex Administrators Role
+	Make a User a Cortex Administrator
 	"""
 
 	cur = obj.db_cursor()
@@ -97,17 +107,18 @@ def makeadmin(obj, user, role_id):
 		click.echo('Role ID: {} Does not exist!'.format(group_id))
 		sys.exit(1)
 
-@cli.command()
+################################################################################
+
+@cli.command('clean')
 @click.pass_obj
 def clean(obj):
 	"""
-	Clean the Cortex Database (Useful for setting up Dev Boxes)
+	Clean the Cortex Database
 	"""
 
 	if click.confirm('This command will clean the Cortex database. Are you sure you wish to continue?'):
 		
 		cur = obj.db_cursor()
-
 		if click.confirm('Truncate the \'events\' and \'tasks\' tables?'):
 			cur.execute("""TRUNCATE `events`;""")
 			click.echo('Table \'events\' has been truncated')
@@ -120,13 +131,15 @@ def clean(obj):
 
 		obj.db_commit()
 
-@cli.command()
+################################################################################
+
+@cli.command('update-class')
 @click.argument('name')
 @click.argument('lastid')
 @click.pass_obj
 def update_class(obj, name, lastid):
 	"""
-	Update the lastid for a given class
+	Update the 'lastid' for a given class
 	"""
 
 	cur = obj.db_cursor() 
@@ -139,20 +152,25 @@ def update_class(obj, name, lastid):
 	else:
 		click.echo('Class {} not found.'.format(name))
 
-@cli.command()
-@click.argument('name')
+################################################################################
+
+@cli.command('get-last-password')
+@click.argument('system_name')
 @click.pass_obj
-def get_last_vm_password(obj, name):
+def get_last_password(obj, system_name):
 	"""
-	Get the last password for this system (Useful mainly for Student VMs)
+	Get the last repeatable password for this VM
 	"""
-	system = obj.corpus.get_system_by_name(name, must_have_vmware_uuid=True)
+	system = obj.corpus.get_system_by_name(system_name, must_have_vmware_uuid=True)
 	if system is None:
-		click.echo('System {} does not exist!'.format(system))
+		click.echo('System {} does not exist! (Or may not have a VMware UUID)'.format(system))
 		sys.exit(1)
 	else:
 		pw = obj.corpus.system_get_repeatable_password(system['id'])
-		click.echo(pw)
+		click.echo('The last repeatable password for {} was:\n{}'.format(system_name, pw))
+
+################################################################################
 
 if __name__ == "__main__":
 	cli()
+
