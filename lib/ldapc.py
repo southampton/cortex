@@ -104,9 +104,7 @@ def get_users_groups_from_ldap(username):
 						cn_regex = re.compile("^(cn|CN)=([^,;]+),")
 						
 						## Preprocssing into string
-							
 						group = group.decode('utf-8')					
-	
 						matched = cn_regex.match(group)
 						if matched:
 							group_cn = matched.group(2)

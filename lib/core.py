@@ -70,7 +70,7 @@ def vmware_list_clusters(tag):
 def vmware_list_folders(tag):
 	"""Return a list of folders from witihin a given vCenter. The tag
 	parameter defines an entry in the vCenter configuration dictionary that
-		is within the application configuration."""
+	is within the application configuration."""
 	
 	if tag in app.config['VMWARE']:
 		curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -80,7 +80,7 @@ def vmware_list_folders(tag):
 		result = curd.fetchall()
 		dcs_dict = {dc['id']: dc for dc in result}
 
-				# SQL to grab the clusters from the cache into a dictionary
+		# SQL to grab the clusters from the cache into a dictionary
 		curd.execute("SELECT * FROM `vmware_cache_folders` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname'],))
 		result = curd.fetchall()
 		folders_dict = {folder['id']: folder for folder in result}

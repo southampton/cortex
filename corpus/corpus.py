@@ -1266,7 +1266,7 @@ class Corpus(object):
 		table to their relevant item in the CMDB.
 		 - cortex_system_id: The id of the system in the table (not the name)
 		 - cmdb_id: The value to store for the CMDB ID field.
-				 - vmware_uuid: The UUID of the VM in VMware
+		 - vmware_uuid: The UUID of the VM in VMware
 		"""
 
 		# Get a cursor to the database
@@ -1287,8 +1287,8 @@ class Corpus(object):
 		"""Links a ServiceNow 'task' (Incident Task, Project Task, etc.) to a CI so that it appears in the related records. 
 		   Note that you should NOT use this function to link an incident to a CI (even though ServiceNow will kind of let
 		   you do this...)
-			 - ci_sys_id: The sys_id of the created configuration item, as returned by servicenow_create_ci
-			 - task_number: The task number (e.g. INCTASK0123456, PRJTASK0123456) to link to. NOT the sys_id of the task."""
+		    - ci_sys_id: The sys_id of the created configuration item, as returned by servicenow_create_ci
+		    - task_number: The task number (e.g. INCTASK0123456, PRJTASK0123456) to link to. NOT the sys_id of the task."""
 
 		# Request information about the task (incident task, project task, etc.) to get its sys_id
 		r = requests.get('https://' + self.config['SN_HOST'] + '/api/now/v1/table/task?sysparm_fields=sys_id&sysparm_query=number=' + task_number, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json'})
@@ -1334,18 +1334,18 @@ class Corpus(object):
 
 	def servicenow_create_ci(self, ci_name, os_type, os_name, sockets='', cores_per_socket='', ram_mb='', disk_gb='', ipaddr='', virtual=True, environment=None, short_description='', comments='', location=None):
 		"""Creates a new CI within ServiceNow.
-			 - ci_name: The name of the CI, e.g. srv01234
-			 - os_type: The OS type as a number, see OS_TYPE_BY_NAME
-			 - os_name: The name of the OS, as used by ServiceNow
-			 - cpus: The total number of CPUs the CI has
-			 - ram_mb: The amount of RAM of the CI in MeB
-			 - disk_gb: The total amount of disk space in GiB
-			 - ipaddr: The IP address of the CI
-			 - virtual: Boolean indicating if the CI is a VM (True) or Physical (False). Defaults to True.
-			 - environment: The id of the environment (see the application configuration) that the CI is in
-			 - short_description: The value of the short_description (Description) field in ServiceNow. A purpose, or something.
-			 - comments: The value of the comments field in ServiceNow. Any random information.
-			 - location: The value of the location field in ServiceNow
+		 - ci_name: The name of the CI, e.g. srv01234
+		 - os_type: The OS type as a number, see OS_TYPE_BY_NAME
+		 - os_name: The name of the OS, as used by ServiceNow
+		 - cpus: The total number of CPUs the CI has
+		 - ram_mb: The amount of RAM of the CI in MeB
+		 - disk_gb: The total amount of disk space in GiB
+		 - ipaddr: The IP address of the CI
+		 - virtual: Boolean indicating if the CI is a VM (True) or Physical (False). Defaults to True.
+		 - environment: The id of the environment (see the application configuration) that the CI is in
+		 - short_description: The value of the short_description (Description) field in ServiceNow. A purpose, or something.
+		 - comments: The value of the comments field in ServiceNow. Any random information.
+		 - location: The value of the location field in ServiceNow
 
 		On success, returns the sys_id of the object created in ServiceNow.
 		"""
@@ -1671,7 +1671,7 @@ class Corpus(object):
 		"""Sets various details about the computer object in AD.
 		Args:
 		  hostname (string): The hostname of the computer object to modify
-				  description (string): The description of the computer
+		  description (string): The description of the computer
 		  location (string): The location of the computer
 		Returns:
 		  Nothing."""

@@ -7,10 +7,6 @@ from flask import Flask, request, session, redirect, url_for, flash, g, abort, r
 import re
 from cas_client import CASClient
 
-################################################ DEBUG, remove when done
-from flask import jsonify
-
-
 ################################################################################
 
 @app.route('/', methods=['GET', 'POST'])
