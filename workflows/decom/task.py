@@ -1,7 +1,7 @@
 from pyVmomi import vim
 import requests
 import requests.exceptions
-from urlparse import urljoin
+from urllib.parse import urljoin
 import ldap
 
 def run(helper, options):
@@ -252,17 +252,19 @@ def action_check_system(action, helper, wfconfig):
 	## Check graphite for monitoring entries
 	if 'GRAPHITE_DELETE_ENABLE' in wfconfig and wfconfig['GRAPHITE_DELETE_ENABLE']:
 		try:
-			for suffix in wfconfig['GRAPHITE_DELETE_SUFFIXES']:
-				host = system['name'] + suffix
-				url = urljoin(helper.lib.config['GRAPHITE_URL'], '/host/' + system['name'] + suffix)
-				r = requests.get(url, auth=(helper.lib.config['GRAPHITE_USER'], helper.lib.config['GRAPHITE_PASS']))
-				if r.status_code == 200:
-					js = r.json()
-					if type(js) is list and len(js) > 0:
-						system_actions.append({'id': 'graphite.delete', 'desc': 'Remove metrics from Graphite / Grafana', 'detail': 'Delete ' + ','.join(js) + ' from ' + helper.lib.config['GRAPHITE_URL'], 'data': {'host': host}})
+			if not helper.lib.config['GRAPHITE_URL'] == '':
+				for suffix in wfconfig['GRAPHITE_DELETE_SUFFIXES']:
+					host = system['name'] + suffix
+					url = urljoin(helper.lib.config['GRAPHITE_URL'], '/host/' + system['name'] + suffix)
+					r = requests.get(url, auth=(helper.lib.config['GRAPHITE_USER'], helper.lib.config['GRAPHITE_PASS']))
+					if r.status_code == 200:
+						js = r.json()
+						if type(js) is list and len(js) > 0:
+							system_actions.append({'id': 'graphite.delete', 'desc': 'Remove metrics from Graphite / Grafana', 'detail': 'Delete ' + ','.join(js) + ' from ' + helper.lib.config['GRAPHITE_URL'], 'data': {'host': host}})
+					else:
+						helper.flash('Warning - CarbonHTTPInterface returned error code ' + str(r.status_code), 'warning')
 				else:
-					helper.flash('Warning - CarbonHTTPInterface returned error code ' + str(r.status_code), 'warning')
-
+					helper.flash('No Graphite URL Supplied, Skipping Step','success')
 		except Exception as ex:
 			helper.flash('Warning - An error occurred when communicating with ' + str(helper.lib.config['GRAPHITE_URL']) + ': ' + str(ex), 'warning')
 

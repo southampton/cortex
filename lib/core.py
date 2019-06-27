@@ -59,7 +59,6 @@ def vmware_list_clusters(tag):
 	"""Return a list of clusters from within a given vCenter. The tag
 	parameter defines an entry in the vCenter configuration dictionary that
 	is within the application configuration."""
-
 	if tag in app.config['VMWARE']:
 		# SQL to grab the clusters from the cache
 		curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -71,19 +70,19 @@ def vmware_list_clusters(tag):
 def vmware_list_folders(tag):
 	"""Return a list of folders from witihin a given vCenter. The tag
 	parameter defines an entry in the vCenter configuration dictionary that
-        is within the application configuration."""
+		is within the application configuration."""
 	
 	if tag in app.config['VMWARE']:
-                curd = g.db.cursor(mysql.cursors.DictCursor)
+		curd = g.db.cursor(mysql.cursors.DictCursor)
 
 		# SQL to grab the datacenters from the cache into a dictionary
-                curd.execute("SELECT * FROM `vmware_cache_datacenters` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname'],))
+		curd.execute("SELECT * FROM `vmware_cache_datacenters` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname'],))
 		result = curd.fetchall()
 		dcs_dict = {dc['id']: dc for dc in result}
 
-                # SQL to grab the clusters from the cache into a dictionary
-                curd.execute("SELECT * FROM `vmware_cache_folders` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname'],))
-                result = curd.fetchall()
+				# SQL to grab the clusters from the cache into a dictionary
+		curd.execute("SELECT * FROM `vmware_cache_folders` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname'],))
+		result = curd.fetchall()
 		folders_dict = {folder['id']: folder for folder in result}
 
 		folders = []
@@ -110,8 +109,8 @@ def vmware_list_folders(tag):
 			folders.append(folders_dict[folder_id])
 
 		return folders
-        else:
-                raise Exception("Invalid VMware tag")
+	else:
+		raise Exception("Invalid VMware tag")
 
 ################################################################################
 

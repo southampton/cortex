@@ -28,7 +28,7 @@ class CortexWorkflow(object):
 					if check_config is not None:
 						# If a dict is given for check_config, then use our _default_validate_config
 						# function to validate the configuration items
-						if type(check_config) is types.DictType:
+						if type(check_config) is dict:
 							if not self._default_validate_config(check_config):
 								raise Exception("Workflows: Invalid configuration in workflow '" + self.name + "'")
 						# If a function is given for check_config, call it:

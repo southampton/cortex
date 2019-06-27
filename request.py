@@ -148,21 +148,21 @@ def context_processor():
 
 		# Determine the layout mode for the user
 		try:
-			if g.redis.get('user:' + session['username'] + ":preferences:interface:layout") == "classic":
+			if str(g.redis.get('user:' + session['username'] + ":preferences:interface:layout"), 'utf-8') == "classic":
 				injectdata['classic_layout'] = True
 		except Exception as ex:
 			pass
 
 		# Determine theme for the user
 		try:
-			if g.redis.get('user:' + session['username'] + ":preferences:interface:theme") == "dark":
+			if str(g.redis.get('user:' + session['username'] + ":preferences:interface:theme"), 'utf-8') == "dark":
 				injectdata['theme'] = "dark"
 		except Exception as ex:
 			pass
 
 		# Determine whether to expand sidebar.
 		try:
-			if g.redis.get('user:' + session['username'] + ':preferences:interface:sidebar') == 'expand':
+			if str(g.redis.get('user:' + session['username'] + ':preferences:interface:sidebar'), 'utf-8') == 'expand':
 				injectdata['sidebar_expand'] = True
 		except Exception as ex:
 			pass

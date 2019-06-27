@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+import MySQLdb as mysql
 from cortex import app
 from cortex.lib.workflow import CortexWorkflow
 import cortex.lib.core
@@ -8,10 +8,11 @@ import cortex.views
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify, Response
 import re, datetime, requests
-from urlparse import urljoin
+from urllib.parse import urljoin
 
 # For downloading ZIP file
-import zipfile, StringIO
+import zipfile
+from io import StringIO
 
 # For NLB API
 from f5.bigip import ManagementRoot
@@ -50,10 +51,10 @@ def get_certificate_from_redis(task):
 	prefix = 'certmgr/' + str(task['id']) + '/'
 
 	if g.redis.exists(prefix + 'certificate') and g.redis.exists(prefix + 'private'):
-		pem_cert = g.redis.get(prefix + 'certificate')
-		pem_key = g.redis.get(prefix + 'private')
+		pem_cert = str(g.redis.get(prefix + 'certificate'), 'utf-8')
+		pem_key = str(g.redis.get(prefix + 'private'), 'utf-8')
 		if g.redis.exists(prefix + 'chain'):
-			pem_chain = g.redis.get(prefix + 'chain')
+			pem_chain = str(g.redis.get(prefix + 'chain'), 'utf-8')
 
 	return (pem_cert, pem_key, pem_chain)
 
@@ -129,6 +130,14 @@ def certmgr_ajax_get_raw():
 
 @workflow.route('create', title='Create SSL Certificate', order=40, permission="certmgr.create", methods=['GET', 'POST'])
 def certmgr_create():
+
+	# Check if workflows are disabled or not
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
+	current_value = curd.fetchone()
+	if current_value['value'] == 'Locked':
+		raise Exception("Workflows are currently locked. \n Please try again later.")
+
 	# Get the workflow settings
 	wfconfig = workflow.config
 

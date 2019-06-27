@@ -21,6 +21,14 @@ workflow.add_permission('buildvm.standard', 'Create Standard VM')
 
 @workflow.route("sandbox",title='Create Sandbox VM', order=20, permission="buildvm.sandbox", methods=['GET', 'POST'])
 def sandbox():
+
+	# Check if workflows are currently locked 
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
+	current_value = curd.fetchone()
+	if current_value['value'] == 'Locked':
+		raise Exception("Workflows are currently locked. \n Please try again later.")
+
 	# Get the list of clusters
 	all_clusters = cortex.lib.core.vmware_list_clusters(workflow.config['SB_VCENTER_TAG'])
 
@@ -52,9 +60,9 @@ def sandbox():
 			comments = request.form['comments']
 			sendmail = 'send_mail' in request.form
 			primary_owner_who = request.form.get('primary_owner_who', None)
-                        primary_owner_role = request.form.get('primary_owner_role', None)
-                        secondary_owner_who = request.form.get('secondary_owner_who', None)
-                        secondary_owner_role = request.form.get('secondary_owner_role', None)
+			primary_owner_role = request.form.get('primary_owner_role', None)
+			secondary_owner_who = request.form.get('secondary_owner_who', None)
+			secondary_owner_role = request.form.get('secondary_owner_role', None)
 
 			# Validate the data (common between standard / sandbox)
 			(sockets, cores, ram, disk, template, env, expiry) = validate_data(request, workflow.config['SB_OS_ORDER'], [e['id'] for e in environments])
@@ -87,13 +95,14 @@ def sandbox():
 		options['sendmail'] = sendmail
 		options['wfconfig'] = workflow.config
 		options['primary_owner_who'] = primary_owner_who
-                options['primary_owner_role'] = primary_owner_role
-                options['secondary_owner_who'] = secondary_owner_who
-                options['secondary_owner_role'] = secondary_owner_role
+		options['primary_owner_role'] = primary_owner_role
+		options['secondary_owner_who'] = secondary_owner_who
+		options['secondary_owner_role'] = secondary_owner_role
 
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.lib.core.neocortex_connect()
 		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and sets up a virtual machine (sandbox VMware environment)")
+
 
 		# Redirect to the status page for the task
 		return redirect(url_for('task_status', id=task_id))
@@ -103,6 +112,14 @@ def sandbox():
 
 @workflow.route("standard",title='Create Standard VM', order=10, permission="buildvm.standard", methods=['GET', 'POST'])
 def standard():
+
+	# Check if workflows are locked
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
+	current_value = curd.fetchone()
+	if current_value['value'] == 'Locked':
+		raise Exception("Workflows are currently locked. \n Please try again later.")
+
 	# Get the list of clusters
 	all_clusters = cortex.lib.core.vmware_list_clusters(workflow.config['VCENTER_TAG'])
 

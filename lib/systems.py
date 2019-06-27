@@ -52,7 +52,7 @@ def csv_stream(cursor):
 			# ...if it's not None...
 			if outrow[i]:
 				# ...if the element is unicode...
-				if type(outrow[i]) == unicode:
+				if type(outrow[i]) == str:
 					# ...decode from utf-8 into a ASCII-compatible byte string
 					outrow[i] = outrow[i].encode('utf-8')
 				else:
