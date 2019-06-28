@@ -12,6 +12,10 @@ DAYS_OF_WEEK = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDA
 def ordefault(s, default=""):
 	return str(s) if s is not None and len(str(s).strip()) > 0 else str(default)
 
+def uniqify(l, k):
+	seen = set()
+	return [d for d in l if d[k] not in seen and not seen.add(d[k])]
+
 def run(helper, options):
 	if 'SYSTEM_EXPIRE_NOTIFY_CONFIG' not in helper.config:
 		helper.event('expire_notify_unconfigured', success=False, description='Missing configuration for VM expiry notification', oneshot=True)
@@ -131,7 +135,8 @@ def run(helper, options):
 				message = ''
 
 			# For each system that needs to be reported
-			for system in email_system_map[email]:
+			# (Sorting uniquely by ID)
+			for system in uniqify(email_system_map[email], 'id'):
 				# Get the live power status (rather than cached, so that we're 100% accurate)
 				vm = helper.lib.vmware_get_vm_by_uuid(system['vmware_uuid'], system['vmware_vcenter'])
 				system_status = "off"
