@@ -716,6 +716,11 @@ def system_edit(id):
 			else:
 				vmware_uuid = system['vmware_uuid']
 
+			if does_user_have_system_permission(id,"edit.rubrik","systems.all.edit.rubrik"):
+				enable_backup = request.form.get('enable_backup', 1)
+			else:
+				enable_backup = system['enable_backup']
+
 			# Process the expiry date
 			if does_user_have_system_permission(id,"edit.expiry","systems.all.edit.expiry"):
 				if 'expiry_date' in request.form and request.form['expiry_date'] is not None and len(request.form['expiry_date'].strip()) > 0:
@@ -776,8 +781,9 @@ def system_edit(id):
 				review_task = system['review_task']
 
 			# Update the system
-			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, id))
+			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `enable_backup` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, enable_backup, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, id))
 			g.db.commit();
+			
 			cortex.lib.core.log(__name__, "systems.edit", "System '" + system['name'] + "' edited, id " + str(id), related_id=id)
 
 			flash('System updated', "alert-success")

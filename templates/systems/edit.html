@@ -4,6 +4,8 @@
 <script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}"></script>        
 <script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script>                
 <script src="{{ url_for('static', filename='js/vendor/bootstrap-datetimepicker.min.js') }}"></script>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
+<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
 {% endblock %}
 {% block body %}
 {% import 'node-header.html' as node %}
@@ -136,6 +138,19 @@
 	</div>
 
 {%- endif %}
+
+	<div class="form-group">
+		<label class="col-sm-2 control-label" for="enable_backup">Backup Status:</label>
+		<div class="col-sm-10 col-md-9">
+			<select class="form-control selectpicker" name="enable_backup" id="enable_backup"{% if not does_user_have_system_permission(system['id'],"edit.rubrik","systems.all.edit.rubrik") %} disabled="disabled" {% endif %}>
+				<option value="0"{% if system.enable_backup == 0 %} selected="selected"{% endif %}>Do NOT Backup</option>
+				<option value="1"{% if system.enable_backup == 1 %} selected="selected"{% endif %}>Backup this System</option>
+			</select>
+		</div>
+		<div style="margin-bottom:0px" class="col-sm-offset-2 col-sm-10 col-md-9 help-block">When reviewing current VMs, these fields can be used to state whether a VM is required or can be deleted. If a review status of 'Under review' is selected, a ServiceNow project task can be added. If left blank, one will be created for you.</div>
+
+	</div>
+
 {%- if not system_class or system_class.cmdb_type %}
 	<div class="form-group">
 		<label class="col-sm-2 control-label" for="cmdb_id">CMDB System ID:</label>
@@ -193,7 +208,7 @@
 		<div class="form-group">
 			<label class="col-sm-2 control-label" for="review_status">Review Status:</label>
 			<div class="col-sm-3">
-				<select class="form-control" name="review_status" id="review_status"{% if not does_user_have_system_permission(system['id'],"edit.review","systems.all.edit.review") %} disabled="disabled" {% endif %}>
+				<select class="form-control selectpicker" name="review_status" id="review_status"{% if not does_user_have_system_permission(system['id'],"edit.review","systems.all.edit.review") %} disabled="disabled" {% endif %}>
 					<option value="0"{% if system.review_status == 0 %} selected="selected"{% endif %}>Not reviewed</option>
 					<option value="1"{% if system.review_status == 1 %} selected="selected"{% endif %}>Required</option>
 					<option value="3"{% if system.review_status == 3 %} selected="selected"{% endif %}>Not required</option>
