@@ -1,0 +1,1 @@
+{"puppet_classes": [{"docstring": {"tags": [{"text": "", "tag_name": "param", "name": "override_config", "types": ["Any"]}]}, "name": "uos_linux_sshd"}]}

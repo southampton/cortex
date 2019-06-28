@@ -1,0 +1,1 @@
+{"puppet_classes": [{"docstring": {"tags": [{"text": "", "tag_name": "param", "name": "deploysshkeys", "types": ["Any"]}]}, "name": "uos_linux_users"}, {"name": "uos_linux_users::logindefs"}, {"docstring": {"tags": [{"text": "", "tag_name": "param", "name": "root_password", "types": ["Any"]}]}, "name": "uos_linux_users::root"}, {"name": "uos_linux_users::sshkeys"}]}

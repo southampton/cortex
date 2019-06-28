@@ -1,0 +1,1 @@
+{"puppet_classes": [{"docstring": {"tags": [{"text": "", "tag_name": "param", "name": "bashrc_files", "types": ["Any"]}]}, "name": "uos_dev_boxes"}]}

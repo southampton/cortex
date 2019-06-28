@@ -1,0 +1,1 @@
+{"puppet_classes": [{"docstring": {"tags": [{"text": "", "tag_name": "param", "name": "service_name", "types": ["Any"]}]}, "name": "uos_ecs_cad"}]}

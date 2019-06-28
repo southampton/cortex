@@ -1,0 +1,1 @@
+{"puppet_classes": [{"docstring": {"tags": [{"text": "", "tag_name": "param", "name": "server_name", "types": ["Any"]}, {"text": "", "tag_name": "param", "name": "enable_web", "types": ["Any"]}]}, "name": "uos_o365_dashboard"}]}

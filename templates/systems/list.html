@@ -20,14 +20,21 @@ a.server-link:hover { text-decoration: underline !important; }
 		</small>
 	</h3>
 </div>
-
-<ul id="class-tabs" class="nav nav-tabs" style="margin-bottom:1em">
-	{%- for class in classes %}
-	<li {% if (display and display == class.name) or (not display and loop.index0 == 0 and not q and not expired and not nocmdb) %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="{{ class.name }}" data-vmware="{{ class.link_vmware }}" role="tab">{{ class.name }}</a></li>
-	{%- endfor %}
-	{% if classes|length > 0 %}<li role="presentation"><a style="cursor:pointer" data-class="*OTHER" data-vmware="1" role="tab">Other/Legacy</a></li>{% endif %}
-	<li {% if (display and display == 'all') or q or classes|length == 0 or expired or nocmdb %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="*ALL" data-vmware="1" role="tab">All</a></li>
-</ul>
+<div>	<div class="pull-right">
+		Search using queries
+		<div class="btn-group btn-toggle"> 
+			<button id="query_search_on" class="btn btn-sm btn-default">ON</button>
+			<button id="query_search_off" class="btn btn-sm btn-primary active">OFF</button>
+		</div>
+	</div>
+	<ul id="class-tabs" class="nav nav-tabs" style="margin-bottom:1em">
+		{%- for class in classes %}
+		<li {% if (display and display == class.name) or (not display and loop.index0 == 0 and not q and not expired and not nocmdb) %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="{{ class.name }}" data-vmware="{{ class.link_vmware }}" role="tab">{{ class.name }}</a></li>
+		{%- endfor %}
+		{% if classes|length > 0 %}<li role="presentation"><a style="cursor:pointer" data-class="*OTHER" data-vmware="1" role="tab">Other/Legacy</a></li>{% endif %}
+		<li {% if (display and display == 'all') or q or classes|length == 0 or expired or nocmdb %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="*ALL" data-vmware="1" role="tab">All</a></li>
+	</ul>
+</div>
 <div id="systemsWrapper">
 <table class="table table-condensed table-striped" id="systems">
 	<thead>
@@ -44,7 +51,8 @@ a.server-link:hover { text-decoration: underline !important; }
 	<tbody>
 	</tbody>
 </table>
-</div>
+
+
 <script type="text/javascript">
 $(function() {
 	var systemsTable = $('#systems').DataTable({
@@ -91,6 +99,7 @@ $(function() {
 				{%- if favourites %}
 				d.show_favourites_only = '1';
 				{%- endif %}
+				d.toggle_queries = ($('#query_search_on').hasClass("active") ? "1" : "0");
 			}
 		},
 		{% if q %}
@@ -211,6 +220,13 @@ $(function() {
 			dataType: 'json',
 		});
 	});
+    	$('.btn-toggle').click(function() {
+   		$(this).find('.btn').toggleClass('active');  
+    		if ($(this).find('.btn-primary').size()>0) {
+    			$(this).find('.btn').toggleClass('btn-primary');
+    		} 
+    		$(this).find('.btn').toggleClass('btn-default');
+       });
 });
 $(function () {
 	$('[data-toggle="popover"]').popover()

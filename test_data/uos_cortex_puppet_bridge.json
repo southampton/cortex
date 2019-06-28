@@ -1,0 +1,1 @@
+{"puppet_classes": [{"docstring": {"tags": [{"text": "", "tag_name": "param", "name": "master_ssl_fqdn", "types": ["Any"]}, {"text": "", "tag_name": "param", "name": "auth_token", "types": ["Any"]}]}, "name": "uos_cortex_puppet_bridge"}]}

@@ -1,0 +1,1 @@
+{"puppet_classes": [{"docstring": {"tags": [{"text": "", "tag_name": "param", "name": "fqdn", "types": ["Any"]}, {"text": "", "tag_name": "param", "name": "install_pkcs12", "types": ["Any"]}, {"text": "", "tag_name": "param", "name": "install_javakeystore", "types": ["Any"]}]}, "name": "uos_acmeclient"}]}

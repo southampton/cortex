@@ -16,6 +16,7 @@ from logging import Formatter
 import redis
 import MySQLdb as mysql
 import traceback
+import re
 
 class CortexFlask(Flask):
 	## A list of dict's, each representing a workflow 'create' function
@@ -150,9 +151,9 @@ Further Details:
 			# Get the function that is rendering the current view
 			view = self.view_functions.get(request.endpoint)
 			view_location = view.__module__ + '.' + view.__name__
-
-			# If the view is not exempt
-			if not view_location in self._exempt_views:
+			
+			# If the view is not part of the API and it's not exempt
+			if re.search("[\w]*cortex\.api\.endpoints[\w]*", view.__module__)is None and  not view_location in self._exempt_views:
 				token = session.get('_csrf_token')
 				if not token or token != request.form.get('_csrf_token'):
 					if 'username' in session:
@@ -176,7 +177,6 @@ Further Details:
 				return render_template('some_view.html')
 		:param view: The view to be wrapped by the decorator.
 		"""
-
 		view_location = view.__module__ + '.' + view.__name__
 		self._exempt_views.add(view_location)
 		self.logger.debug('Added CSRF check exemption for ' + view_location)
@@ -365,6 +365,16 @@ Username:             %s
 		  `key` varchar(64) NOT NULL,
 		  `value` text,
 		  PRIMARY KEY (`key`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_modules_info` (
+		`id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		`module_name` varchar(256) NOT NULL,
+		`class_name` varchar(256) NOT NULL,
+		`class_parameter` varchar(256) NOT NULL,
+		`description` text DEFAULT NULL,
+		`tag_name` varchar(255) DEFAULT NULL,
+		PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `systems` (
@@ -823,7 +833,10 @@ Username:             %s
 		  (1, "systems.allocate_name"), 
 		  (1, "systems.add_existing"),
 		  (1, "vmware.view"), 
-		  (1, "puppet.dashboard.view"), 
+		  (1, "puppet.dashboard.view"),
+		  (1, "puppet.modules_info.view"),
+		  (1, "puppet.modules_info.add"),
+		  (1, "puppet.modules_info.edit"),   
 		  (1, "puppet.nodes.view"), 
 		  (1, "puppet.default_classes.view"), 
 		  (1, "puppet.default_classes.edit"), 
@@ -882,6 +895,9 @@ Username:             %s
 			{'name': 'systems.all.edit.owners',            'desc': 'Modify the system owners on any system'},
 			{'name': 'vmware.view',			       'desc': 'View VMware data and statistics'},
 			{'name': 'puppet.dashboard.view',	       'desc': 'View the Puppet dashboard'},
+			{'name': 'puppet.modules_info.view', 	       'desc': 'View the Puppet modules info'},
+			{'name': 'puppet.modules_info.add', 	       'desc': 'Add  to the Puppet modules info'},
+			{'name': 'puppet.modules_info.edit', 	       'desc': 'Modify the Puppet modules info'},
 			{'name': 'puppet.nodes.view',		       'desc': 'View the list of Puppet nodes'},
 			{'name': 'puppet.default_classes.view',	       'desc': 'View the list of Puppet default classes'},
 			{'name': 'puppet.default_classes.edit',	       'desc': 'Modify the list of Puppet default classes'},

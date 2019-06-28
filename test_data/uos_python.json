@@ -1,0 +1,1 @@
+{"puppet_classes": [{"docstring": {"tags": [{"text": "", "tag_name": "param", "name": "python_version", "types": ["Any"]}]}, "name": "uos_python"}]}

@@ -1,6 +1,7 @@
 {#- CodeMirror style -#}
 <link href="{{ url_for('static', filename='css/vendor/codemirror.min.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='css/vendor/lint.min.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/vendor/show-hint.css') }}" rel="stylesheet">
 
 {#- CodeMirror scripts -#}
 <script src="{{ url_for('static', filename='js/vendor/codemirror.min.js') }}"></script>
@@ -8,6 +9,9 @@
 <script src="{{ url_for('static', filename='js/vendor/lint.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/vendor/js-yaml.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/vendor/yaml-lint.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vendor/show-hint.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vendor/anyword-hint.js') }}"></script>
+
 
 {#- Override CodeMirror style - must come after CodeMirror style imports -#}
 <style type="text/css">

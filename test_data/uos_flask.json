@@ -1,0 +1,1 @@
+{"puppet_classes": [{"docstring": {"tags": [{"text": "", "tag_name": "param", "name": "install_mysql_python", "types": ["Any"]}]}, "name": "uos_flask"}]}

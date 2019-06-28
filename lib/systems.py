@@ -68,7 +68,7 @@ def csv_stream(cursor):
 
 ################################################################################
 
-def get_system_count(class_name = None, search = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, show_allocated_and_perms = False, only_allocated_by = None, show_favourites_for = None, virtual_only = False):
+def get_system_count(class_name = None, search = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, show_allocated_and_perms = False, only_allocated_by = None, show_favourites_for = None, virtual_only = False, toggle_queries=False):
 	"""Returns the number of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost)"""
 
 	## BUILD THE QUERY
@@ -78,19 +78,24 @@ def get_system_count(class_name = None, search = None, hide_inactive = True, onl
 	query = 'SELECT COUNT(*) AS `count` FROM `systems_info_view` '
 
 	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
-	query_where = _build_systems_query(class_name, search, None, None, None, None, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms, only_allocated_by, show_favourites_for, virtual_only)
+	query_where = _build_systems_query(class_name, search, None, None, None, None, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms, only_allocated_by, show_favourites_for, virtual_only, toggle_queries)
 	query = query + query_where[0]
 	params = params + query_where[1]
 
 	# Query the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute(query, params)
+	try:
+		curd.execute(query, params)
 
-	# Get the results
-	row = curd.fetchone()
+		# Get the results
+		row = curd.fetchone()
 
-	# Return the count
-	return row['count']
+		# Return the count
+		return row['count']
+	except:
+		# If error occurs, it's because of the incorrect syntax of the query;
+		# Therefore, no data is being returned anyway so just return 0
+		return 0
 
 ################################################################################
 
@@ -135,37 +140,43 @@ def get_system_by_vmware_uuid(name):
 
 ################################################################################
 
-def _build_systems_query(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, show_allocated_and_perms = False, only_allocated_by = None, show_favourites_for = None, virtual_only = False):
+def _build_systems_query(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, show_allocated_and_perms = False, only_allocated_by = None, show_favourites_for = None, virtual_only = False, toggle_queries = False):
 	params = ()
-
 	query = ""
 
 	# If a class_name is specfied, add on a WHERE clause
 	if class_name is not None:
-		query = query + "WHERE `class` = %s"
-		params = (class_name,)
+                query = query + "WHERE `class` = %s"
+                params = (class_name,)
 
-	# If a search term is specified...
-	if search is not None:
-		# Build a filter string
-		# escape wildcards
-		search = search.replace('%', '\%').replace('_', '\_')
-		like_string = '%' + search + '%'
-
-		# If a class name was specified already, we need to AND the query,
-		# otherwise we need to start the WHERE clause
+	if toggle_queries and search is not None and search is not "":
 		if class_name is not None:
-			query = query + " AND "
-		else:
-			query = query + "WHERE "
+               		query = query + " AND "
+                else:   
+               	        query = query + "WHERE "
+		query = query + search
+	else:
+		# If a search term is specified...
+		if search is not None:
+			# Build a filter string
+			# escape wildcards
+			search = search.replace('%', '\%').replace('_', '\_')
+			like_string = '%' + search + '%'
 
-		# Allow the search to match on name, allocation_comment or 
-		# allocation_who
-		query = query + "(`name` LIKE %s OR `allocation_comment` LIKE %s OR `allocation_who` LIKE %s OR `cmdb_environment` LIKE %s OR `allocation_who_realname` LIKE %s OR `vmware_ipaddr` LIKE %s)"
+			# If a class name was specified already, we need to AND the query,
+			# otherwise we need to start the WHERE clause
+			if class_name is not None:
+				query = query + " AND "
+			else:
+				query = query + "WHERE "
 
-		# Add the filter string to the parameters of the query. Add it 
-		# three times as there are three columns to match on.
-		params = params + (like_string, like_string, like_string, like_string, like_string, like_string)
+			# Allow the search to match on name, allocation_comment or 
+			# allocation_who
+			query = query + "(`name` LIKE %s OR `allocation_comment` LIKE %s OR `allocation_who` LIKE %s OR `cmdb_environment` LIKE %s OR `allocation_who_realname` LIKE %s OR `vmware_ipaddr` LIKE %s)"
+
+			# Add the filter string to the parameters of the query. Add it 
+			# three times as there are three columns to match on.
+			params = params + (like_string, like_string, like_string, like_string, like_string, like_string)
 
 	# If hide_inactive is set to false, then exclude systems that are no longer In Service
 	if hide_inactive == True:
@@ -283,7 +294,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 
 ################################################################################
 
-def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, return_cursor = False, show_allocated_and_perms=False, only_allocated_by = None, show_favourites_for = None, virtual_only = False):
+def get_systems(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, return_cursor = False, show_allocated_and_perms=False, only_allocated_by = None, show_favourites_for = None, virtual_only = False, toggle_queries = False):
 	"""Returns the list of systems in the database, optionally restricted to those of a certain class (e.g. srv, vhost), and ordered (defaults to "name")"""
 
 	## BUILD THE QUERY
@@ -293,19 +304,27 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 	query = "SELECT * FROM `systems_info_view` "
 
 	# Build the WHERE clause. This returns a tuple of (where_clause, query_params)
-	query_where = _build_systems_query(class_name, search, order, order_asc, limit_start, limit_length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms, only_allocated_by, show_favourites_for, virtual_only)
+	query_where = _build_systems_query(class_name, search, order, order_asc, limit_start, limit_length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms, only_allocated_by, show_favourites_for, virtual_only, toggle_queries)
 	query       = query + query_where[0]
 	params      = params + query_where[1]
 
 	# Query the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute(query, params)
-
-	# Return the results
-	if return_cursor:
-		return curd
-	else:
-		return curd.fetchall()
+	try:
+		curd.execute(query, params)
+		
+		# Return the results
+		if return_cursor:
+			return curd
+		else:
+			return curd.fetchall()
+	except:
+		# If an error occurs, it's because of the incorrect syntax of the WHERE clause
+		# Therefore, return nothing
+		if return_cursor:
+			return curd
+		else:
+			return None
 
 ################################################################################
 
