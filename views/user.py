@@ -134,6 +134,7 @@ def preferences():
 
 	# the only preference right now is interface layout mode
 	classic = False
+
 	if 'uihorizontal' in request.form:
 		if request.form['uihorizontal'] == "yes":
 			classic = True
@@ -148,6 +149,7 @@ def preferences():
 	if 'theme' in request.form:
 		if request.form['theme'] == "dark":
 			theme = "dark"
+			
 	if theme == 'dark':
 		g.redis.set("user:" + session['username'] + ":preferences:interface:theme","dark")
 	else:
@@ -159,6 +161,8 @@ def preferences():
 		g.redis.set('user:' + session['username'] + ':preferences:interface:sidebar', 'expand')
 	else:
 		g.redis.delete('user:' + session['username'] + ':preferences:interface:sidebar')
+	
 
+	# return jsonify({'a':session['username']})
 	flash("Your preferences have been saved","alert-success")
 	return redirect(url_for('dashboard'))

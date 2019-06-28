@@ -105,11 +105,11 @@ class NeoCortex(object):
 
 		## ensure we have required config options
 		for wkey in ['NEOCORTEX_SET_GID', 'NEOCORTEX_SET_UID', 'NEOCORTEX_KEY', 'WORKFLOWS_DIR', 'NEOCORTEX_TASKS_DIR']:
-			if not wkey in self.config.keys():
-				print "Missing configuation option: " + wkey
+			if not wkey in list(self.config.keys()):
+				print(("Missing configuation option: " + wkey))
 				sys.exit(1)
 
-		if 'DEBUG' in self.config.keys():
+		if 'DEBUG' in list(self.config.keys()):
 			if self.config['DEBUG'] == True:
 				self.debug = True
 				

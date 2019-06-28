@@ -12,6 +12,10 @@ import OpenSSL as openssl
 import DNS
 
 def run(helper, options):
+	# check if workflows are locked
+	if not helper.lib.checkWorkflowLock:
+		raise Exception("Workflows are currently locked")
+
 	# Configuration of task
 	config = options['wfconfig']
 

@@ -326,7 +326,7 @@ def puppetdb_get_node_stats(db = None):
 	
 	environs = ['count', 'preproduction', 'production', 'development', 'moduledev']
 
-	for k in stats.keys():
+	for k in list(stats.keys()):
 		for e in environs:
 			stats[k][e] = 0
 

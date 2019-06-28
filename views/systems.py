@@ -270,7 +270,7 @@ def systems_add_existing():
 		if 'link_vmware' in request.form:
 			# Search for a VM with the correct name		
 			curd.execute("SELECT `uuid` FROM `vmware_cache_vm` WHERE `name` = %s", (hostname,))
-			print curd._last_executed
+			print((curd._last_executed))
 			vm_results = curd.fetchall()
 
 			if len(vm_results) == 0:
@@ -285,7 +285,7 @@ def systems_add_existing():
 		if 'link_servicenow' in request.form:
 			# Search for a CI with the correct name
 			curd.execute("SELECT `sys_id` FROM `sncache_cmdb_ci` WHERE `name` = %s", (hostname,))
-			print curd._last_executed
+			print((curd._last_executed))
 			ci_results = curd.fetchall()
 
 			if len(ci_results) == 0:
@@ -347,14 +347,18 @@ def systems_new():
 			# To prevent code duplication, this is done remotely by Neocortex. So, connect:
 			neocortex   = cortex.lib.core.neocortex_connect()
 
+			new_systems = []
 			# Allocate the name
-			new_systems = neocortex.allocate_name(class_name, system_comment, username=session['username'], num=system_number)
+			for x in range(system_number):
+				new_systems.append(neocortex.allocate_name(class_name, system_comment, username=session['username']))
 		except Exception as ex:
 			flash("A fatal error occured when trying to allocate names: " + str(ex), "alert-danger")
 			return redirect(url_for('systems_new'))
 
-		for new_system_name in new_systems:
-			cortex.lib.core.log(__name__, "systems.name.allocate", "New system name allocated: " + new_system_name,related_id=new_systems[new_system_name])
+		for new_system in new_systems:
+			new_system_name = new_system['name']
+			system_id = new_system['id']
+			cortex.lib.core.log(__name__, "systems.name.allocate", "New system name allocated: " + new_system_name,related_id=system_id)
 
 		# If the user only wanted one system, redirect back to the systems
 		# list page and flash up success. If they requested more than one
@@ -362,7 +366,7 @@ def systems_new():
 		# change the comments on all of the systems.
 		if len(new_systems) == 1:
 			flash("System name allocated successfully", "alert-success")
-			return redirect(url_for('system', id=new_systems[new_systems.keys()[0]]))
+			return redirect(url_for('system', id=new_systems[0]['id']))
 		else:
 			return render_template('systems/new-bulk.html', systems=new_systems, comment=system_comment, title="Systems")
 
@@ -446,7 +450,7 @@ def systems_bulk_save():
 
 	# Find a list of systems from the form. Each of the form input elements
 	# containing a system comment has a name that starts "system_comment_"
-	for key, value in request.form.iteritems():
+	for key, value in request.form.items():
 		if key.startswith("system_comment_"):
 			# Yay we found one! blindly update it!
 			updateid = key.replace("system_comment_", "")
@@ -531,6 +535,9 @@ def system_overview(id):
 		system['allocation_who'] = system['allocation_who_realname'] + ' (' + system['allocation_who'] + ')'
 	else:
 		system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
+
+	systemInfo = {'a':[]}
+	systemInfo['a'].append(system['name'])
 
 	return render_template('systems/overview.html', system=system, active='systems', title=system['name'], power_ctl_perm=does_user_have_system_permission(id, "control.vmware.power", "control.all.vmware.power"))
 
@@ -731,7 +738,7 @@ def system_edit(id):
 					expiry_date = request.form['expiry_date']
 					try:
 						expiry_date = datetime.datetime.strptime(expiry_date, '%Y-%m-%d')
-					except Exception, e:
+					except Exception as e:
 						abort(400)
 				else:
 					expiry_date = None
@@ -1178,7 +1185,7 @@ def _systems_extract_datatables():
 	search = None
 	if 'search[value]' in request.form:
 		if request.form['search[value]'] != '':
-			if type(request.form['search[value]']) is not str and type(request.form['search[value]']) is not unicode:
+			if type(request.form['search[value]']) is not str and type(request.form['search[value]']) is not str:
 				search = str(request.form['search[value]'])
 			else:
 				search = request.form['search[value]']

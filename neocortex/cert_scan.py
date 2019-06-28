@@ -275,7 +275,7 @@ def run(helper, options):
 	results = []
 	for ip_range in helper.config['CERT_SCAN_IP_RANGES']:
 		# Make sure this is a unicode object
-		ip_range = unicode(ip_range)
+		ip_range = str(ip_range)
 
 		# If this is a subnet
 		if '/' in ip_range:

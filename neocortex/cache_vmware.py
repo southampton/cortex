@@ -67,7 +67,7 @@ def run(helper, options):
 			skip_vms = True
 
 		## For each vCenter that appears in the configuration
-		for key in helper.config['VMWARE'].keys():
+		for key in list(helper.config['VMWARE'].keys()):
 			# Get the hostname
 			instance = helper.config['VMWARE'][key]
 
@@ -247,7 +247,7 @@ def run(helper, options):
 		stats_other = 0
 
 		## For each vCenter that appears in the configuration
-		for key in helper.config['VMWARE'].keys():
+		for key in list(helper.config['VMWARE'].keys()):
 			# Get the hostname
 			instance = helper.config['VMWARE'][key]
 
@@ -322,5 +322,5 @@ def recurse_folder(folder, folders):
 
 			if len(child.childEntity) > 0:
 				recurse_folder(child, folders)
- 
+
 

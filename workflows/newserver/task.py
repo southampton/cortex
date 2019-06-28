@@ -1,6 +1,10 @@
 #### Allocate server task
 
 def run(helper, options):
+	# check if workflows are locked
+	if not helper.lib.checkWorkflowLock:
+		raise Exception("Workflows are currently locked")
+	
 	# Configuration of task
 	puppet_cert_domain = options['wfconfig']['PUPPET_CERT_DOMAIN']
 
@@ -13,13 +17,13 @@ def run(helper, options):
 	system_info = helper.lib.allocate_name(options['classname'], options['purpose'], helper.username)
 
 	# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
-	system_name = system_info.keys()[0]
-	system_dbid = system_info.values()[0]
+	system_name = system_info['name']
+	system_dbid = system_info['id']
 
 	# End the event
 	helper.end_event(description="Allocated system name " + system_name)
 
-
+	helper.event("flash_1", str(system_info), oneshot=True, success=True, warning=True)
 
 	## Allocate an IPv4 Address and create a host object ###################
 
@@ -80,6 +84,10 @@ def run(helper, options):
 		helper.event("puppet_enc_register", "Registering with Puppet ENC")
 
 		# Register with the Puppet ENC
+		helper.event("flash_1", str(str(system_name) + " " + str(system_dbid)), oneshot=True, success=True, warning=True)
+		helper.event("flash_1", str(str(system_info)), oneshot=True, success=True, warning=True)
+		# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
+
 		helper.lib.puppet_enc_register(system_dbid, system_name + "." + puppet_cert_domain, options['env'])
 
 		# End the event

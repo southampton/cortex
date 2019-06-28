@@ -24,7 +24,7 @@ def stderr(title,message,code=200,template="error.html"):
 ################################################################################
 
 ## fatal error (returns HTML from python code - which is more likely to work)
-def fatalerr(title=u"Totes not an error ;)",message="While processing your request an unexpected error occured which the application could not recover from",debug=None):
+def fatalerr(title="Totes not an error ;)",message="While processing your request an unexpected error occured which the application could not recover from",debug=None):
 
 	# Should we show a traceback?	
 	if debug is None:
@@ -35,7 +35,7 @@ def fatalerr(title=u"Totes not an error ;)",message="While processing your reque
 
 	# Build the response. Not using a template here to prevent any Jinja 
 	# issues from causing this to fail.
-	html = u"""
+	html = """
 <!doctype html>
 <html>
 <head>
@@ -61,16 +61,16 @@ def fatalerr(title=u"Totes not an error ;)",message="While processing your reque
 		margin: 5em auto;
 		padding: 50px;
 		border-radius: 0.5em;
-    }
-    @media (max-width: 900px) {
-        div {
-            width: auto;
-            margin: 0 auto;
-            border-radius: 0;
-            padding: 1em;
-        }
-    }
-    </style>
+	}
+	@media (max-width: 900px) {
+		div {
+			width: auto;
+			margin: 0 auto;
+			border-radius: 0;
+			padding: 1em;
+		}
+	}
+	</style>
 </head>
 <body>
 <div>
