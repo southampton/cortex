@@ -717,7 +717,11 @@ def system_edit(id):
 				vmware_uuid = system['vmware_uuid']
 
 			if does_user_have_system_permission(id,"edit.rubrik","systems.all.edit.rubrik"):
-				enable_backup = request.form.get('enable_backup', 1)
+				try:
+					enable_backup = int(request.form.get('enable_backup', 1))
+				except ValueError:
+					flash('Failed to update backup status!', 'alert-danger')
+					enable_backup = system['enable_backup']
 			else:
 				enable_backup = system['enable_backup']
 
@@ -781,13 +785,12 @@ def system_edit(id):
 				review_task = system['review_task']
 
 			if system['enable_backup'] == 1 and enable_backup == 0:
-				
+				rubrik = cortex.lib.rubrik.Rubrik()
 				try:
 					vm = rubrik.get_vm(system['name'])
 				except Exception as e:
 					flash("Failed to get VM from Rubrik", "alert-danger")
 				else:
-					rubrik = cortex.lib.rubrik.Rubrik()
 					rubrik.update_vm(vm['id'], {'configuredSlaDomainId': 'UNPROTECTED'})
 
 			# Update the system
