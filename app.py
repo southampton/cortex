@@ -387,6 +387,7 @@ Username:             %s
 		  `primary_owner_role` varchar(64) DEFAULT NULL,
 		  `secondary_owner_who` varchar(64) DEFAULT NULL,
 		  `secondary_owner_role` varchar(64) DEFAULT NULL,
+		  `enable_backup` tinyint(1) DEFAULT 1,
 		  PRIMARY KEY (`id`),
 		  KEY `class` (`class`),
 		  KEY `name` (`name`(255)),
@@ -562,22 +563,19 @@ Username:             %s
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		# Attempt to alter the systems table and add new columns.
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `expiry_date` datetime DEFAULT NULL""")
 		except Exception as e:
 			pass
-
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `build_count` mediumint(11) DEFAULT 0""")
 		except Exception as e:
 			pass
-
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `decom_date` datetime DEFAULT NULL""")
 		except Exception as e:
 			pass
-		
-		# Attempt to alter the systems table and add new columns.
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `primary_owner_who` varchar(64) DEFAULT NULL""")
 		except Exception as e:
@@ -592,6 +590,10 @@ Username:             %s
 			pass
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `secondary_owner_role` varchar(64) DEFAULT NULL""")
+		except Exception as e:
+			pass
+		try:
+			cursor.execute("""ALTER TABLE `systems` ADD `enable_backup` tinyint(1) DEFAULT 1""")
 		except Exception as e:
 			pass
 
@@ -642,7 +644,8 @@ Username:             %s
 		 `puppet_nodes`.`env` AS `puppet_env`,
 		 `puppet_nodes`.`include_default` AS `puppet_include_default`,
 		 `puppet_nodes`.`classes` AS `puppet_classes`,
-		 `puppet_nodes`.`variables` AS `puppet_variables`
+		 `puppet_nodes`.`variables` AS `puppet_variables`,
+		 `systems`.`enable_backup` AS `enable_backup`
                 FROM `systems` 
 		LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`
 		LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid`
