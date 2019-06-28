@@ -780,6 +780,16 @@ def system_edit(id):
 				review_status = system['review_status']
 				review_task = system['review_task']
 
+			if system['enable_backup'] == 1 and enable_backup == 0:
+				
+				try:
+					vm = rubrik.get_vm(system['name'])
+				except Exception as e:
+					flash("Failed to get VM from Rubrik", "alert-danger")
+				else:
+					rubrik = cortex.lib.rubrik.Rubrik()
+					rubrik.update_vm(vm['id'], {'configuredSlaDomainId': 'UNPROTECTED'})
+
 			# Update the system
 			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `enable_backup` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, enable_backup, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, id))
 			g.db.commit();

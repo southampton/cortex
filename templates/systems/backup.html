@@ -21,6 +21,9 @@
 			</div>
 			<div class="panel-body">
 				<p style="font-size:120%;font-weight:bold">Effective SLA Domain:&nbsp;&nbsp;<span class="fa fa-shield fa-2x rubrikshield" style="color: {{ vm.effectiveSlaDomain.uiColor or '#000' }};"></span> {{ vm.effectiveSlaDomainName }}</p>
+				{%- if system.enable_backup == 0 %}
+					This system is set to not backup in Cortex. Please change this in the settings tab before assigning a Rubrik SLA domain.
+				{%- else %}
 				<div>You can update the SLA Domain below:</div>
 				<form method="POST" class="form">
 					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}" />
@@ -44,6 +47,7 @@
 {% endif -%}
 					</div>
 				</form>
+				{% endif -%}
 			</div>
 		</div>
 	</div>
