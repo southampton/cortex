@@ -14,6 +14,7 @@ import requests
 import requests.exceptions
 from urllib.parse import urljoin
 import ldap
+import json
 
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('systems.all.decom', 'Decommission any system')

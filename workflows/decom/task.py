@@ -5,6 +5,9 @@ from urllib.parse import urljoin
 import ldap
 
 def run(helper, options):
+	# check if workflows are locked
+	if not helper.lib.checkWorkflowLock:
+		raise Exception("Workflows are currently locked")
 
 	# Iterate over the actions that we have to perform
 	for action in options['actions']:

@@ -11,6 +11,7 @@ import MySQLdb as mysql
 import datetime
 import json
 from copy import deepcopy
+import json
 
 ################################################################################
 
@@ -568,12 +569,11 @@ def admin_maint():
 			elif task['name'] == '_cert_scan':
 				cert_scan_id = task['id']
 
-
 		# Render the page
 		return render_template('admin/maint.html', active='admin',
 			sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id,
 			vmexpire_task_id=vmexpire_task_id, sync_puppet_servicenow_id=sync_puppet_servicenow_id,
-			cert_scan_id=cert_scan_id, student_vm_build_id=student_vm_build_id, pause_vm_builds=lock_workflows , title="Maintenance Tasks"
+			cert_scan_id=cert_scan_id, student_vm_build_id=student_vm_build_id, pause_vm_builds=lock_workflows , title="Maintenance Tasks", lock_status=json.loads(workflows_lock_status['value'])
 		)
 
 	else:

@@ -7,6 +7,7 @@ import cortex.lib.classes
 import cortex.views
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
 import MySQLdb as mysql
+import json
 
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('newserver', 'Create System Record')
@@ -14,11 +15,11 @@ workflow.add_permission('newserver', 'Create System Record')
 @workflow.route("create",title='Create System Record', order=30, permission="newserver", methods=['GET', 'POST'])
 def allocateserver():
 
-	# Check if workflows are disabled or not
+	# Check if workflows are currently locked 
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
 	current_value = curd.fetchone()
-	if current_value['value'] == 'Locked':
+	if json.loads(current_value['value'])['status'] == 'Locked':
 		raise Exception("Workflows are currently locked. \n Please try again later.")
 
 	# Get the list of enabled classes

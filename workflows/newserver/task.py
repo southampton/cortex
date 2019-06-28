@@ -1,6 +1,10 @@
 #### Allocate server task
 
 def run(helper, options):
+	# check if workflows are locked
+	if not helper.lib.checkWorkflowLock:
+		raise Exception("Workflows are currently locked")
+	
 	# Configuration of task
 	puppet_cert_domain = options['wfconfig']['PUPPET_CERT_DOMAIN']
 

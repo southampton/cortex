@@ -2,6 +2,9 @@
 import time
 
 def run(helper, options):
+	if not helper.lib.checkWorkflowLock:
+		raise Exception("Workflows are currently locked")
+
 
 	# Find out which workflow we're wanting to run
 	workflow = options['workflow']

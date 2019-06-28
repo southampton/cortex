@@ -2105,3 +2105,16 @@ class Corpus(object):
 		self.rdb.setex(prefix + 'system', 3600, str(system_id))
 
 		return True	
+
+	############################################################################
+
+	def checkWorkflowLock():
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+		curd.execute('LOCK TABLE kv_settings;')
+		curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
+		current_value = curd.fetchone()
+		curd.execute('UNLOCK TABLES;')
+		if json.loads(current_value['value'])['status'] == 'Unlocked':
+			return True
+		else:
+			return False

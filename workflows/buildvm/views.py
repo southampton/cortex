@@ -26,7 +26,7 @@ def sandbox():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
 	current_value = curd.fetchone()
-	if current_value['value'] == 'Locked':
+	if json.loads(current_value['value'])['status'] == 'Locked':
 		raise Exception("Workflows are currently locked. \n Please try again later.")
 
 	# Get the list of clusters
@@ -113,11 +113,11 @@ def sandbox():
 @workflow.route("standard",title='Create Standard VM', order=10, permission="buildvm.standard", methods=['GET', 'POST'])
 def standard():
 
-	# Check if workflows are locked
+	# Check if workflows are currently locked 
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
 	current_value = curd.fetchone()
-	if current_value['value'] == 'Locked':
+	if json.loads(current_value['value'])['status'] == 'Locked':
 		raise Exception("Workflows are currently locked. \n Please try again later.")
 
 	# Get the list of clusters
