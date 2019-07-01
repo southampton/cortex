@@ -27,7 +27,8 @@
 
 <script>
 $(document).ready(function() 
-{	
+{
+	// This function will get the name of the last puppet class which appeared in the textarea	
 	function getLastMatch(class_editor, puppetModulesArray){
 		var cursorLine = class_editor.getCursor().line - 1;
 		
@@ -50,12 +51,14 @@ $(document).ready(function()
 		completeSingle: false,
 	});
 	
-	var dictionary = {{variable_names | tojson | safe}}
-	var puppetModulesArray = [];
+	var dictionary = {{variable_names | tojson | safe}} // will hold all the keywords
+	var puppetModulesArray = []; // will hold all the names of the modules
+	
 	for(var key in dictionary){
 		puppetModulesArray.push(key);
 	}
 	
+	// Codemirror hint helper which returns the list of elements which match the current string on the line
 	CodeMirror.registerHelper('hint', 'dictionaryHint', function(editor) {
    		var cur = editor.getCursor();
     		var curLine = editor.getLine(cur.line);
@@ -73,7 +76,6 @@ $(document).ready(function()
 			// It's completely ok though
 			var regex = /(?!)/
 		}
-    		//var regex = new RegExp('^' + curWord, 'i');
 		var using_init = true;
 		if(curLine.match(/\w*:{2}?\w*/)){ // match the whole line because you only want this to happen in the case of a module name (which would have no whitespaces before it)
 			var module_and_class = curLine.split("::"); // extract the module name and whatever is after it(the part that is after will be used to list all the classes that are within that module)
@@ -89,13 +91,14 @@ $(document).ready(function()
                                         to: CodeMirror.Pos(cur.line, end) // the to position should be the same as normally
 			}
 		}
+		
 		var lastMatch = getLastMatch(editor, puppetModulesArray);
-		lastMatch = lastMatch.substring(0, lastMatch.length-1);
+		lastMatch = lastMatch.substring(0, lastMatch.length-1); // eliminates the ":" at the end of the name
 		var last_match_module_name = lastMatch;
                 var last_match_class_name = "";
-		if (lastMatch.includes("::")){
-			last_match_module_name = lastMatch.split("::")[0];
-                        last_match_class_name = lastMatch.split("::")[1];
+		if (lastMatch.includes("::")){ // if the last match is of format module::class
+			last_match_module_name = lastMatch.split("::")[0]; // store the module in a var
+                        last_match_class_name = lastMatch.split("::")[1]; // store the class in another var
 		}
     		if(curLine && lastMatch != "" && dictionary.hasOwnProperty(last_match_module_name)){ // if the dictionary contains this module name
 			if (lastMatch.includes("::")){ // if the last match includes ::, then show the variable names that belong to that class

@@ -5,7 +5,6 @@ import json
 from cortex import app
 from cortex.api import api_manager, api_login_required
 from cortex.api.exceptions import InvalidPermissionException, NoResultsFoundException
-from cortex.api.parsers import puppet_post_args, puppet_info_root#, puppet_info_module, puppet_info_class, puppet_info_parameter, puppet_info_description, puppet_info_tag
 from cortex.api.serializers.puppet import page_puppet_serializer, puppet_serializer
 
 from cortex.lib.user import does_user_have_permission
@@ -53,7 +52,5 @@ class Puppet(Resource):
 						description = tag['text']
 						tag_name = tag['tag_name']
 						curd.execute("INSERT INTO `puppet_modules_info` (`module_name`, `class_name`, `class_parameter`, `description`, `tag_name`) VALUES (%s, %s, %s, %s, %s)", (module_name, class_name, class_parameter, description, tag_name))
-				
+		# commit the changes		
 		curd.connection.commit()
-
-		return request.json
