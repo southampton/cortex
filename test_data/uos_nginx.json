@@ -1,1 +1,0 @@
-{"puppet_classes": [{"docstring": {"tags": [{"text": "", "tag_name": "param", "name": "user", "types": ["Any"]}, {"text": "", "tag_name": "param", "name": "worker_processes", "types": ["Any"]}, {"text": "", "tag_name": "param", "name": "worker_connections", "types": ["Any"]}]}, "name": "uos_nginx"}]}

@@ -10,8 +10,8 @@ pagination_arguments.add_argument(
 puppet_post_args = reqparse.RequestParser()
 
 puppet_info_root = reqparse.RequestParser()
-puppet_info_root.add_argument('modules', type=dict)
-
+puppet_info_root.add_argument('json_string', type=str)
+"""
 puppet_info_module = reqparse.RequestParser()
 puppet_info_module.add_argument('module_name', type=dict, location=('modules',))
 
@@ -27,26 +27,9 @@ puppet_info_description.add_argument('description', location=('class_parameter',
 puppet_info_tag = reqparse.RequestParser()
 puppet_info_tag.add_argument('tag_name', location=('class_parameter',))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 puppet_post_args.add_argument('module_name')
 puppet_post_args.add_argument('class_name')
 puppet_post_args.add_argument('class_parameter')
 puppet_post_args.add_argument('description')
 puppet_post_args.add_argument('tag_name')
-
+"""

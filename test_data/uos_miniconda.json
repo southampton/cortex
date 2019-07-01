@@ -1,1 +1,0 @@
-{"puppet_classes": [{"docstring": {"tags": [{"text": "", "tag_name": "param", "name": "installed", "types": ["Any"]}]}, "name": "uos_miniconda"}]}

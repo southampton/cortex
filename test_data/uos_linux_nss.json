@@ -1,1 +1,0 @@
-{"puppet_classes": [{"docstring": {"tags": [{"text": "", "tag_name": "param", "name": "primary_provider", "types": ["Any"]}, {"text": "", "tag_name": "param", "name": "secondary_optional_provider", "types": ["Any"]}, {"text": "", "tag_name": "param", "name": "enable_nscd_caching", "types": ["Any"]}]}, "name": "uos_linux_nss"}]}

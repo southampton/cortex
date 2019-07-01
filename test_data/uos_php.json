@@ -1,1 +1,0 @@
-{"puppet_classes": [{"docstring": {"tags": [{"text": "The version of PHP to install. Defaults to whatever the OS provides.", "tag_name": "param", "name": "version", "types": ["Any"]}]}, "name": "uos_php"}, {"name": "uos_php::fpm"}]}

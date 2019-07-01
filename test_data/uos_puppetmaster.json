@@ -1,1 +1,0 @@
-{"puppet_classes": [{"docstring": {"tags": [{"text": "", "tag_name": "param", "name": "fqdn", "types": ["Any"]}, {"text": "", "tag_name": "param", "name": "cortex_auth_token", "types": ["Any"]}]}, "name": "uos_puppetmaster"}, {"name": "uos_puppetmaster::samba"}]}

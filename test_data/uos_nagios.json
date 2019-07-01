@@ -1,1 +1,0 @@
-{"puppet_classes": [{"docstring": {"tags": [{"text": "", "tag_name": "param", "name": "role", "types": ["Any"]}]}, "name": "uos_nagios"}, {"name": "uos_nagios::fusion"}, {"name": "uos_nagios::nconf"}, {"name": "uos_nagios::xi"}]}
