@@ -546,6 +546,7 @@ def admin_maint():
 	cert_scan_id = None
 	student_vm_build_id = None
 	lock_workflows = None
+	rubrik_crcheck = None
 
 	# get the lock status of the page
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -568,6 +569,11 @@ def admin_maint():
 				sync_puppet_servicenow_id = task['id']
 			elif task['name'] == '_cert_scan':
 				cert_scan_id = task['id']
+			elif task['name'] == '_lock_workflows':
+				lock_workflows = task['id']
+			elif task['name'] == '_rubrik_policy_check':
+				rubrik_crcheck = task['id']
+
 
 		# Render the page
 		return render_template('admin/maint.html', active='admin',
@@ -620,6 +626,9 @@ def admin_maint():
 			curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
 			res = curd.fetchone()
 			task_id = neocortex.start_internal_task(session['username'], 'lock_workflows.py', '_lock_workflows', description="Locks the workflows from being started", options={'page_load_lock_status' : res})
+		elif module == 'rubrik_crcheck':
+			if not does_user_have_permission("maintenance.expired_vm"):
+				task_id = neocortex.start_internal_task(session['username'], 'rubrik_crcheck.py', '_rubrik_policy_check', description="Checks the backup systems of policies against the ones in Rubrik")
 		else:
 			app.logger.warn('Unknown module name specified when starting task')
 			abort(400)
