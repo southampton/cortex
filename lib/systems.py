@@ -140,6 +140,14 @@ def get_system_by_vmware_uuid(name):
 
 ################################################################################
 
+def search_is_valid(search):
+	# This regex pretty much matches the syntax of the WHERE clause
+	# Doesn't fully prevent SQL injection, the \w* regex is quite flexible -> maybe replace it with the column names specifically?
+	regex = '(`\w*`\s*(<|>|=|!=|LIKE|NOT LIKE|<=|>=)\s*(((\'|\")\w*(\'|\"))|[0-9]*))(\s*(AND|OR)\s*(`\w*`\s*(<|>|=|!=|LIKE|NOT LIKE|<=|>=)\s*(((\'|\")\w*(\'|\"))|[0-9]*)))*'
+
+	# test the search string against the regex and return either True or False depending on the result
+
+################################################################################
 def _build_systems_query(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, show_allocated_and_perms = False, only_allocated_by = None, show_favourites_for = None, virtual_only = False, toggle_queries = False):
 	params = ()
 	query = ""
@@ -149,7 +157,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
                 query = query + "WHERE `class` = %s"
                 params = (class_name,)
 
-	if toggle_queries and search is not None and search is not "":
+	if toggle_queries and search is not None and search is not "": # and search_is_valid(search):
 		if class_name is not None:
                		query = query + " AND "
                 else:   

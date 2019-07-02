@@ -19,3 +19,9 @@ class NoResultsFoundException(Exception):
 
 	def __str__(self):
 		return self.message
+class MissingAuthenticationTokenException(Exception):
+	message = "API Authentication Token missing from request headers."
+	status_code = 400
+	
+	def __str__(self):
+		return self.message
