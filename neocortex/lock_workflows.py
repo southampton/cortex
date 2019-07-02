@@ -4,13 +4,13 @@ from urllib.parse import urljoin
 import requests
 import time
 import MySQLdb as mysql
-from datetime import datetime
+import datetime
 import json
 
 def run(helper, options):
 
 	user = helper.username
-	time = datetime.now().time()
+	time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
 	# Set up cursor to access the DB
 	curd = helper.db.cursor(mysql.cursors.DictCursor)
