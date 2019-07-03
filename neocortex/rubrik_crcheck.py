@@ -48,6 +48,5 @@ def run(helper, options):
 			helper.event("flash_1", cortex_vm_data['name'] + " is in rubrik and is set to backup", oneshot=True, success=True, warning=False)
 		else:
 			helper.event("flash_1", "Something went wrong with " + cortex_vm_data['name'], oneshot=True, success=False, warning=False)
-			
 	
 	helper.end_event(description=vms_in_server)
