@@ -21,8 +21,6 @@ def run(helper, options):
 	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
 	current_value = curd.fetchone()
 
-
-	
 	# unlock the table once run
 	curd.execute('UNLOCK TABLES ;')
 	
