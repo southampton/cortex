@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from cortex import app
-from cortex.lib.workflow import CortexWorkflow
+from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
 import cortex.lib.core
 import cortex.lib.classes
 import cortex.views
@@ -14,13 +14,8 @@ workflow.add_permission('newserver', 'Create System Record')
 
 @workflow.route("create",title='Create System Record', order=30, permission="newserver", methods=['GET', 'POST'])
 def allocateserver():
-
-	# Check if workflows are currently locked 
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
-	current_value = curd.fetchone()
-	if json.loads(current_value['value'])['status'] == 'Locked':
-		raise Exception("Workflows are currently locked. \n Please try again later.")
+	# Don't go any further if workflows are currently locked
+	raise_if_workflows_locked()
 
 	# Get the list of enabled classes
 	classes = cortex.lib.classes.list(hide_disabled=True)

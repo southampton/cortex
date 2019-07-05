@@ -300,7 +300,7 @@ class Corpus(object):
 			aliases = []
 
 		# Append the new alias(es) - only if they don't already exist
-		if type(new_aliases) is str or type(new_aliases) is str:
+		if type(new_aliases) is str:
 			if new_aliases not in aliases:
 				aliases.append(new_aliases)
 		elif type(new_aliases) is list:
@@ -345,7 +345,7 @@ class Corpus(object):
 			aliases = []
 
 		# Remove the alias(es)
-		if type(remove_aliases) is str or type(remove_aliases) is str:
+		if type(remove_aliases) is str:
 			aliases.remove(remove_aliases)
 		elif type(remove_aliases) is list:
 			for alias in remove_aliases:
@@ -1442,7 +1442,7 @@ class Corpus(object):
 
 		# Determine the new status it needs to be, which depends on 
 		# whether it is virtual or not
-		if (type(virtual) is bool and virtual is True) or ((type(virtual) is str or type(virtual) is str) and virtual.lower() == "true"):
+		if (type(virtual) is bool and virtual is True) or (type(virtual) is str and virtual.lower() == "true"):
 			new_status = "Deleted"
 		else:
 			new_status = "Decommissioned"

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import MySQLdb as mysql
 import cortex.lib.core
-from cortex.lib.workflow import CortexWorkflow
+from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
 from cortex.lib.systems import get_systems
 from cortex.lib.user import does_user_have_workflow_permission, does_user_have_system_permission, does_user_have_any_system_permission
 from flask import request, session, redirect, url_for, abort, flash, g
@@ -20,14 +20,9 @@ def snapshot_system(id):
 
 @workflow.route('create', title='Create VMware Snapshot', order=40, permission='systems.snapshot', methods=['GET', 'POST'])
 def snapshot_create():
+	# Don't go any further if workflows are currently locked
+	raise_if_workflows_locked()
 
-	# Check if workflows are currently locked 
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
-	current_value = curd.fetchone()
-	if json.loads(current_value['value'])['status'] == 'Locked':
-		raise Exception("Workflows are currently locked. \n Please try again later.")
-	
 	# Get systems depending on permissions.
 	if does_user_have_workflow_permission('systems.all.snapshot'):
 		# User can snapshot all systems.
