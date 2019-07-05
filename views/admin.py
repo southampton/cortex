@@ -623,7 +623,6 @@ def admin_maint():
 			abort(400)
 
 		# Show the user the status of the task
-		# return jsonify(task_id)
 		return redirect(url_for('task_status', id=task_id))
 
 ################################################################################

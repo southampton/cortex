@@ -162,7 +162,5 @@ def preferences():
 	else:
 		g.redis.delete('user:' + session['username'] + ':preferences:interface:sidebar')
 	
-
-	# return jsonify({'a':session['username']})
 	flash("Your preferences have been saved","alert-success")
 	return redirect(url_for('dashboard'))

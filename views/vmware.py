@@ -252,8 +252,6 @@ def vmware_history():
 	stats_desktop_vms = curd.fetchall()
 
 	# Render
-	# return jsonify(stats_desktop_vms)
-
 	return render_template('vmware/history.html', active='vmware', stats_vms=stats_vms, stats_linux_vms=stats_linux_vms, stats_windows_vms=stats_windows_vms, stats_desktop_vms=stats_desktop_vms, title='VMware History', d=d)
 
 ################################################################################

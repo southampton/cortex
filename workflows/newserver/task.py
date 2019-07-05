@@ -23,8 +23,6 @@ def run(helper, options):
 	# End the event
 	helper.end_event(description="Allocated system name " + system_name)
 
-	helper.event("flash_1", str(system_info), oneshot=True, success=True, warning=True)
-
 	## Allocate an IPv4 Address and create a host object ###################
 
 	if options['alloc_ip']:
@@ -84,10 +82,6 @@ def run(helper, options):
 		helper.event("puppet_enc_register", "Registering with Puppet ENC")
 
 		# Register with the Puppet ENC
-		helper.event("flash_1", str(str(system_name) + " " + str(system_dbid)), oneshot=True, success=True, warning=True)
-		helper.event("flash_1", str(str(system_info)), oneshot=True, success=True, warning=True)
-		# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
-
 		helper.lib.puppet_enc_register(system_dbid, system_name + "." + puppet_cert_domain, options['env'])
 
 		# End the event
