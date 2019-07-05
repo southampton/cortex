@@ -143,6 +143,7 @@ def get_user_realname_from_ldap(username):
 	try:
 		results = l.search_s(app.config['LDAP_USER_SEARCH_BASE'], ldap.SCOPE_SUBTREE, app.config['LDAP_USER_ATTRIBUTE'] + "=" + username)
 	except ldap.LDAPError as e:
+		app.logger.warning('Failed to execute real name LDAP search: ' + str(e))
 		return username
 
 	# Handle the search results
@@ -160,6 +161,12 @@ def get_user_realname_from_ldap(username):
 				if len(attrs['sn']) > 0:
 					lastname = attrs['sn'][0]
 
+	# In Python 3, the ldap client returns bytes, so decode UTF-8
+	if type(firstname) is bytes:
+		firstname = firstname.decode('utf-8')
+	if type(lastname) is bytes:
+		lastname = lastname.decode('utf-8')
+
 	try:
 		if len(firstname) > 0 and len(lastname) > 0:
 			name = firstname + ' ' + lastname
@@ -170,6 +177,7 @@ def get_user_realname_from_ldap(username):
 		else:
 			name = username
 	except Exception as ex:
+		app.logger.warning('Failed to generate real name: ' + str(ex))
 		name = username
 	try:
 		curd = g.db.cursor(mysql.cursors.DictCursor)
