@@ -1567,6 +1567,11 @@ class Corpus(object):
 		# Get the current state of the notify variable
 		notify = self.redis_get_vm_data(vm, 'notify')
 
+		# StrictRedis.get() returns bytes(), so decode it
+		if notify is not None:
+			if type(notify) is bytes:
+				notify = notify.decode('utf-8')
+
 		# Start a timer
 		timer = 0
 
@@ -1585,6 +1590,11 @@ class Corpus(object):
 
 			# Get the lastest value of the notify
 			notify = self.redis_get_vm_data(vm, 'notify')
+
+			# StrictRedis.get() returns bytes(), so decode it
+			if notify is not None:
+				if type(notify) is bytes:
+					notify = notify.decode('utf-8')
 
 		# Return the latest value, which may be None if the in-guest installer
 		# never runs. Otherwise it can be any other value, which may not
