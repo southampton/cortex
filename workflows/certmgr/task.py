@@ -11,7 +11,6 @@ import OpenSSL as openssl
 # For DNS resolution
 import DNS
 
-import traceback #DEBUG
 def run(helper, options):
 	# check if workflows are locked
 	if not helper.lib.checkWorkflowLock:
