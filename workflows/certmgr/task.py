@@ -11,6 +11,7 @@ import OpenSSL as openssl
 # For DNS resolution
 import DNS
 
+import traceback #DEBUG
 def run(helper, options):
 	# check if workflows are locked
 	if not helper.lib.checkWorkflowLock:
@@ -164,7 +165,7 @@ def create_self_signed_cert(helper, options):
 	try:
 		# Build the SAN X509v3 extension
 		san_aliases_string = ','.join(['DNS:' + alias for alias in (options['aliases'] + [options['fqdn']])])
-		san_extension = openssl.crypto.X509Extension('subjectAltName', False, san_aliases_string)
+		san_extension = openssl.crypto.X509Extension(b'subjectAltName', False, san_aliases_string.encode('utf-8'))
 
 		# Build the certificate
 		cert = openssl.crypto.X509()
