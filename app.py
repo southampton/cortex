@@ -394,6 +394,23 @@ Username:             %s
 		  CONSTRAINT `systems_ibfk_1` FOREIGN KEY (`class`) REFERENCES `classes` (`name`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_groups` (
+		  	`id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  	`name` varchar(256) NOT NULL,
+			`notifyee` varchar(265) NOT NULL,
+		 	PRIMARY KEY (`id`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_group_systems` (
+			`group_id` mediumint(11) NOT NULL,
+			`system_id` mediumint(11) NOT NULL,
+			`restart_info` TEXT,
+			`order` smallint(6),
+			PRIMARY KEY (`group_id`, `system_id`),
+			FOREIGN KEY (`group_id`) REFERENCES system_groups(`id`) ON DELETE CASCADE,
+			FOREIGN KEY (`system_id`) REFERENCES systems(`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `tasks` (
 		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
 		  `module` varchar(64) NOT NULL,
@@ -854,6 +871,7 @@ Username:             %s
 		  (1, "certificates.stats"),
 		  (1, "certificates.add")
 		""")
+
 
 		## Close database connection
 		temp_db.close()

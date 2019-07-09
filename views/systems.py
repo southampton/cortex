@@ -23,6 +23,7 @@ import requests
 import cortex.lib.rubrik
 from flask.views import MethodView
 from pyVmomi import vim
+import ast
 
 ################################################################################
 
@@ -1183,7 +1184,72 @@ def _systems_extract_datatables():
 	return (draw, start, length, order_column, order_asc, search)
 
 ################################################################################
-@route('/systems/groups')
+@app.route('/systems/groups', methods=['GET', 'POST'])
+@cortex.lib.user.login_required
 def system_groups():
-	pass
+	group_contents = {}
 
+	# All of the VMs which have not expired
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT `name` FROM `systems` WHERE `expiry_date` IS NOT NULL;')
+	unexpired_boxes = curd.fetchall()
+
+	#Get all of the groups
+	curd.execute('SELECT `name` FROM `system_groups`;')
+	existing_groups = curd.fetchall()
+	# groups = list(group_contents.keys())
+
+	# return jsonify(existing_groups)
+
+	# setting up the groups
+	for group in existing_groups:
+		group_contents[group['name']] = []
+
+
+
+	wait_for_options = ['Check if DB is running', 'Check if VMware tools are running', 'Check for ping result', 'Check if __________']
+
+	if request.method == 'GET':
+		return render_template('systems/groups.html', systems=group_contents, boxes=unexpired_boxes, wait_options=wait_for_options,title="System Groups", existing_groups=existing_groups)
+	elif request.method == 'POST':
+
+		# do stuff with the post request to create a group
+		# or to add a box to a group
+		if request.form['task_name'] == 'create_group':
+			try:
+				curd.execute('INSERT INTO `system_groups` (`name`, `notifyee`) VALUES (%s, %s);', (request.form['name'], request.form['notifyee']))
+				g.db.commit()
+				flash('Group added', "alert-success")
+				#Get all of the groups
+				curd.execute('SELECT `name` FROM `system_groups`;')
+				existing_groups = curd.fetchall()
+
+				group_contents = {}
+				for group in existing_groups:
+					group_contents[group['name']] = []
+			
+			except Exception as e:
+				flash('Group was not added: ' + e, "alert-warning")
+				raise e
+		elif request.form['task_name'] == 'remove_group':
+			try:
+				pass
+				curd.execute('DELETE FROM `system_groups` WHERE name = "%s";' % (ast.literal_eval(request.form['groups'])['name'],))
+				g.db.commit()
+				#Get all of the groups
+				curd.execute('SELECT `name` FROM `system_groups`;')
+				existing_groups = curd.fetchall()
+			
+				group_contents = {}
+				for group in existing_groups:
+					group_contents[group['name']] = []
+			
+			except Exception as e:
+				return jsonify({'e':str(e)})
+				raise e
+
+		else:
+			flash('else flipepd', "alert-warning")
+
+
+		return render_template('systems/groups.html', systems=group_contents, boxes=unexpired_boxes, wait_options=wait_for_options, title="System Groups", existing_groups=existing_groups)
