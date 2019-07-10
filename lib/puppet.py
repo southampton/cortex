@@ -180,7 +180,7 @@ def generate_node_config(certname):
 	curd.execute("SELECT `value` FROM `kv_settings` WHERE `key` = 'puppet.enc.default'")
 	default_classes = curd.fetchone()
 	if default_classes is not None:
-		default_classes = yaml.load(default_classes['value'])
+		default_classes = yaml.safe_load(default_classes['value'])
 	
 		# YAML load can come back with no actual objects, e.g. comments, blank etc.
 		if default_classes == None:
@@ -196,7 +196,7 @@ def generate_node_config(certname):
 
 	# Decode YAML for classes from the node
 	if len(node['classes'].strip()) != 0:
-		node_classes = yaml.load(node['classes'])
+		node_classes = yaml.safe_load(node['classes'])
 
 		# YAML load can come back with no actual objects, e.g. comments, blank etc.
 		if node_classes == None:
@@ -218,7 +218,7 @@ def generate_node_config(certname):
 	# Decode YAML for environment (Puppet calls them parameters, but we call them [global] variables)
 	variables = None
 	if len(node['variables'].strip()) != 0:
-		params = yaml.load(node['variables'])
+		params = yaml.safe_load(node['variables'])
 
 		if not params == None:
 			response['parameters'] = params
