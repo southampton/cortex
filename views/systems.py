@@ -1187,6 +1187,7 @@ def _systems_extract_datatables():
 @app.route('/systems/groups', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_groups():
+
 	group_contents = {}
 
 	# All of the VMs which have not expired
@@ -1195,28 +1196,29 @@ def system_groups():
 	unexpired_boxes = curd.fetchall()
 
 	#Get all of the groups
-	curd.execute('SELECT `name` FROM `system_groups`;')
+	curd.execute('SELECT `name`, `id` FROM `system_groups`;')
 	existing_groups = curd.fetchall()
-	# groups = list(group_contents.keys())
-
-	# return jsonify(existing_groups)
 
 	# setting up the groups
 	for group in existing_groups:
 		group_contents[group['name']] = []
-
-
+		curd.execute('SELECT `id`, `name`, `group_id`, `order` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
+		group_machines = curd.fetchall()
+		for box in group_machines:
+			group_contents[group['name']].append(box['name'])
 
 	wait_for_options = ['Check if DB is running', 'Check if VMware tools are running', 'Check for ping result', 'Check if __________']
 
 	if request.method == 'GET':
 		return render_template('systems/groups.html', systems=group_contents, boxes=unexpired_boxes, wait_options=wait_for_options,title="System Groups", existing_groups=existing_groups)
+	
 	elif request.method == 'POST':
-
+		return jsonify(request.form)
 		# do stuff with the post request to create a group
 		# or to add a box to a group
 		if request.form['task_name'] == 'create_group':
 			try:
+				# add the new group to the db
 				curd.execute('INSERT INTO `system_groups` (`name`, `notifyee`) VALUES (%s, %s);', (request.form['name'], request.form['notifyee']))
 				g.db.commit()
 				flash('Group added', "alert-success")
@@ -1224,32 +1226,88 @@ def system_groups():
 				curd.execute('SELECT `name` FROM `system_groups`;')
 				existing_groups = curd.fetchall()
 
-				group_contents = {}
-				for group in existing_groups:
-					group_contents[group['name']] = []
-			
+				# add the group to the groups dictionary
+				group_contents[request.form['name']] = []
+
 			except Exception as e:
 				flash('Group was not added: ' + e, "alert-warning")
 				raise e
+
 		elif request.form['task_name'] == 'remove_group':
 			try:
-				pass
-				curd.execute('DELETE FROM `system_groups` WHERE name = "%s";' % (ast.literal_eval(request.form['groups'])['name'],))
-				g.db.commit()
-				#Get all of the groups
-				curd.execute('SELECT `name` FROM `system_groups`;')
-				existing_groups = curd.fetchall()
-			
-				group_contents = {}
-				for group in existing_groups:
-					group_contents[group['name']] = []
-			
+				# get the name from the weird way that the selectpicker returns it
+				if request.form['groups'] != "":
+					name = ast.literal_eval(request.form['groups'])['name']
+
+					#remove the name from the database
+					curd.execute('DELETE FROM `system_groups` WHERE name = "%s";' % (name,))
+					g.db.commit()
+					flash('Group removed', "alert-success")
+					
+					#Get all of the groups
+					curd.execute('SELECT `name` FROM `system_groups`;')
+					
+					# we can remove all of the contents of this from group_contents			
+					group_contents.pop(name, None)
+				else:
+					flash('No group selected to remove', 'alert-warning')
+
 			except Exception as e:
-				return jsonify({'e':str(e)})
+				flash('Group was not removed: ' + e, "alert-warning")
 				raise e
 
+		elif request.form['task_name'] == 'add_to_group': 
+			system_to_add = request.form['systems']
+			group_to_add_to = request.form['button_clicked']
+
+			#get id of system
+			curd.execute('SELECT `id` FROM system_groups WHERE `name` = "%s";' % (group_to_add_to, ))
+			group_id = curd.fetchone()
+			curd.execute('SELECT `id` FROM systems WHERE `name` = "%s";' % (system_to_add, ))
+			system_id = curd.fetchone()
+
+			#get the value for order
+			curd.execute('SELECT * FROM system_group_systems WHERE `group_id` = "%s"' % (group_id['id'], ))
+			count = len(curd.fetchall())
+
+			curd.execute('INSERT INTO `system_group_systems` (`group_id`, `system_id`, `order`) VALUES (%s, %s, %s);' % (group_id['id'], system_id['id'], count+1))
+			g.db.commit()
+			group_contents[group_to_add_to].append(system_to_add)
+
+		elif request.form['task_name'] == 'remove_from_group':
+			system_to_remove = request.form['systems']
+			group_to_remove_from = request.form['button_clicked']
+
+			#get id of system
+			curd.execute('SELECT `id` FROM system_groups WHERE `name` = "%s";' % (group_to_remove_from, ))
+			group_id = curd.fetchone()
+			curd.execute('SELECT `id` FROM systems WHERE `name` = "%s";' % (system_to_remove, ))
+			system_id = curd.fetchone()
+
+			# we need to modify the order so that it is correct once the removal is done
+			# start by getting the current position
+			curd.execute('SELECT `order` FROM system_group_systems WHERE `group_id` = %s AND `system_id` = %s' % (group_id['id'], system_id['id']))
+			order_of_removed_item = curd.fetchone()['order']
+
+			#then we get the total number
+			curd.execute('SELECT * FROM system_group_systems WHERE `group_id` = "%s"' % (group_id['id'], ))
+			count = len(curd.fetchall())
+
+			#run an update on everything that comes after the removed value
+			for x in range(order_of_removed_item+1, count+1):
+				curd.execute('UPDATE system_group_systems SET `order` = %s-1 WHERE `group_id` = %s AND `order` = %s;' % (x, group_id['id'], x))
+				g.db.commit()
+
+			#remove the unwanted value
+			curd.execute('DELETE FROM `system_group_systems` WHERE group_id = %s AND system_id = %s;' % (group_id['id'], system_id['id']))
+			g.db.commit()
+
+
+			group_contents[group_to_remove_from].remove(system_to_remove)
+
+
 		else:
-			flash('else flipepd', "alert-warning")
+			flash('else flipped', "alert-warning")
 
 
 		return render_template('systems/groups.html', systems=group_contents, boxes=unexpired_boxes, wait_options=wait_for_options, title="System Groups", existing_groups=existing_groups)

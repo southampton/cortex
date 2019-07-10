@@ -25,12 +25,7 @@
 		</style>
 		<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
 		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-		<script>
-		$( function() {
-		  $( ".sortableList" ).sortable();
-		  $( ".sortableList" ).disableSelection();
-		} );
-		</script>
+
 		
 
 
@@ -101,10 +96,10 @@
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
 					<button type="submit" class="btn btn-primary">Create</button>
-				</div>
-			</form>
-		</div>
-	</div>
+</div>
+</form>
+</div>
+</div>
 </div>
 <div class="modal fade" id="remove_system" role="dialog">
 	<div class="modal-dialog">
@@ -121,7 +116,7 @@
 						<div style="margin-left: 1em">
 							<div class="form-group">
 								<input type="hidden" name="button_clicked" id="remove-VM-input" value="default"></input>
-								<input type="hidden" name="task_name" value="add_to_group"/></input>
+								<input type="hidden" name="task_name" value="remove_from_group"/></input>
 								<select class="selectpicker" name="systems" id="systems" data-live-search="true">
 									<option></option>
 									{% for box in boxes -%}
@@ -136,10 +131,10 @@
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
 					<button type="submit" class="btn btn-danger">Remove</button>
-				</div>
-			</form>
-		</div>
-	</div>
+</div>
+</form>
+</div>
+</div>
 </div>
 <div class="modal fade" id="restart" role="dialog">
 	<div class="modal-dialog">
@@ -204,7 +199,7 @@
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
 					<button type="submit" class="btn btn-danger">Remove</button>
-				</div>
+</div>
 			</form>
 		</div>
 	</div>
@@ -216,58 +211,72 @@
 	<div class="pull-right">
 		<a data-toggle="modal" data-target="#restart" class="btn btn-sm pull-right btn-danger active"><i class="fa fa-fw fa-minus"></i> <span class="hidden-sm hidden-xs">Restart Group</span></a>
 		<a data-toggle="modal" data-target="#create" class="btn btn-sm pull-right btn-success active" style="margin-right:10px"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs">Create Group</span></a>
-		<a data-toggle="modal" data-target="#remove_group" class="btn btn-sm pull-right btn-danger active" style="margin-right:10px"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs">REMOVE Group</span></a>
+		<a data-toggle="modal" data-target="#remove_group" class="btn btn-sm pull-right btn-danger active" style="margin-right:10px"><i class="fa fa-fw fa-minus"></i> <span class="hidden-sm hidden-xs">REMOVE Group</span></a>
 	</div>
 	<h3><i class="fa fa-fw fa-server fa"></i> System Groups</h3>
 	<p class="text-muted">A system group is used to restart systems in a certain order</p>
 </div>
-<div class="panel-group" id="accordion">
-	{% for group in systems %}
-  		<div class="panel panel-default">
-   			<div class="panel-heading">
-				<h4 class="panel-title col-align col-align--center" id="{{ group }}">
-					<a data-toggle="collapse" data-parent="#accordion" href="#collapse{{ loop.index }}">System Group - {{ group }}</a>
-					<a data-toggle="modal" data-target="#remove_system" class="btn btn-xs pull-right btn-danger active group-hyperlink-remove" id="{{ group }}"><i class="fa fa-fw fa-minus"></i> <span class="hidden-sm hidden-xs ">Remove from Group</span></a>
-					<a data-toggle="modal" data-target="#add" class="btn btn-xs pull-right btn-success active group-hyperlink" style="margin-right:3px"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs ">Add to Group</span></a>
-				</h4>
-    		</div>
-    		<div id="collapse{{ loop.index }}" class="panel-collapse collapse sortable">
-    			<ul class="sortableList">
-    			{% for box in systems[group] %}
-  					<!-- <li class="panel-body">{{ box }}</li> -->
-      				<div class="panel-body">
-      					<span>
-	      					<ul style="float: left">{{ box }}</ul>
-		      				<select name="wait_options" style="float: right">
 
-		      					{% for options in wait_options %}
-		  							<option value="{{ option }}">{{ options }}</option>
-		      					{% endfor %}
-		  					</select>
-      					</span>
-      				</div>
-    			{% endfor %}
-				</ul>
-			</div>
-		</div>
-	{% endfor %}
-	<button type="submit" class="btn btn-success btn-submit" id="save_changes" style="margin-top: 5px" ><span class="glyphicon glyphicon-ok" aria-hidden="true" ></span> Save Changes</button>
-</div>
+<form id="vm_order" method="POST" role="form">
+	<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+	<div class="panel-group" id="accordion">
+			{% for group in systems %}
+
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h4 class="panel-title col-align col-align--center" id="{{ group }}">
+							<a data-toggle="collapse" data-parent="#accordion" href="#collapse{{ loop.index }}">System Group - {{ group }}</a>
+							<a data-toggle="modal" data-target="#remove_system" class="btn btn-xs pull-right btn-danger active group-hyperlink-remove" id="{{ group }}"><i class="fa fa-fw fa-minus"></i> <span class="hidden-sm hidden-xs ">Remove from Group</span></a>
+							<a data-toggle="modal" data-target="#add" class="btn btn-xs pull-right btn-success active group-hyperlink" style="margin-right:3px"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs ">Add to Group</span></a>
+						</h4>
+					</div>
+					<div id="collapse{{ loop.index }}" class="panel-collapse collapse sortable">
+						<ul class="sortableList">
+						{% for box in systems[group] %}
+
+							<!-- <li class="panel-body">{{ box }}</li> -->
+							<div class="panel-body">
+								<span>
+
+									<ol style="float: left">{{ box }} <input type="hidden" name="{{ group }}order{{ loop.index }}" value="{{ box }}"/></ol>
+									<select name="wait_options" style="float: right">
+										{% for options in wait_options %}
+											<option value="{{ option }}">{{ options }}</option>
+										{% endfor %}
+									</select>
+								</span>
+							</div>
+						{% endfor %}
+						</ul>
+					</div>
+				</div>
+			{% endfor %}
+			<button type="submit" class="btn btn-success btn-submit" id="save_changes" style="margin-top: 5px" ><span class="glyphicon glyphicon-ok" aria-hidden="true" ></span> Save Changes</button>
+	</div>
+</form>
+
 
 <script>
 
 $(".group-hyperlink").click(function(){
 	console.log($(this).parent().attr('id'));
-	// var temp = $("#add-VM-modal").html();
-	//$("#add-VM-modal").html($(this).parent().attr('id'));
-	$("#add-VM-modal").setAttribute("value",$(this).parent().attr('id'));
+	$("#add-VM-modal").val($(this).parent().attr('id'));
 });
 $(".group-hyperlink-remove").click(function(){
 	console.log($(this).parent().attr('id'));
-	//$("#add-VM-modal").html($(this).parent().attr('id'));
-	console.log($("#remove-VM-input").val());
 	$("#remove-VM-input").val($(this).parent().attr('id'));
 });
+</script>
+<script>
+$( function() {
+  $( ".sortableList" ).sortable();
+  $( ".sortableList" ).disableSelection();
+} );
+</script>
+<script>
+	$('#create').click(function(e) {
+		$('#vm_order').submit();
+	}
 </script>
 
 {% endblock %}
