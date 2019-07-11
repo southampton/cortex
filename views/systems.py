@@ -1189,7 +1189,6 @@ def _systems_extract_datatables():
 def system_groups():
 
 	group_contents = {}
-
 	# All of the VMs which have not expired
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT `name` FROM `systems` WHERE `expiry_date` IS NOT NULL;')
@@ -1213,9 +1212,11 @@ def system_groups():
 		return render_template('systems/groups.html', systems=group_contents, boxes=unexpired_boxes, wait_options=wait_for_options,title="System Groups", existing_groups=existing_groups)
 	
 	elif request.method == 'POST':
-		return jsonify(request.form)
+
+		# return jsonify({'a':type(request.form['data_of_order'])})
 		# do stuff with the post request to create a group
 		# or to add a box to a group
+
 		if request.form['task_name'] == 'create_group':
 			try:
 				# add the new group to the db
@@ -1302,8 +1303,18 @@ def system_groups():
 			curd.execute('DELETE FROM `system_group_systems` WHERE group_id = %s AND system_id = %s;' % (group_id['id'], system_id['id']))
 			g.db.commit()
 
-
 			group_contents[group_to_remove_from].remove(system_to_remove)
+
+		elif request.form['task_name'] == 'save_changes':
+			# the order is returned in a really odd way, so change it into a dict
+			order = ast.literal_eval(request.form['data_of_order'])
+			# clean it up a bit, remove parts of the JQUERY object that we don't care about
+			del order['context']
+			del order['prevObject']
+
+
+
+			return jsonify(order)
 
 
 		else:

@@ -238,7 +238,7 @@
 							<div class="panel-body">
 								<span>
 
-									<ol style="float: left">{{ box }} <input type="hidden" name="{{ group }}order{{ loop.index }}" value="{{ box }}"/></ol>
+									<ol id="{{ box }}" class="sortable-systems" style="float: left">{{ box }}</ol>
 									<select name="wait_options" style="float: right">
 										{% for options in wait_options %}
 											<option value="{{ option }}">{{ options }}</option>
@@ -251,8 +251,11 @@
 					</div>
 				</div>
 			{% endfor %}
+			
 			<button type="submit" class="btn btn-success btn-submit" id="save_changes" style="margin-top: 5px" ><span class="glyphicon glyphicon-ok" aria-hidden="true" ></span> Save Changes</button>
 	</div>
+	<input type="hidden" name="task_name" id="task_name" value="save_changes"/>
+	<input type="hidden" name="data_of_order" id="locations_of_stuff" value=""/>
 </form>
 
 
@@ -266,6 +269,21 @@ $(".group-hyperlink-remove").click(function(){
 	console.log($(this).parent().attr('id'));
 	$("#remove-VM-input").val($(this).parent().attr('id'));
 });
+var isDragging = false;
+$(".sortable-systems")
+.mousedown(function() {
+    isDragging = false;
+})
+.mousemove(function() {
+    isDragging = true;
+ })
+.mouseup(function() {
+    var wasDragging = isDragging;
+    isDragging = false;
+    if (!wasDragging) {
+    	console.log("dragend");
+    }
+});
 </script>
 <script>
 $( function() {
@@ -274,9 +292,21 @@ $( function() {
 } );
 </script>
 <script>
-	$('#create').click(function(e) {
+
+	$("#save_changes").click( function() { 
+		var systems_list = $('#vm_order').find(".sortable-systems").map(function() {return $(this).attr('id');});
+		// console.log(systems_list['length']);
+		// for (var i = 0; i < systems_list['length']; i++ ){
+		// 	console.log(i);
+		// }
+		console.log(JSON.stringify(systems_list));
+		console.log($('#locations_of_stuff').val());
+		$('#locations_of_stuff').attr('value', JSON.stringify(systems_list));
+		console.log($('#locations_of_stuff'));
 		$('#vm_order').submit();
-	}
+		
+	});
+	
 </script>
 
 {% endblock %}
