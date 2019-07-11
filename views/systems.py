@@ -1296,7 +1296,7 @@ def system_groups():
 
 			#run an update on everything that comes after the removed value
 			for x in range(order_of_removed_item+1, count+1):
-				curd.execute('UPDATE system_group_systems SET `order` = %s-1 WHERE `group_id` = %s AND `order` = %s;' % (x, group_id['id'], x))
+				curd.execute('UPDATE `system_group_systems` SET `order` = %s-1 WHERE `group_id` = %s AND `order` = %s;' % (x, group_id['id'], x))
 				g.db.commit()
 
 			#remove the unwanted value
@@ -1311,10 +1311,54 @@ def system_groups():
 			# clean it up a bit, remove parts of the JQUERY object that we don't care about
 			del order['context']
 			del order['prevObject']
+			del order['length']
+
+			group_sets=[]
+			sizes_of_groups = [0]
+			len_of_previous_group = 0
+			for group in existing_groups:
+				curd.execute('SELECT * FROM system_group_systems WHERE `group_id` = "%s"' % (group['id'], ))
+				count = len(curd.fetchall())
+				sizes_of_groups.append(count + len_of_previous_group)
+				len_of_previous_group += count
+
+
+			for x in range(len(existing_groups)):
+				machines = list(order.values())[sizes_of_groups[x]:sizes_of_groups[x+1]]
+				m_new = []
+				for x, machine in enumerate(machines):
+					curd.execute('SELECT id FROM systems WHERE `name` = "%s"' % (machine, ))
+					m_new.append({'name' : machine, 'id' : curd.fetchone()['id']})
+					
+				group_sets.append(m_new)
+			
+			systems = {}
+			curd.execute('SELECT `id`, `name` FROM systems ;')
+			systems_from_db = curd.fetchall()
+			debug = []
+			for system in systems_from_db:
+				systems[system['name']] = system['id'] 
+
+			# for group in existing_groups:
+			# 	for new_groups in group_sets:
+			# 		if new_groups == []:
+			# 			continue
+			# 		else:
+			# 			# debug.append(new_groups)
+			# 			for x, system in enumerate(new_groups):
+			# 				# debug.append((x+1, group['id'], system['id']))
+			# 				curd.execute('UPDATE `system_group_systems` SET `order` = %s+1 WHERE `group_id` = %s AND `system_id` = %s;' % (x, group['id'], system['id']))
+			# 				g.db.commit()
+			for x, group in enumerate(group_sets):
+				group_id = existing_groups[x]['id']
+				for y, system in enumerate(group):
+					system_id = system['id']
+					curd.execute('UPDATE `system_group_systems` SET `order` = %s WHERE `group_id` = %s AND `system_id` = %s;' % (y+1, group_id, system_id))
+					g.db.commit()
 
 
 
-			return jsonify(order)
+			return jsonify({'exist' : existing_groups, 'new' : group_sets, 'dbg' : debug})
 
 
 		else:
