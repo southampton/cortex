@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+ {% extends "layout.html" %}
 
 {% block head -%}
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-slider.min.css') }}">
@@ -34,6 +34,7 @@
 {% block body %}
 {% import 'node-header.html' as node %}
 
+<script type="text/javascript"> $(document).ready(function(){ $('.reboot_options').hide(); });  </script>
 <div class="modal fade" id="create" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -88,6 +89,25 @@
 										<option value="{{ box['name'] }}">{{ box['name'] }}</option>
 									{%- endfor %}
 								</select>
+								<input type="hidden" name="task_name" value="configure_box" id="system_options_input"/>
+									<select name="wait_options" class="selectpicker"  id="system_options" onchange="changeEventHandler(event);">
+										{% for options in wait_options %}
+											<option value="{{ options }}">{{ options }}</option>
+										{% endfor %}
+									</select>
+								</input>
+								<div id="Check_if_DB_is_running" class="reboot_options">
+								  <h1>Content for checking DB goes here</h1>
+								</div>
+								<div id="Check_if_VMware_tools_are_running" class="reboot_options">
+								  <h1>Content for checking VMWare goes here</h1>
+								</div>
+								<div id="Check_for_ping_result" class="reboot_options">
+								  <h1>Content for ping test goes here</h1>
+								</div>
+								<div id="Check_if___________" class="reboot_options">
+								  <h1>Content for _____ test goes here</h1>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -117,7 +137,7 @@
 							<div class="form-group">
 								<input type="hidden" name="button_clicked" id="remove-VM-input" value="default"></input>
 								<input type="hidden" name="task_name" value="remove_from_group"/></input>
-								<select class="selectpicker" name="systems" id="systems" data-live-search="true">
+								<select class="selectpicker" name="systems" id="system_options" data-live-search="true">
 									<option></option>
 									{% for box in boxes -%}
 										<option value="{{ box['name'] }}">{{ box['name'] }}</option>
@@ -199,11 +219,63 @@
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
 					<button type="submit" class="btn btn-danger">Remove</button>
-</div>
+				</div>
 			</form>
 		</div>
 	</div>
 </div>
+
+
+<div class="modal fade" id="configure" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form role="form" method="POST" class="form-horizontal">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input type="hidden" name="button_clicked" id="box-edit-status"></input>
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title">Configure Box Settings</h4>
+				</div>
+				<div class="modal-body">
+					<div class="form-group">
+						<label class="col-sm-3 control-label">System Reboot:</label>
+						<div style="margin-left: 1em">
+							<div class="form-group">
+								<input type="hidden" name="task_name" value="configure_box" id="system_options_input"/>
+									<select name="wait_options" class="selectpicker"  id="system_options" onchange="changeEventHandler(event);">
+										{% for options in wait_options %}
+											<option value="{{ options }}">{{ options }}</option>
+										{% endfor %}
+									</select>
+								</input>
+								<div id="Check_if_DB_is_running" class="reboot_options">
+								  <h1>Content for checking DB goes here</h1>
+								</div>
+								<div id="Check_if_VMware_tools_are_running" class="reboot_options">
+								  <h1>Content for checking VMWare goes here</h1>
+								</div>
+								<div id="Check_for_ping_result" class="reboot_options">
+								  <h1>Content for ping test goes here</h1>
+								</div>
+								<div id="Check_if___________" class="reboot_options">
+								  <h1>Content for _____ test goes here</h1>
+								</div>
+								
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="submit" class="btn btn-success">Confirm</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+
+
 
 
 
@@ -216,7 +288,6 @@
 	<h3><i class="fa fa-fw fa-server fa"></i> System Groups</h3>
 	<p class="text-muted">A system group is used to restart systems in a certain order</p>
 </div>
-
 <form id="vm_order" method="POST" role="form">
 	<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 	<div class="panel-group" id="accordion">
@@ -237,13 +308,9 @@
 							<!-- <li class="panel-body">{{ box }}</li> -->
 							<div class="panel-body">
 								<span>
-
 									<ol id="{{ box }}" class="sortable-systems" style="float: left">{{ box }}</ol>
-									<select name="wait_options" style="float: right">
-										{% for options in wait_options %}
-											<option value="{{ option }}">{{ options }}</option>
-										{% endfor %}
-									</select>
+										<a data-toggle="modal" data-target="#configure" class="btn btn-xs pull-right btn-warning active box-hyperlink" id="{{ box }}" style="margin-right:3px"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs ">Configure</span></a>
+									
 								</span>
 							</div>
 						{% endfor %}
@@ -261,35 +328,42 @@
 
 <script>
 
-$(".group-hyperlink").click(function(){
-	console.log($(this).parent().attr('id'));
-	$("#add-VM-modal").val($(this).parent().attr('id'));
-});
-$(".group-hyperlink-remove").click(function(){
-	console.log($(this).parent().attr('id'));
-	$("#remove-VM-input").val($(this).parent().attr('id'));
-});
-var isDragging = false;
-$(".sortable-systems")
-.mousedown(function() {
-    isDragging = false;
-})
-.mousemove(function() {
-    isDragging = true;
- })
-.mouseup(function() {
-    var wasDragging = isDragging;
-    isDragging = false;
-    if (!wasDragging) {
-    	console.log("dragend");
-    }
-});
+	$(".group-hyperlink").click(function(){
+		console.log($(this).parent().attr('id'));
+		$("#add-VM-modal").val($(this).parent().attr('id'));
+	});
+	$(".group-hyperlink-remove").click(function(){
+		console.log($(this).parent().attr('id'));
+		$("#remove-VM-input").val($(this).parent().attr('id'));
+	});
+	$(".box-hyperlink").click(function(){
+		console.log($(this).attr('id'));
+		$("#box-edit-status").val($(this).attr('id'));
+	});
+	function changeEventHandler(event) {
+	    var selected = $('#system_options').val();
+	    $('.reboot_options').hide();
+	    selected = selected.split(' ').join('_')
+	    // alert(selected)
+	    if (selected === "Check_if_DB_is_running"){
+	    	$('#Check_if_DB_is_running').show();
+	    	// $('.Check_if_DB_is_running').show();
+	    } else if (selected === "Check_if_VMware_tools_are_running"){
+	    	$('#Check_if_VMware_tools_are_running').show();
+	    } else if (selected === "Check_for_ping_result"){
+	    	$('#Check_for_ping_result').show();
+	    } else if (selected === 'Check_if___________'){
+	    	$('#Check_if___________').show();
+	    }
+	}
 </script>
 <script>
+
 $( function() {
   $( ".sortableList" ).sortable();
   $( ".sortableList" ).disableSelection();
 } );
+
 </script>
 <script>
 
@@ -304,7 +378,7 @@ $( function() {
 		$('#locations_of_stuff').attr('value', JSON.stringify(systems_list));
 		console.log($('#locations_of_stuff'));
 		$('#vm_order').submit();
-		
+
 	});
 	
 </script>

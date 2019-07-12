@@ -1213,7 +1213,7 @@ def system_groups():
 	
 	elif request.method == 'POST':
 
-		# return jsonify({'a':type(request.form['data_of_order'])})
+		# return jsonify(request.form)
 		# do stuff with the post request to create a group
 		# or to add a box to a group
 
@@ -1332,23 +1332,16 @@ def system_groups():
 					
 				group_sets.append(m_new)
 			
+
 			systems = {}
 			curd.execute('SELECT `id`, `name` FROM systems ;')
 			systems_from_db = curd.fetchall()
-			debug = []
+
+
 			for system in systems_from_db:
 				systems[system['name']] = system['id'] 
 
-			# for group in existing_groups:
-			# 	for new_groups in group_sets:
-			# 		if new_groups == []:
-			# 			continue
-			# 		else:
-			# 			# debug.append(new_groups)
-			# 			for x, system in enumerate(new_groups):
-			# 				# debug.append((x+1, group['id'], system['id']))
-			# 				curd.execute('UPDATE `system_group_systems` SET `order` = %s+1 WHERE `group_id` = %s AND `system_id` = %s;' % (x, group['id'], system['id']))
-			# 				g.db.commit()
+
 			for x, group in enumerate(group_sets):
 				group_id = existing_groups[x]['id']
 				for y, system in enumerate(group):
@@ -1356,10 +1349,12 @@ def system_groups():
 					curd.execute('UPDATE `system_group_systems` SET `order` = %s WHERE `group_id` = %s AND `system_id` = %s;' % (y+1, group_id, system_id))
 					g.db.commit()
 
-
-
-			return jsonify({'exist' : existing_groups, 'new' : group_sets, 'dbg' : debug})
-
+			for group in existing_groups:
+				group_contents[group['name']] = []
+				curd.execute('SELECT `id`, `name`, `group_id`, `order` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
+				group_machines = curd.fetchall()
+				for box in group_machines:
+					group_contents[group['name']].append(box['name'])
 
 		else:
 			flash('else flipped', "alert-warning")
