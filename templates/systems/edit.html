@@ -147,8 +147,7 @@
 				<option value="1"{% if system.enable_backup == 1 %} selected="selected"{% endif %}>Backup this System</option>
 			</select>
 		</div>
-		<div style="margin-bottom:0px" class="col-sm-offset-2 col-sm-10 col-md-9 help-block">When reviewing current VMs, these fields can be used to state whether a VM is required or can be deleted. If a review status of 'Under review' is selected, a ServiceNow project task can be added. If left blank, one will be created for you.</div>
-
+		<div style="margin-bottom:0px" class="col-sm-offset-2 col-sm-10 col-md-9 help-block">This field determines whether Cortex will set a default policy for the VM is it is set to Do Not Protect in Rubrik.</div>
 	</div>
 
 {%- if not system_class or system_class.cmdb_type %}
