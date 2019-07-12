@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from cortex import app
-from cortex.lib.workflow import CortexWorkflow
+from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
 from cortex.lib.errors import stderr
 import cortex.lib.core
 import cortex.lib.systems
@@ -55,6 +55,8 @@ def get_system_actions_from_redis(task):
 
 @workflow.action("prepare",title='Decommission', desc="Begins the process of decommissioning this system", system_permission="decom", permission="systems.all.decom")
 def decom_step_prepare(id):
+	# Don't go any further if workflows are currently locked
+	raise_if_workflows_locked()
 
 	system = cortex.lib.systems.get_system_by_id(id)
 	if system is None:

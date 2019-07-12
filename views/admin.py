@@ -3,6 +3,7 @@
 from cortex import app
 import cortex.lib.core
 import cortex.lib.admin
+from cortex.lib.workflow import get_workflows_locked_details
 from cortex.lib.user import does_user_have_permission
 from cortex.lib.admin import set_kv_setting, get_kv_setting
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
@@ -549,10 +550,7 @@ def admin_maint():
 	rubrik_crcheck = None
 
 	# get the lock status of the page
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
-	workflows_lock_status = curd.fetchone()
-	
+	workflows_lock_status = get_workflows_locked_details()
 
 	if request.method == 'GET':
 		# See which tasks are already running
@@ -579,7 +577,7 @@ def admin_maint():
 		return render_template('admin/maint.html', active='admin',
 			sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id,
 			vmexpire_task_id=vmexpire_task_id, sync_puppet_servicenow_id=sync_puppet_servicenow_id,
-			cert_scan_id=cert_scan_id, student_vm_build_id=student_vm_build_id, pause_vm_builds=lock_workflows , title="Maintenance Tasks", lock_status=json.loads(workflows_lock_status['value'])
+			cert_scan_id=cert_scan_id, student_vm_build_id=student_vm_build_id, pause_vm_builds=lock_workflows , title="Maintenance Tasks", lock_status=workflows_lock_status
 		)
 
 	else:
@@ -634,7 +632,6 @@ def admin_maint():
 			abort(400)
 
 		# Show the user the status of the task
-		# return jsonify(task_id)
 		return redirect(url_for('task_status', id=task_id))
 
 ################################################################################

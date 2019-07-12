@@ -362,3 +362,5 @@ DEFAULT_DOMAIN='domain'
 # so add on DEFAULT_DOMAIN
 KNOWN_DOMAIN_SUFFIXES=['test', 'dev']
 
+# Classes to show favourite lists for
+FAVOURITE_CLASSES=[]

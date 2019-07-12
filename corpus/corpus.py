@@ -300,7 +300,7 @@ class Corpus(object):
 			aliases = []
 
 		# Append the new alias(es) - only if they don't already exist
-		if type(new_aliases) is str or type(new_aliases) is str:
+		if type(new_aliases) is str:
 			if new_aliases not in aliases:
 				aliases.append(new_aliases)
 		elif type(new_aliases) is list:
@@ -345,7 +345,7 @@ class Corpus(object):
 			aliases = []
 
 		# Remove the alias(es)
-		if type(remove_aliases) is str or type(remove_aliases) is str:
+		if type(remove_aliases) is str:
 			aliases.remove(remove_aliases)
 		elif type(remove_aliases) is list:
 			for alias in remove_aliases:
@@ -1442,7 +1442,7 @@ class Corpus(object):
 
 		# Determine the new status it needs to be, which depends on 
 		# whether it is virtual or not
-		if (type(virtual) is bool and virtual is True) or ((type(virtual) is str or type(virtual) is str) and virtual.lower() == "true"):
+		if (type(virtual) is bool and virtual is True) or (type(virtual) is str and virtual.lower() == "true"):
 			new_status = "Deleted"
 		else:
 			new_status = "Decommissioned"
@@ -1567,6 +1567,11 @@ class Corpus(object):
 		# Get the current state of the notify variable
 		notify = self.redis_get_vm_data(vm, 'notify')
 
+		# StrictRedis.get() returns bytes(), so decode it
+		if notify is not None:
+			if type(notify) is bytes:
+				notify = notify.decode('utf-8')
+
 		# Start a timer
 		timer = 0
 
@@ -1585,6 +1590,11 @@ class Corpus(object):
 
 			# Get the lastest value of the notify
 			notify = self.redis_get_vm_data(vm, 'notify')
+
+			# StrictRedis.get() returns bytes(), so decode it
+			if notify is not None:
+				if type(notify) is bytes:
+					notify = notify.decode('utf-8')
 
 		# Return the latest value, which may be None if the in-guest installer
 		# never runs. Otherwise it can be any other value, which may not

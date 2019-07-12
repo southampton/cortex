@@ -164,7 +164,7 @@ def create_self_signed_cert(helper, options):
 	try:
 		# Build the SAN X509v3 extension
 		san_aliases_string = ','.join(['DNS:' + alias for alias in (options['aliases'] + [options['fqdn']])])
-		san_extension = openssl.crypto.X509Extension('subjectAltName', False, san_aliases_string)
+		san_extension = openssl.crypto.X509Extension(b'subjectAltName', False, san_aliases_string.encode('utf-8'))
 
 		# Build the certificate
 		cert = openssl.crypto.X509()
@@ -260,7 +260,7 @@ def wait_for_dns(external_dns_server, fqdn, timeout=30, address=None, cname=None
 			qtype = 'AAAA'
 
 			# The data we get back from DNS is "packed" (byte representation)
-			address = ipaddress.IPv6Address(unicode(address)).packed
+			address = ipaddress.IPv6Address(str(address)).packed
 		else:
 			qtype = 'A'
 	elif cname is not None:

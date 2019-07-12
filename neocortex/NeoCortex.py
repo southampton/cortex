@@ -216,9 +216,9 @@ class NeoCortex(object):
 
 	## This function allows the Flask web app to allocate names (as well as tasks)
 	@Pyro4.expose
-	def allocate_name(self, class_name, system_comment, username, num):
+	def allocate_name(self, class_name, system_comment, username):
 		lib = Corpus(self._get_db(), self.config)
-		return lib.allocate_name(class_name, system_comment, username, num)
+		return lib.allocate_name(class_name, system_comment, username)
 
 	## List active tasks - returns a list of task ids
 	@Pyro4.expose
