@@ -116,8 +116,7 @@
 {%- if does_user_have_permission("maintenance.expire_vm") %}
 	<div class="col-md-4">
 		<div class="well mtask">
-			<h3><i class="fa fa-fa fa-upload"></i> Toggle Workflow Lock</h3>
-			<p>Toggles the lock on starting new workflows. Use to ensure that the VM creation process doesn't get shutdown halfway through.{% if 'status' in lock_status and 'username' in lock_status and 'time' in lock_status %} It was {{ lock_status.status.lower() }} by {{ lock_status.username }} at {{ lock_status.time.split('.')[0] }}.{% endif %}</p>
+			<p> Toggles the lock on starting new workflows.{% if 'status' in lock_status and 'username' in lock_status and 'time' in lock_status %} It was {{ lock_status.status.lower() }} by {{ lock_status.username }} at {{ lock_status.time }}.{% endif %}</p>
 			<form method="POST">
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 				<input type="hidden" name="task_name" value="toggle_workflow_lock"/>
@@ -127,5 +126,19 @@
 		</div>
 	</div>
 {%- endif %}
+{%- if does_user_have_permission("maintenance.expire_vm") %}
+	<div class="col-md-4">
+		<div class="well mtask">
+			<h3><i class="fa fa-fa fa-cloud-download"></i> Confirm Rubrik Policies </h3>
+			<p>Verifies the backup policies of all the VMs against the values stored by Rubrik</p>
+			<form method="POST">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input type="hidden" name="task_name" value="rubrik_crcheck"/>
+			<button class="form-control btn btn-success" type="submit"><i class="fa fa-fw fa-play"></i> Start</button>
+			</form>
+		</div>
+	</div>
+{%- endif %}
 </div>
 {% endblock %}
+n

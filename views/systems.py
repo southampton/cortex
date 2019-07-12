@@ -347,18 +347,14 @@ def systems_new():
 			# To prevent code duplication, this is done remotely by Neocortex. So, connect:
 			neocortex   = cortex.lib.core.neocortex_connect()
 
-			new_systems = []
 			# Allocate the name
-			for x in range(system_number):
-				new_systems.append(neocortex.allocate_name(class_name, system_comment, username=session['username']))
+			new_systems = neocortex.allocate_name(class_name, system_comment, username=session['username'], num=system_number)
 		except Exception as ex:
 			flash("A fatal error occured when trying to allocate names: " + str(ex), "alert-danger")
 			return redirect(url_for('systems_new'))
 
-		for new_system in new_systems:
-			new_system_name = new_system['name']
-			system_id = new_system['id']
-			cortex.lib.core.log(__name__, "systems.name.allocate", "New system name allocated: " + new_system_name,related_id=system_id)
+		for new_system_name in new_systems:
+			cortex.lib.core.log(__name__, "systems.name.allocate", "New system name allocated: " + new_system_name,related_id=new_systems[new_system_name])
 
 		# If the user only wanted one system, redirect back to the systems
 		# list page and flash up success. If they requested more than one
@@ -366,7 +362,7 @@ def systems_new():
 		# change the comments on all of the systems.
 		if len(new_systems) == 1:
 			flash("System name allocated successfully", "alert-success")
-			return redirect(url_for('system', id=new_systems[0]['id']))
+			return redirect(url_for('system', id=new_systems[list(new_systems.keys())[0]]))
 		else:
 			return render_template('systems/new-bulk.html', systems=new_systems, comment=system_comment, title="Systems")
 
@@ -450,7 +446,7 @@ def systems_bulk_save():
 
 	# Find a list of systems from the form. Each of the form input elements
 	# containing a system comment has a name that starts "system_comment_"
-	for key, value in request.form.items():
+	for key, value in list(request.form.items()):
 		if key.startswith("system_comment_"):
 			# Yay we found one! blindly update it!
 			updateid = key.replace("system_comment_", "")
@@ -535,9 +531,6 @@ def system_overview(id):
 		system['allocation_who'] = system['allocation_who_realname'] + ' (' + system['allocation_who'] + ')'
 	else:
 		system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
-
-	systemInfo = {'a':[]}
-	systemInfo['a'].append(system['name'])
 
 	return render_template('systems/overview.html', system=system, active='systems', title=system['name'], power_ctl_perm=does_user_have_system_permission(id, "control.vmware.power", "control.all.vmware.power"))
 
@@ -723,6 +716,11 @@ def system_edit(id):
 			else:
 				vmware_uuid = system['vmware_uuid']
 
+			if does_user_have_system_permission(id,"edit.rubrik","systems.all.edit.rubrik"):
+				enable_backup = request.form.get('enable_backup', 1)
+			else:
+				enable_backup = system['enable_backup']
+
 			# Process the expiry date
 			if does_user_have_system_permission(id,"edit.expiry","systems.all.edit.expiry"):
 				if 'expiry_date' in request.form and request.form['expiry_date'] is not None and len(request.form['expiry_date'].strip()) > 0:
@@ -782,9 +780,20 @@ def system_edit(id):
 				review_status = system['review_status']
 				review_task = system['review_task']
 
+			if system['enable_backup'] == 1 and enable_backup == 0:
+				
+				try:
+					vm = rubrik.get_vm(system['name'])
+				except Exception as e:
+					flash("Failed to get VM from Rubrik", "alert-danger")
+				else:
+					rubrik = cortex.lib.rubrik.Rubrik()
+					rubrik.update_vm(vm['id'], {'configuredSlaDomainId': 'UNPROTECTED'})
+
 			# Update the system
-			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, id))
+			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `enable_backup` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, enable_backup, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, id))
 			g.db.commit();
+			
 			cortex.lib.core.log(__name__, "systems.edit", "System '" + system['name'] + "' edited, id " + str(id), related_id=id)
 
 			flash('System updated', "alert-success")

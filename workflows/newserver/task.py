@@ -24,7 +24,6 @@ def run(helper, options):
 	helper.end_event(description="Allocated system name " + system_name)
 
 	## Allocate an IPv4 Address and create a host object ###################
-
 	if options['alloc_ip']:
 		# Start the event
 		helper.event("allocate_ipaddress", "Allocating an IP address from " + options['network'])
