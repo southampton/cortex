@@ -6,23 +6,6 @@ function enableMenuTooltip(selector){
 		container: 'body'
 	});
 }
-function show_popover(target) {
-	var popover = $(target);
-	selected_point.h = popover.height();
-	var xPos = selected_point.x + 15;
-	var yPos = selected_point.y - (selected_point.h / 2) - 12;
-	var maxRight = $( window ).width() - popover.width();
-	var maxDown = $( window ).height() - popover.height();
-	if (xPos > maxRight) {
-	xPos = maxRight;
-	}
-	if (yPos > maxDown) {
-	yPos = maxDown;
-	}
-	$('.popover').css('left', xPos +'px');
-	$('.popover').css('top',  yPos +'px');
-	$('.popover').popover('show');
-}
 
 /* Tooltips and Popovers */
 $(document).ready(function ()

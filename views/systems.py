@@ -980,7 +980,6 @@ def systems_json():
 
 	# Extract information from DataTables
 	(draw, start, length, order_column, order_asc, search) = _systems_extract_datatables()
-	app.logger.warn("extracted datatables")
 	# Validate and convert the ordering column number to the name of the
 	# column as it is in the database
 	if order_column == 0:
@@ -998,7 +997,6 @@ def systems_json():
 	else:
 		app.logger.warn('Invalid ordering column parameter in DataTables request')
 		abort(400)
-	app.logger.warn("ordering was not  invalid")
 	# Validate the system class filter group. This is the name of the
 	# currently selected tab on the page that narrows down by system
 	# class, e.g .srv, vhost, etc.
@@ -1009,9 +1007,8 @@ def systems_json():
 			filter_group = str(request.form['filter_group'])
 	# Filter group being *OTHER should hide our group names and filter on 
 	only_other = False
-	if 'filter_group' in request.form:
-		if request.form['filter_group'] == '*OTHER':
-			only_other = True
+	if request.form['filter_group'] == '*OTHER':
+		only_other = True
 
 	# Validate the flag for showing 'inactive' systems.
 	hide_inactive = True
@@ -1038,11 +1035,9 @@ def systems_json():
 	if 'show_favourites_only' in request.form:
 		if str(request.form['show_favourites_only']) != '0':
 			show_favourites_for = session.get('username')
-	app.logger.warn("IFS PROCESSED")
 	
 	favourites = []
 	favourites = cortex.lib.systems.get_system_favourites(session.get('username'))
-	app.logger.warn("FAVOURITES GOT")
 
 	show_allocated_and_perms=False
 	if does_user_have_permission("systems.all.view"):
@@ -1060,7 +1055,6 @@ def systems_json():
 
 	# Get results of query
 	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
-	app.logger.warn("CORTEX.LIB STUFF DONE")
 
 	# DataTables wants an array in JSON, so we build this here, returning
 	# only the columns we want. We format the date as a string as
@@ -1102,7 +1096,6 @@ def systems_json():
 			"puppet_certname": row["puppet_certname"],
 			"favourited": favourited
 		})
-	app.logger.warn("FOR LOOP DONE")
 	# Return JSON data in the format DataTables wants
 	return jsonify(draw=draw, recordsTotal=system_count, recordsFiltered=filtered_count, data=system_data)
 
