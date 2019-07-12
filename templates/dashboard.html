@@ -56,10 +56,10 @@ a.server-link:hover { text-decoration: underline !important; }
 	<div class="col-md-9">
 {%- endif -%}
 		{%- if syscount > 0 %}
-		<div class="panel panel-default">
-			<div class="panel-heading"><h3 class="panel-title">Your recent systems</h3></div>
-			<div class="panel-body">
-				<table class="table table-condensed table-striped" id="your-systems">
+		<div class="card card-default">
+			<div class="card-header"><h4 class="card-title">Your recent systems</h4></div>
+			<div class="card-body">
+				<table class="table table-sm table-striped" id="your-systems">
 					<thead>
 						<tr>
 							<th>Name</th>
@@ -82,7 +82,7 @@ a.server-link:hover { text-decoration: underline !important; }
 							<td>{{ system.cmdb_environment }}</td>
 							<td>{{ system.cmdb_operational_status }}</td>
 							<td>{{ system.allocation_date }}</td>
-							<td><a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
+							<td><a title="View" class="btn btn-xs btn-secondary" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
 						</tr>
 						{%- endfor %}
 					</tbody>
@@ -103,11 +103,11 @@ a.server-link:hover { text-decoration: underline !important; }
 			</div>
 		</div>
 		{%- endif %}
-		<div class="panel panel-default">
-			<div class="panel-heading"><h3 class="panel-title">Your recent tasks</h3></div>
-			<div class="panel-body">
+		<div class="card card-default">
+			<div class="card-header"><h4 class="card-title">Your recent tasks</h4></div>
+			<div class="card-body">
 				{%- if tasks and tasks|length > 0 %}
-				<table class="table table-condensed table-striped" id="tasks" style="margin-bottom:0">
+				<table class="table table-sm table-striped" id="tasks" style="margin-bottom:0">
 					<thead>
 						<tr>
 							<th>Details</th>
@@ -124,7 +124,7 @@ a.server-link:hover { text-decoration: underline !important; }
 							<td>{{ task.start or '' }}</td>
 							<td>{{ task.end or '' }}</td>
 							<td>{% if task.status == 0 %}<span style="color:#22c">In Progress</span>{% elif task.status == 1 %}<span style="color:#2c2">Finished</span>{% elif task.status == 2 %}<span style="color:#c22">Failed</span>{% elif task.status == 3 %}<span style="color:#c82">Warnings</span>{% else %}Unknown{% endif %}</td>
-							<td><a class="btn btn-xs btn-default" href="{{ url_for('task_status', id=task.id) }}"><i class="fa fa-fw fa-search"></i></a></td>
+							<td><a class="btn btn-xs btn-secondary" href="{{ url_for('task_status', id=task.id) }}"><i class="fa fa-fw fa-search"></i></a></td>
 						</tr>
 						{%- endfor %}
 					</tbody>
@@ -136,10 +136,10 @@ a.server-link:hover { text-decoration: underline !important; }
 		</div>
 
 		{%- if does_user_have_permission('systems.all.view') %}
-		<div class="panel panel-default">
-			<div class="panel-heading"><h3 class="panel-title">Recently created systems</h3></div>
-			<div class="panel-body">
-			<table class="table table-condensed table-striped" id="recent-systems">
+		<div class="card card-default">
+			<div class="card-header"><h4 class="card-title">Recently created systems</h4></div>
+			<div class="card-body">
+			<table class="table table-sm table-striped" id="recent-systems">
 				<thead>
 					<tr>
 						<th>Name</th>
@@ -162,7 +162,7 @@ a.server-link:hover { text-decoration: underline !important; }
 						<td>{{ system.cmdb_environment }}</td>
 						<td>{{ system.cmdb_operational_status }}</td>
 						<td>{{ system.allocation_date }}</td>
-						<td><a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
+						<td><a title="View" class="btn btn-xs btn-secondary" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
 					</tr>
 					{%- endfor %}
 				</tbody>
@@ -185,63 +185,63 @@ a.server-link:hover { text-decoration: underline !important; }
 		{%- endif %}
 {%- if does_user_have_permission('systems.all.view') %}
 	</div>
-	<div class="col-md-3 hidden-xs hidden-sm">
+	<div class="col-md-3 d-none d-sm-none d-md-block">  <!--d-none d-sm-none> -->
 		<div class="dashblock bg-primary">
 			<strong><i class="fa fa-fw fa-server"></i> {{ vm_count }}</strong> Virtual machines<br/>
 		</div>
 		<div class="dashblock bg-teal">
 			<div class="row row">
-				<div class="col-xs-1 text-right norpad">
+				<div class="col-1 text-right norpad">
 					<i class="fa fa-fw fa-linux"></i>
 				</div>
-				<div class="col-xs-4 col-md-3 col-lg-2 text-right nolpad norpad">
+				<div class="col-4 col-md-3 col-lg-2 text-right nolpad norpad">
 					<strong>{{ types['linux'] }}</strong>
 				</div>
-				<div class="col-xs-7 col-md-8 col-lg-9 colpad">
+				<div class="col-7 col-md-8 col-lg-9 colpad">
 					Linux
 				</div>
 			</div>
 			<div class="row">
-				<div class="col-xs-1 text-right norpad">
+				<div class="col-1 text-right norpad">
 					<i class="fa fa-fw fa-windows"></i>
 				</div>
-				<div class="col-xs-4 col-md-3 col-lg-2 text-right nolpad norpad">
+				<div class="col-4 col-md-3 col-lg-2 text-right nolpad norpad">
 					<strong>{{ types['windows_server'] }}</strong>
 				</div>
-				<div class="col-xs-7 col-md-8 col-lg-9 colpad">
+				<div class="col-7 col-md-8 col-lg-9 colpad">
 					Windows
 				</div>
 			</div>
 			<div class="row">
-				<div class="col-xs-1 text-right norpad">
+				<div class="col-1 text-right norpad">
 					<i class="fa fa-fw fa-desktop"></i>
 				</div>
-				<div class="col-xs-4 col-md-3 col-lg-2 text-right nolpad norpad">
+				<div class="col-4 col-md-3 col-lg-2 text-right nolpad norpad">
 					<strong>{{ types['windows_desktop'] }}</strong>
 				</div>
-				<div class="col-xs-7 col-md-8 col-lg-9 colpad">
+				<div class="col-7 col-md-8 col-lg-9 colpad">
 					Desktops
 				</div>
 			</div>
 			<div class="row">
-				<div class="col-xs-1 text-right norpad">
+				<div class="col-1 text-right norpad">
 					<i class="fa fa-fw fa-cube"></i>
 				</div>
-				<div class="col-xs-4 col-md-3 col-lg-2 text-right nolpad norpad">
+				<div class="col-4 col-md-3 col-lg-2 text-right nolpad norpad">
 					<strong>{{ types['bsd'] }}</strong>
 				</div>
-				<div class="col-xs-7 col-md-8 col-lg-9 colpad">
+				<div class="col-7 col-md-8 col-lg-9 colpad">
 					BSD
 				</div>
 			</div>
 			<div class="row">
-				<div class="col-xs-1 text-right norpad">
+				<div class="col-1 text-right norpad">
 					<i class="fa fa-fw fa-cubes"></i>
 				</div>
-				<div class="col-xs-4 col-md-3 col-lg-2 text-right nolpad norpad">
+				<div class="col-4 col-md-3 col-lg-2 text-right nolpad norpad">
 					<strong>{{ types['other'] }}</strong>
 				</div>
-				<div class="col-xs-7 col-md-8 col-lg-9 colpad">
+				<div class="col-7 col-md-8 col-lg-9 colpad">
 					Other
 				</div>
 			</div>

@@ -1,7 +1,7 @@
 {% macro header(system, active="puppet_classify", title=none) -%}
 <div class="puppet-header">
 	{% if system.puppet_certname -%}
-	<h3>
+	<h4>
 		<div class="pull-right">
 			{% if does_user_have_system_permission(system.id, "edit.puppet", "systems.all.edit.puppet") or does_user_have_system_permission(system['id'],"view.puppet.classify","systems.all.view.puppet.classify") -%}
 			<a class="btn btn-sm {% if active == 'puppet_classify' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('puppet_enc_edit', node=system.puppet_certname) }}">Classify</a>
@@ -26,7 +26,7 @@
 		{%- else %}
 			<span><i class="fa fa-fw fa-magic"></i> Puppet</span>
 		{%- endif -%}
-	</h3>
+	</h4>
 	<div class="text-muted">
 	{%- if active == 'puppet_classify' %}
 	Puppet classification for node {{system.puppet_certname}}.
@@ -39,9 +39,9 @@
 	{%- endif -%}
 	</div>
 	{% else -%}
-	<h3>
+	<h4>
 		<span><i class="fa fa-fw fa-magic"></i> Puppet</span>
-	</h3>
+	</h4>
 	<div class="text-muted">
 	This system is not connected to Puppet.
 	</div>

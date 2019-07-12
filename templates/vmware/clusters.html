@@ -25,20 +25,20 @@
 </style>
 
 <div class="page-header">
-<h3><i class="fa fa-fw fa-cubes"></i> VMware Clusters</h3>
+<h4><i class="fa fa-fw fa-cubes"></i> VMware Clusters</h4>
 <p class="text-muted">Summarised information about VMware cluster usage and capacity. Note that standalone ESXi hosts within vCenter are not shown here.</p>
 </div>
 
 <ul class="nav nav-tabs" role="tablist">
 	{%- for address, clusters in vcenters|dictsort %}
-	<li role="presentation"{% if loop.first %} class="active"{%endif%}><a href="#tab_{{loop.index}}" data-toggle="tab" data-index="{{loop.index}}">{{address}}</a></li>
+	<li role="presentation" class= "nav-item"><a class="nav-link {% if loop.first %} active{%endif%}" href="#tab_{{loop.index}}" data-toggle="tab" data-index="{{loop.index}}">{{address}}</a></li>
 	{%- endfor %}
 </ul>
 
 <div class="tab-content">
 {%- for address, clusters in vcenters|dictsort %}
 	<div class="tab-pane{% if loop.first %} active{%endif%}" id="tab_{{loop.index}}">
-		<table class="table table-condensed table-striped" id="table_{{loop.index}}">
+		<table class="table table-sm table-striped" id="table_{{loop.index}}">
 			<thead>
 				<tr>
 					<th>Name</th>

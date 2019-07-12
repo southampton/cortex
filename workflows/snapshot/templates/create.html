@@ -67,14 +67,14 @@
 					<tr id="system_row_template" style="display:none;">
 						<input type="hidden" class="system_server_name" value="">
 						<td class="system_row_name"></td>
-						<td><button type="button" class="btn btn-xs btn-danger remove_system">Remove</button></td>
+						<td><button type="button" class="btn btn-md btn-danger remove_system">Remove</button></td>
 					</tr>
 					{%- if 'snapshot_systems' in values %}
 					{%- for system in values['snapshot_systems'] %}
 					<tr>
 						<input type="hidden" class="system_server_name" name="systems[]" value="{{ system['name'] }}">
 						<td class="system_row_name">{{ system['name'] }} - {{ system['allocation_comment'] }}</td>
-						<td><button type="button" class="btn btn-xs btn-danger remove_system">Remove</button></td>
+						<td><button type="button" class="btn btn-md btn-danger remove_system">Remove</button></td>
 					</tr>
 					{% endfor -%}
 					{% endif -%}
@@ -88,13 +88,13 @@
 								{% endfor -%}
 							</select>
 						</td>
-						<td style="width:1px"><button type="button" class="btn btn-sm btn-success" id="add_system">Add</button></td>
+						<td style="width:1px"><button type="button" class="btn btn-md btn-success" id="add_system">Add</button></td>
 					</tr>
 				</tfoot>
 			</table>
 		</div>
 		<div class="col-md-12"><h3 style="margin-top:0px">Create Snapshot</h3></div>
-		<div class="row">
+		<div class="row w-100">
 			<div class="col-md-12">
 				<p style="text-align:center"><input type="submit" class="btn btn-lg btn-success" value="Create Snapshot" name="submit" id="submit" /></p>				
 			</div>

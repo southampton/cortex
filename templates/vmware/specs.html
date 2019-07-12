@@ -6,26 +6,30 @@
 {% endblock %}
 {% block body %}
 <div class="page-header">
-<h3><i class="fa fa-pie-chart fa-fw"></i> Statistics - VM Specs</h3>
+<h4><i class="fa fa-pie-chart fa-fw"></i> Statistics - VM Specs</h4>
 </div>
 <div class="container" role="main">
+	<div class="row">
 	<div class="col-md-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Memory</h3>
+		<div class="card card-default">
+			<div class="card-header">
+				<h4 class="card-title">Memory</h4>
 			</div>
-			<div class="panel-body">
+			<div class="card-body">
 				<div id="chart_ram"></div>
 			</div>
 		</div>
 	</div>
-	<div class="col-md-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Processors</h3>
-			</div>
-			<div class="panel-body">
-				<div id="chart_cpu"></div>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+			<div class="card card-default">
+				<div class="card-header">
+					<h4 class="card-title">Processors</h4>
+				</div>
+				<div class="card-body">
+					<div id="chart_cpu"></div>
+				</div>
 			</div>
 		</div>
 	</div>

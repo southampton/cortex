@@ -117,14 +117,14 @@ $( document ).ready(function()
 </script>
 
 <div class="modal fade" id="add_class" role="dialog">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<form role="form" method="POST" class="form-horizontal">
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 				<input name="action" type="hidden" value="add_class"/>
 				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 					<h4 class="modal-title">Add class</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				</div>
 				<div class="modal-body">
 					<p>
@@ -135,28 +135,28 @@ $( document ).ready(function()
 
 					<div class="form-group">
 						<label class="col-sm-3 control-label">Prefix</label>
-						<div class="col-sm-9">
+						<div class="col-sm-12">
 							<input class="form-control" name="class_name" id="prefix" />
 						</div>
 					</div>
 
 					<div class="form-group">
 						<label class="col-sm-3 control-label">Digits</label>
-						<div class="col-sm-9">
+						<div class="col-sm-12">
 							<input class="form-control" type="number" value="5" max="10" min="1" name="class_digits" />
 						</div>
 					</div>
 
 					<div class="form-group">
 						<label class="col-sm-3 control-label">Comment</label>
-						<div class="col-sm-9">
+						<div class="col-sm-12">
 							<input class="form-control" type="text" name="class_comment" />
 						</div>
 					</div>
 
 					<div class="form-group">
 						<label class="col-sm-3 control-label">CMDB Type</label>
-						<div class="col-sm-9">
+						<div class="col-sm-12">
 							<select class="form-control" name="class_cmdb_type">
 								<option value="">None</option>
 {%- for type in cmdb_types %}
@@ -183,7 +183,7 @@ $( document ).ready(function()
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
 					<button type="submit" class="btn btn-primary">Add class</button>
 				</div>
 			</form>
@@ -193,9 +193,9 @@ $( document ).ready(function()
 
 <div class="page-header">
 	<div class="pull-right">
-		<a data-toggle="modal" data-target="#add_class" class="btn btn-primary btn-sm"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs">Add new class</span></a>
+		<a data-toggle="modal" data-target="#add_class" class="btn btn-primary btn-sm" style="color: white; font-size:12px;"><i class="fa fa-fw fa-plus"></i> <span class="d-sm-none d-none d-md-inline">Add new class</span></a>
 	</div>
-	<h3><i class="fa fa-fw fa-table"></i> System Classes</h3>
+	<h4><i class="fa fa-fw fa-table"></i> System Classes</h4>
 </div>
 
 <p>A system class defines a logical group of systems, and specifies the format 
@@ -204,7 +204,7 @@ digits defines a system name format that would fit the name 'server0099', for
 example. An inactive system class cannot have new system names assigned, either 
 manually or automatically.</p>
 
-<table class="table table-condensed table-striped" id="classes">
+<table class="table table-sm table-striped" id="classes">
 	<thead>
 		<tr>
 			<th>Name</th>
@@ -223,7 +223,7 @@ manually or automatically.</p>
 			<td>{% if class.disabled %}<i style="color:#d00" class="fa fa-fw fa-times"></i>{% else %}<i style="color:#0d0" class="fa fa-fw fa-check"></i>{% endif %}</td>
 			<td>{{ class.lastid }}</td>
 			<td>{{ class.comment }}</td>
-			<td><a data-toggle="modal" data-target="#edit_class" data-active="{{class.disabled}}" data-comment="{{class.comment}}" data-name="{{class.name}}" data-digits="{{class.digits}}" data-vmware="{{class.link_vmware}}" data-type="{{class.cmdb_type or ''}}" class="btn btn-default btn-xs"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i><span class="hidden-sm hidden-xs">Edit</span></a></td>
+			<td><a data-toggle="modal" data-target="#edit_class" data-active="{{class.disabled}}" data-comment="{{class.comment}}" data-name="{{class.name}}" data-digits="{{class.digits}}" data-vmware="{{class.link_vmware}}" data-type="{{class.cmdb_type or ''}}" class="btn btn-default btn-xs"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i><span class="d-sm-none d-none">Edit</span></a></td>
 		</tr>
 {%else%}
 		<tr>

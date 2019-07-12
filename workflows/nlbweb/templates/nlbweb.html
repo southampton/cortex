@@ -31,6 +31,29 @@ td.na
 {
 	color: #aaa;
 }
+#advanced-settings-header:hover {
+	cursor: pointer;
+	
+}
+h3
+{
+	margin-top: 20px;
+}
+#advanced-settings-card {
+	padding-bottom: 7px;
+	border-bottom: 1px solid #555555;
+	border-left: 0px;
+	border-right: 0px;
+	border-radius: 0px;
+}
+
+#advanced-settings-header {
+	background-color: inherit;
+	padding-left: 0px;
+}
+#advanced-settings-header[aria-expanded="true"] > h3 > a {
+	color: black;
+}
 </style>
 <form id="nlb_form" method="POST" role="form">
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
@@ -175,36 +198,43 @@ td.na
 						<td style="width:10em"><input class="form-control node-input-box" type="number" min="1" max="65535" id="node_http_port" placeholder="New Node HTTP Port" value="80" /></td>
 						<td style="width:10em"><input class="form-control node-input-box" type="number" min="1" max="65535" id="node_https_port" placeholder="New Node HTTPS Port" value="443" /></td>
 						<td><input class="form-control node-input-box" id="new_node_ip" placeholder="New Node IP Address (optional - can take from DNS)" /></td>
-						<td style="width:1px"><button type="button" class="btn btn-sm btn-success" id="add_node">Add</button></td>
+						<td style="width:1px"><button type="button" class="btn btn-md btn-success" id="add_node">Add</button></td>
 					</tr>
 				</tfoot>
 			</table>
 		</div>
 	</div>
-	<h3 style="margin-top:0px"><a data-toggle="collapse" data-target="#advanced">Advanced Options <span class="caret"></span></a></h3>
-	<div class="row collapse" id="advanced">
-		<div class="col-md-12 form-group">
-			<label for="outage_page">Outage Page URL:</label>
-			<input class="form-control" name="outage_page" id="outage_page" placeholder="The URL of the page to redirect to if the service is unavailable. Creates a specific HTTP profile." {% if 'outage_page' in values %}value="{{ values['outage_page'] }}" {% endif %}/>
-		</div>
-		<div class="col-md-6 form-group">
-			<label for="http_irules">Additional HTTP iRules:</label>
-			<input class="form-control" name="http_irules" id="http_irules" placeholder="Space-separated list of iRules to add to the HTTP Virtual Server" {% if 'http_irules' in values %}value="{{ values['http_irules'] }}" {% endif %}/>
-		</div>
-		<div class="col-md-6 form-group">
-			<label for="https_irules">Additional HTTPS iRules:</label>
-			<input class="form-control" name="https_irules" id="https_irules" placeholder="Space-separated list of iRules to add to the HTTPS Virtual Server" {% if 'https_irules' in values %}value="{{ values['https_irules'] }}" {% endif %}/>
-		</div>
-		<div class="col-md-12 form-group">
-			<label for="ssl_cipher_string">SSL Client Profile:</label>
-			<select class="form-control" name="ssl_client_profile" id="ssl_client_profile">
-{%- for profile in ssl_client_profiles %}
-				<option value="{{ profile.id }}"{% if ('ssl_client_profile' in values and values['ssl_client_profile'] == profile['id']) or ('ssl_client_profile' not in values and profile['id'] == default_ssl_client_profile) %} selected="selected"{% endif %}>{{ profile['name'] }}</option>
-{%- endfor %}
-			</select>
-		</div>
-		<div class="col-md-12">
-			<label for="use_xforwardedfor"><input type="checkbox" id="use_xforwardedfor" name="use_xforwardedfor" {% if 'use_xforwardedfor' not in values or ('use_xforwardedfor' in values and values['use_xforwardedfor']) %}checked="checked" {% endif %}/> Add in an X-Forwarded-For header to relay the client's IP address to the backend</label>
+	<div id="accordion">
+		<div class="card" id="advanced-settings-card">
+			<div class="card-header" style="border: 5px;" id="advanced-settings-header" data-toggle="collapse" data-target="#advanced" aria-expanded="false" aria-controls="advanced">
+				<h3 class="list-group-item" style="margin-top:0px; padding: 0px; border: 0px;"><a>Advanced Options <i class="fa fa-fw fa-plus-circle acc-expand" style="font-size: 31px; float:right;" ></i></a></h3>
+				
+			</div>
+			<div class="row collapse" id="advanced" style="padding: 15px;" aria-labelledby="advanced-settings" data-parent="#accordion">
+				<div class="col-md-12 form-group">
+					<label for="outage_page">Outage Page URL:</label>
+					<input class="form-control" name="outage_page" id="outage_page" placeholder="The URL of the page to redirect to if the service is unavailable. Creates a specific HTTP profile." {% if 'outage_page' in values %}value="{{ values['outage_page'] }}" {% endif %}/>
+				</div>
+				<div class="col-md-6 form-group">
+					<label for="http_irules">Additional HTTP iRules:</label>
+					<input class="form-control" name="http_irules" id="http_irules" placeholder="Space-separated list of iRules to add to the HTTP Virtual Server" {% if 'http_irules' in values %}value="{{ values['http_irules'] }}" {% endif %}/>
+				</div>
+				<div class="col-md-6 form-group">
+					<label for="https_irules">Additional HTTPS iRules:</label>
+					<input class="form-control" name="https_irules" id="https_irules" placeholder="Space-separated list of iRules to add to the HTTPS Virtual Server" {% if 'https_irules' in values %}value="{{ values['https_irules'] }}" {% endif %}/>
+				</div>
+				<div class="col-md-12 form-group">
+					<label for="ssl_cipher_string">SSL Client Profile:</label>
+					<select class="form-control" name="ssl_client_profile" id="ssl_client_profile">
+		{%- for profile in ssl_client_profiles %}
+						<option value="{{ profile.id }}"{% if ('ssl_client_profile' in values and values['ssl_client_profile'] == profile['id']) or ('ssl_client_profile' not in values and profile['id'] == default_ssl_client_profile) %} selected="selected"{% endif %}>{{ profile['name'] }}</option>
+		{%- endfor %}
+					</select>
+				</div>
+				<div class="col-md-12">
+					<label for="use_xforwardedfor"><input type="checkbox" id="use_xforwardedfor" name="use_xforwardedfor" {% if 'use_xforwardedfor' not in values or ('use_xforwardedfor' in values and values['use_xforwardedfor']) %}checked="checked" {% endif %}/> Add in an X-Forwarded-For header to relay the client's IP address to the backend</label>
+				</div>
+			</div>
 		</div>
 	</div>
 	<h3>Validate and Create</h3>

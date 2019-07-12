@@ -15,11 +15,11 @@
 {%- else -%}
 <div class="row">
 	<div class="col-md-6">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">SLA Domain</h3>
+		<div class="card">
+			<div class="card-header">
+				<h4 class="card-title">SLA Domain</h4>
 			</div>
-			<div class="panel-body">
+			<div class="card-body">
 				<p style="font-size:120%;font-weight:bold">Effective SLA Domain:&nbsp;&nbsp;<span class="fa fa-shield fa-2x rubrikshield" style="color: {{ vm.effectiveSlaDomain.uiColor or '#000' }};"></span> {{ vm.effectiveSlaDomainName }}</p>
 				<div>You can update the SLA Domain below:</div>
 				<form method="POST" class="form">
@@ -39,21 +39,21 @@
 						</select>
 					</div>
 					<div class="col-sm-2">
-{% if does_user_have_permission('systems.all.edit.rubrik') -%}
-						<button type="submit" class="btn btn-success" style="margin-left:1em">Save</button>
-{% endif -%}
+					{% if does_user_have_permission('systems.all.edit.rubrik') -%}
+						<button type="submit" class="btn btn-success" style="margin-left:1em; margin-top: 1em;">Save</button>
+					{% endif -%}
 					</div>
 				</form>
 			</div>
 		</div>
 	</div>
 	<div class="col-md-6">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Recent backups</h3>
+		<div class="card">
+			<div class="card-header">
+				<h4 class="card-title">Recent backups</h4>
 			</div>
-			<div class="panel-body">
-				<table class="table table-striped table-condensed">
+			<div class="card-body">
+				<table class="table table-striped table-sm">
 					<thead>
 						<tr>
 							<th>Snapshot ID</th>

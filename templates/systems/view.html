@@ -14,12 +14,12 @@
 		flex: 1 1 auto;
 	}
 
-	.equal .panel
+	.equal .card
 	{
 		width: 100%;
 	}
 
-	.equal .panel
+	.equal .card
 	{
 		min-height: 15em;
 	}
@@ -28,6 +28,9 @@
 		max-height: 22em;
 		overflow-y: scroll;	
 	}
+	.form-group > div {
+		float: right;
+	}
 }
 </style>
 
@@ -35,11 +38,11 @@
 {{ node.header(system,active="info" ) }}
 	<div class="row equal">
 		<div class="col-md-6">
-			<div class="panel panel-default">
-				<div class="panel-heading">
-					<h3 class="panel-title">System Record</h3> 
+			<div class="card">
+				<div class="card-header">
+					<h4 class="card-title">System Record</h4> 
 				</div>
-				<div class="panel-body system-record-body">
+				<div class="card-body system-record-body">
 					<div class="form-group">
 						<label class="col-sm-3 control-label" for="allocation_comment">Purpose:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_comment or '' }}</p></div>
 					</div>
@@ -51,7 +54,7 @@
 					</div>
 					<div class="form-group">
 						<label class="col-sm-3 control-label" for="allocation_date">Review Status:</label><div class="col-sm-9"><p class="form-control-static">
-{% if system.review_status == 0 %}<span class="label label-danger">{% elif system.review_status == 1 %}<span class="label label-success">{% elif system.review_status == 2 %}<span class="label label-info">{% elif system.review_status == 3 %}<span class="label label-warning">{% endif %}
+{% if system.review_status == 0 %}<span class="badge badge-danger">{% elif system.review_status == 1 %}<span class="badge badge-success">{% elif system.review_status == 2 %}<span class="badge badge-info">{% elif system.review_status == 3 %}<span class="badge badge-warning">{% endif %}
 {{ system.review_status_text or 'Unknown' }}</span>{% if system.review_status == 2 %} &ndash; See ServiceNow task <a href="{{ config['PRJTASK_URL_FORMAT'] % system.review_task }}">{{ system.review_task }}</a>{% endif %}</p></div>
 					</div>
 					<div class="form-group">
@@ -66,11 +69,11 @@
 			</div>
 		</div>
 		<div class="col-md-6">
-			<div class="panel {% if system.puppet_certname %} panel-default{%else%}panel-default{%endif%}">
-				<div class="panel-heading">
-					<h3 class="panel-title">Puppet</h3>
+			<div class="card {% if system.puppet_certname %} card-default{%else%}card-default{%endif%}">
+				<div class="card-header">
+					<h4 class="card-title">Puppet</h4>
 				</div>
-				<div class="panel-body">
+				<div class="card-body">
 					{%- if system.puppet_certname %} 
 					<div class="form-group">
 						<label class="col-sm-3 control-label" for="allocation_comment">Certname:</label><div class="col-sm-9"><p class="form-control-static">{{ system.puppet_certname or '' }}</p></div>
@@ -91,11 +94,11 @@
 
 	<div class="row equal">
 		<div class="col-md-4">
-			<div class="panel {% if system.cmdb_id %}panel-default{%else%}panel-default{%endif%}">
-				<div class="panel-heading">
-					<h3 class="panel-title">ServiceNow CMDB</h3> 
+			<div class="card {% if system.cmdb_id %}card-default{%else%}card-default{%endif%}">
+				<div class="card-header">
+					<h4 class="card-title">ServiceNow CMDB</h4> 
 				</div>
-				<div class="panel-body">
+				<div class="card-body">
 					{%- if system.cmdb_id %}
 					<div class="form-group">
 						<label class="col-sm-5 control-label" for="cmdb_name">Type:</label>
@@ -132,11 +135,11 @@
 			</div>
 		</div>
 		<div class="col-md-4">
-			<div class="panel panel-default">
-				<div class="panel-heading">
-					<h3 class="panel-title">System Owner</h3> 
+			<div class="card">
+				<div class="card-header">
+					<h4 class="card-title">System Owner</h4> 
 				</div>
-				<div class="panel-body">
+				<div class="card-body">
 					<div class="form-group">
 						<label class="col-sm-5 control-label" for="primary_owner_who">Primary Owner:</label>
 						<div class="col-sm-7"><p class="form-control-static">{{ system.primary_owner_who or 'Not set' }}</p></div>
@@ -158,11 +161,11 @@
 			</div>
 		</div>
 		<div class="col-md-4">
-			<div class="panel {% if system.vmware_uuid %}panel-default{%else%}panel-default{%endif%}">
-				<div class="panel-heading">
-					<h3 class="panel-title">VMware</h3> 
+			<div class="card {% if system.vmware_uuid %}card-default{%else%}card-default{%endif%}">
+				<div class="card-header">
+					<h4 class="card-title">VMware</h4> 
 				</div>
-				<div class="panel-body">
+				<div class="card-body">
 					{% if system.vmware_uuid %}
 					<div class="form-group">
 						<label class="col-sm-5 control-label" for="vm_vcenter">vCenter:</label>

@@ -98,10 +98,10 @@ $( document ).ready(function()
 {%- if classes|length != 0 %}
 {%- for class in classes %}
 	<div class="col-md-4 cselect">
-		<div class="well">
+		<div class="card card-header">
 		<h1>{{class.name}}</h1>
 		<p>{{class.comment}}</p>
-		<p><a data-toggle="modal" data-target="#allocate" data-name="{{class.name}}" class="btn btn-success"><i class="fa fa-fw fa-plus fa-3x"></i></a></p>
+		<p><a data-toggle="modal" data-target="#allocate" data-name="{{class.name}}" class="btn btn-success" style="color: white;"><i class="fa fa-fw fa-plus fa-3x"></i></a></p>
 		</div>
 	</div>
 {%- endfor %}

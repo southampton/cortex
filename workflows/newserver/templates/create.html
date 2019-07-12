@@ -36,11 +36,13 @@ span.required
 	<div class="row">
 		<div class="col-md-12">
 			<h4 style="margin-top:0">1. Enter details</h4>
-			<div class="form-group col-md-3">
-				<label for="task">ServiceNow Task:</label><input class="form-control" id="task" name="task" placeholder="e.g. INCTASK0123456, PRJTASK0987654 or CTASK012345" autofocus />
-			</div>
-			<div class="form-group col-md-9">
-				<label for="purpose">Purpose:<span class="required">*</span></label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the server, e.g. VMware appliance" autofocus />
+			<div class="row col-md-12" style="padding-right: 0px">
+				<div class="form-group col-md-3">
+					<label for="task">ServiceNow Task:</label><input class="form-control" id="task" name="task" placeholder="e.g. INCTASK0123456, PRJTASK0987654 or CTASK012345" autofocus />
+				</div>
+				<div class="form-group col-md-9" style="padding-right: 0px;">
+					<label for="purpose">Purpose:<span class="required">*</span></label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the server, e.g. VMware appliance" autofocus />
+				</div>
 			</div>
 			<div class="form-group col-md-12">
 				<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />

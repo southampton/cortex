@@ -22,7 +22,7 @@ $(document).ready(function() {
 });
 </script>
 <div class="page-header">
-	<h3><i class="fa fa-fw fa-sliders"></i> VM Specs</h3>
+	<h4><i class="fa fa-fw fa-sliders"></i> VM Specs</h4>
 	<p class="text-muted">Configure the VM Specification for the standard buildvm workflow.</p>
 </div>
 
@@ -30,9 +30,9 @@ $(document).ready(function() {
 	<div class="col-md-6">
 		<form class="form-horizontal" method="POST" role="form">
 		<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-		<div class="panel panel-default">
-			<div class="panel-heading">VM Specification JSON</div>
-			<div class="panel-body" style="padding:0px">
+		<div class="card card-default">
+			<div class="card-header">VM Specification JSON</div>
+			<div class="card-body" style="padding:0px">
 				<textarea id="specs" name="specs">{{ vm_spec_json }}</textarea>
 			</div>
 		</div>
@@ -42,9 +42,9 @@ $(document).ready(function() {
 	<div class="col-md-6">
 		<form class="form-horizontal" method="POST" role="form">
 		<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-		<div class="panel panel-default">
-			<div class="panel-heading">VM Specification Configuration</div>
-			<div class="panel-body" style="padding:0px">
+		<div class="card card-default">
+			<div class="card-header">VM Specification Configuration</div>
+			<div class="card-body" style="padding:0px">
 				<textarea id="specsconfig" name="specsconfig">{{ vm_spec_config_json }}</textarea>
 			</div>
 		</div>

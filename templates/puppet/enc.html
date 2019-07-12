@@ -83,19 +83,19 @@ $(document).ready(function()
 
 <form class="form-horizontal" method="POST" role="form">
 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-	<div class="panel panel-default">
-		<div class="panel-heading">Puppet Classification
+	<div class="card card-default">
+		<div class="card-header">Puppet Classification
 					<div class="pull-right">
 						<a href="#" class="btn btn-info btn-xs" data-toggle="modal" data-target="#modalyaml">View raw YAML</a>		
 					</div></div>
-		<div class="panel-body" style="padding-bottom:0em">
-			<div class="form-group">
+		<div class="card-body" style="padding-bottom:0em">
+			<div class="form-group row">
 				<label title="The Common Name (CN) of the certificate registered with the Puppet Master" class="col-sm-2 control-label" for="certname">Cert Name:</label>
 				<div class="col-sm-10">
 					<p class="form-control-static">{{ system.puppet_certname }}</p>
 				</div>
 			</div>
-			<div class="form-group">
+			<div class="form-group row">
 				<label title="The Puppet environment that this node sits in (the actual name within Puppet is given in brackets)" class="col-sm-2 control-label" for="environment">Environment:</label>
 				<div class="col-sm-8 col-md-6 col-lg-4"> <select class="selectpicker form-control" id="environment" name="environment">
 {%- for environment in environments -%}
@@ -106,7 +106,7 @@ $(document).ready(function()
 				</select></div>
 			</div>
 			<div class="form-group">
-				<div class="col-sm-offset-2 col-sm-10">
+				<div class="offset-sm-2 col-sm-10">
 					<div class="checkbox" style="padding-top:0em">
 						<label title="Check to include the default classes that deploy are standard build" for="include_default"><input type="checkbox" id="include_default" name="include_default"{% if system.puppet_include_default %} checked="checked"{% endif %}/>Include the{%- if does_user_have_permission("puppet.default_classes.view") or does_user_have_permission("puppet.default_classes.edit") %} <a href="{{url_for('puppet_enc_default')}}">default classes</a>{%- else %} default classes{% endif -%}</label>
 					</div>
@@ -116,16 +116,16 @@ $(document).ready(function()
 	</div>
 <div class="row">
 	<div class="col-md-9">
-		<div class="panel panel-default">
-			<div class="panel-heading">Puppet Classes{% if config['PUPPET_MODULE_DOCS_URL'] %}<div class="pull-right"><a href="{{ config['PUPPET_MODULE_DOCS_URL'] }}"><i class="fa fa-question-circle"></i> Module Help</a></div>{% endif %}</div>
-			<div class="panel-body" style="padding:0px">
+		<div class="card card-default">
+			<div class="card-header">Puppet Classes{% if config['PUPPET_MODULE_DOCS_URL'] %}<div class="pull-right"><a href="{{ config['PUPPET_MODULE_DOCS_URL'] }}"><i class="fa fa-question-circle"></i> Module Help</a></div>{% endif %}</div>
+			<div class="card-body" style="padding:0px">
 				<textarea id="classes" name="classes" placeholder="Classes to include can be entered here">{{ system.puppet_classes or '' }}</textarea>
 			</div>
 		</div>
 
-		<div class="panel panel-default">
-			<div class="panel-heading">Puppet Global Variables</div>
-			<div class="panel-body" style="padding:0px">
+		<div class="card card-default">
+			<div class="card-header">Puppet Global Variables</div>
+			<div class="card-body" style="padding:0px">
 				<textarea id="variables" name="variables" placholder="Global variables to include can be entered here">{{ system.puppet_variables or '' }}</textarea>
 			</div>
 		</div>
@@ -137,9 +137,9 @@ $(document).ready(function()
 		{% endif -%}
 	</div>
 	<div class="col-md-3">
-		<div class="panel panel-default">
-			<div class="panel-heading">Help</div>
-			<div class="panel-body">
+		<div class="card card-default">
+			<div class="card-header">Help</div>
+			<div class="card-body">
 				<p>Use the <strong>Classes</strong> field to define the classes that this node will import, along with the parameters
 				for the classes. Nodes will also import classes configured in groups and the default node configuration. You cannot
 				specify <a href="https://puppet.com/docs/puppet/latest/lang_resources.html">resources</a> here.</p>

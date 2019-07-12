@@ -3,7 +3,7 @@
 {% include 'puppet/codemirror.html' %}
 
 <div class="page-header">
-<h3><i class="fa fa-fw fa-info-circle"></i> Puppet Help</h3>
+<h4><i class="fa fa-fw fa-info-circle"></i> Puppet Help</h4>
 </div>
 
 <script>
@@ -28,7 +28,7 @@ $(document).ready(function()
 				You define, using YAML, a set of classes to import and global variables to set. Cortex also determines a node's environment through the ENC functionality.</p>
 				<p>PuppetLabs documentation for the YAML syntax can be found here: <a href="https://docs.puppetlabs.com/guides/external_nodes.html#enc-output-format">https://docs.puppetlabs.com/guides/external_nodes.html</a></p> 
 
-				<h3>How does Cortex build a node's configuration?</h3>
+				<h4>How does Cortex build a node's configuration?</h4>
 				<p>When building the configuration for a node, which is to say the classes to import and variables to set, Cortex checks in three places to determine what to do:</p>
 				<ul>
 					<li>Default classes configuration (unless the node has opted out)</li>
@@ -57,7 +57,7 @@ $(document).ready(function()
 					<li>A node may opt out out of the 'default classes'. This allows it to override the base configuration. It cannot opt out of group configuration - instead remove it from groups as needed.</li>
 				</ul>
 
-				<h3>Class overrides</h3>
+				<h4>Class overrides</h4>
 				<p>Puppet does not allow a class to be defined twice but the Cortex ENC does let you define a class twice. If you define a class in 'default classes' and also define it in the node 
 				configuration then Cortex will simply import the class once. If class parameters are set in multiple places then Cortex ENC will use the parameters set last, e.g:</p>
 				<ul>
@@ -68,7 +68,7 @@ $(document).ready(function()
 				<p>In the above example the widget-colour will be set to Blue, as the node's priority is always highest, then groups, then the default classes.</p>
 				<p>Class overrides in Cortex allow basic defaults to be set in the 'default classes' section and allows nodes to override these without having to use Hiera.</p>
 
-				<h3>YAML Syntax</h3>
+				<h4>YAML Syntax</h4>
 				<h4>Comments</h4>
 				<p>It is useful to add comments to explain what a class import does or why it is present. In YAML comment lines starting with a hash '#' character.</p> 
 				<h4>Classes</h4>

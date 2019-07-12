@@ -34,12 +34,12 @@ tr > td:first-child {
 		flex: 1 1 auto;
 	}
 
-	.equal .panel
+	.equal .card
 	{
 		width: 100%;
 	}
 
-	.equal .panel
+	.equal .card
 	{
 		min-height: 15em;
 	}
@@ -56,11 +56,11 @@ tr > td:first-child {
 {{ node.header(system,active="overview" ) }}
 <div class="row equal">
 	<div class="col-md-4">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">System Record</h3>
+		<div class="card ">
+			<div class="card-header">
+				<h4 class="card-title">System Record</h4>
 			</div>
-			<div class="panel-body">
+			<div class="card-body">
 				<table class="table">
 					<tr><td>Comment:</td><td>{{ system.allocation_comment or '' }}</td></tr>
 					<tr><td>Allocated by:</td><td>{{ system.allocation_who or 'Unknown' }}</td></tr>
@@ -71,11 +71,11 @@ tr > td:first-child {
 		</div>
 	</div>
 	<div class="col-md-5">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Network</h3>
+		<div class="card ">
+			<div class="card-header">
+				<h4 class="card-title">Network</h4>
 			</div>
-			<div class="panel-body network-body">
+			<div class="card-body network-body">
 				{% if system.vmware_uuid %}
 				<div class="row">
 					<div class="col-md-12" id="network_loading">Loading...</div>
@@ -95,11 +95,11 @@ tr > td:first-child {
 		</div>
 	</div>
 	<div class="col-md-3">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Power Control</h3>
+		<div class="card ">
+			<div class="card-header">
+				<h4 class="card-title">Power Control</h4>
 			</div>
-			<div class="panel-body">
+			<div class="card-body">
 				{% if system.vmware_uuid %}
 				{#<p><span class="fa fa-info"></span> You can control the power state of the system should it become unresponsive. To avoid losing data, graceful shutdowns should be issued by logging into the system.</p>#}
 				<div class="text-center" style="margin:0.5em">
@@ -126,11 +126,11 @@ tr > td:first-child {
 </div>
 <div class="row equal">
 	<div class="col-md-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">System Status</h3>
+		<div class="card ">
+			<div class="card-header">
+				<h4 class="card-title">System Status</h4>
 			</div>
-			<div id="systemStatusPanel" class="panel-body row">
+			<div id="systemStatusPanel" class="card-body row">
 				{% if system.vmware_uuid %}
 				<div class="col-md-4">
 					<div style="text-align:center">
@@ -146,11 +146,11 @@ tr > td:first-child {
 					</table>
 				</div>
 				<div class="col-md-8">
-					<div class="col-md-6">
+					<div class="col-md-6 float-left">
 						<div id="chart_cpu"></div>
 						<h4>Estimated CPU Usage</h4>
 					</div>
-					<div class="col-md-6">
+					<div class="col-md-6 float-left">
 						<div id="chart_mem"></div>
 						<h4>Active Memory Usage</h4>
 					</div>
@@ -269,7 +269,7 @@ function secondsToString(seconds) {
 var chart_mem = c3.generate({
 	bindto: '#chart_mem',
 	size: {
-		height: 200,
+		height: 300,
 	},
 	data: {
 		columns: [
@@ -294,7 +294,7 @@ var chart_mem = c3.generate({
 var chart_cpu = c3.generate({
 	bindto: '#chart_cpu',
 	size: {
-		height: 200,
+		height: 300,
 	},
 	data: {
 		columns: [

@@ -16,6 +16,7 @@ body
 	padding-left: 40px;
 	padding-top: 20px;
 	padding-bottom: 20px;
+	width: 100%;
 }
 
 @media (min-width: 768px)
@@ -389,7 +390,7 @@ i.icon-favourites:hover
 }
 
 /* Popover menu stuff */
-.popover-content-nopad
+.popover-body
 {
 	padding: 0px;
 }
@@ -409,12 +410,6 @@ i.icon-favourites:hover
 #layout-row.active .list-group-bottom
 {
 	width: 145px;
-}
-
-.list-group-menu > a
-{
-	padding-left: 6px;
-	padding-right: 0px;
 }
 
 @media (max-width: 767px)
@@ -515,4 +510,88 @@ span.required
 .mtask h3
 {
 	margin-top: 0px;
+}
+
+/* Bootstrap 4.0 fixes:
+ * the *-xs classes have been removed
+ * in Bootstrap 4.0, so some of them
+ * have to be added manually in the
+ * Cortex css file */
+.btn-group-xs > .btn, .btn-xs { /* btn-xs does not exist in Bootstrap 4, so it needs to be added manually */
+	padding: .25rem .4rem;
+	font-size: .875rem;
+	line-height: .5;
+	border-radius: .2rem;
+}
+
+.card {
+	margin-bottom: 20px; /* unlike the Bootstrap 3 panels, the Bootstrap 4 cards have margin-bottom set to 0px by default */
+	border: 1px solid #e7e7e7;
+	border-width: 0 1px 4px 1px;
+}
+
+.card-title {
+	margin-bottom: 0; /* default is 0.75 rem in bootstrap 4, but 0 in Bootstrap 3 */
+	font-size: 16px; /* needed to overwrite the h3 default of 1.75 rem */
+	color: inherit; /* inherit the color from the body instead of using the default black */
+}
+
+body {
+	font-family: "Source Sans Pro","Helvetica Neue",Helvetica,Arial,sans-serif !important; /* Bootstrap 4 default font is different compared to bootstrap 3 */
+	font-size: 14px; /* default font size in Bootstrap 4 is set in rem */
+	color: #555555; /* font colour in old cortex was inherited from Bootstrap 3, but I had to add it manually here */
+}
+
+.bg-primary {
+	color: #fff; /* the bg-primary in Bootstrap 3 sets the text colour to white automatically, but in Bootstrap 4 there is no default text colour, so it just inherits it from the body */
+}
+
+.table thead th {
+	border-bottom: 0; /* Bootstrap 3 does not add any border line to table headings */
+} 
+
+.table td, .table th {
+	border-top: 0; /* Bootstrap 3 does not add any border line to table data or table headings */
+}
+
+.page-header { /* Bootstrap 4 does not hav a class called page-header  */
+	padding-bottom: 9px;
+	border-bottom: 1px solid #eeeeee;
+}
+
+.page-header > h4 {
+	margin-top: 5px;
+}
+
+h4 small {
+	font-size: 65%;
+	font-weight: normal;
+	line-height: 1;
+	color: #999999;
+}
+
+#node-header > li > a {
+	border-bottom: 0;
+}
+
+.list-group-menu > a
+{
+        padding-left: 6px;
+        padding-right: 0px;
+        color: #555555;
+}
+
+.list-group-popover > a
+{
+	color: #555555;
+	font-size: 14px;
+	padding: 10px 15px;
+}
+
+a.btn-secondary 
+{
+	color: #555555; /* default is blue */
+	font-size: 12px; /* no default in bootstrap 4 */
+	display: inline-flex;
+	align-items: center;
 }

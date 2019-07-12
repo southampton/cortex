@@ -12,14 +12,14 @@
 
 <form class="form-horizontal" method="POST" action="{{ url_for('systems_add_existing') }}">
 	<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-	<div class="form-group">
+	<div class="row form-group">
 		<label for="comment" class="col-sm-2 control-label">Comment:</label>
 		<div class="col-sm-8">
 			<input name="comment" type="text" class="form-control" value="" placeholder="A brief description of what the system is" autofocus />
 		</div>
 	</div>
 
-	<div class="form-group">
+	<div class="row form-group">
 		<label for="class" class="col-sm-2 control-label">Class:</label>
 		<div class="col-sm-2">
 			<select name="class" class="selectpicker" id="class">
@@ -41,16 +41,16 @@
 
 	</div>
 
-	<div class="form-group">
+	<div class="row form-group">
 		<label class="col-sm-2 control-label">Automatic Linking:</label>
 		<div class="col-sm-10" style="padding-top:6px">
 			<input checked="checked" type="checkbox" name="link_vmware" id="link_vmware" /> <label for="link_vmware" style="margin-right:2.0em">Link to VMware</label>
 			<input checked="checked" type="checkbox" name="link_servicenow" id="link_servicenow" /> <label for="link_servicenow">Link to ServiceNow</label>
-			<p class="help-block">Use the checkboxes above to have Cortex attempt to automatically find the VMware Virtual Machine and ServiceNow CI that belong to the given hostname. When using this, you should check afterwards that the system has been linked correctly.</p>
+			<p class="form-text" style="color: #959595;">Use the checkboxes above to have Cortex attempt to automatically find the VMware Virtual Machine and ServiceNow CI that belong to the given hostname. When using this, you should check afterwards that the system has been linked correctly.</p>
 		</div>
 	</div>
 
-	<div class="form-group">
+	<div class="row form-group">
 		<label for="env" class="col-sm-2 control-label">Puppet Environment:</label>
 		<div class="col-sm-10">
 			<select name="env" class="selectpicker" data-width="auto">
@@ -59,12 +59,12 @@
 				<option value="{{ env.puppet }}">{{ env.name }} ({{ env.puppet }})</option>
 {%- endfor %}
 			</select>
-			<p class="help-block">Use the dropdown above to have Cortex create an entry in Cortex's Puppet ENC so that this box can be configured from Cortex. Note that this does not register the system with the Puppet master as this requires access to the system, so that step should still be performed manually.</p>
+			<p class="form-text" style="color: #959595;">Use the dropdown above to have Cortex create an entry in Cortex's Puppet ENC so that this box can be configured from Cortex. Note that this does not register the system with the Puppet master as this requires access to the system, so that step should still be performed manually.</p>
 		</div>
 	</div>
 
-	<div class="form-group">
-		<div class="col-sm-offset-2 col-sm-10">
+	<div class="row form-group">
+		<div class="offset-sm-2 col-sm-10">
 			<button type="submit" class="btn btn-primary">Add</button>
 		</div>
 	</div>
