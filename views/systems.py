@@ -780,14 +780,13 @@ def system_edit(id):
 				review_status = system['review_status']
 				review_task = system['review_task']
 
-			if system['enable_backup'] == 1 and enable_backup == 0:
-				
+			if system['enable_backup'] in [1, 2] and enable_backup == 0:
+				rubrik = cortex.lib.rubrik.Rubrik()
 				try:
 					vm = rubrik.get_vm(system['name'])
 				except Exception as e:
 					flash("Failed to get VM from Rubrik", "alert-danger")
 				else:
-					rubrik = cortex.lib.rubrik.Rubrik()
 					rubrik.update_vm(vm['id'], {'configuredSlaDomainId': 'UNPROTECTED'})
 
 			# Update the system

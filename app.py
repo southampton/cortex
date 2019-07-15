@@ -386,7 +386,7 @@ Username:             %s
 		  `primary_owner_role` varchar(64) DEFAULT NULL,
 		  `secondary_owner_who` varchar(64) DEFAULT NULL,
 		  `secondary_owner_role` varchar(64) DEFAULT NULL,
-		  `enable_backup` tinyint(1) DEFAULT 1,
+		  `enable_backup` tinyint(1) DEFAULT 2,
 		  PRIMARY KEY (`id`),
 		  KEY `class` (`class`),
 		  KEY `name` (`name`(255)),

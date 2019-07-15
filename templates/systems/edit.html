@@ -145,6 +145,7 @@
 			<select class="form-control selectpicker" name="enable_backup" id="enable_backup"{% if not does_user_have_system_permission(system['id'],"edit.rubrik","systems.all.edit.rubrik") %} disabled="disabled" {% endif %}>
 				<option value="0"{% if system.enable_backup == 0 %} selected="selected"{% endif %}>Do NOT Backup</option>
 				<option value="1"{% if system.enable_backup == 1 %} selected="selected"{% endif %}>Backup this System</option>
+				<option value="2"{% if system.enable_backup == 2 %} selected="selected"{% endif %}>Unknown - Do not change backup policy</option>
 			</select>
 		</div>
 		<div style="margin-bottom:0px" class="col-sm-offset-2 col-sm-10 col-md-9 help-block">This field determines whether Cortex will set a default policy for the VM is it is set to Do Not Protect in Rubrik.</div>

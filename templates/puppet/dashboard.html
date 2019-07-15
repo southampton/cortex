@@ -65,20 +65,13 @@
 						<h1><i class="fa fa-fw fa-server"></i></h1><h2>Registered nodes</h2>
 					</div>
 					<div class="col-md-2">
-						<h1>{{ stats['count']['count'] }} </h1> <h2 style="font-weight: bold"> Total <br/></h2>
+						<h1>{{ stats['count']['count'] }}</h1><h2 style="font-weight:bold">Total<br/></h2>
 					</div>
+{%- for env in environments %}
 					<div class="col-md-2">
-						<h1>{{ stats['count']['production'] }} </h1> <h2 style="font-weight: bold"> Production <br/></h2>
+						<h1>{{ stats['count'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
 					</div>
-					<div class="col-md-2">
-						<h1>{{ stats['count']['preproduction'] }} </h1> <h2 style="font-weight: bold"> PreProduction <br/></h2>
-					</div>
-					<div class="col-md-2">
-						<h1>{{ stats['count']['development'] }} </h1> <h2 style="font-weight: bold"> Development <br/></h2>
-					</div>
-					<div class="col-md-2">
-						<h1>{{ stats['count']['moduledev'] }} </h1> <h2 style="font-weight: bold"> ModuleDev <br/></h2>
-					</div>
+{%- endfor %}
 				</div>
 			</div>
 		</a>
@@ -93,20 +86,13 @@
 					<h1><i class="fa fa-fw fa-check"></i></h1><h2>Normal</h2>
 				</div>
 				<div class="col-md-2">
-					<h1>{{ stats['unchanged']['count'] }} </h1> <h2 style="font-weight: bold"> Total <br/></h2>
+					<h1>{{ stats['unchanged']['count'] }}</h1><h2 style="font-weight: bold">Total<br/></h2>
 				</div>
+{%- for env in environments %}
 				<div class="col-md-2">
-					<h1>{{ stats['unchanged']['production'] }} </h1> <h2 style="font-weight: bold"> Production <br/></h2>
+					<h1>{{ stats['unchanged'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
 				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['unchanged']['preproduction'] }} </h1> <h2 style="font-weight: bold"> PreProduction <br/></h2>
-				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['unchanged']['development'] }} </h1> <h2 style="font-weight: bold"> Development <br/></h2>
-				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['unchanged']['moduledev'] }} </h1> <h2 style="font-weight: bold"> ModuleDev <br/></h2>
-				</div>
+{%- endfor %}
 			</div>
 		</div>
 		</a>
@@ -121,20 +107,13 @@
 					<h1><i class="fa fa-fw fa-cog"></i></h1><h2>Changed</h2>
 				</div>
 				<div class="col-md-2">
-					<h1>{{ stats['changed']['count'] }} </h1> <h2 style="font-weight: bold"> Total <br/></h2>
+					<h1>{{ stats['changed']['count'] }}</h1><h2 style="font-weight: bold">Total<br/></h2>
 				</div>
+{%- for env in environments %}
 				<div class="col-md-2">
-					<h1>{{ stats['changed']['production'] }} </h1> <h2 style="font-weight: bold"> Production <br/></h2>
+					<h1>{{ stats['changed'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
 				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['changed']['preproduction'] }} </h1> <h2 style="font-weight: bold"> PreProduction <br/></h2>
-				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['changed']['development'] }} </h1> <h2 style="font-weight: bold"> Development <br/></h2>
-				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['changed']['moduledev'] }} </h1> <h2 style="font-weight: bold"> ModuleDev <br/></h2>
-				</div>
+{%- endfor %}
 			</div>
 		</div>
 		</a>
@@ -149,20 +128,13 @@
 					<h1><i class="fa fa-fw fa-wrench"></i></h1><h2>Disabled</h2>
 				</div>
 				<div class="col-md-2">
-					<h1>{{ stats['noop']['count'] }} </h1> <h2 style="font-weight: bold"> Total <br/></h2>
+					<h1>{{ stats['noop']['count'] }}</h1><h2 style="font-weight: bold">Total<br/></h2>
 				</div>
+{%- for env in environments %}
 				<div class="col-md-2">
-					<h1>{{ stats['noop']['production'] }} </h1> <h2 style="font-weight: bold"> Production <br/></h2>
+					<h1>{{ stats['noop'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
 				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['noop']['preproduction'] }} </h1> <h2 style="font-weight: bold"> PreProduction <br/></h2>
-				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['noop']['development'] }} </h1> <h2 style="font-weight: bold"> Development <br/></h2>
-				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['noop']['moduledev'] }} </h1> <h2 style="font-weight: bold"> ModuleDev <br/></h2>
-				</div>
+{%- endfor %}
 			</div>
 		</div>
 		</a>
@@ -177,20 +149,13 @@
 					<h1><i class="fa fa-fw fa-exclamation-triangle"></i></h1><h2>Failed</h2>
 				</div>
 				<div class="col-md-2">
-					<h1>{{ stats['failed']['count'] }} </h1> <h2 style="font-weight: bold"> Total <br/></h2>
+					<h1>{{ stats['failed']['count'] }}</h1><h2 style="font-weight: bold">Total<br/></h2>
 				</div>
+{%- for env in environments %}
 				<div class="col-md-2">
-					<h1>{{ stats['failed']['production'] }} </h1> <h2 style="font-weight: bold"> Production <br/></h2>
+					<h1>{{ stats['failed'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
 				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['failed']['preproduction'] }} </h1> <h2 style="font-weight: bold"> PreProduction <br/></h2>
-				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['failed']['development'] }} </h1> <h2 style="font-weight: bold"> Development <br/></h2>
-				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['failed']['moduledev'] }} </h1> <h2 style="font-weight: bold"> ModuleDev <br/></h2>
-				</div>
+{%- endfor %}
 			</div>
 		</div>
 		</a>
@@ -205,20 +170,13 @@
 					<h1><i class="fa fa-fw fa-question-circle"></i></h1><h2>Unknown</h2>
 				</div> 
 				<div class="col-md-2">
-					<h1>{{ stats['unknown']['count'] + stats['unreported']['count'] }} </h1> <h2 style="font-weight: bold"> Total <br/></h2>
+					<h1>{{ stats['unknown']['count'] + stats['unreported']['count'] }}</h1><h2 style="font-weight: bold">Total<br/></h2>
 				</div>
+{%- for env in environments %}
 				<div class="col-md-2">
-					<h1>{{ stats['unknown']['production'] + stats['unreported']['production'] }} </h1> <h2 style="font-weight: bold"> Production <br/></h2>
+					<h1>{{ stats['unknown'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
 				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['unknown']['preproduction'] + stats['unreported']['preproduction'] }} </h1> <h2 style="font-weight: bold"> PreProduction <br/></h2>
-				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['unknown']['development'] + stats['unreported']['development'] }} </h1> <h2 style="font-weight: bold"> Development <br/></h2>
-				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['unknown']['moduledev'] + stats['unreported']['moduledev'] }} </h1> <h2 style="font-weight: bold"> ModuleDev <br/></h2>
-				</div>
+{%- endfor %}
 			</div>
 			
 		</div>
