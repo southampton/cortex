@@ -45,11 +45,12 @@ def run(helper, options):
 
 		# If Cortex is set to backup but Rubrik isn't, update the Rubrik to the default for the box's environment
 		elif cortex_vm_data['enable_backup'] == 1 and rubrik_vm_data['effectiveSlaDomainId'] == 'UNPROTECTED':
-			helper.event("_rubrik_setdefault", cortex_vm_data['name'] + " has no Rubrik SLA domain, setting default for environment", oneshot=True, success=True, warning=False)
-
+			# Extract the environment
 			cmdb_environment = cortex_vm_data['cmdb_environment']
 
 			if cmdb_environment is not None:
+				helper.event("_rubrik_setdefault", cortex_vm_data['name'] + " has no Rubrik SLA domain - setting default for environment", oneshot=True, success=True, warning=False)
+
 				# Map the SLA domain to the default for the environment, and then map it to 
 				# it's ID (we can't set it in Rubrik by name)
 				updated_vm = {}
@@ -59,22 +60,23 @@ def run(helper, options):
 				rubrik_connection.update_vm(rubrik_vm_data['id'], updated_vm)
 				changes = changes + 1
 			else:
-				helper.event("_rubrik_warn", cortex_vm_data['name'] + " has no CMDB environment set - unable to set a default SLA domain", oneshot=True, success=True, warning=True)
+				helper.event("_rubrik_warn", cortex_vm_data['name'] + " has no CMDB environment set - unable to set a default SLA domain", oneshot=True, success=False)
 
 		# If Cortex is not backing up but Rubrik is, DO NOT change but instead report this.
 		elif cortex_vm_data['enable_backup'] == 0 and rubrik_vm_data['effectiveSlaDomainId'] != 'UNPROTECTED':
-			helper.event("_rubrik_warn", cortex_vm_data['name'] + " is set to not backup but this system is set to backup in Rubrik. Please check and confirm that this is correct", oneshot=True, success=True, warning=True)
+			helper.event("_rubrik_warn", cortex_vm_data['name'] + " is set to not backup but has a Rubrik SLA domain set - please check and confirm that this is correct", oneshot=True, success=True, warning=True)
 
 		# If Cortex is set to not backup, and Rubrik isn't backing up, don't change anything
 		elif cortex_vm_data['enable_backup'] == 0 and rubrik_vm_data['effectiveSlaDomainId'] == 'UNPROTECTED':
-			helper.event("_rubrik_correct", cortex_vm_data['name'] + " is not configured to backup", oneshot=True, success=True, warning=False)
+			helper.event("_rubrik_correct", cortex_vm_data['name'] + " is configured to not backup and has no Rubrik SLA domain set", oneshot=True, success=True)
 
 		# If Cortex and Rubrik are both backing up, don't change anything
 		elif cortex_vm_data['enable_backup'] == 1 and rubrik_vm_data['configuredSlaDomainName'] in local_domains:
-			helper.event("_rubrik_correct", cortex_vm_data['name'] + " is in Rubrik and is set to backup", oneshot=True, success=True, warning=False)
+			helper.event("_rubrik_correct", cortex_vm_data['name'] + " is configured to backup and has a Rubrik SLA domain set", oneshot=True, success=True)
 
 		else:
-			helper.event("_rubrik_error", "Something went wrong with " + cortex_vm_data['name'], oneshot=True, success=False, warning=False)
+			# Logically, we shouldn't get here
+			helper.event("_rubrik_error", "Something went wrong with " + cortex_vm_data['name'], oneshot=True, success=False)
 	
 	# Oneshot this as the original _vm_task event above may have already ended
 	helper.event("_rubrik_end", "VM SLA assignments updated: " + str(changes) + " changes made", oneshot=True)

@@ -391,9 +391,11 @@ def system_backup(id):
 
 		mode = request.form.get('mode')
 		if mode in ('INHERIT', 'UNPROTECTED'):
-				rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
+			rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
+			flash('SLA Domain updated', 'alert-success')
 		elif 'sla_domain' in request.form:
 			rubrik.update_vm(vm['id'], {'configuredSlaDomainId': request.form.get('sla_domain')})
+			flash('SLA Domain updated', 'alert-success')
 		else:
 			abort(400)
 
