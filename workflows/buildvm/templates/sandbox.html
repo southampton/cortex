@@ -174,13 +174,13 @@ div.specdetails
                                         <p class="text-muted">Number of cores per socket</p>
                                 </div>
 				<div class="form-group col-md-3" style="margin-top:2.4em">
-                                        <label for="ram-slider">Cores:</label>    
+                                        <label for="ram-slider">RAM (GB):</label>    
                                         <input class="slider form-control-range slider-input" type="range" id="ram-slider" name="ram" style="width: 65%;" step="2" min="2" max="32" value="2">
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
                                         <p class="text-muted">Total amount of RAM, including video RAM</p>
                                 </div>
 				<div class="form-group col-md-3" style="margin-top:2.4em">
-                                        <label for="disk-slider">Cores:</label>  
+                                        <label for="disk-slider">Disk (GB):</label>  
                                         <input class="slider form-control-range slider-input" type="range" id="disk-slider" name="disk" style="width: 65%;" step="100" min="100" max="2000" value="100">
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
                                         <p class="text-muted">Additional disk size, excluding the default OS disk</p>
@@ -337,6 +337,7 @@ function setSliderValue(selector, val)
 		var selector_label_value = parseInt(selector_label.html());
 		selector_label.html(val);
 	}
+	console.log("selector: " + selector + " val: "+ val + " current value: " + $(selector).attr('value'));
 }
 
 function setSliderMinimum(selector, minimum)
@@ -346,7 +347,7 @@ function setSliderMinimum(selector, minimum)
 		$(selector).attr('min', minimum);
 		var selector_label = $(selector).parent().find(".output").eq(0);
 		var selector_label_value = parseInt(selector_label.html());
-		if(selector_label_value < minimum){
+		if(selector_label_value != minimum){
 			selector_label.html(minimum);
 		}
 		setSliderValue(selector, minimum);
@@ -367,6 +368,7 @@ $(document).ready(function()
 
 		if (first) { first = false; }
 	}
+	$("label.active > input[type=radio][name=spec]").prop('checked', true); // whichever label is active needs to also be checked
 	// Update the totals when the inputs change
 	$('input[type=range], input[type=radio][name=spec]').on('input', function() { updateTotals(); });
 	$('input[type=radio][name=spec]').change(function() {
@@ -427,6 +429,7 @@ sliders.each(function(){
 
 sliders.on('input', function() {
 	$(this).parent().find(".output").eq(0).html($(this).val());
+	console.log($(this).val());
 	$('#val_vcpus').text($("#sockets-slider").val() * $("#cores-slider").val());
 	$('#val_ram').text($("#ram-slider").val());
 	$('#val_disk').text($("#disk-slider").val());

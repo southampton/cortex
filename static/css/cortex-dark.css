@@ -89,3 +89,7 @@
 {
 	background-color: #060606;
 }
+
+.dataTables_wrapper, a.btn-secondary, .modal-title, .page-header, h4 small, .nav-link, .card-header, .sidebar > div > a, .list-group-popover > a , .card-body {
+	color: white!important;
+}
