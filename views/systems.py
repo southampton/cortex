@@ -1201,19 +1201,22 @@ def system_groups():
 	# setting up the groups
 	for group in existing_groups:
 		group_contents[group['name']] = []
-		curd.execute('SELECT `id`, `name`, `group_id`, `order` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
+		curd.execute('SELECT `id`, `name`, `group_id`, `order`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
 		group_machines = curd.fetchall()
 		for box in group_machines:
-			group_contents[group['name']].append(box['name'])
+			box['restart_info'] = json.loads(box['restart_info'])
+			group_contents[group['name']].append({'name' : box['name'], 'r_info' : box['restart_info']})
 
-	wait_for_options = ['Check if DB is running', 'Check if VMware tools are running', 'Check for ping result', 'Check if __________']
+	
+
+	wait_for_options = ['Check if HTTP is running', 'Check if VMware tools are running', 'Check for ping result', 'Check on system agent']
 
 	if request.method == 'GET':
 		return render_template('systems/groups.html', systems=group_contents, boxes=unexpired_boxes, wait_options=wait_for_options,title="System Groups", existing_groups=existing_groups)
 	
 	elif request.method == 'POST':
 
-		# return jsonify(request.form)
+		# return jsonify(group_contents)
 		# do stuff with the post request to create a group
 		# or to add a box to a group
 
@@ -1237,9 +1240,9 @@ def system_groups():
 		elif request.form['task_name'] == 'remove_group':
 			try:
 				# get the name from the weird way that the selectpicker returns it
-				if request.form['groups'] != "":
-					name = ast.literal_eval(request.form['groups'])['name']
-
+				if request.form['group_to_remove_from'] != "":
+					# name = ast.literal_eval(request.form['groups'])['name']
+					name = request.form['group_to_remove_from']
 					#remove the name from the database
 					curd.execute('DELETE FROM `system_groups` WHERE name = "%s";' % (name,))
 					g.db.commit()
@@ -1250,11 +1253,12 @@ def system_groups():
 					
 					# we can remove all of the contents of this from group_contents			
 					group_contents.pop(name, None)
+
 				else:
 					flash('No group selected to remove', 'alert-warning')
 
 			except Exception as e:
-				flash('Group was not removed: ' + e, "alert-warning")
+				flash( e, "alert-warning")
 				raise e
 
 		elif request.form['task_name'] == 'add_to_group': 
@@ -1271,13 +1275,42 @@ def system_groups():
 			curd.execute('SELECT * FROM system_group_systems WHERE `group_id` = "%s"' % (group_id['id'], ))
 			count = len(curd.fetchall())
 
-			curd.execute('INSERT INTO `system_group_systems` (`group_id`, `system_id`, `order`) VALUES (%s, %s, %s);' % (group_id['id'], system_id['id'], count+1))
+			restart_instructions = {}
+
+			# package up the information supplied to us
+			if request.form['wait_options'] == 'Check if HTTP is running':
+				restart_instructions['wait_options'] = request.form['wait_options']
+				# return jsonify(request.form)
+				restart_instructions['http_checks'] = {'place_to_check': request.form['place_to_check']}
+				try: 
+					request.form['expected_response']
+				except Exception as e:
+					restart_instructions['expected_response'] = 200
+				else:
+					restart_instructions['expected_response'] = request.form['expected_response']
+
+
+				try:
+					restart_instructions['http_checks']['https'] = request.form['http_checks']
+				except Exception as e:
+					restart_instructions['http_checks']['https'] = 'off'
+			else:
+				restart_instructions['wait_options'] = request.form['wait_options']
+
+			curd.execute('INSERT INTO `system_group_systems` (`group_id`, `system_id`, `order`, `restart_info`) VALUES (%s, %s, %s, \'%s\');' % (group_id['id'], system_id['id'], count+1, json.dumps(restart_instructions)))
 			g.db.commit()
-			group_contents[group_to_add_to].append(system_to_add)
+
+			for group in existing_groups:
+				group_contents[group['name']] = []
+				curd.execute('SELECT `id`, `name`, `group_id`, `order`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
+				group_machines = curd.fetchall()
+				for box in group_machines:
+					box['restart_info'] = json.loads(box['restart_info'])
+					group_contents[group['name']].append({'name' : box['name'], 'r_info' : box['restart_info']})
 
 		elif request.form['task_name'] == 'remove_from_group':
-			system_to_remove = request.form['systems']
-			group_to_remove_from = request.form['button_clicked']
+			system_to_remove = request.form['box_to_remove']
+			group_to_remove_from = request.form['group_to_remove_from']
 
 			#get id of system
 			curd.execute('SELECT `id` FROM system_groups WHERE `name` = "%s";' % (group_to_remove_from, ))
@@ -1303,7 +1336,13 @@ def system_groups():
 			curd.execute('DELETE FROM `system_group_systems` WHERE group_id = %s AND system_id = %s;' % (group_id['id'], system_id['id']))
 			g.db.commit()
 
-			group_contents[group_to_remove_from].remove(system_to_remove)
+			for group in existing_groups:
+				group_contents[group['name']] = []
+				curd.execute('SELECT `id`, `name`, `group_id`, `order`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
+				group_machines = curd.fetchall()
+				for box in group_machines:
+					box['restart_info'] = json.loads(box['restart_info'])
+					group_contents[group['name']].append({'name' : box['name'], 'r_info' : box['restart_info']})
 
 		elif request.form['task_name'] == 'save_changes':
 			# the order is returned in a really odd way, so change it into a dict
@@ -1351,10 +1390,45 @@ def system_groups():
 
 			for group in existing_groups:
 				group_contents[group['name']] = []
-				curd.execute('SELECT `id`, `name`, `group_id`, `order` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
+				curd.execute('SELECT `id`, `name`, `group_id`, `order`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
 				group_machines = curd.fetchall()
 				for box in group_machines:
-					group_contents[group['name']].append(box['name'])
+					box['restart_info'] = json.loads(box['restart_info'])
+					group_contents[group['name']].append({'name' : box['name'], 'r_info' : box['restart_info']})
+
+
+		elif request.form['task_name'] == 'configure_box':
+			system_to_configure = request.form['box_clicked']
+			group_to_configure_in = request.form['group_clicked']
+			#get id of system and group
+			curd.execute('SELECT `id` FROM system_groups WHERE `name` = "%s";' % (group_to_configure_in, ))
+			group_id = curd.fetchone()
+			curd.execute('SELECT `id` FROM systems WHERE `name` = "%s";' % (system_to_configure, ))
+			system_id = curd.fetchone()
+
+			restart_instructions = {}
+
+			# package up the information supplied to us
+			if request.form['wait_options'] == 'Check if HTTP is running':
+				restart_instructions['wait_options'] = request.form['wait_options']
+				restart_instructions['http_checks'] = {'place_to_check': request.form['place_to_check'], 'expected_response': request.form['expected_response']}
+				try:
+					restart_instructions['http_checks']['https'] = request.form['https_check']
+				except Exception as e:
+					restart_instructions['http_checks']['https'] = 'off'
+			else:
+				restart_instructions['wait_options'] = request.form['wait_options']
+
+			# restart_instructions = json.dumps(restart_instructions)
+			# return jsonify({'a': restart_instructions})
+			curd.execute('UPDATE `system_group_systems` SET `restart_info` = \'%s\' WHERE `group_id` = %s AND `system_id` = %s' % (json.dumps(restart_instructions), group_id['id'], system_id['id']))
+			g.db.commit()
+
+			# return jsonify(restart_instructions);
+
+
+
+
 
 		else:
 			flash('else flipped', "alert-warning")
