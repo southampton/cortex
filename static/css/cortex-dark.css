@@ -93,3 +93,18 @@
 .dataTables_wrapper, a.btn-secondary, .modal-title, .page-header, h4 small, .nav-link, .card-header, .sidebar > div > a, .list-group-popover > a , .card-body {
 	color: white!important;
 }
+
+.card {
+	border-width: 0px!important;
+}
+
+.sidebar {
+	border-right: 0px!important;
+}
+
+#search label {
+	color: white;
+}
+form {
+	color: white!important;
+}
