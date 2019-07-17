@@ -83,9 +83,9 @@ $(document).ready(function()
 		}
 		if(!using_init && dictionary.hasOwnProperty(module_and_class[0])){ // if init is not being used, then return the list of classes that match the current keyword
 			regex = new RegExp('^' + module_and_class[1], 'i'); // replace the current word in the regex with the partial class name currently on the line
-			return { // will return a list of all the modules which belong to that module
+			return { // will return a list of all the classes which belong to that module
 				list: (!curWord ? Object.keys(dictionary[module_and_class[0]]) : Object.keys(dictionary[module_and_class[0]]).filter(function(item) {
-                                                return item.match(regex);
+                                                return (item.match(regex)&&(item!="init"));
                                         })).sort(),
                                         from: CodeMirror.Pos(cur.line, start), // the start will only match to word characters a-z A-Z 0-9 and _, so it will stop when it reaches the first : anyway
                                         to: CodeMirror.Pos(cur.line, end) // the to position should be the same as normally
