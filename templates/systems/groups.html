@@ -98,7 +98,7 @@
 									{%- endfor %}
 								</select>
 								<input type="hidden" name="task_name" value="configure_box" id="system_options_input"/>
-									<select name="wait_options" class="selectpicker system_options"  id="system_options" onchange="changeEventHandler(event);">
+									<select name="wait_options" class="selectpicker system_options"  id="system_options_add" onchange="changeEventHandler(event);">
 										{% for options in wait_options %}
 											<option value="{{ options }}">{{ options }}</option>
 										{% endfor %}
@@ -115,9 +115,21 @@
 								</div>
 								<div id="Check_if_HTTP_is_running" class="reboot_options Check_if_HTTP_is_running" style="margin-top: 7px; margin-left: 4px; margin-right: 4px;">
 									<div class="form-group">
-										<label class="col-sm-3 control-label">IP Address/URL</label>
+										<label class="col-sm-3 control-label">Hostname</label>
 										<div class="col-sm-6">
-											<input class="form-control" type="text" name="place_to_check" id="place_to_check" />
+											<input class="form-control" type="text" name="hostname" id="hostname" />
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="col-sm-3 control-label">URL</label>
+										<div class="col-sm-6">
+											<input class="form-control" type="text" name="url" id="url" />
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="col-sm-3 control-label">Port</label>
+										<div class="col-sm-6">
+											<input class="form-control" type="text" name="port" id="port" />
 										</div>
 									</div>
 									<div class="form-group">
@@ -148,27 +160,34 @@
 
 
 
-<div class="modal fade" id="restart" role="dialog">
+<div class="modal fade" id="configure_group" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form role="form" method="POST" class="form-horizontal">
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-					<h4 class="modal-title">Restart Group</h4>
+					<h4 class="modal-title" id="">Configure Group</h4>
 				</div>
 				<div class="modal-body">
 					<div class="form-group">
-						<label class="col-sm-3 control-label">Name</label>
-						<div style="margin-left: 1em">
+						<div style="margin-left:1em">
 							<div class="form-group">
-								<input type="hidden" name="task_name" value="restart_group"/></input>
-								<select class="selectpicker" name="groups" id="groups" data-live-search="true">
-									<option></option>
-									{% for group in systems.keys() -%}
-										<option value="{{ group }}">{{ group }}</option>
-									{%- endfor %}
-								</select>
+								<input type="hidden" name="task_name" value="configure_group"/></input>
+								<input type="hidden" name="group_name" id="configure-VM-modal"></input>
+								<div class="form-group">
+									<label class="col-sm-2 control-label">Name</label>
+									<div class="col-sm-9">
+										<input type="hidden" name="task_name" value="create_group"/>
+										<input class="form-control" name="configure_name" id="configure_name" />
+									</div>
+								</div>
+								<div class="form-group">
+									<label class="col-sm-2 control-label">Notifyee</label>
+									<div class="col-sm-9">
+										<input class="form-control" name="configure_notifyee" id="configure_notifyee" />
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -176,12 +195,13 @@
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-					<button type="submit" class="btn btn-danger">Restart</button>
+					<button type="submit" class="btn btn-primary">Create</button>
 				</div>
 			</form>
 		</div>
 	</div>
 </div>
+
 
 
 
@@ -204,7 +224,7 @@
 						<div style="margin-left: 1em">
 							<div class="form-group" style="">
 								<input type="hidden" name="task_name" value="configure_box" id="system_options_input"/>
-									<select name="wait_options" class="selectpicker"  id="system_options" onchange="changeEventHandler(event);">
+									<select name="wait_options" class="selectpicker"  id="system_options_configure" onchange="changeEventHandler(event);">
 										{% for options in wait_options %}
 											<option value="{{ options }}">{{ options }}</option>
 										{% endfor %}
@@ -221,9 +241,21 @@
 								</div>
 								<div id="Check_if_HTTP_is_running" class="reboot_options Check_if_HTTP_is_running" style="margin-top: 7px; margin-left: 4px; margin-right: 4px;">
 									<div class="form-group">
-										<label class="col-sm-3 control-label">IP Address/URL</label>
+										<label class="col-sm-3 control-label">Hostname</label>
 										<div class="col-sm-6">
-											<input class="form-control" type="text" name="place_to_check" id="place_to_check" />
+											<input class="form-control" type="text" name="hostname" id="hostname" />
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="col-sm-3 control-label">URL</label>
+										<div class="col-sm-6">
+											<input class="form-control" type="text" name="url" id="url" />
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="col-sm-3 control-label">Port</label>
+										<div class="col-sm-6">
+											<input class="form-control" type="text" name="port" id="port" />
 										</div>
 									</div>
 									<div class="form-group">
@@ -268,7 +300,8 @@
 					<div class="panel-heading">
 						<h4 class="panel-title col-align col-align--center" id="{{ group }}">
 							<a data-toggle="collapse" data-parent="#accordion" href="#collapse{{ loop.index }}">System Group - {{ group }}</a>
-							<a data-toggle="modal" data-target="#add" class="btn btn-xs pull-right btn-success active group-hyperlink" style="margin-right:3px"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs ">Add to Group</span></a>
+							<a data-toggle="modal" data-target="#add" class="btn btn-xs pull-right btn-success active group-hyperlink" style="margin-right:5px"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs ">Add to Group</span></a>
+							<a data-toggle="modal" data-target="#configure_group" class="btn btn-xs pull-right btn-warning active group-configure" id="group-configure" group="{{ group }}" style="margin-right:5px"><i class="fa fa-fw fa-cog"></i> <span class="hidden-sm hidden-xs ">Configure</span></a>
 							<button type="submit" class="btn btn-xs btn-success btn-danger pull-right remove_group" id="remove_group" group="{{ group }}" style="margin-right:5px"><i class="fa fa-fw fa-minus"></i> Remove </button>
 						</h4>
 					</div>
@@ -278,8 +311,8 @@
 
 							<div class="panel-body">
 								<span>
-									<ol id="{{ box['name'] }}" class="sortable-systems" style="float: left">{{ box['name'] }} &#9; - &#9; {{ box['r_info']['wait_options'] }}</ol>
-										<a data-toggle="modal" data-target="#configure" class="btn btn-xs pull-right btn-warning active box-configure" box="{{ box['name'] }}" group="{{ group }}" style="margin-left:3px"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs ">Configure</span></a>
+									<ol id="{{ box['name'] }}" class="sortable-systems" style="float: left">{{ box['name'] }} - {{ box['alloc_comment'] }} - {{ box['r_info']['wait_options'] }}</ol>
+										<a data-toggle="modal" data-target="#configure" class="btn btn-xs pull-right btn-warning active box-configure" box="{{ box['name'] }}" group="{{ group }}" style="margin-left:3px"><i class="fa fa-fw fa-cog"></i> <span class="hidden-sm hidden-xs ">Configure</span></a>
 										<input type="hidden" name="box_to_remove" id="delete_box_name"></input>
 										<input type="hidden" name="group_to_remove_from" id="delete_box_group"></input>
 										<button type="submit" class="btn btn-xs btn-success btn-danger pull-right remove_vm_from_group" id="remove_vm" group="{{ group }}" box="{{ box['name'] }}"><i class="fa fa-fw fa-minus"></i> Remove </button>
@@ -308,7 +341,7 @@
 
 	$(".group-hyperlink-remove").click(function(){
 		console.log($(this).parent().attr('id'));
-		$("#remove-VM-input").val($(this).parent().attr('id'));
+		$("#remove-VM-input").val($(this).parent().attr('id')); 
 	});
 
 	$(".box-hyperlink").click(function(){
@@ -317,27 +350,75 @@
 	});
 
 	$(".remove_group").click(function(e){
-		console.log('attempting to remove vm from group');
 		$("#delete_box_group").val($(this).attr('group'));
 		$("#task_name").val("remove_group");
 	});
 
 	$(".remove_vm_from_group").click(function(e){
-		console.log('attempting to remove group');
 		$("#delete_box_name").val($(this).attr('box'));
 		$("#delete_box_group").val($(this).attr('group'));
 		$("#task_name").val("remove_from_group");
 	});
+
+	$(".group-configure").click(function(e){
+		$("#configure-VM-modal").val($(this).attr('group'));
+		var selected_group = $(this).attr('group')
+		var groups = JSON.parse('{{ existing_groups|tojson|safe }}');
+		groups.forEach(function (item, index){
+			if (item.name === selected_group){
+				$("#configure_name").val(item.name);
+				$("#configure_notifyee").val(item.notifyee);
+			}
+		})
+	})
+
+
 
 	$(".box-configure").click(function(e){
 		console.log("attempting to configure group");
 		console.log($(this).attr('box'));
 		$("#box_clicked").val($(this).attr('box'));
 		$("#group_clicked").val($(this).attr('group'));
-		$('.Check_if_HTTP_is_running').show();
+		$('.reboot_options').hide();
+		var system_data = JSON.parse('{{ systems|tojson|safe }}');
+		var selected; var hostname; var url; var port; var exp_resp;
+		system_data = system_data[$(this).attr('group')];
+		system_data.forEach(function (item, index){
+			if (item.name === $("#box_clicked").val()){
+				selected = item.r_info.wait_options;
+				$('#system_options_configure').val(selected);
+				console.log($('#system_options_configure'));
+				selected = selected.split(' ').join('_');
+				if (selected === "Check_if_HTTP_is_running"){
+					hostname = item.r_info.http_checks.hostname;
+					url = item.r_info.http_checks.url;
+					port = item.r_info.http_checks.port;
+					exp_resp = item.r_info.expected_response;
+				}
+			}
+		});
+		
+		if (selected === "Check_if_HTTP_is_running"){
+			$('.Check_if_HTTP_is_running').show();
 
+			var hostnames = $("input[name=hostname]");
+			var urls = $("input[name=url]");
+			var ports = $("input[name=port]");
+			var exp_resps = $("input[name=expected_response]");
 
-
+			for (x = 0; x < hostnames.length; x++){
+				hostnames[x].value = hostname;
+				urls[x].value = url;
+				ports[x].value = port;
+				exp_resps[x].value = exp_resp;
+			}
+		} else if (selected === "Check_if_VMware_tools_are_running"){
+			$('.Check_if_VMware_tools_are_running').show();
+		} else if (selected === "Check_for_ping_result"){
+			$('.Check_for_ping_result').show();
+		} else if (selected === 'Check_on_system_agent'){
+			$('.Check_on_system_agent').show();
+		}
 	});
 
 	function changeEventHandler(event) {

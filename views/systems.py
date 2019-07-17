@@ -1195,31 +1195,28 @@ def system_groups():
 	unexpired_boxes = curd.fetchall()
 
 	#Get all of the groups
-	curd.execute('SELECT `name`, `id` FROM `system_groups`;')
+	curd.execute('SELECT `name`, `id`, `notifyee` FROM `system_groups`;')
 	existing_groups = curd.fetchall()
 
 	# setting up the groups
 	for group in existing_groups:
 		group_contents[group['name']] = []
-		curd.execute('SELECT `id`, `name`, `group_id`, `order`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
+		curd.execute('SELECT `id`, `name`, `group_id`, `order`, `allocation_comment`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
 		group_machines = curd.fetchall()
 		for box in group_machines:
 			box['restart_info'] = json.loads(box['restart_info'])
-			group_contents[group['name']].append({'name' : box['name'], 'r_info' : box['restart_info']})
+			group_contents[group['name']].append({'name' : box['name'], 'alloc_comment' : box['allocation_comment'], 'r_info' : box['restart_info']})
 
 	
-
 	wait_for_options = ['Check if HTTP is running', 'Check if VMware tools are running', 'Check for ping result', 'Check on system agent']
+
 
 	if request.method == 'GET':
 		return render_template('systems/groups.html', systems=group_contents, boxes=unexpired_boxes, wait_options=wait_for_options,title="System Groups", existing_groups=existing_groups)
 	
 	elif request.method == 'POST':
-
-		# return jsonify(group_contents)
 		# do stuff with the post request to create a group
 		# or to add a box to a group
-
 		if request.form['task_name'] == 'create_group':
 			try:
 				# add the new group to the db
@@ -1227,7 +1224,7 @@ def system_groups():
 				g.db.commit()
 				flash('Group added', "alert-success")
 				#Get all of the groups
-				curd.execute('SELECT `name` FROM `system_groups`;')
+				curd.execute('SELECT `name`, `id`, `notifyee` FROM `system_groups`;')
 				existing_groups = curd.fetchall()
 
 				# add the group to the groups dictionary
@@ -1241,7 +1238,6 @@ def system_groups():
 			try:
 				# get the name from the weird way that the selectpicker returns it
 				if request.form['group_to_remove_from'] != "":
-					# name = ast.literal_eval(request.form['groups'])['name']
 					name = request.form['group_to_remove_from']
 					#remove the name from the database
 					curd.execute('DELETE FROM `system_groups` WHERE name = "%s";' % (name,))
@@ -1281,7 +1277,9 @@ def system_groups():
 			if request.form['wait_options'] == 'Check if HTTP is running':
 				restart_instructions['wait_options'] = request.form['wait_options']
 				# return jsonify(request.form)
-				restart_instructions['http_checks'] = {'place_to_check': request.form['place_to_check']}
+				restart_instructions['http_checks'] = {'hostname': request.form['hostname']}
+				restart_instructions['http_checks']['url'] = request.form['url']
+				restart_instructions['http_checks']['port'] = request.form['port'] 
 				try: 
 					request.form['expected_response']
 				except Exception as e:
@@ -1302,11 +1300,11 @@ def system_groups():
 
 			for group in existing_groups:
 				group_contents[group['name']] = []
-				curd.execute('SELECT `id`, `name`, `group_id`, `order`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
+				curd.execute('SELECT `id`, `name`, `group_id`, `order`, `allocation_comment`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
 				group_machines = curd.fetchall()
 				for box in group_machines:
 					box['restart_info'] = json.loads(box['restart_info'])
-					group_contents[group['name']].append({'name' : box['name'], 'r_info' : box['restart_info']})
+					group_contents[group['name']].append({'name' : box['name'], 'alloc_comment' : box['allocation_comment'], 'r_info' : box['restart_info']})
 
 		elif request.form['task_name'] == 'remove_from_group':
 			system_to_remove = request.form['box_to_remove']
@@ -1338,11 +1336,11 @@ def system_groups():
 
 			for group in existing_groups:
 				group_contents[group['name']] = []
-				curd.execute('SELECT `id`, `name`, `group_id`, `order`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
+				curd.execute('SELECT `id`, `name`, `group_id`, `order`, `allocation_comment`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
 				group_machines = curd.fetchall()
 				for box in group_machines:
 					box['restart_info'] = json.loads(box['restart_info'])
-					group_contents[group['name']].append({'name' : box['name'], 'r_info' : box['restart_info']})
+					group_contents[group['name']].append({'name' : box['name'], 'alloc_comment' : box['allocation_comment'], 'r_info' : box['restart_info']})
 
 		elif request.form['task_name'] == 'save_changes':
 			# the order is returned in a really odd way, so change it into a dict
@@ -1390,11 +1388,11 @@ def system_groups():
 
 			for group in existing_groups:
 				group_contents[group['name']] = []
-				curd.execute('SELECT `id`, `name`, `group_id`, `order`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
+				curd.execute('SELECT `id`, `name`, `group_id`, `order`, `allocation_comment`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
 				group_machines = curd.fetchall()
 				for box in group_machines:
 					box['restart_info'] = json.loads(box['restart_info'])
-					group_contents[group['name']].append({'name' : box['name'], 'r_info' : box['restart_info']})
+					group_contents[group['name']].append({'name' : box['name'], 'alloc_comment' : box['allocation_comment'], 'r_info' : box['restart_info']})
 
 
 		elif request.form['task_name'] == 'configure_box':
@@ -1411,7 +1409,17 @@ def system_groups():
 			# package up the information supplied to us
 			if request.form['wait_options'] == 'Check if HTTP is running':
 				restart_instructions['wait_options'] = request.form['wait_options']
-				restart_instructions['http_checks'] = {'place_to_check': request.form['place_to_check'], 'expected_response': request.form['expected_response']}
+				restart_instructions['http_checks'] = {'hostname': request.form['hostname'], 'expected_response': request.form['expected_response']}
+				restart_instructions['http_checks']['url'] = request.form['url']
+				restart_instructions['http_checks']['port'] = request.form['port']
+
+				try: 
+					request.form['expected_response']
+				except Exception as e:
+					restart_instructions['expected_response'] = 200
+				else:
+					restart_instructions['expected_response'] = request.form['expected_response']
+
 				try:
 					restart_instructions['http_checks']['https'] = request.form['https_check']
 				except Exception as e:
@@ -1419,15 +1427,21 @@ def system_groups():
 			else:
 				restart_instructions['wait_options'] = request.form['wait_options']
 
-			# restart_instructions = json.dumps(restart_instructions)
-			# return jsonify({'a': restart_instructions})
 			curd.execute('UPDATE `system_group_systems` SET `restart_info` = \'%s\' WHERE `group_id` = %s AND `system_id` = %s' % (json.dumps(restart_instructions), group_id['id'], system_id['id']))
 			g.db.commit()
 
-			# return jsonify(restart_instructions);
+		elif request.form['task_name'] == "configure_group":
+			group_name = request.form['group_name']
+			new_name = request.form['configure_name']
+			new_notifyee = request.form['configure_notifyee']
 
+			curd.execute('SELECT `id` FROM system_groups WHERE `name` = "%s";' % (group_name, ))
+			group_id = curd.fetchone()['id']
 
-
+			# TODO: write checks to see if the group name is already in use
+			curd.execute('UPDATE `system_groups` SET `name` = \'%s\', `notifyee` = \'%s\' WHERE `id` = %s ' % (new_name, new_notifyee, group_id))
+			g.db.commit()
+			# return jsonify(request.form)
 
 
 		else:
