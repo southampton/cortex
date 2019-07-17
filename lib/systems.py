@@ -6,6 +6,7 @@ from flask import Flask, request, redirect, session, url_for, abort, render_temp
 import io, csv
 from cortex.corpus import Corpus
 import cortex.lib.user
+import json
 
 REVIEW_STATUS_BY_NAME = {'NONE': 0, 'REQUIRED': 1, 'REVIEW': 2, 'NOT_REQUIRED': 3}
 REVIEW_STATUS_BY_ID   = {0: 'Not reviewed', 1: 'Required', 2: 'Under review', 3: 'Not required' }
@@ -381,3 +382,45 @@ def generate_pretty_display_name(who, who_realname):
 		# If we weren't given a 'who' return None.
 		return None
 		
+################################################################################
+
+def get_group_id(group_name):
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	try:
+		curd.execute('SELECT `id` FROM system_groups WHERE `name` = "%s";' % (group_name))
+		return curd.fetchone()['id']
+	except Exception as e:
+		raise e
+
+################################################################################
+
+def get_system_id(system_name):
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	try:
+		curd.execute('SELECT `id` FROM systems WHERE `name` = "%s";' % (system_name))
+		return curd.fetchone()['id']
+	except Exception as e:
+		raise e
+
+###############################################################################
+
+def generate_existing_groups():
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT `name`, `id`, `notifyee` FROM `system_groups`;')
+	return curd.fetchall()
+
+###############################################################################
+
+def generate_group_contents():
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	existing_groups = generate_existing_groups()
+	group_contents = {}
+	for group in existing_groups:
+		group_contents[group['name']] = []
+		curd.execute('SELECT `id`, `name`, `group_id`, `order`, `allocation_comment`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
+		group_machines = curd.fetchall()
+		for box in group_machines:
+			box['restart_info'] = json.loads(box['restart_info'])
+			group_contents[group['name']].append({'name' : box['name'], 'alloc_comment' : box['allocation_comment'], 'r_info' : box['restart_info']})
+	return group_contents
+

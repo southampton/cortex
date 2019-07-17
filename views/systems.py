@@ -1195,18 +1195,9 @@ def system_groups():
 	unexpired_boxes = curd.fetchall()
 
 	#Get all of the groups
-	curd.execute('SELECT `name`, `id`, `notifyee` FROM `system_groups`;')
-	existing_groups = curd.fetchall()
+	existing_groups = cortex.lib.systems.generate_existing_groups()
 
-	# setting up the groups
-	for group in existing_groups:
-		group_contents[group['name']] = []
-		curd.execute('SELECT `id`, `name`, `group_id`, `order`, `allocation_comment`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
-		group_machines = curd.fetchall()
-		for box in group_machines:
-			box['restart_info'] = json.loads(box['restart_info'])
-			group_contents[group['name']].append({'name' : box['name'], 'alloc_comment' : box['allocation_comment'], 'r_info' : box['restart_info']})
-
+	group_contents = cortex.lib.systems.generate_group_contents()
 	
 	wait_for_options = ['Check if HTTP is running', 'Check if VMware tools are running', 'Check for ping result', 'Check on system agent']
 
@@ -1224,8 +1215,7 @@ def system_groups():
 				g.db.commit()
 				flash('Group added', "alert-success")
 				#Get all of the groups
-				curd.execute('SELECT `name`, `id`, `notifyee` FROM `system_groups`;')
-				existing_groups = curd.fetchall()
+				existing_groups = cortex.lib.systems.generate_existing_groups()
 
 				# add the group to the groups dictionary
 				group_contents[request.form['name']] = []
@@ -1258,17 +1248,13 @@ def system_groups():
 				raise e
 
 		elif request.form['task_name'] == 'add_to_group': 
-			system_to_add = request.form['systems']
-			group_to_add_to = request.form['button_clicked']
 
 			#get id of system
-			curd.execute('SELECT `id` FROM system_groups WHERE `name` = "%s";' % (group_to_add_to, ))
-			group_id = curd.fetchone()
-			curd.execute('SELECT `id` FROM systems WHERE `name` = "%s";' % (system_to_add, ))
-			system_id = curd.fetchone()
+			group_id = cortex.lib.systems.get_group_id(request.form['button_clicked'])
+			system_id = cortex.lib.systems.get_system_id(request.form['systems'])
 
 			#get the value for order
-			curd.execute('SELECT * FROM system_group_systems WHERE `group_id` = "%s"' % (group_id['id'], ))
+			curd.execute('SELECT * FROM system_group_systems WHERE `group_id` = "%s"' % (group_id, ))
 			count = len(curd.fetchall())
 
 			restart_instructions = {}
@@ -1276,7 +1262,6 @@ def system_groups():
 			# package up the information supplied to us
 			if request.form['wait_options'] == 'Check if HTTP is running':
 				restart_instructions['wait_options'] = request.form['wait_options']
-				# return jsonify(request.form)
 				restart_instructions['http_checks'] = {'hostname': request.form['hostname']}
 				restart_instructions['http_checks']['url'] = request.form['url']
 				restart_instructions['http_checks']['port'] = request.form['port'] 
@@ -1289,58 +1274,44 @@ def system_groups():
 
 
 				try:
-					restart_instructions['http_checks']['https'] = request.form['http_checks']
+					restart_instructions['http_checks']['https'] = request.form['http_check']
 				except Exception as e:
 					restart_instructions['http_checks']['https'] = 'off'
 			else:
 				restart_instructions['wait_options'] = request.form['wait_options']
 
-			curd.execute('INSERT INTO `system_group_systems` (`group_id`, `system_id`, `order`, `restart_info`) VALUES (%s, %s, %s, \'%s\');' % (group_id['id'], system_id['id'], count+1, json.dumps(restart_instructions)))
+			curd.execute('INSERT INTO `system_group_systems` (`group_id`, `system_id`, `order`, `restart_info`) VALUES (%s, %s, %s, \'%s\');' % (group_id, system_id, count+1, json.dumps(restart_instructions)))
 			g.db.commit()
 
-			for group in existing_groups:
-				group_contents[group['name']] = []
-				curd.execute('SELECT `id`, `name`, `group_id`, `order`, `allocation_comment`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
-				group_machines = curd.fetchall()
-				for box in group_machines:
-					box['restart_info'] = json.loads(box['restart_info'])
-					group_contents[group['name']].append({'name' : box['name'], 'alloc_comment' : box['allocation_comment'], 'r_info' : box['restart_info']})
+			group_contents = cortex.lib.systems.generate_group_contents()
 
 		elif request.form['task_name'] == 'remove_from_group':
 			system_to_remove = request.form['box_to_remove']
 			group_to_remove_from = request.form['group_to_remove_from']
 
-			#get id of system
-			curd.execute('SELECT `id` FROM system_groups WHERE `name` = "%s";' % (group_to_remove_from, ))
-			group_id = curd.fetchone()
-			curd.execute('SELECT `id` FROM systems WHERE `name` = "%s";' % (system_to_remove, ))
-			system_id = curd.fetchone()
+			# get id of system and group
+			group_id = cortex.lib.systems.get_group_id(group_to_remove_from)
+			system_id = cortex.lib.systems.get_system_id(system_to_remove)
 
 			# we need to modify the order so that it is correct once the removal is done
 			# start by getting the current position
-			curd.execute('SELECT `order` FROM system_group_systems WHERE `group_id` = %s AND `system_id` = %s' % (group_id['id'], system_id['id']))
+			curd.execute('SELECT `order` FROM system_group_systems WHERE `group_id` = %s AND `system_id` = %s' % (group_id, system_id))
 			order_of_removed_item = curd.fetchone()['order']
 
 			#then we get the total number
-			curd.execute('SELECT * FROM system_group_systems WHERE `group_id` = "%s"' % (group_id['id'], ))
+			curd.execute('SELECT * FROM system_group_systems WHERE `group_id` = "%s"' % (group_id, ))
 			count = len(curd.fetchall())
 
 			#run an update on everything that comes after the removed value
 			for x in range(order_of_removed_item+1, count+1):
-				curd.execute('UPDATE `system_group_systems` SET `order` = %s-1 WHERE `group_id` = %s AND `order` = %s;' % (x, group_id['id'], x))
+				curd.execute('UPDATE `system_group_systems` SET `order` = %s-1 WHERE `group_id` = %s AND `order` = %s;' % (x, group_id, x))
 				g.db.commit()
 
 			#remove the unwanted value
-			curd.execute('DELETE FROM `system_group_systems` WHERE group_id = %s AND system_id = %s;' % (group_id['id'], system_id['id']))
+			curd.execute('DELETE FROM `system_group_systems` WHERE group_id = %s AND system_id = %s;' % (group_id, system_id))
 			g.db.commit()
 
-			for group in existing_groups:
-				group_contents[group['name']] = []
-				curd.execute('SELECT `id`, `name`, `group_id`, `order`, `allocation_comment`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
-				group_machines = curd.fetchall()
-				for box in group_machines:
-					box['restart_info'] = json.loads(box['restart_info'])
-					group_contents[group['name']].append({'name' : box['name'], 'alloc_comment' : box['allocation_comment'], 'r_info' : box['restart_info']})
+			group_contents = cortex.lib.systems.generate_group_contents()
 
 		elif request.form['task_name'] == 'save_changes':
 			# the order is returned in a really odd way, so change it into a dict
@@ -1386,24 +1357,13 @@ def system_groups():
 					curd.execute('UPDATE `system_group_systems` SET `order` = %s WHERE `group_id` = %s AND `system_id` = %s;' % (y+1, group_id, system_id))
 					g.db.commit()
 
-			for group in existing_groups:
-				group_contents[group['name']] = []
-				curd.execute('SELECT `id`, `name`, `group_id`, `order`, `allocation_comment`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`;' % (group['id'], ))
-				group_machines = curd.fetchall()
-				for box in group_machines:
-					box['restart_info'] = json.loads(box['restart_info'])
-					group_contents[group['name']].append({'name' : box['name'], 'alloc_comment' : box['allocation_comment'], 'r_info' : box['restart_info']})
+			group_contents = cortex.lib.systems.generate_group_contents()
 
 
 		elif request.form['task_name'] == 'configure_box':
-			system_to_configure = request.form['box_clicked']
-			group_to_configure_in = request.form['group_clicked']
 			#get id of system and group
-			curd.execute('SELECT `id` FROM system_groups WHERE `name` = "%s";' % (group_to_configure_in, ))
-			group_id = curd.fetchone()
-			curd.execute('SELECT `id` FROM systems WHERE `name` = "%s";' % (system_to_configure, ))
-			system_id = curd.fetchone()
-
+			group_id = cortex.lib.system.get_group_id(request.form['group_clicked'])
+			system_id = cortex.lib.system.get_system_id(request.form['box_clicked'])
 			restart_instructions = {}
 
 			# package up the information supplied to us
@@ -1435,17 +1395,14 @@ def system_groups():
 			new_name = request.form['configure_name']
 			new_notifyee = request.form['configure_notifyee']
 
-			curd.execute('SELECT `id` FROM system_groups WHERE `name` = "%s";' % (group_name, ))
+			curd.execute('SELECT `id` FROM `system_groups` WHERE `name` = "%s";' % (group_name, ))
 			group_id = curd.fetchone()['id']
 
 			# TODO: write checks to see if the group name is already in use
 			curd.execute('UPDATE `system_groups` SET `name` = \'%s\', `notifyee` = \'%s\' WHERE `id` = %s ' % (new_name, new_notifyee, group_id))
 			g.db.commit()
-			# return jsonify(request.form)
-
 
 		else:
-			flash('else flipped', "alert-warning")
+			flash('Unknown operation occoured', "alert-warning")
 
-
-		return render_template('systems/groups.html', systems=group_contents, boxes=unexpired_boxes, wait_options=wait_for_options, title="System Groups", existing_groups=existing_groups)
+		return render_template('systems/groups.html', title="System Groups", systems=group_contents, boxes=unexpired_boxes, wait_options=wait_for_options, existing_groups=existing_groups)

@@ -282,6 +282,41 @@
 	</div>
 </div>
 
+<div class="modal fade" id="restart" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form role="form" method="POST" class="form-horizontal">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title">Restart Group</h4>
+				</div>
+				<div class="modal-body">
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Name</label>
+						<div style="margin-left: 1em">
+							<div class="form-group">
+								<input type="hidden" name="task_name" value="restart_group"/></input>
+								<select class="selectpicker" name="groups" id="groups" data-live-search="true">
+									<option></option>
+									{% for group in systems.keys() -%}
+										<option value="{{ group }}">{{ group }}</option>
+									{%- endfor %}
+								</select>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="submit" class="btn btn-danger">Restart</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+
 
 
 <div class="page-header">
