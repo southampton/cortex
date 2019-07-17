@@ -1,0 +1,212 @@
+{% extends "layout.html" %}
+
+{% block head -%}
+	<!-- IMPORT SELECTPICKER -->
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
+	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+	<!-- IMPORT CUSTOM STYLESHEET FOR CAROUSEL-->
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/carousel.css') }}">
+	{#- CodeMirror style -#}
+	<link href="{{ url_for('static', filename='css/vendor/codemirror.min.css') }}" rel="stylesheet">
+	<link href="{{ url_for('static', filename='css/vendor/lint.min.css') }}" rel="stylesheet">
+
+	{#- CodeMirror scripts -#}
+	<script src="{{ url_for('static', filename='js/vendor/codemirror.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/vendor/yaml.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/vendor/lint.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/vendor/js-yaml.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/vendor/yaml-lint.js') }}"></script>
+
+	{#- Override CodeMirror style - must come after CodeMirror style imports -#}
+	<style type="text/css">
+	.CodeMirror {
+		border: 1px solid #eee;
+		height: auto;
+	}
+	</style>
+
+{% endblock %}
+
+{% block body %}
+
+<div class="page-header">
+	<h3><i class="fa fa-plus-circle fa-fw"></i> Create a New Service</h3>
+	<p class="text-muted">This workflow will create a VM in the chosen environment. Hostnames will be automatically allocated from the 'srv' group, and will automatically have IP addresses assigned from Infoblox. ServiceNow CI's will also be created.</p>
+</div>
+
+<div id="vm-carousel" class="carousel slide" data-ride="carousel" data-interval="false">
+	<ol class="carousel-indicators">
+		<li data-target="#vm-carousel" data-slide-to="0" class="active"></li>
+	</ol>
+	<form>
+		<div class="carousel-inner">
+			<div class="carousel-item active">
+				<img class="first-slide" src="https://www.officemax.co.nz/Images/ProductImages/500/2012286.jpg" alt="First slide">
+				<div class="container">
+					<div class="carousel-caption" id="choose-action">
+						<a id="use-existing" class="btn btn-lg btn-primary">Use existing service template</a>
+						<hr class="hr-text" data-content="OR">
+						<a id="create-service-template" class="btn btn-lg btn-success">Create your own service template</a>
+					</div>
+					<div class="carousel-caption">
+						<h2 style="color: #777;">1. Choose an action</h2>
+					</div>
+				</div>
+			</div>
+		</div>
+	</form>
+	<a class="carousel-control-prev" href="#vm-carousel" role="button" data-slide="prev">
+		<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+		<span class="sr-only">Previous</span>
+	</a>
+	<a class="carousel-control-next" href="#vm-carousel" role="button" data-slide="next">
+		<span class="carousel-control-next-icon" aria-hidden="true"></span>
+		<span class="sr-only">Next</span>
+	</a>
+</div>
+
+<div id="create-service-template-form">
+	<div class="carousel-item" id="create-service-template-item">
+		<img src="https://www.solidbackgrounds.com/images/2880x1800/2880x1800-light-sky-blue-solid-color-background.jpg">
+		<div class="carousel-item-content-center name-service">
+			<div class="form-group w-25">
+				<div class="input-group">
+					<label for="service_name" class="h4 w-100 text-left" style="margin-bottom: 10px;">Give your new service "recipe" a name:</label>
+					<input id="service_name" class="form-control form-control-lg" type="text" placeholder="'Service_name'" aria-label="Service_name" required>
+					<div class="input-group-append">
+						<button class="btn btn-success" type="button" href="#vm-carousel" role="button" data-slide="next">Next</button>
+					</div>
+				</div>
+
+			</div>
+		</div>
+		<div class="carousel-caption">
+			<h2>2. Name the recipe</h2>
+		</div>
+	</div>
+	<div class="carousel-item" id="add-vms-template-item">
+                <img src="https://www.officemax.co.nz/Images/ProductImages/500/2012286.jpg">
+		<div id="vms-card-list" class="carousel-item-content-top">
+		</div>
+		<div class="carousel-caption">
+			<h1 class="d-inline-flex" style="position: relative; margin-bottom: 0px!important; vertical-align: middle; margin-right: 5px; color: #777;">3.</h1>
+			<div class="btn-group" role="group" id="choose-vm-action">
+				<button type="button" class="btn btn-lg btn-primary" data-target="#add-vm-existing-recipe" data-toggle="modal">Add a VM using an existing recipe</button>
+				<button type="button" class="btn btn-lg btn-success">Add a VM by using your custom recipe</button>
+			</div>
+		</div>
+        </div>
+</div>
+<datalist id="autocomplete-VMs">
+	<option></option>
+	<option value="banner_database_1">banner_database_1</option>
+	<option value="banner_database_2">banner_database_2</option>
+	<option value="banner_database_3">banner_database_3</option>
+	<option value="banner_database_4">banner_database_4</option>
+	<option value="something_else">something_else</option>
+	<option value="app_server">app_server</option>
+	<option value="magic_layer">magic_layer</option>
+	<option value="hah?">hah?</option>
+	<option value="oh_my_days_will_this_work_?">oh_my_days_will_this_work_?</option>
+</datalist>
+<div class="modal fade" id="add-vm-existing-recipe" tabindex="-1" role="dialog" aria-hidden="true">
+	<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" >Use Existing Recipe</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div class="row">
+					<div class="col-sm-3 offset-1">Choose an existing VM Recipe</div>
+					<div class="col-sm-6"><input id="vm-recipe-input" class="form-control w-100" list="autocomplete-VMs" autocomplete="off" maxlength="64"></div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-primary" id="temp-save">Save changes</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+$(document).ready(function(){
+	// var src_1 = "https://www.officemax.co.nz/Images/ProductImages/500/2012286.jpg";
+	// var src_2 = "https://www.solidbackgrounds.com/images/2880x1800/2880x1800-light-sky-blue-solid-color-background.jpg";
+	var form_steps = 1;
+	var was_clicked = false;
+	$("#create-service-template").click(function (){
+		if(!was_clicked){
+			form_steps = form_steps + ($('#create-service-template-form > div').appendTo('.carousel-inner')).length;
+			for(var i=1; i<form_steps; i++){
+				console.log(form_steps);
+				$('<li data-target="#vm-carousel" data-slide-to="'+(i)+'"></li>').appendTo('.carousel-indicators');
+			}
+			$("#vm-carousel").carousel('next');
+			was_clicked = true;
+			/*var classes_editor = CodeMirror.fromTextArea(document.getElementById('puppet_classes'), 
+                        {
+                                mode: 'yaml',
+                                gutters: ["CodeMirror-lint-markers"],
+                                lint: true,
+                                indentUnit: 2,
+                                viewportMargin: Infinity,
+                        });
+			*/
+
+		} else {
+			$("#vm-carousel").carousel('next');
+		}
+	});
+	// This event listener should disappear soon when the backend is finished
+	// Now, keeping it just for navigation
+	$("#temp-save").click(function(){
+		var vm_recipe_name = $("#vm-recipe-input").val();
+		$("#vm-recipe-input").val("");
+		// would use ajax here to query the database, but there's no backend at the moment
+		/*
+		  let's just pretend that I have some ajax here which returns the default puppet code and the specs for this VM
+		*/
+		var puppet_code = "this is where the puppet code goes";
+		var vm_specs = "this is where the specs for the VM go";
+		var general_description = vm_recipe_name+" general description";
+		/*
+		  the stuff above should be returned by the view
+		*/
+
+
+		// careful on the next line, is there a use case when the user will use the same recipe twice ? if that's the case, you need to find something else for the ID
+		var card = '<div class="card w-25 h-25"id="'+vm_recipe_name+'" style="margin: 0.4rem;" data-target="#'+vm_recipe_name+'-modal" data-toggle="modal"><div class="card-header"><h4>'+vm_recipe_name+'</h4></div><div class="card-body"><p>'+general_description+'</p></div></div>';
+		$("#vms-card-list").append(card); // append the card to the carousel item
+		$('#'+vm_recipe_name).click(function(){ // add an event listener that shows a modal of the config for that VM
+			if($("#"+vm_recipe_name+"-modal").length == 0){
+				var modal = '<div class="modal fade" id="'+vm_recipe_name+'-modal" tabindex="-1" role="dialog" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-centered" role="document"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Config '+vm_recipe_name+'</h5><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div><div class="modal-body"></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button><button type="button" class="btn btn-primary">Save changes</button></div></div></div></div>';
+				var modal_body = '<textarea class="form-control" id="puppet_classes" name="puppet_classes" placeholder="Classes to include can be entered here"></textarea>';
+				$("#"+vm_recipe_name).append(modal);
+				$("#"+vm_recipe_name + " .modal-body").append(modal_body);
+				$("#puppet_classes").click(function( event ) {
+					console.log("testetstatet");
+					event.stopPropagation();
+				});
+				var classes_editor = CodeMirror.fromTextArea(document.getElementById('puppet_classes'), 
+				{
+					mode: 'yaml',
+					gutters: ["CodeMirror-lint-markers"],
+					lint: true,
+					indentUnit: 2,
+					viewportMargin: Infinity,
+				});
+
+			}
+                });
+		$("#add-vm-existing-recipe").modal('hide'); // hide the modal in the end
+	});
+	
+	
+});
+
+</script>
+{% endblock %}
