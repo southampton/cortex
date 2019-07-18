@@ -108,3 +108,7 @@
 form {
 	color: white!important;
 }
+.bootstrap-select>.dropdown-toggle, .show>.btn-light.dropdown-toggle, .bootstrap-select>.dropdown-toggle:active, .btn-light:not(:disabled):not(.disabled):active {
+	background-color: white !important;
+	color: #777;
+}
