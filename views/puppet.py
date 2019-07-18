@@ -75,7 +75,7 @@ def puppet_enc_edit(node):
 
 		# Validate classes YAML
 		try:
-			data = yaml.load(classes)
+			data = yaml.safe_load(classes)
 		except Exception as e:
 			flash('Invalid YAML syntax for classes: ' + str(e), 'alert-danger')
 			error = True
@@ -89,7 +89,7 @@ def puppet_enc_edit(node):
 
 		# Validate variables YAML
 		try:
-			data = yaml.load(variables)
+			data = yaml.safe_load(variables)
 		except Exception as e:
 			flash('Invalid YAML syntax for variables: ' + str(e), 'alert-danger')
 			error = True
@@ -162,7 +162,7 @@ def puppet_enc_default():
 
 		# Validate classes YAML
 		try:
-			data = yaml.load(classes)
+			data = yaml.safe_load(classes)
 		except Exception as e:
 			flash('Invalid YAML syntax: ' + str(e), 'alert-danger')
 			return render_template('puppet/default.html', classes=classes, active='puppet', title="Default Classes")
@@ -302,7 +302,7 @@ def puppet_dashboard():
 	except Exception as e:
 		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
-	return render_template('puppet/dashboard.html', stats=stats,active='puppet', title="Puppet Dashboard")
+	return render_template('puppet/dashboard.html', stats=stats,active='puppet', title="Puppet Dashboard", environments=cortex.lib.core.get_puppet_environments())
 
 ################################################################################
 

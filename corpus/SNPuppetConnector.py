@@ -52,7 +52,7 @@ class SNPuppetConnector:
 
 			# Sum the disks
 			total_disk_space = 0
-			for disk_name, disk_data in facts["disks"].iteritems():
+			for disk_name, disk_data in facts["disks"].items():
 				if not (disk_name[:2] == "fd" or disk_name[:2] == "sr"):
 					total_disk_space += int(disk_data["size_bytes"])
 
@@ -82,7 +82,7 @@ class SNPuppetConnector:
 		network_facts = self.puppet.get_network_facts(node) 
 		
 		try:
-			for interface_name, interface_data in network_facts["interfaces"].iteritems():
+			for interface_name, interface_data in network_facts["interfaces"].items():
 				# Build the data dictionary to send to SN.
 				sn_interface_data = {}
 				sn_interface_data["name"] = interface_name
@@ -133,7 +133,7 @@ class SNPuppetConnector:
 		disk_facts = self.puppet.get_disk_facts(node)
 
 		try:
-			for disk_name, disk_data in disk_facts.iteritems():
+			for disk_name, disk_data in disk_facts.items():
 				sn_disk_data = {}
 				sn_disk_data["computer"] = node_sys_id
 				sn_disk_data["name"] = disk_name
@@ -177,7 +177,7 @@ class SNPuppetConnector:
 		mountpoint_facts = self.puppet.get_mountpoint_facts(node)
 
 		try:
-			for mountpoint_name, mountpoint_data in mountpoint_facts.iteritems():
+			for mountpoint_name, mountpoint_data in mountpoint_facts.items():
 				sn_mountpoint_data = {}
 				sn_mountpoint_data["computer"] = node_sys_id
 				sn_mountpoint_data["name"] = mountpoint_name
@@ -233,7 +233,7 @@ class ServiceNowAPI():
 		if kwargs:
 			url = url + "?"
 			# Add keyword arguments to the url.
-			for key, value in kwargs.iteritems():
+			for key, value in kwargs.items():
 				url = url + str(key) + "=" + str(value) + "&"
 			url = url.strip('&')
 

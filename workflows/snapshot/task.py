@@ -1,6 +1,11 @@
 from pyVmomi import vim
+import json
 
 def run(helper, options):
+	
+	# check if workflows are locked
+	if not helper.lib.checkWorkflowLock:
+		raise Exception("Workflows are currently locked")
 
 	for name in options['values']['systems']:
 		

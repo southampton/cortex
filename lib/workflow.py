@@ -1,8 +1,48 @@
-import os, imp, types
+import os, imp, types, json
 from cortex import app
 from flask import render_template, abort, g
 from cortex.lib.user import login_required, does_user_have_workflow_permission, does_user_have_permission, does_user_have_system_permission
 from functools import wraps
+import MySQLdb as mysql
+
+################################################################################
+
+def get_workflows_locked_details():
+	"""Gets the details about workflow locking."""
+
+	# Check if workflows are currently locked 
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key` = "workflow_lock_status";')
+	current_value = curd.fetchone()
+
+	# If we didn't get a row, then we can't be locked
+	if current_value is None:
+		return {'status': 'Unlocked', 'error': 'No data'}
+
+	# Parse the JSON
+	try:
+		jsonobj = json.loads(current_value['value'])
+	except Exception as e:
+		# No JSON, assume False
+		return {'status': 'Unlocked', 'error': 'Invalid JSON'}
+
+	return jsonobj
+
+def get_workflows_locked():
+	"""Determines if workflows are currently locked."""
+
+	jsonobj = get_workflows_locked_details()
+
+	if jsonobj is not None and 'status' in jsonobj and jsonobj['status'] == 'Locked':
+		return True
+	else:
+		return False
+
+def raise_if_workflows_locked():
+	"""Raises an Exception if workflows are currently locked."""
+
+	if get_workflows_locked():
+		raise Exception("Workflows are currently locked.\nPlease try again later.")
 
 ################################################################################
 
@@ -28,7 +68,7 @@ class CortexWorkflow(object):
 					if check_config is not None:
 						# If a dict is given for check_config, then use our _default_validate_config
 						# function to validate the configuration items
-						if type(check_config) is types.DictType:
+						if type(check_config) is dict:
 							if not self._default_validate_config(check_config):
 								raise Exception("Workflows: Invalid configuration in workflow '" + self.name + "'")
 						# If a function is given for check_config, call it:

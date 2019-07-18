@@ -155,6 +155,7 @@ def vmware_specs():
 			data_cpu[int(vm['numCPU'])] += 1
 		except KeyError as ex:
 			data_cpu['Other'] += 1
+
 	return render_template('vmware/specs.html', active='vmware', stats_ram=data_ram, stats_cpu=data_cpu, title="Statistics - VM Specs")
 
 ################################################################################
@@ -282,7 +283,7 @@ def vmware_csv_stream(cursor):
 			# ...if it's not None...
 			if outrow[i]:
 				# ...if the element is unicode...
-				if type(outrow[i]) == unicode:
+				if type(outrow[i]) == str:
 					# ...decode from utf-8 into a ASCII-compatible byte string
 					outrow[i] = outrow[i].encode('utf-8')
 				else:

@@ -2,6 +2,9 @@
 import time
 
 def run(helper, options):
+	if not helper.lib.checkWorkflowLock:
+		raise Exception("Workflows are currently locked")
+
 
 	# Find out which workflow we're wanting to run
 	workflow = options['workflow']
@@ -95,9 +98,9 @@ def run(helper, options):
 	# Allocate the name
 	system_info = helper.lib.allocate_name(prefix, options['purpose'], helper.username, expiry=options['expiry'])
 
-	# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
-	system_name = system_info.keys()[0]
-	system_dbid = system_info.values()[0]
+	# system_info is a dictionary containg a single { 'name': name, 'id':dbid }. Extract both of these:
+	system_name = system_info['name']
+	system_dbid = system_info['id']
 
 
 	# Update the system with some options.

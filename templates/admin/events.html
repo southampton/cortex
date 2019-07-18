@@ -69,17 +69,17 @@ The list below shows all events started by the scheduler
 
 {%- if json_source %}
 	$('#hide_frequent').click(function() {
-                $('#hide_frequent').toggleClass('btn-success');
-                $('#hide_frequent').toggleClass('btn-danger');
-                $('#hide_frequent').toggleClass('active');
-                $('#hide_frequent i').toggleClass('fa-check-square-o');
-                $('#hide_frequent i').toggleClass('fa-square-o');
-                $('#eventsWrapper').fadeOut(150, function() {
-                        eventsTable.ajax.reload(function() {
-                                $('#eventsWrapper').fadeIn(150);
-                        });
-                });
-        });
+		$('#hide_frequent').toggleClass('btn-success');
+		$('#hide_frequent').toggleClass('btn-danger');
+		$('#hide_frequent').toggleClass('active');
+		$('#hide_frequent i').toggleClass('fa-check-square-o');
+		$('#hide_frequent i').toggleClass('fa-square-o');
+		$('#eventsWrapper').fadeOut(150, function() {
+				eventsTable.ajax.reload(function() {
+						$('#eventsWrapper').fadeIn(150);
+				});
+		});
+	});
 {%- endif %}
 
 </script>

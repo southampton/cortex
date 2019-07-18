@@ -270,7 +270,7 @@ def systems_add_existing():
 		if 'link_vmware' in request.form:
 			# Search for a VM with the correct name		
 			curd.execute("SELECT `uuid` FROM `vmware_cache_vm` WHERE `name` = %s", (hostname,))
-			print curd._last_executed
+			print((curd._last_executed))
 			vm_results = curd.fetchall()
 
 			if len(vm_results) == 0:
@@ -285,7 +285,7 @@ def systems_add_existing():
 		if 'link_servicenow' in request.form:
 			# Search for a CI with the correct name
 			curd.execute("SELECT `sys_id` FROM `sncache_cmdb_ci` WHERE `name` = %s", (hostname,))
-			print curd._last_executed
+			print((curd._last_executed))
 			ci_results = curd.fetchall()
 
 			if len(ci_results) == 0:
@@ -362,7 +362,7 @@ def systems_new():
 		# change the comments on all of the systems.
 		if len(new_systems) == 1:
 			flash("System name allocated successfully", "alert-success")
-			return redirect(url_for('system', id=new_systems[new_systems.keys()[0]]))
+			return redirect(url_for('system', id=new_systems[list(new_systems.keys())[0]]))
 		else:
 			return render_template('systems/new-bulk.html', systems=new_systems, comment=system_comment, title="Systems")
 
@@ -391,9 +391,11 @@ def system_backup(id):
 
 		mode = request.form.get('mode')
 		if mode in ('INHERIT', 'UNPROTECTED'):
-				rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
+			rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
+			flash('SLA Domain updated', 'alert-success')
 		elif 'sla_domain' in request.form:
 			rubrik.update_vm(vm['id'], {'configuredSlaDomainId': request.form.get('sla_domain')})
+			flash('SLA Domain updated', 'alert-success')
 		else:
 			abort(400)
 
@@ -446,7 +448,7 @@ def systems_bulk_save():
 
 	# Find a list of systems from the form. Each of the form input elements
 	# containing a system comment has a name that starts "system_comment_"
-	for key, value in request.form.iteritems():
+	for key, value in list(request.form.items()):
 		if key.startswith("system_comment_"):
 			# Yay we found one! blindly update it!
 			updateid = key.replace("system_comment_", "")
@@ -716,13 +718,18 @@ def system_edit(id):
 			else:
 				vmware_uuid = system['vmware_uuid']
 
+			if does_user_have_system_permission(id,"edit.rubrik","systems.all.edit.rubrik"):
+				enable_backup = request.form.get('enable_backup', 1)
+			else:
+				enable_backup = system['enable_backup']
+
 			# Process the expiry date
 			if does_user_have_system_permission(id,"edit.expiry","systems.all.edit.expiry"):
 				if 'expiry_date' in request.form and request.form['expiry_date'] is not None and len(request.form['expiry_date'].strip()) > 0:
 					expiry_date = request.form['expiry_date']
 					try:
 						expiry_date = datetime.datetime.strptime(expiry_date, '%Y-%m-%d')
-					except Exception, e:
+					except Exception as e:
 						abort(400)
 				else:
 					expiry_date = None
@@ -775,9 +782,19 @@ def system_edit(id):
 				review_status = system['review_status']
 				review_task = system['review_task']
 
+			if system['enable_backup'] in [1, 2] and enable_backup == 0:
+				rubrik = cortex.lib.rubrik.Rubrik()
+				try:
+					vm = rubrik.get_vm(system['name'])
+				except Exception as e:
+					flash("Failed to get VM from Rubrik", "alert-danger")
+				else:
+					rubrik.update_vm(vm['id'], {'configuredSlaDomainId': 'UNPROTECTED'})
+
 			# Update the system
-			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, id))
+			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `enable_backup` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, enable_backup, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, id))
 			g.db.commit();
+			
 			cortex.lib.core.log(__name__, "systems.edit", "System '" + system['name'] + "' edited, id " + str(id), related_id=id)
 
 			flash('System updated', "alert-success")
@@ -1159,7 +1176,7 @@ def _systems_extract_datatables():
 	search = None
 	if 'search[value]' in request.form:
 		if request.form['search[value]'] != '':
-			if type(request.form['search[value]']) is not str and type(request.form['search[value]']) is not unicode:
+			if type(request.form['search[value]']) is not str and type(request.form['search[value]']) is not str:
 				search = str(request.form['search[value]'])
 			else:
 				search = request.form['search[value]']

@@ -4,6 +4,8 @@
 <script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}"></script>        
 <script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script>                
 <script src="{{ url_for('static', filename='js/vendor/bootstrap-datetimepicker.min.js') }}"></script>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
+<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
 {% endblock %}
 {% block body %}
 {% import 'node-header.html' as node %}
@@ -87,12 +89,12 @@
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 
 	<div class="form-group">
-		<label class="col-sm-2 control-label" for="allocation_comment">Purpose:</label>
+		<label class="col-sm-2 control-label" for="allocation_comment">Comment:</label>
 		<div class="col-sm-10 col-md-9">
 			<input class="form-control" {% if not does_user_have_system_permission(system['id'],"edit.comment","systems.all.edit.comment") %}readonly="readonly" {% endif %}type="text" name="allocation_comment" id="allocation_comment" value="{{ system.allocation_comment or '' }}" />
 		</div>
 	</div>
-	
+
 	<div class="form-group">
 		<label class="col-sm-2 control-label" for="allocation_comment">Primary Owner:</label>
 		<div class="col-sm-2">
@@ -136,6 +138,19 @@
 	</div>
 
 {%- endif %}
+
+	<div class="form-group">
+		<label class="col-sm-2 control-label" for="enable_backup">Backup Status:</label>
+		<div class="col-sm-10 col-md-9">
+			<select class="form-control selectpicker" name="enable_backup" id="enable_backup"{% if not does_user_have_system_permission(system['id'],"edit.rubrik","systems.all.edit.rubrik") %} disabled="disabled" {% endif %}>
+				<option value="0"{% if system.enable_backup == 0 %} selected="selected"{% endif %}>Do NOT Backup</option>
+				<option value="1"{% if system.enable_backup == 1 %} selected="selected"{% endif %}>Backup this System</option>
+				<option value="2"{% if system.enable_backup == 2 %} selected="selected"{% endif %}>Unknown - Do not change backup policy</option>
+			</select>
+		</div>
+		<div style="margin-bottom:0px" class="col-sm-offset-2 col-sm-10 col-md-9 help-block">This field determines whether Cortex will set a default policy for the VM is it is set to Do Not Protect in Rubrik.</div>
+	</div>
+
 {%- if not system_class or system_class.cmdb_type %}
 	<div class="form-group">
 		<label class="col-sm-2 control-label" for="cmdb_id">CMDB System ID:</label>
@@ -149,51 +164,36 @@
 			<div class="help-block">This is the unique identifier of the CMDB entry in ServiceNow, known as the 'sys_id'. This can be found in the URL for a CMDB entry, which is accessible from a CMDB page, by right-clicking the header and selecting Copy URL.</div>
 		</div>
 	</div>
-	
-	<div class="form-group">
-		<label class="col-sm-2 control-label" for="cmdb_description">CMDB Description:</label>
-		<div class="col-sm-10 col-md-9">
-			<input class="form-control" readonly="readonly" id="cmdb_description" value="{{ system.cmdb_description or '' }}" />
-		</div>
-	</div>
-
-	<div class="form-group">
-		<label class="col-sm-2 control-label" for="cmdb_comments">CMDB Comments:</label>
-		<div class="col-sm-10 col-md-9">
-			<input class="form-control" readonly="readonly" id="cmdb_comments" value="{{ system.cmdb_comments or '' }}" />
-		</div>
-	</div>
-
 {%- endif %}
 
 		<div class="form-group">
 			<label class="col-sm-2 control-label" for="expiry_date">Expiry Date:</label>
 			<div class="col-sm-10 col-md-9">
-                                <div class="input-group date" id="expirypicker">
-                                        <input type="text" {% if not does_user_have_system_permission(system['id'],"edit.expiry","systems.all.edit.expiry") %}readonly="readonly" {% endif %}class="form-control" id="expiry_date" name="expiry_date" />
-                                        <span class="input-group-addon">
-                                                <span class="glyphicon glyphicon-calendar"></span>
-                                        </span>
-                                </div>
+				<div class="input-group date" id="expirypicker">
+						<input type="text" {% if not does_user_have_system_permission(system['id'],"edit.expiry","systems.all.edit.expiry") %}readonly="readonly" {% endif %}class="form-control" id="expiry_date" name="expiry_date" />
+						<span class="input-group-addon">
+								<span class="glyphicon glyphicon-calendar"></span>
+						</span>
+				</div>
 				<div class="help-block">Set the date for when the system should be expired. Leave field blank for no expiration date.</div>
-                                <script>
-                                        $(function ()
-										{
-                                                $('#expirypicker').datetimepicker({
-                                                        viewMode: 'days',
-                                                        format: 'YYYY-MM-DD',
-							useCurrent: false,
-							defaultDate: '{{ system.expiry_date or '' }}'
-                                                });
-                                        });
-                                </script>
-                        </div>
+				<script>
+					$(function ()
+					{
+						$('#expirypicker').datetimepicker({
+						viewMode: 'days',
+						format: 'YYYY-MM-DD',
+						useCurrent: false,
+						defaultDate: '{{ system.expiry_date or '' }}'
+						});
+					});
+				</script>
+			</div>
 		</div>
 
 		<div class="form-group">
 			<label class="col-sm-2 control-label" for="review_status">Review Status:</label>
 			<div class="col-sm-3">
-				<select class="form-control" name="review_status" id="review_status"{% if not does_user_have_system_permission(system['id'],"edit.review","systems.all.edit.review") %} disabled="disabled" {% endif %}>
+				<select class="form-control selectpicker" name="review_status" id="review_status"{% if not does_user_have_system_permission(system['id'],"edit.review","systems.all.edit.review") %} disabled="disabled" {% endif %}>
 					<option value="0"{% if system.review_status == 0 %} selected="selected"{% endif %}>Not reviewed</option>
 					<option value="1"{% if system.review_status == 1 %} selected="selected"{% endif %}>Required</option>
 					<option value="3"{% if system.review_status == 3 %} selected="selected"{% endif %}>Not required</option>

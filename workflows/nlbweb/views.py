@@ -1,14 +1,16 @@
 #!/usr/bin/python
 
 from cortex import app
-from cortex.lib.workflow import CortexWorkflow
+from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
 import cortex.lib.core
 import cortex.lib.systems
 import cortex.views
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
 import re, datetime, requests
-from urlparse import urljoin
+from urllib.parse import urljoin
+import MySQLdb as mysql
+import json
 
 # For DNS queries
 import socket
@@ -33,6 +35,9 @@ fqdn_re = re.compile(r"^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]
 
 @workflow.route('create', title='Create NLB Web Service', order=40, permission="nlbweb.create", methods=['GET', 'POST'])
 def nlbweb_create():
+	# Don't go any further if workflows are currently locked
+	raise_if_workflows_locked()
+
 	# Get the workflow settings
 	wfconfig = workflow.config
 
@@ -104,7 +109,7 @@ def nlbweb_create():
 				flash('The specified service domain name is not valid', 'alert-danger')
 				valid_form = False
 		if len(form_fields['aliases']) > 0:
-			split_aliases = filter(lambda x: x != '', form_fields['aliases'].split(' '))
+			split_aliases = [x for x in form_fields['aliases'].split(' ') if x != '']
 			for alias in split_aliases:
 				if '.' not in alias:
 					flash('All service aliases must be fully qualified domain names', 'alert-danger')
@@ -910,7 +915,7 @@ def parse_irule_list(irules_text, bigip):
 		return []
 
 	# Split the space-separated string and filter out empty values
-	irules_list = filter(lambda x: x != '', irules_text.split(' '))
+	irules_list = [x for x in irules_text.split(' ') if x != '']
 
 	# Start a results list
 	result = []

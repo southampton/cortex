@@ -3,11 +3,15 @@
 from cortex import app
 import cortex.lib.core
 import cortex.lib.admin
+from cortex.lib.workflow import get_workflows_locked_details
 from cortex.lib.user import does_user_have_permission
+from cortex.lib.admin import set_kv_setting, get_kv_setting
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
 import re
 import MySQLdb as mysql
 import datetime
+import json
+from copy import deepcopy
 import json
 
 ################################################################################
@@ -542,6 +546,11 @@ def admin_maint():
 	sync_puppet_servicenow_id = None
 	cert_scan_id = None
 	student_vm_build_id = None
+	lock_workflows = None
+	rubrik_crcheck = None
+
+	# get the lock status of the page
+	workflows_lock_status = get_workflows_locked_details()
 
 	if request.method == 'GET':
 		# See which tasks are already running
@@ -558,19 +567,22 @@ def admin_maint():
 				sync_puppet_servicenow_id = task['id']
 			elif task['name'] == '_cert_scan':
 				cert_scan_id = task['id']
+			elif task['name'] == '_lock_workflows':
+				lock_workflows = task['id']
+			elif task['name'] == '_rubrik_policy_check':
+				rubrik_crcheck = task['id']
 
 
 		# Render the page
 		return render_template('admin/maint.html', active='admin',
 			sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id,
 			vmexpire_task_id=vmexpire_task_id, sync_puppet_servicenow_id=sync_puppet_servicenow_id,
-			cert_scan_id=cert_scan_id, student_vm_build_id=student_vm_build_id, title="Maintenance Tasks"
+			cert_scan_id=cert_scan_id, student_vm_build_id=student_vm_build_id, pause_vm_builds=lock_workflows , title="Maintenance Tasks", lock_status=workflows_lock_status
 		)
 
 	else:
 		# Find out what task to start
 		module = request.form['task_name']
-
 		# Start the appropriate internal task
 		if module == 'vmcache':
 			# Check user permissions
@@ -605,6 +617,16 @@ def admin_maint():
 			if not does_user_have_permission(""):
 				abort(403)
 			task_id = neocortex.start_internal_task(session['username'], 'servicenow_vm_build.py', '_servicenow_vm_build', description="Checks for outstanding VM build requests in ServiceNow and starts them")
+		elif module == 'toggle_workflow_lock':
+			if not does_user_have_permission("maintenance.expire_vm"):
+				abort(403)
+			curd = g.db.cursor(mysql.cursors.DictCursor)
+			curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
+			res = curd.fetchone()
+			task_id = neocortex.start_internal_task(session['username'], 'lock_workflows.py', '_lock_workflows', description="Locks the workflows from being started", options={'page_load_lock_status' : res})
+		elif module == 'rubrik_crcheck':
+			if not does_user_have_permission("maintenance.expired_vm"):
+				task_id = neocortex.start_internal_task(session['username'], 'rubrik_crcheck.py', '_rubrik_policy_check', description="Checks the backup systems of policies against the ones in Rubrik")
 		else:
 			app.logger.warn('Unknown module name specified when starting task')
 			abort(400)
@@ -667,7 +689,7 @@ def _extract_datatables():
 	search = None
 	if 'search[value]' in request.form:
 		if request.form['search[value]'] != '':
-			if type(request.form['search[value]']) is not str and type(request.form['search[value]']) is not unicode:
+			if type(request.form['search[value]']) is not str and type(request.form['search[value]']) is not str:
 				search = str(request.form['search[value]'])
 			else:
 				search = request.form['search[value]']

@@ -26,7 +26,7 @@ def do_starttls_smtp(sock):
 
 	# SMTP: Write EHLO
 	res2 = select.select([], [sock], [], 3.0)
-	sock.send("EHLO sslscan.client.net\r\n")
+	sock.send(b"EHLO sslscan.client.net\r\n")
 
 	# SMTP: Read EHLO response
 	res1 = select.select([sock], [], [], 3.0)
@@ -36,7 +36,7 @@ def do_starttls_smtp(sock):
 
 	# SMTP: Write STARTTLS
 	res2 = select.select([], [sock], [], 3.0)
-	sock.send("STARTTLS\r\n")
+	sock.send(b"STARTTLS\r\n")
 
 	# SMTP: Read "Ready for STARTTLS"
 	res1 = select.select([sock], [], [], 3.0)
@@ -57,7 +57,7 @@ def do_starttls_imap(sock):
 
 	# IMAP: Write CAPABILITY
 	res2 = select.select([], [sock], [], 3.0)
-	sock.send("a001 CAPABILITY\r\n")
+	sock.send(b"a001 CAPABILITY\r\n")
 
 	# SMTP: Read CAPABILITY response
 	res1 = select.select([sock], [], [], 3.0)
@@ -67,7 +67,7 @@ def do_starttls_imap(sock):
 
 	# IMAP: Write STARTTLS
 	res2 = select.select([], [sock], [], 3.0)
-	sock.send("a002 STARTTLS\r\n")
+	sock.send(b"a002 STARTTLS\r\n")
 
 	# IMAP: Read "Ready for STARTTLS"
 	res1 = select.select([sock], [], [], 3.0)
@@ -87,7 +87,7 @@ def do_starttls_ldap(sock):
 	#                  |-------DAT||-------DATA-------------------------------------------------------------------------------------------|
 	#                                      |requestName (LDAPString)                                                                      |
 	#                                      |-------DATA-----------------------------------------------------------------------------------|
-	message = "\x30\x1d\x02\x01\x01\x77\x18\x80\x16\x31\x2e\x33\x2e\x36\x2e\x31\x2e\x34\x2e\x31\x2e\x31\x34\x36\x36\x2e\x32\x30\x30\x33\x37"
+	message = b"\x30\x1d\x02\x01\x01\x77\x18\x80\x16\x31\x2e\x33\x2e\x36\x2e\x31\x2e\x34\x2e\x31\x2e\x31\x34\x36\x36\x2e\x32\x30\x30\x33\x37"
 
 	# LDAP: Send STARTTLS LDAPMessage
 	res2 = select.select([], [sock], [], 3.0)
@@ -218,7 +218,7 @@ def scan_ip(host, port, timeout, starttls=None):
 			else:
 				first_chain_cert = ""
 
-		result.update({'discovered': 1, 'protocol': sock.get_protocol_version_name(), 'cipher': sock.get_cipher_name(), 'notAfter': notafter_time, 'notBefore': notbefore_time, 'subject_cn': peer_cert_name, 'subject_dn': peer_cert_dn, 'issuer_cn': issuer_cert_name, 'issuer_dn': issuer_cert_dn, 'serial': peer_cert.get_serial_number(), 'subject_hash': peer_cert.subject_name_hash(), 'digest': peer_cert.digest('SHA1').replace(':', '').lower(), 'sans': sans, 'first_chain_cert': first_chain_cert, 'key_size': key_size})
+		result.update({'discovered': 1, 'protocol': sock.get_protocol_version_name(), 'cipher': sock.get_cipher_name(), 'notAfter': notafter_time, 'notBefore': notbefore_time, 'subject_cn': peer_cert_name, 'subject_dn': peer_cert_dn, 'issuer_cn': issuer_cert_name, 'issuer_dn': issuer_cert_dn, 'serial': peer_cert.get_serial_number(), 'subject_hash': peer_cert.subject_name_hash(), 'digest': peer_cert.digest('SHA1').decode('utf-8').replace(':', '').lower(), 'sans': sans, 'first_chain_cert': first_chain_cert, 'key_size': key_size})
 		return result
 
 	except socket.timeout as e1:
@@ -275,7 +275,7 @@ def run(helper, options):
 	results = []
 	for ip_range in helper.config['CERT_SCAN_IP_RANGES']:
 		# Make sure this is a unicode object
-		ip_range = unicode(ip_range)
+		ip_range = str(ip_range)
 
 		# If this is a subnet
 		if '/' in ip_range:

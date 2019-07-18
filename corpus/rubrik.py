@@ -1,4 +1,3 @@
-from cortex import app
 from flask import g
 
 import requests
@@ -9,7 +8,8 @@ from urllib.parse import quote
 class Rubrik(object):
 	"""A restful client for Rubrik"""
 
-	def __init__(self):
+	def __init__(self, helper):
+		app = helper
 		self.api_url_base = app.config['RUBRIK_API_URL_BASE']
 		self.headers = {'Accept': 'application/json'}
 		self.rubrik_api_user = app.config['RUBRIK_API_USER']

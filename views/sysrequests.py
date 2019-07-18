@@ -207,7 +207,7 @@ def _sysrequests_extract_datatables():
 	search = None
 	if 'search[value]' in request.form:
 		if request.form['search[value]'] != '':
-			if type(request.form['search[value]']) is not str and type(request.form['search[value]']) is not unicode:
+			if type(request.form['search[value]']) is not str and type(request.form['search[value]']) is not str:
 				search = str(request.form['search[value]'])
 			else:
 				search = request.form['search[value]']
