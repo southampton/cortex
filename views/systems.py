@@ -1215,7 +1215,7 @@ def system_groups():
 				g.db.commit()
 				flash('Group added', "alert-success")
 				#Get all of the groups
-				existing_groups = cortex.lib.systems.generate_existing_groups()
+				# existing_groups = cortex.lib.systems.generate_existing_groups()
 
 				# add the group to the groups dictionary
 				group_contents[request.form['name']] = []
@@ -1230,7 +1230,7 @@ def system_groups():
 				if request.form['group_to_remove_from'] != "":
 					name = request.form['group_to_remove_from']
 					#remove the name from the database
-					curd.execute('DELETE FROM `system_groups` WHERE name = "%s";' % (name,))
+					curd.execute('DELETE FROM `system_groups` WHERE name = %s;', (name,))
 					g.db.commit()
 					flash('Group removed', "alert-success")
 					
@@ -1238,7 +1238,7 @@ def system_groups():
 					curd.execute('SELECT `name` FROM `system_groups`;')
 					
 					# we can remove all of the contents of this from group_contents			
-					group_contents.pop(name, None)
+					# group_contents.pop(name, None)
 
 				else:
 					flash('No group selected to remove', 'alert-warning')
@@ -1254,7 +1254,7 @@ def system_groups():
 			system_id = cortex.lib.systems.get_system_id(request.form['systems'])
 
 			#get the value for order
-			curd.execute('SELECT * FROM system_group_systems WHERE `group_id` = "%s"' % (group_id, ))
+			curd.execute('SELECT * FROM system_group_systems WHERE `group_id` = %s', (group_id, ))
 			count = len(curd.fetchall())
 
 			restart_instructions = {}
@@ -1280,10 +1280,8 @@ def system_groups():
 			else:
 				restart_instructions['wait_options'] = request.form['wait_options']
 
-			curd.execute('INSERT INTO `system_group_systems` (`group_id`, `system_id`, `order`, `restart_info`) VALUES (%s, %s, %s, \'%s\');' % (group_id, system_id, count+1, json.dumps(restart_instructions)))
+			curd.execute('INSERT INTO `system_group_systems` (`group_id`, `system_id`, `order`, `restart_info`) VALUES (%s, %s, %s, %s);', (group_id, system_id, count+1, json.dumps(restart_instructions)))
 			g.db.commit()
-
-			group_contents = cortex.lib.systems.generate_group_contents()
 
 		elif request.form['task_name'] == 'remove_from_group':
 			system_to_remove = request.form['box_to_remove']
@@ -1295,7 +1293,7 @@ def system_groups():
 
 			# we need to modify the order so that it is correct once the removal is done
 			# start by getting the current position
-			curd.execute('SELECT `order` FROM system_group_systems WHERE `group_id` = %s AND `system_id` = %s' % (group_id, system_id))
+			curd.execute('SELECT `order` FROM system_group_systems WHERE `group_id` = %s AND `system_id` = %s', (group_id, system_id))
 			order_of_removed_item = curd.fetchone()['order']
 
 			#then we get the total number
@@ -1304,14 +1302,12 @@ def system_groups():
 
 			#run an update on everything that comes after the removed value
 			for x in range(order_of_removed_item+1, count+1):
-				curd.execute('UPDATE `system_group_systems` SET `order` = %s-1 WHERE `group_id` = %s AND `order` = %s;' % (x, group_id, x))
+				curd.execute('UPDATE `system_group_systems` SET `order` = %s-1 WHERE `group_id` = %s AND `order` = %s;', (x, group_id, x))
 				g.db.commit()
 
 			#remove the unwanted value
-			curd.execute('DELETE FROM `system_group_systems` WHERE group_id = %s AND system_id = %s;' % (group_id, system_id))
+			curd.execute('DELETE FROM `system_group_systems` WHERE group_id = %s AND system_id = %s;', (group_id, system_id))
 			g.db.commit()
-
-			group_contents = cortex.lib.systems.generate_group_contents()
 
 		elif request.form['task_name'] == 'save_changes':
 			# the order is returned in a really odd way, so change it into a dict
@@ -1325,7 +1321,7 @@ def system_groups():
 			sizes_of_groups = [0]
 			len_of_previous_group = 0
 			for group in existing_groups:
-				curd.execute('SELECT * FROM system_group_systems WHERE `group_id` = "%s"' % (group['id'], ))
+				curd.execute('SELECT * FROM system_group_systems WHERE `group_id` = %s' , (group['id'], ))
 				count = len(curd.fetchall())
 				sizes_of_groups.append(count + len_of_previous_group)
 				len_of_previous_group += count
@@ -1354,16 +1350,14 @@ def system_groups():
 				group_id = existing_groups[x]['id']
 				for y, system in enumerate(group):
 					system_id = system['id']
-					curd.execute('UPDATE `system_group_systems` SET `order` = %s WHERE `group_id` = %s AND `system_id` = %s;' % (y+1, group_id, system_id))
+					curd.execute('UPDATE `system_group_systems` SET `order` = %s WHERE `group_id` = %s AND `system_id` = %s;' , (y+1, group_id, system_id))
 					g.db.commit()
-
-			group_contents = cortex.lib.systems.generate_group_contents()
 
 
 		elif request.form['task_name'] == 'configure_box':
 			#get id of system and group
-			group_id = cortex.lib.system.get_group_id(request.form['group_clicked'])
-			system_id = cortex.lib.system.get_system_id(request.form['box_clicked'])
+			group_id = cortex.lib.systems.get_group_id(request.form['group_clicked'])
+			system_id = cortex.lib.systems.get_system_id(request.form['box_clicked'])
 			restart_instructions = {}
 
 			# package up the information supplied to us
@@ -1387,8 +1381,10 @@ def system_groups():
 			else:
 				restart_instructions['wait_options'] = request.form['wait_options']
 
-			curd.execute('UPDATE `system_group_systems` SET `restart_info` = \'%s\' WHERE `group_id` = %s AND `system_id` = %s' % (json.dumps(restart_instructions), group_id['id'], system_id['id']))
+			curd.execute('UPDATE `system_group_systems` SET `restart_info` = %s WHERE `group_id` = %s AND `system_id` = %s' , (json.dumps(restart_instructions), group_id, system_id))
 			g.db.commit()
+
+
 
 		elif request.form['task_name'] == "configure_group":
 			group_name = request.form['group_name']
@@ -1399,10 +1395,13 @@ def system_groups():
 			group_id = curd.fetchone()['id']
 
 			# TODO: write checks to see if the group name is already in use
-			curd.execute('UPDATE `system_groups` SET `name` = \'%s\', `notifyee` = \'%s\' WHERE `id` = %s ' % (new_name, new_notifyee, group_id))
+			curd.execute('UPDATE `system_groups` SET `name` = %s, `notifyee` = %s WHERE `id` = %s ', (new_name, new_notifyee, group_id))
 			g.db.commit()
+			existing_groups = cortex.lib.systems.generate_existing_groups()
 
 		else:
 			flash('Unknown operation occoured', "alert-warning")
 
+
+		group_contents = cortex.lib.systems.generate_group_contents()
 		return render_template('systems/groups.html', title="System Groups", systems=group_contents, boxes=unexpired_boxes, wait_options=wait_for_options, existing_groups=existing_groups)

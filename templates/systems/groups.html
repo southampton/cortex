@@ -16,14 +16,14 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>jQuery UI Sortable - Default functionality</title>
-		<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+		<!-- <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"> -->
 		<link rel="stylesheet" href="/resources/demos/style.css">
 		<style>
 		#sortable { list-style-type: none; margin: 0; padding: 0; width: 60%; }
 		#sortable li { margin: 0 3px 3px 3px; padding: 0.4em; padding-left: 1.5em; font-size: 1.4em; height: 18px; }
 		#sortable li span { position: absolute; margin-left: -1.3em; }
 		</style>
-		<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+		<!-- <script src="https://code.jquery.com/jquery-1.12.4.js"></script> -->
 		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
 		
@@ -139,8 +139,8 @@
 										</div>
 									</div>
 									<div class="custom-control custom-checkbox mr-sm-2" style="text-align: center;">
-										<input type="checkbox" class="custom-control-input" id="customControlAutosizing" name='https_check' id='https_check'>
-										<label class="custom-control-label" for="customControlAutosizing">HTTPS Check</label>
+										<input type="checkbox" class="custom-control-input" id="https_check_tickbox" name='https_check' id='https_check'>
+										<label class="custom-control-label" for="https_check_tickbox">HTTPS Check</label>
 									</div>
 								</div>
 							</div>
@@ -265,8 +265,8 @@
 										</div>
 									</div>
 									<div class="custom-control custom-checkbox mr-sm-2" style="text-align: center;">
-										<input type="checkbox" class="custom-control-input" id="customControlAutosizing" name='https_check' id='https_check'>
-										<label class="custom-control-label" for="customControlAutosizing">HTTPS Check</label>
+										<input type="checkbox" class="custom-control-input" id="https_check_tickbox_configure" name='https_check' id='https_check'>
+										<label class="custom-control-label" for="https_check_tickbox_configure">HTTPS Check</label>
 									</div>
 								</div>
 							</div>
@@ -416,7 +416,7 @@
 		$("#group_clicked").val($(this).attr('group'));
 		$('.reboot_options').hide();
 		var system_data = JSON.parse('{{ systems|tojson|safe }}');
-		var selected; var hostname; var url; var port; var exp_resp;
+		var selected; var hostname; var url; var port; var exp_resp; var https_check;
 		system_data = system_data[$(this).attr('group')];
 		system_data.forEach(function (item, index){
 			if (item.name === $("#box_clicked").val()){
@@ -429,6 +429,7 @@
 					url = item.r_info.http_checks.url;
 					port = item.r_info.http_checks.port;
 					exp_resp = item.r_info.expected_response;
+					https_check = item.r_info.http_checks.https;
 				}
 			}
 		});
@@ -446,6 +447,9 @@
 				urls[x].value = url;
 				ports[x].value = port;
 				exp_resps[x].value = exp_resp;
+				if (https_check === 'on'){
+					$("#https_check_tickbox_configure").attr('checked', true);
+				}
 			}
 		} else if (selected === "Check_if_VMware_tools_are_running"){
 			$('.Check_if_VMware_tools_are_running').show();
