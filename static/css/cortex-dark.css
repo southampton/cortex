@@ -112,3 +112,11 @@ form {
 	background-color: white !important;
 	color: #777;
 }
+
+p, .text-muted {
+	color: white !important;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #252525 !important;
+}
