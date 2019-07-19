@@ -5,7 +5,6 @@ import json
 from cortex import app
 from cortex.api import api_manager, api_login_required
 from cortex.api.exceptions import InvalidPermissionException, NoResultsFoundException
-from cortex.api.serializers.puppet import page_puppet_serializer, puppet_serializer
 
 from cortex.lib.user import does_user_have_permission
 import cortex.lib.core
@@ -20,9 +19,7 @@ class Puppet(Resource):
 	"""
 	API Handler for POST requests
 	"""
-	
-	# User must be logged in and the csrf_check is not applied as there is no csrf token
-	# being passed
+
 	@app.disable_csrf_check
 	def post(self):
 		if 'X-Auth-Token' in request.headers:
@@ -32,7 +29,8 @@ class Puppet(Resource):
 				# Get the database cursor
 				curd = g.db.cursor(mysql.cursors.DictCursor)
 				# Turn off autocommit cause a lot of insertions are going to be used
-				curd.connection.autocommit(False)	
+				curd.connection.autocommit(False)
+				curd.execute("DELETE FROM `puppet_modules_info`") # clean up everything before inserting the new entries`
 				for module_list in request.json['puppet_classes']:
 					for module in module_list:
 						app.logger.debug(module['name'])

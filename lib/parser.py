@@ -131,7 +131,7 @@ class SearchQueryParser(object):
 				else:
 					sql = sql + "`"+token.left+"` "
 				if type(token.right) is int:
-					sql = sql + token.operator + " " + "%s"  #str(token.right)
+					sql = sql + token.operator + " " + "%s"
 					params.append(token.right)
 				elif type(token.right) is bool:
 					if token.operator == "=":
@@ -145,7 +145,7 @@ class SearchQueryParser(object):
 					else:
 						sql = sql + "FALSE"
 				else:
-					sql = sql + token.operator+ " " + "%s"  + "" #token.right + "\""
+					sql = sql + token.operator+ " " + "%s"  + ""
 					params.append(token.right)
 			elif type(token) is BooleanOperator:
 				sql = sql + " " + token.operator + " "
