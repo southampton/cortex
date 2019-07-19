@@ -30,7 +30,7 @@ class Puppet(Resource):
 				curd = g.db.cursor(mysql.cursors.DictCursor)
 				# Turn off autocommit cause a lot of insertions are going to be used
 				curd.connection.autocommit(False)
-				curd.execute("DELETE FROM `puppet_modules_info`") # clean up everything before inserting the new entries`
+				curd.execute("TRUNCATE TABLE `puppet_modules_info`") # clean up everything before inserting the new entries`
 				for module_list in request.json['puppet_classes']:
 					for module in module_list:
 						app.logger.debug(module['name'])
@@ -52,3 +52,4 @@ class Puppet(Resource):
 				raise InvalidPermissionException
 		else:
 			raise UnauthorizedException
+
