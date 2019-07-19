@@ -23,6 +23,7 @@ import cortex.views.user
 import cortex.views.perms
 import cortex.views.favourites
 import cortex.views.certificates
+import cortex.views.dsc
 
 # load blueprints
 from cortex.api import api_blueprint

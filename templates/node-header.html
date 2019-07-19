@@ -11,7 +11,10 @@
 		<li class="nav-item"><a class="nav-link disabled">Rubrik</a></li>
 		{% endif -%}
 		<li class="nav-item"><a class="{% if active == "actions" %}active {% endif %}nav-link" href="{{url_for('system_actions', system_id=system.id)}}">Actions</a></li>
-		{% if system.puppet_certname -%}
+
+		<li role="presentation" {% if active == "dsc" %} class="active"{%endif%}><a href="{{url_for('dsc_classify_machine',id=system.id)}}">DSC</a></li>
+
+								{% if system.puppet_certname -%}
 		{% if does_user_have_system_permission(system.id, "edit.puppet", "systems.all.edit.puppet") or does_user_have_system_permission(system['id'],"view.puppet.classify","systems.all.view.puppet.classify") -%}
 		<li class="nav-item"><a class="{% if active == "puppet" %}active {% endif %}nav-link" href="{{url_for('puppet_enc_edit',node=system.puppet_certname)}}" >Puppet</a></li>
 		{% else -%}
