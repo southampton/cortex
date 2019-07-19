@@ -37,14 +37,10 @@
 				<li role="presentation" class="disabled"><a>ServiceNow <i class="fa fa-fw fa-external-link"></i></a></li>
 				{%endif%}
 
-				{% if system.vmware_os == None or system.cmdb_os == None %}	
-					<li role="presentation" class="disabled"><a>Red Hat Satellite 6 <i class="fa fa-fw fa-external-link"></i></a></li>
+				{%- if ((system.vmware_os != None and 'linux' in system.vmware_os.lower()) or (system.cmdb_os != None and 'linux' in system.cmdb_os.lower())) and does_user_have_system_permission(system.id, "view.detail", "systems.all.view") %}
+				<li role="presentation"><a href="{{ config['SATELLITE6_URL'] + '/hosts/' + system.name }}" target="_blank">Red Hat Satellite 6 <i class="fa fa-fw fa-external-link"></i></a></li>
 				{% else %}
-					{%- if ('linux' in system.vmware_os.lower() or 'linux' in system.cmdb_os.lower()) and does_user_have_system_permission(system.id, "view.detail", "systems.all.view") %}
-					<li role="presentation"><a href="{{ config['SATELLITE6_URL'] + '/hosts/' + system.name }}" target="_blank">Red Hat Satellite 6 <i class="fa fa-fw fa-external-link"></i></a></li>
-					{% else %}
-					<li role="presentation" class="disabled"><a>Red Hat Satellite 6 <i class="fa fa-fw fa-external-link"></i></a></li>
-				{%endif%}
+				<li role="presentation" class="disabled"><a>Red Hat Satellite 6 <i class="fa fa-fw fa-external-link"></i></a></li>
 
 				{% endif %}
 
