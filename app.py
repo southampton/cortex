@@ -592,7 +592,7 @@ Username:             %s
 		except Exception as e:
 			pass
 		try:
-			cursor.execute("""ALTER TABLE `systems` ADD `enable_backup` tinyint(1) DEFAULT 1""")
+			cursor.execute("""ALTER TABLE `systems` ADD `enable_backup` tinyint(1) DEFAULT 2""")
 		except Exception as e:
 			pass
 
