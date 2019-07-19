@@ -1,11 +1,11 @@
 #!/usr/bin/python
-from pyparsing import Word, Literal, Suppress, CharsNotIn, nums, alphas, alphanums, ZeroOrMore, Forward, QuotedString, removeQuotes, CaselessKeyword, Optional
 from cortex import app
 import MySQLdb as mysql
 from flask import Flask, request, redirect, session, url_for, abort, render_template, flash, g
 import io, csv
 from cortex.corpus import Corpus
 import cortex.lib.user
+import cortex.lib.parser
 
 REVIEW_STATUS_BY_NAME = {'NONE': 0, 'REQUIRED': 1, 'REVIEW': 2, 'NOT_REQUIRED': 3}
 REVIEW_STATUS_BY_ID   = {0: 'Not reviewed', 1: 'Required', 2: 'Under review', 3: 'Not required' }
@@ -86,10 +86,8 @@ def get_system_count(class_name = None, search = None, hide_inactive = True, onl
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	try:
 		curd.execute(query, params)
-
 		# Get the results
 		row = curd.fetchone()
-
 		# Return the count
 		return row['count']
 	except:
@@ -143,18 +141,27 @@ def get_system_by_vmware_uuid(name):
 def _build_systems_query(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, show_allocated_and_perms = False, only_allocated_by = None, show_favourites_for = None, virtual_only = False, toggle_queries = False):
 	params = ()
 	query = ""
-
+	
 	# If a class_name is specfied, add on a WHERE clause
 	if class_name is not None:
                 query = query + "WHERE `class` = %s"
                 params = (class_name,)
 
 	if toggle_queries and search is not None and search is not "":
+		sql_query = ""
+		sql_query_params = ()
 		if class_name is not None:
                		query = query + " AND "
                 else:   
                	        query = query + "WHERE "
-		query = query + search
+		try:
+			variable_to_column_map = {'id': 'id', 'type': 'type', 'class': 'class', 'number': 'number', 'name': 'name', 'allocation':'allocation_date', 'expiry': 'expiry_date', 'decom':'decom_date', 'allocation_who':'allocation_who', 'allocation_who_realname':'allocation_who_realname', 'allocation_comment':'allocation_comment', 'review_status':'review_status', 'cmdb_id':'cmdb_id', 'build_count':'build_count', 'primary_owner_who':'primary_owner_who', 'primary_owner_role':'primary_owner_role', 'primary_owner_who_realname':'primary_owner_who_realname', 'secondary_owner_who':'secondary_owner_who', 'secondary_owner_role':'secondary_owner_role', 'secondary_owner_who_realname':'secondary_owner_who_realname', 'cmdb_sys_class_name':'cmdb_sys_class_name', 'cmdb_name':'cmdb_name', 'cmdb_operational_status':'cmdb_operational_status', 'cmdb_u_number':'cmdb_u_number', 'cmdb_environment':'cmdb_environment', 'cmdb_description':'cmdb_description', 'cmdb_comments':'cmdb_comments', 'cmdb_os':'cmdb_os', 'cmdb_short_description':'cmdb_short_description', 'cmdb_is_virtual':'cmdb_is_virtual', 'vmware_name':'vmware_name', 'vmware_vcenter':'vmware_vcenter', 'vmware_uuid':'vmware_uuid', 'vmware_cpus':'vmware_cpus', 'vmware_ram':'vmware_ram', 'vmware_guest_state':'vmware_guest_state', 'vmware_os':'vmware_os', 'vmware_hwversion':'vmware_hwversion', 'vmware_ipaddr':'vmware_ipaddr', 'vmware_tools_version_status':'vmware_tools_version_status', 'vmware_hostname':'vmware_hostname', 'puppet_certname':'puppet_certname', 'puppet_env':'puppet_env', 'puppet_include_default':'puppet_include_default', 'puppet_classes':'puppet_classes', 'puppet_variables':'puppet_variables'}
+			(sql_query, sql_query_params) = cortex.lib.parser.parse_sql(search, variable_to_column_map)
+		except Exception, e: # If an exception occurs, it's because the search query is invalid since it's being sent on each keystroke.
+			# The parser will therefore throw a parse error, so nothing needs to be done. Just don't add the query to the where clause
+			pass
+		query = query + sql_query
+		params = params + sql_query_params
 	else:
 		# If a search term is specified...
 		if search is not None:
@@ -288,7 +295,6 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 			#
 			# Seriously, this is how MySQL recommends to do this :'(
 			query = query + "18446744073709551610"
-
 	return (query, params)
 
 
@@ -307,18 +313,16 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 	query_where = _build_systems_query(class_name, search, order, order_asc, limit_start, limit_length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms, only_allocated_by, show_favourites_for, virtual_only, toggle_queries)
 	query       = query + query_where[0]
 	params      = params + query_where[1]
-
 	# Query the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	try:
 		curd.execute(query, params)
-		
 		# Return the results
 		if return_cursor:
 			return curd
 		else:
 			return curd.fetchall()
-	except:
+	except Exception, e:
 		# If an error occurs, it's because of the incorrect syntax of the WHERE clause
 		# Therefore, return nothing
 		if return_cursor:
@@ -399,162 +403,3 @@ def generate_pretty_display_name(who, who_realname):
 	else:
 		# If we weren't given a 'who' return None.
 		return None
-def validate_sql (sql):
-	## Helper classes for parsed tokens ############################################
-
-	class VariableComparison(object):
-		"""Stores the details about a single query within a larger search 
-		expression. Contains the variable name, operator and comparison value."""
-
-		def __init__(self, left, operator, right):
-			self.left = left
-			self.operator = operator
-			self.right = right
-
-		def __str__(self):
-			return str((self.left, self.operator, self.right))
-
-	class BooleanOperator(object):
-		"""Stores the name of a boolean operator."""
-
-		def __init__(self, operator):
-			self.operator = operator
-
-		def __str__(self):
-			return "BooleanOperator(" + self.operator + ")"
-
-	class StartSubExpression(object):
-		"""Type for starting a subexpression."""
-
-		def __str__(self):
-			return "("
-
-	class EndSubExpression(object):
-		"""Type for starting a subexpression."""
-
-		def __str__(self):
-			return ")"
-
-	## Helper functions to return appropriately-typed objects ######################
-
-	def do_field_to_value(s, l, t):
-		"""Constructs a VariableComparison object from a parse action."""
-
-		return VariableComparison(t[0], t[1], t[2])
-
-	def do_boolean_operator(s, l, t):
-		"""Constructs a BooleanOperator object from a parse action."""
-
-		return BooleanOperator(t[0].upper())
-
-	def do_boolean_value(s, l, t):
-		"""Constructs a bool object from a parse action."""
-
-		if t[0].lower() == "true":
-			return True
-		elif t[0].lower() == "false":
-			return False
-		else:
-			raise Exception("Unknown boolean value: " + s)
-
-	def do_integer(s, l, t):
-		"""Constructs an integer object from a parse action."""
-
-		return int(t[0])
-
-	def do_bracket(s, l, t):
-		"""Constructs a StartSubExpression/EndSubExpression object from a parse action."""
-
-		if t[0] == '(':
-			return StartSubExpression()
-		elif t[0] == ')':
-			return EndSubExpression()
-		else:
-			raise Exception("Unknown bracketing string: " + s)
-
-	################################################################################
-
-	class SearchQueryParser(object):
-		"""Parses a search query."""
-
-		def __init__(self):
-			pass
-
-		def parse(self, query):
-			"""Parses a query string."""
-
-			# Parse instructions
-			quoted_string = QuotedString(quoteChar='"', escChar='\\', unquoteResults=True)
-			field_name = Word(alphas, alphanums + '_')
-			search_start = Suppress('?')
-			subexpression = Forward()
-			boolean_expression = Forward()
-			binary_operator = Literal('=') | Literal('<=') | Literal('<') | Literal('>=') | Literal('>')
-			boolean_operator = CaselessKeyword('AND') | CaselessKeyword('OR')
-			boolean_not = CaselessKeyword('NOT')
-			boolean_value = CaselessKeyword("true") ^ CaselessKeyword("false")
-			integer = Word(nums)
-			rvalue = quoted_string ^ boolean_value ^ integer
-			field_to_value = field_name + binary_operator + rvalue
-			expression = Optional(boolean_not) + (subexpression | (field_to_value + ZeroOrMore(boolean_expression)))
-			boolean_expression << boolean_operator + expression
-			left_bracket = Literal('(')
-			right_bracket = Literal(')')
-			subexpression << (left_bracket + expression + right_bracket)
-			search_query = search_start + expression
-
-			# Parse actions for emitting special cases
-			field_to_value.setParseAction(do_field_to_value)
-			boolean_operator.setParseAction(do_boolean_operator)
-			boolean_not.setParseAction(do_boolean_operator)
-			boolean_value.setParseAction(do_boolean_value)
-			integer.setParseAction(do_integer)
-			left_bracket.setParseAction(do_bracket)
-			right_bracket.setParseAction(do_bracket)
-
-			self.tokens = search_query.parseString(query)
-
-		def get_tokens(self):
-			return self.tokens
-
-		def generate_sql(self, variable_to_column_map):
-			sql = ""
-			for token in self.tokens:
-				if type(token) is StartSubExpression:
-					sql = sql + "("
-				elif type(token) is EndSubExpression:
-					sql = sql + ")"
-				elif type(token) is VariableComparison:
-					if token.left not in variable_to_column_map:
-						raise Exception("Unknown variable: " + token.left)
-					else:
-						sql = sql + "`" + variable_to_column_map[token.left] + "` "
-					if type(token.right) is int:
-						sql = sql + token.operator + " " + str(token.right)
-					elif type(token.right) is bool:
-						if token.operator == "=":
-							sql = sql + "IS "
-						elif token.operator == "!=":
-							sql = sql + "IS NOT "
-						else:
-							raise Exception("Operator " + token.operator + " cannot take a boolean")
-						if token.right:
-							sql = sql + "TRUE"
-						else:
-							sql = sql + "FALSE"
-					else:
-						sql = sql + token.operator+ " \"" + token.right + "\""
-				elif type(token) is BooleanOperator:
-					sql = sql + " " + token.operator + " "
-
-			return sql
-
-	parser = SearchQueryParser()
-	parser.parse('?((my_bool = true and not (a > 1 or b <= 2 or c = "test")))')
-	print parser.get_tokens()
-	print parser.generate_sql({'mystring': 'count', 'my_bool': 'valid', 'a': 'A', 'b': 'B', 'c': 'C'})
-
-
-
-
-	
