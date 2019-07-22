@@ -120,4 +120,9 @@
 	color: #818078;
 	background-color: #fcfcfa;
 }
-
+.btn{
+	cursor: pointer;
+}
+.CodeMirror {
+	text-align: left!important;
+}
