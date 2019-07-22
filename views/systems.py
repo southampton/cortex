@@ -1056,6 +1056,10 @@ def systems_json():
 	if 'show_favourites_only' in request.form:
 		if str(request.form['show_favourites_only']) != '0':
 			show_favourites_for = session.get('username')
+	toggle_queries = False
+	if 'toggle_queries' in request.form:
+		if str(request.form['toggle_queries']) != '0':
+			toggle_queries = True
 
 	favourites = []
 	favourites = cortex.lib.systems.get_system_favourites(session.get('username'))
@@ -1072,10 +1076,10 @@ def systems_json():
 	# Get number of systems that match the query, and the number of systems
 	# within the filter group
 	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
-	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
+	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for, toggle_queries=toggle_queries)
 
 	# Get results of query
-	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
+	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for, toggle_queries=toggle_queries)
 
 	# DataTables wants an array in JSON, so we build this here, returning
 	# only the columns we want. We format the date as a string as
@@ -1083,41 +1087,42 @@ def systems_json():
 	# CMDB ID and database ID, and operational status which are not displayed 
 	# verbatim, but can be processed by a DataTables rowCallback
 	system_data = []
-	for row in results:
+	if results:
+		for row in results:
 
-		if row['id'] in favourites:
-			favourited = True
-		else:
-			favourited = False
-		if row['cmdb_id'] is not None and row['cmdb_id'] is not '':
-			cmdb_id = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
-		else:
-			cmdb_id = ''
-
-		if row['allocation_date'] is not None:
-			row['allocation_date'] = row['allocation_date'].strftime('%Y-%m-%d %H:%M:%S')
-		else:
-			row['allocation_date'] = "Unknown"
-
-		if row['allocation_who'] is not None:
-			if row['allocation_who_realname'] is not None:
-				row['allocation_who'] = row['allocation_who_realname']
+			if row['id'] in favourites:
+				favourited = True
 			else:
-				row['allocation_who'] = cortex.lib.user.get_user_realname(row['allocation_who'])
+				favourited = False
+			if row['cmdb_id'] is not None and row['cmdb_id'] is not '':
+				cmdb_id = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
+			else:
+				cmdb_id = ''
 
-		system_data.append({
-			"name": row["name"],
-			"allocation_comment": row["allocation_comment"],
-			"cmdb_environment": row["cmdb_environment"],
-			"allocation_who": row["allocation_who"],
-			"allocation_date": row["allocation_date"],
-			"cmdb_operational_status": row["cmdb_operational_status"],
-			"cmdb_id": cmdb_id,
-			"id": row["id"],
-			"vmware_guest_state": row["vmware_guest_state"],
-			"puppet_certname": row["puppet_certname"],
-			"favourited": favourited
-		})
+			if row['allocation_date'] is not None:
+				row['allocation_date'] = row['allocation_date'].strftime('%Y-%m-%d %H:%M:%S')
+			else:
+				row['allocation_date'] = "Unknown"
+
+			if row['allocation_who'] is not None:
+				if row['allocation_who_realname'] is not None:
+					row['allocation_who'] = row['allocation_who_realname']
+				else:
+					row['allocation_who'] = cortex.lib.user.get_user_realname(row['allocation_who'])
+
+			system_data.append({
+				"name": row["name"],
+				"allocation_comment": row["allocation_comment"],
+				"cmdb_environment": row["cmdb_environment"],
+				"allocation_who": row["allocation_who"],
+				"allocation_date": row["allocation_date"],
+				"cmdb_operational_status": row["cmdb_operational_status"],
+				"cmdb_id": cmdb_id,
+				"id": row["id"],
+				"vmware_guest_state": row["vmware_guest_state"],
+				"puppet_certname": row["puppet_certname"],
+				"favourited": favourited
+			})
 
 	# Return JSON data in the format DataTables wants
 	return jsonify(draw=draw, recordsTotal=system_count, recordsFiltered=filtered_count, data=system_data)

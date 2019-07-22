@@ -41,23 +41,36 @@ def puppet_enc_edit(node):
 	if system == None:
 		abort(404)
 
+
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute("SELECT module_name, class_name, class_parameter, description, tag_name FROM puppet_modules_info;")
+
+	outcome = {}
+	result = curd.fetchall()
 	
+	modules = {}
+
+	for row in result:
+		if row['module_name'] not in modules.keys():
+			modules[row['module_name']] = {row['class_name']:{row['class_parameter']:{'description':row['description'], 'tag_name':row['tag_name']}}}
+		elif row['class_name'] not in modules[row['module_name']]:
+			modules[row['module_name']][row['class_name']] = {row['class_parameter']:{'description':row['description'], 'tag_name':row['tag_name']}}
+		elif row['class_parameter'] not in modules[row['module_name']][row['class_name']]:
+			modules[row['module_name']][row['class_name']][row['class_parameter']] = {'description':row['description'], 'tag_name':row['tag_name']}
 	
 	# On any GET request, just display the information
 	if request.method == 'GET':
-		
 		# If the user has view or edit permission send them the template - otherwise abort with 403.
-		if does_user_have_system_permission(system['id'],"view.puppet.classify","systems.all.view.puppet.classify") or \
-			does_user_have_system_permission(system['id'],"edit.puppet","systems.all.edit.puppet"):
+		if does_user_have_system_permission(system['id'], "view.puppet.classify", "systems.all.view.puppet.classify") or \
+			does_user_have_system_permission(system['id'], "edit.puppet"," systems.all.edit.puppet"):
 
-			return render_template('puppet/enc.html', system=system, active='puppet', environments=environments, title=system['name'], nodename=node, pactive="edit", yaml=cortex.lib.puppet.generate_node_config(system['puppet_certname']))
+			return render_template('puppet/enc.html', variable_names=modules,system=system, active='puppet', environments=environments, title=system['name'], nodename=node, pactive="edit", yaml=cortex.lib.puppet.generate_node_config(system['puppet_certname']))
 		else:
 			abort(403)
 
 	# If the method is POST and the user has edit permission.
 	# Validate the input and then save.
 	elif request.method == 'POST' and does_user_have_system_permission(system['id'],"edit.puppet","systems.all.edit.puppet"):
-
 		# Extract data from form
 		environment = request.form.get('environment', '')
 		classes = request.form.get('classes', '')
@@ -123,7 +136,6 @@ def puppet_enc_edit(node):
 		flash('Puppet ENC for host ' + system['name'] + ' updated', 'alert-success')
 
 		return redirect(url_for('puppet_enc_edit', node=node))
-
 	else:
 		abort(403)
 
