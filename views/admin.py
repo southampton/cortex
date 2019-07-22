@@ -532,7 +532,7 @@ def admin_maint():
 	"""Allows the user to kick off scheduled jobs on demand"""
 
 	# Check user permissions
-	if not does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow", "maintenance.cert_scan", "maintenance.student_vm"]):
+	if not does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow", "maintenance.cert_scan", "maintenance.student_vm", "maintenance.lock_workflows", "maintenance.rubrik_policy_check"]):
 		abort(403)
 
 	# Connect to NeoCortex and the database
@@ -618,14 +618,14 @@ def admin_maint():
 				abort(403)
 			task_id = neocortex.start_internal_task(session['username'], 'servicenow_vm_build.py', '_servicenow_vm_build', description="Checks for outstanding VM build requests in ServiceNow and starts them")
 		elif module == 'toggle_workflow_lock':
-			if not does_user_have_permission("maintenance.expire_vm"):
+			if not does_user_have_permission("maintenance.lock_workflows"):
 				abort(403)
 			curd = g.db.cursor(mysql.cursors.DictCursor)
-			curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
+			curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;', ('workflow_lock_status',))
 			res = curd.fetchone()
 			task_id = neocortex.start_internal_task(session['username'], 'lock_workflows.py', '_lock_workflows', description="Locks the workflows from being started", options={'page_load_lock_status' : res})
 		elif module == 'rubrik_crcheck':
-			if not does_user_have_permission("maintenance.expired_vm"):
+			if not does_user_have_permission("maintenance.rubrik_policy_check"):
 				task_id = neocortex.start_internal_task(session['username'], 'rubrik_crcheck.py', '_rubrik_policy_check', description="Checks the backup systems of policies against the ones in Rubrik")
 		else:
 			app.logger.warn('Unknown module name specified when starting task')

@@ -113,7 +113,7 @@
 {%- endif %}
 </div>
 <div class="row">
-{%- if does_user_have_permission("maintenance.expire_vm") %}
+{%- if does_user_have_permission("maintenance.lock_workflows") %}
 	<div class="col-md-4">
 		<div class="well mtask">
 			<h3><i class="fa fa-fa fa-lock"></i> Toggle Workflow Lock</h3>
@@ -127,7 +127,7 @@
 		</div>
 	</div>
 {%- endif %}
-{%- if does_user_have_permission("maintenance.expire_vm") %}
+{%- if does_user_have_permission("maintenance.rubrik_policy_check") %}
 	<div class="col-md-4">
 		<div class="well mtask">
 			<h3><i class="fa fa-fa fa-check-circle"></i> Confirm Rubrik Policies </h3>

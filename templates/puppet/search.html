@@ -20,7 +20,7 @@
 			<td><a href="{{url_for('puppet_enc_edit',node=node.certname) }}">{{ node.name }}</a></td>
 			<td>{{ node.certname }}</td>
 			<td>{{ node.env }}</td>
-			<td class="status-{{ node.status }}"><a href="{{ url_for('puppet_dashboard_status', status=node.status) }}">{{ node.status }}</a></td>
+			<td class="status-{{ node.status }}"><a href="{{ url_for('puppet_nodes', status=node.status) }}">{{ node.status }}</a></td>
 			<td><a href="{{url_for('puppet_enc_edit',node=node.certname) }}" class="btn btn-default btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a></td>
 		</tr>
 {%- endfor %}

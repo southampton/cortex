@@ -124,7 +124,7 @@ def context_processor():
 		admin.append({'link': url_for('admin_events'), 'title': 'Events', 'icon': 'fa-list-alt'})
 	if does_user_have_permission("specs.view"):
 		admin.append({'link': url_for('admin_specs'), 'title': 'VM Specs', 'icon': 'fa-sliders'})
-	if does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow", "maintenance.cert_scan"]):
+	if does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow", "maintenance.cert_scan", "maintenance.lock_workflows", "maintenance.rubrik_policy_check", "maintenance.student_vm"]):
 		admin.append({'link': url_for('admin_maint'), 'title': 'Maintenance', 'icon': 'fa-gears'})
 	if does_user_have_permission("systems.allocate_name"):
 		admin.append({'link': url_for('systems_new'), 'title': 'Allocate system name', 'icon': 'fa-plus'})
