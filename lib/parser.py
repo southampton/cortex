@@ -129,9 +129,9 @@ class SearchQueryParser(object):
 				if token.left not in variable_to_column_map:
 					raise Exception("Unknown variable: " + token.left)
 				else:
-					sql = sql + "`"+token.left+"` "
+					sql = sql + "`" + variable_to_column_map[token.left] + "` "
 				if type(token.right) is int:
-					sql = sql + token.operator + " " + "%s"
+					sql = sql + token.operator + " %s"
 					params.append(token.right)
 				elif type(token.right) is bool:
 					if token.operator == "=":
@@ -145,16 +145,15 @@ class SearchQueryParser(object):
 					else:
 						sql = sql + "FALSE"
 				else:
-					sql = sql + token.operator+ " " + "%s"  + ""
+					sql = sql + token.operator + " %s "
 					params.append(token.right)
 			elif type(token) is BooleanOperator:
 				sql = sql + " " + token.operator + " "
 		return (sql, tuple(params))
 
-def parse_sql(sql_query, variable_to_column_map):
-	
+def get_search_query_sql(query, variable_to_column_map):
 	parser = SearchQueryParser()
-	parser.parse(sql_query)
+	parser.parse(query)
 	parser.get_tokens()
 	result = parser.generate_sql(variable_to_column_map)
 	return result

@@ -152,7 +152,7 @@ Further Details:
 			view_location = view.__module__ + '.' + view.__name__
 			
 			# If the view is not part of the API and it's not exempt
-			if re.search("[\w]*cortex\.api\.endpoints[\w]*", view.__module__)is None and  not view_location in self._exempt_views:
+			if re.search("[\w]*cortex\.api\.endpoints[\w]*", view.__module__) is None and not view_location in self._exempt_views:
 				token = session.get('_csrf_token')
 				if not token or token != request.form.get('_csrf_token'):
 					if 'username' in session:
@@ -367,13 +367,13 @@ Username:             %s
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_modules_info` (
-		`id` mediumint(11) NOT NULL AUTO_INCREMENT,
-		`module_name` varchar(256) NOT NULL,
-		`class_name` varchar(256) NOT NULL,
-		`class_parameter` varchar(256) NOT NULL,
-		`description` text DEFAULT NULL,
-		`tag_name` varchar(255) DEFAULT NULL,
-		PRIMARY KEY (`id`)
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `module_name` varchar(256) NOT NULL,
+		  `class_name` varchar(256) NOT NULL,
+		  `class_parameter` varchar(256) NOT NULL,
+		  `description` text DEFAULT NULL,
+		  `tag_name` varchar(255) DEFAULT NULL,
+		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `systems` (
@@ -880,55 +880,55 @@ Username:             %s
 		before workflows are run"""
 
 		## The ORDER MATTERS! It determines the order used on the Roles page
-		self.permissions        = [
-			{'name': 'systems.all.view',		       'desc': 'View any system'},
-			{'name': 'systems.own.view',		       'desc': 'View systems allocated by the user'},
-			{'name': 'systems.all.view.puppet',	       'desc': 'View Puppet reports and facts on any system'},
+		self.permissions = [
+			{'name': 'systems.all.view',                   'desc': 'View any system'},
+			{'name': 'systems.own.view',                   'desc': 'View systems allocated by the user'},
+			{'name': 'systems.all.view.puppet',            'desc': 'View Puppet reports and facts on any system'},
 			{'name': 'systems.all.view.puppet.classify',   'desc': 'View Puppet classify on any system'},
 			{'name': 'systems.all.view.puppet.catalog',    'desc': 'View Puppet catalog on any system'},
 			{'name': 'systems.all.view.rubrik',            'desc': 'View Rubrik backups for any system'},
-			{'name': 'systems.all.edit.expiry',	       'desc': 'Modify the expiry date of any system'},
-			{'name': 'systems.all.edit.review',	       'desc': 'Modify the review status of any system'},
-			{'name': 'systems.all.edit.vmware',	       'desc': 'Modify the VMware link on any system'},
-			{'name': 'systems.all.edit.cmdb',	       'desc': 'Modify the CMDB link on any system'},
-			{'name': 'systems.all.edit.comment',	       'desc': 'Modify the comment on any system'},
-			{'name': 'systems.all.edit.puppet',	       'desc': 'Modify Puppet settings on any system'},
+			{'name': 'systems.all.edit.expiry',            'desc': 'Modify the expiry date of any system'},
+			{'name': 'systems.all.edit.review',            'desc': 'Modify the review status of any system'},
+			{'name': 'systems.all.edit.vmware',            'desc': 'Modify the VMware link on any system'},
+			{'name': 'systems.all.edit.cmdb',              'desc': 'Modify the CMDB link on any system'},
+			{'name': 'systems.all.edit.comment',           'desc': 'Modify the comment on any system'},
+			{'name': 'systems.all.edit.puppet',            'desc': 'Modify Puppet settings on any system'},
 			{'name': 'systems.all.edit.rubrik',            'desc': 'Modify Rubrik settings on any system'},
 			{'name': 'systems.all.edit.owners',            'desc': 'Modify the system owners on any system'},
-			{'name': 'vmware.view',			       'desc': 'View VMware data and statistics'},
-			{'name': 'puppet.dashboard.view',	       'desc': 'View the Puppet dashboard'},
-			{'name': 'puppet.modules_info.view', 	       'desc': 'View the Puppet modules info'},
-			{'name': 'puppet.modules_info.add', 	       'desc': 'Add  to the Puppet modules info'},
-			{'name': 'puppet.modules_info.edit', 	       'desc': 'Modify the Puppet modules info'},
-			{'name': 'puppet.nodes.view',		       'desc': 'View the list of Puppet nodes'},
-			{'name': 'puppet.default_classes.view',	       'desc': 'View the list of Puppet default classes'},
-			{'name': 'puppet.default_classes.edit',	       'desc': 'Modify the list of Puppet default classes'},
-			{'name': 'classes.view',		       'desc': 'View the list of system class definitions'},
-			{'name': 'classes.edit',		       'desc': 'Edit system class definitions'},
-			{'name': 'tasks.view',			       'desc': 'View the details of all tasks (not just your own)'},
-			{'name': 'events.view',			       'desc': 'View the details of all events (not just your own)'},
-			{'name': 'specs.view',			       'desc': 'View the VM Specification Settings'},
-			{'name': 'specs.edit',			       'desc': 'Edit the VM Specification Settings'},
-			{'name': 'maintenance.vmware',		       'desc': 'Run VMware maintenance tasks'},
-			{'name': 'maintenance.cmdb',		       'desc': 'Run CMDB maintenance tasks'},
-			{'name': 'maintenance.expire_vm',	       'desc': 'Run the Expire VM maintenance task'},
+			{'name': 'vmware.view',                        'desc': 'View VMware data and statistics'},
+			{'name': 'puppet.dashboard.view',              'desc': 'View the Puppet dashboard'},
+			{'name': 'puppet.modules_info.view',           'desc': 'View the Puppet modules info'},
+			{'name': 'puppet.modules_info.add',            'desc': 'Add  to the Puppet modules info'},
+			{'name': 'puppet.modules_info.edit',           'desc': 'Modify the Puppet modules info'},
+			{'name': 'puppet.nodes.view',                  'desc': 'View the list of Puppet nodes'},
+			{'name': 'puppet.default_classes.view',        'desc': 'View the list of Puppet default classes'},
+			{'name': 'puppet.default_classes.edit',        'desc': 'Modify the list of Puppet default classes'},
+			{'name': 'classes.view',                       'desc': 'View the list of system class definitions'},
+			{'name': 'classes.edit',                       'desc': 'Edit system class definitions'},
+			{'name': 'tasks.view',                         'desc': 'View the details of all tasks (not just your own)'},
+			{'name': 'events.view',                        'desc': 'View the details of all events (not just your own)'},
+			{'name': 'specs.view',                         'desc': 'View the VM Specification Settings'},
+			{'name': 'specs.edit',                         'desc': 'Edit the VM Specification Settings'},
+			{'name': 'maintenance.vmware',                 'desc': 'Run VMware maintenance tasks'},
+			{'name': 'maintenance.cmdb',                   'desc': 'Run CMDB maintenance tasks'},
+			{'name': 'maintenance.expire_vm',              'desc': 'Run the Expire VM maintenance task'},
 			{'name': 'maintenance.sync_puppet_servicenow', 'desc': 'Run the Sync Puppet with Servicenow task'},
 			{'name': 'maintenance.cert_scan',              'desc': 'Run the Certificate Scan task'},
 			{'name': 'maintenance.student_vm',             'desc': 'Run the Student VM Build Task'},
-			{'name': 'api.register',		       'desc': 'Manually register Linux machines (rebuilds / physical machines)'},
-			{'name': 'admin.permissions',		       'desc': 'Modify permissions'},
-			{'name': 'workflows.all',		       'desc': 'Use any workflow or workflow function'},
+			{'name': 'api.register',                       'desc': 'Manually register Linux machines (rebuilds / physical machines)'},
+			{'name': 'admin.permissions',                  'desc': 'Modify permissions'},
+			{'name': 'workflows.all',                      'desc': 'Use any workflow or workflow function'},
 
-			{'name': 'sysrequests.own.view',	       'desc': 'View system requests owned by the user'},
-			{'name': 'sysrequests.all.view',	       'desc': 'View any system request'},
-			{'name': 'sysrequests.all.approve',	       'desc': 'Approve any system request'},
-			{'name': 'sysrequests.all.reject',	       'desc': 'Reject any system request'},
-			{'name': 'control.all.vmware.power',	       'desc': 'Contol the power settings of any VM'},
+			{'name': 'sysrequests.own.view',               'desc': 'View system requests owned by the user'},
+			{'name': 'sysrequests.all.view',               'desc': 'View any system request'},
+			{'name': 'sysrequests.all.approve',            'desc': 'Approve any system request'},
+			{'name': 'sysrequests.all.reject',             'desc': 'Reject any system request'},
+			{'name': 'control.all.vmware.power',           'desc': 'Contol the power settings of any VM'},
 
-			{'name': 'api.get',			       'desc': 'Send GET requests to the Cortex API.'},
-			{'name': 'api.post',			       'desc': 'Send POST requests to the Cortex API.'},
-			{'name': 'api.put',			       'desc': 'Send PUT requests to the Cortex API.'},
-			{'name': 'api.delete',			       'desc': 'Send DELETE requests to the Cortex API.'},
+			{'name': 'api.get',                            'desc': 'Send GET requests to the Cortex API.'},
+			{'name': 'api.post',                           'desc': 'Send POST requests to the Cortex API.'},
+			{'name': 'api.put',                            'desc': 'Send PUT requests to the Cortex API.'},
+			{'name': 'api.delete',                         'desc': 'Send DELETE requests to the Cortex API.'},
 
 			{'name': 'certificates.view',                  'desc': 'View the list of discovered certificates and their details'},
 			{'name': 'certificates.stats',                 'desc': 'View the statistics about certificates'},

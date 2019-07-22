@@ -79,7 +79,6 @@ $(function() {
 			{
 				$('#class-tabs li').removeClass('active');
 				$('#class-tabs li a[data-class=\"' + window.history.state['tab'] + '\"]').closest('li').addClass('active');
-				console.log(window.history.state['toggle_queries']);
 				if(window.history.state['toggle_queries'] == "ON"){
 					$('#toggle_queries').each(function(){
 						$(this).find('.btn').toggleClass('active');  
@@ -96,7 +95,6 @@ $(function() {
 		"stateSaveCallback": function (settings, data) {
 			var classname = $('#class-tabs li.active a').attr('data-class');
 			var toggle_queries_status = $('#toggle_queries .active').eq(0).html();
-			console.log($('#toggle_queries .active').eq(0).html());
 			window.history.replaceState({dtState: data, tab: classname, toggle_queries: toggle_queries_status}, "SystemsListState");
 		},
 		"ajax": {

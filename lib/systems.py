@@ -144,20 +144,20 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 	
 	# If a class_name is specfied, add on a WHERE clause
 	if class_name is not None:
-                query = query + "WHERE `class` = %s"
-                params = (class_name,)
+		query = query + "WHERE `class` = %s"
+		params = (class_name,)
 
 	if toggle_queries and search is not None and search is not "":
 		sql_query = ""
 		sql_query_params = ()
 		if class_name is not None:
-               		query = query + " AND "
-                else:   
-               	        query = query + "WHERE "
+	       		query = query + " AND "
+		else:   
+	       		query = query + "WHERE "
 		try:
-			variable_to_column_map = {'id': 'id', 'type': 'type', 'class': 'class', 'number': 'number', 'name': 'name', 'allocation':'allocation_date', 'expiry': 'expiry_date', 'decom':'decom_date', 'allocation_who':'allocation_who', 'allocation_who_realname':'allocation_who_realname', 'allocation_comment':'allocation_comment', 'review_status':'review_status', 'cmdb_id':'cmdb_id', 'build_count':'build_count', 'primary_owner_who':'primary_owner_who', 'primary_owner_role':'primary_owner_role', 'primary_owner_who_realname':'primary_owner_who_realname', 'secondary_owner_who':'secondary_owner_who', 'secondary_owner_role':'secondary_owner_role', 'secondary_owner_who_realname':'secondary_owner_who_realname', 'cmdb_sys_class_name':'cmdb_sys_class_name', 'cmdb_name':'cmdb_name', 'cmdb_operational_status':'cmdb_operational_status', 'cmdb_u_number':'cmdb_u_number', 'cmdb_environment':'cmdb_environment', 'cmdb_description':'cmdb_description', 'cmdb_comments':'cmdb_comments', 'cmdb_os':'cmdb_os', 'cmdb_short_description':'cmdb_short_description', 'cmdb_is_virtual':'cmdb_is_virtual', 'vmware_name':'vmware_name', 'vmware_vcenter':'vmware_vcenter', 'vmware_uuid':'vmware_uuid', 'vmware_cpus':'vmware_cpus', 'vmware_ram':'vmware_ram', 'vmware_guest_state':'vmware_guest_state', 'vmware_os':'vmware_os', 'vmware_hwversion':'vmware_hwversion', 'vmware_ipaddr':'vmware_ipaddr', 'vmware_tools_version_status':'vmware_tools_version_status', 'vmware_hostname':'vmware_hostname', 'puppet_certname':'puppet_certname', 'puppet_env':'puppet_env', 'puppet_include_default':'puppet_include_default', 'puppet_classes':'puppet_classes', 'puppet_variables':'puppet_variables'}
-			(sql_query, sql_query_params) = cortex.lib.parser.parse_sql(search, variable_to_column_map)
-		except Exception, e: # If an exception occurs, it's because the search query is invalid since it's being sent on each keystroke.
+			variable_to_column_map = {'id': 'id', 'class': 'class', 'number': 'number', 'name': 'name', 'allocation': 'allocation_date', 'expiry': 'expiry_date', 'decom': 'decom_date', 'allocation_who': 'allocation_who', 'allocation_who_realname': 'allocation_who_realname', 'allocation_comment': 'allocation_comment', 'review_status': 'review_status', 'cmdb_id': 'cmdb_id', 'primary_owner_who': 'primary_owner_who', 'primary_owner_role': 'primary_owner_role', 'primary_owner_who_realname': 'primary_owner_who_realname', 'secondary_owner_who': 'secondary_owner_who', 'secondary_owner_role': 'secondary_owner_role', 'secondary_owner_who_realname': 'secondary_owner_who_realname', 'cmdb_sys_class_name': 'cmdb_sys_class_name', 'cmdb_name': 'cmdb_name', 'cmdb_operational_status': 'cmdb_operational_status', 'cmdb_u_number': 'cmdb_u_number', 'cmdb_environment': 'cmdb_environment', 'cmdb_description': 'cmdb_description', 'cmdb_comments': 'cmdb_comments', 'cmdb_os': 'cmdb_os', 'cmdb_short_description': 'cmdb_short_description', 'cmdb_is_virtual': 'cmdb_is_virtual', 'vmware_name': 'vmware_name', 'vmware_vcenter': 'vmware_vcenter', 'vmware_uuid': 'vmware_uuid', 'vmware_cpus': 'vmware_cpus', 'vmware_ram': 'vmware_ram', 'vmware_guest_state': 'vmware_guest_state', 'vmware_os': 'vmware_os', 'vmware_hwversion': 'vmware_hwversion', 'vmware_ipaddr': 'vmware_ipaddr', 'vmware_tools_version_status': 'vmware_tools_version_status', 'vmware_hostname': 'vmware_hostname', 'puppet_certname': 'puppet_certname', 'puppet_env': 'puppet_env', 'puppet_include_default': 'puppet_include_default', 'puppet_classes': 'puppet_classes', 'puppet_variables': 'puppet_variables'}
+			(sql_query, sql_query_params) = cortex.lib.parser.get_search_query_sql(search, variable_to_column_map)
+		except Exception as e: # If an exception occurs, it's because the search query is invalid since it's being sent on each keystroke.
 			# The parser will therefore throw a parse error, so nothing needs to be done. Just don't add the query to the where clause
 			pass
 		query = query + sql_query
@@ -322,7 +322,7 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 			return curd
 		else:
 			return curd.fetchall()
-	except Exception, e:
+	except Exception as e:
 		# If an error occurs, it's because of the incorrect syntax of the WHERE clause
 		# Therefore, return nothing
 		if return_cursor:
