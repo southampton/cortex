@@ -140,7 +140,7 @@ def api_register_system():
 					app.logger.error("Error occured parsing response from cortex-puppet-autosign server. Parameter '" + key + "' was not sent.")
 					abort(500)
 
-			cdata[key] = pdata[key]
+				cdata[key] = pdata[key]
 		else:
 			app.logger.error("Error occured contacting cortex-puppet-autosign server. HTTP status code: '" + str(r.status_code) + "'")
 			abort(500)
