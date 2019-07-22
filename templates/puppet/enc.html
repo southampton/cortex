@@ -245,13 +245,13 @@ $(document).ready(function()
 		<div class="panel panel-default">
 			<div class="panel-heading">Help</div>
 			<div class="panel-body">
-				<p>Use the <strong>Classes</strong> field to define the classes that this node will import, along with the parameters
-				for the classes. Nodes will also import classes configured in groups and the default node configuration. You cannot
-				specify <a href="https://puppet.com/docs/puppet/latest/lang_resources.html">resources</a> here.</p>
+				<p>Use the <strong>Classes</strong> field to define the classes that this node will apply, along with their parameters.
+				Nodes will also apply classes from the default classes. You cannot specify <a href="https://puppet.com/docs/puppet/latest/lang_resources.html">resources</a> here.</p>
 				<p>Use the <strong>Global Variables</strong> field to define the global puppet variables that will be sent to all the
-				classes imported by this node. Groups and the default node configuration cannot set global variables - only this field can.</p>
-				<p>The format of this field is <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a>. Use two spaces for 
-				indentation. Do not use tabs, but you can safely press the tab key within the editor (it will enter 2 spaces for you).</p>
+				classes imported by this node.</p>
+				<p>The format of these fields is <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a>. Use two spaces for 
+				indentation. Do not use tabs, but you can safely press the <kbd>tab</kbd> key within the editor (it will enter two spaces for you).
+				You can also press <kbd>Ctrl+Space</kbd> to see suggestions of the names of classes and parameters.</p>
 				<div class="text-center">
 					<a href="{{url_for('puppet_help')}}" target="_blank" class="btn btn-success">Find out more</a>
 				</div>
