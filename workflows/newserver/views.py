@@ -1,17 +1,21 @@
 #!/usr/bin/python
 
 from cortex import app
-from cortex.lib.workflow import CortexWorkflow
+from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
 import cortex.lib.core
 import cortex.lib.classes
 import cortex.views
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
+import MySQLdb as mysql
+import json
 
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('newserver', 'Create System Record')
 
 @workflow.route("create",title='Create System Record', order=30, permission="newserver", methods=['GET', 'POST'])
 def allocateserver():
+	# Don't go any further if workflows are currently locked
+	raise_if_workflows_locked()
 
 	# Get the list of enabled classes
 	classes = cortex.lib.classes.list(hide_disabled=True)

@@ -66,10 +66,9 @@ def context_processor():
 	# Favourites menu
 	favourites = []
 	if does_user_have_permission("systems.own.view") or does_user_have_permission("systems.all.view"):
-		favourites = [{'link': url_for('favourites'), 'title': 'All Favourites', 'icon': 'fa-star'},
-		{'link': url_for('favourites_by_type', system_type='srv'), 'title': 'Favourited srv systems', 'icon': 'fa-star'},
-		{'link': url_for('favourites_by_type', system_type='play'), 'title': 'Favourited play systems', 'icon': 'fa-star'},
-	]
+		favourites = [{'link': url_for('favourites'), 'title': 'All Favourites', 'icon': 'fa-star'}]
+		for fav_class in app.config['FAVOURITE_CLASSES']:
+			favourites.append({'link': url_for('favourites_by_type', system_type=fav_class), 'title': 'Favourited ' + fav_class + ' systems', 'icon': 'fa-star'})
 
 	# Set up the Systems menu, based on a single permission
 	systems = []
@@ -148,21 +147,21 @@ def context_processor():
 
 		# Determine the layout mode for the user
 		try:
-			if g.redis.get('user:' + session['username'] + ":preferences:interface:layout") == "classic":
+			if str(g.redis.get('user:' + session['username'] + ":preferences:interface:layout"), 'utf-8') == "classic":
 				injectdata['classic_layout'] = True
 		except Exception as ex:
 			pass
 
 		# Determine theme for the user
 		try:
-			if g.redis.get('user:' + session['username'] + ":preferences:interface:theme") == "dark":
+			if str(g.redis.get('user:' + session['username'] + ":preferences:interface:theme"), 'utf-8') == "dark":
 				injectdata['theme'] = "dark"
 		except Exception as ex:
 			pass
 
 		# Determine whether to expand sidebar.
 		try:
-			if g.redis.get('user:' + session['username'] + ':preferences:interface:sidebar') == 'expand':
+			if str(g.redis.get('user:' + session['username'] + ':preferences:interface:sidebar'), 'utf-8') == 'expand':
 				injectdata['sidebar_expand'] = True
 		except Exception as ex:
 			pass

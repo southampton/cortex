@@ -1,17 +1,18 @@
 #!/usr/bin/python
-
+import MySQLdb as mysql
 from cortex import app
-from cortex.lib.workflow import CortexWorkflow
+from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
 import cortex.lib.core
 import cortex.lib.systems
 import cortex.views
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify, Response
 import re, datetime, requests
-from urlparse import urljoin
-
+from urllib.parse import urljoin
+import json
 # For downloading ZIP file
-import zipfile, StringIO
+import zipfile
+from io import BytesIO
 
 # For NLB API
 from f5.bigip import ManagementRoot
@@ -50,10 +51,10 @@ def get_certificate_from_redis(task):
 	prefix = 'certmgr/' + str(task['id']) + '/'
 
 	if g.redis.exists(prefix + 'certificate') and g.redis.exists(prefix + 'private'):
-		pem_cert = g.redis.get(prefix + 'certificate')
-		pem_key = g.redis.get(prefix + 'private')
+		pem_cert = g.redis.get(prefix + 'certificate').decode('utf-8')
+		pem_key = g.redis.get(prefix + 'private').decode('utf-8')
 		if g.redis.exists(prefix + 'chain'):
-			pem_chain = g.redis.get(prefix + 'chain')
+			pem_chain = g.redis.get(prefix + 'chain').decode('utf-8')
 
 	return (pem_cert, pem_key, pem_chain)
 
@@ -75,7 +76,7 @@ def certmgr_download_zip():
 		abort(404)
 
 	# Open a Zip file in memory for writing
-	zip_data = StringIO.StringIO()
+	zip_data = BytesIO()
 	zip_file = zipfile.ZipFile(zip_data, 'w', zipfile.ZIP_DEFLATED)
 
 	# Add in the certificate and private key
@@ -129,6 +130,9 @@ def certmgr_ajax_get_raw():
 
 @workflow.route('create', title='Create SSL Certificate', order=40, permission="certmgr.create", methods=['GET', 'POST'])
 def certmgr_create():
+	# Don't go any further if workflows are currently locked
+	raise_if_workflows_locked()
+
 	# Get the workflow settings
 	wfconfig = workflow.config
 
@@ -195,7 +199,7 @@ def certmgr_create():
 				valid_form = False
 
 		if len(form_fields['aliases']) > 0:
-			split_aliases = filter(lambda x: x != '', form_fields['aliases'].split(' '))
+			split_aliases = [x for x in form_fields['aliases'].split(' ') if x != '']
 			for alias in split_aliases:
 				if '.' not in alias:
 					flash('All SANs must be fully qualified domain names', 'alert-danger')

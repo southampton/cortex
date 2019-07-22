@@ -101,7 +101,7 @@ def dashboard():
 		'failed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract","certname",["and",["=", "latest_report_status", "failed"], ["=", "latest_report_noop", false], [">", "report_timestamp", "{0}"]]]'.format(now_minus_2.isoformat()))),
 		'changed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname",["and",["=", "latest_report_status", "changed"],["=", "latest_report_noop", false], [">", "report_timestamp", "{0}"]]]'.format(now_minus_2.isoformat()))),
 	}
-
+	
 	return render_template('dashboard.html', active="dashboard", 
 		vm_count=vm_count, 
 		ci_count=ci_count, 
