@@ -130,15 +130,17 @@ def api_register_system():
 
 		if r.status_code == 200:
 			try:
-				cdata = r.json()
+				pdata = r.json()
 			except Exception as ex:
 				app.logger.error("Error occured parsing response from cortex-puppet-autosign server:" + str(ex))
 				abort(500)
 
 			for key in ['private_key', 'public_key', 'cert']:
-				if not key in cdata:
+				if not key in pdata:
 					app.logger.error("Error occured parsing response from cortex-puppet-autosign server. Parameter '" + key + "' was not sent.")
 					abort(500)
+
+			cdata[key] = pdata[key]
 		else:
 			app.logger.error("Error occured contacting cortex-puppet-autosign server. HTTP status code: '" + str(r.status_code) + "'")
 			abort(500)
