@@ -96,7 +96,7 @@ class SearchQueryParser(object):
 		integer = Word(nums)
 		rvalue = quoted_string ^ boolean_value ^ integer
 		field_to_value = field_name + binary_operator + rvalue
-		expression = Optional(boolean_not) + (subexpression | (field_to_value + ZeroOrMore(boolean_expression)))
+		expression = Optional(boolean_not) + ((subexpression + ZeroOrMore(boolean_expression)) | (field_to_value + ZeroOrMore(boolean_expression)))
 		boolean_expression << boolean_operator + expression
 		left_bracket = Literal('(')
 		right_bracket = Literal(')')
@@ -145,7 +145,7 @@ class SearchQueryParser(object):
 					else:
 						sql = sql + "FALSE"
 				else:
-					sql = sql + token.operator + " %s "
+					sql = sql + token.operator + " %s"
 					params.append(token.right)
 			elif type(token) is BooleanOperator:
 				sql = sql + " " + token.operator + " "
@@ -154,6 +154,5 @@ class SearchQueryParser(object):
 def get_search_query_sql(query, variable_to_column_map):
 	parser = SearchQueryParser()
 	parser.parse(query)
-	parser.get_tokens()
 	result = parser.generate_sql(variable_to_column_map)
 	return result
