@@ -82,7 +82,7 @@ class Corpus(object):
 
 	################################################################################
 
-	def allocate_name(self, class_name, comment, username, expiry=None):
+	def allocate_name(self, class_name, comment, username, expiry=None, set_backup=2):
 		"""Allocates 'num' systems, of type 'class_name' each with the given
 		comment. Returns a dictionary with mappings between each new name
 		and the corresponding row ID in the database table."""
@@ -112,7 +112,7 @@ class Corpus(object):
 		#    this function can carry on.
 
 		## 1. Lock the table to prevent other requests issuing names whilst we are
-		cur.execute('LOCK TABLE `classes` WRITE, `systems` WRITE; ')
+		cur.execute('LOCK TABLE `classes` WRITE, `systems` WRITE;')
 
 		# 2a. Get the class (along with the next nubmer to allocate)
 		try:
@@ -134,21 +134,16 @@ class Corpus(object):
 			## 3. Increment the number by the number we're simultaneously allocating
 			cur.execute("UPDATE `classes` SET `lastid` = %s WHERE `name` = %s", (int(class_data['lastid']) + int(num), class_name))
 
-
-
 			## 4. Create the server
 			new_number = int(class_data['lastid']) + 1
 			new_name   = self.pad_system_name(class_name, new_number, class_data['digits'])
 
-			cur.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `expiry_date`) VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s)",
-				(self.SYSTEM_TYPE_BY_NAME['System'], class_name, new_number, new_name, username, comment, expiry))
+			cur.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `expiry_date`, `enable_backup`) VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s)",
+				(self.SYSTEM_TYPE_BY_NAME['System'], class_name, new_number, new_name, username, comment, expiry, set_backup))
 
 			# this is the return
 			new_systems['name'] = new_name
 			new_systems['id'] = cur.lastrowid
-
-			# store a record of the new system so we can give this back to the browser in a minute
-			# new_systems[new_name] = cur.lastrowid
 
 			## 5. All names are now created and the table incremented. Time to commit.
 			self.db.commit()
