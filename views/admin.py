@@ -614,7 +614,7 @@ def admin_maint():
 			task_id = neocortex.start_internal_task(session['username'], 'cert_scan.py', '_cert_scan', description="Scans configured subnets for certificates used for SSL/TLS")
 		elif module == 'student_vm_build':
 			# Check user permissions
-			if not does_user_have_permission(""):
+			if not does_user_have_permission("maintenance.student_vm"):
 				abort(403)
 			task_id = neocortex.start_internal_task(session['username'], 'servicenow_vm_build.py', '_servicenow_vm_build', description="Checks for outstanding VM build requests in ServiceNow and starts them")
 		elif module == 'toggle_workflow_lock':
