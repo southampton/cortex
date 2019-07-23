@@ -135,6 +135,9 @@ def get_users_groups_from_ldap(username):
 def get_user_realname_from_ldap(username):
 	"""Talks to LDAP and retrieves the real name of the username passed."""
 
+	if username is None or username == "":
+		return ""
+
 	# The name we've picked
 	# Connect to LDAP
 	l = connect()
@@ -145,6 +148,9 @@ def get_user_realname_from_ldap(username):
 	except ldap.LDAPError as e:
 		app.logger.warning('Failed to execute real name LDAP search: ' + str(e))
 		return username
+
+	firstname = None
+	lastname = None
 
 	# Handle the search results
 	for result in results:

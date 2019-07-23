@@ -20,7 +20,7 @@ def csv_stream(cursor):
 	row = cursor.fetchone()
 
 	# Write CSV header
-	output = io.BytesIO()
+	output = io.StringIO()
 	writer = csv.writer(output)
 	writer.writerow([
 		'ID', 'Type', 'Class', 'Number', 'Name', 'Allocation Date', 'Expiry Date', 'Decom Date', 'Allocation Who', 'Allocation Who Realname', 'Allocation Comment',
@@ -36,7 +36,7 @@ def csv_stream(cursor):
 	while row is not None:
 		# There's no way to flush (and empty) a CSV writer, so we create
 		# a new one each time
-		output = io.BytesIO()
+		output = io.StringIO()
 		writer = csv.writer(output)
 
 		# Generate link to CMDB
@@ -46,18 +46,6 @@ def csv_stream(cursor):
 
 		# Write a row to the CSV output
 		outrow = [row['id'], row['type'], row['class'], row['number'], row['name'], row['allocation_date'], row['expiry_date'], row['decom_date'], row['allocation_who'], row['allocation_who_realname'], row['allocation_comment'], row['review_status'], row['review_task'], row['cmdb_id'], row['build_count'], row['primary_owner_who'], row['primary_owner_role'], row['primary_owner_who_realname'], row['secondary_owner_who'], row['secondary_owner_role'], row['secondary_owner_who_realname'], row['cmdb_sys_class_name'], row['cmdb_name'], row['cmdb_operational_status'], row['cmdb_u_number'], row['cmdb_environment'], row['cmdb_description'], row['cmdb_comments'], row['cmdb_os'], row['cmdb_short_description'], row['cmdb_is_virtual'], row['vmware_name'], row['vmware_vcenter'], row['vmware_uuid'], row['vmware_cpus'], row['vmware_ram'], row['vmware_guest_state'], row['vmware_os'], row['vmware_hwversion'], row['vmware_ipaddr'], row['vmware_tools_version_status'], row['vmware_hostname'], row['puppet_certname'], row['puppet_env'], row['puppet_include_default'], row['puppet_classes'], row['puppet_variables']]
-
-		# For each element in the output row...
-		for i in range(0, len(outrow)):
-			# ...if it's not None...
-			if outrow[i]:
-				# ...if the element is unicode...
-				if type(outrow[i]) == str:
-					# ...decode from utf-8 into a ASCII-compatible byte string
-					outrow[i] = outrow[i].encode('utf-8')
-				else:
-					# ...otherwise just chuck it out as a string
-					outrow[i] = str(outrow[i])
 
 		# Write the output row to the stream
 		writer.writerow(outrow)
