@@ -345,16 +345,19 @@ def systems_new():
 		# Allocate the names asked for
 		try:
 			# To prevent code duplication, this is done remotely by Neocortex. So, connect:
-			neocortex   = cortex.lib.core.neocortex_connect()
+			neocortex = cortex.lib.core.neocortex_connect()
 
 			# Allocate the name
-			new_systems = neocortex.allocate_name(class_name, system_comment, username=session['username'], num=system_number)
+			new_systems = []
+			for x in range(system_number):
+				new_systems.append(neocortex.allocate_name(class_name, system_comment, username=session['username']))
 		except Exception as ex:
 			flash("A fatal error occured when trying to allocate names: " + str(ex), "alert-danger")
 			return redirect(url_for('systems_new'))
 
-		for new_system_name in new_systems:
-			cortex.lib.core.log(__name__, "systems.name.allocate", "New system name allocated: " + new_system_name,related_id=new_systems[new_system_name])
+		# Logging
+		for new_system in new_systems:
+			cortex.lib.core.log(__name__, "systems.name.allocate", "New system name allocated: " + new_system['name'], related_id=new_system['id'])
 
 		# If the user only wanted one system, redirect back to the systems
 		# list page and flash up success. If they requested more than one
@@ -362,7 +365,7 @@ def systems_new():
 		# change the comments on all of the systems.
 		if len(new_systems) == 1:
 			flash("System name allocated successfully", "alert-success")
-			return redirect(url_for('system', id=new_systems[list(new_systems.keys())[0]]))
+			return redirect(url_for('system', id=new_systems[0]['id']))
 		else:
 			return render_template('systems/new-bulk.html', systems=new_systems, comment=system_comment, title="Systems")
 
