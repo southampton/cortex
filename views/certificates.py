@@ -59,7 +59,7 @@ def certificates():
 ################################################################################
 
 def add_openssl_certificate(cert):
-	digest = cert.digest('SHA1').replace(':', '').lower()
+	digest = cert.digest('SHA1').decode('utf-8').replace(':', '').lower()
 	subject = cert.get_subject()
 	subjectHash = cert.subject_name_hash()
 	issuer = cert.get_issuer()
