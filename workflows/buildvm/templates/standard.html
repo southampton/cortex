@@ -73,7 +73,7 @@ div.specdetails
 {%- if autocomplete_users %}
 <datalist id="autocompleteUsers">
 {%- for user in autocomplete_users %}
-        <option>{{user.username}}</option>
+		<option>{{user.username}}</option>
 {% endfor -%}
 </datalist>
 {% endif -%}
@@ -83,19 +83,19 @@ div.specdetails
 		<div class="col-md-12">
 			<h4 style="margin-top:0">1. Enter request details</h4>
 			<div class="form-group col-md-3">
-				<label for="task">ServiceNow Task:</label><input class="form-control" id="task" name="task" placeholder="e.g. CTASK0123456 or PRJTASK0987654" autofocus />
+				<label for="task">ServiceNow Task:<span class="required">*</span></label><input class="form-control" id="task" name="task" placeholder="e.g. CTASK0123456 or PRJTASK0987654" autofocus />
 			</div>
 			<div class="form-group col-md-9">
-				<label for="purpose">Purpose:</label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" />
+				<label for="purpose">Purpose:<span class="required">*</span></label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" />
 			</div>
 			<div class="form-group col-md-12">
 				<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
 			</div>
 			<div class="form-group col-md-3">
-				<label for="primary_owner_who">Primary Owner:</label><input class="form-control" list="autocompleteUsers" autocomplete="off" id="primary_owner_who" name="primary_owner_who" placeholder="Primary owner's username" maxlength="64"/>
+				<label for="primary_owner_who">Primary Owner:<span class="required">*</span></label><input class="form-control" list="autocompleteUsers" autocomplete="off" id="primary_owner_who" name="primary_owner_who" placeholder="Primary owner's username" maxlength="64"/>
 			</div>
 			<div class="form-group col-md-3">
-				<label for="primary_owner_role">Primary Owner Role:</label><input class="form-control" id="primary_owner_role" name="primary_owner_role" placeholder="Primary owner's role" maxlength="64"/>
+				<label for="primary_owner_role">Primary Owner Role:<span class="required">*</span></label><input class="form-control" id="primary_owner_role" name="primary_owner_role" placeholder="Primary owner's role" maxlength="64"/>
 			</div>
 			<div class="form-group col-md-3">
 				<label for="secondary_owner_who">Secondary Owner:</label><input class="form-control" list="autocompleteUsers" autocomplete="off" id="secondary_owner_who" name="secondary_owner_who" placeholder="Secondary owner's username" maxlength="64"/>
@@ -159,7 +159,7 @@ div.specdetails
 
 	<div class="row">
 		<div class="col-md-3">
-			<h4>4. Choose Image</h4>
+			<h4>4. Choose Image<span class="required">*</span></h4>
 			<div style="margin-left:1em">
 				<select class="selectpicker" name="template" id="template">
 					<option></option>
@@ -170,7 +170,7 @@ div.specdetails
 			</div>
 		</div>
 		<div class="col-md-3">
-			<h4>5. Choose Environment</h4>
+			<h4>5. Choose Environment<span class="required">*</span></h4>
 			<div style="margin-left:1em">
 				<select class="selectpicker" name="environment" id="environment">
 					<option></option>
@@ -181,7 +181,7 @@ div.specdetails
 			</div>
 		</div>
 		<div class="col-md-3">
-			<h4>6. Choose Location Cluster</h4>
+			<h4>6. Choose Location Cluster<span class="required">*</span></h4>
 			<div style="margin-left:1em">
 				<select class="selectpicker" name="cluster" id="cluster">
 					<option></option>
@@ -192,7 +192,7 @@ div.specdetails
 			</div>
 		</div>
 		<div class="col-md-3">
-			<h4>7. Choose Network</h4>
+			<h4>7. Choose Network<span class="required">*</span></h4>
 			<div style="margin-left:1em">
 				<select class="selectpicker" name="network" id="network">
 					<option></option>
@@ -242,7 +242,7 @@ div.specdetails
 					<select class="selectpicker" name="vm_folder_moid" id="vm_folder_moid" data-live-search="true">
 						<option></option>
 {% for folder in folders -%}
-                                        <option value="{{ folder['id'] }}">{{ folder['fully_qualified_path'] }}</option>
+										<option value="{{ folder['id'] }}">{{ folder['fully_qualified_path'] }}</option>
 {%- endfor %}
 					</select>
 				</div>
@@ -567,6 +567,18 @@ function validate(e)
 		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345 or CTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident, or use the change task for the RFC you\'re performing.');
 		$('#cost_related_ticket').focus();
 	}	
+	else if ($("#network").val() == "")
+	{
+		alert('You must select a network.');
+	}
+	else if ($("#primary_owner_who").val() == "")
+	{
+		alert('You must enter a primary owner.');
+	}
+	else if ($("#primary_owner_role").val() == "")
+	{
+		alert('You must enter a role for the primary owner.');
+	}
 	else
 	{
 		return true;

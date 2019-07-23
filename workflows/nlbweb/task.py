@@ -1,6 +1,6 @@
 #### F5 BigIP NLB Create HTTP Site Workflow Task
 
-from urlparse import urljoin
+from urllib.parse import urljoin
 import requests, time
 
 # For NLB API

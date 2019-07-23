@@ -66,10 +66,9 @@ def context_processor():
 	# Favourites menu
 	favourites = []
 	if does_user_have_permission("systems.own.view") or does_user_have_permission("systems.all.view"):
-		favourites = [{'link': url_for('favourites'), 'title': 'All Favourites', 'icon': 'fa-star'},
-		{'link': url_for('favourites_by_type', system_type='srv'), 'title': 'Favourited srv systems', 'icon': 'fa-star'},
-		{'link': url_for('favourites_by_type', system_type='play'), 'title': 'Favourited play systems', 'icon': 'fa-star'},
-	]
+		favourites = [{'link': url_for('favourites'), 'title': 'All Favourites', 'icon': 'fa-star'}]
+		for fav_class in app.config['FAVOURITE_CLASSES']:
+			favourites.append({'link': url_for('favourites_by_type', system_type=fav_class), 'title': 'Favourited ' + fav_class + ' systems', 'icon': 'fa-star'})
 
 	# Set up the Systems menu, based on a single permission
 	systems = []
@@ -101,8 +100,6 @@ def context_processor():
 		puppet.append({'link': url_for('puppet_dashboard'), 'title': 'Dashboard', 'icon': 'fa-dashboard'})
 	if does_user_have_permission("puppet.nodes.view"):
 		puppet.append({'link': url_for('puppet_nodes'), 'title': 'Nodes', 'icon': 'fa-server'})
-	if does_user_have_permission("puppet.groups.view"):
-		puppet.append({'link': url_for('puppet_groups'), 'title': 'Groups', 'icon': 'fa-object-group'})
 	if does_user_have_permission("puppet.default_classes.view"):
 		puppet.append({'link': url_for('puppet_enc_default'), 'title': 'Default classes', 'icon': 'fa-globe'})
 	if does_user_have_permission("puppet.dashboard.view"):
@@ -127,7 +124,7 @@ def context_processor():
 		admin.append({'link': url_for('admin_events'), 'title': 'Events', 'icon': 'fa-list-alt'})
 	if does_user_have_permission("specs.view"):
 		admin.append({'link': url_for('admin_specs'), 'title': 'VM Specs', 'icon': 'fa-sliders'})
-	if does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow", "maintenance.cert_scan"]):
+	if does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow", "maintenance.cert_scan", "maintenance.lock_workflows", "maintenance.rubrik_policy_check", "maintenance.student_vm"]):
 		admin.append({'link': url_for('admin_maint'), 'title': 'Maintenance', 'icon': 'fa-gears'})
 	if does_user_have_permission("systems.allocate_name"):
 		admin.append({'link': url_for('systems_new'), 'title': 'Allocate system name', 'icon': 'fa-plus'})
@@ -150,21 +147,21 @@ def context_processor():
 
 		# Determine the layout mode for the user
 		try:
-			if g.redis.get('user:' + session['username'] + ":preferences:interface:layout") == "classic":
+			if str(g.redis.get('user:' + session['username'] + ":preferences:interface:layout"), 'utf-8') == "classic":
 				injectdata['classic_layout'] = True
 		except Exception as ex:
 			pass
 
 		# Determine theme for the user
 		try:
-			if g.redis.get('user:' + session['username'] + ":preferences:interface:theme") == "dark":
+			if str(g.redis.get('user:' + session['username'] + ":preferences:interface:theme"), 'utf-8') == "dark":
 				injectdata['theme'] = "dark"
 		except Exception as ex:
 			pass
 
 		# Determine whether to expand sidebar.
 		try:
-			if g.redis.get('user:' + session['username'] + ':preferences:interface:sidebar') == 'expand':
+			if str(g.redis.get('user:' + session['username'] + ':preferences:interface:sidebar'), 'utf-8') == 'expand':
 				injectdata['sidebar_expand'] = True
 		except Exception as ex:
 			pass

@@ -1,5 +1,7 @@
 {% extends "layout.html" %}
 {% block head %}
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
+	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
 {% include 'puppet/codemirror.html' %}
 {% endblock %}
 {% block body %}
@@ -26,6 +28,19 @@
 <script>
 $(document).ready(function() 
 {
+	// This function will get the name of the last puppet class which appeared in the textarea	
+	function getLastMatch(class_editor, puppetModulesArray){
+		var cursorLine = class_editor.getCursor().line - 1;
+		
+		for(var i = cursorLine; i >= 0; i--){
+			for(var j = 0; j < puppetModulesArray.length; j++){
+				var regex = new RegExp('(' + puppetModulesArray[j] + ')((::)?\\w+)?(?=:)');
+				if(regex.test(class_editor.getLine(i))) return class_editor.getLine(i);
+			}
+		}
+		return "";
+	}
+	
 	var classes_editor = CodeMirror.fromTextArea(document.getElementById('classes'), 
 	{
 		mode: 'yaml',
@@ -33,8 +48,95 @@ $(document).ready(function()
 		lint: true,
 		indentUnit: 2,
 		viewportMargin: Infinity,
+		completeSingle: false,
 	});
+	
+	var dictionary = {{variable_names | tojson | safe}} // will hold all the keywords
+	var puppetModulesArray = []; // will hold all the names of the modules
+	
+	for(var key in dictionary){
+		puppetModulesArray.push(key);
+	}
+	
+	// Codemirror hint helper which returns the list of elements which match the current string on the line
+	CodeMirror.registerHelper('hint', 'dictionaryHint', function(editor) {
+   		var cur = editor.getCursor();
+    		var curLine = editor.getLine(cur.line);
+    		var start = cur.ch;
+		var end = start;
+    		while (end < curLine.length && /[\w$]/.test(curLine.charAt(end))) ++end;
+    		while (start && /[\w$]/.test(curLine.charAt(start - 1))) --start;
+		var curWord = curLine.replace(/\s*/, "");
+		try {
+			var regex = new RegExp('^' + curWord, 'i');
+		}
+		catch(err) {
+			// 0 length negative lookahead regex... this will not match anything, not even the empty String
+			// Should only happen when an invalid regex syntax will appear on the line... which might be quite often
+			// It's completely ok though
+			var regex = /(?!)/
+		}
+		var using_init = true;
+		if(curLine.match(/\w*:{2}?\w*/)){ // match the whole line because you only want this to happen in the case of a module name (which would have no whitespaces before it)
+			var module_and_class = curLine.split("::"); // extract the module name and whatever is after it(the part that is after will be used to list all the classes that are within that module)
+			using_init = false;// since you have the :: it means that you're not using the default init class anymore
+		}
+		if(!using_init && dictionary.hasOwnProperty(module_and_class[0])){ // if init is not being used, then return the list of classes that match the current keyword
+			regex = new RegExp('^' + module_and_class[1], 'i'); // replace the current word in the regex with the partial class name currently on the line
+			return { // will return a list of all the classes which belong to that module
+				list: (!curWord ? Object.keys(dictionary[module_and_class[0]]) : Object.keys(dictionary[module_and_class[0]]).filter(function(item) {
+                                                return (item.match(regex)&&(item!="init"));
+                                        })).sort(),
+                                        from: CodeMirror.Pos(cur.line, start), // the start will only match to word characters a-z A-Z 0-9 and _, so it will stop when it reaches the first : anyway
+                                        to: CodeMirror.Pos(cur.line, end) // the to position should be the same as normally
+			}
+		}
+		var lastMatch = getLastMatch(editor, puppetModulesArray);
+		lastMatch = lastMatch.substring(0, lastMatch.length-1); // eliminates the ":" at the end of the name
+		var last_match_module_name = lastMatch;
+                var last_match_class_name = "";
+		if (lastMatch.includes("::")){ // if the last match is of format module::class
+			last_match_module_name = lastMatch.split("::")[0]; // store the module in a var
+                        last_match_class_name = lastMatch.split("::")[1]; // store the class in another var
+		}
+    		if(curLine && curLine.match(/^\s+\w*/) && lastMatch != "" && dictionary.hasOwnProperty(last_match_module_name)){ // if the dictionary contains this module name
+			if (lastMatch.includes("::")){ // if the last match includes ::, then show the variable names that belong to that class
+				return {   	
+					list: (!curWord ? Object.keys(dictionary[last_match_module_name][last_match_class_name]) : Object.keys(dictionary[last_match_module_name][last_match_class_name]).filter(function(item) {
+						return item.match(regex);
+					})).sort(),
+					from: CodeMirror.Pos(cur.line, start),
+					to: CodeMirror.Pos(cur.line, end)
+				}
+			}
+			else return { // else just display the variables for the init class
 
+				list: (!curWord ? Object.keys(dictionary[lastMatch]["init"]) : (Object.keys(dictionary[lastMatch]["init"])).filter(function(item) {
+					return item.match(regex);
+				})).sort(),
+				from: CodeMirror.Pos(cur.line, start),
+				to: CodeMirror.Pos(cur.line, end)
+			}
+		}
+		else return { // the dictionary does not contain whatever is on the line as a module name, so just return the list of module names that match the regex
+				
+                                list: (!curWord ? puppetModulesArray : puppetModulesArray.filter(function(item) {
+					return item.match(regex);
+                                })).sort(),
+                                from: CodeMirror.Pos(cur.line, start),
+                                to: CodeMirror.Pos(cur.line, end)
+		}
+	});
+	CodeMirror.commands.autocomplete = function(cm) {
+    		CodeMirror.showHint(cm, CodeMirror.hint.dictionaryHint, {completeSingle: false});
+	};
+	classes_editor.on("keyup", function (cm, event) {
+		if (!cm.state.completionActive &&   //Enables keyboard navigation in autocomplete list
+     			(event.keyCode > 47 && event.keyCode < 91) || event.keyCode == 186){// only when a letter key is pressed or when `:` is pressed
+				CodeMirror.commands.autocomplete(cm, CodeMirror.hint.dictionaryHint, {});
+
+    			}
+		});
 	var variables_editor = CodeMirror.fromTextArea(document.getElementById('variables'), 
 	{
 		mode: 'yaml',
@@ -49,9 +151,14 @@ $(document).ready(function()
 		Tab: function(cm) {
 			var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
 			cm.replaceSelection(spaces);
-		}
-	});
+		},
+		"Ctrl-Space": function (cm) {
+                if (!cm.state.completionActive){
+                                CodeMirror.commands.autocomplete(cm, CodeMirror.hint.dictionaryHint, {});
 
+                        }
+                },
+	});
 	variables_editor.setOption("extraKeys", 
 	{
 		Tab: function(cm) {
@@ -95,7 +202,7 @@ $(document).ready(function()
 			</div>
 			<div class="form-group">
 				<label title="The Puppet environment that this node sits in (the actual name within Puppet is given in brackets)" class="col-sm-2 control-label" for="environment">Environment:</label>
-				<div class="col-sm-8 col-md-6 col-lg-4"> <select class="form-control" id="environment" name="environment">
+				<div class="col-sm-8 col-md-6 col-lg-4"> <select class="selectpicker form-control" id="environment" name="environment">
 {%- for environment in environments -%}
 {%- if environment.puppet %}
 					<option value="{{ environment.id }}"{% if system.puppet_env == environment.puppet %} selected="selected"{% endif %}>{{ environment.name }} ({{ environment.puppet }})</option>
@@ -106,7 +213,7 @@ $(document).ready(function()
 			<div class="form-group">
 				<div class="col-sm-offset-2 col-sm-10">
 					<div class="checkbox" style="padding-top:0em">
-						<label title="Check to include the default classes that deploy are standard build" for="include_default"><input type="checkbox" id="include_default" name="include_default"{% if system.puppet_include_default %} checked="checked"{% endif %}/>Include the <a href="{{url_for('puppet_enc_default')}}">default classes</a></label>
+						<label title="Check to include the default classes that deploy are standard build" for="include_default"><input type="checkbox" id="include_default" name="include_default"{% if system.puppet_include_default %} checked="checked"{% endif %}/>Include the{%- if does_user_have_permission("puppet.default_classes.view") or does_user_have_permission("puppet.default_classes.edit") %} <a href="{{url_for('puppet_enc_default')}}">default classes</a>{%- else %} default classes{% endif -%}</label>
 					</div>
 				</div>
 			</div>
@@ -127,22 +234,24 @@ $(document).ready(function()
 				<textarea id="variables" name="variables" placholder="Global variables to include can be entered here">{{ system.puppet_variables or '' }}</textarea>
 			</div>
 		</div>
-
+		
+		{%- if does_user_have_system_permission(system['id'],"edit.puppet","systems.all.edit.puppet") %}
 		<div class="text-center">
 			<button class="btn btn-primary btn-lg" type="submit">Save Changes</button>
 		</div>
+		{% endif -%}
 	</div>
 	<div class="col-md-3">
 		<div class="panel panel-default">
 			<div class="panel-heading">Help</div>
 			<div class="panel-body">
-				<p>Use the <strong>Classes</strong> field to define the classes that this node will import, along with the parameters
-				for the classes. Nodes will also import classes configured in groups and the default node configuration. You cannot
-				specify <a href="https://puppet.com/docs/puppet/latest/lang_resources.html">resources</a> here.</p>
+				<p>Use the <strong>Classes</strong> field to define the classes that this node will apply, along with their parameters.
+				Nodes will also apply classes from the default classes. You cannot specify <a href="https://puppet.com/docs/puppet/latest/lang_resources.html">resources</a> here.</p>
 				<p>Use the <strong>Global Variables</strong> field to define the global puppet variables that will be sent to all the
-				classes imported by this node. Groups and the default node configuration cannot set global variables - only this field can.</p>
-				<p>The format of this field is <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a>. Use two spaces for 
-				indentation. Do not use tabs, but you can safely press the tab key within the editor (it will enter 2 spaces for you).</p>
+				classes imported by this node.</p>
+				<p>The format of these fields is <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a>. Use two spaces for 
+				indentation. Do not use tabs, but you can safely press the <kbd>tab</kbd> key within the editor (it will enter two spaces for you).
+				You can also press <kbd>Ctrl+Space</kbd> to see suggestions of the names of classes and parameters.</p>
 				<div class="text-center">
 					<a href="{{url_for('puppet_help')}}" target="_blank" class="btn btn-success">Find out more</a>
 				</div>

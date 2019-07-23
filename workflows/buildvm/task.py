@@ -2,6 +2,9 @@
 import time
 
 def run(helper, options):
+	if not helper.lib.checkWorkflowLock:
+		raise Exception("Workflows are currently locked")
+
 
 	# Find out which workflow we're wanting to run
 	workflow = options['workflow']
@@ -35,6 +38,7 @@ def run(helper, options):
 		vm_folder_moid = options['vm_folder_moid']
 		dns_aliases = options['dns_aliases']
 		system_charging = options['system_charging']
+		set_backup = options['wfconfig']['SET_BACKUP']
 	elif workflow == 'sandbox':
 		prefix = options['wfconfig']['SB_PREFIX']
 		vcenter_tag = options['wfconfig']['SB_VCENTER_TAG']
@@ -58,6 +62,7 @@ def run(helper, options):
 		vm_folder_moid = None
 		dns_aliases = []
 		system_charging = None
+		set_backup = options['wfconfig']['SB_SET_BACKUP']
 	elif workflow == 'student':
 		prefix = options['wfconfig']['STU_PREFIX']
 		vcenter_tag = options['wfconfig']['STU_VCENTER_TAG']
@@ -84,6 +89,7 @@ def run(helper, options):
 		vm_folder_moid = options['wfconfig']['STU_VM_FOLDER']
 		dns_aliases = options['dns_aliases']
 		system_charging = None
+		set_backup = options['wfconfig']['STU_SET_BACKUP']
 
 		# Override primary owner to match allocated_by
 		options['primary_owner_who'] = helper.username
@@ -96,11 +102,11 @@ def run(helper, options):
 	helper.event("allocate_name", "Allocating a '" + prefix + "' system name")
 
 	# Allocate the name
-	system_info = helper.lib.allocate_name(prefix, options['purpose'], helper.username, expiry=options['expiry'])
+	system_info = helper.lib.allocate_name(prefix, options['purpose'], helper.username, expiry=options['expiry'], set_backup=set_backup)
 
-	# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
-	system_name = system_info.keys()[0]
-	system_dbid = system_info.values()[0]
+	# system_info is a dictionary containg a single { 'name': name, 'id':dbid }. Extract both of these:
+	system_name = system_info['name']
+	system_dbid = system_info['id']
 
 
 	# Update the system with some options.

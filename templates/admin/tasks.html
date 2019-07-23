@@ -99,38 +99,38 @@ The list below shows all past and present system-started tasks
 
 	function toggleFilterButton (buttonID, toggleClass='btn-danger') {
 		$(buttonID).toggleClass('btn-success');
-                $(buttonID).toggleClass(toggleClass);
-                $(buttonID).toggleClass('active');
-                $(`${buttonID} i`).toggleClass('fa-check-square-o');
-                $(`${buttonID} i`).toggleClass('fa-square-o');
+		$(buttonID).toggleClass(toggleClass);
+		$(buttonID).toggleClass('active');
+		$(`${buttonID} i`).toggleClass('fa-check-square-o');
+		$(`${buttonID} i`).toggleClass('fa-square-o');
 	}
 
 	function reloadTable () {
 		$('#tasksWrapper').fadeOut(150, function() {
-                        tasksTable.ajax.reload(function() {
-                                $('#tasksWrapper').fadeIn(150);
-                        });
-                });
+			tasksTable.ajax.reload(function() {
+					$('#tasksWrapper').fadeIn(150);
+			});
+		});
 	}
 
 	$('#hide_frequent').click(function() {
 		toggleFilterButton('#hide_frequent', )
 		reloadTable()
-        });
+	});	
 
 	$('#filter_succeeded').click(function() {
 		toggleFilterButton('#filter_succeeded', 'btn-default')
 		reloadTable()
-        });
+	});
 	$('#filter_warnings').click(function() {
 		toggleFilterButton('#filter_warnings', 'btn-default')
 		reloadTable()
-        });
+	});
 
 	$('#filter_failed').click(function() {
 		toggleFilterButton('#filter_failed', 'btn-default')
 		reloadTable()
-        });
+	});
 
 
 {%- endif %}

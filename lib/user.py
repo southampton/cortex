@@ -50,6 +50,7 @@ def clear_session():
 	session.pop('logged_in', None)
 	session.pop('username', None)
 	session.pop('id', None)
+	session.pop('_csrf_token', None)
 
 ################################################################################
 
@@ -191,10 +192,10 @@ def get_user_list_from_cache():
 def does_user_have_permission(perm, user=None):
 	"""Returns a boolean indicating if a user has a certain permission or
 	one of a list of permissions.
-	  perm: Either a string or a list of strings that contains the
-	        permission(s) to search for
-	  user: The user whose permissions should be checked. Defaults to
-	        None, which checks the currently logged in user."""
+	perm: Either a string or a list of strings that contains the
+	permission(s) to search for
+	user: The user whose permissions should be checked. Defaults to
+	None, which checks the currently logged in user."""
 
 	# Default to using the current user
 	if user is None:
@@ -290,16 +291,16 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 	on the system specified in system_id. If 'perm' is supplied then the function
 	returns true if the user has the global 'perm' instead (e.g. a global
 	override permission).
-
-	  system_id: The Cortex system id of the system (as found in the
-                     systems table)
-	  sysperm: A string containing the system permission to check for
-	  perm: The global permission, which is the user has, overrides system
+		system_id: The Cortex system id of the system (as found in the
+		systems table)
+		sysperm: A string containing the system permission to check for
+		perm: The global permission, which is the user has, overrides system
 			permissions and causes the function to return True irrespective
 			of whether the user has the system permission or not. Defaults to 
 			None (no global permission is checked for)
-	  user: The user whose permissions should be checked. Defaults to
-	        None, which checks the currently logged in user."""
+		user: The user whose permissions should be checked. Defaults to
+			None, which checks the currently logged in user.
+	"""
 
 	# Default to using the current user
 	if user is None:
@@ -323,10 +324,10 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 
 	app.logger.debug("Checking system permissions for user " + str(user) + " on system " + str(system_id))
 
-	# Query the system_role_perms_view table to see if the user has the system
+	# Query the system_perms_view table to see if the user has the system
 	# explicitly given access to them
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT 1 FROM `system_role_perms_view` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (system_id, user, ROLE_WHO_USER, sysperm))
+	curd.execute('SELECT 1 FROM `system_perms_view` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (system_id, user, ROLE_WHO_USER, sysperm))
 
 	# If a row is returned then they have the permission
 	if len(curd.fetchall()) > 0:
@@ -337,9 +338,9 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 
 	# Iterate over the groups, checking each group for the permission
 	for group in ldap_groups:
-		# Query the system_role_perms_view table to see if the permission is granted
+		# Query the system_perms_view table to see if the permission is granted
 		# to the group the user is in
-		curd.execute('SELECT 1 FROM `system_role_perms_view` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (system_id, group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
+		curd.execute('SELECT 1 FROM `system_perms_view` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (system_id, group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
 
 		# If a row is returned then they have access to the workflow
 		if len(curd.fetchall()) > 0:
@@ -367,10 +368,10 @@ def does_user_have_any_system_permission(sysperm,user=None):
 
 	app.logger.debug("Checking to see if " + str(user) + " has system permission " + sysperm + " on any system")
 
-	# Query the system_role_perms_view table to see if the user has the system
+	# Query the system_perms_view table to see if the user has the system
 	# explicitly given access to them
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT 1 FROM `system_role_perms_view` WHERE `who` = %s AND `type` = %s AND `perm` = %s', (user, ROLE_WHO_USER, sysperm))
+	curd.execute('SELECT 1 FROM `system_perms_view` WHERE `who` = %s AND `type` = %s AND `perm` = %s', (user, ROLE_WHO_USER, sysperm))
 
 	# If a row is returned then they have the permission
 	if len(curd.fetchall()) > 0:
@@ -382,9 +383,9 @@ def does_user_have_any_system_permission(sysperm,user=None):
 
 	# Iterate over the groups, checking each group for the permission
 	for group in ldap_groups:
-		# Query the system_role_perms_view table to see if the permission is granted
+		# Query the system_perms_view table to see if the permission is granted
 		# to the group the user is in
-		curd.execute('SELECT 1 FROM `system_role_perms_view` WHERE `who` = %s AND `type` = %s AND `perm` = %s', (group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
+		curd.execute('SELECT 1 FROM `system_perms_view` WHERE `who` = %s AND `type` = %s AND `perm` = %s', (group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
 
 		# If a row is returned then they have access to the workflow
 		if len(curd.fetchall()) > 0:

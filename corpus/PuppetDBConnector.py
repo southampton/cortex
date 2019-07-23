@@ -23,6 +23,9 @@ class PuppetDBConnector:
 	def get_node(self, node_name):
 		return self.db.node(node_name)
 
+	def get_environments(self):
+		return [i['name'] for i in self.db.environments()]
+
 	def get_all_facts(self, node_object, cached=True):
 		"""Get facts about this node from puppet."""
 		if node_object.name in self.facts and cached:

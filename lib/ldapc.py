@@ -41,8 +41,8 @@ def auth(username,password):
 
 	# Handle the search results
 	for result in results:
-		dn	= result[0]
-		attrs	= result[1]
+		dn    = result[0]
+		attrs = result[1]
 
 		if dn == None:
 			# No dn returned. Return false.
@@ -52,7 +52,7 @@ def auth(username,password):
 			try:
 				lauth = ldap.initialize(app.config['LDAP_URI'])
 				lauth.set_option(ldap.OPT_REFERRALS, 0)
-				lauth.simple_bind_s( (dn), (password) )
+				lauth.simple_bind_s((dn), (password))
 			except ldap.LDAPError as e:
 				# Password was wrong
 				return False
@@ -63,7 +63,7 @@ def auth(username,password):
 	return False
 
 ################################################################################
-		
+
 def get_users_groups_from_ldap(username):
 	"""Talks to LDAP and gets the list of the given users groups. This
 	information is then stored in Redis so that it can be accessed 
@@ -81,8 +81,8 @@ def get_users_groups_from_ldap(username):
 
 	# Handle the search results
 	for result in results:
-		dn	= result[0]
-		attrs	= result[1]
+		dn    = result[0]
+		attrs = result[1]
 
 		if dn == None:
 			return None
@@ -102,7 +102,9 @@ def get_users_groups_from_ldap(username):
 					for group in attrs['memberOf']:
 						## We only want the group name, not the DN
 						cn_regex = re.compile("^(cn|CN)=([^,;]+),")
-
+						
+						## Preprocssing into string
+						group = group.decode('utf-8')
 						matched = cn_regex.match(group)
 						if matched:
 							group_cn = matched.group(2)
@@ -133,6 +135,9 @@ def get_users_groups_from_ldap(username):
 def get_user_realname_from_ldap(username):
 	"""Talks to LDAP and retrieves the real name of the username passed."""
 
+	if username is None or username == "":
+		return ""
+
 	# The name we've picked
 	# Connect to LDAP
 	l = connect()
@@ -141,12 +146,16 @@ def get_user_realname_from_ldap(username):
 	try:
 		results = l.search_s(app.config['LDAP_USER_SEARCH_BASE'], ldap.SCOPE_SUBTREE, app.config['LDAP_USER_ATTRIBUTE'] + "=" + username)
 	except ldap.LDAPError as e:
+		app.logger.warning('Failed to execute real name LDAP search: ' + str(e))
 		return username
+
+	firstname = None
+	lastname = None
 
 	# Handle the search results
 	for result in results:
-		dn	= result[0]
-		attrs	= result[1]
+		dn    = result[0]
+		attrs = result[1]
 
 		if dn == None:
 			return None
@@ -158,6 +167,12 @@ def get_user_realname_from_ldap(username):
 				if len(attrs['sn']) > 0:
 					lastname = attrs['sn'][0]
 
+	# In Python 3, the ldap client returns bytes, so decode UTF-8
+	if type(firstname) is bytes:
+		firstname = firstname.decode('utf-8')
+	if type(lastname) is bytes:
+		lastname = lastname.decode('utf-8')
+
 	try:
 		if len(firstname) > 0 and len(lastname) > 0:
 			name = firstname + ' ' + lastname
@@ -168,6 +183,7 @@ def get_user_realname_from_ldap(username):
 		else:
 			name = username
 	except Exception as ex:
+		app.logger.warning('Failed to generate real name: ' + str(ex))
 		name = username
 	try:
 		curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -191,7 +207,7 @@ def does_group_exist(groupname):
 
 	# Handle the search results
 	for result in results:
-		dn	  = result[0]
+		dn    = result[0]
 		attrs = result[1]
 
 		if dn == None:

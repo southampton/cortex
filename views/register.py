@@ -14,10 +14,10 @@ import requests
 @app.disable_csrf_check
 def api_register_system():
 	"""API endpoint for when systems register with Cortex to obtain their
-       Puppet certificates, their Puppet environment, a satellite registration 
-       key, etc. Clients can authenticate either via username/password, which
-       is checked against LDAP, or via the VMware virtual machine UUID, which
-       is checked against the VMware systems cache."""
+	   Puppet certificates, their Puppet environment, a satellite registration 
+	   key, etc. Clients can authenticate either via username/password, which
+	   is checked against LDAP, or via the VMware virtual machine UUID, which
+	   is checked against the VMware systems cache."""
 
 	# Clients can send hostname, username and password (interactive installation)
 	if 'hostname' in request.form and 'username' in request.form and 'password' in request.form:
@@ -130,15 +130,17 @@ def api_register_system():
 
 		if r.status_code == 200:
 			try:
-				cdata = r.json()
+				pdata = r.json()
 			except Exception as ex:
 				app.logger.error("Error occured parsing response from cortex-puppet-autosign server:" + str(ex))
 				abort(500)
 
 			for key in ['private_key', 'public_key', 'cert']:
-				if not key in cdata:
+				if not key in pdata:
 					app.logger.error("Error occured parsing response from cortex-puppet-autosign server. Parameter '" + key + "' was not sent.")
 					abort(500)
+
+				cdata[key] = pdata[key]
 		else:
 			app.logger.error("Error occured contacting cortex-puppet-autosign server. HTTP status code: '" + str(r.status_code) + "'")
 			abort(500)
@@ -149,7 +151,7 @@ def api_register_system():
 	if not interactive:
 		cdata['hostname']  = system['name']
 		cdata['fqdn']      = fqdn
-		netaddr = g.redis.get('vm/' + system['vmware_uuid'].lower() + '/ipaddress')
+		netaddr = str(g.redis.get('vm/' + system['vmware_uuid'].lower() + '/ipaddress'), 'utf-8')
 		if netaddr == None:
 			cdata['ipaddress'] = 'dhcp'
 		else:
@@ -207,7 +209,7 @@ def api_register_system():
 	else:
 		cortex.lib.core.log(__name__, "api.register.system", "New system '" + fqdn + "' registered via the API by VM-UUID authentication")
 
-	return(jsonify(cdata))
+	return jsonify(cdata)
 
 ################################################################################
 

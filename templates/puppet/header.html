@@ -3,7 +3,7 @@
 	{% if system.puppet_certname -%}
 	<h3>
 		<div class="pull-right">
-			{% if does_user_have_system_permission(system.id, "edit.puppet", "systems.all.edit.puppet") -%}
+			{% if does_user_have_system_permission(system.id, "edit.puppet", "systems.all.edit.puppet") or does_user_have_system_permission(system['id'],"view.puppet.classify","systems.all.view.puppet.classify") -%}
 			<a class="btn btn-sm {% if active == 'puppet_classify' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('puppet_enc_edit', node=system.puppet_certname) }}">Classify</a>
 			{% else -%}
 			<a class="btn btn-sm btn-default disabled">Classify</a>
