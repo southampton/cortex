@@ -1,6 +1,16 @@
 
 # pylint: disable=too-many-lines
 
+from cortex import app
+import cortex.lib.core
+import cortex.lib.systems
+import cortex.lib.cmdb
+import cortex.lib.classes
+from cortex.lib.user import does_user_have_permission, does_user_have_system_permission, does_user_have_any_system_permission, is_system_enrolled
+from cortex.corpus import Corpus
+from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
+import os
+import time
 import datetime
 import re
 
@@ -528,6 +538,7 @@ def system_overview(system_id):
 	if not does_user_have_system_permission(system_id, "view.overview", "systems.all.view"):
 		abort(403)
 
+	# return jsonify(is_system_enrolled(id))
 	# Get the system
 	system = cortex.lib.systems.get_system_by_id(system_id)
 

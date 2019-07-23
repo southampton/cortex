@@ -705,6 +705,14 @@ Username:             %s
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `dsc_config` (
+		`system_id` mediumint(11) NOT NULL,
+		`roles` text,
+		`config` text,
+		PRIMARY KEY (`system_id`),
+		FOREIGN KEY (`system_id`) REFERENCES systems(`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
 		# Attempt to alter the systems table and add new columns.
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `expiry_date` datetime DEFAULT NULL""")
@@ -796,15 +804,127 @@ Username:             %s
 		  `puppet_nodes`.`last_failed` AS `puppet_last_failed`,
 		  `puppet_nodes`.`last_changed` AS `puppet_last_changed`,
 		  `puppet_nodes`.`noop_since` AS `puppet_noop_since`,
+		  `systems`.`enable_backup_scripts` AS `enable_backup_scripts`,
 		  `systems`.`enable_backup` AS `enable_backup`,
-		  `systems`.`enable_backup_scripts` AS `enable_backup_scripts`
-		FROM `systems`
+		  `dsc_config`.`roles` as `dsc_roles`,
+		  `dsc_config`.`config` as `dsc_config`
+                FROM `systems` 
 		LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`
 		LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid`
-		LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id`
-		LEFT JOIN `realname_cache` AS `allocation_who_realname_cache` ON `systems`.`allocation_who` = `allocation_who_realname_cache`.`username`
-		LEFT JOIN `realname_cache` AS `primary_owner_who_realname_cache` ON `systems`.`primary_owner_who` = `primary_owner_who_realname_cache`.`username`
-		LEFT JOIN `realname_cache` AS `secondary_owner_who_realname_cache` ON `systems`.`secondary_owner_who` = `secondary_owner_who_realname_cache`.`username`""")
+		LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` 
+		LEFT JOIN `realname_cache` AS  `allocation_who_realname_cache` ON `systems`.`allocation_who` = `allocation_who_realname_cache`.`username`
+		LEFT JOIN `realname_cache` AS  `primary_owner_who_realname_cache` ON `systems`.`primary_owner_who` = `primary_owner_who_realname_cache`.`username`
+		LEFT JOIN `realname_cache` AS  `secondary_owner_who_realname_cache` ON `systems`.`secondary_owner_who` = `secondary_owner_who_realname_cache`.`username`
+		LEFT JOIN `dsc_config` ON `systems`.`id` = `dsc_config`.`system_id`
+		""")
+       	
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `roles` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `name` varchar(64) NOT NULL,
+		  `description` text NOT NULL,
+		  PRIMARY KEY (`id`),
+		  KEY (`name`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=2""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `role_perms` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `role_id` mediumint(11) NOT NULL,
+		  `perm` varchar(64) NOT NULL,
+		  PRIMARY KEY (`id`),
+		  UNIQUE (`role_id`, `perm`),
+		  CONSTRAINT `role_perms_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `role_who` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `role_id` mediumint(11) NOT NULL,
+		  `who` varchar(128) NOT NULL,
+		  `type` tinyint(1) NOT NULL,
+		  PRIMARY KEY (`id`),
+		  UNIQUE (`role_id`, `who`, `type`),
+		  CONSTRAINT `role_who_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_perms` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `system_id` mediumint(11) NOT NULL,
+		  `who` varchar(128) NOT NULL,
+		  `type` tinyint(1) NOT NULL,
+		  `perm` varchar(64) NOT NULL,
+		  PRIMARY KEY (`id`),
+		  UNIQUE (`system_id`, `who`, `type`, `perm`),
+		  CONSTRAINT `system_perms_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_roles` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `name` varchar(64) NOT NULL,
+		  `description` text NOT NULL,
+		  PRIMARY KEY (`id`),
+		  KEY (`name`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_role_perms` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `system_role_id` mediumint(11) NOT NULL,
+		  `perm` varchar(64) NOT NULL,
+		  PRIMARY KEY (`id`),
+		  UNIQUE (`system_role_id`, `perm`),
+		  CONSTRAINT `system_role_perms_ibfk_1` FOREIGN KEY (`system_role_id`) REFERENCES `system_roles` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_role_who` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `system_role_id` mediumint(11) NOT NULL,
+		  `who` varchar(128) NOT NULL,
+		  `type` tinyint(1) NOT NULL,
+		  PRIMARY KEY (`id`),
+		  UNIQUE (`system_role_id`, `who`, `type`),
+		  CONSTRAINT `system_role_who_ibfk_1` FOREIGN KEY (`system_role_id`) REFERENCES `system_roles` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_role_what` (
+		  `system_role_id` mediumint(11) NOT NULL,
+		  `system_id` mediumint(11) NOT NULL,
+		  PRIMARY KEY (`system_role_id`, `system_id`),
+		  CONSTRAINT `system_role_what_ibfk_1` FOREIGN KEY (`system_role_id`) REFERENCES `system_roles` (`id`) ON DELETE CASCADE,
+		  CONSTRAINT `system_role_what_ibfk_2` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE OR REPLACE VIEW `system_role_perms_view` AS
+		SELECT DISTINCT 
+		  `system_roles`.`id` as `system_role_id`,
+		  `system_roles`.`name` as `system_role_name`,
+		  `system_role_what`.`system_id`,
+		  `system_role_who`.`who`,
+		  `system_role_who`.`type`,
+		  `system_role_perms`.`perm`
+		FROM `system_roles`
+		LEFT JOIN `system_role_perms` ON `system_roles`.`id`=`system_role_perms`.`system_role_id`
+		LEFT JOIN `system_role_who` ON `system_roles`.`id`=`system_role_who`.`system_role_id`
+		LEFT JOIN `system_role_what` ON `system_roles`.`id`=`system_role_what`.`system_role_id`
+		WHERE 
+		  `system_role_what`.`system_id` IS NOT NULL AND
+		  `system_role_who`.`who` IS NOT NULL AND
+		  `system_role_who`.`type` IS NOT NULL AND
+		  `system_role_perms`.`perm` IS NOT NULL
+		""")
+
+		cursor.execute("""CREATE OR REPLACE VIEW `system_perms_view` AS
+		SELECT DISTINCT
+		  `system_role_perms_view`.`system_id`,
+		  `system_role_perms_view`.`who`,
+		  `system_role_perms_view`.`type`,
+		  `system_role_perms_view`.`perm`
+		FROM `system_role_perms_view`
+		UNION
+		SELECT DISTINCT
+		  `system_perms`.`system_id`,
+		  `system_perms`.`who`,
+		  `system_perms`.`type`,
+		  `system_perms`.`perm`
+		FROM `system_perms`;
+		""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_user_favourites` (
 		  `username` varchar(255),
@@ -986,6 +1106,57 @@ Username:             %s
 		cursor.execute("""DROP TABLE IF EXISTS `workflow_perms`""")
 		cursor.execute("""DROP TABLE IF EXISTS `puppet_groups`""")
 		cursor.execute("""DROP TABLE IF EXISTS `puppet_modules_info`""")
+		# Ensure we have a default administrator role with appropriate permissions
+		cursor.execute("""INSERT IGNORE INTO `roles` (`id`, `name`, `description`) VALUES (1, "Administrator", "Has full access to everything")""")
+		cursor.execute("""INSERT IGNORE INTO `role_perms` (`role_id`, `perm`) VALUES 
+		  (1, "admin.permissions"), 
+		  (1, "systems.all.view"), 
+		  (1, "systems.all.view.puppet"), 
+		  (1, "systems.all.view.puppet.catalog"), 
+		  (1, "systems.all.view.rubrik"),
+		  (1, "systems.all.edit.expiry"), 
+		  (1, "systems.all.edit.review"), 
+		  (1, "systems.all.edit.vmware"), 
+		  (1, "systems.all.edit.cmdb"), 
+		  (1, "systems.all.edit.comment"), 
+		  (1, "systems.all.edit.puppet"),
+		  (1, "systems.all.edit.rubrik"), 
+		  (1, "systems.all.edit.owners"), 
+		  (1, "systems.allocate_name"), 
+		  (1, "systems.add_existing"),
+		  (1, "vmware.view"), 
+		  (1, "puppet.dashboard.view"), 
+		  (1, "puppet.nodes.view"), 
+		  (1, "puppet.default_classes.view"), 
+		  (1, "puppet.default_classes.edit"),
+		  (1, "dsc.view"),
+		  (1, "dsc.edit"), 
+		  (1, "dsc.enrol"),
+		  (1, "classes.view"), 
+		  (1, "classes.edit"), 
+		  (1, "tasks.view"),
+		  (1, "events.view"),
+		  (1, "specs.view"),
+		  (1, "specs.edit"),
+		  (1, "maintenance.vmware"), 
+		  (1, "maintenance.cmdb"), 
+		  (1, "maintenance.expire_vm"),
+		  (1, "maintenance.sync_puppet_servicenow"),
+		  (1, "maintenance.cert_scan"),
+		  (1, "maintenance.student_vm"),
+		  (1, "api.register"),
+		  (1, "workflows.all"),
+		  (1, "sysrequests.all.view"),
+		  (1, "sysrequests.all.approve"),
+		  (1, "sysrequests.all.reject"),
+		  (1, "api.get"),
+		  (1, "api.post"),
+		  (1, "api.put"),
+		  (1, "api.delete"),
+		  (1, "certificates.view"),
+		  (1, "certificates.stats"),
+		  (1, "certificates.add")
+		""")
 
 		## Close database connection
 		temp_db.close()
@@ -993,3 +1164,81 @@ Username:             %s
 		self.logger.info("Database initialisation complete")
 
 ################################################################################
+
+	def init_permissions(self):
+		"""Sets up the list of permissions that can be assigned, must be run
+		before workflows are run"""
+
+		## The ORDER MATTERS! It determines the order used on the Roles page
+		self.permissions        = [
+			{'name': 'systems.all.view',		       'desc': 'View any system'},
+			{'name': 'systems.own.view',		       'desc': 'View systems allocated by the user'},
+			{'name': 'systems.all.view.puppet',	       'desc': 'View Puppet reports and facts on any system'},
+			{'name': 'systems.all.view.puppet.classify',   'desc': 'View Puppet classify on any system'},
+			{'name': 'systems.all.view.puppet.catalog',    'desc': 'View Puppet catalog on any system'},
+			{'name': 'systems.all.view.rubrik',            'desc': 'View Rubrik backups for any system'},
+			{'name': 'systems.all.edit.expiry',	       'desc': 'Modify the expiry date of any system'},
+			{'name': 'systems.all.edit.review',	       'desc': 'Modify the review status of any system'},
+			{'name': 'systems.all.edit.vmware',	       'desc': 'Modify the VMware link on any system'},
+			{'name': 'systems.all.edit.cmdb',	       'desc': 'Modify the CMDB link on any system'},
+			{'name': 'systems.all.edit.comment',	       'desc': 'Modify the comment on any system'},
+			{'name': 'systems.all.edit.puppet',	       'desc': 'Modify Puppet settings on any system'},
+			{'name': 'systems.all.edit.rubrik',            'desc': 'Modify Rubrik settings on any system'},
+			{'name': 'systems.all.edit.owners',            'desc': 'Modify the system owners on any system'},
+			{'name': 'vmware.view',			       'desc': 'View VMware data and statistics'},
+			{'name': 'puppet.dashboard.view',	       'desc': 'View the Puppet dashboard'},
+			{'name': 'puppet.nodes.view',		       'desc': 'View the list of Puppet nodes'},
+			{'name': 'puppet.default_classes.view',	       'desc': 'View the list of Puppet default classes'},
+			{'name': 'puppet.default_classes.edit',	       'desc': 'Modify the list of Puppet default classes'},
+			{'name': 'dsc.view', 					'desc': 'View DSC of a system'},
+			{'name': 'dsc.enrol', 					'desc': 'Enrol a system in DSC'},
+			{'name': 'dsc.edit',					'desc': 'Edit the DSC of a system'},
+			{'name': 'classes.view',		       'desc': 'View the list of system class definitions'},
+			{'name': 'classes.edit',		       'desc': 'Edit system class definitions'},
+			{'name': 'tasks.view',			       'desc': 'View the details of all tasks (not just your own)'},
+			{'name': 'events.view',			       'desc': 'View the details of all events (not just your own)'},
+			{'name': 'specs.view',			       'desc': 'View the VM Specification Settings'},
+			{'name': 'specs.edit',			       'desc': 'Edit the VM Specification Settings'},
+			{'name': 'maintenance.vmware',		       'desc': 'Run VMware maintenance tasks'},
+			{'name': 'maintenance.cmdb',		       'desc': 'Run CMDB maintenance tasks'},
+			{'name': 'maintenance.expire_vm',	       'desc': 'Run the Expire VM maintenance task'},
+			{'name': 'maintenance.sync_puppet_servicenow', 'desc': 'Run the Sync Puppet with Servicenow task'},
+			{'name': 'maintenance.cert_scan',              'desc': 'Run the Certificate Scan task'},
+			{'name': 'maintenance.student_vm',             'desc': 'Run the Student VM Build Task'},
+			{'name': 'api.register',		       'desc': 'Manually register Linux machines (rebuilds / physical machines)'},
+			{'name': 'admin.permissions',		       'desc': 'Modify permissions'},
+			{'name': 'workflows.all',		       'desc': 'Use any workflow or workflow function'},
+
+			{'name': 'sysrequests.own.view',	       'desc': 'View system requests owned by the user'},
+			{'name': 'sysrequests.all.view',	       'desc': 'View any system request'},
+			{'name': 'sysrequests.all.approve',	       'desc': 'Approve any system request'},
+			{'name': 'sysrequests.all.reject',	       'desc': 'Reject any system request'},
+			{'name': 'control.all.vmware.power',	       'desc': 'Contol the power settings of any VM'},
+
+			{'name': 'api.get',			       'desc': 'Send GET requests to the Cortex API.'},
+			{'name': 'api.post',			       'desc': 'Send POST requests to the Cortex API.'},
+			{'name': 'api.put',			       'desc': 'Send PUT requests to the Cortex API.'},
+			{'name': 'api.delete',			       'desc': 'Send DELETE requests to the Cortex API.'},
+
+			{'name': 'certificates.view',                  'desc': 'View the list of discovered certificates and their details'},
+			{'name': 'certificates.stats',                 'desc': 'View the statistics about certificates'},
+			{'name': 'certificates.add',                   'desc': 'Adds a certificate to the list of tracked certificates'},
+		]
+
+		self.workflow_permissions = []
+
+		self.system_permissions = [
+			{'name': 'view.overview',               'desc': 'View the system overview'},
+			{'name': 'view.detail',                 'desc': 'View the system details'},
+			{'name': 'view.puppet',                 'desc': 'View the system\'s Puppet reports and facts'},
+			{'name': 'view.puppet.classify',        'desc': 'View the system\'s Puppet classification'},
+			{'name': 'view.puppet.catalog',         'desc': 'View the system\'s Puppet catalog'},
+			{'name': 'edit.expiry',                 'desc': 'Change the expiry date of the system'},
+			{'name': 'edit.review',                 'desc': 'Change the review status of the system'},
+			{'name': 'edit.vmware',                 'desc': 'Change the VMware VM link'},
+			{'name': 'edit.cmdb',                   'desc': 'Change the CMDB link'},
+			{'name': 'edit.comment',                'desc': 'Change the comment'},
+			{'name': 'edit.owners',                 'desc': 'Change the system owners'},
+			{'name': 'edit.puppet',                 'desc': 'Change Puppet settings'},
+			{'name': 'control.vmware.power',        'desc': 'Control the VMware power state'},
+		]
