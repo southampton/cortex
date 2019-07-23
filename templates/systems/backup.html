@@ -30,19 +30,19 @@
 					<div class="col-sm-12">
 					{% for label, value in [('Clear Assignment', 'INHERIT'), ('Do Not Protect', 'UNPROTECTED'), ('SLA Domain:', 'direct')] -%}
 						<div class="radio">
-							<label><input {% if not does_user_have_permission('systems.all.edit.rubrik') %}disabled="disabled" {% endif %}type="radio" name="mode" value="{{ value|e }}"{{ ' checked' if vm.configuredSlaDomainId == value or vm.configuredSlaDomainId not in ('INHERIT', 'UNPROTECTED') }}> {{ label|e }}</label>
+							<label><input {% if not does_user_have_system_permission(system.id,'edit.rubrik','systems.all.edit.rubrik') %}disabled="disabled" {% endif %}type="radio" name="mode" value="{{ value|e }}"{{ ' checked' if vm.configuredSlaDomainId == value or vm.configuredSlaDomainId not in ('INHERIT', 'UNPROTECTED') }}> {{ label|e }}</label>
 						</div>
 					{% endfor -%}
 					</div>
 					<div class="col-sm-10">
-						<select {% if not does_user_have_permission('systems.all.edit.rubrik') %}disabled="disabled" {% endif %}class="form-control" name="sla_domain" style="margin-left:2em"{% if vm.configuredSlaDomainId in ('INHERIT', 'UNPROTECTED') %} disabled="disabled"{% endif %}>
+						<select {% if not does_user_have_system_permission(system.id,'edit.rubrik','systems.all.edit.rubrik') %}disabled="disabled" {% endif %}class="form-control" name="sla_domain" style="margin-left:2em"{% if vm.configuredSlaDomainId in ('INHERIT', 'UNPROTECTED') %} disabled="disabled"{% endif %}>
 					{% for sla_domain in sla_domains.data -%}
 							<option value="{{ sla_domain.id }}"{{ ' selected' if sla_domain.id == vm.effectiveSlaDomainId }}>{{ sla_domain.name }}</option>
 					{%- endfor -%}
 						</select>
 					</div>
 					<div class="col-sm-2">
-{% if does_user_have_permission('systems.all.edit.rubrik') -%}
+{% if does_user_have_system_permission(system.id,'edit.rubrik','systems.all.edit.rubrik') -%}
 						<button type="submit" class="btn btn-success" style="margin-left:1em">Save</button>
 {% endif -%}
 					</div>

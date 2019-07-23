@@ -379,7 +379,7 @@ def system_backup(id):
 
 	if request.method == 'POST':
 
-		if not does_user_have_permission("systems.all.edit.rubrik"):
+		if not does_user_have_system_permission(id,"edit.rubrik","systems.all.edit.rubrik"):
 			abort(403)
 
 		# Get the name of the vm
@@ -402,8 +402,8 @@ def system_backup(id):
 		else:
 			abort(400)
 
-	# Check user permissions. User must have either systems.all.view.rubrik
-	if not does_user_have_permission("systems.all.view.rubrik"):
+	# Check user permissions. User must have either systems.all.view.rubrik or edit.rubrik (there's no separate view at present)
+	if not does_user_have_system_permission(id,"edit.rubrik","systems.all.view.rubrik"):
 		abort(403)
 
 	# Get the name of the vm

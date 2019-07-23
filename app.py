@@ -954,5 +954,6 @@ Username:             %s
 			{'name': 'edit.comment',                'desc': 'Change the comment'},
 			{'name': 'edit.owners',                 'desc': 'Change the system owners'},
 			{'name': 'edit.puppet',                 'desc': 'Change Puppet settings'},
+			{'name': 'edit.rubrik',                 'desc': 'Change Rubrik backup settings'},
 			{'name': 'control.vmware.power',        'desc': 'Control the VMware power state'},
 		]
