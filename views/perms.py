@@ -88,13 +88,13 @@ def system_perms_roles():
 
 		# Validate role name/prefix
 		name = request.form['name']
-		if not re.match(r'^[a-zA-Z0-9\s\-\_\'\"\&\@\,\:]{3,64}$', name):
-			flash("The name you chose is invalid. It can only contain lowercase letters and be at least 3 characters long and at most 64", "alert-danger")
+		if len(name) < 3 or len(name) > 64:
+			flash('The name you chose is invalid. It must be between 3 and 64 characters long', 'alert-danger')
 			return redirect(url_for('system_perms_roles'))
 
 		# Validate the description
 		desc = request.form['description']
-		if not re.match(r'^.{3,512}$', desc):
+		if len(desc) < 3 or len(desc) > 512:
 			flash("The description you sent was invalid. It must be between 3 and 512 characters long.", "alert-danger")
 			return redirect(url_for('system_perms_roles'))
 
@@ -111,7 +111,6 @@ def system_perms_roles():
 
 		flash("System Role created", "alert-success")
 		return redirect(url_for('system_perms_roles'))
-
 
 ################################################################################
 
