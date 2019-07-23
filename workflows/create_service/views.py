@@ -15,14 +15,21 @@ workflow.add_permission('service.create', 'Create New Service')
 
 @workflow.route("create",title='Create New Service', order=20, permission="newserver", methods=['GET', 'POST'])
 def createservice():
-	# This function will build the whole service from scratch
-	
-	# existing_recipes = cortex.lib.core.get_existing_recipes()
-	# 
-	
-	if request.method == 'GET': # if request is get render the page itself
-		return workflow.render_template("create_service.html")#, existing_recipes_names)
-		## Show form
+	# Get the list of clusters
+	all_clusters = cortex.lib.core.vmware_list_clusters(workflow.config['SB_VCENTER_TAG'])
+
+	# Exclude any clusters that the config asks to:
+	clusters = []
+	for cluster in all_clusters:
+		if cluster['name'] in workflow.config['SB_CLUSTERS']:
+			clusters.append(cluster)
+
+	# Get the list of environments
+	environments = cortex.lib.core.get_cmdb_environments()
+
+	if request.method == 'GET':
+		autocomplete_users = get_user_list_from_cache()
+		return workflow.render_template("create_service.html", clusters=clusters, environments=environments, title="Create Service", default_cluster=workflow.config['SB_DEFAULT_CLUSTER'], default_env=workflow.config['SB_DEFAULT_ENV'], os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'], autocomplete_users=autocomplete_users)#, existing_recipes_names)
 	else: # if it is POST, then it does need validation
 		return workflow.render_template("create_service.html")# return redirect(url_for('task_status', id=task_id))
 """

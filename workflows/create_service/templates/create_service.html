@@ -16,7 +16,13 @@
 	<script src="{{ url_for('static', filename='js/vendor/lint.min.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/vendor/js-yaml.min.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/vendor/yaml-lint.js') }}"></script>
-
+	
+	{#- datetime-pickers -#}
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}">
+	<script src="{{ url_for('static', filename='js/vendor/moment.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}"></script>
 	{#- Override CodeMirror style - must come after CodeMirror style imports -#}
 	<style type="text/css">
 	.CodeMirror {
@@ -95,7 +101,9 @@
 	-->
 	<div class="carousel-item" id="add-vms-template-item">
                 <img src="https://www.officemax.co.nz/Images/ProductImages/500/2012286.jpg">
-		<div id="vms-card-list" class="carousel-item-content-top">
+		<div id="vms-card-list-wrapper" class="carousel-item-content-top">
+			<div class="w-100 h-100" id="vms-card-list">
+			</div>
 		</div>
 		<div class="carousel-caption">
 			<h1 class="d-inline-flex" style="position: relative; margin-bottom: 0px!important; vertical-align: middle; margin-right: 5px; color: #777;">3.</h1>
@@ -172,17 +180,141 @@
 		
 			<div class="modal-body">
 				<ul class="nav nav-tabs" style="margin-bottom:1em" role="tablist">
-					<li class="nav-item"><a class="nav-link" id="vm-puppet" data-toggle="tab" style="cursor:pointer" href="#puppet-code">Puppet</a></li>
-					<li class="nav-item"><a class="nav-link active" id="vm-configuration" data-toggle="tab" style="cursor:pointer" href="#config">Configuration</a></li>
+					<li class="nav-item"><a class="nav-link active" id="vm-puppet" data-toggle="tab" style="cursor:pointer" href="#puppet-code">Puppet</a></li>
+					<li class="nav-item"><a class="nav-link" id="vm-configuration" data-toggle="tab" style="cursor:pointer" href="#config">Configuration</a></li>
 				</ul>
 				<div class="tab-content">
-					<div id="puppet-code" class="tab-pane container fade active">
+					<div id="puppet-code" class="tab-pane container fade active show">
 						<h3>Puppet Code</h3>
 						<textarea class="form-control" id="puppet_classes" name="puppet_classes" placeholder="Classes to include can be entered here"> </textarea>
 					</div>
 					<div id="config" class="tab-pane container fade">
 						<h3>VM Config</h3>
-						<p>Eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+						<h4 class="row col-md-12" style="margin-top:0">1. Enter request details</h4>
+						<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+							<div class="row">
+								<div class="form-group col-md-6">
+									<label for="purpose">Purpose:<span class="required">*</span></label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" autofocus />
+								</div>
+								<div class="form-group col-md-6">
+									<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
+								</div>
+							</div>
+							<div class="row">
+								<div class="form-group col-md-3">
+									<label for="primary_owner_who">Primary Owner:</label><input class="form-control" list="autocompleteUsers" autocomplete="off" id="primary_owner_who" name="primary_owner_who" placeholder="Primary owner's username" maxlength="64"/>
+								</div>
+								<div class="form-group col-md-3">
+									<label for="primary_owner_role">Primary Owner Role:</label><input class="form-control" id="primary_owner_role" name="primary_owner_role" placeholder="Primary owner's role" maxlength="64"/>
+								</div>
+								<div class="form-group col-md-3">
+									<label for="secondary_owner_who">Secondary Owner:</label><input class="form-control" list="autocompleteUsers" autocomplete="off" id="secondary_owner_who" name="secondary_owner_who" placeholder="Secondary owner's username" maxlength="64"/>
+								</div>
+								<div class="form-group col-md-3">
+									<label for="secondary_owner_role">Secondary Owner Role:</label><input class="form-control" id="secondary_owner_role" name="secondary_owner_role" placeholder="Secondary owner's role" maxlength="64"/>
+								</div>
+							</div>
+
+						<div class="row" style="margin-top: 0.5em">
+							<div class="col-md-12">
+								<h4>2. Choose Base Specification</h4>
+								<div class="btn-group" data-toggle="buttons" id="specs" style="margin-left: 1em">
+									<!-- Populated by JavaScript -->
+								</div>
+							</div>
+						</div>
+
+						<div class="row" style="margin-top: 1.6em">
+							<div class="col-md-12">
+								<h4>3. Customise Specification</h4>
+								<div class="form-group col-md-3" style="margin-top:2.4em">
+									<label for="sockets" style="margin-right: 15px;position:relative;top:1px">Sockets:</label>
+									<input style="width:65%" name="sockets" id="sockets" data-slider-id="slider-sockets" type="text" data-slider-min="1" data-slider-max="16" data-slider-step="1" data-slider-value="1" />
+									<p class="text-muted">Number of CPU sockets</p>
+								</div>
+								<div class="form-group col-md-3" style="margin-top:2.4em">
+									<label for="cores" style="margin-right: 15px;position:relative;top:1px">Cores:</label>
+									<input style="width:65%" name="cores" id="cores" data-slider-id="slider-cores" type="text" data-slider-min="1" data-slider-max="16" data-slider-step="1" data-slider-value="1" />
+									<p class="text-muted">Number of cores per socket</p>
+								</div>
+								<div class="form-group col-md-3" style="margin-top:2.4em">
+									<label for="ram" style="margin-right: 15px;position:relative;top:1px">RAM (GB):</label>
+									<input style="width:65%" name="ram" id="ram" data-slider-id="slider-ram" type="text" data-slider-min="2" data-slider-max="32" data-slider-step="2" data-slider-value="2" />
+									<p class="text-muted">Total amount of RAM, including video RAM</p>
+								</div>
+								<div class="form-group col-md-3" style="margin-top:2.4em">
+									<label for="disk" style="margin-right: 15px;position:relative;top:1px">Disk (GB):</label>
+									<input style="width:65%" name="disk" id="disk" data-slider-id="slider-disk" type="text" data-slider-min="2" data-slider-max="2000" data-slider-step="100" data-slider-value="100" />
+									<p class="text-muted">Additional disk size, excluding the default OS disk</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="row" style="margin-top: 1.0em">
+							<div class="col-md-4">
+								<h4>4. Choose Image<span class="required">*</span></h4>
+								<div style="margin-left:1em">
+									<select class="selectpicker" name="template" id="template">
+										<option></option>
+										{% for os in os_order -%}
+											<option value="{{ os }}">{{ os_names[os] }}</option>
+										{%- endfor %}
+									</select>
+								</div>
+
+								<h4 style="margin-top:2.2em">5. Choose Environment<span class="required">*</span></h4>
+								<div style="margin-left:1em">
+									<select class="selectpicker" name="environment" id="environment">
+										<option></option>
+										{% for environment in environments -%}
+											<option value="{{ environment.id }}"{% if default_env == environment.id %} selected="selected"{% endif %}>{{ environment.name }}</option>
+										{%- endfor %}
+									</select>
+								</div>
+								<h4 style="margin-top:2.2em">6. Choose Location Cluster<span class="required">*</span></h4>
+								<div style="margin-left:1em">
+									<select class="selectpicker" name="cluster" id="cluster">
+										<option></option>
+										{% for cluster in clusters -%}
+											<option value="{{ cluster.name }}"{% if default_cluster == cluster.name %} selected="selected"{% endif %}>{{cluster.name}}</option>
+										{%- endfor %}
+									</select>
+								</div>
+							</div>
+
+							<div class="col-md-4">
+								<h4>7. Expiry date (optional)</h4>
+								<div style="margin-left: 1em">
+									<p>Set the date that this VM will be automatically powered off.</p>
+									<div class='input-group date' id='expirypicker'>
+										<input type='text' class="form-control" id="expiry" name="expiry" placeholder="YYYY-MM-DD" />
+										<span class="input-group-addon">
+											<span class="glyphicon glyphicon-calendar"></span>
+										</span>
+									</div>
+									<script>
+										$(function () {
+											$('#expirypicker').datetimepicker({
+												viewMode: 'days',
+												format: 'YYYY-MM-DD',
+												minDate: moment(),
+												useCurrent: false,
+											});
+										});
+									</script>
+								</div>
+
+								<h4>8. Summary</h4>
+								<div style="margin-left: 1em">
+									<p>A VM will be created with the following specifications.</p>
+									<div style="font-size: 120%">
+										<div><strong>vCPUs:</strong> <span id="val_vcpus">0</span></div>
+										<div><strong>RAM:</strong> <span id="val_ram">0</span> GiB</div>
+										<div><strong>Disk:</strong> <span id="val_disk">0</span> GiB</div>
+									</div>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -203,9 +335,10 @@
 	* the header (vm name)
 	* the body (description)
 -->
-<div class="card w-25 h-25 d-none" id="vm-card" style="margin: 0.4rem;" data-target="#" data-toggle="modal">
+<div class="card d-none vm-card h-100" id="vm-card" style="margin: 0.4rem; width: 30%" data-target="#" data-toggle="modal">
 	<div class="card-header">
-		<h4>blablabla</h4>
+			<h4 class="float-left" style="margin-top: 4px; margin-bottom: 4px;"></h4>
+			<a class="btn btn-danger float-right" style="color:white;"><i class="fa fa-trash" aria-hidden="true"></i> Delete</a> 
 	</div>
 	<div class="card-body">
 		<p>Some general description</p>
@@ -214,8 +347,6 @@
 
 <script>
 $(document).ready(function(){
-	// var src_1 = "https://www.officemax.co.nz/Images/ProductImages/500/2012286.jpg";
-	// var src_2 = "https://www.solidbackgrounds.com/images/2880x1800/2880x1800-light-sky-blue-solid-color-background.jpg";
 	var form_steps = 1;
 	var was_clicked = false;
 	$("#create-service-template").click(function (){
@@ -247,14 +378,34 @@ $(document).ready(function(){
 
 
 		// careful on the next line, is there a use case when the user will use the same recipe twice ? if that's the case, you need to find something else for the ID
-		var card = $("#vm-card").clone(); 
-		card.toggleClass('d-none');	
+		
+		var card = $("#vm-card").clone();
+		card.toggleClass('d-none');
 		card.attr('id', vm_recipe_name);
 		card.attr('data-target', "#"+vm_recipe_name+"-modal");
 		card.find(".card-header h4").eq(0).html(vm_recipe_name);
 		card.find(".card-body p").eq(0).html(general_description);
-		
-		$("#vms-card-list").append(card); // append the card to the carousel item
+		card.find(".card-header a").eq(0).click(function() {
+			var row = $(this).closest(".row");
+			if(row.find(".card").length == 1){
+				row.remove();
+			} else {
+				$(this).closest(".card").remove();
+				var modal = $("#" + vm_recipe_name + "-modal");
+				if(modal.length){
+					modal.remove();
+				}
+			}
+		});
+		var number_of_cards = $(".vm-card").length -1;
+		if(number_of_cards % 3 == 0){
+			var row = $($.parseHTML('<div class="row col-md-12"></div>'));
+			row.append(card);
+			$("#vms-card-list").append(row);
+		} else {
+			$("#vms-card-list .row").last().append(card);
+		}
+		//$("#vms-card-list").append(card); // append the card to the carousel item
 		$('#'+vm_recipe_name).click(function(){ // add an event listener that shows a modal of the config for that VM
 			if($("#"+vm_recipe_name+"-modal").length == 0){
 				var modal = $("#vm-recipe-template-modal").clone();
@@ -262,7 +413,7 @@ $(document).ready(function(){
 				modal.attr('id', vm_recipe_name+"-modal");
 				modal.find(".modal-header h5").eq(0).html("Config "+ vm_recipe_name);
 				modal.find(".modal-body textarea").eq(0).attr('id', vm_recipe_name+"-textarea");
-				modal.find(".modal-body #vm-puppet").eq(0).attr('href', "#puppet-code-"+vm_recipe_name).html(puppet_code);
+				modal.find(".modal-body #vm-puppet").eq(0).attr('href', "#puppet-code-"+vm_recipe_name);
 				modal.find(".modal-body #vm-configuration").eq(0).attr('href', "#config-"+vm_recipe_name);
 				modal.find(".modal-body #puppet-code").eq(0).attr('id', "puppet-code-"+vm_recipe_name);
 				modal.find(".modal-body #config").eq(0).attr('id', "config-"+vm_recipe_name);
@@ -278,7 +429,6 @@ $(document).ready(function(){
 							lint: true,
 							indentUnit: 2,
 							viewportMargin: Infinity,
-							value: vm_recipe_name,
 						});
 						classes_editor.setSize(1100,500);
 					}
