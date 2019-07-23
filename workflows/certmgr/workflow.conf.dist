@@ -1,0 +1,100 @@
+# The ordered list of providers. Fields are:
+# - id: A unique identifier for the provider
+# - name: The name displayed to the user
+# - type: How the cert is generated. Currently can be "acme" or "self"
+# - selectable_key_size: Whether key sizes are selectable for the provider
+# - selectable_expiration: Whether certificate length is selectable for the provider
+# - nlb_upload: Whether certificates need uploading to the NLB
+PROVIDERS=[
+	{'id': 'letsencrypt', 'name': 'Let\'s Encrypt', 'type': 'acme', 'selectable_key_size': False, 'selectable_expiration': False, 'nlb_upload': False},
+	{'id': 'selfsign', 'name': 'Self-signed', 'type': 'self', 'selectable_key_size': True, 'selectable_expiration': True, 'nlb_upload': True}
+]
+
+# The ID of the provider to choose by default
+DEFAULT_PROVIDER='letsencrypt'
+
+# The ordered list of environments. Fields are:
+# - id: A unique identifier for the environment
+# - name: The name displayed to the user
+# - domain: The default domain to use for certificates in the environment
+# - nlb: The ID of the NLB to create objects on where necessary
+# - acme: The ID of the ACME server to use where necessary
+ENVS=[
+	{'id': 'prod', 'name': 'Production', 'domain': 'mydomain.tld', 'nlb': 'prod', 'acme': 'acme_prod'}
+]
+
+# The ID of the environment to choose by default
+DEFAULT_ENV='prod'
+
+# Key sizes to present for providers that allow selectable key sizes
+KEY_SIZES=[2048, 4096]
+
+# The default key size
+DEFAULT_KEY_SIZE=2048
+
+# The validity lengths (days) to present for providers that allow selectable expirations
+LENGTHS=[365, 730, 1095]
+
+# The default validity length
+DEFAULT_LENGTH=730
+
+# The Network Load Balancer(s) configuration. Fields are:
+# - id: A unique identifier for the NLB
+# - hostname: The hostname of the NLB for API access
+# - username: The username to use for API access
+# - password: The password to use for access
+# - partition: The partition to put objects in to
+# - parent-ssl-profile: The parent profile for Client SSL Profiles
+NLBS=[
+	{'id': 'prod', 'hostname': 'nlb.mydomain.tld', 'username': 'admin', 'password': 'password', 'partition': 'Common', 'parent-ssl-profile': '/Common/clientssl'},
+]
+
+# The ACME server(s) configuration. Fields are:
+# - id: A unique identifier for the ACME server
+# - hostname: The hostname of the server for API access
+# - api_token: The pre-shared token to use for accessing the API
+# - verify_ssl: Whether to verify the certificate when doing TLS to the ACME server
+ACME_SERVERS=[
+	{'id': 'acme_prod', 'hostname': 'acme.mydomain.tld', 'api_token': 'password', 'verify_ssl': True},
+]
+
+# A map of CNs of direct provider certificates to the associated file on the NLB
+NLB_INTERMEDIATE_CN_FILES={
+	'Let\'s Encrypt Authority X3': '/Common/letsencrypt.crt',
+}
+
+# The prefix to add to client SSL profile names
+CLIENT_SSL_PROFILE_PREFIX='ssl-'
+
+# The suffix to add to client SSL profile names
+CLIENT_SSL_PROFILE_SUFFIX=''
+
+# Self-signed certificate parameters: country
+CERT_SELF_SIGNED_C='GB'
+
+# Self-signed certificate parameters: state
+CERT_SELF_SIGNED_ST='MyState'
+
+# Self-signed certificate parameters: locality
+CERT_SELF_SIGNED_L='MyCity'
+
+# Self-signed certificate parameters: organisation
+CERT_SELF_SIGNED_O='MyOrganisation'
+
+# Self-signed certificate parameters: organisational unit
+CERT_SELF_SIGNED_OU='MyDepartment'
+
+# The DNS view (can be None for default view) to modify DNS entries in for initial Let's Encrypt ACME challenge
+ACME_DNS_VIEW='External'
+
+# Initial wait to let DNS catch up (seconds)
+DNS_PRE_WAIT_TIME=5
+
+# Timeout for waiting to DNS to actually catch up (not including pre-wait time) (seconds)
+DNS_WAIT_TIME=600
+
+# Amount of time Cortex will store the cert and key in redis
+CERT_CACHE_TIME=3600
+
+# External DNS server to check for records
+EXTERNAL_DNS_SERVER_IP='8.8.8.8'

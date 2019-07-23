@@ -5,14 +5,14 @@
 		<li role="presentation"{% if active == "overview" %} class="active"{%endif%}><a href="{{url_for('system_overview',id=system.id)}}">Overview</a></li>
 		<li role="presentation"{% if active == "info" %} class="active"{%endif%}><a href="{{url_for('system',id=system.id)}}">Info</a></li>
 		<li role="presentation"{% if active == "edit" %} class="active"{%endif%}><a href="{{url_for('system_edit',id=system.id)}}">Settings</a></li>
-		{% if system.vmware_uuid and does_user_have_permission("systems.all.view.rubrik") -%}
+		{% if system.vmware_uuid and does_user_have_system_permission(system.id, "edit.rubrik", "systems.all.view.rubrik") -%}
 		<li role="presentation"{% if active == "backup" %} class="active"{%endif%}><a href="{{url_for('system_backup',id=system.id)}}">Rubrik</a></li>
 		{% else -%}
 		<li role="presentation" class="disabled"><a>Rubrik</a></li>
 		{% endif -%}
 		<li role="presentation"{% if active == "actions" %} class="active"{%endif%}><a href="{{url_for('system_actions',id=system.id)}}">Actions</a></li>
 		{% if system.puppet_certname -%}
-		{% if does_user_have_system_permission(system.id, "edit.puppet", "systems.all.edit.puppet") -%}
+		{% if does_user_have_system_permission(system.id, "edit.puppet", "systems.all.edit.puppet") or does_user_have_system_permission(system['id'],"view.puppet.classify","systems.all.view.puppet.classify") -%}
 		<li role="presentation"{% if active == "puppet" %} class="active"{%endif%}><a href="{{url_for('puppet_enc_edit',node=system.puppet_certname)}}">Puppet</a></li>
 		{% else -%}
 		{% if does_user_have_system_permission(system.id, "view.puppet", "systems.all.view.puppet") -%}
@@ -29,11 +29,24 @@
 		{% if does_user_have_permission("admin.permissions") -%}
 		<li role="presentation"{% if active == "perms" %} class="active"{%endif%}><a href="{{url_for('perms_system',id=system.id)}}">Permissions</a></li>
 		{% endif -%}
-		{%- if system.cmdb_id and does_user_have_system_permission(system.id, "view.detail", "systems.all.view") %}
-		<li role="presentation"><a href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank">ServiceNow <i class="fa fa-fw fa-external-link"></i></a></li>
-		{% else %}
-		<li role="presentation" class="disabled"><a>ServiceNow <i class="fa fa-fw fa-external-link"></i></a></li>
-		{%endif%}
+		<li role="presentation" class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">External Links <b class="caret"></b></a>
+			<ul class="dropdown-menu">
+				{%- if system.cmdb_id and does_user_have_system_permission(system.id, "view.detail", "systems.all.view") %}
+				<li role="presentation"><a href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank">ServiceNow <i class="fa fa-fw fa-external-link"></i></a></li>
+				{% else %}
+				<li role="presentation" class="disabled"><a>ServiceNow <i class="fa fa-fw fa-external-link"></i></a></li>
+				{%endif%}
+
+				{%- if ((system.vmware_os != None and 'linux' in system.vmware_os.lower()) or (system.cmdb_os != None and 'linux' in system.cmdb_os.lower())) and does_user_have_system_permission(system.id, "view.detail", "systems.all.view") %}
+				<li role="presentation"><a href="{{ config['SATELLITE6_URL'] + '/hosts/' + system.name }}" target="_blank">Red Hat Satellite 6 <i class="fa fa-fw fa-external-link"></i></a></li>
+				{% else %}
+				<li role="presentation" class="disabled"><a>Red Hat Satellite 6 <i class="fa fa-fw fa-external-link"></i></a></li>
+
+				{% endif %}
+
+				
+			</ul>
+		</li>
 	</ul>
 </div>
 {%- endmacro %}

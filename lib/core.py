@@ -59,12 +59,56 @@ def vmware_list_clusters(tag):
 	"""Return a list of clusters from within a given vCenter. The tag
 	parameter defines an entry in the vCenter configuration dictionary that
 	is within the application configuration."""
-
 	if tag in app.config['VMWARE']:
 		# SQL to grab the clusters from the cache
 		curd = g.db.cursor(mysql.cursors.DictCursor)
 		curd.execute("SELECT * FROM `vmware_cache_clusters` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname'],))
 		return curd.fetchall()
+	else:
+		raise Exception("Invalid VMware tag")
+
+def vmware_list_folders(tag):
+	"""Return a list of folders from witihin a given vCenter. The tag
+	parameter defines an entry in the vCenter configuration dictionary that
+	is within the application configuration."""
+	
+	if tag in app.config['VMWARE']:
+		curd = g.db.cursor(mysql.cursors.DictCursor)
+
+		# SQL to grab the datacenters from the cache into a dictionary
+		curd.execute("SELECT * FROM `vmware_cache_datacenters` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname'],))
+		result = curd.fetchall()
+		dcs_dict = {dc['id']: dc for dc in result}
+
+		# SQL to grab the clusters from the cache into a dictionary
+		curd.execute("SELECT * FROM `vmware_cache_folders` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname'],))
+		result = curd.fetchall()
+		folders_dict = {folder['id']: folder for folder in result}
+
+		folders = []
+		for folder_id in folders_dict:
+			# Start the fully qualified path with the name of the folder
+			fully_qualified = folders_dict[folder_id]['name']
+
+			# Recurse up the tree
+			recurse_folder = folders_dict[folder_id]
+			while recurse_folder['parent'] is not None:
+				try:
+					recurse_folder = folders_dict[recurse_folder['parent']]
+					if recurse_folder is not None:
+						# Add on the parent folder name to the front
+						fully_qualified = recurse_folder['name'] + "\\" + fully_qualified
+				except KeyError as e:
+					# We hit KeyErrors when we reach the "folder" that is the datecenter object
+					break
+
+			# Add the datacenter object name on the front
+			folders_dict[folder_id]['fully_qualified_path'] = dcs_dict[folders_dict[folder_id]['did']]['name'] + "\\" + fully_qualified
+
+			# Append this to our array
+			folders.append(folders_dict[folder_id])
+
+		return folders
 	else:
 		raise Exception("Invalid VMware tag")
 
@@ -94,6 +138,57 @@ def fqdn_strip_domain(fqdn):
 
 	# n.b split always returns a list with 1 entry even if the seperator isnt found
 	return fqdn.split('.')[0]
+
+
+################################################################################
+
+def tasks_where_query(*args, **kwargs):
+	# Build the query parts
+	query_parts = []
+	query_params = []
+	for key in kwargs:
+		if key in ['module', 'username', 'status']:
+			if kwargs[key] is not None:
+				query_parts.append("`" + key + "` = %s")
+				query_params.append(kwargs[key])
+		else:
+			raise TypeError("tasks_where_query() got an unexpected keyword argument '" + key + "'")
+
+	if len(query_parts) > 0:
+		return (" WHERE " + " AND ".join(query_parts), tuple(query_params))
+	else:
+		return ("", ())
+
+################################################################################
+
+def tasks_count(*args, **kwargs):
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	(where_clause, query_params) = tasks_where_query(**kwargs)
+	curd.execute("SELECT COUNT(*) AS `count` FROM `tasks`" + where_clause, tuple(query_params))
+
+	return curd.fetchone()['count']
+
+################################################################################
+
+def tasks_get(order = None, limit_start = None, limit_length = None, *args, **kwargs):
+	# Get a cursor to the database
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Build the query
+	(where_clause, query_params) = tasks_where_query(**kwargs)
+	query = "SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks`" + where_clause
+
+	if order in ['id', 'module', 'username', 'start', 'end', 'status', 'description']:
+		query = query + " ORDER BY `" + order + "`"
+
+	if limit_start is not None and limit_length is not None:
+		query = query + " LIMIT " + str(int(limit_start)) + "," + str(int(limit_length))
+
+	# Get the task
+	curd.execute(query, tuple(query_params))
+	return curd.fetchall()
 
 ################################################################################
 

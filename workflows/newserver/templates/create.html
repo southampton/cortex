@@ -139,9 +139,9 @@ $('#alloc_ip').change(function(e) {
 $('span.required').attr('title', 'Required');
 $('#allocate').click(function(e) {
 	// If a ServiceNow ticket has been entered, validate the number
-	if ($("#task").val().length > 0 && $("#task").val().match(/^[ \t]*((PRJ)|(INC)|(C))TASK[0-9]+[ \t]*/) == null)
+	if ($("#task").val().length > 0 && $("#task").val().match(/^[ \t]*((PRJ)|(INC)|(C)|(REQ))TASK[0-9]+[ \t]*/) == null)
 	{
-		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345 or CTASK012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident.');
+		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345, CTASK012345 or REQTASK0012345.\nNote that this cannot be a ticket number (i.e. INC0123456). If necessary, create an incident task for the incident.');
 		$('#task').focus();
 	}
 	else if ($('#purpose').val().length == 0)

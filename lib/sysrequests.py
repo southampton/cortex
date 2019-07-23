@@ -161,21 +161,21 @@ def approve(id, status_text=None):
 
 	#load options from request
 	stmt = ('SELECT `workflow`, '
-                       '`hostname`, '
-                       '`sockets`, '
-                       '`cores`, '
-                       '`ram`, '
-                       '`disk`, '
-                       '`template`, '
-                       '`network`, '
-                       '`cluster`, '
-                       '`environment`, '
-                       '`purpose`, '
-                       '`comments`, '
-                       '`expiry_date`, '
-                       '`sendmail` '
-              'FROM `system_request` '
-              'WHERE `id`=%s')
+		'`hostname`, '
+		'`sockets`, '
+		'`cores`, '
+		'`ram`, '
+		'`disk`, '
+		'`template`, '
+		'`network`, '
+		'`cluster`, '
+		'`environment`, '
+		'`purpose`, '
+		'`comments`, '
+		'`expiry_date`, '
+		'`sendmail` '
+		'FROM `system_request` '
+		'WHERE `id`=%s')
 	params = (id,)
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute(stmt, params)

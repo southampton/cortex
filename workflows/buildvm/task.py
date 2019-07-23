@@ -2,6 +2,9 @@
 import time
 
 def run(helper, options):
+	if not helper.lib.checkWorkflowLock:
+		raise Exception("Workflows are currently locked")
+
 
 	# Find out which workflow we're wanting to run
 	workflow = options['workflow']
@@ -31,8 +34,10 @@ def run(helper, options):
 		os_templates = options['wfconfig']['OS_TEMPLATES']
 		os_names = options['wfconfig']['OS_NAMES']
 		os_disks = options['wfconfig']['OS_DISKS']
-		vm_folder_name = None
+		os_types = options['wfconfig']['OS_TYPES']
+		vm_folder_moid = options['vm_folder_moid']
 		dns_aliases = options['dns_aliases']
+		set_backup = options['wfconfig']['SET_BACKUP']
 	elif workflow == 'sandbox':
 		prefix = options['wfconfig']['SB_PREFIX']
 		vcenter_tag = options['wfconfig']['SB_VCENTER_TAG']
@@ -52,8 +57,10 @@ def run(helper, options):
 		os_templates = options['wfconfig']['SB_OS_TEMPLATES']
 		os_names = options['wfconfig']['SB_OS_NAMES']
 		os_disks = options['wfconfig']['SB_OS_DISKS']
-		vm_folder_name = None
+		os_types = options['wfconfig']['SB_OS_TYPES']
+		vm_folder_moid = None
 		dns_aliases = []
+		set_backup = options['wfconfig']['SB_SET_BACKUP']
 	elif workflow == 'student':
 		prefix = options['wfconfig']['STU_PREFIX']
 		vcenter_tag = options['wfconfig']['STU_VCENTER_TAG']
@@ -76,8 +83,10 @@ def run(helper, options):
 		os_templates = options['wfconfig']['STU_OS_TEMPLATES']
 		os_names = options['wfconfig']['STU_OS_NAMES']
 		os_disks = options['wfconfig']['STU_OS_DISKS']
-		vm_folder_name = options['wfconfig']['STU_VM_FOLDER']
+		os_types = options['wfconfig']['STU_OS_TYPES']
+		vm_folder_moid = options['wfconfig']['STU_VM_FOLDER']
 		dns_aliases = options['dns_aliases']
+		set_backup = options['wfconfig']['STU_SET_BACKUP']
 
 		# Override primary owner to match allocated_by
 		options['primary_owner_who'] = helper.username
@@ -90,11 +99,11 @@ def run(helper, options):
 	helper.event("allocate_name", "Allocating a '" + prefix + "' system name")
 
 	# Allocate the name
-	system_info = helper.lib.allocate_name(prefix, options['purpose'], helper.username, expiry=options['expiry'])
+	system_info = helper.lib.allocate_name(prefix, options['purpose'], helper.username, expiry=options['expiry'], set_backup=set_backup)
 
-	# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
-	system_name = system_info.keys()[0]
-	system_dbid = system_info.values()[0]
+	# system_info is a dictionary containg a single { 'name': name, 'id':dbid }. Extract both of these:
+	system_name = system_info['name']
+	system_dbid = system_info['id']
 
 
 	# Update the system with some options.
@@ -140,12 +149,12 @@ def run(helper, options):
 	os_disk_size =  os_disks[options['template']]
 
 	# For RHEL6, RHEL7:
-	if options['template'] in ['rhel6', 'rhel7', 'rhel6c']:
+	if options['template'] in os_types['Linux']:
 		os_type = helper.lib.OS_TYPE_BY_NAME['Linux']
 		vm_spec = None
 
 	# For Server 2012R2
-	elif options['template'] == 'windows_server_2012' or options['template'] == 'windows_server_2016' or options['template'] == 'windows_server_2016_core':
+	elif options['template'] in os_types['Windows']:
 		os_type = helper.lib.OS_TYPE_BY_NAME['Windows']
 
 		# Build a customisation spec depending on the environment to use the correct domain details
@@ -171,17 +180,19 @@ def run(helper, options):
 
 	# Get the vm folder to use if any
 	vm_folder = None
-	if vm_folder_name is not None:
-		vm_folder = vm_folder_name
+	if vm_folder_moid is not None:
+		vm_folder = vm_folder_moid
+		folder_is_moid = True
 
 	elif "default_folder" in helper.config['VMWARE'][vcenter_tag]:
 		vm_folder = helper.config['VMWARE'][vcenter_tag]['default_folder']
+		folder_is_moid = False
 
 	# Get the vm resource pool to use if any
 	vm_rpool = cluster_rpool.get(options['cluster'], "Root Resource Pool")
 
 	# Launch the task to clone the virtual machine
-	task = helper.lib.vmware_clone_vm(si, template_name, system_name, vm_rpool=vm_rpool, vm_cluster=options['cluster'], custspec=vm_spec, vm_folder=vm_folder, vm_network=network_name, vm_datastore_cluster=cluster_storage_pools[options['cluster']])
+	task = helper.lib.vmware_clone_vm(si, template_name, system_name, vm_rpool=vm_rpool, vm_cluster=options['cluster'], custspec=vm_spec, vm_folder=vm_folder, vm_network=network_name, vm_datastore_cluster=cluster_storage_pools[options['cluster']], folder_is_moid=folder_is_moid)
 	helper.lib.vmware_task_complete(task, "Failed to create the virtual machine")
 
 	# End the event
@@ -498,16 +509,15 @@ def run(helper, options):
 		except Exception as e:
 			helper.end_event(success=False, description='Failed to set Computer object attributes: ' + str(e))
 
-			# Wait for 60 seconds to allow time for the VM to come back up
-			# This feels like a bit of a hack currently, but we don't have
-			# a way currently of knowing if the VM is up.
-			helper.event('windows_delay', 'Wait and restart guest')
-			time.sleep(60)
+		# Wait for 60 seconds to allow time for the VM to come back up
+		# This feels like a bit of a hack currently, but we don't have
+		# a way currently of knowing if the VM is up.
+		helper.event('windows_delay', 'Wait and restart guest')
+		time.sleep(60)
 
-			# Restart the guest
-			helper.lib.vmware_vm_restart_guest(vm)
-			helper.end_event(success=True, description='Initiated guest restart')
-
+		# Restart the guest
+		helper.lib.vmware_vm_restart_guest(vm)
+		helper.end_event(success=True, description='Initiated guest restart')
 
 
 	## Send success email ##################################################

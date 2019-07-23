@@ -2,6 +2,9 @@
 {% block body %}
 <div class="page-header">
 <h3>
+	<div class="pull-right" style="margin-left:10px;padding-left:10px;border-left:1px solid #eeeeee">
+		<button id="hide_frequent" type="button" class="btn btn-sm btn-success btn-filter active" {{ 'disabled' if not json_source }}><i class="fa fa-fw fa-check-square-o"></i> Hide Frequent Tasks</button>
+	</div>
 	<div class="pull-right">
 		<a class="btn btn-sm {% if event_source == 'all' %}btn-primary{% else %}btn-default{% endif %}" href="{{ url_for('admin_events') }}">All</a>
 		<a class="btn btn-sm {% if event_source == 'user' %}btn-primary{% else %}btn-default{% endif %}" href="{{ url_for('admin_events',src='user') }}">User</a>
@@ -23,25 +26,27 @@ The list below shows all events started by the scheduler
 </div>
 </div>
 
-<table class="table table-condensed table-striped" id="events">
-	<thead>
-		<tr>
-			<th>ID</th>
-			<th>Start</th>
-			<th>End</th>
-			<th>Name</th>
-			<th style="max-width: 30%">Description</th>
-			<th>Source</th>
-			<th>Username</th>
-			<th>Address</th>
-		</tr>
-	</thead>
-	<tbody>
-	</tbody>
-</table>
+<div id="eventsWrapper">
+	<table class="table table-condensed table-striped" id="events">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>Start</th>
+				<th>End</th>
+				<th>Name</th>
+				<th style="max-width: 30%">Description</th>
+				<th>Source</th>
+				<th>Username</th>
+				<th>Address</th>
+			</tr>
+		</thead>
+		<tbody>
+		</tbody>
+	</table>
+</div>
 
 <script type="text/javascript">
-	$('#events').DataTable({
+	var eventsTable = $('#events').DataTable({
 		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 		"pageLength": 15,
 		"order": [[0, 'desc']],
@@ -53,10 +58,29 @@ The list below shows all events started by the scheduler
 		"ajax": {
 			"url": "{{ json_source }}",
 			"type": "POST",
+			"data": function (d) {
+				d.hide_frequent = ($('#hide_frequent').hasClass('btn-success') ? "1" : "0");
+			}
 		},
 		"rowCallback": function(row, data, index) {
 		}
 {%- endif %}
 	});
+
+{%- if json_source %}
+	$('#hide_frequent').click(function() {
+		$('#hide_frequent').toggleClass('btn-success');
+		$('#hide_frequent').toggleClass('btn-danger');
+		$('#hide_frequent').toggleClass('active');
+		$('#hide_frequent i').toggleClass('fa-check-square-o');
+		$('#hide_frequent i').toggleClass('fa-square-o');
+		$('#eventsWrapper').fadeOut(150, function() {
+				eventsTable.ajax.reload(function() {
+						$('#eventsWrapper').fadeIn(150);
+				});
+		});
+	});
+{%- endif %}
+
 </script>
 {% endblock %}

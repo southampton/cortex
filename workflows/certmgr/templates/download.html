@@ -1,0 +1,122 @@
+{% extends "layout.html" %}
+{% block head -%}
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+<div class="page-header">
+<h3 id="heading">Create SSL Certificate - Task In Progress</h3>
+</div>
+<style type="text/css">
+.submit
+{
+	padding-bottom: 2em;
+	margin-left: 1em;
+}
+
+.btn-submit
+{
+	font-size: 2em;
+}
+
+textarea
+{
+	width: 100%;
+	height: 20em;
+	font-family: Consolas,Monaco,"Lucida Console","Liberation Mono","DejaVu Sans Mono","Bitstream Vera Sans Mono","Courier New",monospace;
+	font-size: 10pt;
+}
+button.copy-to-clipboard
+{
+	position: relative;
+	top: -2px;
+}
+p
+{
+	font-size: 120%;
+}
+</style>
+<div class="row" id="task_waiting">
+	<div class="col-md-12">
+		<p style="margin: 1em 0em 1em 2em;font-size: 16px"><i class="fa fa-fw fa-spin fa-refresh"></i>  Waiting for NeoCortex <a href="{{ url_for('task_status', id=task_id) }}" target="_blank">task {{ task_id }}</a> to complete...</p>
+	</div>
+</div>
+<div class="row" style="display:none" id="task_failed">
+	<div class="col-md-12">
+		<p>The task to create the certificate failed. You may wish to review the <a href="{{ url_for('task_status', id=task_id) }}">task details</a> for more information.</p>
+	</div>
+</div>
+<div class="row" style="display:none" id="ajax_error">
+	<div class="col-md-12">
+		<p id="ajax_error_content"></p>
+	</div>
+</div>
+<div class="row" style="display:none" id="task_ready">
+	<div class="col-md-12"><p>The task completed successfully. The key and certificate are available in PEM-encoded format below. Please copy them elsewhere now, as they will be removed from the Cortex server in one hour.</p></div>
+	<div class="col-md-4"><h4>Certificate<button class="btn btn-xs btn-default pull-right copy-to-clipboard" data-copy="certificate">Copy to Clipboard</button></h4><textarea readonly="readonly" id="certificate"></textarea></div>
+	<div class="col-md-4"><h4>Private Key<button class="btn btn-xs btn-default pull-right copy-to-clipboard" data-copy="key">Copy to Clipboard</button></h4><textarea readonly="readonly" id="key"></textarea></div>
+	<div class="col-md-4"><h4>Chain<button class="btn btn-xs btn-default pull-right copy-to-clipboard" data-copy="chain">Copy to Clipboard</button></h4><textarea readonly="readonly" id="chain"></textarea></div>
+	<div class="col-md-12">
+		<h4>Downloads</h4>
+		<p>The above certificates are available for download in various formats below. The Zip file contains the above certificates in the same PEM-encoded format as they are above, that are best used for Apache / nginx. The PKCS12 / PFX file is a password-less PFX file, which is best used with IIS.</p>
+		<p><a class="btn btn-sm btn-primary" href="{{ url_for('certmgr_download_zip', task=task_id) }}">Download ZIP</a> &nbsp;<a class="btn btn-sm btn-primary" href="{{ url_for('certmgr_download_pkcs12', task=task_id) }}">Download PKCS12 / PFX</a></p>
+	</div>
+</div>
+<script type="text/javascript">
+var task_id = {{ task_id }};
+var interval = window.setInterval(function() {
+	$.ajax({
+		url: '/api/tasks/{{ task_id }}',
+		success: function(data, textStatus, xhr) {
+			if (data['status'] == 1)
+			{
+				window.clearInterval(interval);
+				$('#task_waiting').css('display', 'none');
+				
+				$.ajax({
+					url: '{{ url_for('certmgr_ajax_get_raw', task=task_id) }}',
+					success: function(data, textStatus, xhr) {
+						if (data['error'] != undefined)
+						{
+							$('#ajax_error_content').text(data['error']);
+							$('#ajax_error').css('display', 'block');
+							$('#heading').text('Create SSL Certificate - Error')
+						}
+						else
+						{
+							$('#certificate').text(data['certificate']);
+							$('#key').text(data['key']);
+							if (data['chain'] != undefined)
+							{
+								$('#chain').text(data['chain']);
+							}
+							$('#task_ready').css('display', 'block');
+							$('#heading').text('Create SSL Certificate')
+						}
+					},
+					dataType: 'json'
+				});
+			}
+			else if (data['status'] == 2 || data['status'] == 3)
+			{
+				$('#task_waiting').css('display', 'none');
+				$('#task_failed').css('display', 'block');
+				$('#heading').text('Create SSL Certificate - Task Failed')
+			}
+		},
+		dataType: 'json'
+	});
+}, 1000);
+$('.copy-to-clipboard').click(function(event) {
+	var textarea_id = $(event.target).attr('data-copy');
+	const selection = document.getSelection().rangeCount > 0 ? document.getSelection().getRangeAt(0) : false;
+	$('#' + textarea_id).select();
+	document.execCommand('copy');
+	if (selection)
+	{
+		document.getSelection().removeAllRanges();
+		document.getSelection().addRange(selection);
+	}
+});
+</script>
+{% endblock %}

@@ -1,14 +1,16 @@
 #!/usr/bin/python
 
 from cortex import app
-from cortex.lib.workflow import CortexWorkflow
+from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
 import cortex.lib.core
 import cortex.lib.systems
 import cortex.views
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
 import re, datetime, requests
-from urlparse import urljoin
+from urllib.parse import urljoin
+import MySQLdb as mysql
+import json
 
 # For DNS queries
 import socket
@@ -23,7 +25,7 @@ import OpenSSL as openssl
 from itsdangerous import JSONWebSignatureSerializer
 
 workflow = CortexWorkflow(__name__)
-workflow.add_permission('nlbweb.create', 'Creates NLB Web Service')
+workflow.add_permission('nlbweb.create', 'Create NLB Web Service')
 
 # IPv4 Address Regex
 ipv4_re = re.compile(r"^((([0-9])|([1-9][0-9])|(1[0-9][0-9])|(2[0-4][0-9])|(25[0-5]))\.){3}((([0-9])|([1-9][0-9])|(1[0-9][0-9])|(2[0-4][0-9])|(25[0-5])))$")
@@ -33,6 +35,9 @@ fqdn_re = re.compile(r"^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]
 
 @workflow.route('create', title='Create NLB Web Service', order=40, permission="nlbweb.create", methods=['GET', 'POST'])
 def nlbweb_create():
+	# Don't go any further if workflows are currently locked
+	raise_if_workflows_locked()
+
 	# Get the workflow settings
 	wfconfig = workflow.config
 
@@ -104,7 +109,7 @@ def nlbweb_create():
 				flash('The specified service domain name is not valid', 'alert-danger')
 				valid_form = False
 		if len(form_fields['aliases']) > 0:
-			split_aliases = filter(lambda x: x != '', form_fields['aliases'].split(' '))
+			split_aliases = [x for x in form_fields['aliases'].split(' ') if x != '']
 			for alias in split_aliases:
 				if '.' not in alias:
 					flash('All service aliases must be fully qualified domain names', 'alert-danger')
@@ -798,28 +803,13 @@ def nlbweb_validate():
 
 @workflow.route('dnslookup', permission="nlbweb.create", menu=False)
 def nlbweb_dns_lookup():
+	
 	host = request.args['host']
-	add_default_domain = False
-	if host.find('.') == -1:
-		add_default_domain = True
-	else:
-		host_parts = host.split('.')
-		if len(host_parts) == 2:
-			if host_parts[1] in workflow.config['KNOWN_DOMAIN_SUFFIXES']:
-				add_default_domain = True
 
-	if add_default_domain:
-		host = host + '.' + workflow.config['DEFAULT_DOMAIN']
-
-	result = {'success': 0}
-	try:
-		result['ip'] = socket.gethostbyname(host)
-		result['hostname'] = host
-		result['success'] = 1
-	except Exception, e:
-		pass
-
-	return jsonify(result)
+	# Load the Corpus library (for Infoblox helper functions)
+	corpus = Corpus(g.db, app.config)
+	
+	return jsonify(corpus.dns_lookup(host))
 
 # Processes a Zulu time
 def parse_zulu_time(s):
@@ -925,7 +915,7 @@ def parse_irule_list(irules_text, bigip):
 		return []
 
 	# Split the space-separated string and filter out empty values
-	irules_list = filter(lambda x: x != '', irules_text.split(' '))
+	irules_list = [x for x in irules_text.split(' ') if x != '']
 
 	# Start a results list
 	result = []

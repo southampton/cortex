@@ -1,31 +1,109 @@
-import os
-import imp
+import os, imp, types, json
 from cortex import app
 from flask import render_template, abort, g
 from cortex.lib.user import login_required, does_user_have_workflow_permission, does_user_have_permission, does_user_have_system_permission
 from functools import wraps
+import MySQLdb as mysql
 
 ################################################################################
 
-class CortexWorkflow:
+def get_workflows_locked_details():
+	"""Gets the details about workflow locking."""
+
+	# Check if workflows are currently locked 
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key` = "workflow_lock_status";')
+	current_value = curd.fetchone()
+
+	# If we didn't get a row, then we can't be locked
+	if current_value is None:
+		return {'status': 'Unlocked', 'error': 'No data'}
+
+	# Parse the JSON
+	try:
+		jsonobj = json.loads(current_value['value'])
+	except Exception as e:
+		# No JSON, assume False
+		return {'status': 'Unlocked', 'error': 'Invalid JSON'}
+
+	return jsonobj
+
+def get_workflows_locked():
+	"""Determines if workflows are currently locked."""
+
+	jsonobj = get_workflows_locked_details()
+
+	if jsonobj is not None and 'status' in jsonobj and jsonobj['status'] == 'Locked':
+		return True
+	else:
+		return False
+
+def raise_if_workflows_locked():
+	"""Raises an Exception if workflows are currently locked."""
+
+	if get_workflows_locked():
+		raise Exception("Workflows are currently locked.\nPlease try again later.")
+
+################################################################################
+
+class CortexWorkflow(object):
 	config = {}
 
-	def __init__(self, name):
+	def __init__(self, name, load_config=True, check_config=None):
 		self.name = name
+		self.config = {}
 
-		# Load settings for this workflow
-		cfgfile = os.path.join(app.config['WORKFLOWS_DIR'], self.name, "workflow.conf") 
-		if os.path.isfile(cfgfile):
-			try:
-				self.config = self._load_config(cfgfile)
-				app.logger.info("Workflows: Loaded config file for '" + self.name + "'")
-			except Exception as ex:
-				app.logger.warn("Workflows: Could not load config file " + cfgfile + ": " + str(ex))
-		else:
-			app.logger.debug("Workflows: No config file found for '" + self.name + "'")
+		if 'DISABLED_WORKFLOWS' in app.config and name in app.config['DISABLED_WORKFLOWS']:
+			raise Exception('Workflow is disabled in configuration')
+
+		if load_config:
+			# Load settings for this workflow
+			cfgfile = os.path.join(app.config['WORKFLOWS_DIR'], self.name, "workflow.conf") 
+			if os.path.isfile(cfgfile):
+				try:
+					self.config = self._load_config(cfgfile)
+					app.logger.info("Workflows: Loaded config file for '" + self.name + "'")
+
+					# Validate the config
+					if check_config is not None:
+						# If a dict is given for check_config, then use our _default_validate_config
+						# function to validate the configuration items
+						if type(check_config) is dict:
+							if not self._default_validate_config(check_config):
+								raise Exception("Workflows: Invalid configuration in workflow '" + self.name + "'")
+						# If a function is given for check_config, call it:
+						elif type(check_config) is types.FunctionType:
+							if not check_config(self):
+								raise Exception("Workflows: Invalid configuration in workflow '" + self.name + "'")
+
+				except Exception as ex:
+					app.logger.error("Workflows: Could not load config file " + cfgfile + ": " + str(ex))
+
+					# Re-raise to stop the workflow from loading
+					raise(ex)
+
+			else:
+				app.logger.debug("Workflows: No config file found for '" + self.name + "'")
 
 		#register the workflow against the app so it can be accessed from cortex
 		app.workflows.update({name: self})
+
+	def _default_validate_config(self, required_config):
+		valid_config = True
+
+		for item in required_config:
+			# Make sure we have the item
+			if item not in self.config:
+				app.logger.error("Workflows: Missing required configuration item '" + str(item) + "' for workflow '" + self.name + "'")
+				valid_config = False
+			else:
+				# Check the type of the item matches what we expect
+				if required_config[item] is not None:
+					if type(self.config[item]) is not required_config[item]:
+						app.logger.error("Workflows: Configuration item '" + str(item) + "' in workflow '" + self.name + "' is of incorrect type '" + type(self.config[item]).__name__ + "' - should be '" + required_config[item].__name__ + "'")
+						valid_config = False
+
+		return valid_config
 
 	def _load_config(self, filename): 
 		"""Extracts the settings from the given config file."""

@@ -51,7 +51,9 @@ a.server-link:hover { text-decoration: underline !important; }
 	color: #FFFFFF;
 }
 </style>
+
 {%- if does_user_have_permission('systems.all.view') %}
+
 <div class="row">
 	<div class="col-md-9">
 {%- endif -%}
@@ -250,9 +252,9 @@ a.server-link:hover { text-decoration: underline !important; }
 			<strong><i class="fa fa-fw fa-book"></i> {{ ci_count }}</strong> ServiceNow CIs
 		</div>
 		<div class="dashblock bg-dorange">
-			<strong><i class="fa fa-fw fa-cog"></i> {{ task_progress_count }}</strong> Tasks in progress<br/>
-			<strong><i class="fa fa-fw fa-exclamation-triangle"></i> {{ task_warning_count }}</strong> Recent tasks with warnings<br/>
-			<strong><i class="fa fa-fw fa-times"></i> {{ task_failed_count }}</strong> Recent failed tasks
+			<a href="{{ url_for('admin_tasks_active') }}"><strong><i class="fa fa-fw fa-cog"></i> {{ task_progress_count }}</strong> Tasks in progress<br/></a>
+			<a href="{{ url_for('admin_tasks', filter_succeeded='0', filter_failed='0') }}"><strong><i class="fa fa-fw fa-exclamation-triangle"></i> {{ task_warning_count }}</strong> Recent tasks with warnings<br/></a>
+			<a href="{{ url_for('admin_tasks', filter_succeeded='0', filter_warnings='0') }}"><strong><i class="fa fa-fw fa-times"></i> {{ task_failed_count }}</strong> Recent failed tasks</a>
 		</div>
 		<div class="dashblock bg-success">
 			<strong><i class="fa fa-fw fa-database"></i> {{ total_ram | filesizeformat(binary=True) }}</strong> RAM total<br/>
@@ -260,8 +262,8 @@ a.server-link:hover { text-decoration: underline !important; }
 			<strong><i class="fa fa-fw fa-line-chart"></i> {{ total_ram_usage | filesizeformat(binary=True) }}</strong> RAM usage
 		</div>
 		<div class="dashblock bg-purple">
-			<strong><i class="fa fa-fw fa-download"></i> {{ stats['changed'] }}</strong> Puppet nodes changed<br/>
-			<strong><i class="fa fa-fw fa-times"></i> {{ stats['failed'] }}</strong> Puppet nodes failed
+			<a href="{{ url_for('puppet_nodes', status='changed') }}"><strong><i class="fa fa-fw fa-download"></i> {{ stats['changed'] }}</strong> Puppet nodes changed<br/></a>
+			<a href="{{ url_for('puppet_nodes', status='failed') }}"><strong><i class="fa fa-fw fa-times"></i> {{ stats['failed'] }}</strong> Puppet nodes failed</a>
 		</div>
 
 	</div>

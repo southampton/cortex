@@ -3,11 +3,15 @@
 from cortex import app
 import cortex.lib.core
 import cortex.lib.admin
+from cortex.lib.workflow import get_workflows_locked_details
 from cortex.lib.user import does_user_have_permission
+from cortex.lib.admin import set_kv_setting, get_kv_setting
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
 import re
 import MySQLdb as mysql
 import datetime
+import json
+from copy import deepcopy
 import json
 
 ################################################################################
@@ -21,8 +25,16 @@ def admin_tasks():
 	if not does_user_have_permission("tasks.view"):
 		abort(403)
 
+	# Check url for parameters from dashboard links.
+	filters = {
+		'filter_succeeded': request.args.get('filter_succeeded', "1"),
+		'filter_warnings': request.args.get('filter_warnings', "1"),
+		'filter_failed': request.args.get('filter_failed', "1")
+	}
+	print(filters)
+
 	# Render the page
-	return render_template('admin/tasks.html', active='admin', title="Tasks", tasktype='all', json_source=url_for('admin_tasks_json', tasktype='all'))
+	return render_template('admin/tasks.html', active='admin', title="Tasks", tasktype='all', json_source=url_for('admin_tasks_json', tasktype='all'), filters=filters)
 
 ################################################################################
 
@@ -38,7 +50,7 @@ def admin_tasks_json(tasktype):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Extract stuff from DataTables requests
-	(draw, start, length, order_column, order_asc, search) = _extract_datatables()
+	(draw, start, length, order_column, order_asc, search, hide_frequent, filters) = _extract_datatables()
 
 	# Choose the order column
 	if order_column == 0:
@@ -49,8 +61,7 @@ def admin_tasks_json(tasktype):
 		order_by = "start"
 	elif order_column == 3:
 		order_by = "end"
-	elif order_column == 4:
-		order_by = "elapsed"
+	# Skip col 4 as this doesn't allow ordering.
 	elif order_column == 5:
 		order_by = "username"
 	elif order_column == 6:
@@ -75,6 +86,22 @@ def admin_tasks_json(tasktype):
 		where_clause = '`username` = "scheduler"'
 	else:
 		abort(404)
+
+	# Apply filters
+	# Status: 1 = Succeeded 2 = Failed 3 = Warnings
+	if 'filter_succeeded' in filters and not filters['filter_succeeded']:
+		where_clause = where_clause + " AND (`status` != 1) " 
+	if 'filter_failed' in filters and not filters['filter_failed']:
+		where_clause = where_clause + " AND (`status` != 2) " 
+	if 'filter_warnings' in filters and not filters['filter_warnings']:
+		where_clause = where_clause + " AND (`status` != 3) " 
+
+
+	# Define some tasks we will hide if hide_frequent is True
+	frequent_tasks = ['_sync_puppet_stats_graphite']
+	frequent_tasks_str = '"' + ('","'.join(frequent_tasks)) + '"'
+	if frequent_tasks and hide_frequent:
+		where_clause = where_clause + " AND (`module` NOT IN (" + frequent_tasks_str + ")) "
 
 	# Add on search string if we have one
 	if search:
@@ -142,7 +169,7 @@ def admin_tasks_active():
 			tasks.append(task)
 
 	# Render the page
-	return render_template('admin/tasks.html', tasks=tasks, active='admin', title="Active Tasks", tasktype='active')
+	return render_template('admin/tasks.html', tasks=tasks, active='admin', title="Active Tasks", tasktype='active', filters={})
 
 ################################################################################
 
@@ -156,7 +183,7 @@ def admin_tasks_user():
 		abort(403)
 
 	# Render the page
-	return render_template('admin/tasks.html', active='admin', title="User Tasks", tasktype='user', json_source=url_for('admin_tasks_json', tasktype='user'))
+	return render_template('admin/tasks.html', active='admin', title="User Tasks", tasktype='user', json_source=url_for('admin_tasks_json', tasktype='user'), filters={})
 
 ################################################################################
 
@@ -170,7 +197,7 @@ def admin_tasks_system():
 		abort(403)
 
 	# Render the page
-	return render_template('admin/tasks.html', active='admin', title="System Tasks", tasktype='system', json_source=url_for('admin_tasks_json', tasktype='system'))
+	return render_template('admin/tasks.html', active='admin', title="System Tasks", tasktype='system', json_source=url_for('admin_tasks_json', tasktype='system'), filters={})
 
 ################################################################################
 
@@ -186,7 +213,7 @@ def admin_events_json(event_source):
 	cur = g.db.cursor()
 
 	# Extract stuff from DataTables requests
-	(draw, start, length, order_column, order_asc, search) = _extract_datatables()
+	(draw, start, length, order_column, order_asc, search, hide_frequent, filters) = _extract_datatables()
 
 	# Choose the order column
 	if order_column == 0:
@@ -229,6 +256,17 @@ def admin_events_json(event_source):
 		where_clause = "`source` = 'neocortex.task'"
 	else:
 		where_clause = "1=1"
+
+	# Define some events we will hide if hide_frequent is True
+	frequent_events = [
+		'_sync_puppet_stats_graphite.post_graphite',
+		'_sync_puppet_stats_graphite.puppet_nodes',
+		'_sync_puppet_stats_graphite.puppetdb_connect',
+		'_sync_puppet_stats_graphite.sync_puppet_stats_graphite_config_check'
+	]
+	frequent_events_str = '"' + ('","'.join(frequent_events)) + '"'
+	if frequent_events and hide_frequent:
+		where_clause = where_clause + " AND (`name` NOT IN (" + frequent_events_str + ")) "
 
 	# Add on search string if we have one
 	if search:
@@ -494,7 +532,7 @@ def admin_maint():
 	"""Allows the user to kick off scheduled jobs on demand"""
 
 	# Check user permissions
-	if not does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow"]):
+	if not does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow", "maintenance.cert_scan", "maintenance.student_vm", "maintenance.lock_workflows", "maintenance.rubrik_policy_check"]):
 		abort(403)
 
 	# Connect to NeoCortex and the database
@@ -506,6 +544,13 @@ def admin_maint():
 	sncache_task_id  = None
 	vmexpire_task_id = None
 	sync_puppet_servicenow_id = None
+	cert_scan_id = None
+	student_vm_build_id = None
+	lock_workflows = None
+	rubrik_crcheck = None
+
+	# get the lock status of the page
+	workflows_lock_status = get_workflows_locked_details()
 
 	if request.method == 'GET':
 		# See which tasks are already running
@@ -520,18 +565,24 @@ def admin_maint():
 				sncache_task_id = task['id']
 			elif task['name'] == '_sync_puppet_servicenow':
 				sync_puppet_servicenow_id = task['id']
+			elif task['name'] == '_cert_scan':
+				cert_scan_id = task['id']
+			elif task['name'] == '_lock_workflows':
+				lock_workflows = task['id']
+			elif task['name'] == '_rubrik_policy_check':
+				rubrik_crcheck = task['id']
+
 
 		# Render the page
 		return render_template('admin/maint.html', active='admin',
 			sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id,
 			vmexpire_task_id=vmexpire_task_id, sync_puppet_servicenow_id=sync_puppet_servicenow_id,
-			title="Maintenance Tasks"
+			cert_scan_id=cert_scan_id, student_vm_build_id=student_vm_build_id, pause_vm_builds=lock_workflows , title="Maintenance Tasks", lock_status=workflows_lock_status
 		)
 
 	else:
 		# Find out what task to start
 		module = request.form['task_name']
-
 		# Start the appropriate internal task
 		if module == 'vmcache':
 			# Check user permissions
@@ -556,6 +607,27 @@ def admin_maint():
 			if not does_user_have_permission("maintenance.sync_puppet_servicenow"):
 				abort(403)
 			task_id = neocortex.start_internal_task(session['username'], 'sync_puppet_servicenow.py', '_sync_puppet_servicenow', description="Sync Puppet facts with ServiceNow")
+		elif module == 'cert_scan':
+			# Check user permissions
+			if not does_user_have_permission("maintenance.cert_scan"):
+				abort(403)
+			task_id = neocortex.start_internal_task(session['username'], 'cert_scan.py', '_cert_scan', description="Scans configured subnets for certificates used for SSL/TLS")
+		elif module == 'student_vm_build':
+			# Check user permissions
+			if not does_user_have_permission("maintenance.student_vm"):
+				abort(403)
+			task_id = neocortex.start_internal_task(session['username'], 'servicenow_vm_build.py', '_servicenow_vm_build', description="Checks for outstanding VM build requests in ServiceNow and starts them")
+		elif module == 'toggle_workflow_lock':
+			if not does_user_have_permission("maintenance.lock_workflows"):
+				abort(403)
+			curd = g.db.cursor(mysql.cursors.DictCursor)
+			curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;', ('workflow_lock_status',))
+			res = curd.fetchone()
+			task_id = neocortex.start_internal_task(session['username'], 'lock_workflows.py', '_lock_workflows', description="Locks the workflows from being started", options={'page_load_lock_status' : res})
+		elif module == 'rubrik_crcheck':
+			if not does_user_have_permission("maintenance.rubrik_policy_check"):
+				abort(403)
+			task_id = neocortex.start_internal_task(session['username'], 'rubrik_crcheck.py', '_rubrik_policy_check', description="Checks the backup systems of policies against the ones in Rubrik")
 		else:
 			app.logger.warn('Unknown module name specified when starting task')
 			abort(400)
@@ -618,9 +690,26 @@ def _extract_datatables():
 	search = None
 	if 'search[value]' in request.form:
 		if request.form['search[value]'] != '':
-			if type(request.form['search[value]']) is not str and type(request.form['search[value]']) is not unicode:
+			if type(request.form['search[value]']) is not str and type(request.form['search[value]']) is not str:
 				search = str(request.form['search[value]'])
 			else:
 				search = request.form['search[value]']
 
-	return (draw, start, length, order_column, order_asc, search)
+	# Handle the hide_frequent parameter. This is a custom field added
+	# in order to filter out frequent tasks/events from dataTables.
+	hide_frequent = False
+	if 'hide_frequent' in request.form:
+		if request.form['hide_frequent'] == "1":
+			hide_frequent = True
+
+	
+	# Handle the filter parameters. These are custom fields added to
+	# filter tasks. This is not used on the events page currently.
+	filters = {}
+	for f in ['filter_succeeded', 'filter_warnings', 'filter_failed']:
+		if f in request.form and request.form[f] == "1":
+			filters[f] = True
+		else:
+			filters[f] = False
+
+	return (draw, start, length, order_column, order_asc, search, hide_frequent, filters)

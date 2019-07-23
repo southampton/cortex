@@ -9,12 +9,14 @@ import random
 import string
 import logging
 import os.path
+import datetime
 from logging.handlers import SMTPHandler
 from logging.handlers import RotatingFileHandler
 from logging import Formatter
 import redis
 import MySQLdb as mysql
 import traceback
+import re
 
 class CortexFlask(Flask):
 	## A list of dict's, each representing a workflow 'create' function
@@ -40,12 +42,17 @@ class CortexFlask(Flask):
 
 		# CSRF token function in templates
 		self.jinja_env.globals['csrf_token'] = self._generate_csrf_token
+		self.jinja_env.globals['utcnow'] = datetime.datetime.utcnow
 
 		# Load the __init__.py config defaults
 		self.config.from_object("cortex.defaultcfg")
 
 		# Load system config file
 		self.config.from_pyfile('/data/cortex/cortex.conf')
+
+		# Make TEMPLATES_AUTO_RELOAD work (we've touch the Jinja environment). See resolved Flask issue #1907
+		if 'TEMPLATES_AUTO_RELOAD' in self.config and self.config['TEMPLATES_AUTO_RELOAD']:
+			self.jinja_env.auto_reload = True
 
 		# Set up logging to file
 		if self.config['FILE_LOG'] == True:
@@ -109,13 +116,12 @@ Further Details:
 
 	################################################################################
 
-	def pwgen(self, length=16):
+	def pwgen(self, length=32):
 		"""This is very crude password generator. It is currently only used to generate
 		a CSRF token."""
 
-		urandom = random.SystemRandom()
 		alphabet = string.ascii_letters + string.digits
-		return str().join(urandom.choice(alphabet) for _ in range(length))
+		return ''.join(random.choice(alphabet) for _ in range(length))
 
 	################################################################################
 
@@ -144,9 +150,9 @@ Further Details:
 			# Get the function that is rendering the current view
 			view = self.view_functions.get(request.endpoint)
 			view_location = view.__module__ + '.' + view.__name__
-
-			# If the view is not exempt
-			if not view_location in self._exempt_views:
+			
+			# If the view is not part of the API and it's not exempt
+			if re.search("[\w]*cortex\.api\.endpoints[\w]*", view.__module__) is None and not view_location in self._exempt_views:
 				token = session.get('_csrf_token')
 				if not token or token != request.form.get('_csrf_token'):
 					if 'username' in session:
@@ -170,7 +176,6 @@ Further Details:
 				return render_template('some_view.html')
 		:param view: The view to be wrapped by the decorator.
 		"""
-
 		view_location = view.__module__ + '.' + view.__name__
 		self._exempt_views.add(view_location)
 		self.logger.debug('Added CSRF check exemption for ' + view_location)
@@ -361,6 +366,16 @@ Username:             %s
 		  PRIMARY KEY (`key`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_modules_info` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `module_name` varchar(256) NOT NULL,
+		  `class_name` varchar(256) NOT NULL,
+		  `class_parameter` varchar(256) NOT NULL,
+		  `description` text DEFAULT NULL,
+		  `tag_name` varchar(255) DEFAULT NULL,
+		  PRIMARY KEY (`id`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `systems` (
 		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
 		  `type` tinyint(4) NOT NULL,
@@ -381,6 +396,7 @@ Username:             %s
 		  `primary_owner_role` varchar(64) DEFAULT NULL,
 		  `secondary_owner_who` varchar(64) DEFAULT NULL,
 		  `secondary_owner_role` varchar(64) DEFAULT NULL,
+		  `enable_backup` tinyint(1) DEFAULT 2,
 		  PRIMARY KEY (`id`),
 		  KEY `class` (`class`),
 		  KEY `name` (`name`(255)),
@@ -394,15 +410,9 @@ Username:             %s
 		  `username` varchar(64) NOT NULL,
 		  `start` datetime NOT NULL,
 		  `end` datetime DEFAULT NULL,
-		  `status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '0: in progress, 1: success, 2: failure',
+		  `status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '0: in progress, 1: success, 2: failure, 3: warning',
 		  `description` text,
 		  PRIMARY KEY (`id`)
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
-
-		cursor.execute("""CREATE TABLE IF NOT EXISTS  `puppet_groups` (
-		  `name` varchar(255) NOT NULL,
-		  `classes` text NOT NULL,
-		  PRIMARY KEY (`name`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_nodes` (
@@ -562,22 +572,19 @@ Username:             %s
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		# Attempt to alter the systems table and add new columns.
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `expiry_date` datetime DEFAULT NULL""")
 		except Exception as e:
 			pass
-
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `build_count` mediumint(11) DEFAULT 0""")
 		except Exception as e:
 			pass
-
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `decom_date` datetime DEFAULT NULL""")
 		except Exception as e:
 			pass
-		
-		# Attempt to alter the systems table and add new columns.
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `primary_owner_who` varchar(64) DEFAULT NULL""")
 		except Exception as e:
@@ -594,55 +601,60 @@ Username:             %s
 			cursor.execute("""ALTER TABLE `systems` ADD `secondary_owner_role` varchar(64) DEFAULT NULL""")
 		except Exception as e:
 			pass
+		try:
+			cursor.execute("""ALTER TABLE `systems` ADD `enable_backup` tinyint(1) DEFAULT 2""")
+		except Exception as e:
+			pass
 
 		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT 
-		 `systems`.`id` AS `id`,
-		 `systems`.`type` AS `type`,
-		 `systems`.`class` AS `class`,
-		 `systems`.`number` AS `number`,
-		 `systems`.`name` AS `name`,
-		 `systems`.`allocation_date` AS `allocation_date`,
-		 `systems`.`expiry_date` AS `expiry_date`,
-		 `systems`.`decom_date` AS `decom_date`,
-		 `systems`.`allocation_who` AS `allocation_who`,
-		 `allocation_who_realname_cache`.`realname` AS `allocation_who_realname`,
-		 `systems`.`allocation_comment` AS `allocation_comment`,
-		 `systems`.`review_status` AS `review_status`,
-		 `systems`.`review_task` AS `review_task`,
-		 `systems`.`cmdb_id` AS `cmdb_id`,
-		 `systems`.`build_count` AS `build_count`,
-		 `systems`.`primary_owner_who` AS `primary_owner_who`,
-		 `systems`.`primary_owner_role` AS `primary_owner_role`,
-		 `primary_owner_who_realname_cache`.`realname` AS `primary_owner_who_realname`,
-		 `systems`.`secondary_owner_who` AS `secondary_owner_who`,
-		 `systems`.`secondary_owner_role` AS `secondary_owner_role`,
-		 `secondary_owner_who_realname_cache`.`realname` AS `secondary_owner_who_realname`,
-		 `sncache_cmdb_ci`.`sys_class_name` AS `cmdb_sys_class_name`,
-		 `sncache_cmdb_ci`.`name` AS `cmdb_name`,
-		 `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status`,
-		 `sncache_cmdb_ci`.`u_number` AS `cmdb_u_number`,
-		 `sncache_cmdb_ci`.`u_environment` AS `cmdb_environment`,
-		 `sncache_cmdb_ci`.`short_description` AS `cmdb_description`,
-		 `sncache_cmdb_ci`.`comments` AS `cmdb_comments`,
-		 `sncache_cmdb_ci`.`os` AS `cmdb_os`,
-		 `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description`,
-		 `sncache_cmdb_ci`.`virtual` AS `cmdb_is_virtual`,
-		 `vmware_cache_vm`.`name` AS `vmware_name`,
-		 `vmware_cache_vm`.`vcenter` AS `vmware_vcenter`,
-		 `vmware_cache_vm`.`uuid` AS `vmware_uuid`,
-		 `vmware_cache_vm`.`numCPU` AS `vmware_cpus`,
-		 `vmware_cache_vm`.`memoryMB` AS `vmware_ram`,
-		 `vmware_cache_vm`.`powerState` AS `vmware_guest_state`,
-		 `vmware_cache_vm`.`guestFullName` AS `vmware_os`,
-		 `vmware_cache_vm`.`hwVersion` AS `vmware_hwversion`,
-		 `vmware_cache_vm`.`ipaddr` AS `vmware_ipaddr`,
-		 `vmware_cache_vm`.`toolsVersionStatus` AS `vmware_tools_version_status`,
-		 `vmware_cache_vm`.`hostname` AS `vmware_hostname`,
-		 `puppet_nodes`.`certname` AS `puppet_certname`,
-		 `puppet_nodes`.`env` AS `puppet_env`,
-		 `puppet_nodes`.`include_default` AS `puppet_include_default`,
-		 `puppet_nodes`.`classes` AS `puppet_classes`,
-		 `puppet_nodes`.`variables` AS `puppet_variables`
+		  `systems`.`id` AS `id`,
+		  `systems`.`type` AS `type`,
+		  `systems`.`class` AS `class`,
+		  `systems`.`number` AS `number`,
+		  `systems`.`name` AS `name`,
+		  `systems`.`allocation_date` AS `allocation_date`,
+		  `systems`.`expiry_date` AS `expiry_date`,
+		  `systems`.`decom_date` AS `decom_date`,
+		  `systems`.`allocation_who` AS `allocation_who`,
+		  `allocation_who_realname_cache`.`realname` AS `allocation_who_realname`,
+		  `systems`.`allocation_comment` AS `allocation_comment`,
+		  `systems`.`review_status` AS `review_status`,
+		  `systems`.`review_task` AS `review_task`,
+		  `systems`.`cmdb_id` AS `cmdb_id`,
+		  `systems`.`build_count` AS `build_count`,
+		  `systems`.`primary_owner_who` AS `primary_owner_who`,
+		  `systems`.`primary_owner_role` AS `primary_owner_role`,
+		  `primary_owner_who_realname_cache`.`realname` AS `primary_owner_who_realname`,
+		  `systems`.`secondary_owner_who` AS `secondary_owner_who`,
+		  `systems`.`secondary_owner_role` AS `secondary_owner_role`,
+		  `secondary_owner_who_realname_cache`.`realname` AS `secondary_owner_who_realname`,
+		  `sncache_cmdb_ci`.`sys_class_name` AS `cmdb_sys_class_name`,
+		  `sncache_cmdb_ci`.`name` AS `cmdb_name`,
+		  `sncache_cmdb_ci`.`operational_status` AS `cmdb_operational_status`,
+		  `sncache_cmdb_ci`.`u_number` AS `cmdb_u_number`,
+		  `sncache_cmdb_ci`.`u_environment` AS `cmdb_environment`,
+		  `sncache_cmdb_ci`.`short_description` AS `cmdb_description`,
+		  `sncache_cmdb_ci`.`comments` AS `cmdb_comments`,
+		  `sncache_cmdb_ci`.`os` AS `cmdb_os`,
+		  `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description`,
+		  `sncache_cmdb_ci`.`virtual` AS `cmdb_is_virtual`,
+		  `vmware_cache_vm`.`name` AS `vmware_name`,
+		  `vmware_cache_vm`.`vcenter` AS `vmware_vcenter`,
+		  `vmware_cache_vm`.`uuid` AS `vmware_uuid`,
+		  `vmware_cache_vm`.`numCPU` AS `vmware_cpus`,
+		  `vmware_cache_vm`.`memoryMB` AS `vmware_ram`,
+		  `vmware_cache_vm`.`powerState` AS `vmware_guest_state`,
+		  `vmware_cache_vm`.`guestFullName` AS `vmware_os`,
+		  `vmware_cache_vm`.`hwVersion` AS `vmware_hwversion`,
+		  `vmware_cache_vm`.`ipaddr` AS `vmware_ipaddr`,
+		  `vmware_cache_vm`.`toolsVersionStatus` AS `vmware_tools_version_status`,
+		  `vmware_cache_vm`.`hostname` AS `vmware_hostname`,
+		  `puppet_nodes`.`certname` AS `puppet_certname`,
+		  `puppet_nodes`.`env` AS `puppet_env`,
+		  `puppet_nodes`.`include_default` AS `puppet_include_default`,
+		  `puppet_nodes`.`classes` AS `puppet_classes`,
+		  `puppet_nodes`.`variables` AS `puppet_variables`,
+		  `systems`.`enable_backup` AS `enable_backup`
                 FROM `systems` 
 		LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`
 		LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid`
@@ -726,6 +738,8 @@ Username:             %s
 
 		cursor.execute("""CREATE OR REPLACE VIEW `system_role_perms_view` AS
 		SELECT DISTINCT 
+		  `system_roles`.`id` as `system_role_id`,
+		  `system_roles`.`name` as `system_role_name`,
 		  `system_role_what`.`system_id`,
 		  `system_role_who`.`who`,
 		  `system_role_who`.`type`,
@@ -739,6 +753,15 @@ Username:             %s
 		  `system_role_who`.`who` IS NOT NULL AND
 		  `system_role_who`.`type` IS NOT NULL AND
 		  `system_role_perms`.`perm` IS NOT NULL
+		""")
+
+		cursor.execute("""CREATE OR REPLACE VIEW `system_perms_view` AS
+		SELECT DISTINCT
+		  `system_role_perms_view`.`system_id`,
+		  `system_role_perms_view`.`who`,
+		  `system_role_perms_view`.`type`,
+		  `system_role_perms_view`.`perm`
+		FROM `system_role_perms_view`
 		UNION
 		SELECT DISTINCT
 		  `system_perms`.`system_id`,
@@ -755,6 +778,41 @@ Username:             %s
 		  UNIQUE (`username`, `system_id`),
 		  CONSTRAINT `system_user_favourites_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `certificate` (
+		  `digest` varchar(40) NOT NULL,
+		  `subjectHash` varchar(64),
+		  `subjectCN` text,
+		  `subjectDN` text,
+		  `notBefore` DATETIME,
+		  `notAfter` DATETIME,
+		  `issuerCN` text,
+		  `issuerDN` text,
+		  `notify` tinyint(1) NOT NULL DEFAULT TRUE,
+		  `notes` TEXT NOT NULL,
+		  `keySize` integer DEFAULT NULL,
+		  PRIMARY KEY (`digest`),
+		  INDEX `idx_subjectCN` (`subjectCN`(128))
+		) ENGINE=InnoDB DEFAULT CHARSET utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `certificate_sans` (
+		  `cert_digest` varchar(40) NOT NULL,
+		  `san` varchar(255) NOT NULL,
+		  PRIMARY KEY (cert_digest, san),
+		  FOREIGN KEY `ibfk_cert_digest` (`cert_digest`) REFERENCES `certificate` (`digest`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `scan_result` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `host` varchar(128) NOT NULL,
+		  `port` integer(4) NOT NULL,
+		  `cert_digest` varchar(40) NOT NULL,
+		  `when` DATETIME NOT NULL,
+		  `chain_state` tinyint(2) NOT NULL DEFAULT 0,
+		  PRIMARY KEY (`id`),
+		  FOREIGN KEY `ibfk_cert_digest` (`cert_digest`) REFERENCES `certificate` (`digest`) ON DELETE CASCADE,
+		  INDEX `idx_host` (`host`)
+		) ENGINE=InnoDB DEFAULT CHARSET utf8;""")
 
 		cursor.execute("""DROP TABLE IF EXISTS `workflow_perms`""")
 
@@ -777,12 +835,13 @@ Username:             %s
 		  (1, "systems.allocate_name"), 
 		  (1, "systems.add_existing"),
 		  (1, "vmware.view"), 
-		  (1, "puppet.dashboard.view"), 
+		  (1, "puppet.dashboard.view"),
+		  (1, "puppet.modules_info.view"),
+		  (1, "puppet.modules_info.add"),
+		  (1, "puppet.modules_info.edit"),   
 		  (1, "puppet.nodes.view"), 
 		  (1, "puppet.default_classes.view"), 
 		  (1, "puppet.default_classes.edit"), 
-		  (1, "puppet.groups.view"), 
-		  (1, "puppet.groups.edit"), 
 		  (1, "classes.view"), 
 		  (1, "classes.edit"), 
 		  (1, "tasks.view"),
@@ -793,6 +852,10 @@ Username:             %s
 		  (1, "maintenance.cmdb"), 
 		  (1, "maintenance.expire_vm"),
 		  (1, "maintenance.sync_puppet_servicenow"),
+		  (1, "maintenance.cert_scan"),
+		  (1, "maintenance.student_vm"),
+		  (1, "maintenance.lock_workflows"),
+		  (1, "maintenance.rubrik_policy_check"),
 		  (1, "api.register"),
 		  (1, "workflows.all"),
 		  (1, "sysrequests.all.view"),
@@ -801,7 +864,10 @@ Username:             %s
 		  (1, "api.get"),
 		  (1, "api.post"),
 		  (1, "api.put"),
-		  (1, "api.delete")
+		  (1, "api.delete"),
+		  (1, "certificates.view"),
+		  (1, "certificates.stats"),
+		  (1, "certificates.add")
 		""")
 
 		## Close database connection
@@ -816,51 +882,61 @@ Username:             %s
 		before workflows are run"""
 
 		## The ORDER MATTERS! It determines the order used on the Roles page
-		self.permissions        = [
-			{'name': 'systems.all.view',		       'desc': 'View any system'},
-			{'name': 'systems.own.view',		       'desc': 'View systems allocated by the user'},
-			{'name': 'systems.all.view.puppet',	       'desc': 'View Puppet reports and facts on any system'},
+		self.permissions = [
+			{'name': 'systems.all.view',                   'desc': 'View any system'},
+			{'name': 'systems.own.view',                   'desc': 'View systems allocated by the user'},
+			{'name': 'systems.all.view.puppet',            'desc': 'View Puppet reports and facts on any system'},
+			{'name': 'systems.all.view.puppet.classify',   'desc': 'View Puppet classify on any system'},
 			{'name': 'systems.all.view.puppet.catalog',    'desc': 'View Puppet catalog on any system'},
 			{'name': 'systems.all.view.rubrik',            'desc': 'View Rubrik backups for any system'},
-			{'name': 'systems.all.edit.expiry',	       'desc': 'Modify the expiry date of any system'},
-			{'name': 'systems.all.edit.review',	       'desc': 'Modify the review status of any system'},
-			{'name': 'systems.all.edit.vmware',	       'desc': 'Modify the VMware link on any system'},
-			{'name': 'systems.all.edit.cmdb',	       'desc': 'Modify the CMDB link on any system'},
-			{'name': 'systems.all.edit.comment',	       'desc': 'Modify the comment on any system'},
-			{'name': 'systems.all.edit.puppet',	       'desc': 'Modify Puppet settings on any system'},
+			{'name': 'systems.all.edit.expiry',            'desc': 'Modify the expiry date of any system'},
+			{'name': 'systems.all.edit.review',            'desc': 'Modify the review status of any system'},
+			{'name': 'systems.all.edit.vmware',            'desc': 'Modify the VMware link on any system'},
+			{'name': 'systems.all.edit.cmdb',              'desc': 'Modify the CMDB link on any system'},
+			{'name': 'systems.all.edit.comment',           'desc': 'Modify the comment on any system'},
+			{'name': 'systems.all.edit.puppet',            'desc': 'Modify Puppet settings on any system'},
 			{'name': 'systems.all.edit.rubrik',            'desc': 'Modify Rubrik settings on any system'},
 			{'name': 'systems.all.edit.owners',            'desc': 'Modify the system owners on any system'},
-			{'name': 'vmware.view',			       'desc': 'View VMware data and statistics'},
-			{'name': 'puppet.dashboard.view',	       'desc': 'View the Puppet dashboard'},
-			{'name': 'puppet.nodes.view',		       'desc': 'View the list of Puppet nodes'},
-			{'name': 'puppet.default_classes.view',	       'desc': 'View the list of Puppet default classes'},
-			{'name': 'puppet.default_classes.edit',	       'desc': 'Modify the list of Puppet default classes'},
-			{'name': 'puppet.groups.view',		       'desc': 'View the list of Puppet groups'},
-			{'name': 'puppet.groups.edit',		       'desc': 'Modify Puppet groups'},
-			{'name': 'classes.view',		       'desc': 'View the list of system class definitions'},
-			{'name': 'classes.edit',		       'desc': 'Edit system class definitions'},
-			{'name': 'tasks.view',			       'desc': 'View the details of all tasks (not just your own)'},
-			{'name': 'events.view',			       'desc': 'View the details of all events (not just your own)'},
-			{'name': 'specs.view',			       'desc': 'View the VM Specification Settings'},
-			{'name': 'specs.edit',			       'desc': 'Edit the VM Specification Settings'},
-			{'name': 'maintenance.vmware',		       'desc': 'Run VMware maintenance tasks'},
-			{'name': 'maintenance.cmdb',		       'desc': 'Run CMDB maintenance tasks'},
-			{'name': 'maintenance.expire_vm',	       'desc': 'Run the Expire VM maintenance task'},
-			{'name': 'maintenance.sync_puppet_servicenow', 'desc': 'Run the Sync Puppet with Servicenow task'},
-			{'name': 'api.register',		       'desc': 'Manually register Linux machines (rebuilds / physical machines)'},
-			{'name': 'admin.permissions',		       'desc': 'Modify permissions'},
-			{'name': 'workflows.all',		       'desc': 'Use any workflow or workflow function'},
+			{'name': 'vmware.view',                        'desc': 'View VMware data and statistics'},
+			{'name': 'puppet.dashboard.view',              'desc': 'View the Puppet dashboard'},
+			{'name': 'puppet.modules_info.view',           'desc': 'View the Puppet modules info'},
+			{'name': 'puppet.modules_info.add',            'desc': 'Add  to the Puppet modules info'},
+			{'name': 'puppet.modules_info.edit',           'desc': 'Modify the Puppet modules info'},
+			{'name': 'puppet.nodes.view',                  'desc': 'View the list of Puppet nodes'},
+			{'name': 'puppet.default_classes.view',        'desc': 'View the list of Puppet default classes'},
+			{'name': 'puppet.default_classes.edit',        'desc': 'Modify the list of Puppet default classes'},
+			{'name': 'classes.view',                       'desc': 'View the list of system class definitions'},
+			{'name': 'classes.edit',                       'desc': 'Edit system class definitions'},
+			{'name': 'tasks.view',                         'desc': 'View the details of all tasks (not just your own)'},
+			{'name': 'events.view',                        'desc': 'View the details of all events (not just your own)'},
+			{'name': 'specs.view',                         'desc': 'View the VM Specification Settings'},
+			{'name': 'specs.edit',                         'desc': 'Edit the VM Specification Settings'},
+			{'name': 'maintenance.vmware',                 'desc': 'Run VMware maintenance tasks'},
+			{'name': 'maintenance.cmdb',                   'desc': 'Run CMDB maintenance tasks'},
+			{'name': 'maintenance.expire_vm',              'desc': 'Run the Expire VM maintenance task'},
+			{'name': 'maintenance.sync_puppet_servicenow', 'desc': 'Run the Sync Puppet with ServiceNow task'},
+			{'name': 'maintenance.cert_scan',              'desc': 'Run the Certificate Scan task'},
+			{'name': 'maintenance.student_vm',             'desc': 'Run the Student VM Build task'},
+			{'name': 'maintenance.lock_workflows',         'desc': 'Run the Lock/Unlock Workflows task'},
+			{'name': 'maintenance.rubrik_policy_check',    'desc': 'Run the Rubrik Policy check task'},
+			{'name': 'api.register',                       'desc': 'Manually register Linux machines (rebuilds / physical machines)'},
+			{'name': 'admin.permissions',                  'desc': 'Modify permissions'},
+			{'name': 'workflows.all',                      'desc': 'Use any workflow or workflow function'},
 
-			{'name': 'sysrequests.own.view',	       'desc': 'View system requests owned by the user'},
-			{'name': 'sysrequests.all.view',	       'desc': 'View any system request'},
-			{'name': 'sysrequests.all.approve',	       'desc': 'Approve any system request'},
-			{'name': 'sysrequests.all.reject',	       'desc': 'Reject any system request'},
-			{'name': 'control.all.vmware.power',	       'desc': 'Contol the power settings of any VM'},
+			{'name': 'sysrequests.own.view',               'desc': 'View system requests owned by the user'},
+			{'name': 'sysrequests.all.view',               'desc': 'View any system request'},
+			{'name': 'sysrequests.all.approve',            'desc': 'Approve any system request'},
+			{'name': 'sysrequests.all.reject',             'desc': 'Reject any system request'},
+			{'name': 'control.all.vmware.power',           'desc': 'Contol the power settings of any VM'},
 
-			{'name': 'api.get',			       'desc': 'Send GET requests to the Cortex API.'},
-			{'name': 'api.post',			       'desc': 'Send POST requests to the Cortex API.'},
-			{'name': 'api.put',			       'desc': 'Send PUT requests to the Cortex API.'},
-			{'name': 'api.delete',			       'desc': 'Send DELETE requests to the Cortex API.'},
+			{'name': 'api.get',                            'desc': 'Send GET requests to the Cortex API'},
+			{'name': 'api.post',                           'desc': 'Send POST requests to the Cortex API'},
+			{'name': 'api.put',                            'desc': 'Send PUT requests to the Cortex API'},
+			{'name': 'api.delete',                         'desc': 'Send DELETE requests to the Cortex API'},
+
+			{'name': 'certificates.view',                  'desc': 'View the list of discovered certificates and their details'},
+			{'name': 'certificates.stats',                 'desc': 'View the statistics about certificates'},
+			{'name': 'certificates.add',                   'desc': 'Adds a certificate to the list of tracked certificates'},
 		]
 
 		self.workflow_permissions = []
@@ -869,6 +945,7 @@ Username:             %s
 			{'name': 'view.overview',               'desc': 'View the system overview'},
 			{'name': 'view.detail',                 'desc': 'View the system details'},
 			{'name': 'view.puppet',                 'desc': 'View the system\'s Puppet reports and facts'},
+			{'name': 'view.puppet.classify',        'desc': 'View the system\'s Puppet classification'},
 			{'name': 'view.puppet.catalog',         'desc': 'View the system\'s Puppet catalog'},
 			{'name': 'edit.expiry',                 'desc': 'Change the expiry date of the system'},
 			{'name': 'edit.review',                 'desc': 'Change the review status of the system'},
@@ -877,5 +954,6 @@ Username:             %s
 			{'name': 'edit.comment',                'desc': 'Change the comment'},
 			{'name': 'edit.owners',                 'desc': 'Change the system owners'},
 			{'name': 'edit.puppet',                 'desc': 'Change Puppet settings'},
+			{'name': 'edit.rubrik',                 'desc': 'Change Rubrik backup settings'},
 			{'name': 'control.vmware.power',        'desc': 'Control the VMware power state'},
 		]

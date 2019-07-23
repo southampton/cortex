@@ -1,0 +1,126 @@
+{% extends "layout.html" %}
+{% block head -%}
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+{% endblock %}
+{% block body %}
+<div class="page-header">
+<h3>Create SSL Certificate</h3>
+<p class="text-muted">This workflow automates the creation of SSL certificates.</p>
+</div>
+<style type="text/css">
+.submit
+{
+	padding-bottom: 2em;
+	margin-left: 1em;
+}
+
+.btn-submit
+{
+	font-size: 2em;
+}
+</style>
+<form id="cert_form" method="POST" role="form">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+	<div class="row">
+		<div class="col-md-12"><h3 style="margin-top:0px">Certificate Details</h3></div>
+		<div class="col-md-6 form-group">
+			<label for="provider">Provider:</label>
+			<select class="form-control" name="provider" id="provider">
+{%- for provider in providers %}
+				<option value="{{ provider['id'] }}"{% if ('provider' in values and values['provider'] == provider['id']) or ('provider' not in values and provider['id'] == default_provider) %} selected="selected"{% endif %}>{{ provider['name'] }}</option>
+{%- endfor %}
+			</select>
+		</div>
+		<div class="col-md-6 form-group">
+			<label for="env">Environment:</label>
+			<select class="form-control" name="env" id="env">
+{%- for env in envs %}
+				<option value="{{ env['id'] }}"{% if ('env' in values and values['env'] == env['id']) or ('env' not in values and env['id'] == default_env) %} selected="selected"{% endif %}>{{ env['name'] }} (created on {{ nlbs_dict[env['nlb']]['hostname'] }})</option>
+{%- endfor %}
+			</select>
+		</div>
+		<div class="col-md-6 form-group">
+			<label for="suffix">Hostname:</label>
+			<input class="form-control" name="hostname" id="hostname" placeholder="The hostname part of the FQDN" required="required" {% if 'hostname' in values %}value="{{ values['hostname'] }}" {% endif %}/>
+		</div>
+		<div class="col-md-6 form-group">
+			<label for="fqdn">Domain:</label>
+			<input class="form-control" name="domain" id="domain" placeholder="The domain part of the FQDN" required="required" value="{% if 'domain' in values %}{{ values['domain'] }}{% else %}{{ envs_dict[default_env]['domain'] }}{% endif %}" />
+		</div>
+		<div class="col-md-12 form-group">
+			<label for="fqdn">Subject Alternate Names:</label>
+			<input class="form-control" name="aliases" id="aliases" placeholder="A space-separated list of Subject Alternate Names for the certificate. The CN above will be added automatically." value="{% if 'aliases' in values %}{{ values['aliases'] }}{% endif %}" />
+		</div>
+		<div class="col-md-4 form-group">
+			<label for="key_size">Key Size:</label>
+			<select class="form-control" name="key_size" id="key_size"{% if ('provider' in values and not providers_dict[values['provider']]['selectable_key_size']) or ('provider' not in values and not providers_dict[default_provider]['selectable_key_size']) %} readonly="readonly"{% endif %}>
+{%- for ks in key_sizes %}
+				<option value="{{ ks }}"{% if ('key_size' in values and values['key_size'] == ks) or ('key_size' not in values and ks == default_key_size) %} selected="selected"{% endif %}>{{ ks }} bit</option>
+{%- endfor %}
+			</select>
+		</div>
+		<div class="col-md-4 form-group">
+			<label for="length">Validity Length:</label>
+			<select class="form-control" name="length" id="length"{% if ('length' in values and not providers_dict[values['provider']]['selectable_expiration']) or ('provider' not in values and not providers_dict[default_provider]['selectable_expiration']) %} readonly="readonly"{% endif %}>
+{%- for cert_length in cert_lengths %}
+				<option value="{{ cert_length }}"{% if ('cert_length' in values and values['cert_length'] == cert_length) or ('cert_length' not in values and cert_length == default_cert_length) %} selected="selected"{% endif %}>{{ cert_length }} days</option>
+{%- endfor %}
+			</select>
+		</div>
+		<div class="col-md-4 form-group">
+			<label for="">SSL Profile:</label></br/>
+			<label for="create_ssl_profile" style="top:0.5em;position:relative"><input type="checkbox" id="create_ssl_profile" name="create_ssl_profile" {% if 'create_ssl_profile' not in values or ('create_ssl_profile' in values and values['create_ssl_profile']) %}checked="checked" {% endif %}/> Create SSL Profile on the NLBs</label>
+		</div>
+
+	</div>
+	<h3>Create</h3>
+	<div class="row">
+		<div class="col-md-12">
+			<p style="text-align:center">Once you have populated all the necessary information about the service, click the button below to create the certificate. A private key, certificate and (where necessary) certificate chain will be provided. Note that for Let's Encrypt certificates, a DNS change needs to be made to perform the ACME challenge to create the certificate and as such, the CN you provide as the hostname/domain above should not already exist in DNS.</p>
+			<p style="text-align:center"><input type="submit" class="btn btn-lg btn-success" value="create" name="submit" id="submit" /></p>
+		</div>
+	</div>
+</form>
+<script type="text/javascript">
+var env_domain_map = {
+{%- for env in envs %}
+	'{{ env.id }}': '{{ env.domain }}',
+{%- endfor %}
+}
+var provider_key_size_enable = {
+{%- for provider in providers %}
+	'{{ provider.id }}': {% if provider.selectable_key_size %}true{% else %}false{% endif %},
+{%- endfor %}
+}
+var provider_expire_enable = {
+{%- for provider in providers %}
+	'{{ provider.id }}': {% if provider.selectable_expiration %}true{% else %}false{% endif %},
+{%- endfor %}
+}
+
+$('#env').change(function() {
+	$('#domain').val(env_domain_map[$('#env').val()]);
+});
+$('#provider').change(function() {
+	if (provider_key_size_enable[$('#provider').val()])
+	{
+		$('#key_size').removeAttr('readonly');
+	}
+	else
+	{
+		$('#key_size').attr('readonly', 'readonly');
+	}
+
+	if (provider_expire_enable[$('#provider').val()])
+	{
+		$('#length').removeAttr('readonly');
+	}
+	else
+	{
+		$('#length').attr('readonly', 'readonly');
+	}
+
+});
+</script>
+{% endblock %}

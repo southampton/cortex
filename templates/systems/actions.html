@@ -4,18 +4,20 @@
 
 {{ node.header(system,active="actions" ) }}
 
-<div class="list-group">
-{% for action in actions %}
-
-<div class="list-group-item">
-	<p class="list-group-item-text"><a href="{{url_for(action.name,id=system.id)}}" class="btn btn-primary" style="margin-right: 10px">{{action.title}}</a> {{action.desc}}</p>
-</div>
-
-{% else %}
-<div class="list-group-item">
-	<p class="list-group-item-text">No actions available</p>
-</div>
-{% endfor %}
+<div class="row">
+	{%- for action in actions %}
+		<div class="col-md-4">
+			<div class="well mtask">
+				<h3><i class="fa fa-fa fa-paper-plane"></i> {{ action.title }}</h3>
+				<p>{{ action.desc }}</p>
+				<a href="{{url_for(action.name,id=system.id)}}" class="btn btn-success" style="width:100%"><i class="fa fa-fw fa-play"></i> Start</a>
+			</div>
+		</div>
+	{%- else %}
+	<div class="col-md-12">
+		<p>No actions available</p>
+	</div>
+	{% endfor -%}
 </div>
 
 {% endblock %}

@@ -6,7 +6,7 @@ import cortex.lib.user
 import cortex.lib.systems
 import cortex.lib.core
 from cortex.lib.user import does_user_have_permission
-from flask import request, session, redirect, url_for, flash, g, abort, render_template
+from flask import request, session, redirect, url_for, flash, g, abort, render_template, jsonify
 import re
 import MySQLdb as mysql
 
@@ -37,14 +37,14 @@ def perms_roles():
 
 		# Validate class name/prefix
 		name = request.form['name']
-		if not re.match(r'^[a-zA-Z0-9\s\-\_\'\"\&\@\,\:]{3,64}$', name):
-			flash("The name you chose is invalid. It can only contain lowercase letters and be at least 3 characters long and at most 64", "alert-danger")
+		if len(name) < 3 or len(name) > 64:
+			flash('The name you chose is invalid. It must be between 3 and 64 characters long.', 'alert-danger')
 			return redirect(url_for('perms_roles'))
 
 		# Validate the description
 		desc = request.form['description']
-		if not re.match(r'^.{3,512}$', desc):
-			flash("The description you sent was invalid. It must be between 3 and 512 characters long.", "alert-danger")
+		if len(desc) < 3 or len(desc) > 512:
+			flash('The description you chose was invalid. It must be between 3 and 512 characters long.', 'alert-danger')
 			return redirect(url_for('perms_roles'))
 
 		# Check if the class already exists
@@ -88,14 +88,14 @@ def system_perms_roles():
 
 		# Validate role name/prefix
 		name = request.form['name']
-		if not re.match(r'^[a-zA-Z0-9\s\-\_\'\"\&\@\,\:]{3,64}$', name):
-			flash("The name you chose is invalid. It can only contain lowercase letters and be at least 3 characters long and at most 64", "alert-danger")
+		if len(name) < 3 or len(name) > 64:
+			flash('The name you chose is invalid. It must be between 3 and 64 characters long.', 'alert-danger')
 			return redirect(url_for('system_perms_roles'))
 
 		# Validate the description
 		desc = request.form['description']
-		if not re.match(r'^.{3,512}$', desc):
-			flash("The description you sent was invalid. It must be between 3 and 512 characters long.", "alert-danger")
+		if len(desc) < 3 or len(desc) > 512:
+			flash('The description you chose was invalid. It must be between 3 and 512 characters long.', 'alert-danger')
 			return redirect(url_for('system_perms_roles'))
 
 		# Check if the class already exists
@@ -111,7 +111,6 @@ def system_perms_roles():
 
 		flash("System Role created", "alert-success")
 		return redirect(url_for('system_perms_roles'))
-
 
 ################################################################################
 
@@ -168,22 +167,22 @@ def perms_role(id):
 		elif action == 'edit':
 			# Validate class name/prefix
 			name = request.form['name']
-			if not re.match(r'^[a-zA-Z0-9\s\-\_\'\"\&\@\,\:]{3,64}$', name):
-				flash("The name you sent was invalid", "alert-danger")
-				return redirect(url_for('perms_role',id=id))
+			if len(name) < 3 or len(name) > 64:
+				flash('The name you chose was invalid. It must be between 3 and 64 characters long.', 'alert-danger')
+				return redirect(url_for('perms_role', id=id))
 
 			# Validate the description
 			desc = request.form['description']
-			if not re.match(r'^.{3,512}$', desc):
-				flash("The description you sent was invalid. It must be between 3 and 512 characters long.", "alert-danger")
-				return redirect(url_for('perms_role',id=id))
+			if len(desc) < 3 or len(desc) > 512:
+				flash('The description you chose was invalid. It must be between 3 and 512 characters long.', 'alert-danger')
+				return redirect(url_for('perms_role', id=id))
 
 			curd.execute('''UPDATE `roles` SET `name` = %s, `description` = %s WHERE `id` = %s''', (name, desc, id))
 			g.db.commit()
 			cortex.lib.core.log(__name__, "permissions.role.edit", "Role '" + role['name'] + "' (" + str(id) + ")" + " name/description edited")
 
 			flash("Role updated", "alert-success")
-			return redirect(url_for('perms_role',id=id))
+			return redirect(url_for('perms_role', id=id))
 
 		elif action == 'update':
 			# Loop over all the permissions available, check if it is in the form
@@ -221,73 +220,74 @@ def perms_role(id):
 				flash("Permissions were not updated - no changes requested", "alert-warning")
 			else:
 				flash("Permissions for the role were successfully updated", "alert-success")
-			return redirect(url_for('perms_role',id=id))
+
+			return redirect(url_for('perms_role', id=id))
 
 		## Add a user or group to the role
 		elif action == 'add':
 			name = request.form['name']
 			if not re.match(r'^[a-zA-Z0-9\-\_]{3,255}$', name):
 				flash("The user or group name you sent was invalid", "alert-danger")
-				return redirect(url_for('perms_role',id=id))
+				return redirect(url_for('perms_role', id=id))
 
 			ptype = request.form['type']
 			if not re.match(r'^[0-9]+$',ptype):
 				flash("The type you sent was invalid", "alert-danger")
-				return redirect(url_for('perms_role',id=id))
+				return redirect(url_for('perms_role', id=id))
 			else:
 				ptype = int(ptype)
 
 			if ptype not in [0, 1]:
 				flash("The type you sent was invalid", "alert-danger")
-				return redirect(url_for('perms_role',id=id))
+				return redirect(url_for('perms_role', id=id))
 
 			if ptype == 0:
 				hstr = "user"
 
 				if not cortex.lib.user.does_user_exist(name):
 					flash("The username you sent does not exist", "alert-danger")
-					return redirect(url_for('perms_role',id=id))
+					return redirect(url_for('perms_role', id=id))
 
 			elif ptype == 1:
 				hstr = "group"
 
 				if not cortex.lib.ldapc.does_group_exist(name):
 					flash("The Active Directory group you specified does not exist", "alert-danger")
-					return redirect(url_for('perms_role',id=id))
+					return redirect(url_for('perms_role', id=id))
 
 			# Ensure the user/group combo was not already added
 			curd.execute('SELECT 1 FROM `role_who` WHERE `role_id` = %s AND `who` = %s AND `type` = %s', (id,name,ptype))
 			if curd.fetchone() is not None:
 				flash('That user/group is already added to the role', 'alert-warning')
-				return redirect(url_for('perms_role',id=id))
+				return redirect(url_for('perms_role', id=id))
 
 			curd.execute('''INSERT INTO `role_who` (`role_id`, `who`, `type`) VALUES (%s, %s, %s)''', (id, name, ptype))
 			g.db.commit()
 			cortex.lib.core.log(__name__, "permissions.role.member.add", hstr + " '" + name + "' added to role '" + role['name'] + "' (" + str(id) + ")")
 
 			flash("The " + hstr + " " + name + " was added to the role", "alert-success")
-			return redirect(url_for('perms_role',id=id))
+			return redirect(url_for('perms_role', id=id))
 
 		## Remove a user or group from the role
 		elif action == 'remove':
 			wid = request.form['wid']
 			if not re.match(r'^[0-9]+$',wid):
 				flash("The user/group ID you sent was invalid", "alert-danger")
-				return redirect(url_for('perms_role',id=id))
+				return redirect(url_for('perms_role', id=id))
 
 			# Ensure the permission was not already granted
 			curd.execute('SELECT `who` FROM `role_who` WHERE `id` = %s', (wid,))
 			who_row = curd.fetchone()
 			if who_row is None:
 				flash('That user/group is not added to the role', 'alert-warning')
-				return redirect(url_for('perms_role',id=id))
+				return redirect(url_for('perms_role', id=id))
 
 			curd.execute('''DELETE FROM `role_who` WHERE `id` = %s''', (wid,))
 			g.db.commit()
 			cortex.lib.core.log(__name__, "permissions.role.member.remove", "The user/group '" + who_row['who'] + "' was removed from role '" + role['name'] + "' (" + str(id) + ")")
 
 			flash("The user or group was revoked from the role", "alert-success")
-			return redirect(url_for('perms_role',id=id))
+			return redirect(url_for('perms_role', id=id))
 		else:
 			abort(400)
 
@@ -321,8 +321,11 @@ def system_perms_role(id):
 
 	## View list
 	if request.method == 'GET':
+
+		systems = cortex.lib.systems.get_systems(order='id', order_asc=False) 
+
 		# Render the page
-		return render_template('perms/role.html', active='perms', title="System Role", role=role, system_perms=app.system_permissions, rperms=plist)
+		return render_template('perms/role.html', active='perms', title="System Role", role=role, system_perms=app.system_permissions, rperms=plist, systems=systems)
 
 	## Edit role, delete role
 	elif request.method == 'POST':
@@ -349,22 +352,22 @@ def system_perms_role(id):
 		elif action == 'edit':
 			# Validate class name/prefix
 			name = request.form['name']
-			if not re.match(r'^[a-zA-Z0-9\s\-\_\'\"\&\@\,\:]{3,64}$', name):
-				flash("The name you sent was invalid", "alert-danger")
-				return redirect(url_for('system_perms_role',id=id))
+			if len(name) < 3 or len(name) > 64:
+				flash('The name you chose is invalid. It must be between 3 and 64 characters long.', 'alert-danger')
+				return redirect(url_for('system_perms_role', id=id))
 
 			# Validate the description
 			desc = request.form['description']
-			if not re.match(r'^.{3,512}$', desc):
-				flash("The description you sent was invalid. It must be between 3 and 512 characters long.", "alert-danger")
-				return redirect(url_for('system_perms_role',id=id))
+			if len(desc) < 3 or len(desc) > 512:
+				flash('The description you chose was invalid. It must be between 3 and 512 characters long.', 'alert-danger')
+				return redirect(url_for('system_perms_role', id=id))
 
 			curd.execute('''UPDATE `system_roles` SET `name` = %s, `description` = %s WHERE `id` = %s''', (name, desc, id))
 			g.db.commit()
 			cortex.lib.core.log(__name__, "permissions.system.role.edit", "Role '" + role['name'] + "' (" + str(id) + ")" + " name/description edited")
 
 			flash("System Role updated", "alert-success")
-			return redirect(url_for('system_perms_role',id=id))
+			return redirect(url_for('system_perms_role', id=id))
 
 		elif action == 'update':
 			# Loop over all the permissions available, check if it is in the form
@@ -402,92 +405,92 @@ def system_perms_role(id):
 				flash("Permissions were not updated - no changes requested", "alert-warning")
 			else:
 				flash("Permissions for the system role were successfully updated", "alert-success")
-			return redirect(url_for('system_perms_role',id=id))
+			return redirect(url_for('system_perms_role', id=id))
 
 		## Add a user or group to the role
 		elif action == 'add':
 			name = request.form['name']
 			if not re.match(r'^[a-zA-Z0-9\-\_]{3,255}$', name):
 				flash("The user or group name you sent was invalid", "alert-danger")
-				return redirect(url_for('system_perms_role',id=id))
+				return redirect(url_for('system_perms_role', id=id))
 
 			ptype = request.form['type']
 			if not re.match(r'^[0-9]+$',ptype):
 				flash("The type you sent was invalid", "alert-danger")
-				return redirect(url_for('system_perms_role',id=id))
+				return redirect(url_for('system_perms_role', id=id))
 			else:
 				ptype = int(ptype)
 
 			if ptype not in [0, 1]:
 				flash("The type you sent was invalid", "alert-danger")
-				return redirect(url_for('system_perms_role',id=id))
+				return redirect(url_for('system_perms_role', id=id))
 
 			if ptype == 0:
 				hstr = "user"
 
 				if not cortex.lib.user.does_user_exist(name):
 					flash("The username you sent does not exist", "alert-danger")
-					return redirect(url_for('system_perms_role',id=id))
+					return redirect(url_for('system_perms_role', id=id))
 
 			elif ptype == 1:
 				hstr = "group"
 
 				if not cortex.lib.ldapc.does_group_exist(name):
 					flash("The Active Directory group you specified does not exist", "alert-danger")
-					return redirect(url_for('system_perms_role',id=id))
+					return redirect(url_for('system_perms_role', id=id))
 
 			# Ensure the user/group combo was not already added
 			curd.execute('SELECT 1 FROM `system_role_who` WHERE `system_role_id` = %s AND `who` = %s AND `type` = %s', (id,name,ptype))
 			if curd.fetchone() is not None:
 				flash('That user/group is already added to the system role', 'alert-warning')
-				return redirect(url_for('system_perms_role',id=id))
+				return redirect(url_for('system_perms_role', id=id))
 
 			curd.execute('''INSERT INTO `system_role_who` (`system_role_id`, `who`, `type`) VALUES (%s, %s, %s)''', (id, name, ptype))
 			g.db.commit()
 			cortex.lib.core.log(__name__, "permissions.system.role.member.add", hstr + " '" + name + "' added to system role '" + role['name'] + "' (" + str(id) + ")")
 
 			flash("The " + hstr + " " + name + " was added to the system role", "alert-success")
-			return redirect(url_for('system_perms_role',id=id))
+			return redirect(url_for('system_perms_role', id=id))
 
 		## Remove a user or group from the role
 		elif action == 'remove':
 			wid = request.form['wid']
 			if not re.match(r'^[0-9]+$',wid):
 				flash("The user/group ID you sent was invalid", "alert-danger")
-				return redirect(url_for('system_perms_role',id=id))
+				return redirect(url_for('system_perms_role', id=id))
 
 			# Ensure the permission was not already granted
 			curd.execute('SELECT `who` FROM `system_role_who` WHERE `id` = %s', (wid,))
 			who_row = curd.fetchone()
 			if who_row is None:
 				flash('That user/group is not added to the system role', 'alert-warning')
-				return redirect(url_for('system_perms_role',id=id))
+				return redirect(url_for('system_perms_role', id=id))
 
 			curd.execute('''DELETE FROM `system_role_who` WHERE `id` = %s''', (wid,))
 			g.db.commit()
 			cortex.lib.core.log(__name__, "permissions.system.role.member.remove", "The user/group '" + who_row['who'] + "' was removed from system role '" + role['name'] + "' (" + str(id) + ")")
 
 			flash("The user or group was revoked from the system role", "alert-success")
-			return redirect(url_for('system_perms_role',id=id))
+			return redirect(url_for('system_perms_role', id=id))
 
 		## Add a system to the role.
 		elif action == 'add_system':
 			name = request.form['name']
 			if not re.match(r'^[a-zA-Z0-9\-\_]{3,255}$', name):
 				flash("The system name you sent was invalid", "alert-danger")
-				return redirect(url_for('system_perms_role',id=id))
+				return redirect(url_for('system_perms_role', id=id))
 
 			# Get the system.
 			system = cortex.lib.systems.get_system_by_name(name)
 			if system is None:
 				flash('The system you sent does not exist.', 'alert-danger')
-				return redirect(url_for('system_perms_role',id=id))
+				return redirect(url_for('system_perms_role', id=id))
 
 			# Ensure the system isn't already added.
 			curd.execute("SELECT 1 FROM `system_role_what` WHERE `system_role_id`=%s and `system_id`=%s", (id, system['id']))
 			if curd.fetchone() is not None:
 				flash('That system has already been added to the system role.')
-				return redirect(url_for('system_perms_role',id=id))
+				return redirect(url_for('system_perms_role', id=id))
 
 			# Add the system.
 			curd.execute("INSERT INTO `system_role_what` (`system_role_id`, `system_id`) VALUES (%s, %s);", (id, system['id']))
@@ -495,28 +498,28 @@ def system_perms_role(id):
 			cortex.lib.core.log(__name__, "permissions.system.role.system.add", "The system '" + system['name'] + "' (" + str(system['id']) + ") was added to the system role '" + role['name'] + "' (" + str(id) + ")")
 
 			flash("The system was added from the system role", "alert-success")
-			return redirect(url_for('system_perms_role',id=id))
+			return redirect(url_for('system_perms_role', id=id))
 
 		## Remove a system from this role.
 		elif action == 'remove_system':
 			sid = request.form['sid']
 			if not re.match(r'^[0-9]+$',sid):
 				flash("The system ID you sent was invalid", "alert-danger")
-				return redirect(url_for('system_perms_role',id=id))
+				return redirect(url_for('system_perms_role', id=id))
 
 			# Ensure this system is attached to this role.
 			curd.execute("SELECT 1 FROM `system_role_what` WHERE `system_role_id`=%s AND `system_id`=%s", (id, sid))
 			what_row = curd.fetchone()
 			if what_row is None:
 				flash('That system is not added to the system role', 'alert-warning')
-				return redirect(url_for('system_perms_role',id=id))
+				return redirect(url_for('system_perms_role', id=id))
 				
 			curd.execute("DELETE FROM `system_role_what` WHERE `system_role_id`=%s AND `system_id`=%s", (id, sid))
 			g.db.commit()
 			cortex.lib.core.log(__name__, "permissions.system.role.system.remove", "System ID '" + str(sid) + "'was removed from the system role '" + role['name'] + "' (" + str(id) + ")")
 
 			flash("The system was removed from the system role", "alert-success")
-			return redirect(url_for('system_perms_role',id=id))
+			return redirect(url_for('system_perms_role', id=id))
 
 		else:
 			abort(400)
@@ -545,29 +548,51 @@ def perms_system(id):
 
 	if request.method == 'GET':
 
-		# Get the list of distinct users/groups/etc added to this system
+		system_perms = []
+
+		# Get the list of distinct users/groups/etc added to this system explicitly
 		curd.execute('SELECT DISTINCT `type`, `who` FROM `system_perms` WHERE `system_id` = %s', (system['id'],))
-		who = curd.fetchall()
+		results = curd.fetchall()
 
-		# We create a dictionary with the key being a tuple of the 'type' and 'who'
-		# with the value being a list of dictionaries, each dictionary having the
-		# id of the permission and the permission itself
-		perms_by_who = {}
-
-		# This is pretty nasty looking, but it works!
-		# it creates the above-explained structure.
-		for entry in who:
-			curd.execute('SELECT `id`, `perm` FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s', (system['id'], entry['who'], entry['type']))	
+		for entry in results:
+			# Get perms for this system/user/type combo
+			curd.execute('SELECT `perm` FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s', (system['id'], entry['who'], entry['type']))
 			perms = curd.fetchall()
 
-			permslist = []
-			for perm in perms:
-				permslist.append(perm['perm'])
+			# Create a object to add to the system_perms list.
+			obj = {
+				'who': entry['who'],
+				'type': entry['type'],
+				'is_editable': True,
+				'perms': [p['perm'] for p in perms]
+			}
 
-			perms_by_who[(entry['type'],entry['who'])] = permslist
+			# Add the constructed object to the system_perms list.
+			system_perms.append(obj)
 
+		# Get the list of distinct users/groups/etc added to this system via a system role.
+		curd.execute('SELECT DISTINCT `system_role_id`, `system_role_name`, `type`, `who` FROM `system_role_perms_view` WHERE `system_id` = %s', (system['id'],))
+		results = curd.fetchall()
+		
+		for entry in results:
+			# Get perms for this system/user/type combo
+			curd.execute('SELECT `perm` FROM `system_role_perms_view` WHERE `system_id` = %s AND `who` = %s AND `type` = %s and `system_role_id`=%s and `system_role_name`=%s', (system['id'], entry['who'], entry['type'], entry['system_role_id'], entry['system_role_name']))
+			perms = curd.fetchall()
 
-		return render_template('perms/system.html', active='systems', title="Server permissions", system=system, who=who, perms_by_who=perms_by_who, sysperms=app.system_permissions)		
+			# Create a object to add to the system_perms list.
+			obj = {
+				'who': entry['who'],
+				'type': entry['type'],
+				'is_editable': False, # System Role Perms cannot be edited here!!
+				'system_role_id': entry['system_role_id'],
+				'system_role_name': entry['system_role_name'],
+				'perms': [p['perm'] for p in perms]
+			}
+
+			# Add the constructed object to the system_perms list.
+			system_perms.append(obj)
+
+		return render_template('perms/system.html', active='systems', title="Server permissions", system=system, system_perms=system_perms, sysperms=app.system_permissions)		
 
 	else:
 		action = request.form['action']
@@ -620,44 +645,44 @@ def perms_system(id):
 				flash("Permissions were not updated - no changes requested", "alert-warning")
 			else:
 				flash("Permissions for the system were successfully updated", "alert-success")
-			return redirect(url_for('perms_system',id=id))
+			return redirect(url_for('perms_system', id=id))
 
 		elif action == 'add':
 			name = request.form['name']
 			if not re.match(r'^[a-zA-Z0-9\-\_&]{3,255}$', name):
 				flash("The user or group name you sent was invalid", "alert-danger")
-				return redirect(url_for('perms_system',id=id))
+				return redirect(url_for('perms_system', id=id))
 
 			wtype = request.form['type']
 			if not re.match(r'^[0-9]+$',wtype):
 				flash("The type you sent was invalid", "alert-danger")
-				return redirect(url_for('perms_system',id=id))
+				return redirect(url_for('perms_system', id=id))
 			else:
 				wtype = int(wtype)
 
 			if wtype not in [0, 1]:
 				flash("The type you sent was invalid", "alert-danger")
-				return redirect(url_for('perms_system',id=id))
+				return redirect(url_for('perms_system', id=id))
 
 			if wtype == 0:
 				hstr = "user"
 
 				if not cortex.lib.user.does_user_exist(name):
 					flash("The username you specified does not exist", "alert-danger")
-					return redirect(url_for('perms_system',id=id))
+					return redirect(url_for('perms_system', id=id))
 
 			elif wtype == 1:
 				hstr = "group"
 
 				if not cortex.lib.ldapc.does_group_exist(name):
 					flash("The Active Directory group you specified does not exist", "alert-danger")
-					return redirect(url_for('perms_system',id=id))
+					return redirect(url_for('perms_system', id=id))
 
 			## Check the user/group/type combo doesn't already exist
 			curd.execute('SELECT 1 FROM `system_perms` WHERE `system_id` = %s AND `who` = %s AND `type` = %s', (id,name,wtype))
 			if curd.fetchone() is not None:
 				flash('That user/group is already added to the system, please select it from the list below and change permissions as required', 'alert-warning')
-				return redirect(url_for('perms_system',id=id))
+				return redirect(url_for('perms_system', id=id))
 
 			changes = 0
 
@@ -679,24 +704,24 @@ def perms_system(id):
 				flash("The " + hstr + " " + name + " was not added because no permissions were selected", "alert-danger")
 			else:
 				flash("The " + hstr + " " + name + " was added to the system", "alert-success")
-			return redirect(url_for('perms_system',id=id))
+			return redirect(url_for('perms_system', id=id))
 
 		elif action == 'remove':
 			name = request.form['name']
 			if not re.match(r'^[a-zA-Z0-9\-\_&]{3,255}$', name):
 				flash("The user or group name you sent was invalid", "alert-danger")
-				return redirect(url_for('perms_system',id=id))
+				return redirect(url_for('perms_system', id=id))
 
 			wtype = request.form['type']
 			if not re.match(r'^[0-9]+$',wtype):
 				flash("The type you sent was invalid", "alert-danger")
-				return redirect(url_for('perms_system',id=id))
+				return redirect(url_for('perms_system', id=id))
 			else:
 				wtype = int(wtype)
 
 			if wtype not in [0, 1]:
 				flash("The type you sent was invalid", "alert-danger")
-				return redirect(url_for('perms_system',id=id))
+				return redirect(url_for('perms_system', id=id))
 
 			if wtype == 0:
 				hstr = "user"
@@ -708,7 +733,7 @@ def perms_system(id):
 			cortex.lib.core.log(__name__, "permissions.system.purge", "System permissions purged for " + hstr + " '" + name + "' on system " + str(id))
 
 			flash("The " + hstr + " " + name + " was removed from the system", "alert-success")
-			return redirect(url_for('perms_system',id=id))
+			return redirect(url_for('perms_system', id=id))
 		
 		else:
 			abort(400)

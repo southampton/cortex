@@ -40,7 +40,7 @@ td.na
 				<div class="col-md-12"><h3 style="margin-top:0px">Service Details</h3></div>
 				<div class="col-md-12 form-group">
 					<label for="service">Service Name:</label>
-					<input class="form-control" name="service" id="service" placeholder="The human-readable name of the service you are creating to be used in NLB object descriptions e.g. Corporate Website" required="required" red="required"eutofocus {% if 'service' in values %}value="{{ values['service'] }}" {% endif %}/>
+					<input class="form-control" name="service" id="service" placeholder="The human-readable name of the service you are creating to be used in NLB object descriptions e.g. Corporate Website" required="required" autofocus {% if 'service' in values %}value="{{ values['service'] }}" {% endif %}/>
 				</div>
 				<div class="col-md-6 form-group">
 					<label for="env">Environment:</label>
@@ -320,6 +320,7 @@ function addNode(host, ip, http_port, https_port, orig_host)
 	var row = $('#node_template').clone(true);
 	$('#node_table_body').append(row);
 	row.css('display', '');
+	row.removeAttr('id');
 
 	// Set the body of the table row
 	row.find('td.node_row_host').html(host.trim());
@@ -333,7 +334,7 @@ function addNode(host, ip, http_port, https_port, orig_host)
 	row.find('input.nti_https_port').val(https_port.trim());
 	row.find('input.nti_ip').val(ip.trim());
 
-	// Set the name of the inputs on the tow
+	// Set the name of the inputs on the row
 	row.find('input.nti_host').attr('name', 'node_host[]');
 	row.find('input.nti_http_port').attr('name', 'node_http_port[]');
 	row.find('input.nti_https_port').attr('name', 'node_https_port[]');

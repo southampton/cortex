@@ -1,6 +1,6 @@
 #### F5 BigIP NLB Create HTTP Site Workflow Task
 
-from urlparse import urljoin
+from urllib.parse import urljoin
 import requests, time
 
 # For NLB API
@@ -85,8 +85,8 @@ def action_generate_letsencrypt(action, helper, config, task_globals):
 
 	# Extract the details
 	js = r.json()
-	cert = js['certificate_text']
-	private_key = js['privatekey_text']
+	cert = js['certificate']
+	private_key = js['privatekey']
 	cert_cn = js['cn'][0]
 	cert_sans = js['sans']
 
@@ -112,7 +112,7 @@ def action_retrieve_letsencrypt(action, helper, config, task_globals):
 	if r.status_code != 200:
 		raise Exception('Request to ACME Create Certificate Endpoint failed with error code ' + str(r.status_code) + ': ' + r.text)
 	js = r.json()
-	task_globals['le_cert'] = js['certificate_text']
+	task_globals['le_cert'] = js['certificate']
 
 	# Get the private key
 	r = requests.get(urljoin(config['ACME_API_URL'], 'get_privatekey') + '/' + action['fqdn'], headers={'Content-Type': 'application/json', 'X-Client-Secret': config['ACME_API_SECRET']})
@@ -121,7 +121,7 @@ def action_retrieve_letsencrypt(action, helper, config, task_globals):
 	if r.status_code != 200:
 		raise Exception('Request to ACME Create Certificate Endpoint failed with error code ' + str(r.status_code) + ': ' + r.text)
 	js = r.json()
-	task_globals['le_key'] = js['privatekey_text']
+	task_globals['le_key'] = js['privatekey']
 
 	return True, task_globals
 

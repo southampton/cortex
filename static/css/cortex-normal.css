@@ -39,3 +39,9 @@
 {
 	background-color: #ae0000;
 }
+
+.dropdown-menu>li>a
+{
+	color: #333333;
+}
+
