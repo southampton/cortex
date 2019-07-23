@@ -10,9 +10,11 @@
 		{% else -%}
 		<li role="presentation" class="disabled"><a>Rubrik</a></li>
 		{% endif -%}
-
+		{% if does_user_have_permission("dsc.view") and is_system_enrolled(system['id']) %}
 		<li role="presentation" {% if active == "dsc" %} class="active"{%endif%}><a href="{{url_for('dsc_classify_machine',id=system.id)}}">DSC</a></li>
-
+		{% else %}
+		<li role="presentation" class="disabled"><a>DSC</a></li>
+		{% endif %}
 
 		<li role="presentation"{% if active == "actions" %} class="active"{%endif%}><a href="{{url_for('system_actions',id=system.id)}}">Actions</a></li>
 		{% if system.puppet_certname -%}

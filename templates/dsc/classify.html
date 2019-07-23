@@ -3,10 +3,125 @@
 	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
 	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
 
+
+	{% include 'puppet/codemirror.html' %}
 {% endblock %}
 
 {% block body %}
 {% import 'node-header.html' as node %}
+{% import 'puppet/header.html' as puppeth %}
 {{ node.header(system,active="dsc" ) }}
+
+<style type="text/css">
+
+.bootstrap-select .bs-ok-default::after {
+    width: 10em;
+    height: 10em;
+    border-width: 0 0.1em 0.1em 0;
+    transform: rotate(45deg) translateY(0.5rem);
+}
+
+.btn.dropdown-toggle:focus {
+    outline: none !important;
+}
+
+
+.btn dropdown-toggle {
+	min-width: 100em !important;
+}
+</style>
+
+<script>
+$(document).ready(function() 
+{
+	var classes_editor = CodeMirror.fromTextArea(document.getElementById('configurations'), 
+	{
+		mode: 'yaml',
+		gutters: ["CodeMirror-lint-markers"],
+		lint: true,
+		indentUnit: 2,
+		viewportMargin: Infinity,
+	});
+
+	classes_editor.setOption("extraKeys", 
+	{
+		Tab: function(cm) {
+			var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
+			cm.replaceSelection(spaces);
+		}
+	});
+
+});
+</script>
+
+<form class="form-horizontal" method="POST" role="form" id="dsc_form">
+<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+	<div class="panel panel-default">
+		<div class="panel-heading">DSC Roles
+			<div class="pull-right">
+				<a href="#" class="btn btn-info btn-xs" data-toggle="modal" data-target="#modalyaml">View raw YAML</a>		
+			</div>
+			<button class="btn btn-success btn-xs btn-default pull-right">Classify</button>
+			<button class="btn btn-xs btn-default pull-right">Reports</button>
+		</div>
+		<div class="panel-body" style="padding-bottom:0em">
+			<div class="form-group">
+				<label title="The roles that this box fulfils" class="col-sm-2 control-label">Roles:</label>
+				<div class="col-lg-16">
+					<select multiple data-style="bg-white rounded-pill px-40 py-3 shadow-sm" class="selectpicker w-100" id="roles" name="roles" data-width="75%"> 
+						{% for role in roles %}
+							<option value="{{ role }}">{{ role }}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+			<input type="hidden" id="selected_values" name="selected_values">
+		</div>
+	</div>
+<div class="row">
+	<div class="col-md-9">
+		<div class="panel panel-default">
+			<div class="panel-heading">DSC Configurations</div>
+			<div class="panel-body" style="padding:0px">
+				<textarea id="configurations" name="configurations" placholder="Configurations to include can be entered here">{{ yaml }}</textarea>
+			</div>
+		</div>
+		<div class="text-center">
+			<button class="btn btn-primary btn-lg" type="submit" id="save_changes">Save Changes</button>
+		</div>
+	</div>
+	<div class="col-md-3">
+		<div class="panel panel-default">
+			<div class="panel-heading">Help</div>
+			<div class="panel-body">
+				<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>
+				<p>"Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?"</p>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<script type="text/javascript">
+
+window.onload = function() {
+	var exist_roles = {{ set_roles|tojson }};
+	$('.selectpicker').selectpicker('val', exist_roles);
+};
+
+$("#save_changes").click(function(){
+
+	// $("#selected_values").val(JSON.stringify($(".selected")));
+	// console.log($("button[data-id=\"roles\"]").attr("title"));
+	// $("#selected_values").val($("button[data-id=\"roles\"]").attr("title"));
+	$("#selected_values").val($('.selectpicker').selectpicker('val'));
+	$("#dsc_form").submit();
+});
+
+
+</script>
+
+
+
 
 {% endblock %}

@@ -6,7 +6,7 @@ import cortex.lib.core
 import cortex.lib.systems
 import cortex.lib.cmdb
 import cortex.lib.classes
-from cortex.lib.user import does_user_have_permission, does_user_have_system_permission, does_user_have_any_system_permission
+from cortex.lib.user import does_user_have_permission, does_user_have_system_permission, does_user_have_any_system_permission, is_system_enrolled
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
 import os
@@ -522,6 +522,7 @@ def system_overview(id):
 	if not does_user_have_system_permission(id,"view.overview","systems.all.view"):
 		abort(403)
 
+	# return jsonify(is_system_enrolled(id))
 	# Get the system
 	system = cortex.lib.systems.get_system_by_id(id)
 

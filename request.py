@@ -1,6 +1,6 @@
 from cortex import app
 from cortex.lib.errors import logerr, fatalerr
-from cortex.lib.user import does_user_have_permission, does_user_have_workflow_permission, does_user_have_system_permission
+from cortex.lib.user import does_user_have_permission, does_user_have_workflow_permission, does_user_have_system_permission, is_system_enrolled
 from flask import Flask, request, session, g, abort, render_template, url_for
 import redis
 import time
@@ -39,6 +39,7 @@ def before_request():
 	# cortex.lib.user which it can't import due to a cyclic dependency
 	app.jinja_env.globals['does_user_have_permission'] = does_user_have_permission
 	app.jinja_env.globals['does_user_have_system_permission'] = does_user_have_system_permission
+	app.jinja_env.globals['is_system_enrolled'] = is_system_enrolled
 
 ################################################################################
 

@@ -562,6 +562,14 @@ Username:             %s
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `dsc_config` (
+		`system_id` mediumint(11) NOT NULL,
+		`roles` text,
+		`config` text,
+		PRIMARY KEY (`system_id`),
+		FOREIGN KEY (`system_id`) REFERENCES systems(`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
 		# Attempt to alter the systems table and add new columns.
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `expiry_date` datetime DEFAULT NULL""")
@@ -644,14 +652,18 @@ Username:             %s
 		  `puppet_nodes`.`include_default` AS `puppet_include_default`,
 		  `puppet_nodes`.`classes` AS `puppet_classes`,
 		  `puppet_nodes`.`variables` AS `puppet_variables`,
-		  `systems`.`enable_backup` AS `enable_backup`
+		  `systems`.`enable_backup` AS `enable_backup`,
+		  `dsc_config`.`roles` as `dsc_roles`,
+		  `dsc_config`.`config` as `dsc_config`
                 FROM `systems` 
 		LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`
 		LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid`
 		LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` 
 		LEFT JOIN `realname_cache` AS  `allocation_who_realname_cache` ON `systems`.`allocation_who` = `allocation_who_realname_cache`.`username`
 		LEFT JOIN `realname_cache` AS  `primary_owner_who_realname_cache` ON `systems`.`primary_owner_who` = `primary_owner_who_realname_cache`.`username`
-		LEFT JOIN `realname_cache` AS  `secondary_owner_who_realname_cache` ON `systems`.`secondary_owner_who` = `secondary_owner_who_realname_cache`.`username`""")
+		LEFT JOIN `realname_cache` AS  `secondary_owner_who_realname_cache` ON `systems`.`secondary_owner_who` = `secondary_owner_who_realname_cache`.`username`
+		LEFT JOIN `dsc_config` ON `systems`.`id` = `dsc_config`.`system_id`
+		""")
        	
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `roles` (
 		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
@@ -828,7 +840,10 @@ Username:             %s
 		  (1, "puppet.dashboard.view"), 
 		  (1, "puppet.nodes.view"), 
 		  (1, "puppet.default_classes.view"), 
-		  (1, "puppet.default_classes.edit"), 
+		  (1, "puppet.default_classes.edit"),
+		  (1, "dsc.view"),
+		  (1, "dsc.edit"), 
+		  (1, "dsc.enrol"),
 		  (1, "classes.view"), 
 		  (1, "classes.edit"), 
 		  (1, "tasks.view"),
@@ -887,6 +902,9 @@ Username:             %s
 			{'name': 'puppet.nodes.view',		       'desc': 'View the list of Puppet nodes'},
 			{'name': 'puppet.default_classes.view',	       'desc': 'View the list of Puppet default classes'},
 			{'name': 'puppet.default_classes.edit',	       'desc': 'Modify the list of Puppet default classes'},
+			{'name': 'dsc.view', 					'desc': 'View DSC of a system'},
+			{'name': 'dsc.enrol', 					'desc': 'Enrol a system in DSC'},
+			{'name': 'dsc.edit',					'desc': 'Edit the DSC of a system'},
 			{'name': 'classes.view',		       'desc': 'View the list of system class definitions'},
 			{'name': 'classes.edit',		       'desc': 'Edit system class definitions'},
 			{'name': 'tasks.view',			       'desc': 'View the details of all tasks (not just your own)'},
