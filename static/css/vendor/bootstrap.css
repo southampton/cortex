@@ -11,7 +11,7 @@
  * Copyright 2011-2019 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  */
-@import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic");
+@import url("Source-Sans-Pro-Fonts.css");
 :root {
   --blue: #158CBA;
   --indigo: #6610f2;
