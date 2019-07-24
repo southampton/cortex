@@ -360,6 +360,11 @@ Username:             %s
 		except Exception as ex:
 			pass
 
+		try:
+			cursor.execute("""CREATE INDEX `events_name_index` ON `events` (`name`)""")
+		except Exception as ex:
+			pass
+
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `kv_settings` (
 		  `key` varchar(64) NOT NULL,
 		  `value` text,
