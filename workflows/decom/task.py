@@ -3,6 +3,7 @@ import requests
 import requests.exceptions
 from urllib.parse import urljoin
 import ldap
+import MySQLdb as mysql
 
 def run(helper, options):
 	# check if workflows are locked
@@ -46,7 +47,9 @@ def run(helper, options):
 		elif action['id'] == "graphite.delete":
 			r = action_graphite_delete(action, helper, options['wfconfig'])
 		elif action['id'] == "system.update_decom_date":
-			r = action_update_decom_date(action, helper) 
+			r = action_update_decom_date(action, helper)
+		elif action['id'] == "dsc.disenroll":
+			r = action_disenroll_from_dsc(action, helper) 
 			
 		# End the event (don't change the description) if the action
 		# succeeded. The action_* functions either raise Exceptions or
@@ -280,6 +283,16 @@ def action_check_system(action, helper, wfconfig):
 
 	# Add action to input the decom date.
 	system_actions.append({'id': 'system.update_decom_date', 'desc': 'Update the decommission date in Cortex', 'detail': 'Update the decommission date in Cortex and set it to the current date and time.', 'data': {'system_id': system['id']}})	
+
+	curd = helper.db.cursor(mysql.cursors.DictCursor)
+	curd.execute("SELECT system_id FROM `dsc_config`;")
+	dsc_enrolled = curd.fetchall()
+	# convert to a list
+	dsc_enrolled = [m['system_id'] for m in dsc_enrolled]
+
+	if system['id'] in dsc_enrolled:
+		system_actions.append({'id': 'dsc.disenroll', 'desc': 'Disenroll the VM from DSC', 'detail':'Remove the record of the VM from Cortex.', 'data': {'system_id': system['id']}})
+	
 
 	# A success message
 	helper.flash('Successfully completed a pre-decommission check of System ID: {} ({}). Found {} actions for decommissioning'.format(system_id, system['name'], len(system_actions)), 'success')
@@ -546,3 +559,15 @@ def action_graphite_delete(action, helper, wfconfig):
 		helper.end_event(success=False, description="Failed to remove the metrics from Graphite: " + str(e))
 		return False
 
+
+#################################################################################
+
+def action_disenroll_from_dsc(action, helper):
+	curd = helper.db.cursor(mysql.cursors.DictCursor)
+ 	try:
+		curd.execute("DELETE FROM `dsc_config` WHERE `system_id` = %s", (action['data']['system_id'], ))
+		helper.db.commit()
+ 		return True
+ 	except Exception as e:
+ 		helper.end_event(success=False, description="Failed to remove the VM from DSC: " + str(e))
+		return False
