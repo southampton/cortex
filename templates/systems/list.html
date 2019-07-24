@@ -68,7 +68,7 @@ a.server-link:hover { text-decoration: underline !important; }
 			</div>
 
 			<div class="modal-footer">
-				<button data-dismiss="modal" type="button" class="btn btn-default">Close</button>
+				<button data-dismiss="modal" type="button" class="btn btn-secondary">Close</button>
 			</div>
 		</div>
 	</div>
@@ -92,7 +92,7 @@ a.server-link:hover { text-decoration: underline !important; }
 	<div class="pull-right">
 		<a href="#" data-toggle="modal" data-target="#advanced_search_help">Advanced Search:</a>&nbsp;
 		<div class="btn-group btn-toggle" id="toggle_queries"> 
-			<button id="query_search_on" class="btn btn-sm btn-default">ON</button>
+			<button id="query_search_on" class="btn btn-sm btn-secondary">ON</button>
 			<button id="query_search_off" class="btn btn-sm btn-primary active">OFF</button>
 		</div>
 	</div>
@@ -154,7 +154,7 @@ $(function() {
 						if ($(this).find('.btn-primary').size()>0) {
 							$(this).find('.btn').toggleClass('btn-primary');
 						} 
-						$(this).find('.btn').toggleClass('btn-default');
+						$(this).find('.btn').toggleClass('btn-secondary');
                                 	});
 				}
 				return window.history.state['dtState'];
@@ -188,7 +188,7 @@ $(function() {
 		"rowCallback": function(row, data, index) {
 			{#- data[6] is CMDB URL, data[7] is database ID, data[5] is operational status, data[9] is Puppet Cert Name #}
 			$('td:eq(6)', row).html(
-				'<a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/overview/' + data["id"] + '">' +
+				'<a title="View" class="btn btn-xs btn-secondary" style="margin-right:0.5em" href="/systems/overview/' + data["id"] + '">' +
 				'	<i class="fa fa-fw fa-info-circle"></i>' +
 				'</a>' + (data["cmdb_id"] != '' ?
 				'<a title="CMDB" style="margin-right:0.5em" class="btn btn-xs btn-primary" href="' + data["cmdb_id"] + '" target="_blank">' +
@@ -304,7 +304,7 @@ $(function() {
     		if ($(this).find('.btn-primary').size()>0) {
     			$(this).find('.btn').toggleClass('btn-primary');
     		} 
-    		$(this).find('.btn').toggleClass('btn-default');
+    		$(this).find('.btn').toggleClass('btn-secondary');
 		systemsTable.state.save();
        });
 });

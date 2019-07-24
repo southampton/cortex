@@ -7,9 +7,9 @@
 	</div>
 
 	<div class="pull-right divider-left">
-		<button id="filter_succeeded" type="button" class="btn btn-md btn-filter {{ 'btn-success active' if filters.get('filter_succeeded', '1') == '1' else 'btn-default' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_succeeded', '1') == '1' else 'fa-square-o' }}"></i> Succeeded</button>
-		<button id="filter_warnings" type="button" class="btn btn-md btn-filter {{ 'btn-success active' if filters.get('filter_warnings', '1') == '1' else 'btn-default' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_warnings', '1') == '1' else 'fa-square-o' }}"></i> Warnings</button>
-		<button id="filter_failed" type="button" class="btn btn-md btn-filter {{ 'btn-success active' if filters.get('filter_failed', '1') == '1' else 'btn-default' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_failed', '1') == '1' else 'fa-square-o' }}"></i> Failed</button>
+		<button id="filter_succeeded" type="button" class="btn btn-md btn-filter {{ 'btn-success active' if filters.get('filter_succeeded', '1') == '1' else 'btn-secondary' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_succeeded', '1') == '1' else 'fa-square-o' }}"></i> Succeeded</button>
+		<button id="filter_warnings" type="button" class="btn btn-md btn-filter {{ 'btn-success active' if filters.get('filter_warnings', '1') == '1' else 'btn-secondary' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_warnings', '1') == '1' else 'fa-square-o' }}"></i> Warnings</button>
+		<button id="filter_failed" type="button" class="btn btn-md btn-filter {{ 'btn-success active' if filters.get('filter_failed', '1') == '1' else 'btn-secondary' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_failed', '1') == '1' else 'fa-square-o' }}"></i> Failed</button>
 	</div>
 	<div class="pull-right">
 		<a class="btn btn-md {% if tasktype == 'all' %}btn-success{% else %}btn-secondary{% endif %}" href="{{ url_for('admin_tasks') }}">All</a>

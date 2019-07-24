@@ -182,7 +182,7 @@ tr > td:first-child {
 				<p>Power on the system from an off state?</p>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
 					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 					<input type="hidden" name="power_action" value="on"/>
@@ -208,7 +208,7 @@ tr > td:first-child {
 				</ul>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
 					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 					<input type="hidden" name="power_action" value="shutdown"/>
@@ -235,7 +235,7 @@ tr > td:first-child {
 				<p>Are you sure you wish to reset the system?</p>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
 					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 					<input type="hidden" name="power_action" value="reset"/>

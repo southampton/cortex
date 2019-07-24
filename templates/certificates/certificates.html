@@ -41,7 +41,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 					<button type="submit" class="btn btn-primary">Apply Filter</button>
 				</div>
 			</form>
@@ -84,7 +84,7 @@
 			<td>{% if cert.lastSeen %}<abbr title="{{ cert.lastSeen }}">{{ cert.lastSeen.strftime("%Y-%m-%d") }}</abbr>{% else %}Unknown{% endif %}</td>
 			<td>{{ cert.numHosts }}</td>
 			<td>{{ cert.keySize or "Unknown" }}</td>
-			<td><a href="{{url_for('certificate_edit',digest=cert.digest) }}" class="btn btn-default btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a></td>
+			<td><a href="{{url_for('certificate_edit',digest=cert.digest) }}" class="btn btn-secondary btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a></td>
 		</tr>
 {%- endfor %}
 	</tbody>
