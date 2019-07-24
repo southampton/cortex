@@ -42,8 +42,6 @@
 	</div>
 </div>
 
-<!----------------------------------------------------------------------------->
-
 <div class="modal" id="search_vmware" role="dialog">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
@@ -73,8 +71,6 @@
 	</div>
 </div>
 
-<!----------------------------------------------------------------------------->
-
 {%- if autocomplete_users %}
 <datalist id="autocompleteUsers">
 {%- for user in autocomplete_users %}
@@ -82,8 +78,6 @@
 {% endfor -%}
 </datalist>
 {% endif -%}
-
-<!----------------------------------------------------------------------------->
 
 
 {{ node.header(system,active="edit" ) }}
@@ -123,8 +117,17 @@
 		</div>
 	</div>
 
-
-
+	<div class="form-group">
+		<label class="col-sm-2 control-label" for="enable_backup">Backup Status:</label>
+		<div class="col-sm-10 col-md-9">
+			<select class="form-control selectpicker" name="enable_backup" id="enable_backup"{% if not does_user_have_system_permission(system['id'],"edit.rubrik","systems.all.edit.rubrik") %} disabled="disabled" {% endif %}>
+				<option value="0"{% if system.enable_backup == 0 %} selected="selected"{% endif %}>Do NOT Backup</option>
+				<option value="1"{% if system.enable_backup == 1 %} selected="selected"{% endif %}>Backup this System</option>
+				<option value="2"{% if system.enable_backup == 2 %} selected="selected"{% endif %}>Unknown - Do not change backup policy</option>
+			</select>
+		</div>
+		<div style="margin-bottom:0px" class="col-sm-offset-2 col-sm-10 col-md-9 help-block">This field determines whether Cortex will set a default policy for the VM is it is set to Do Not Protect in Rubrik.</div>
+	</div>
 
 {%- if not system_class or system_class.link_vmware %}
 	<div class="form-group row">
@@ -139,8 +142,8 @@
 			<div class="form-text">This is the UUID of the VM within VMware.</div>
 		</div>
 	</div>
-
 {%- endif %}
+
 {%- if not system_class or system_class.cmdb_type %}
 	<div class="form-group row">
 		<label class="col-sm-2 control-label" for="cmdb_id">CMDB System ID:</label>
@@ -183,7 +186,7 @@
 		<div class="form-group row">
 			<label class="col-sm-2 control-label" for="review_status">Review Status:</label>
 			<div class="col-sm-3">
-				<select class="form-control" name="review_status" id="review_status"{% if not does_user_have_system_permission(system['id'],"edit.review","systems.all.edit.review") %} disabled="disabled" {% endif %}>
+				<select class="form-control selectpicker" name="review_status" id="review_status"{% if not does_user_have_system_permission(system['id'],"edit.review","systems.all.edit.review") %} disabled="disabled" {% endif %}>
 					<option value="0"{% if system.review_status == 0 %} selected="selected"{% endif %}>Not reviewed</option>
 					<option value="1"{% if system.review_status == 1 %} selected="selected"{% endif %}>Required</option>
 					<option value="3"{% if system.review_status == 3 %} selected="selected"{% endif %}>Not required</option>
@@ -292,7 +295,6 @@ $(document).ready(function()
 			$('#review_task').attr('readonly', 'readonly');
 		}
 	});
-
 });
 </script>
 {% endblock %}

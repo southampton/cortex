@@ -1,0 +1,176 @@
+#!/bin/env python
+
+import click
+import os
+import imp
+import sys
+import MySQLdb as mysql
+
+CORTEX_PATH = '/data/cortex/cortex'
+CORTEX_CONFIG_FILE = '/data/cortex/cortex.conf'
+
+# Add Cortex to the path (required for Corpus).
+sys.path.append(CORTEX_PATH)
+
+from corpus import Corpus
+
+class CortexAdmin(object):
+
+	def __init__(self, verbose=False):
+
+		# Set Global Options
+		self.verbose = verbose
+		
+		self.config = self.load_config()
+		self.db = self.db_connect()
+
+		self.corpus = Corpus(self.db, self.config)
+
+	def load_config(self):
+		"""
+		Load Cortex Config
+		"""
+		d = imp.new_module('config')
+		d.__file__ = CORTEX_CONFIG_FILE
+		try:
+			with open(CORTEX_CONFIG_FILE) as config_file:
+				exec(compile(config_file.read(), CORTEX_CONFIG_FILE, 'exec'), d.__dict__)
+		except IOError as e:
+			click.echo('Unable to load configuration file {}'.format(e.strerror))
+			sys.exit(1)
+
+		config = {}
+
+		for key in dir(d):
+			if key.isupper():
+				config[key] = getattr(d, key)
+
+		## ensure we have required config options
+		for wkey in ['MYSQL_HOST', 'MYSQL_PORT', 'MYSQL_USER', 'MYSQL_PASS', 'MYSQL_NAME']:
+			if not wkey in config.keys():
+				click.echo('Missing configuation option: {}'.format(wkey))
+				sys.exit(1)
+
+		return config	
+
+	def db_connect(self):
+		"""Return MySQL Connection Object"""
+		return mysql.connect(host=self.config['MYSQL_HOST'], port=self.config['MYSQL_PORT'], user=self.config['MYSQL_USER'], passwd=self.config['MYSQL_PASS'], db=self.config['MYSQL_NAME'])
+
+	def db_cursor(self):
+		"""Return MySQL (Dict) Cursor"""
+		return self.db.cursor(mysql.cursors.DictCursor)
+
+	def db_commit(self):
+		"""Commit the DB Changes"""
+		self.db.commit()
+
+################################################################################
+
+@click.group(context_settings={'help_option_names':['-h', '--help']})
+@click.option('-v', '--verbose', type=bool, default=False, is_flag=True)
+@click.pass_context
+def cli(ctx, verbose):
+	"""
+	Cortex Admin Tool
+	"""
+	ctx.obj = CortexAdmin(verbose)
+	
+################################################################################
+
+@cli.command('make-admin')
+@click.argument('user')
+@click.option('--role-id', default=1, help='Role ID in the Cortex database')
+@click.pass_obj
+def make_admin(obj, user, role_id):
+	"""
+	Make a User a Cortex Administrator
+	"""
+
+	cur = obj.db_cursor()
+	cur.execute("""SELECT * FROM `roles` WHERE `id`=%s""", (role_id,))
+	result = cur.fetchone()
+
+	if result:
+		click.echo('Adding User {} to Role \'{}\' (ID: {})'.format(user, result['name'], result['id']))
+		try:
+			cur.execute("""INSERT INTO role_who (role_id, who, type) VALUES (%s, %s, 0)""", (role_id, user,))
+		except mysql.IntegrityError as e:
+			if obj.verbose:
+				click.echo('mysql.IntegrityError: {}\nThe user is likely already a member of this role!'.format(str(e)))
+			else:
+				click.echo('The user is already a member of this role!')
+		else:
+			obj.db_commit()
+			click.echo('Success!')		
+	else:
+		click.echo('Role ID: {} Does not exist!'.format(group_id))
+		sys.exit(1)
+
+################################################################################
+
+@cli.command('clean')
+@click.pass_obj
+def clean(obj):
+	"""
+	Clean the Cortex Database
+	"""
+
+	if click.confirm('This command will clean the Cortex database. Are you sure you wish to continue?'):
+		
+		cur = obj.db_cursor()
+		if click.confirm('Truncate the \'events\' and \'tasks\' tables?'):
+			cur.execute("""TRUNCATE `events`;""")
+			click.echo('Table \'events\' has been truncated')
+			cur.execute("""TRUNCATE `tasks`;""")
+			click.echo('Table \'tasks\' has been truncated')
+
+		if click.confirm('Set the expiry date to NULL for all Systems?'):
+			cur.execute("""UPDATE `systems` SET `expiry_date` = NULL;""")
+			click.echo('The expiry date has been set to NULL for all Systems')
+
+		obj.db_commit()
+
+################################################################################
+
+@cli.command('update-class')
+@click.argument('name')
+@click.argument('lastid')
+@click.pass_obj
+def update_class(obj, name, lastid):
+	"""
+	Update the 'lastid' for a given class
+	"""
+
+	cur = obj.db_cursor() 
+
+	cur.execute("""SELECT 1 FROM `classes` WHERE `name`=%s;""", (name,))
+	if cur.fetchone():
+		cur.execute("""UPDATE `classes` SET `lastid`=%s WHERE `name`=%s;""", (lastid, name,))
+		obj.db_commit()
+		click.echo('Success!')
+	else:
+		click.echo('Class {} not found.'.format(name))
+
+################################################################################
+
+@cli.command('get-last-password')
+@click.argument('system_name')
+@click.pass_obj
+def get_last_password(obj, system_name):
+	"""
+	Get the last repeatable password for this VM
+	"""
+	system = obj.corpus.get_system_by_name(system_name, must_have_vmware_uuid=True)
+	if system is None:
+		click.echo('System {} does not exist! (Or may not have a VMware UUID)'.format(system))
+		sys.exit(1)
+	else:
+		pw = obj.corpus.system_get_repeatable_password(system['id'])
+		click.echo('The last repeatable password for {} was:\n{}'.format(system_name, pw))
+
+################################################################################
+
+if __name__ == "__main__":
+	cli()
+

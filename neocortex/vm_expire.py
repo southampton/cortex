@@ -26,7 +26,7 @@ def run(helper, options):
 				try:
 					helper.lib.vmware_vm_shutdown_guest(vm)
 
-				except vim.fault.ToolsUnavailable, e:
+				except vim.fault.ToolsUnavailable as e:
 
 					try:
 						helper.lib.vmware_vm_poweroff(vm)

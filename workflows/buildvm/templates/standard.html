@@ -128,7 +128,7 @@ div.specdetails
 {%- if autocomplete_users %}
 <datalist id="autocompleteUsers">
 {%- for user in autocomplete_users %}
-        <option>{{user.username}}</option>
+		<option>{{user.username}}</option>
 {% endfor -%}
 </datalist>
 {% endif -%}
@@ -303,7 +303,7 @@ div.specdetails
 					<select class="selectpicker" name="vm_folder_moid" id="vm_folder_moid" data-live-search="true">
 						<option></option>
 {% for folder in folders -%}
-                                        <option value="{{ folder['id'] }}">{{ folder['fully_qualified_path'] }}</option>
+										<option value="{{ folder['id'] }}">{{ folder['fully_qualified_path'] }}</option>
 {%- endfor %}
 					</select>
 				</div>

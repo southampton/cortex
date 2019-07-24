@@ -3,15 +3,15 @@
 <style type="text/css">
 .admin-block
 {
-	min-height: 150px;
-	padding-left: auto;
-	padding-right: auto;
+	min-height: 100px;
+	//padding-left: auto;
+	//padding-right: auto;
 	border-radius: 24px;
 	box-shadow: 0px 0px 2px 2px rgba(0,0,0,.2);
-	margin: 20px 0px;
-	padding: 20px;
-	padding-top: 10px;
-	padding-bottom: 10px;
+	margin: 9px auto;
+	padding: 2px;
+	padding-top: 2px;
+	padding-bottom: 5px;
 	text-align: center;
 }
 
@@ -25,20 +25,24 @@
 {
 	text-decoration: none;
 }
-
+.admin-block p
+{
+	color: #FFFFFF;
+	font-size: 1em;
+	font-weight: bold;
+}
 .admin-block h2
 {
 	color: #FFFFFF;
-	font-size: 2em;
+	font-size: 1.25em;
 }
 
 .admin-block h1
 {
-	font-size: 3em;
+	font-size: 1.75em;
 	font-weight: bold;
 	color: #FFFFFF;
 }
-
 .bg-default
 {
 	background-color: #aaa;
@@ -55,49 +59,126 @@
 <div class="row">
 	<div class="col-md-4">
 		<a href="{{ url_for('puppet_nodes', status='all') }}">
-		<div class="admin-block bg-purple">
-			<h1><i class="fa fa-fw fa-server"></i> {{ stats['count'] }}</h1>
-			<h2>Registered nodes</h2>
-		</div>
+			<div class="admin-block bg-purple" style="width: 300%;">
+				<div class="row">
+					<div class="col-md-2">
+						<h1><i class="fa fa-fw fa-server"></i></h1><h2>Registered nodes</h2>
+					</div>
+					<div class="col-md-2">
+						<h1>{{ stats['count']['count'] }}</h1><h2 style="font-weight:bold">Total<br/></h2>
+					</div>
+{%- for env in environments %}
+					<div class="col-md-2">
+						<h1>{{ stats['count'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
+					</div>
+{%- endfor %}
+				</div>
+			</div>
 		</a>
 	</div>
+</div>
+<div class="row">	
 	<div class="col-md-4">
 		<a href="{{ url_for('puppet_nodes', status='unchanged') }}">
-		<div class="admin-block bg-success">
-			<h1><i class="fa fa-fw fa-check"></i> {{ stats['unchanged'] }}</h1>
-			<h2>Normal</h2>
+		<div class="admin-block bg-success" style="width: 300%;">
+			<div class="row">
+				<div class="col-md-2">
+					<h1><i class="fa fa-fw fa-check"></i></h1><h2>Normal</h2>
+				</div>
+				<div class="col-md-2">
+					<h1>{{ stats['unchanged']['count'] }}</h1><h2 style="font-weight: bold">Total<br/></h2>
+				</div>
+{%- for env in environments %}
+				<div class="col-md-2">
+					<h1>{{ stats['unchanged'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
+				</div>
+{%- endfor %}
+			</div>
 		</div>
 		</a>
 	</div>
+</div>
+<div class="row">
 	<div class="col-md-4">
 		<a href="{{ url_for('puppet_nodes', status='changed') }}">
-		<div class="admin-block bg-primary">
-			<h1><i class="fa fa-fw fa-cog"></i> {{ stats['changed'] }}</h1>
-			<h2>Changed</h2>
+		<div class="admin-block bg-primary" style="width: 300%;">
+			<div class="row">
+				<div class="col-md-2">
+					<h1><i class="fa fa-fw fa-cog"></i></h1><h2>Changed</h2>
+				</div>
+				<div class="col-md-2">
+					<h1>{{ stats['changed']['count'] }}</h1><h2 style="font-weight: bold">Total<br/></h2>
+				</div>
+{%- for env in environments %}
+				<div class="col-md-2">
+					<h1>{{ stats['changed'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
+				</div>
+{%- endfor %}
+			</div>
 		</div>
 		</a>
 	</div>
+</div>
+<div class="row">
 	<div class="col-md-4">
 		<a href="{{ url_for('puppet_nodes', status='noop') }}">
-		<div class="admin-block bg-warning">
-			<h1><i class="fa fa-fw fa-wrench"></i> {{ stats['noop'] }}</h1>
-			<h2>Disabled</h2>
+		<div class="admin-block bg-warning" style="width: 300%;">
+			<div class="row">
+				<div class="col-md-2">
+					<h1><i class="fa fa-fw fa-wrench"></i></h1><h2>Disabled</h2>
+				</div>
+				<div class="col-md-2">
+					<h1>{{ stats['noop']['count'] }}</h1><h2 style="font-weight: bold">Total<br/></h2>
+				</div>
+{%- for env in environments %}
+				<div class="col-md-2">
+					<h1>{{ stats['noop'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
+				</div>
+{%- endfor %}
+			</div>
 		</div>
 		</a>
 	</div>
+</div>
+<div class="row">
 	<div class="col-md-4">
 		<a href="{{ url_for('puppet_nodes', status='failed') }}">
-		<div class="admin-block bg-danger">
-			<h1><i class="fa fa-fw fa-exclamation-triangle"></i> {{ stats['failed'] }}</h1>
-			<h2>Failed</h2>
+		<div class="admin-block bg-danger" style="width: 300%;">
+			<div class="row">
+				<div class="col-md-2">
+					<h1><i class="fa fa-fw fa-exclamation-triangle"></i></h1><h2>Failed</h2>
+				</div>
+				<div class="col-md-2">
+					<h1>{{ stats['failed']['count'] }}</h1><h2 style="font-weight: bold">Total<br/></h2>
+				</div>
+{%- for env in environments %}
+				<div class="col-md-2">
+					<h1>{{ stats['failed'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
+				</div>
+{%- endfor %}
+			</div>
 		</div>
 		</a>
 	</div>
+</div>
+<div class="row">
 	<div class="col-md-4">
 		<a href="{{ url_for('puppet_nodes', status='unknown') }}">
-		<div class="admin-block bg-default">
-			<h1><i class="fa fa-fw fa-question-circle"></i> {{ stats['unknown'] + stats['unreported'] }}</h1>
-			<h2>Unknown</h2>
+		<div class="admin-block bg-default" style="width: 300%;">
+			<div class="row">
+				<div class="col-md-2">
+					<h1><i class="fa fa-fw fa-question-circle"></i></h1><h2>Unknown</h2>
+				</div> 
+				<div class="col-md-2">
+					<h1>{{ stats['unknown']['count'] + stats['unreported']['count'] }}</h1><h2 style="font-weight: bold">Total<br/></h2>
+				</div>
+{%- for env in environments %}
+				<div class="col-md-2">
+					<h1>{{ stats['unknown'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
+				</div>
+{%- endfor %}
+			</div>
+			
 		</div>
 		</a>
 	</div>

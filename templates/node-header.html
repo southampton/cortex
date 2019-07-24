@@ -5,7 +5,7 @@
 		<li class="nav-item"><a class="{% if active == "overview" %}active {%endif%}nav-link" href="{{url_for('system_overview',id=system.id)}}">Overview</a></li>
 		<li class="nav-item"><a class="{% if active == "info" %}active {%endif%}nav-link" href="{{url_for('system',id=system.id)}}">Info</a></li>
 		<li class="nav-item"><a class="{% if active == "edit" %}active {%endif%}nav-link" href="{{url_for('system_edit',id=system.id)}}">Settings</a></li>
-		{% if system.vmware_uuid and does_user_have_permission("systems.all.view.rubrik") -%}
+		{% if system.vmware_uuid and does_user_have_system_permission(system.id, "edit.rubrik", "systems.all.view.rubrik") -%}
 		<li class="nav-item"><a class="{% if active == "backup" %}active {% endif %}nav-link" href="{{url_for('system_backup',id=system.id)}}">Rubrik</a></li>
 		{% else -%}
 		<li class="nav-item"><a class="nav-link disabled">Rubrik</a></li>
@@ -37,7 +37,7 @@
 				{% else %}
 				<a class="dropdown-item disabled" href="#">ServiceNow <i class="fa fa-fw fa-external-link"></i></a>
 				{% endif %}
-				{%- if ('linux' in system.vmware_os.lower() or 'linux' in system.cmdb_os.lower()) and does_user_have_system_permission(system.id, "view.detail", "systems.all.view") %}
+				{%- if ((system.vmware_os != None and 'linux' in system.vmware_os.lower()) or (system.cmdb_os != None and 'linux' in system.cmdb_os.lower())) and does_user_have_system_permission(system.id, "view.detail", "systems.all.view") %}
 				<a class="dropdown-item" href="{{ config['SATELLITE6_URL'] + '/hosts/' + system.name }}">Red Hat Satellite 6 <i class="fa fa-fw fa-external-link"></i></a>
 				{% else %}
 				<a class="dropdown-item disabled">Red Hat Satellite 6 <i class="fa fa-fw fa-external-link"></i></a>

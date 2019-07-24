@@ -1,11 +1,11 @@
 #!/usr/bin/python
-
 import cortex.lib.core
-from cortex.lib.workflow import CortexWorkflow
+from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
 from cortex.lib.systems import get_systems
 from cortex.lib.user import does_user_have_workflow_permission, does_user_have_system_permission, does_user_have_any_system_permission
-from flask import request, session, redirect, url_for, abort, flash
+from flask import request, session, redirect, url_for, abort, flash, g
 from datetime import datetime
+import json
 
 workflow = CortexWorkflow(__name__, check_config={})
 workflow.add_permission('systems.all.snapshot', 'Create VMware Snapshots on any system')
@@ -19,7 +19,9 @@ def snapshot_system(id):
 
 @workflow.route('create', title='Create VMware Snapshot', order=40, permission='systems.snapshot', methods=['GET', 'POST'])
 def snapshot_create():
-	
+	# Don't go any further if workflows are currently locked
+	raise_if_workflows_locked()
+
 	# Get systems depending on permissions.
 	if does_user_have_workflow_permission('systems.all.snapshot'):
 		# User can snapshot all systems.

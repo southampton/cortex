@@ -6,6 +6,74 @@ a.server-link { text-decoration: none !important; color: inherit; }
 a.server-link:hover { text-decoration: underline !important; }
 </style>
 
+<div class="modal" id="advanced_search_help" role="dialog">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">Advanced Search Help</h4>
+			</div>
+
+			<div class="modal-body">
+				<p>With the advanced search feature, you can search for systems by specifying complex queries rather than just wildcard searches on a subset of the total information available.
+				Conditions can be grouped together with brackets, and boolean expressions such as <code>NOT</code>, <code>AND</code> and <code>OR</code> can be applied. For example:</p>
+				<p><code>(cmdb_environment = "Pre-production" OR cmdb_environment = "Production") AND allocation_date &gt;= "2019-01-01"</code></p>
+				<p>The full list of fields that can be used in the advanced queries is given below:</p>
+				<table>
+					<tbody>
+						<tr><td><code>id</code></td><td>The unique ID of the system in the Cortex database</td></tr>
+						<tr><td><code>class</code></td><td>The 'class' of the system - i.e. its hostname prefix</td></tr>
+						<tr><td><code>number</code></td><td>The number of the system from it's hostname.</td></tr>
+						<tr><td><code>name</code></td><td>The name of the system</td></tr>
+						<tr><td><code>allocation_date</code></td><td>The date and time when the name was allocated</td></tr>
+						<tr><td><code>expiry_date</code></td><td>The expiry date of the system</td></tr>
+						<tr><td><code>decom_date</code></td><td>The decommission date of the system</td></tr>
+						<tr><td><code>allocation_username</code></td><td>The username of the user who allocated the system</td></tr>
+						<tr><td><code>allocation_name</code></td><td>The name of the user who allocated the system</td></tr>
+						<tr><td><code>purpose</code></td><td>The purpose of the system according to Cortex</td></tr>
+						<tr><td><code>review_status</code></td><td>The review status of the system.</td></tr>
+						<tr><td><code>cmdb_id</code></td><td>The CMDB 'sys_id' of the system in ServiceNow</td></tr>
+						<tr><td><code>primary_owner_username</code></td><td>The username of the primary owner</td></tr>
+						<tr><td><code>primary_owner_role</code></td><td>The role of the primary owner</td></tr>
+						<tr><td><code>primary_owner_name</code></td><td>The name of the primary owner</td></tr>
+						<tr><td><code>secondary_owner_username</code></td><td>The username of the secondary owner</td></tr>
+						<tr><td><code>secondary_owner_role</code></td><td>The role of the secondary owner</td></tr>
+						<tr><td><code>secondary_owner_name</code></td><td>The name of the secondary owner</td></tr>
+						<tr><td><code>cmdb_sys_class_name</code></td><td>The type of the object in the CMDB</td></tr>
+						<tr><td><code>cmdb_name</code></td><td>The name of the object in the CMDB. Should match the hostname</td></tr>
+						<tr><td><code>cmdb_operational_status</code></td><td>The status of the system according to the CMDB</td></tr>
+						<tr><td><code>cmdb_number</code></td><td>The human-readable number of the system in the CMDB</td></tr>
+						<tr><td><code>cmdb_environment</code></td><td>The environment of the system according to the CMDB</td></tr>
+						<tr><td><code>cmdb_description</code></td><td>The description of the system according to the CMDB</td></tr>
+						<tr><td><code>cmdb_comments</code></td><td>The comments of the system in the CMDB</td></tr>
+						<tr><td><code>cmdb_os</code></td><td>The operating system name according to the CMDB</td></tr>
+						<tr><td><code>cmdb_short_description</code></td><td>The short description of the system according to the CMDB</td></tr>
+						<tr><td><code>cmdb_is_virtual</code></td><td>Whether or not this system is a VM according to the CMDB</td></tr>
+						<tr><td><code>vmware_name</code></td><td>The name of the VM according to VMware. Should match the hostname</td></tr>
+						<tr><td><code>vmware_vcenter</code></td><td>The FQDN of the vCenter containing the VM for this system</td></tr>
+						<tr><td><code>vmware_uuid</code></td><td>The UUID of the VM</td></tr>
+						<tr><td><code>vmware_cpus</code></td><td>The total number of CPU cores for this VM</td></tr>
+						<tr><td><code>vmware_ram</code></td><td>The amount of RAM this VM has, in megabytes</td></tr>
+						<tr><td><code>vmware_guest_state</code></td><td>The state of the VM (e.g. poweredOn)</td></tr>
+						<tr><td><code>vmware_os</code></td><td>The operating system name according to VMware</td></tr>
+						<tr><td><code>vmware_hwversion</code></td><td>The VMware hardware version of the VM</td></tr>
+						<tr><td><code>vmware_ipaddr</code></td><td>The IP address of the VM according to VMware Tools</td></tr>
+						<tr><td><code>vmware_tools_version_status</code></td><td>The state of VMware Tools</td></tr>
+						<tr><td><code>vmware_hostname</code></td><td>The hostname of the system according to VMware Tools</td></tr>
+						<tr><td><code>puppet_certname</code></td><td>The CN of the certificate used for this system in Puppet</td></tr>
+						<tr><td><code>puppet_env</code></td><td>The environment of the system according to Puppet</td></tr>
+						<tr><td><code>puppet_include_default</code></td><td>Whether this system includes the default Puppet classes</td></tr>
+					</tbody>
+				</table>
+			</div>
+
+			<div class="modal-footer">
+				<button data-dismiss="modal" type="button" class="btn btn-default">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <div class="page-header">
 	<button id="hide_inactive" type="button" class="btn btn-sm pull-right {% if hide_inactive %}btn-success active{%else%}btn-danger{%endif%}" style="margin-left:4px" data-toggle="popover" data-trigger="hover" data-placement="left" title="Hide Inactive Systems" data-content="When ticked, systems that are not in ServiceNow or VMware will not be shown, nor will systems that are not marked as 'In Service' in ServiceNow."><i class="fa fa-fw {% if hide_inactive %}fa-check-square-o{%else%}fa-square-o{%endif%}"></i> Hide Inactive Systems</button>
 	<h4><i class="fa {% if favourites %}fa-star{% else %}fa-server{% endif %} fa-fw"></i>{% if expired %} Expired Systems{% elif nocmdb %} VMs Missing a CMDB Record{% elif perms_only %} Systems with permissions{% elif favourites %}Favourites{% else %} Systems{% endif %}
@@ -20,14 +88,22 @@ a.server-link:hover { text-decoration: underline !important; }
 		</small>
 	</h4>
 </div>
+<div>
+	<div class="pull-right">
+		<a href="#" data-toggle="modal" data-target="#advanced_search_help">Advanced Search:</a>&nbsp;
+		<div class="btn-group btn-toggle" id="toggle_queries"> 
+			<button id="query_search_on" class="btn btn-sm btn-default">ON</button>
+			<button id="query_search_off" class="btn btn-sm btn-primary active">OFF</button>
+		</div>
+	</div>
 
-<ul id="class-tabs" class="nav nav-tabs" style="margin-bottom:1em">
-	{%- for class in classes %}
-	<li class="nav-item"><a class="{% if (display and display == class.name) or (not display and loop.index0 == 0 and not q and not expired and not nocmdb) %}active {% endif%}nav-link" style="cursor:pointer" data-class="{{ class.name }}" data-toggle="tab" data-vmware="{{ class.link_vmware }}">{{ class.name }}</a></li>
-	{%- endfor %}
-	{% if classes|length > 0 %}<li class="nav-item"><a class="nav-link" style="cursor:pointer" data-class="*OTHER" data-vmware="1" data-toggle="tab">Other/Legacy</a></li>{% endif %}
-	<li class="nav-item"><a class="nav-link {% if (display and display == 'all') or q or classes|length == 0 or expired or nocmdb %}active{% endif %}" style="cursor:pointer" data-class="*ALL" data-vmware="1" data-toggle="tab">All</a></li>
-</ul>
+	<ul id="class-tabs" class="nav nav-tabs" style="margin-bottom:1em">
+		{%- for class in classes %}
+		<li class="nav-item"><a class="{% if (display and display == class.name) or (not display and loop.index0 == 0 and not q and not expired and not nocmdb) %}active {% endif%}nav-link" style="cursor:pointer" data-class="{{ class.name }}" data-toggle="tab" data-vmware="{{ class.link_vmware }}">{{ class.name }}</a></li>
+		{%- endfor %}
+		{% if classes|length > 0 %}<li class="nav-item"><a class="nav-link" style="cursor:pointer" data-class="*OTHER" data-vmware="1" data-toggle="tab">Other/Legacy</a></li>{% endif %}
+		<li class="nav-item"><a class="nav-link {% if (display and display == 'all') or q or classes|length == 0 or expired or nocmdb %}active{% endif %}" style="cursor:pointer" data-class="*ALL" data-vmware="1" data-toggle="tab">All</a></li>
+	</ul>
 <div id="systemsWrapper">
 <table class="table table-sm table-striped" id="systems">
 	<thead>
@@ -44,7 +120,8 @@ a.server-link:hover { text-decoration: underline !important; }
 	<tbody>
 	</tbody>
 </table>
-</div>
+
+
 <script type="text/javascript">
 $(function() {
 	var systemsTable = $('#systems').DataTable({
@@ -71,13 +148,23 @@ $(function() {
 			{
 				$('#class-tabs li a').removeClass('active');
 				$('#class-tabs li a[data-class=\"' + window.history.state['tab'] + '\"]').addClass('active');
+				if(window.history.state['toggle_queries'] == "ON"){
+					$('#toggle_queries').each(function(){
+						$(this).find('.btn').toggleClass('active');  
+						if ($(this).find('.btn-primary').size()>0) {
+							$(this).find('.btn').toggleClass('btn-primary');
+						} 
+						$(this).find('.btn').toggleClass('btn-default');
+                                	});
+				}
 				return window.history.state['dtState'];
 			}
 			return {}
 		},
 		"stateSaveCallback": function (settings, data) {
 			var classname = $('#class-tabs li a.active').attr('data-class');
-			window.history.replaceState({dtState: data, tab: classname}, "SystemsListState");
+			var toggle_queries_status = $('#toggle_queries .active').eq(0).html();
+			window.history.replaceState({dtState: data, tab: classname, toggle_queries: toggle_queries_status}, "SystemsListState");
 		},
 		"ajax": {
 			"url": "{{ url_for('systems_json') }}",
@@ -91,6 +178,7 @@ $(function() {
 				{%- if favourites %}
 				d.show_favourites_only = '1';
 				{%- endif %}
+				d.toggle_queries = ($('#query_search_on').hasClass("active") ? "1" : "0");
 			}
 		},
 		{% if q %}
@@ -211,6 +299,14 @@ $(function() {
 			dataType: 'json',
 		});
 	});
+    	$('.btn-toggle').click(function() {
+   		$(this).find('.btn').toggleClass('active');  
+    		if ($(this).find('.btn-primary').size()>0) {
+    			$(this).find('.btn').toggleClass('btn-primary');
+    		} 
+    		$(this).find('.btn').toggleClass('btn-default');
+		systemsTable.state.save();
+       });
 });
 $(function () {
 	$('[data-toggle="popover"]').popover()

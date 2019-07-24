@@ -39,7 +39,7 @@
 		bindto: '#chart_ram',
 		data: {
 			columns: [
-				['memory', {%- for key, value in stats_ram.iteritems() -%}{{ value }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
+				['memory', {%- for key, value in stats_ram.items() -%}{{ value }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
 			],
 			//columns: [
 			//	{%- for key, value in stats_ram|dictsort(false, 'value') -%}
@@ -55,7 +55,7 @@
 					position: 'outer-center',
 				},
 				type: 'category',
-				categories: [{%- for key, value in stats_ram.iteritems() -%}'{{ key }}'{%- if not loop.last -%},{%- endif -%}{%- endfor -%}]
+				categories: [{%- for key, value in stats_ram.items() -%}'{{ key }}'{%- if not loop.last -%},{%- endif -%}{%- endfor -%}]
 			},
 			y: {
 				label: 'VMs',
@@ -66,11 +66,14 @@
 		}
 		
 	});
-	var chart_cpu = c3.generate({
+	// 
+	// 
+	// 
+	var chart_ram = c3.generate({
 		bindto: '#chart_cpu',
 		data: {
 			columns: [
-				['cores', {%- for key, value in stats_cpu|dictsort(False) -%}{{ value }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
+				['cores', {%- for key, value in stats_cpu.items() -%}{{ value }}{%- if not loop.last -%},{%- endif -%}{%- endfor -%}],
 			],
 			type: 'bar',
 		},
@@ -81,7 +84,7 @@
 					position: 'outer-center',
 				},
 				type: 'category',
-				categories: [{%- for key, value in stats_cpu|dictsort(False) -%}'{{ key }}'{%- if not loop.last -%},{%- endif -%}{%- endfor -%}]
+				categories: [{%- for key, value in stats_cpu.items() -%}'{{ key }}'{%- if not loop.last -%},{%- endif -%}{%- endfor -%}]
 			},
 			y: {
 				label: 'VMs',
@@ -92,5 +95,7 @@
 		}
 		
 	});
+
+
 </script>
 {% endblock %}
