@@ -44,25 +44,25 @@
 				</div>
 				<div class="card-body system-record-body">
 					<div class="form-group row">
-						<label class="col-sm-3 control-label" for="allocation_comment">Purpose:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_comment or '' }}</p></div>
+						<label class="col-sm-3 control-label" for="allocation_comment">Purpose:</label><div class="col-sm-9"><p class="form-control-plaintext">{{ system.allocation_comment or '' }}</p></div>
 					</div>
 					<div class="form-group row">
-						<label class="col-sm-3 control-label" for="allocation_who">Allocated By:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_who or '' }}</p></div>
+						<label class="col-sm-3 control-label" for="allocation_who">Allocated By:</label><div class="col-sm-9"><p class="form-control-plaintext">{{ system.allocation_who or '' }}</p></div>
 					</div>
 					<div class="form-group row">
-						<label class="col-sm-3 control-label" for="allocation_date">Allocation Date:</label><div class="col-sm-9"><p class="form-control-static">{{ system.allocation_date or '' }}</p></div>
+						<label class="col-sm-3 control-label" for="allocation_date">Allocation Date:</label><div class="col-sm-9"><p class="form-control-plaintext">{{ system.allocation_date or '' }}</p></div>
 					</div>
 					<div class="form-group row">
-						<label class="col-sm-3 control-label" for="allocation_date">Review Status:</label><div class="col-sm-9"><p class="form-control-static">
+						<label class="col-sm-3 control-label" for="allocation_date">Review Status:</label><div class="col-sm-9"><p class="form-control-plaintext">
 {% if system.review_status == 0 %}<span class="badge badge-danger">{% elif system.review_status == 1 %}<span class="badge badge-success">{% elif system.review_status == 2 %}<span class="badge badge-info">{% elif system.review_status == 3 %}<span class="badge badge-warning">{% endif %}
 {{ system.review_status_text or 'Unknown' }}</span>{% if system.review_status == 2 %} &ndash; See ServiceNow task <a href="{{ config['PRJTASK_URL_FORMAT'] % system.review_task }}">{{ system.review_task }}</a>{% endif %}</p></div>
 					</div>
 					<div class="form-group row">
-						<label class="col-sm-3 control-label" for="expiry_date">Expiry Date:</label><div class="col-sm-9"><p class="form-control-static">{{ system.expiry_date or 'Not set' }}</p></div>
+						<label class="col-sm-3 control-label" for="expiry_date">Expiry Date:</label><div class="col-sm-9"><p class="form-control-plaintext">{{ system.expiry_date or 'Not set' }}</p></div>
 					</div>
 					{% if system.decom_date %}
 					<div class="form-group row">
-						<label class="col-sm-3 control-label" for="decom_date">Decommission Date:</label><div class="col-sm-9"><p class="form-control-static">{{ system.decom_date or 'Not set' }}</p></div>
+						<label class="col-sm-3 control-label" for="decom_date">Decommission Date:</label><div class="col-sm-9"><p class="form-control-plaintext">{{ system.decom_date or 'Not set' }}</p></div>
 					</div>
 					{% endif %}
 				</div>
@@ -76,13 +76,13 @@
 				<div class="card-body">
 					{%- if system.puppet_certname %} 
 					<div class="form-group row">
-						<label class="col-sm-3 control-label" for="allocation_comment">Certname:</label><div class="col-sm-9"><p class="form-control-static">{{ system.puppet_certname or '' }}</p></div>
+						<label class="col-sm-3 control-label" for="allocation_comment">Certname:</label><div class="col-sm-9"><p class="form-control-plaintext">{{ system.puppet_certname or '' }}</p></div>
 					</div>
 					<div class="form-group row">
-						<label class="col-sm-3 control-label" for="allocation_who">Environment:</label><div class="col-sm-9"><p class="form-control-static">{{ system.puppet_env or '' }}</p></div>
+						<label class="col-sm-3 control-label" for="allocation_who">Environment:</label><div class="col-sm-9"><p class="form-control-plaintext">{{ system.puppet_env or '' }}</p></div>
 					</div>
 					<div class="form-group row">
-						<label class="col-sm-3 control-label" for="allocation_date">Status:</label><div class="col-sm-9"><p class="form-control-static"><span class="{% if system.puppet_node_status %}status-{{system.puppet_node_status}}{%endif%}">{{ system.puppet_node_status or '' }}</span></p></div>
+						<label class="col-sm-3 control-label" for="allocation_date">Status:</label><div class="col-sm-9"><p class="form-control-plaintext"><span class="{% if system.puppet_node_status %}status-{{system.puppet_node_status}}{%endif%}">{{ system.puppet_node_status or '' }}</span></p></div>
 					</div>
 					{%else%}
 					<p class="text-muted"><em>This system has not been linked to Puppet.</em></p>
@@ -102,31 +102,31 @@
 					{%- if system.cmdb_id %}
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="cmdb_name">Type:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.cmdb_sys_class_name or 'Unknown' }}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.cmdb_sys_class_name or 'Unknown' }}</p></div>
 					</div>
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="cmdb_u_number">ID:</label>
-						<div class="col-sm-7"><p class="form-control-static"><a href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}">{{ system.cmdb_u_number or 'Unknown' }}</a></p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext"><a href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}">{{ system.cmdb_u_number or 'Unknown' }}</a></p></div>
 					</div>
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="cmdb_operational_status">Status:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.cmdb_operational_status or 'Unknown' }}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.cmdb_operational_status or 'Unknown' }}</p></div>
 					</div>
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="cmdb_operational_status">Environment:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.cmdb_environment or 'Unknown' }}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.cmdb_environment or 'Unknown' }}</p></div>
 					</div>
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="cmdb_short_description">OS:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.cmdb_os or 'N/A' }}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.cmdb_os or 'N/A' }}</p></div>
 					</div>
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="cmdb_short_description">Description:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.cmdb_short_description or 'N/A' }}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.cmdb_short_description or 'N/A' }}</p></div>
 					</div>
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="cmdb_short_description">Comments:</label>
-						<div class="col-sm-7"><p class="form-control-static">{% if system.cmdb_comments %}{% for line in system.cmdb_comments.splitlines() %}{{ line }}<br/>{% endfor %}{% else %}N/A{% endif %}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{% if system.cmdb_comments %}{% for line in system.cmdb_comments.splitlines() %}{{ line }}<br/>{% endfor %}{% else %}N/A{% endif %}</p></div>
 					</div>
 					{%else%}
 					<p class="text-muted"><em>This system record has not been linked to ServiceNow. To do so click the Settings tab.</em></p>
@@ -142,19 +142,19 @@
 				<div class="card-body">
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="primary_owner_who">Primary Owner:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.primary_owner_who or 'Not set' }}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.primary_owner_who or 'Not set' }}</p></div>
 					</div>
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="primary_owner_who">Primary Owner Role:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.primary_owner_role or 'Not set' }}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.primary_owner_role or 'Not set' }}</p></div>
 					</div>
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="primary_owner_who">Secondary Owner:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.secondary_owner_who or 'Not set' }}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.secondary_owner_who or 'Not set' }}</p></div>
 					</div>
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="primary_owner_who">Secondary Owner Role:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.secondary_owner_role or 'Not set' }}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.secondary_owner_role or 'Not set' }}</p></div>
 					</div>
 
 				</div>
@@ -169,31 +169,31 @@
 					{% if system.vmware_uuid %}
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="vm_vcenter">vCenter:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.vmware_vcenter or '' }}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.vmware_vcenter or '' }}</p></div>
 					</div>
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="vm_state">Power State:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.vmware_guest_state or '' }}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.vmware_guest_state or '' }}</p></div>
 					</div>
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="vm_tools">VMware Tools:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.vmware_tools_version_status or '' }}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.vmware_tools_version_status or '' }}</p></div>
 					</div>
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="vm_cpus">Spec:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.vmware_cpus or 'Unknown' }} vCPU, {{ system.vmware_ram or '' }} MB RAM</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.vmware_cpus or 'Unknown' }} vCPU, {{ system.vmware_ram or '' }} MB RAM</p></div>
 					</div>
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="vm_os">OS:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.vmware_os or '' }}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.vmware_os or '' }}</p></div>
 					</div>
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="vm_cpus">Hostname:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.vmware_hostname or 'Unknown' }}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.vmware_hostname or 'Unknown' }}</p></div>
 					</div>
 					<div class="form-group row">
 						<label class="col-sm-5 control-label" for="vm_ipaddr">IP Address:</label>
-						<div class="col-sm-7"><p class="form-control-static">{{ system.vmware_ipaddr or 'Unknown' }}</p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.vmware_ipaddr or 'Unknown' }}</p></div>
 					</div>
 					{%else%}
 					<p class="text-muted"><em>This system record has not been linked to VMWare. To do so click the Settings tab.</em></p>

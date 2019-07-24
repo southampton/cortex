@@ -17,8 +17,8 @@
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				<h4 class="modal-title">Search CMDB</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 			</div>
 
 			<div class="modal-body">
@@ -46,8 +46,8 @@
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				<h4 class="modal-title">Search VMWare</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 			</div>
 
 			<div class="modal-body">
@@ -119,14 +119,14 @@
 
 	<div class="form-group row">
 		<label class="col-sm-2 control-label" for="enable_backup">Backup Status:</label>
-		<div class="col-sm-10 col-md-9">
+		<div class="col-sm-9">
 			<select class="form-control selectpicker" name="enable_backup" id="enable_backup"{% if not does_user_have_system_permission(system['id'],"edit.rubrik","systems.all.edit.rubrik") %} disabled="disabled" {% endif %}>
 				<option value="0"{% if system.enable_backup == 0 %} selected="selected"{% endif %}>Do NOT Backup</option>
 				<option value="1"{% if system.enable_backup == 1 %} selected="selected"{% endif %}>Backup this System</option>
 				<option value="2"{% if system.enable_backup == 2 %} selected="selected"{% endif %}>Unknown - Do not change backup policy</option>
 			</select>
+			<div class="form-text">This field determines whether Cortex will set a default policy for the VM is it is set to Do Not Protect in Rubrik.</div>
 		</div>
-		<div style="margin-bottom:0px" class="col-sm-offset-2 col-sm-10 col-md-9 help-block">This field determines whether Cortex will set a default policy for the VM is it is set to Do Not Protect in Rubrik.</div>
 	</div>
 
 {%- if not system_class or system_class.link_vmware %}
@@ -136,7 +136,7 @@
 			<div class="input-group">
 				<input class="form-control" {% if not does_user_have_system_permission(system['id'],"edit.vmware","systems.all.edit.vmware") %}readonly="readonly" {% endif %}type="text" name="vmware_uuid" id="vmware_uuid" pattern="^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$" value="{{ system.vmware_uuid or '' }}" />
 				<div class="input-group-append" style="">
-					<a {% if does_user_have_system_permission(system['id'],"edit.vmware","systems.all.edit.vmware") %}data-toggle="modal" data-target="#search_vmware"{% endif %} class="btn btn-outline-secondary" >Search</a>
+					<a {% if does_user_have_system_permission(system['id'],"edit.vmware","systems.all.edit.vmware") %}data-toggle="modal" data-target="#search_vmware"{% endif %} class="btn btn-secondary" >Search</a>
 				</div>
 			</div>
 			<div class="form-text">This is the UUID of the VM within VMware.</div>
@@ -151,7 +151,7 @@
 			<div class="input-group">
 				<input class="form-control" {% if not does_user_have_system_permission(system['id'],"edit.cmdb","systems.all.edit.cmdb") %}readonly="readonly" {% endif %}type="text" name="cmdb_id" id="cmdb_id" pattern="^[0-9a-f]+$" value="{{ system.cmdb_id or '' }}" />
 				<div class="input-group-append" style="">
-					<a {% if does_user_have_system_permission(system['id'],"edit.cmdb","systems.all.edit.cmdb") %}data-toggle="modal" data-target="#search_cmdb"{% endif %} class="btn btn-outline-secondary">Search</a>
+					<a {% if does_user_have_system_permission(system['id'],"edit.cmdb","systems.all.edit.cmdb") %}data-toggle="modal" data-target="#search_cmdb"{% endif %} class="btn btn-secondary">Search</a>
 				</div>
 			</div>
 			<div class="form-text">This is the unique identifier of the CMDB entry in ServiceNow, known as the 'sys_id'. This can be found in the URL for a CMDB entry, which is accessible from a CMDB page, by right-clicking the header and selecting Copy URL.</div>
