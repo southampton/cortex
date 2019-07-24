@@ -127,6 +127,12 @@ span.arrow {
 	font-weight: bold;
 }
 
+/* override bootstrap 4 forcing colour on tables */
+.table
+{
+	color: inherit;
+}
+
 /* override bootstrap's valign top in tables*/
 td, th
 {
@@ -576,8 +582,7 @@ h4 small {
 
 .list-group-menu > a
 {
-        padding-left: 6px;
-        padding-right: 0px;
+	padding: 10px 0px 10px 6px;
         color: #555555;
 }
 
