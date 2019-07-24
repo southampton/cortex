@@ -10,14 +10,14 @@
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				</div>
 				<div class="modal-body">
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label">Name</label>
 						<div class="col-sm-9">
 							<input class="form-control" name="name" id="name" />
 						</div>
 					</div>
 
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label">Description</label>
 						<div class="col-sm-9">
 							<input class="form-control" type="text" name="description" id="description" />
@@ -39,9 +39,9 @@
 	</div>
 	<h4><i class="fa fa-fw fa-user-secret"></i> {{ title }}</h4>
 {%- if manage_role_route == 'system_perms_role' %}
-	<p class="text-muted">A system role is a group of systems and permissions. Users are given one or more system roles which grant them the permissions over the systems assigned to those roles</p>
+	<div class="text-muted">A system role is a group of systems and permissions. Users are given one or more system roles which grant them the permissions over the systems assigned to those roles</div>
 {%- else %}
-	<p class="text-muted">A role is a group of permissions. Users are given one or more roles which grant them the permissions assigned to those roles</p>
+	<div class="text-muted">A role is a group of permissions. Users are given one or more roles which grant them the permissions assigned to those roles</div>
 {%- endif %}
 </div>
 
@@ -59,7 +59,7 @@
 		<tr>
 			<td>{{ role.name }}</td>
 			<td>{{ role.description }}</td>
-			<td><a href="{{ url_for(manage_role_route,id=role.id) }}" class="btn btn-xs btn-light"><i class="fa fa-fw fa-edit"></i>Manage</a></td>
+			<td><a href="{{ url_for(manage_role_route,id=role.id) }}" class="btn btn-xs btn-secondary"><i class="fa fa-fw fa-edit"></i>Manage</a></td>
 		</tr>
 {%-     endfor %}
 {%- else %}

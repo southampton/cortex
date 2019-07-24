@@ -10,8 +10,8 @@ a.server-link:hover { text-decoration: underline !important; }
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				<h4 class="modal-title">Advanced Search Help</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 			</div>
 
 			<div class="modal-body">
@@ -75,9 +75,9 @@ a.server-link:hover { text-decoration: underline !important; }
 </div>
 
 <div class="page-header">
-	<button id="hide_inactive" type="button" class="btn btn-sm pull-right {% if hide_inactive %}btn-success active{%else%}btn-danger{%endif%}" style="margin-left:4px" data-toggle="popover" data-trigger="hover" data-placement="left" title="Hide Inactive Systems" data-content="When ticked, systems that are not in ServiceNow or VMware will not be shown, nor will systems that are not marked as 'In Service' in ServiceNow."><i class="fa fa-fw {% if hide_inactive %}fa-check-square-o{%else%}fa-square-o{%endif%}"></i> Hide Inactive Systems</button>
+	<button id="hide_inactive" type="button" class="btn pull-right {% if hide_inactive %}btn-success active{%else%}btn-danger{%endif%}" style="margin-left:4px" data-toggle="popover" data-trigger="hover" data-placement="left" title="Hide Inactive Systems" data-content="When ticked, systems that are not in ServiceNow or VMware will not be shown, nor will systems that are not marked as 'In Service' in ServiceNow."><i class="fa fa-fw {% if hide_inactive %}fa-check-square-o{%else%}fa-square-o{%endif%}"></i> Hide Inactive Systems</button>
 	<h4><i class="fa {% if favourites %}fa-star{% else %}fa-server{% endif %} fa-fw"></i>{% if expired %} Expired Systems{% elif nocmdb %} VMs Missing a CMDB Record{% elif perms_only %} Systems with permissions{% elif favourites %}Favourites{% else %} Systems{% endif %}
-		{% if does_user_have_permission("systems.all.view") %}<a class="btn btn-primary btn-sm pull-right" href="{{ url_for('systems_download_csv') }}"><i class="fa fa-fw fa-download"></i> Download CSV</a>{% endif %}
+		{% if does_user_have_permission("systems.all.view") %}<a class="btn btn-primary pull-right" href="{{ url_for('systems_download_csv') }}"><i class="fa fa-fw fa-download"></i> Download CSV</a>{% endif %}
 		<small><strong>&nbsp;Legend:</strong>
 			<i title='System is linked to VMware and the VM is powered on' class='fa fa-fw fa-play icon-state icon-legend icon-on'></i>On
 			<i title='System is linked to VMware and the VM is powered off' class='fa fa-fw fa-stop icon-state icon-legend icon-off'></i>Off
@@ -87,6 +87,7 @@ a.server-link:hover { text-decoration: underline !important; }
 			<i title='System is not favourited' class='fa fa-fw fa-star-o icon-state icon-legend'></i>Not favourited
 		</small>
 	</h4>
+	<div class="text-muted">This lists all of the systems that Cortex contains data for, which may not be all systems in VMware or ServiceNow.</div>
 </div>
 <div>
 	<div class="pull-right">

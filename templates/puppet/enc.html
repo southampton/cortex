@@ -210,7 +210,7 @@ $(document).ready(function()
 {%- endfor %}
 				</select></div>
 			</div>
-			<div class="form-group">
+			<div class="form-group row">
 				<div class="offset-sm-2 col-sm-10">
 					<div class="checkbox" style="padding-top:0em">
 						<label title="Check to include the default classes that deploy are standard build" for="include_default"><input type="checkbox" id="include_default" name="include_default"{% if system.puppet_include_default %} checked="checked"{% endif %}/>Include the{%- if does_user_have_permission("puppet.default_classes.view") or does_user_have_permission("puppet.default_classes.edit") %} <a href="{{url_for('puppet_enc_default')}}">default classes</a>{%- else %} default classes{% endif -%}</label>

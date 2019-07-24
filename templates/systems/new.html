@@ -25,31 +25,30 @@
 		<div class="modal-content">
 			<form role="form" method="POST" class="form-horizontal">
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-				<input name="class_name" type="hidden" value="" id="class_name_hidden"/>
 
 				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 					<h4 class="modal-title">Allocate new system name(s)</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				</div>
 
 				<div class="modal-body">
 					<p>Please select how many new system names you'd like and choose a comment. If more than one name is created then you will be asked to set a per-name comment after creation.</p>
 
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label">Prefix</label>
 						<div class="col-sm-9">
-							<p class="form-control-static" id="class_name" name="class_name">N/A</p>
+							<input type="text" readonly class="form-control" id="class_name" name="class_name" value="N/A" />
 						</div>
 					</div>
 
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label">How many?</label>
 						<div class="col-sm-9">
 							<input class="form-control" type="number" value="1" max="50" min="1" name="system_number"></input>
 						</div>
 					</div>
 
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label">Comment</label>
 						<div class="col-sm-9">
 							<input class="form-control" id="system_comment" type="text" name="system_comment"></input>
@@ -71,9 +70,8 @@ $( document ).ready(function()
 {
 	$('#allocate').on('show.bs.modal', function (event)
 	{
-		var button = $(event.relatedTarget)
-		$('#class_name').text(button.data('name'));
-		$('#class_name_hidden').attr('value',button.data('name'));
+		var button = $(event.relatedTarget);
+		$('#class_name').val(button.data('name'));
 	})
 
 	$('#allocate').on('shown.bs.modal', function (event)
@@ -86,7 +84,7 @@ $( document ).ready(function()
 
 
 <div class="page-header">
-<h3><i class="fa fa-plus fa-fw"></i> Allocate new system names</h3>
+<h4><i class="fa fa-plus fa-fw"></i> Allocate new system names</h4>
 <p class="text-muted">Use the buttons below to allocate a system name and nothing else. Note that the VM creation workflows automatically do this for you, so you don't need to allocate a name first.</p>
 </div>
 

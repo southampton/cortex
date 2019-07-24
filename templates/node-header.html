@@ -1,6 +1,6 @@
 {% macro header(system,active="overview") -%}
 <div style="margin-bottom: 20px">
-	<ul class="nav nav-tabs" id="node-header">
+	<ul class="nav nav-tabs" id="node-header" role="tablist">
 		<li style="padding: 0px 15px; font-size: 28px;"><i class="fa fa-fw fa-server"></i> {{ system.name }}</li>
 		<li class="nav-item"><a class="{% if active == "overview" %}active {%endif%}nav-link" href="{{url_for('system_overview',id=system.id)}}">Overview</a></li>
 		<li class="nav-item"><a class="{% if active == "info" %}active {%endif%}nav-link" href="{{url_for('system',id=system.id)}}">Info</a></li>

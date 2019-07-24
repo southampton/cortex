@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block body %}
 <div class="page-header">
-<h3>
+<h4>
 	<div class="pull-right" style="margin-left:10px;padding-left:10px;border-left:1px solid #eeeeee">
 		<button id="hide_frequent" type="button" class="btn btn-md btn-success btn-filter active" {{ 'disabled' if not json_source }}><i class="fa fa-fw fa-check-square-o"></i> Hide Frequent Tasks</button>
 	</div>
@@ -12,7 +12,7 @@
 		<a class="btn btn-md {% if event_source == 'tasks' %}btn-primary{% else %}btn-secondary{% endif %}" href="{{ url_for('admin_events',src='tasks') }}">Tasks</a>
 	</div>
 	<i class="fa fa-fw fa-list-alt"></i> {{ title }}
-</h3>
+</h4>
 <div class="text-muted">
 {%- if event_source == 'all' %}
 The list below shows all events
