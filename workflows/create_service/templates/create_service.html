@@ -1,35 +1,35 @@
 {% extends "layout.html" %}
 
 {% block head -%}
-	<!-- IMPORT SELECTPICKER -->
-	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
-	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
-	<!-- IMPORT CUSTOM STYLESHEET FOR CAROUSEL-->
-	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/carousel.css') }}">
-	{#- CodeMirror style -#}
-	<link href="{{ url_for('static', filename='css/vendor/codemirror.min.css') }}" rel="stylesheet">
-	<link href="{{ url_for('static', filename='css/vendor/lint.min.css') }}" rel="stylesheet">
+		<!-- IMPORT SELECTPICKER -->
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+		<!-- IMPORT CUSTOM STYLESHEET FOR CAROUSEL-->
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/carousel.css') }}">
+		{#- CodeMirror style -#}
+		<link href="{{ url_for('static', filename='css/vendor/codemirror.min.css') }}" rel="stylesheet">
+		<link href="{{ url_for('static', filename='css/vendor/lint.min.css') }}" rel="stylesheet">
 
-	{#- CodeMirror scripts -#}
-	<script src="{{ url_for('static', filename='js/vendor/codemirror.min.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/vendor/yaml.min.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/vendor/lint.min.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/vendor/js-yaml.min.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/vendor/yaml-lint.js') }}"></script>
-	
-	{#- datetime-pickers -#}
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}">
-	<script src="{{ url_for('static', filename='js/vendor/moment.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}"></script>
-	{#- Override CodeMirror style - must come after CodeMirror style imports -#}
-	<style type="text/css">
-	.CodeMirror {
-		border: 1px solid #eee;
-		height: auto;
-	}
-	</style>
+		{#- CodeMirror scripts -#}
+		<script src="{{ url_for('static', filename='js/vendor/codemirror.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/yaml.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/lint.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/js-yaml.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/yaml-lint.js') }}"></script>
+		
+		{#- datetime-pickers -#}
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}">
+		<script src="{{ url_for('static', filename='js/vendor/moment.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}"></script>
+		{#- Override CodeMirror style - must come after CodeMirror style imports -#}
+		<style type="text/css">
+		.CodeMirror {
+			border: 1px solid #eee;
+			height: auto;
+		}
+		</style>
 
 {% endblock %}
 
@@ -37,20 +37,21 @@
 
 <div class="page-header">
 	<h3><i class="fa fa-plus-circle fa-fw"></i> Create a New Service</h3>
-	<p class="text-muted">This workflow will create a VM in the chosen environment. Hostnames will be automatically allocated from the 'srv' group, and will automatically have IP addresses assigned from Infoblox. ServiceNow CI's will also be created.</p>
+	<p class="text-muted">This workflow will create a new service (in a chosen environment I guess). Hostnames will be automatically allocated from the 'srv' group, and will automatically have IP addresses assigned from Infoblox. ServiceNow CI's will also be created.</p>
 </div>
 
 <div id="vm-carousel" class="carousel slide" data-ride="carousel" data-interval="false">
 	<ol class="carousel-indicators">
 		<li data-target="#vm-carousel" data-slide-to="0" class="active"></li>
 	</ol>
-	<form>
+	<form id="service_request_form" method="POST" role="form">
+		<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 		<div class="carousel-inner">
 			<div class="carousel-item active">
 				<img class="first-slide" src="https://www.officemax.co.nz/Images/ProductImages/500/2012286.jpg" alt="First slide">
 				<div class="container">
 					<div class="carousel-caption" id="choose-action">
-						<a id="use-existing" class="btn btn-lg btn-primary">Use existing service template</a>
+						<a id="use-existing" class="btn btn-lg btn-primary" data-target="#add-service-existing-template" data-toggle="modal">Use existing service template</a>
 						<hr class="hr-text" data-content="OR">
 						<a id="create-service-template" class="btn btn-lg btn-success">Create your own service template</a>
 					</div>
@@ -71,6 +72,40 @@
 	</a>
 </div>
 
+<datalist id="autocomplete-service-templates">
+        <option></option>
+        <option value="banner_dev">banner_dev</option>
+        <option value="banner_pre-prod">banner_pre-prod</option>
+        <option value="banner_prod">banner_prod</option>
+        <option value="sqlkb">sqlkb</option>
+        <option value="some_other_service">some_other_service</option>
+        <option value="some_other_service_2">some_other_service_2</option>
+        <option value="hmm">hmm</option>
+</datalist>
+
+
+<div class="modal fade" id="add-service-existing-template" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+                <div class="modal-content">
+                        <div class="modal-header">
+                                <h5 class="modal-title" >Use Existing Service Template</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                </button>
+                        </div>
+                        <div class="modal-body">
+                                <div class="row">
+                                        <div class="col-sm-3 offset-1">Choose an existing service template</div>
+                                        <div class="col-sm-6"><input id="service-template-input" class="form-control w-100" list="autocomplete-service-templates" autocomplete="off" maxlength="64"></div>
+                                </div>
+                        </div>
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-primary" id="submit-template-request">Submit</button>
+                        </div>
+                </div>
+        </div>
+</div>
 
 
 <div id="create-service-template-form">
@@ -83,7 +118,7 @@
 			<div class="form-group w-25">
 				<div class="input-group">
 					<label for="service_name" class="h4 w-100 text-left" style="margin-bottom: 10px;">Give your new service "recipe" a name:</label>
-					<input id="service_name" class="form-control form-control-lg" type="text" placeholder="'Service_name'" aria-label="Service_name" required>
+					<input id="service_name" class="form-control form-control-lg" type="text" name="service_name" placeholder="'Service_name'" aria-label="Service_name" value="" required>
 					<div class="input-group-append">
 						<button class="btn btn-success" type="button" href="#vm-carousel" role="button" data-slide="next">Next</button>
 					</div>
@@ -108,8 +143,8 @@
 		<div class="carousel-caption">
 			<h1 class="d-inline-flex" style="position: relative; margin-bottom: 0px!important; vertical-align: middle; margin-right: 5px; color: #777;">3.</h1>
 			<div class="btn-group" role="group" id="choose-vm-action">
-				<button type="button" class="btn btn-lg btn-primary" data-target="#add-vm-existing-recipe" data-toggle="modal">Add a VM using an existing recipe</button>
-				<button type="button" class="btn btn-lg btn-success">Add a VM by using your custom recipe</button>
+				<button type="button" class="btn btn-lg btn-primary" data-target="#add-vm-existing-recipe" data-toggle="modal">Add a VM</button>
+				<button type="submit" id="submit_service_request" class="btn btn-success btn-lg btn-submit">Submit</button>
 			</div>
 		</div>
         </div>
@@ -128,8 +163,6 @@
 	<option value="something_else">something_else</option>
 	<option value="app_server">app_server</option>
 	<option value="magic_layer">magic_layer</option>
-	<option value="hah?">hah?</option>
-	<option value="oh_my_days_will_this_work_?">oh_my_days_will_this_work_?</option>
 </datalist>
 
 
@@ -153,7 +186,7 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-				<button type="button" class="btn btn-primary" id="temp-save">Save changes</button>
+				<button type="button" class="btn btn-primary" id="new-service-template">Save changes</button>
 			</div>
 		</div>
 	</div>
@@ -190,35 +223,37 @@
 					</div>
 					<div id="config" class="tab-pane container fade">
 						<h3>VM Config</h3>
-						<h4 class="row col-md-12" style="margin-top:0">1. Enter request details</h4>
-						<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
-							<div class="row">
-								<div class="form-group col-md-6">
+						
+						<div class="row">
+							<div class="col-md-12">
+								<h4 style="margin-top:0">1. Enter request details</h4>
+								<div class="form-group row col-md-12">
 									<label for="purpose">Purpose:<span class="required">*</span></label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" autofocus />
 								</div>
-								<div class="form-group col-md-6">
+								<div class="form-group row col-md-12">
 									<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
 								</div>
+								<div class="row">
+									<div class="form-group col-md-3">
+										<label for="primary_owner_who">Primary Owner:</label><input class="form-control" list="autocompleteUsers" autocomplete="off" id="primary_owner_who" name="primary_owner_who" placeholder="Primary owner's username" maxlength="64"/>
+									</div>
+									<div class="form-group col-md-3">
+										<label for="primary_owner_role">Primary Owner Role:</label><input class="form-control" id="primary_owner_role" name="primary_owner_role" placeholder="Primary owner's role" maxlength="64"/>
+									</div>
+									<div class="form-group col-md-3">
+										<label for="secondary_owner_who">Secondary Owner:</label><input class="form-control" list="autocompleteUsers" autocomplete="off" id="secondary_owner_who" name="secondary_owner_who" placeholder="Secondary owner's username" maxlength="64"/>
+									</div>
+									<div class="form-group col-md-3">
+										<label for="secondary_owner_role">Secondary Owner Role:</label><input class="form-control" id="secondary_owner_role" name="secondary_owner_role" placeholder="Secondary owner's role" maxlength="64"/>
+								</div>
+								</div>
 							</div>
-							<div class="row">
-								<div class="form-group col-md-3">
-									<label for="primary_owner_who">Primary Owner:</label><input class="form-control" list="autocompleteUsers" autocomplete="off" id="primary_owner_who" name="primary_owner_who" placeholder="Primary owner's username" maxlength="64"/>
-								</div>
-								<div class="form-group col-md-3">
-									<label for="primary_owner_role">Primary Owner Role:</label><input class="form-control" id="primary_owner_role" name="primary_owner_role" placeholder="Primary owner's role" maxlength="64"/>
-								</div>
-								<div class="form-group col-md-3">
-									<label for="secondary_owner_who">Secondary Owner:</label><input class="form-control" list="autocompleteUsers" autocomplete="off" id="secondary_owner_who" name="secondary_owner_who" placeholder="Secondary owner's username" maxlength="64"/>
-								</div>
-								<div class="form-group col-md-3">
-									<label for="secondary_owner_role">Secondary Owner Role:</label><input class="form-control" id="secondary_owner_role" name="secondary_owner_role" placeholder="Secondary owner's role" maxlength="64"/>
-								</div>
-							</div>
+						</div>
 
 						<div class="row" style="margin-top: 0.5em">
 							<div class="col-md-12">
 								<h4>2. Choose Base Specification</h4>
-								<div class="btn-group" data-toggle="buttons" id="specs" style="margin-left: 1em">
+								<div class="btn-group row" data-toggle="buttons" id="specs" style="margin-left: 1em">
 									<!-- Populated by JavaScript -->
 								</div>
 							</div>
@@ -227,25 +262,31 @@
 						<div class="row" style="margin-top: 1.6em">
 							<div class="col-md-12">
 								<h4>3. Customise Specification</h4>
-								<div class="form-group col-md-3" style="margin-top:2.4em">
-									<label for="sockets" style="margin-right: 15px;position:relative;top:1px">Sockets:</label>
-									<input style="width:65%" name="sockets" id="sockets" data-slider-id="slider-sockets" type="text" data-slider-min="1" data-slider-max="16" data-slider-step="1" data-slider-value="1" />
-									<p class="text-muted">Number of CPU sockets</p>
-								</div>
-								<div class="form-group col-md-3" style="margin-top:2.4em">
-									<label for="cores" style="margin-right: 15px;position:relative;top:1px">Cores:</label>
-									<input style="width:65%" name="cores" id="cores" data-slider-id="slider-cores" type="text" data-slider-min="1" data-slider-max="16" data-slider-step="1" data-slider-value="1" />
-									<p class="text-muted">Number of cores per socket</p>
-								</div>
-								<div class="form-group col-md-3" style="margin-top:2.4em">
-									<label for="ram" style="margin-right: 15px;position:relative;top:1px">RAM (GB):</label>
-									<input style="width:65%" name="ram" id="ram" data-slider-id="slider-ram" type="text" data-slider-min="2" data-slider-max="32" data-slider-step="2" data-slider-value="2" />
-									<p class="text-muted">Total amount of RAM, including video RAM</p>
-								</div>
-								<div class="form-group col-md-3" style="margin-top:2.4em">
-									<label for="disk" style="margin-right: 15px;position:relative;top:1px">Disk (GB):</label>
-									<input style="width:65%" name="disk" id="disk" data-slider-id="slider-disk" type="text" data-slider-min="2" data-slider-max="2000" data-slider-step="100" data-slider-value="100" />
-									<p class="text-muted">Additional disk size, excluding the default OS disk</p>
+								<div class="row">
+									<div class="form-group col-md-3" style="margin-top:2.4em">
+										<label for="sockets-slider">Sockets:</label> 
+										<input class="slider form-control-range slider-input" type="range" id="sockets-slider" name="sockets"  step="1" min="1" max="16" value="1">
+										<span class="badge badge-primary output" style="font-size: 14px;"></span>
+										<p class="text-muted">Number of CPU sockets</p>
+									</div>
+									<div class="form-group col-md-3" style="margin-top:2.4em">
+										<label for="cores-slider">Cores:</label>    
+										<input class="slider form-control-range slider-input" type="range" id="cores-slider" name="cores"  step="1" min="1" max="16" value="1">
+										<span class="badge badge-primary output" style="font-size: 14px;"></span> 
+										<p class="text-muted">Number of cores per socket</p>
+									</div>
+									<div class="form-group col-md-3" style="margin-top:2.4em">
+										<label for="ram-slider">RAM (GB):</label>    
+										<input class="slider form-control-range slider-input" type="range" id="ram-slider" name="ram"  step="2" min="2" max="32" value="2">
+										<span class="badge badge-primary output" style="font-size: 14px;"></span>
+										<p class="text-muted">Total amount of RAM, including video RAM</p>
+									</div>
+									<div class="form-group col-md-3" style="margin-top:2.4em">
+										<label for="disk-slider">Disk (GB):</label>  
+										<input class="slider form-control-range slider-input" type="range" id="disk-slider" name="disk"  step="100" min="100" max="2000" value="100">
+										<span class="badge badge-primary output" style="font-size: 14px;"></span>
+										<p class="text-muted">Additional disk size, excluding the default OS disk</p>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -254,29 +295,30 @@
 							<div class="col-md-4">
 								<h4>4. Choose Image<span class="required">*</span></h4>
 								<div style="margin-left:1em">
-									<select class="selectpicker" name="template" id="template">
+									<select class="selectpicker-disabled" name="template" id="template">
 										<option></option>
 										{% for os in os_order -%}
-											<option value="{{ os }}">{{ os_names[os] }}</option>
+										<option value="{{ os }}">{{ os_names[os] }}</option>
 										{%- endfor %}
 									</select>
 								</div>
-
+								{#-
 								<h4 style="margin-top:2.2em">5. Choose Environment<span class="required">*</span></h4>
 								<div style="margin-left:1em">
-									<select class="selectpicker" name="environment" id="environment">
+									<select class="selectpicker-disabled" name="environment" id="environment">
 										<option></option>
 										{% for environment in environments -%}
-											<option value="{{ environment.id }}"{% if default_env == environment.id %} selected="selected"{% endif %}>{{ environment.name }}</option>
+										<option value="{{ environment.id }}"{% if default_env == environment.id %} selected="selected"{% endif %}>{{ environment.name }}</option>
 										{%- endfor %}
 									</select>
 								</div>
+								-#}
 								<h4 style="margin-top:2.2em">6. Choose Location Cluster<span class="required">*</span></h4>
 								<div style="margin-left:1em">
-									<select class="selectpicker" name="cluster" id="cluster">
+									<select class="selectpicker-disabled" name="cluster" id="cluster">
 										<option></option>
 										{% for cluster in clusters -%}
-											<option value="{{ cluster.name }}"{% if default_cluster == cluster.name %} selected="selected"{% endif %}>{{cluster.name}}</option>
+										<option value="{{ cluster.name }}"{% if default_cluster == cluster.name %} selected="selected"{% endif %}>{{cluster.name}}</option>
 										{%- endfor %}
 									</select>
 								</div>
@@ -286,10 +328,10 @@
 								<h4>7. Expiry date (optional)</h4>
 								<div style="margin-left: 1em">
 									<p>Set the date that this VM will be automatically powered off.</p>
-									<div class='input-group date' id='expirypicker'>
-										<input type='text' class="form-control" id="expiry" name="expiry" placeholder="YYYY-MM-DD" />
-										<span class="input-group-addon">
-											<span class="glyphicon glyphicon-calendar"></span>
+									<div class='input-group date' id='expirypicker' data-target-input="nearest">
+										<input type='text' class="form-control datetimepicker-input" id="expiry" name="expiry" placeholder="YYYY-MM-DD" data-target="expirypicker" />
+										<span class="input-group-append" data-target="#expirypicker" data-toggle="datetimepicker">
+											<div class="input-group-text"><i class="fa fa-calendar"></i></div>
 										</span>
 									</div>
 									<script>
@@ -314,10 +356,15 @@
 									</div>
 								</div>
 							</div>
+							<div class="col-md-4">
+								<h4>9. Create</h4>
+								<div style="margin:0 0 0.5em 1.0em">
+									<input type="checkbox" name="send_mail" id="send_mail" style="margin-right:0.4em" checked="checked" /><label for="send_mail" style="position:relative;top:-2px">Notify me by e-mail when done</label>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
-			</div>
 		
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>  <!--  Maybe make this button cancel the changes made while the modal was open? -->
@@ -337,15 +384,108 @@
 -->
 <div class="card d-none vm-card h-100" id="vm-card" style="margin: 0.4rem; width: 30%" data-target="#" data-toggle="modal">
 	<div class="card-header">
+			<input type="hidden" name="vm_recipe_name[]" value="" />
 			<h4 class="float-left" style="margin-top: 4px; margin-bottom: 4px;"></h4>
-			<a class="btn btn-danger float-right" style="color:white;"><i class="fa fa-trash" aria-hidden="true"></i> Delete</a> 
+			<a class="btn btn-danger float-right no-modal" style="color:white;"><i class="fa fa-trash" aria-hidden="true"></i> Delete</a> 
 	</div>
 	<div class="card-body">
 		<p>Some general description</p>
 	</div>
 </div>
 
-<script>
+{%- if autocomplete_users %}
+<datalist id="autocompleteUsers">
+{%- for user in autocomplete_users %}
+        <option>{{user.username}}</option>
+{% endfor -%}
+</datalist>
+{% endif -%}
+
+
+<script type="text/javascript">
+var specs = {
+	"spec1": {
+		"name": "VM Specification 1",
+		"sockets": 1,
+		"cores": 1,
+		"ram": 2,
+		"disk": 100,
+	},
+	"spec2": {
+		"name": "VM Specification 2",
+		"sockets": 2,
+		"cores": 1,
+		"ram": 4,
+		"disk": 200,
+	},
+	"spec3": {
+		"name": "VM Specification 3",
+		"sockets": 2,
+		"cores": 2,
+		"ram": 8,
+		"disk": 400,
+	},
+	"spec4": {
+		"name": "VM Specification 4",
+		"sockets": 2,
+		"cores": 4,
+		"ram": 16,
+		"disk": 800,
+	},
+};
+// Specify an order to display them in as dictionaries aren't ordered
+var specs_order = ["spec1", "spec2", "spec3", "spec4"]
+/*****************************************************************************/
+function updateTotals(vm_recipe_name)
+{
+	// See what specification is selected
+	var spec = $('#config-'+vm_recipe_name+' input[name=spec\\['+vm_recipe_name+'\\]]').filter(function(index){
+                        return $(this).is(':checked');
+	});
+	if (spec.length != 0)
+	{
+		// Extract information from specs
+		var spec = specs[$(spec[0]).val()];
+		var spec_sockets = spec['sockets'];
+		var spec_cores = spec['cores'];
+		var spec_ram = spec['ram'];
+		var spec_disk = spec['disk'];
+		// Set minimums on sliders (resets slider values to their minimum)
+		setSliderMinimum('#config-'+vm_recipe_name+' #ram-slider', spec_ram);
+		setSliderMinimum('#config-'+vm_recipe_name+' #disk-slider', spec_disk);
+		// Update display
+		$('#config-'+vm_recipe_name+' #val_vcpus').text($('#config-'+vm_recipe_name+" #sockets-slider").val() * $('#config-'+vm_recipe_name+" #cores-slider").val());
+		$('#config-'+vm_recipe_name+' #val_ram').text($('#config-'+vm_recipe_name+" #ram-slider").val());
+		$('#config-'+vm_recipe_name+' #val_disk').text($('#config-'+vm_recipe_name+" #disk-slider").val());
+	}
+	
+}
+// Helper functions
+function setSliderValue(selector, val)
+{
+	if ($(selector).val() != val)
+	{
+		$(selector).val(val);
+		var selector_label = $(selector).parent().find(".output").eq(0);
+		var selector_label_value = parseInt(selector_label.html());
+		selector_label.html(val);
+	}
+}
+function setSliderMinimum(selector, minimum)
+{
+	if ($(selector).prop('min') != minimum)
+	{
+		$(selector).prop('min', minimum);
+		var selector_label = $(selector).parent().find(".output").eq(0);
+		var selector_label_value = parseInt(selector_label.html());
+		if(selector_label_value != minimum){
+			selector_label.html(minimum);
+		}
+		setSliderValue(selector, minimum);
+	}
+}
+
+
 $(document).ready(function(){
 	var form_steps = 1;
 	var was_clicked = false;
@@ -353,7 +493,6 @@ $(document).ready(function(){
 		if(!was_clicked){
 			form_steps = form_steps + ($('#create-service-template-form > div').appendTo('.carousel-inner')).length;
 			for(var i=1; i<form_steps; i++){
-				console.log(form_steps);
 				$('<li data-target="#vm-carousel" data-slide-to="'+(i)+'"></li>').appendTo('.carousel-indicators');
 			}
 			$("#vm-carousel").carousel('next');
@@ -362,7 +501,49 @@ $(document).ready(function(){
 			$("#vm-carousel").carousel('next');
 		}
 	});
-	$("#temp-save").click(function(){
+	$("#submit-template-request").click(function(){
+		/*
+			Some AJAX will go in here at some point to send an async request to the view,
+			but at the moment the tables are not set up, so I will just use some hardcoded
+			data
+		*/
+		var template_data = {
+			service_name: "banner",
+			service_vms:{
+				banner_database_1:{
+						purpose: "some random stuff",
+						comments: "some comments",
+						},
+				
+				banner_database_2:{
+						purpose: "I don't have a purpose",
+						comments: "wow",
+						}
+				},
+		};
+
+
+
+		$("#new-service-template").trigger("click", [template_data]);
+	});
+	$('#vm-carousel').on('slide.bs.carousel', function (e, stuff) {
+		// check if all the conditions
+		if(e.from == 1 && e.direction == "left"){
+			var current_slide = $(this).find('.carousel-item.active');
+			var current_service_name = $(current_slide).find("input[name=service_name]").eq(0).val();
+			if(!current_service_name){
+				e.preventDefault();
+			} else{
+				$(this).trigger('slide.bs.carousel');
+			}
+		}
+		
+	});
+	$("#new-service-template").click(function(e, template_data){
+		if(template_data){
+			console.log(template_data);
+		}
+		$("input[name=number_of_vms]").prop('value', parseInt($("input[name=number_of_vms]").prop('value'))+1);
 		var vm_recipe_name = $("#vm-recipe-input").val();
 		$("#vm-recipe-input").val("");
 		// would use ajax here to query the database, but there's no backend at the moment
@@ -381,21 +562,24 @@ $(document).ready(function(){
 		
 		var card = $("#vm-card").clone();
 		card.toggleClass('d-none');
-		card.attr('id', vm_recipe_name);
-		card.attr('data-target', "#"+vm_recipe_name+"-modal");
+		card.prop('id', vm_recipe_name);
+		card.prop('data-target', "#"+vm_recipe_name+"-modal");
 		card.find(".card-header h4").eq(0).html(vm_recipe_name);
+		card.find(".card-header input").eq(0).prop('value', vm_recipe_name);
 		card.find(".card-body p").eq(0).html(general_description);
-		card.find(".card-header a").eq(0).click(function() {
+		card.find(".card-header a").eq(0).click(function(e) {
+			e.stopPropagation();
 			var row = $(this).closest(".row");
 			if(row.find(".card").length == 1){
 				row.remove();
 			} else {
 				$(this).closest(".card").remove();
-				var modal = $("#" + vm_recipe_name + "-modal");
-				if(modal.length){
-					modal.remove();
-				}
 			}
+			var modal = $("#" + vm_recipe_name + "-modal");
+                        if(modal.length){
+	                        modal.remove();
+                        }
+
 		});
 		var number_of_cards = $(".vm-card").length -1;
 		if(number_of_cards % 3 == 0){
@@ -410,17 +594,71 @@ $(document).ready(function(){
 			if($("#"+vm_recipe_name+"-modal").length == 0){
 				var modal = $("#vm-recipe-template-modal").clone();
 				
-				modal.attr('id', vm_recipe_name+"-modal");
+				modal.prop('id', vm_recipe_name+"-modal");
 				modal.find(".modal-header h5").eq(0).html("Config "+ vm_recipe_name);
-				modal.find(".modal-body textarea").eq(0).attr('id', vm_recipe_name+"-textarea");
-				modal.find(".modal-body #vm-puppet").eq(0).attr('href', "#puppet-code-"+vm_recipe_name);
-				modal.find(".modal-body #vm-configuration").eq(0).attr('href', "#config-"+vm_recipe_name);
-				modal.find(".modal-body #puppet-code").eq(0).attr('id', "puppet-code-"+vm_recipe_name);
-				modal.find(".modal-body #config").eq(0).attr('id', "config-"+vm_recipe_name);
+				modal.find(".modal-body textarea").eq(0).prop('id', vm_recipe_name+"-textarea");
+				modal.find(".modal-body #vm-puppet").eq(0).prop('href', "#puppet-code-"+vm_recipe_name);
+				modal.find(".modal-body #vm-configuration").eq(0).prop('href', "#config-"+vm_recipe_name);
+				modal.find(".modal-body #puppet-code").eq(0).prop('id', "puppet-code-"+vm_recipe_name);
+				modal.find(".modal-body #config").eq(0).prop('id', "config-"+vm_recipe_name);
 				
 				$(".carousel-inner").append(modal);
-				
-				modal.on('shown.bs.modal', function () {
+
+				///////////////////////////////////////////////////////////////////////////////////
+
+				//// Set the input name propibute to contain the vm_recipe_name
+				modal.find("input, textarea").each(function(){
+					$(this).prop('name', ("service_vms["+vm_recipe_name+"]"+"["+$(this).prop('name')+"]"));
+				});
+
+
+				first = true
+				html = ""
+				// Generate our base specification buttons
+				for (idx in specs_order)
+				{
+					spec = specs_order[idx];
+					html = html + '<label id="spec-template-'+ (parseInt(idx) + 1) + '" class="btn btn-primary spec-template' + (first ? ' active' : '') + '" style="cursor: pointer;"><input type="radio" name="spec['+vm_recipe_name+']" style="position: absolute; clip: rect(0, 0, 0, 0);" value="' + spec + '"><div class="specname">' + (parseInt(idx) + 1) + '</div><div class="specdetails">' + (specs[spec].sockets * specs[spec].cores) + ' CPU<br/>' + specs[spec].ram + ' GB RAM<br/>' + specs[spec].disk + ' GB Disk</div><div class="clearfix"></div></label>';
+					$('#config-'+vm_recipe_name+' #specs').html(html);
+					if (first) { first = false; }
+				}
+				$('#config-'+vm_recipe_name+" label.active > input[type=radio][name=spec\\["+vm_recipe_name+"\\]]").prop('checked', true); // whichever label is active needs to also be checked
+				// Update the totals when the inputs change
+				$('#config-'+vm_recipe_name+' input[type=range], input[type=radio][name=spec\\['+vm_recipe_name+'\\]]').on('input', function() { updateTotals(vm_recipe_name); });
+				$('#config-'+vm_recipe_name+' input[type=radio][name=spec\\['+vm_recipe_name+'\\]]').change(function() {
+					var spec = $('#config-'+vm_recipe_name+' input[name=spec\\['+vm_recipe_name+'\\]]').filter(function(index){
+						return $(this).is(':checked');
+					});
+					var spec = specs[$(spec[0]).val()];
+					var spec_sockets = spec['sockets'];
+					var spec_cores = spec['cores'];
+					setSliderValue('#config-'+vm_recipe_name+' #sockets-slider', spec_sockets);
+					setSliderValue('#config-'+vm_recipe_name+' #cores-slider', spec_cores);
+					updateTotals(vm_recipe_name);
+				});
+				// Perform initial update of values
+				updateTotals(vm_recipe_name);
+
+				var sliders = $('#config-'+vm_recipe_name+" .slider-input");
+				sliders.each(function(){
+					$(this).parent().find(".output").eq(0).html($(this).val());
+				});
+				sliders.on('input', function() {
+					$(this).parent().find(".output").eq(0).html($(this).val());
+					$('#config-'+vm_recipe_name+' #val_vcpus').text($('#config-'+vm_recipe_name+" #sockets-slider").val() * $('#config-'+vm_recipe_name+" #cores-slider").val());
+					$('#config-'+vm_recipe_name+' #val_ram').text($('#config-'+vm_recipe_name+" #ram-slider").val());
+					$('#config-'+vm_recipe_name+' #val_disk').text($('#config-'+vm_recipe_name+" #disk-slider").val());
+				});
+				modal.find(".selectpicker-disabled").each(function(){
+					$(this).addClass("selectpicker").removeClass("selectpicker-disabled");
+					$(this).selectpicker();
+				});
+				/////////////////////////////////////////////////////////////////////////////////////
+				modal.on('shown.bs.modal', function (e) {
+					var delete_button = e.relatedTarget;
+					if($(delete_button).hasClass('no-modal')) {
+						e.stopPropagation();
+					}  
 					if($(this).find(".CodeMirror").length == 0){
 						var classes_editor = CodeMirror.fromTextArea(document.getElementById(vm_recipe_name+'-textarea'), 
 						{
@@ -438,8 +676,11 @@ $(document).ready(function(){
                 });
 		$("#add-vm-existing-recipe").modal('hide'); // hide the modal in the end
 	});
-	
-	
+	/*
+	$("#service_request_form").submit(function(e){
+		e.preventDefault();
+	});
+	*/
 });
 
 </script>
