@@ -40,7 +40,7 @@
 	<p class="text-muted">This workflow will create a new service (in a chosen environment I guess). Hostnames will be automatically allocated from the 'srv' group, and will automatically have IP addresses assigned from Infoblox. ServiceNow CI's will also be created.</p>
 </div>
 
-<div id="vm-carousel" class="carousel slide" data-ride="carousel" data-interval="false">
+<div id="vm-carousel" class="carousel slide" data-ride="carousel" data-interval="false" data-wrap="false">
 	<ol class="carousel-indicators">
 		<li data-target="#vm-carousel" data-slide-to="0" class="active"></li>
 	</ol>
@@ -118,7 +118,7 @@
 			<div class="form-group w-25">
 				<div class="input-group">
 					<label for="service_name" class="h4 w-100 text-left" style="margin-bottom: 10px;">Give your new service "recipe" a name:</label>
-					<input id="service_name" class="form-control form-control-lg" type="text" name="service_name" placeholder="'Service_name'" aria-label="Service_name" value="" required>
+					<input id="service_name" class="form-control form-control-lg" type="text" name="service_name" placeholder="'Service_name'" aria-label="Service_name" value="" data-toggle="popover" data-placement="left" data-content="You need to choose a service name."required>
 					<div class="input-group-append">
 						<button class="btn btn-success" type="button" href="#vm-carousel" role="button" data-slide="next">Next</button>
 					</div>
@@ -366,9 +366,10 @@
 					</div>
 				</div>
 		
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>  <!--  Maybe make this button cancel the changes made while the modal was open? -->
-				<button type="button" class="btn btn-primary" data-dismiss="modal">Save changes</button>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>  <!--  Maybe make this button cancel the changes made while the modal was open? -->
+					<button type="button" class="btn btn-primary" data-dismiss="modal">Save changes</button>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -439,7 +440,7 @@ var specs_order = ["spec1", "spec2", "spec3", "spec4"]
 function updateTotals(vm_recipe_name)
 {
 	// See what specification is selected
-	var spec = $('#config-'+vm_recipe_name+' input[name=spec\\['+vm_recipe_name+'\\]]').filter(function(index){
+	var spec = $('#config-'+vm_recipe_name+' input[name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').filter(function(index){
                         return $(this).is(':checked');
 	});
 	if (spec.length != 0)
@@ -473,9 +474,9 @@ function setSliderValue(selector, val)
 }
 function setSliderMinimum(selector, minimum)
 {
-	if ($(selector).prop('min') != minimum)
+	if ($(selector).attr('min') != minimum)
 	{
-		$(selector).prop('min', minimum);
+		$(selector).attr('min', minimum);
 		var selector_label = $(selector).parent().find(".output").eq(0);
 		var selector_label_value = parseInt(selector_label.html());
 		if(selector_label_value != minimum){
@@ -532,6 +533,7 @@ $(document).ready(function(){
 			var current_slide = $(this).find('.carousel-item.active');
 			var current_service_name = $(current_slide).find("input[name=service_name]").eq(0).val();
 			if(!current_service_name){
+				$(current_slide).find("input[name=service_name]").eq(0).popover('show');
 				e.preventDefault();
 			} else{
 				$(this).trigger('slide.bs.carousel');
@@ -540,10 +542,13 @@ $(document).ready(function(){
 		
 	});
 	$("#new-service-template").click(function(e, template_data){
+		$("input[service_name]").popover({
+			trigger: 'manual',
+		});
 		if(template_data){
 			console.log(template_data);
 		}
-		$("input[name=number_of_vms]").prop('value', parseInt($("input[name=number_of_vms]").prop('value'))+1);
+		$("input[name=number_of_vms]").attr('value', parseInt($("input[name=number_of_vms]").attr('value'))+1);
 		var vm_recipe_name = $("#vm-recipe-input").val();
 		$("#vm-recipe-input").val("");
 		// would use ajax here to query the database, but there's no backend at the moment
@@ -562,10 +567,10 @@ $(document).ready(function(){
 		
 		var card = $("#vm-card").clone();
 		card.toggleClass('d-none');
-		card.prop('id', vm_recipe_name);
-		card.prop('data-target', "#"+vm_recipe_name+"-modal");
+		card.attr('id', vm_recipe_name);
+		card.attr('data-target', "#"+vm_recipe_name+"-modal");
 		card.find(".card-header h4").eq(0).html(vm_recipe_name);
-		card.find(".card-header input").eq(0).prop('value', vm_recipe_name);
+		card.find(".card-header input").eq(0).attr('value', vm_recipe_name);
 		card.find(".card-body p").eq(0).html(general_description);
 		card.find(".card-header a").eq(0).click(function(e) {
 			e.stopPropagation();
@@ -594,21 +599,21 @@ $(document).ready(function(){
 			if($("#"+vm_recipe_name+"-modal").length == 0){
 				var modal = $("#vm-recipe-template-modal").clone();
 				
-				modal.prop('id', vm_recipe_name+"-modal");
+				modal.attr('id', vm_recipe_name+"-modal");
 				modal.find(".modal-header h5").eq(0).html("Config "+ vm_recipe_name);
-				modal.find(".modal-body textarea").eq(0).prop('id', vm_recipe_name+"-textarea");
-				modal.find(".modal-body #vm-puppet").eq(0).prop('href', "#puppet-code-"+vm_recipe_name);
-				modal.find(".modal-body #vm-configuration").eq(0).prop('href', "#config-"+vm_recipe_name);
-				modal.find(".modal-body #puppet-code").eq(0).prop('id', "puppet-code-"+vm_recipe_name);
-				modal.find(".modal-body #config").eq(0).prop('id', "config-"+vm_recipe_name);
+				modal.find(".modal-body textarea").eq(0).attr('id', vm_recipe_name+"-textarea");
+				modal.find(".modal-body #vm-puppet").eq(0).attr('href', "#puppet-code-"+vm_recipe_name);
+				modal.find(".modal-body #vm-configuration").eq(0).attr('href', "#config-"+vm_recipe_name);
+				modal.find(".modal-body #puppet-code").eq(0).attr('id', "puppet-code-"+vm_recipe_name);
+				modal.find(".modal-body #config").eq(0).attr('id', "config-"+vm_recipe_name);
 				
 				$(".carousel-inner").append(modal);
 
 				///////////////////////////////////////////////////////////////////////////////////
 
-				//// Set the input name propibute to contain the vm_recipe_name
-				modal.find("input, textarea").each(function(){
-					$(this).prop('name', ("service_vms["+vm_recipe_name+"]"+"["+$(this).prop('name')+"]"));
+				//// Set the input name attribute to contain the vm_recipe_name
+				modal.find("input, textarea, .selectpicker-disabled").each(function(){
+					$(this).attr('name', ("service_vms["+vm_recipe_name+"]"+"["+$(this).attr('name')+"]"));
 				});
 
 
@@ -618,15 +623,15 @@ $(document).ready(function(){
 				for (idx in specs_order)
 				{
 					spec = specs_order[idx];
-					html = html + '<label id="spec-template-'+ (parseInt(idx) + 1) + '" class="btn btn-primary spec-template' + (first ? ' active' : '') + '" style="cursor: pointer;"><input type="radio" name="spec['+vm_recipe_name+']" style="position: absolute; clip: rect(0, 0, 0, 0);" value="' + spec + '"><div class="specname">' + (parseInt(idx) + 1) + '</div><div class="specdetails">' + (specs[spec].sockets * specs[spec].cores) + ' CPU<br/>' + specs[spec].ram + ' GB RAM<br/>' + specs[spec].disk + ' GB Disk</div><div class="clearfix"></div></label>';
+					html = html + '<label id="spec-template-'+ (parseInt(idx) + 1) + '" class="btn btn-primary spec-template' + (first ? ' active' : '') + '" style="cursor: pointer;"><input type="radio" name="service_vms['+vm_recipe_name+'][spec]" style="position: absolute; clip: rect(0, 0, 0, 0);" value="' + spec + '"><div class="specname">' + (parseInt(idx) + 1) + '</div><div class="specdetails">' + (specs[spec].sockets * specs[spec].cores) + ' CPU<br/>' + specs[spec].ram + ' GB RAM<br/>' + specs[spec].disk + ' GB Disk</div><div class="clearfix"></div></label>';
 					$('#config-'+vm_recipe_name+' #specs').html(html);
 					if (first) { first = false; }
 				}
-				$('#config-'+vm_recipe_name+" label.active > input[type=radio][name=spec\\["+vm_recipe_name+"\\]]").prop('checked', true); // whichever label is active needs to also be checked
+				$('#config-'+vm_recipe_name+" label.active > input[type=radio][name=service_vms\\["+vm_recipe_name+"\\]\\[spec\\]]").prop('checked', true); // whichever label is active needs to also be checked
 				// Update the totals when the inputs change
-				$('#config-'+vm_recipe_name+' input[type=range], input[type=radio][name=spec\\['+vm_recipe_name+'\\]]').on('input', function() { updateTotals(vm_recipe_name); });
-				$('#config-'+vm_recipe_name+' input[type=radio][name=spec\\['+vm_recipe_name+'\\]]').change(function() {
-					var spec = $('#config-'+vm_recipe_name+' input[name=spec\\['+vm_recipe_name+'\\]]').filter(function(index){
+				$('#config-'+vm_recipe_name+' input[type=range], input[type=radio][name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').on('input', function() { updateTotals(vm_recipe_name); });
+				$('#config-'+vm_recipe_name+' input[type=radio][name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').change(function() {
+					var spec = $('#config-'+vm_recipe_name+' input[name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').filter(function(index){
 						return $(this).is(':checked');
 					});
 					var spec = specs[$(spec[0]).val()];
@@ -678,9 +683,18 @@ $(document).ready(function(){
 	});
 	/*
 	$("#service_request_form").submit(function(e){
-		e.preventDefault();
-	});
-	*/
+		//e.preventDefault();
+		var form_data = JSON.stringify($(this).serializeArray());
+		console.log(form_data);
+		/*$.ajax({
+			type: "POST",
+			url: "{{url_for('createservice')}}",
+			data: form_data,
+			success: function(){ console.log("SUCCESS"); },
+			dataType: "json",
+			contentType : "application/json",
+		});*/
+	//});
 });
 
 </script>

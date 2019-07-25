@@ -355,6 +355,33 @@ Username:             %s
 		  `ipaddr` varchar(43) DEFAULT NULL,
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+		
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `service_recipe` (
+		  `name` varchar(255) NOT NULL,
+		  `environment` varchar(255) NOT NULL,
+		  `email_notification` varchar(64) NOT NULL,
+		  `vms_list` text NOT NULL,
+		  PRIMARY KEY (`name`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+		
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `vm_recipe` (
+		  `name` varchar(255) NOT NULL,
+		  `purpose` text NOT NULL,
+		  `comments` text DEFAULT NULL,
+		  `primary_owner_who` varchar(64) DEFAULT NULL,
+		  `primary_owner_role` varchar(64) DEFAULT NULL,
+		  `secondary_owner_who` varchar(64) DEFAULT NULL,
+                  `secondary_owner_role` varchar(64) DEFAULT NULL,
+		  `sockets` mediumint(11) NOT NULL,
+		  `cores` mediumint(11) NOT NULL,
+		  `ram` mediumint(11) NOT NULL,
+		  `disk` mediumint(11) NOT NULL,
+		  `os` varchar(64) NOT NULL,
+		  `location_cluster` varchar(64) NOT NULL,
+		  `puppet_code` text DEFAULT NULL,
+		  `description` text DEFAULT NULL,
+		  PRIMARY KEY (`name`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")		
 
 		try:
 			cursor.execute("""CREATE INDEX `related_events_key` ON `events` (`related_id`)""")
