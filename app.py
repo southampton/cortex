@@ -356,15 +356,16 @@ Username:             %s
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 		
-		cursor.execute("""CREATE TABLE IF NOT EXISTS `service_recipe` (
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `service_recipes` (
 		  `name` varchar(255) NOT NULL,
 		  `environment` varchar(255) NOT NULL,
 		  `email_notification` varchar(64) NOT NULL,
 		  `vms_list` text NOT NULL,
+		  `description` text DEFAULT NULL,
 		  PRIMARY KEY (`name`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 		
-		cursor.execute("""CREATE TABLE IF NOT EXISTS `vm_recipe` (
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `vm_recipes` (
 		  `name` varchar(255) NOT NULL,
 		  `purpose` text NOT NULL,
 		  `comments` text DEFAULT NULL,
@@ -380,6 +381,7 @@ Username:             %s
 		  `location_cluster` varchar(64) NOT NULL,
 		  `puppet_code` text DEFAULT NULL,
 		  `description` text DEFAULT NULL,
+		  `expiry` datetime DEFAULT NULL,
 		  PRIMARY KEY (`name`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")		
 

@@ -73,7 +73,6 @@
 </div>
 
 <datalist id="autocomplete-service-templates">
-        <option></option>
         <option value="banner_dev">banner_dev</option>
         <option value="banner_pre-prod">banner_pre-prod</option>
         <option value="banner_prod">banner_prod</option>
@@ -96,7 +95,9 @@
                         <div class="modal-body">
                                 <div class="row">
                                         <div class="col-sm-3 offset-1">Choose an existing service template</div>
-                                        <div class="col-sm-6"><input id="service-template-input" class="form-control w-100" list="autocomplete-service-templates" autocomplete="off" maxlength="64"></div>
+                                        <div class="col-sm-6">
+						<input id="service-template-input" name="service_recipe_name" class="form-control w-100" list="autocomplete-service-templates" autocomplete="off" maxlength="64">
+					</div>
                                 </div>
                         </div>
                         <div class="modal-footer">
@@ -117,17 +118,43 @@
 		<div class="carousel-item-content-center name-service">
 			<div class="form-group w-25">
 				<div class="input-group">
-					<label for="service_name" class="h4 w-100 text-left" style="margin-bottom: 10px;">Give your new service "recipe" a name:</label>
-					<input id="service_name" class="form-control form-control-lg" type="text" name="service_name" placeholder="'Service_name'" aria-label="Service_name" value="" data-toggle="popover" data-placement="left" data-content="You need to choose a service name."required>
+					<label for="service_name" class="h4 w-100 text-left" style="margin-bottom: 10px;">Service recipe name:</label>
+					<input id="service_name" class="form-control form-control-lg" type="text" name="service_name" placeholder="'Service_name'" aria-label="Service_name" value="" required>
 					<div class="input-group-append">
 						<button class="btn btn-success" type="button" href="#vm-carousel" role="button" data-slide="next">Next</button>
 					</div>
 				</div>
+				<div class="input-group" style="margin-top: 2.5%;">
+					<label for="service_name" class="h4 w-100 text-left" style="margin-bottom: 10px;">Expiry date (optional)</label>
+					<div class='input-group date' id='expirypicker' data-target-input="nearest">
+						<input type='text' class="form-control datetimepicker-input" id="expiry" name="expiry" placeholder="YYYY-MM-DD" data-target="expirypicker" />
+						<span class="input-group-append" data-target="#expirypicker" data-toggle="datetimepicker">
+							<div class="input-group-text"><i class="fa fa-calendar"></i></div>
+						</span>
+						<div style="text-align: justify;">Set the date when all the VMs belonging to this service will be powered off.</div>
 
+					</div>
+					<script>
+						$(function () {
+							$('#expirypicker').datetimepicker({
+								viewMode: 'days',
+								format: 'YYYY-MM-DD',
+								minDate: moment(),
+								useCurrent: false,
+								widgetPositioning: {
+									horizontal: 'right',
+									vertical: 'top',
+								},
+							});
+						});
+					</script>
+				</div>
+				<div class="input-group" style="margin-top: 10%;">
+					<input type="checkbox" name="send_mail" id="send_mail" style="margin-right:0.4em; width: 1rem; height: 1rem; align-self: center;" checked="checked" /><label class="h4" for="send_mail" style="position:relative; top:-2px; margin-bottom: 0px!important;">Notify me by e-mail when done</label>	
+				</div>
 			</div>
 		</div>
 		<div class="carousel-caption">
-			<!-- Add something here to make this required before being able to go to the previous step ? -->
 			<h2>2. Name the recipe</h2>
 		</div>
 	</div>
@@ -186,7 +213,7 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-				<button type="button" class="btn btn-primary" id="new-service-template">Save changes</button>
+				<button type="button" class="btn btn-primary" id="new-vm-recipe">Save changes</button>
 			</div>
 		</div>
 	</div>
@@ -313,7 +340,9 @@
 									</select>
 								</div>
 								-#}
-								<h4 style="margin-top:2.2em">6. Choose Location Cluster<span class="required">*</span></h4>
+							</div>
+							<div class="col-md-4">
+								<h4>5. Choose Location Cluster<span class="required">*</span></h4>
 								<div style="margin-left:1em">
 									<select class="selectpicker-disabled" name="cluster" id="cluster">
 										<option></option>
@@ -323,30 +352,8 @@
 									</select>
 								</div>
 							</div>
-
 							<div class="col-md-4">
-								<h4>7. Expiry date (optional)</h4>
-								<div style="margin-left: 1em">
-									<p>Set the date that this VM will be automatically powered off.</p>
-									<div class='input-group date' id='expirypicker' data-target-input="nearest">
-										<input type='text' class="form-control datetimepicker-input" id="expiry" name="expiry" placeholder="YYYY-MM-DD" data-target="expirypicker" />
-										<span class="input-group-append" data-target="#expirypicker" data-toggle="datetimepicker">
-											<div class="input-group-text"><i class="fa fa-calendar"></i></div>
-										</span>
-									</div>
-									<script>
-										$(function () {
-											$('#expirypicker').datetimepicker({
-												viewMode: 'days',
-												format: 'YYYY-MM-DD',
-												minDate: moment(),
-												useCurrent: false,
-											});
-										});
-									</script>
-								</div>
-
-								<h4>8. Summary</h4>
+								<h4>6. Summary</h4>
 								<div style="margin-left: 1em">
 									<p>A VM will be created with the following specifications.</p>
 									<div style="font-size: 120%">
@@ -354,12 +361,6 @@
 										<div><strong>RAM:</strong> <span id="val_ram">0</span> GiB</div>
 										<div><strong>Disk:</strong> <span id="val_disk">0</span> GiB</div>
 									</div>
-								</div>
-							</div>
-							<div class="col-md-4">
-								<h4>9. Create</h4>
-								<div style="margin:0 0 0.5em 1.0em">
-									<input type="checkbox" name="send_mail" id="send_mail" style="margin-right:0.4em" checked="checked" /><label for="send_mail" style="position:relative;top:-2px">Notify me by e-mail when done</label>
 								</div>
 							</div>
 						</div>
@@ -490,7 +491,10 @@ function setSliderMinimum(selector, minimum)
 $(document).ready(function(){
 	var form_steps = 1;
 	var was_clicked = false;
-	$("#create-service-template").click(function (){
+	$("#create-service-template").click(function (e, template_data){
+		if(template_data){
+			console.log("Template data has been added");
+		}
 		if(!was_clicked){
 			form_steps = form_steps + ($('#create-service-template-form > div').appendTo('.carousel-inner')).length;
 			for(var i=1; i<form_steps; i++){
@@ -523,9 +527,29 @@ $(document).ready(function(){
 				},
 		};
 
-
-
-		$("#new-service-template").trigger("click", [template_data]);
+		/*
+			Do some magical ajax stuff here to fetch the data about the existing service recipe with that name
+		*/
+		service_recipe_name = $("#service-template-input").val();
+		$.ajax({
+			type: "POST",
+			async: true,
+			global: false,
+			url: '/workflows/create_service/get_service_recipe',
+			data: JSON.stringify({"service_recipe_name": service_recipe_name}),
+			contentType: "application/json; charset=utf-8",
+			dataType: "json",
+			success: function(recipe_data){
+				$("#add-service-existing-template").modal('hide');
+		                $("#create-service-template").trigger("click", [recipe_data]);
+			},
+			failure: function(error_message){
+				alert("There is no service recipe with that name. Create your own one");
+				$("#add-service-existing-template").modal('hide');
+				$("#create-service-template").trigger("click");
+			},
+			
+		});
 	});
 	$('#vm-carousel').on('slide.bs.carousel', function (e, stuff) {
 		// check if all the conditions
@@ -541,10 +565,7 @@ $(document).ready(function(){
 		}
 		
 	});
-	$("#new-service-template").click(function(e, template_data){
-		$("input[service_name]").popover({
-			trigger: 'manual',
-		});
+	$("#new-vm-recipe").click(function(e, template_data){
 		if(template_data){
 			console.log(template_data);
 		}
@@ -594,91 +615,90 @@ $(document).ready(function(){
 		} else {
 			$("#vms-card-list .row").last().append(card);
 		}
+		
 		//$("#vms-card-list").append(card); // append the card to the carousel item
-		$('#'+vm_recipe_name).click(function(){ // add an event listener that shows a modal of the config for that VM
-			if($("#"+vm_recipe_name+"-modal").length == 0){
-				var modal = $("#vm-recipe-template-modal").clone();
-				
-				modal.attr('id', vm_recipe_name+"-modal");
-				modal.find(".modal-header h5").eq(0).html("Config "+ vm_recipe_name);
-				modal.find(".modal-body textarea").eq(0).attr('id', vm_recipe_name+"-textarea");
-				modal.find(".modal-body #vm-puppet").eq(0).attr('href', "#puppet-code-"+vm_recipe_name);
-				modal.find(".modal-body #vm-configuration").eq(0).attr('href', "#config-"+vm_recipe_name);
-				modal.find(".modal-body #puppet-code").eq(0).attr('id', "puppet-code-"+vm_recipe_name);
-				modal.find(".modal-body #config").eq(0).attr('id', "config-"+vm_recipe_name);
-				
-				$(".carousel-inner").append(modal);
+		if($("#"+vm_recipe_name+"-modal").length == 0){
+			var modal = $("#vm-recipe-template-modal").clone();
+			
+			modal.attr('id', vm_recipe_name+"-modal");
+			modal.find(".modal-header h5").eq(0).html("Config "+ vm_recipe_name);
+			modal.find(".modal-body textarea").eq(0).attr('id', vm_recipe_name+"-textarea");
+			modal.find(".modal-body #vm-puppet").eq(0).attr('href', "#puppet-code-"+vm_recipe_name);
+			modal.find(".modal-body #vm-configuration").eq(0).attr('href', "#config-"+vm_recipe_name);
+			modal.find(".modal-body #puppet-code").eq(0).attr('id', "puppet-code-"+vm_recipe_name);
+			modal.find(".modal-body #config").eq(0).attr('id', "config-"+vm_recipe_name);
+			
+			$(".carousel-inner").append(modal);
 
-				///////////////////////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////////////////////////
 
-				//// Set the input name attribute to contain the vm_recipe_name
-				modal.find("input, textarea, .selectpicker-disabled").each(function(){
-					$(this).attr('name', ("service_vms["+vm_recipe_name+"]"+"["+$(this).attr('name')+"]"));
-				});
+			//// Set the input name attribute to contain the vm_recipe_name
+			modal.find("input, textarea, .selectpicker-disabled").each(function(){
+				$(this).attr('name', ("service_vms["+vm_recipe_name+"]"+"["+$(this).attr('name')+"]"));
+			});
 
 
-				first = true
-				html = ""
-				// Generate our base specification buttons
-				for (idx in specs_order)
-				{
-					spec = specs_order[idx];
-					html = html + '<label id="spec-template-'+ (parseInt(idx) + 1) + '" class="btn btn-primary spec-template' + (first ? ' active' : '') + '" style="cursor: pointer;"><input type="radio" name="service_vms['+vm_recipe_name+'][spec]" style="position: absolute; clip: rect(0, 0, 0, 0);" value="' + spec + '"><div class="specname">' + (parseInt(idx) + 1) + '</div><div class="specdetails">' + (specs[spec].sockets * specs[spec].cores) + ' CPU<br/>' + specs[spec].ram + ' GB RAM<br/>' + specs[spec].disk + ' GB Disk</div><div class="clearfix"></div></label>';
-					$('#config-'+vm_recipe_name+' #specs').html(html);
-					if (first) { first = false; }
-				}
-				$('#config-'+vm_recipe_name+" label.active > input[type=radio][name=service_vms\\["+vm_recipe_name+"\\]\\[spec\\]]").prop('checked', true); // whichever label is active needs to also be checked
-				// Update the totals when the inputs change
-				$('#config-'+vm_recipe_name+' input[type=range], input[type=radio][name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').on('input', function() { updateTotals(vm_recipe_name); });
-				$('#config-'+vm_recipe_name+' input[type=radio][name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').change(function() {
-					var spec = $('#config-'+vm_recipe_name+' input[name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').filter(function(index){
-						return $(this).is(':checked');
-					});
-					var spec = specs[$(spec[0]).val()];
-					var spec_sockets = spec['sockets'];
-					var spec_cores = spec['cores'];
-					setSliderValue('#config-'+vm_recipe_name+' #sockets-slider', spec_sockets);
-					setSliderValue('#config-'+vm_recipe_name+' #cores-slider', spec_cores);
-					updateTotals(vm_recipe_name);
-				});
-				// Perform initial update of values
-				updateTotals(vm_recipe_name);
-
-				var sliders = $('#config-'+vm_recipe_name+" .slider-input");
-				sliders.each(function(){
-					$(this).parent().find(".output").eq(0).html($(this).val());
-				});
-				sliders.on('input', function() {
-					$(this).parent().find(".output").eq(0).html($(this).val());
-					$('#config-'+vm_recipe_name+' #val_vcpus').text($('#config-'+vm_recipe_name+" #sockets-slider").val() * $('#config-'+vm_recipe_name+" #cores-slider").val());
-					$('#config-'+vm_recipe_name+' #val_ram').text($('#config-'+vm_recipe_name+" #ram-slider").val());
-					$('#config-'+vm_recipe_name+' #val_disk').text($('#config-'+vm_recipe_name+" #disk-slider").val());
-				});
-				modal.find(".selectpicker-disabled").each(function(){
-					$(this).addClass("selectpicker").removeClass("selectpicker-disabled");
-					$(this).selectpicker();
-				});
-				/////////////////////////////////////////////////////////////////////////////////////
-				modal.on('shown.bs.modal', function (e) {
-					var delete_button = e.relatedTarget;
-					if($(delete_button).hasClass('no-modal')) {
-						e.stopPropagation();
-					}  
-					if($(this).find(".CodeMirror").length == 0){
-						var classes_editor = CodeMirror.fromTextArea(document.getElementById(vm_recipe_name+'-textarea'), 
-						{
-							mode: 'yaml',
-							gutters: ["CodeMirror-lint-markers"],
-							lint: true,
-							indentUnit: 2,
-							viewportMargin: Infinity,
-						});
-						classes_editor.setSize(1100,500);
-					}
-				});
-
+			first = true
+			html = ""
+			// Generate our base specification buttons
+			for (idx in specs_order)
+			{
+				spec = specs_order[idx];
+				html = html + '<label id="spec-template-'+ (parseInt(idx) + 1) + '" class="btn btn-primary spec-template' + (first ? ' active' : '') + '" style="cursor: pointer;"><input type="radio" name="service_vms['+vm_recipe_name+'][spec]" style="position: absolute; clip: rect(0, 0, 0, 0);" value="' + spec + '"><div class="specname">' + (parseInt(idx) + 1) + '</div><div class="specdetails">' + (specs[spec].sockets * specs[spec].cores) + ' CPU<br/>' + specs[spec].ram + ' GB RAM<br/>' + specs[spec].disk + ' GB Disk</div><div class="clearfix"></div></label>';
+				$('#config-'+vm_recipe_name+' #specs').html(html);
+				if (first) { first = false; }
 			}
-                });
+			$('#config-'+vm_recipe_name+" label.active > input[type=radio][name=service_vms\\["+vm_recipe_name+"\\]\\[spec\\]]").prop('checked', true); // whichever label is active needs to also be checked
+			// Update the totals when the inputs change
+			$('#config-'+vm_recipe_name+' input[type=range], input[type=radio][name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').on('input', function() { updateTotals(vm_recipe_name); console.log("clicked");});
+			$('#config-'+vm_recipe_name+' input[type=radio][name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').change(function() {
+				var spec = $('#config-'+vm_recipe_name+' input[name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').filter(function(index){
+					return $(this).is(':checked');
+				});
+				var spec = specs[$(spec[0]).val()];
+				var spec_sockets = spec['sockets'];
+				var spec_cores = spec['cores'];
+				setSliderValue('#config-'+vm_recipe_name+' #sockets-slider', spec_sockets);
+				setSliderValue('#config-'+vm_recipe_name+' #cores-slider', spec_cores);
+				updateTotals(vm_recipe_name);
+			});
+			// Perform initial update of values
+			updateTotals(vm_recipe_name);
+
+			var sliders = $('#config-'+vm_recipe_name+" .slider-input");
+			sliders.each(function(){
+				$(this).parent().find(".output").eq(0).html($(this).val());
+			});
+			sliders.on('input', function() {
+				$(this).parent().find(".output").eq(0).html($(this).val());
+				$('#config-'+vm_recipe_name+' #val_vcpus').text($('#config-'+vm_recipe_name+" #sockets-slider").val() * $('#config-'+vm_recipe_name+" #cores-slider").val());
+				$('#config-'+vm_recipe_name+' #val_ram').text($('#config-'+vm_recipe_name+" #ram-slider").val());
+				$('#config-'+vm_recipe_name+' #val_disk').text($('#config-'+vm_recipe_name+" #disk-slider").val());
+			});
+			modal.find(".selectpicker-disabled").each(function(){
+				$(this).addClass("selectpicker").removeClass("selectpicker-disabled");
+				$(this).selectpicker();
+			});
+			/////////////////////////////////////////////////////////////////////////////////////
+			modal.on('shown.bs.modal', function (e) {
+				var delete_button = e.relatedTarget;
+				if($(delete_button).hasClass('no-modal')) {
+					e.stopPropagation();
+				}  
+				if($(this).find(".CodeMirror").length == 0){
+					var classes_editor = CodeMirror.fromTextArea(document.getElementById(vm_recipe_name+'-textarea'), 
+					{
+						mode: 'yaml',
+						gutters: ["CodeMirror-lint-markers"],
+						lint: true,
+						indentUnit: 2,
+						viewportMargin: Infinity,
+					});
+					classes_editor.setSize(1100,500);
+				}
+			});
+
+		}
 		$("#add-vm-existing-recipe").modal('hide'); // hide the modal in the end
 	});
 	/*
