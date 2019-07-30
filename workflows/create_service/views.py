@@ -3,6 +3,7 @@
 from cortex import app
 from cortex.lib.workflow import CortexWorkflow
 from cortex.lib.user import get_user_list_from_cache
+from cortex.lib.systems import get_service_recipes_list, get_vm_recipes_list
 import cortex.lib.core
 import datetime
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, jsonify
@@ -32,9 +33,14 @@ def createservice():
 	# Get the list of environments
 	environments = cortex.lib.core.get_cmdb_environments()
 	if request.method == 'GET':
-		autocomplete_users = get_user_list_from_cache()	
-		return workflow.render_template("create_service.html", clusters=clusters, environments=environments, title="Create Service", default_cluster=workflow.config['SB_DEFAULT_CLUSTER'], default_env=workflow.config['SB_DEFAULT_ENV'], os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'], autocomplete_users=autocomplete_users)#, existing_recipes_names)
-	else: # if it is POST, then it does need validation
+
+
+		autocomplete_users = get_user_list_from_cache()
+		autocomplete_service_recipes_names = get_service_recipes_list()
+		autocomplete_vm_recipes_names = get_vm_recipes_list()
+
+		return workflow.render_template("create_service.html", clusters=clusters, environments=environments, title="Create Service", default_cluster=workflow.config['SB_DEFAULT_CLUSTER'], default_env=workflow.config['SB_DEFAULT_ENV'], os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'], autocomplete_users=autocomplete_users, autocomplete_service_recipes_names=autocomplete_service_recipes_names, autocomplete_vm_recipes_names=autocomplete_vm_recipes_names)
+	elif request.method == 'POST' and 'action' in request.form and request.form['action']=="create_recipe": # if it is POST, then it does need validation
 				
 		# Get the form in a dict
 		form = parse_request_form(request.form)
@@ -49,11 +55,11 @@ def createservice():
 		else: # if the length is 1 do not split the list
 			vms_list = form['vm_recipe_name[]']
 		environment = "dev" # this is a default value for now cause the form itself is not finished
-		email_notification = form['send_mail']
+		email_notification = form['send_mail'] if "send_mail" in form and form["send_mail"]=="on" else "off"
 		expiry = form['expiry']
 		
 		if not recipe_exists(service_name, "service", curd):
-			curd.execute("INSERT INTO `service_recipes`(`name`, `environment`, `vms_list`, `email_notification`) VALUES(%s, %s, %s, %s)", (service_name, environment, vms_list, email_notification,))
+			curd.execute("INSERT INTO `service_recipes`(`name`, `environment`, `vms_list`, `email_notification`, `expiry_date`) VALUES(%s, %s, %s, %s, %s)", (service_name, environment, vms_list, email_notification, expiry,))
 		
 		if 'service_vms' in form.keys():
 			for vm_name in form['service_vms'].keys():
@@ -73,6 +79,8 @@ def createservice():
 			#	cluster = form['service_vms'][vm_name]['cluster']
 				cluster = "ONYX"
 				description = "generic description"
+				print(json.dumps(form['service_vms'][vm_name]))
+				spec = form['service_vms'][vm_name]['spec']
 				if not recipe_exists(vm_name, "vm", curd):
 					curd.execute("""INSERT INTO `vm_recipes`(
 							`name`,
@@ -90,24 +98,25 @@ def createservice():
 							`location_cluster`,
 							`puppet_code`,
 							`expiry`,
-							`description`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (vm_name, purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, template, cluster, puppet_classes, expiry, description, ))
-
-
-
+							`description`,
+							`spec`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (vm_name, purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, template, cluster, puppet_classes, expiry, description, spec,))
 
 		g.db.commit()
 
-		return json.dumps(request.form.to_dict())  # return redirect(url_for('task_status', id=task_id))
+		return json.dumps(request.form.to_dict())
+	elif request.method=='POST' and 'action' in request.form and request.form['action']=="use_recipe":
+		#### Do some stuff here to create n tasks
+		print("woah")
+	else:
+		return "nothing ?"
 
-
-
-@workflow.route("get_service_recipe",title='Create New Service', order=20, permission="newserver", methods=['POST'])
+@workflow.route("get_service_recipe",title='Get a recipe', methods=['POST'], menu=False)
 @app.disable_csrf_check
 def get_service_recipe():
+
 	# Get the db cursor
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	print("++++++++++++++++++++++++++++++++++++++++++++++++++++++=")
-	print(request.get_json())
+
 	# Get the service recipe name from the request form	
 	service_recipe_name = ""
 	if 'service_recipe_name' in request.get_json():
@@ -115,27 +124,29 @@ def get_service_recipe():
 
 	# Query the database to get the service recipe
 	curd.execute("SELECT * FROM `service_recipes` WHERE `name`=%s", (service_recipe_name,))
+
 	service_recipe_raw = curd.fetchone()
 	service_recipe = {}
+
 	if service_recipe_raw is not None:
-		print(service_recipe_name)
-		print("===========================================")
-		print(service_recipe_raw)
+		
 		# Store the details about the recipe in a dict
 		service_recipe['name'] = service_recipe_raw['name']
 		service_recipe['environment'] = service_recipe_raw['environment']
 		service_recipe['email_notification'] = service_recipe_raw['email_notification']
-		
+		service_recipe['expiry_date'] = service_recipe_raw['expiry_date']
+		service_recipe['vms_recipes'] = {}
 		# For each vm in the list, query the databse
 		for vm_recipe_name in service_recipe_raw['vms_list'].split(", "):
 			curd.execute("SELECT * FROM `vm_recipes` WHERE `name`=%s", (vm_recipe_name,))
 			vm_recipe= curd.fetchone()
+			
+			# Add the data to the dict
 			if vm_recipe is not None:
-				# Add the data to the dict
-				service_recipe[vm_recipe['name']] = {"purpose" : vm_recipe['purpose'],
+				service_recipe['vms_recipes'][vm_recipe['name']] = {"purpose" : vm_recipe['purpose'],
 								     "comments": vm_recipe['comments'],
 								     "primary_owner_who": vm_recipe['primary_owner_who'],
-								     "priamry_owner_role": vm_recipe['primary_owner_role'],
+								     "primary_owner_role": vm_recipe['primary_owner_role'],
 								     "secondary_owner_who": vm_recipe['secondary_owner_who'],
 								     "secondary_owner_role": vm_recipe['secondary_owner_role'],
 								     "sockets": vm_recipe['sockets'],
@@ -146,14 +157,17 @@ def get_service_recipe():
 								     "location_cluster": vm_recipe['location_cluster'],
 								     "puppet_code": vm_recipe['puppet_code'],
 								     "description": vm_recipe['description'],
-				}
+								     "spec": vm_recipe['spec'],
+								}
 	return jsonify(service_recipe)
 
 # Helper that parses the request data
 def parse_request_form(form):
 	BASE_STRING = "service_vms"
 	STATIC_FIELDS = ["_csrf_token", "service_name", "vm_recipe_name[]"]
+
 	result_dict = {}
+
 	for index in form.keys():
 		if BASE_STRING in index:
 			regex_search = re.search("\[(.*)\]\[(.*)\]", index)

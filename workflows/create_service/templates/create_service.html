@@ -46,6 +46,7 @@
 	</ol>
 	<form id="service_request_form" method="POST" role="form">
 		<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+		<input type="hidden" id="action" name="action" value="create_recipe"/>
 		<div class="carousel-inner">
 			<div class="carousel-item active">
 				<img class="first-slide" src="https://www.officemax.co.nz/Images/ProductImages/500/2012286.jpg" alt="First slide">
@@ -71,16 +72,6 @@
 		<span class="sr-only">Next</span>
 	</a>
 </div>
-
-<datalist id="autocomplete-service-templates">
-        <option value="banner_dev">banner_dev</option>
-        <option value="banner_pre-prod">banner_pre-prod</option>
-        <option value="banner_prod">banner_prod</option>
-        <option value="sqlkb">sqlkb</option>
-        <option value="some_other_service">some_other_service</option>
-        <option value="some_other_service_2">some_other_service_2</option>
-        <option value="hmm">hmm</option>
-</datalist>
 
 
 <div class="modal fade" id="add-service-existing-template" tabindex="-1" role="dialog" aria-hidden="true">
@@ -125,7 +116,7 @@
 					</div>
 				</div>
 				<div class="input-group" style="margin-top: 2.5%;">
-					<label for="service_name" class="h4 w-100 text-left" style="margin-bottom: 10px;">Expiry date (optional)</label>
+					<label for="expiry" class="h4 w-100 text-left" style="margin-bottom: 10px;">Expiry date (optional)</label>
 					<div class='input-group date' id='expirypicker' data-target-input="nearest">
 						<input type='text' class="form-control datetimepicker-input" id="expiry" name="expiry" placeholder="YYYY-MM-DD" data-target="expirypicker" />
 						<span class="input-group-append" data-target="#expirypicker" data-toggle="datetimepicker">
@@ -191,7 +182,12 @@
 	<option value="app_server">app_server</option>
 	<option value="magic_layer">magic_layer</option>
 </datalist>
-
+<datalist id="autocomplete-service-templates">
+	<option></option>
+	{% for service_name in autocomplete_service_recipes_names %}
+		<option id="{{service_name}}">{{service_name}}</option>
+	{% endfor %}
+</datalist>
 
 <!--
 	This is the modal used to select one of the existing recipes by name
@@ -492,44 +488,46 @@ $(document).ready(function(){
 	var form_steps = 1;
 	var was_clicked = false;
 	$("#create-service-template").click(function (e, template_data){
+		$("#action").attr('value', "create_recipe");
 		if(template_data){
-			console.log("Template data has been added");
+			console.log(template_data);
 		}
 		if(!was_clicked){
 			form_steps = form_steps + ($('#create-service-template-form > div').appendTo('.carousel-inner')).length;
 			for(var i=1; i<form_steps; i++){
 				$('<li data-target="#vm-carousel" data-slide-to="'+(i)+'"></li>').appendTo('.carousel-indicators');
 			}
-			$("#vm-carousel").carousel('next');
 			was_clicked = true;
+			if(template_data){
+				Object.keys(template_data['vms_recipes']).forEach(function(key, index){
+					$("#new-vm-recipe").trigger("click", [template_data['vms_recipes'][key], key]);
+				});
+				$("#vm-carousel #service_name").attr('value', template_data['name']);
+				if('expiry_date' in template_data){
+					$('#expirypicker').datetimepicker('destroy');
+					$('#expirypicker').datetimepicker({
+									viewMode: 'days',
+									format: 'YYYY-MM-DD',
+									minDate: moment(),
+									useCurrent: false,
+									widgetPositioning: {
+										horizontal: 'right',
+										vertical: 'top',
+									},
+									date: new Date(template_data['expiry_date']),
+					});
+				}
+//				$("#vm-carousel #expiry").attr('value', 'expiry_date' in template_data ? new Date(template_data['expiry_date']) : "");
+				$("#vm-carousel #send_mail").prop('checked', template_data['email_notification'] == "on" ? true : false);
+			}
+			$("#vm-carousel").carousel('next');
+			
 		} else {
 			$("#vm-carousel").carousel('next');
 		}
 	});
-	$("#submit-template-request").click(function(){
-		/*
-			Some AJAX will go in here at some point to send an async request to the view,
-			but at the moment the tables are not set up, so I will just use some hardcoded
-			data
-		*/
-		var template_data = {
-			service_name: "banner",
-			service_vms:{
-				banner_database_1:{
-						purpose: "some random stuff",
-						comments: "some comments",
-						},
-				
-				banner_database_2:{
-						purpose: "I don't have a purpose",
-						comments: "wow",
-						}
-				},
-		};
-
-		/*
-			Do some magical ajax stuff here to fetch the data about the existing service recipe with that name
-		*/
+	$("#submit-template-request").click(function(e){
+		$("#action").attr('value', "use_recipe");
 		service_recipe_name = $("#service-template-input").val();
 		$.ajax({
 			type: "POST",
@@ -548,7 +546,6 @@ $(document).ready(function(){
 				$("#add-service-existing-template").modal('hide');
 				$("#create-service-template").trigger("click");
 			},
-			
 		});
 	});
 	$('#vm-carousel').on('slide.bs.carousel', function (e, stuff) {
@@ -565,25 +562,20 @@ $(document).ready(function(){
 		}
 		
 	});
-	$("#new-vm-recipe").click(function(e, template_data){
-		if(template_data){
-			console.log(template_data);
-		}
+	$("#new-vm-recipe").click(function(e, recipe_data, recipe_name){
 		$("input[name=number_of_vms]").attr('value', parseInt($("input[name=number_of_vms]").attr('value'))+1);
-		var vm_recipe_name = $("#vm-recipe-input").val();
+		if(recipe_name) {
+			var vm_recipe_name = recipe_name
+		} else {
+			var vm_recipe_name = $("#vm-recipe-input").val();
+		}
 		$("#vm-recipe-input").val("");
-		// would use ajax here to query the database, but there's no backend at the moment
-		/*
-		  let's just pretend that I have some ajax here which returns the default puppet code and the specs for this VM
-		*/
+		
+
 		var puppet_code = "this is where the puppet code goes";
 		var vm_specs = "this is where the specs for the VM go";
 		var general_description = vm_recipe_name+" general description";
-		/*
-		  the stuff above should be returned by the view
-		*/
-
-
+		
 		// careful on the next line, is there a use case when the user will use the same recipe twice ? if that's the case, you need to find something else for the ID
 		
 		var card = $("#vm-card").clone();
@@ -628,6 +620,29 @@ $(document).ready(function(){
 			modal.find(".modal-body #puppet-code").eq(0).attr('id', "puppet-code-"+vm_recipe_name);
 			modal.find(".modal-body #config").eq(0).attr('id', "config-"+vm_recipe_name);
 			
+			modal.find(".selectpicker-disabled").each(function(){
+                                $(this).addClass("selectpicker").removeClass("selectpicker-disabled");
+                                $(this).selectpicker();
+                        });
+			
+			// Apply existing configuration if it already exists
+			if(recipe_data){
+				modal.find(".modal-body #purpose").eq(0).attr('value', recipe_data['purpose']);
+                                modal.find(".modal-body #comments").eq(0).attr('value', recipe_data['comments']);
+                                modal.find(".modal-body #primary_owner_who").eq(0).attr('value', recipe_data['primary_owner_who']);
+                                modal.find(".modal-body #primary_owner_role").eq(0).attr('value', recipe_data['primary_owner_role']);
+                                modal.find(".modal-body #secondary_owner_who").eq(0).attr('value', recipe_data['secondary_owner_who']);
+                                modal.find(".modal-body #secondary_owner_role").eq(0).attr('value', recipe_data['secondary_owner_role']);
+                                modal.find(".modal-body #sockets-sldier").eq(0).attr('value', recipe_data['sockets']);
+                                modal.find(".modal-body #ram-slider").eq(0).attr('value', recipe_data['ram']);
+                                modal.find(".modal-body #disk-slider").eq(0).attr('value', recipe_data['disk']);
+                                modal.find(".modal-body #cores-slider").eq(0).attr('value', recipe_data['cores']);
+				modal.find(".modal-body #template").eq(0).val(recipe_data['os']);
+				modal.find(".modal-body #template").eq(0).selectpicker('refresh');
+				modal.find(".modal-body #cluster").eq(0).val(recipe_data['location_cluster']);
+				modal.find(".modal-body #cluster").eq(0).selectpicker('refresh');
+			}
+			
 			$(".carousel-inner").append(modal);
 
 			///////////////////////////////////////////////////////////////////////////////////
@@ -644,13 +659,19 @@ $(document).ready(function(){
 			for (idx in specs_order)
 			{
 				spec = specs_order[idx];
-				html = html + '<label id="spec-template-'+ (parseInt(idx) + 1) + '" class="btn btn-primary spec-template' + (first ? ' active' : '') + '" style="cursor: pointer;"><input type="radio" name="service_vms['+vm_recipe_name+'][spec]" style="position: absolute; clip: rect(0, 0, 0, 0);" value="' + spec + '"><div class="specname">' + (parseInt(idx) + 1) + '</div><div class="specdetails">' + (specs[spec].sockets * specs[spec].cores) + ' CPU<br/>' + specs[spec].ram + ' GB RAM<br/>' + specs[spec].disk + ' GB Disk</div><div class="clearfix"></div></label>';
-				$('#config-'+vm_recipe_name+' #specs').html(html);
+				if('spec' in recipe_data && recipe_data['spec'] == "spec"+(parseInt(idx) +1)){
+					first = false;
+					html = html + '<label id="spec'+ (parseInt(idx) + 1) + '" class="btn btn-primary spec-template active" style="cursor: pointer;"><input type="radio" name="service_vms['+vm_recipe_name+'][spec]" style="position: absolute; clip: rect(0, 0, 0, 0);" value="' + spec + '"><div class="specname">' + (parseInt(idx) + 1) + '</div><div class="specdetails">' + (specs[spec].sockets * specs[spec].cores) + ' CPU<br/>' + specs[spec].ram + ' GB RAM<br/>' + specs[spec].disk + ' GB Disk</div><div class="clearfix"></div></label>';
+				}
+				else {
+					html = html + '<label id="spec'+ (parseInt(idx) + 1) + '" class="btn btn-primary spec-template' + (first ? 'active' : '') + '" style="cursor: pointer;"><input type="radio" name="service_vms['+vm_recipe_name+'][spec]" style="position: absolute; clip: rect(0, 0, 0, 0);" value="' + spec + '"><div class="specname">' + (parseInt(idx) + 1) + '</div><div class="specdetails">' + (specs[spec].sockets * specs[spec].cores) + ' CPU<br/>' + specs[spec].ram + ' GB RAM<br/>' + specs[spec].disk + ' GB Disk</div><div class="clearfix"></div></label>';
+				}
 				if (first) { first = false; }
 			}
+			$('#config-'+vm_recipe_name+' #specs').html(html);
 			$('#config-'+vm_recipe_name+" label.active > input[type=radio][name=service_vms\\["+vm_recipe_name+"\\]\\[spec\\]]").prop('checked', true); // whichever label is active needs to also be checked
 			// Update the totals when the inputs change
-			$('#config-'+vm_recipe_name+' input[type=range], input[type=radio][name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').on('input', function() { updateTotals(vm_recipe_name); console.log("clicked");});
+			$('#config-'+vm_recipe_name+' input[type=range], input[type=radio][name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').on('input', function() { updateTotals(vm_recipe_name);});
 			$('#config-'+vm_recipe_name+' input[type=radio][name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').change(function() {
 				var spec = $('#config-'+vm_recipe_name+' input[name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').filter(function(index){
 					return $(this).is(':checked');
@@ -675,17 +696,14 @@ $(document).ready(function(){
 				$('#config-'+vm_recipe_name+' #val_ram').text($('#config-'+vm_recipe_name+" #ram-slider").val());
 				$('#config-'+vm_recipe_name+' #val_disk').text($('#config-'+vm_recipe_name+" #disk-slider").val());
 			});
-			modal.find(".selectpicker-disabled").each(function(){
-				$(this).addClass("selectpicker").removeClass("selectpicker-disabled");
-				$(this).selectpicker();
-			});
-			/////////////////////////////////////////////////////////////////////////////////////
+			
 			modal.on('shown.bs.modal', function (e) {
 				var delete_button = e.relatedTarget;
 				if($(delete_button).hasClass('no-modal')) {
 					e.stopPropagation();
 				}  
 				if($(this).find(".CodeMirror").length == 0){
+					puppet_code = recipe_data ? recipe_data['puppet_code'] : '';
 					var classes_editor = CodeMirror.fromTextArea(document.getElementById(vm_recipe_name+'-textarea'), 
 					{
 						mode: 'yaml',
@@ -694,27 +712,15 @@ $(document).ready(function(){
 						indentUnit: 2,
 						viewportMargin: Infinity,
 					});
+					console.log(recipe_data ? recipe_data['puppet_code'] : "fail");
 					classes_editor.setSize(1100,500);
+					classes_editor.setValue(puppet_code);
 				}
 			});
 
 		}
 		$("#add-vm-existing-recipe").modal('hide'); // hide the modal in the end
 	});
-	/*
-	$("#service_request_form").submit(function(e){
-		//e.preventDefault();
-		var form_data = JSON.stringify($(this).serializeArray());
-		console.log(form_data);
-		/*$.ajax({
-			type: "POST",
-			url: "{{url_for('createservice')}}",
-			data: form_data,
-			success: function(){ console.log("SUCCESS"); },
-			dataType: "json",
-			contentType : "application/json",
-		});*/
-	//});
 });
 
 </script>

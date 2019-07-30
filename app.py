@@ -362,6 +362,7 @@ Username:             %s
 		  `email_notification` varchar(64) NOT NULL,
 		  `vms_list` text NOT NULL,
 		  `description` text DEFAULT NULL,
+		  `expiry_date` datetime DEFAULT NULL,
 		  PRIMARY KEY (`name`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 		
@@ -382,6 +383,7 @@ Username:             %s
 		  `puppet_code` text DEFAULT NULL,
 		  `description` text DEFAULT NULL,
 		  `expiry` datetime DEFAULT NULL,
+		  `spec` varchar(64) DEFAULT NULL,
 		  PRIMARY KEY (`name`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")		
 
