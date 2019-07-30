@@ -76,10 +76,8 @@ def createservice():
 				ram = form['service_vms'][vm_name]['ram']
 				disk = form['service_vms'][vm_name]['disk']
 				template = form['service_vms'][vm_name]['template']
-			#	cluster = form['service_vms'][vm_name]['cluster']
-				cluster = "ONYX"
+				cluster = form['service_vms'][vm_name]['cluster']
 				description = "generic description"
-				print(json.dumps(form['service_vms'][vm_name]))
 				spec = form['service_vms'][vm_name]['spec']
 				if not recipe_exists(vm_name, "vm", curd):
 					curd.execute("""INSERT INTO `vm_recipes`(
@@ -105,10 +103,24 @@ def createservice():
 
 		return json.dumps(request.form.to_dict())
 	elif request.method=='POST' and 'action' in request.form and request.form['action']=="use_recipe":
-		#### Do some stuff here to create n tasks
-		print("woah")
+		form = parse_request_form(request.form)
+		neocortex = cortex.lib.core.neocortex_connect()
+		options = {}
+		options['workflow'] = 'service' # this is not really important, but I might delete it later
+		options['vm_recipes'] = {}
+		options['wfconfig'] = workflow.config
+		for vm_recipe in form['service_vms'].keys():
+			# Add the service-wide configs to each VM
+			options['vm_recipes'][vm_recipe]['sendmail'] = "off"
+			options['vm_recipes'][vm_recipe]['env'] = form['env']
+			options['vm_recipes'][vm_recipe]['expiry'] = form['expiry']
+			# Add the VM specific options
+			options['vm_recipes'][vm_recipe].update(form["service_vms"][vm_recipe])
+
+		task_id = neocortex.create_task(_name_, session['username'], options, description="Creates and sets up a service containing multiple VMs.")
+		
 	else:
-		return "nothing ?"
+		return "Look at me, I just did nothing"
 
 @workflow.route("get_service_recipe",title='Get a recipe', methods=['POST'], menu=False)
 @app.disable_csrf_check

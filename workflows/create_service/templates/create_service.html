@@ -487,8 +487,9 @@ function setSliderMinimum(selector, minimum)
 $(document).ready(function(){
 	var form_steps = 1;
 	var was_clicked = false;
+	var action = "create_recipe";
 	$("#create-service-template").click(function (e, template_data){
-		$("#action").attr('value', "create_recipe");
+		$("#action").attr('value', action);
 		if(template_data){
 			console.log(template_data);
 		}
@@ -527,7 +528,7 @@ $(document).ready(function(){
 		}
 	});
 	$("#submit-template-request").click(function(e){
-		$("#action").attr('value', "use_recipe");
+		action =  "use_recipe";
 		service_recipe_name = $("#service-template-input").val();
 		$.ajax({
 			type: "POST",
@@ -648,7 +649,7 @@ $(document).ready(function(){
 			///////////////////////////////////////////////////////////////////////////////////
 
 			//// Set the input name attribute to contain the vm_recipe_name
-			modal.find("input, textarea, .selectpicker-disabled").each(function(){
+			modal.find("input, textarea, .selectpicker").each(function(){
 				$(this).attr('name', ("service_vms["+vm_recipe_name+"]"+"["+$(this).attr('name')+"]"));
 			});
 
