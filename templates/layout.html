@@ -285,10 +285,10 @@
 						<a tabindex="0" role="button" data-mpop="vmware-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'vmware'%} menu-active{%endif%}"><i class="fa fa-fw fa-line-chart fa-2x"></i><span class="sidebar-hidden">VMware</span></a>
 						{%- endif %}
 						{%- if menu.puppet and menu.puppet|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="puppet-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%}"><i class="fa fa-fw fa-magic fa-2x"></i><span class="sidebar-hidden">Puppet</span></a>
+						<a href="{{ menu.puppet[0].link }}" tabindex="0" role="button" data-mpop="puppet-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%}"><i class="fa fa-fw fa-magic fa-2x"></i><span class="sidebar-hidden">Puppet</span></a>
 						{%- endif %}
 						{%- if menu.certificates and menu.certificates|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="certificates-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'certificates'%} menu-active{%endif%}"><i class="fa fa-fw fa-certificate fa-2x"></i><span class="sidebar-hidden">Certificates</span></a>
+						<a href="{{ menu.certificates[0].link }}" tabindex="0" role="button" data-mpop="certificates-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'certificates'%} menu-active{%endif%}"><i class="fa fa-fw fa-certificate fa-2x"></i><span class="sidebar-hidden">Certificates</span></a>
 						{%- endif %}
 						{%- if menu.perms and menu.perms|length > 0 %}
 						<a tabindex="0" role="button" data-mpop="perms-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%}"><i class="fa fa-fw fa-lock fa-2x"></i><span class="sidebar-hidden">Permissions</span></a>

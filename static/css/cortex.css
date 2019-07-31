@@ -665,3 +665,12 @@ a.btn-secondary
 	color: #fff;
 }
 
+.sidebar .list-group a
+{
+	cursor: pointer
+}
+
+.puppet-header a
+{
+	font-size: 12px
+}
