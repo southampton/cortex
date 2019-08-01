@@ -20,40 +20,28 @@
 {
 	width: 80% !important;
 }
-
-{# Fixes slider tooltips appearing on top of bootstrap-select dropdowns -#}
-.tooltip
-{
-	z-index: 100;
-}
-
 .blocks .btn
 {
 	width: 2.5em;
 }
-
 .btn-group .btn-primary, .btn-group .btn-warning, .btn-group .btn-success
 {
 	opacity: 0.7;
 	font-size: 14px;
 }
-
 .active
 {
 	opacity: 1 !important;
 }
-
 .submit
 {
 	padding-bottom: 2em;
 	margin-left: 1em;
 }
-
 .btn-submit
 {
 	font-size: 2em;
 }
-
 div.specname
 {
 	font-size: 200%; /* Relative to btn-primary */
@@ -61,67 +49,11 @@ div.specname
 	line-height: 90%;
 	padding-right: 0.4em;
 }
-
 div.specdetails
 {
 	float:left;
 	text-align: left
 }
-.slider {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 10px;
-  border-radius: 5px;
-  background: #d3d3d3;
-  outline: none;
-  opacity: 0.7;
-  -webkit-transition: .2s;
-  transition: opacity .2s;
-  cursor: pointer;
-  display: inline-block;
-}
-
-.slider:hover {
-  opacity: 1;
-}
-
-.slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        border-radius: 50%;
-        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
-        cursor: pointer;
-        width: 25px;
-        height: 25px;
-        background-color: #337ab7;
-        background-image: -webkit-linear-gradient(top,#149bdf 0,#0480be 100%);
-        background-image: -o-linear-gradient(top,#149bdf 0,#0480be 100%);
-        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
-        background-repeat: repeat-x;
-        -webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
-        border: 0 solid transparent;
-}
-
-.slider::-moz-range-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        border-radius: 50%;
-        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
-        cursor: pointer;
-        width: 25px;
-        height: 25px;
-        background-color: #337ab7;
-        background-image: -webkit-linear-gradient(top,#149bdf 0,#0480be 100%);
-        background-image: -o-linear-gradient(top,#149bdf 0,#0480be 100%);
-        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
-        background-repeat: repeat-x;
-        -webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
-        border: 0 solid transparent;
-
-}
-
 </style>
 {%- if autocomplete_users %}
 <datalist id="autocompleteUsers">
@@ -143,8 +75,10 @@ div.specdetails
 					<label for="purpose">Purpose:<span class="required">*</span></label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" />
 				</div>
 			</div>
-			<div class="form-group row col-md-12">
-				<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
+			<div class="row">
+				<div class="form-group col-md-12">
+					<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
+				</div>
 			</div>
 			<div class="row">
 				<div class="form-group col-md-3">
