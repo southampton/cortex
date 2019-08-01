@@ -358,7 +358,7 @@ Username:             %s
 		
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `service_recipes` (
 		  `name` varchar(255) NOT NULL,
-		  `environment` varchar(255) NOT NULL,
+		  `env` varchar(255) NOT NULL,
 		  `email_notification` varchar(64) NOT NULL,
 		  `vms_list` text NOT NULL,
 		  `description` text DEFAULT NULL,
@@ -384,6 +384,8 @@ Username:             %s
 		  `description` text DEFAULT NULL,
 		  `expiry` datetime DEFAULT NULL,
 		  `spec` varchar(64) DEFAULT NULL,
+		  `network` varchar(64) NOT NULL,
+		  `vm_folder_moid` varchar(255) DEFAULT NULL,
 		  PRIMARY KEY (`name`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")		
 

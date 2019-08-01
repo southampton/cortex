@@ -140,8 +140,17 @@
 						});
 					</script>
 				</div>
+				<h4 style="margin-top:1em; text-align: left;">Environment<span class="required">*</span></h4>
+					<div>
+						<select class="selectpicker-disabled w-100" name="env" id="env">
+							<option></option>
+							{% for environment in environments -%}
+							<option value="{{ environment.id }}"{% if default_env == environment.id %} selected="selected"{% endif %}>{{ environment.name }}</option>
+							{%- endfor %}
+						</select>
+					</div>
 				<div class="input-group" style="margin-top: 10%;">
-					<input type="checkbox" name="send_mail" id="send_mail" style="margin-right:0.4em; width: 1rem; height: 1rem; align-self: center;" checked="checked" /><label class="h4" for="send_mail" style="position:relative; top:-2px; margin-bottom: 0px!important;">Notify me by e-mail when done</label>	
+					<input type="checkbox" name="sendmail" id="sendmail" style="margin-right:0.4em; width: 1rem; height: 1rem; align-self: center;" checked="checked" /><label class="h4" for="sendmail" style="position:relative; top:-2px; margin-bottom: 0px!important;">Notify me by e-mail when done</label>	
 				</div>
 			</div>
 		</div>
@@ -272,19 +281,9 @@
 								</div>
 							</div>
 						</div>
-
-						<div class="row" style="margin-top: 0.5em">
-							<div class="col-md-12">
-								<h4>2. Choose Base Specification</h4>
-								<div class="btn-group row" data-toggle="buttons" id="specs" style="margin-left: 1em">
-									<!-- Populated by JavaScript -->
-								</div>
-							</div>
-						</div>
-
 						<div class="row" style="margin-top: 1.6em">
 							<div class="col-md-12">
-								<h4>3. Customise Specification</h4>
+								<h4>2. Customise Specification</h4>
 								<div class="row">
 									<div class="form-group col-md-3" style="margin-top:2.4em">
 										<label for="sockets-slider">Sockets:</label> 
@@ -316,7 +315,7 @@
 
 						<div class="row" style="margin-top: 1.0em">
 							<div class="col-md-4">
-								<h4>4. Choose Image<span class="required">*</span></h4>
+								<h4>3. Choose Image<span class="required">*</span></h4>
 								<div style="margin-left:1em">
 									<select class="selectpicker-disabled" name="template" id="template">
 										<option></option>
@@ -325,17 +324,17 @@
 										{%- endfor %}
 									</select>
 								</div>
-								{#-
-								<h4 style="margin-top:2.2em">5. Choose Environment<span class="required">*</span></h4>
+							</div>
+							<div class="col-md-4">
+								<h4>4. Choose Network<span class="required">*</span></h4>
 								<div style="margin-left:1em">
-									<select class="selectpicker-disabled" name="environment" id="environment">
+									<select class="selectpicker-disabled" name="network" id="network">
 										<option></option>
-										{% for environment in environments -%}
-										<option value="{{ environment.id }}"{% if default_env == environment.id %} selected="selected"{% endif %}>{{ environment.name }}</option>
+										{% for network in networks_order -%}
+										<option value="{{ network }}">{{ network_names[network] }}</option>
 										{%- endfor %}
 									</select>
 								</div>
-								-#}
 							</div>
 							<div class="col-md-4">
 								<h4>5. Choose Location Cluster<span class="required">*</span></h4>
@@ -348,8 +347,31 @@
 									</select>
 								</div>
 							</div>
+						</div>
+						<div class="row" style="margin-top: 2em;">
 							<div class="col-md-4">
-								<h4>6. Summary</h4>
+								<h4>6. Infoblox Host Alias (optional)</h4>
+								<div style="margin-left: 1em">
+									<div class="form-group">
+										<input class="form-control" id="dns_aliases" name="dns_aliases" placeholder="servicename.soton.ac.uk"/>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-4">
+								<h4>7. VMware Folder (optional)</h4>
+								<div style="margin-left: 1em">
+									<div class="form-group">
+										<select class="selectpicker-disabled" name="vm_folder_moid" id="vm_folder_moid" data-live-search="true">
+											<option></option>
+											{% for folder in folders -%}
+											<option value="{{ folder['id'] }}">{{ folder['fully_qualified_path'] }}</option>
+											{%- endfor %}
+										</select>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-4">
+								<h4>8. Summary</h4>
 								<div style="margin-left: 1em">
 									<p>A VM will be created with the following specifications.</p>
 									<div style="font-size: 120%">
@@ -401,88 +423,6 @@
 
 
 <script type="text/javascript">
-var specs = {
-	"spec1": {
-		"name": "VM Specification 1",
-		"sockets": 1,
-		"cores": 1,
-		"ram": 2,
-		"disk": 100,
-	},
-	"spec2": {
-		"name": "VM Specification 2",
-		"sockets": 2,
-		"cores": 1,
-		"ram": 4,
-		"disk": 200,
-	},
-	"spec3": {
-		"name": "VM Specification 3",
-		"sockets": 2,
-		"cores": 2,
-		"ram": 8,
-		"disk": 400,
-	},
-	"spec4": {
-		"name": "VM Specification 4",
-		"sockets": 2,
-		"cores": 4,
-		"ram": 16,
-		"disk": 800,
-	},
-};
-// Specify an order to display them in as dictionaries aren't ordered
-var specs_order = ["spec1", "spec2", "spec3", "spec4"]
-/*****************************************************************************/
-function updateTotals(vm_recipe_name)
-{
-	// See what specification is selected
-	var spec = $('#config-'+vm_recipe_name+' input[name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').filter(function(index){
-                        return $(this).is(':checked');
-	});
-	if (spec.length != 0)
-	{
-		// Extract information from specs
-		var spec = specs[$(spec[0]).val()];
-		var spec_sockets = spec['sockets'];
-		var spec_cores = spec['cores'];
-		var spec_ram = spec['ram'];
-		var spec_disk = spec['disk'];
-		// Set minimums on sliders (resets slider values to their minimum)
-		setSliderMinimum('#config-'+vm_recipe_name+' #ram-slider', spec_ram);
-		setSliderMinimum('#config-'+vm_recipe_name+' #disk-slider', spec_disk);
-		// Update display
-		$('#config-'+vm_recipe_name+' #val_vcpus').text($('#config-'+vm_recipe_name+" #sockets-slider").val() * $('#config-'+vm_recipe_name+" #cores-slider").val());
-		$('#config-'+vm_recipe_name+' #val_ram').text($('#config-'+vm_recipe_name+" #ram-slider").val());
-		$('#config-'+vm_recipe_name+' #val_disk').text($('#config-'+vm_recipe_name+" #disk-slider").val());
-	}
-	
-}
-// Helper functions
-function setSliderValue(selector, val)
-{
-	if ($(selector).val() != val)
-	{
-		$(selector).val(val);
-		var selector_label = $(selector).parent().find(".output").eq(0);
-		var selector_label_value = parseInt(selector_label.html());
-		selector_label.html(val);
-	}
-}
-function setSliderMinimum(selector, minimum)
-{
-	if ($(selector).attr('min') != minimum)
-	{
-		$(selector).attr('min', minimum);
-		var selector_label = $(selector).parent().find(".output").eq(0);
-		var selector_label_value = parseInt(selector_label.html());
-		if(selector_label_value != minimum){
-			selector_label.html(minimum);
-		}
-		setSliderValue(selector, minimum);
-	}
-}
-
 
 $(document).ready(function(){
 	var form_steps = 1;
@@ -490,9 +430,6 @@ $(document).ready(function(){
 	var action = "create_recipe";
 	$("#create-service-template").click(function (e, template_data){
 		$("#action").attr('value', action);
-		if(template_data){
-			console.log(template_data);
-		}
 		if(!was_clicked){
 			form_steps = form_steps + ($('#create-service-template-form > div').appendTo('.carousel-inner')).length;
 			for(var i=1; i<form_steps; i++){
@@ -518,8 +455,10 @@ $(document).ready(function(){
 									date: new Date(template_data['expiry_date']),
 					});
 				}
-//				$("#vm-carousel #expiry").attr('value', 'expiry_date' in template_data ? new Date(template_data['expiry_date']) : "");
-				$("#vm-carousel #send_mail").prop('checked', template_data['email_notification'] == "on" ? true : false);
+				$("#env").addClass("selectpicker").removeClass("selectpicker-disabled");
+				$("#env").val(template_data['env']);
+                                $("#env").selectpicker();
+				$("#vm-carousel #sendmail").prop('checked', template_data['email_notification'] == "on" ? true : false);
 			}
 			$("#vm-carousel").carousel('next');
 			
@@ -573,8 +512,6 @@ $(document).ready(function(){
 		$("#vm-recipe-input").val("");
 		
 
-		var puppet_code = "this is where the puppet code goes";
-		var vm_specs = "this is where the specs for the VM go";
 		var general_description = vm_recipe_name+" general description";
 		
 		// careful on the next line, is there a use case when the user will use the same recipe twice ? if that's the case, you need to find something else for the ID
@@ -642,6 +579,12 @@ $(document).ready(function(){
 				modal.find(".modal-body #template").eq(0).selectpicker('refresh');
 				modal.find(".modal-body #cluster").eq(0).val(recipe_data['location_cluster']);
 				modal.find(".modal-body #cluster").eq(0).selectpicker('refresh');
+				console.log(modal.find(".modal-body #network").eq(0));
+				console.log(recipe_data['network']);
+				modal.find(".modal-body #network").eq(0).val(recipe_data['network']);
+                                modal.find(".modal-body #network").eq(0).selectpicker('refresh');
+				modal.find(".modal-body #vm_folder_moid").eq(0).val(recipe_data['vm_folder_moid']);
+                                modal.find(".modal-body #vm_folder_moid").eq(0).selectpicker('refresh');
 			}
 			
 			$(".carousel-inner").append(modal);
@@ -652,40 +595,6 @@ $(document).ready(function(){
 			modal.find("input, textarea, .selectpicker").each(function(){
 				$(this).attr('name', ("service_vms["+vm_recipe_name+"]"+"["+$(this).attr('name')+"]"));
 			});
-
-
-			first = true
-			html = ""
-			// Generate our base specification buttons
-			for (idx in specs_order)
-			{
-				spec = specs_order[idx];
-				if('spec' in recipe_data && recipe_data['spec'] == "spec"+(parseInt(idx) +1)){
-					first = false;
-					html = html + '<label id="spec'+ (parseInt(idx) + 1) + '" class="btn btn-primary spec-template active" style="cursor: pointer;"><input type="radio" name="service_vms['+vm_recipe_name+'][spec]" style="position: absolute; clip: rect(0, 0, 0, 0);" value="' + spec + '"><div class="specname">' + (parseInt(idx) + 1) + '</div><div class="specdetails">' + (specs[spec].sockets * specs[spec].cores) + ' CPU<br/>' + specs[spec].ram + ' GB RAM<br/>' + specs[spec].disk + ' GB Disk</div><div class="clearfix"></div></label>';
-				}
-				else {
-					html = html + '<label id="spec'+ (parseInt(idx) + 1) + '" class="btn btn-primary spec-template' + (first ? 'active' : '') + '" style="cursor: pointer;"><input type="radio" name="service_vms['+vm_recipe_name+'][spec]" style="position: absolute; clip: rect(0, 0, 0, 0);" value="' + spec + '"><div class="specname">' + (parseInt(idx) + 1) + '</div><div class="specdetails">' + (specs[spec].sockets * specs[spec].cores) + ' CPU<br/>' + specs[spec].ram + ' GB RAM<br/>' + specs[spec].disk + ' GB Disk</div><div class="clearfix"></div></label>';
-				}
-				if (first) { first = false; }
-			}
-			$('#config-'+vm_recipe_name+' #specs').html(html);
-			$('#config-'+vm_recipe_name+" label.active > input[type=radio][name=service_vms\\["+vm_recipe_name+"\\]\\[spec\\]]").prop('checked', true); // whichever label is active needs to also be checked
-			// Update the totals when the inputs change
-			$('#config-'+vm_recipe_name+' input[type=range], input[type=radio][name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').on('input', function() { updateTotals(vm_recipe_name);});
-			$('#config-'+vm_recipe_name+' input[type=radio][name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').change(function() {
-				var spec = $('#config-'+vm_recipe_name+' input[name=service_vms\\['+vm_recipe_name+'\\]\\[spec\\]]').filter(function(index){
-					return $(this).is(':checked');
-				});
-				var spec = specs[$(spec[0]).val()];
-				var spec_sockets = spec['sockets'];
-				var spec_cores = spec['cores'];
-				setSliderValue('#config-'+vm_recipe_name+' #sockets-slider', spec_sockets);
-				setSliderValue('#config-'+vm_recipe_name+' #cores-slider', spec_cores);
-				updateTotals(vm_recipe_name);
-			});
-			// Perform initial update of values
-			updateTotals(vm_recipe_name);
 
 			var sliders = $('#config-'+vm_recipe_name+" .slider-input");
 			sliders.each(function(){
@@ -713,7 +622,6 @@ $(document).ready(function(){
 						indentUnit: 2,
 						viewportMargin: Infinity,
 					});
-					console.log(recipe_data ? recipe_data['puppet_code'] : "fail");
 					classes_editor.setSize(1100,500);
 					classes_editor.setValue(puppet_code);
 				}

@@ -10,6 +10,7 @@ import sys
 import requests
 import json
 import time
+import traceback
 from setproctitle import setproctitle #pip install setproctitle
 from corpus import Corpus
 
