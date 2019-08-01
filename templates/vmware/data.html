@@ -51,6 +51,13 @@
 		"lengthMenu": [[10,15,20,50,100,-1], [10,15,20,50,100,'All']],
 		"pageLength": 20,
 		"order": [[1, 'asc']],
+{%- if classic_layout %}
+		"fixedHeader": {
+			"headerOffset": 52
+		},
+{%- else %}
+		"fixedHeader": true,
+{%- endif %}
 		"columns": [{ "orderable": false, "targets": 0 }, null, null, null, null, null, null, null, null, null],
 		"searching": true,
 	});

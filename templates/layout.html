@@ -15,15 +15,14 @@
 		{%- else %}
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap.min.css') }}?version={{ config.VERSION }}">
 		{%- endif %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/dataTables.bootstrap.min.css') }}?version={{ config.VERSION }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/datatables.min.css') }}?version={{ config.VERSION }}">
 		{%- if classic_layout %}
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-classic.css') }}?version={{ config.VERSION }}">
 		{%- endif %}
 
 		{#- JavaScript #}
 		<script src="{{ url_for('static', filename='js/vendor/jquery.min.js') }}?version={{ config.VERSION }}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/jquery.dataTables.min.js') }}?version={{ config.VERSION }}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/dataTables.bootstrap.min.js') }}?version={{ config.VERSION }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/datatables.min.js') }}?version={{ config.VERSION }}"></script>
 		<script src="{{ url_for('static', filename='js/vendor/popper.js') }}?version={{ config.VERSION }}"></script>
 		<script src="{{ url_for('static', filename='js/vendor/bootstrap.min.js') }}?version={{ config.VERSION }}"></script>
 		{#- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries #}

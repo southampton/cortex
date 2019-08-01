@@ -48,6 +48,13 @@ $(function() {
 		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 		"pageLength": 15,
 		"order": [[0, 'asc']],
+{%- if classic_layout %}
+		"fixedHeader": {
+			"headerOffset": 52
+		},
+{%- else %}
+		"fixedHeader": true,
+{%- endif %}
 		"columns": [null, null, null, null, null, { "orderable": false, "targets": 0 }]
 	});
 	$('#hide_unknown').on('click', function(){

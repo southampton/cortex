@@ -129,6 +129,13 @@ $(function() {
 		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 		"pageLength": 15,
 		"order": [[0, 'desc']],
+{%- if classic_layout %}
+		"fixedHeader": {
+			"headerOffset": 52
+		},
+{%- else %}
+		"fixedHeader": true,
+{%- endif %}
 		"columns": [
 			{"data": "name"},
 			{"data": "allocation_comment"},
