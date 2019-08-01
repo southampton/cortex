@@ -3,12 +3,10 @@ import cortex.lib.core
 import cortex.lib.systems
 import cortex.lib.cmdb
 import cortex.lib.classes
+import cortex.lib.dsc
 from cortex.lib.user import does_user_have_permission, does_user_have_system_permission, does_user_have_any_system_permission, is_system_enrolled
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
-import os
-import time
-import datetime
 import json
 import re
 import werkzeug
@@ -20,6 +18,44 @@ import requests
 import cortex.lib.rubrik
 from flask.views import MethodView
 from pyVmomi import vim
+
+def generate_new_yaml(proxy, oldRole, oldConfig, newRole, newConfig):
+	#configs should be passed in as string
+	oldConfig = json.loads(oldConfig)
+	newConfig = json.loads(newConfig)
+
+	roles_info = cortex.lib.dsc.get_roles(proxy)
+
+	removed_values = list(set(oldRole) - set(newRole))
+	added_values = list(set(newRole) - set(oldRole))
+
+	modified_config = newConfig
+
+	for added in added_values:
+		modified_config[added] = roles_info[added]
+
+	
+	for removed in removed_values:
+		del modified_config[removed]
+
+
+
+	return json.dumps(modified_config)
+
+
+
+############################################################################
+
+def generate_reset_yaml(proxy, roles):
+	roles_info = cortex.lib.dsc.get_roles(proxy)
+	config = {}
+	for role in roles:
+		if role == '':
+			continue
+		config[role] = roles_info[role]
+	return json.dumps(config)
+
+############################################################################
 
 @app.route('/dsc/classify/<id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
@@ -33,8 +69,14 @@ def dsc_classify_machine(id):
 	
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
+	default_roles = []
+	dsc_proxy = cortex.lib.dsc.dsc_connect()
+	roles_info = cortex.lib.dsc.get_roles(dsc_proxy)
+	for role in roles_info:
+		default_roles.append(role)
+
 	# retrieve all the systems
-	default_roles = ['Default', 'SQLServer', 'Web Server', 't1', 't2']
+	# default_roles = ['Default', 'SQLServer', 'Web Server', 't1', 't2']
 	curd.execute("SELECT `roles`, `config` FROM `dsc_config` WHERE `system_id` = %s", (id, ))
 	existing_data = curd.fetchone()
 	exist_role = ""
@@ -42,7 +84,8 @@ def dsc_classify_machine(id):
 	# get existing info
 	if existing_data is not None:
 		exist_role = existing_data['roles'].split(',')
-		exist_config = existing_data['config']
+		exist_config = yaml.dump(json.loads(existing_data['config']))
+		
 
 	
 
@@ -53,35 +96,43 @@ def dsc_classify_machine(id):
 		else:
 			abort(403)
 	elif request.method == 'POST':
-		if not does_user_have_permission('dsc.view'):
-			abort(403)
-		configuration = request.form['configurations']
-		role = request.form.get('selected_values', '')
+		# return jsonify(request.form)
+		if request.form['button'] == 'save_changes':
+			#check for permissions
+			if not does_user_have_permission('dsc.edit'):
+				abort(403)
+			
+			# get the new role and configuration entered
+			role = request.form.get('selected_values', '')
+			configuration = request.form['configurations']
+			
+			try:
+				data = yaml.safe_load(configuration)
+			except Exception as e:
+				flash('Invalid YAML syntax for classes: ' + str(e), 'alert-danger')
+				error = True
+				raise e
+			
+			if data != None:
+				roles = json.dumps((data))
+				if roles != ",".join(exist_role):
+					new_yaml = generate_new_yaml(dsc_proxy, exist_role, json.dumps(yaml.load(exist_config)), role.split(","), json.dumps(yaml.load(configuration)))
+					# return new_yaml
 
-		error = False
+				# return jsonify(((new_yaml)))
+				# cortex.lib.dsc.dsc_generate_files(dsc_proxy, system['name'], new_yaml)
 
-		# validate the configuration YAML
-		try:
-			data = yaml.safe_load(configuration)
-		except Exception as e:
-			flash('Invalid YAML syntax for classes: ' + str(e), 'alert-danger')
-			error = True
-			raise e
-
-		try:
-			if not data is None:
-				assert isinstance(data, dict)
-		except Exception as e:
-			flash('Invalid YAML syntax for classes: result was not a list of classes, did you forget a trailing colon? ' + str(e), 'alert-danger')
-			error = True
-
-		if error:
-			flash('There was an unexpected error somewhere when parsing the YAML. Please check this before continuing')
+				curd.execute('REPLACE INTO dsc_config (system_id, roles, config) VALUES (%s, %s, %s)', (id, role, new_yaml))
+				# curd.execute('REPLACE INTO dsc_config (system_id, roles) VALUES (%s, %s)', (id, role))
+				g.db.commit()
 
 
-		curd.execute('REPLACE INTO dsc_config (system_id, roles, config) VALUES (%s, %s, %s)', (id, role, configuration))
-		g.db.commit()
 
+		elif request.form['button'] == 'reset':
+			role = request.form.get('selected_values', '')
+			new_config = generate_reset_yaml(dsc_proxy, role.split(","))
+			curd.execute('REPLACE INTO dsc_config (system_id, roles, config) VALUES (%s, %s, %s)', (id, role, new_config))
+			g.db.commit()
 		
 
 	curd.execute("SELECT roles, config FROM dsc_config WHERE system_id = %s", (id, ))
@@ -90,6 +141,6 @@ def dsc_classify_machine(id):
 	exist_config = ""
 	if existing_data is not None:
 		exist_role = existing_data['roles'].split(',')
-		exist_config = existing_data['config']
+		exist_config = yaml.dump(json.loads(existing_data['config']))
 
 	return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=default_roles, yaml=exist_config, set_roles=exist_role)
