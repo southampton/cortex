@@ -6,7 +6,7 @@
 	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
 
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}">
-	<script src="{{ url_for('static', filename='js/vendor/moment.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script>
 	<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}"></script>
@@ -161,25 +161,25 @@ div.specdetails
 		<div class="col-md-12">
 			<h4>3. Customise Specification</h4>
 			<div class="row">
-				<div class="form-group col-md-3" style="margin-top:2.4em">
+				<div class="form-group col-md-3" style="margin-top:0.5em">
 					<label for="sockets-slider">Sockets:</label> 
 					<input class="slider form-control-range slider-input" type="range" id="sockets-slider" name="sockets" style="width: 65%;" step="1" min="1" max="16" value="1">
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
 					<p class="text-muted">Number of CPU sockets</p>
 				</div>
-				<div class="form-group col-md-3" style="margin-top:2.4em">
+				<div class="form-group col-md-3" style="margin-top:0.5em">
                                         <label for="cores-slider">Cores:</label>    
                                         <input class="slider form-control-range slider-input" type="range" id="cores-slider" name="cores" style="width: 65%;" step="1" min="1" max="16" value="1">
 					<span class="badge badge-primary output" style="font-size: 14px;"></span> 
                                         <p class="text-muted">Number of cores per socket</p>
                                 </div>
-				<div class="form-group col-md-3" style="margin-top:2.4em">
+				<div class="form-group col-md-3" style="margin-top:0.5em">
                                         <label for="ram-slider">RAM (GB):</label>    
                                         <input class="slider form-control-range slider-input" type="range" id="ram-slider" name="ram" style="width: 65%;" step="2" min="2" max="32" value="2">
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
                                         <p class="text-muted">Total amount of RAM, including video RAM</p>
                                 </div>
-				<div class="form-group col-md-3" style="margin-top:2.4em">
+				<div class="form-group col-md-3" style="margin-top:0.5em">
                                         <label for="disk-slider">Disk (GB):</label>  
                                         <input class="slider form-control-range slider-input" type="range" id="disk-slider" name="disk" style="width: 65%;" step="100" min="100" max="2000" value="100">
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
@@ -223,7 +223,7 @@ div.specdetails
 
 		<div class="col-md-4">
 			<h4>7. Expiry date (optional)</h4>
-			<div style="margin-left: 1em">
+			<div class="form-group" style="margin-left: 1em">
 				<p>Set the date that this VM will be automatically powered off.</p>
 				<div class='input-group date' id='expirypicker' data-target-input="nearest">
 					<input type='text' class="form-control datetimepicker-input" id="expiry" name="expiry" placeholder="YYYY-MM-DD" data-target="expirypicker" />

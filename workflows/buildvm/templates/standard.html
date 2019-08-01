@@ -4,7 +4,7 @@
 		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
 
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}">
-		<script src="{{ url_for('static', filename='js/vendor/moment.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}"></script>
@@ -178,17 +178,17 @@ div.specdetails
 		<div class="col-md-12">
 			<h4>3. Customise Specification</h4>
 			<div class="row">
-				<div class="form-group col-md-3" style="margin-top:2.4em">
+				<div class="form-group col-md-3" style="margin-top:0.5em">
 					<label for="sockets-slider">Sockets:</label>
 					{% if vm_spec_config_json and 'slider-sockets' in vm_spec_config_json %}
-					<input class="slider form-control-range slider-input fucking-test" type="range" id="sockets-slider" name="sockets" style="width: 65%;" step="{{vm_spec_config_json['slider-sockets'].get('step',1)}}" min="{{vm_spec_config_json['slider-sockets'].get('min',1)}}" max="{{vm_spec_config_json['slider-sockets'].get('max',16)}}" value="{{vm_spec_config_json['slider-sockets'].get('value',1)}}" style="width: 65%;" />
+					<input class="slider form-control-range slider-input" type="range" id="sockets-slider" name="sockets" style="width: 65%;" step="{{vm_spec_config_json['slider-sockets'].get('step',1)}}" min="{{vm_spec_config_json['slider-sockets'].get('min',1)}}" max="{{vm_spec_config_json['slider-sockets'].get('max',16)}}" value="{{vm_spec_config_json['slider-sockets'].get('value',1)}}" style="width: 65%;" />
 					{% else %}
-					<input class="slider form-control-range slider-input test-fail" name="sockets" id="sockets-slider" type="range" min="1" max="16" step="1" value="1" style="width: 65%;" />
+					<input class="slider form-control-range slider-input" name="sockets" id="sockets-slider" type="range" min="1" max="16" step="1" value="1" style="width: 65%;" />
 					{% endif %}
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
 					<p class="text-muted">Number of CPU sockets</p>
 				</div>
-				<div class="form-group col-md-3" style="margin-top:2.4em">
+				<div class="form-group col-md-3" style="margin-top:0.5em">
 					<label for="cores-slider">Cores:</label>
 					{% if vm_spec_config_json and 'slider-cores' in vm_spec_config_json %}
 					<input class="slider form-control-range slider-input" style="width:65%" name="cores" id="cores-slider" type="range" min="{{vm_spec_config_json['slider-cores'].get('min',1)}}" max="{{vm_spec_config_json['slider-cores'].get('max',16)}}" step="{{vm_spec_config_json['slider-cores'].get('step',1)}}" value="{{vm_spec_config_json['slider-cores'].get('value',1)}}" style="width: 65%;" />
@@ -198,17 +198,17 @@ div.specdetails
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
 					<p class="text-muted">Number of cores per socket</p>
 				</div>
-				<div class="form-group col-md-3" style="margin-top:2.4em">
+				<div class="form-group col-md-3" style="margin-top:0.5em">
 					<label for="ram-slider">RAM (GB):</label>
 					{% if vm_spec_config_json and 'slider-ram' in vm_spec_config_json %}
-					<input class="slider form-control-range slider-input {{vm_spec_config_json['slider-ram'].get('max',32)}} lawl" name="ram" id="ram-slider" type="range" min="{{vm_spec_config_json['slider-ram'].get('min',2)}}" max="{{vm_spec_config_json['slider-ram'].get('max',32)}}" step="{{vm_spec_config_json['slider-ram'].get('step',2)}}" value="{{vm_spec_config_json['slider-ram'].get('value',2)}}" style="width: 65%;" />
+					<input class="slider form-control-range slider-input" name="ram" id="ram-slider" type="range" min="{{vm_spec_config_json['slider-ram'].get('min',2)}}" max="{{vm_spec_config_json['slider-ram'].get('max',32)}}" step="{{vm_spec_config_json['slider-ram'].get('step',2)}}" value="{{vm_spec_config_json['slider-ram'].get('value',2)}}" style="width: 65%;" />
 					{% else %}
 					<input class="slider form-control-range slider-input" name="ram" id="ram-slider" type="range" min="2" max="32" step="2" value="2" style="width: 65%;" />
 					{% endif %}
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
 					<p class="text-muted">Total amount of RAM, including video RAM</p>
 				</div>
-				<div class="form-group col-md-3" style="margin-top:2.4em">
+				<div class="form-group col-md-3" style="margin-top:0.5em">
 					<label for="disk-slider">Disk (GB):</label>
 					{% if vm_spec_config_json and 'slider-disk' in vm_spec_config_json %}
 					<input class="slider form-control-range slider-input" name="disk" id="disk-slider" type="range" min="{{vm_spec_config_json['slider-disk'].get('min', 2)}}" max="{{vm_spec_config_json['slider-disk'].get('max', 2000)}}" step="{{vm_spec_config_json['slider-disk'].get('step', 100)}}" value="{{vm_spec_config_json['slider-disk'].get('value', 100)}}" style="width: 65%;" />
@@ -273,11 +273,11 @@ div.specdetails
 	<div class="row" style="margin-top: 1.0em">
 		<div class="col-md-4">
 			<h4>8. Expiry date (optional)</h4>
-			<div style="margin-left: 1em">
+			<div class="form-group" style="margin-left: 1em">
 				<div class='input-group date' id='expirypicker'>
-					<input type='text' class="form-control" id="expiry" name="expiry" placeholder="Date of automatic power off: YYYY-MM-DD" />
-					<span class="input-group-addon">
-						<span class="glyphicon glyphicon-calendar"></span>
+					<input type='text' class="form-control datetimepicker-input" id="expiry" name="expiry" placeholder="Date of automatic power off: YYYY-MM-DD" data-target="expirypicker" />
+					<span class="input-group-append" data-target="#expirypicker" data-toggle="datetimepicker">
+						<div class="input-group-text"><i class="fa fa-calendar"></i></div>
 					</span>
 				</div>
 				<script>
