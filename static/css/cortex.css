@@ -675,7 +675,6 @@ a.btn-secondary
 {
 	font-size: 12px
 }
-
 .slider {
 	-webkit-appearance: none;
 	width: 100%;
@@ -727,4 +726,10 @@ a.btn-secondary
         border: 0 solid transparent;
 
 }
-
+div.tab-pane#paste, div.tab-pane#upload
+{
+	border-width: 0px 1px 1px 1px;
+	border-style: solid;
+	border-color: #f0f0f0;
+	padding: 15px 15px 0px 15px;
+}

@@ -14,14 +14,14 @@
 			<li class="nav-item"><a class="nav-link" href="#upload" aria-controls="upload" role="tab" data-toggle="tab">Upload Certificate</a></li>
 		</ul>
 		<div class="tab-content">
-			<div role="tabpanel" class="tab-pane active" id="paste" style="border-width: 0px 1px 1px 1px; border-style: solid; border-color: #e7e7e7; padding: 15px 15px 0px 15px;" aria-labelledby="paste">
+			<div role="tabpanel" class="tab-pane active" id="paste" aria-labelledby="paste">
 				<form role="form" method="POST">
 					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 					<textarea class="form-control" id="pasted_cert" name="pasted_cert" placeholder="Paste a PEM-encoded X509 certificate here" rows="6"></textarea>
 					<button type="submit" class="btn btn-primary" style="margin:15px 0px 15px 0px;"><i class="fa fa-fw fa-plus"></i> Add Certificate</button>
 				</form>
 			</div>
-			<div role="tabpanel" class="tab-pane" id="upload" style="border-width: 0px 1px 1px 1px; border-style: solid; border-color: #e7e7e7; padding: 15px 15px 0px 15px;" aria-labelledby="upload">
+			<div role="tabpanel" class="tab-pane" id="upload" aria-labelledby="upload">
 				<form role="form" method="POST" enctype="multipart/form-data" class="form-horizontal">
 					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 					<div class="form-group">

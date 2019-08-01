@@ -4,7 +4,7 @@
 	color: #FFFFFF;
 	background-color: #242448;
 }
-
+table tr td
 .bg-success
 {
 	color: #FFFFFF;
@@ -119,4 +119,17 @@ p, .text-muted {
 
 .table-striped tbody tr:nth-of-type(odd) {
     background-color: #252525 !important;
+}
+
+.nav-link {
+	padding-left: 1em;
+	padding-right: 1em;
+}
+div.tab-pane#paste, div.tab-pane#upload
+{
+	border-color: #444;
+}
+table tr td
+{
+	color: #fff;
 }
