@@ -1,7 +1,5 @@
 {% extends "layout.html" %}
 {% block head -%}
-	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-slider.min.css') }}">
-	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-slider.min.js') }}"></script>
 	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
 	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
 
@@ -95,21 +93,21 @@ div.specdetails
 }
 
 .slider::-moz-range-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        border-radius: 50%;
-        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
-        cursor: pointer;
-        width: 25px;
-        height: 25px;
-        background-color: #337ab7;
-        background-image: -webkit-linear-gradient(top,#149bdf 0,#0480be 100%);
-        background-image: -o-linear-gradient(top,#149bdf 0,#0480be 100%);
-        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
-        background-repeat: repeat-x;
-        -webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
-        border: 0 solid transparent;
+	-webkit-appearance: none;
+	appearance: none;
+	border-radius: 50%;
+	background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
+	cursor: pointer;
+	width: 25px;
+	height: 25px;
+	background-color: #337ab7;
+	background-image: -webkit-linear-gradient(top,#149bdf 0,#0480be 100%);
+	background-image: -o-linear-gradient(top,#149bdf 0,#0480be 100%);
+	background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
+	background-repeat: repeat-x;
+	-webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
+	box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
+	border: 0 solid transparent;
 
 }
 </style>
@@ -168,23 +166,23 @@ div.specdetails
 					<p class="text-muted">Number of CPU sockets</p>
 				</div>
 				<div class="form-group col-md-3" style="margin-top:0.5em">
-                                        <label for="cores-slider">Cores:</label>    
-                                        <input class="slider form-control-range slider-input" type="range" id="cores-slider" name="cores" style="width: 65%;" step="1" min="1" max="16" value="1">
+					<label for="cores-slider">Cores:</label>    
+					<input class="slider form-control-range slider-input" type="range" id="cores-slider" name="cores" style="width: 65%;" step="1" min="1" max="16" value="1">
 					<span class="badge badge-primary output" style="font-size: 14px;"></span> 
-                                        <p class="text-muted">Number of cores per socket</p>
-                                </div>
+					<p class="text-muted">Number of cores per socket</p>
+				</div>
 				<div class="form-group col-md-3" style="margin-top:0.5em">
-                                        <label for="ram-slider">RAM (GB):</label>    
-                                        <input class="slider form-control-range slider-input" type="range" id="ram-slider" name="ram" style="width: 65%;" step="2" min="2" max="32" value="2">
+					<label for="ram-slider">RAM (GB):</label>    
+					<input class="slider form-control-range slider-input" type="range" id="ram-slider" name="ram" style="width: 65%;" step="2" min="2" max="32" value="2">
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
-                                        <p class="text-muted">Total amount of RAM, including video RAM</p>
-                                </div>
+					<p class="text-muted">Total amount of RAM, including video RAM</p>
+				</div>
 				<div class="form-group col-md-3" style="margin-top:0.5em">
-                                        <label for="disk-slider">Disk (GB):</label>  
-                                        <input class="slider form-control-range slider-input" type="range" id="disk-slider" name="disk" style="width: 65%;" step="100" min="100" max="2000" value="100">
+					<label for="disk-slider">Disk (GB):</label>  
+					<input class="slider form-control-range slider-input" type="range" id="disk-slider" name="disk" style="width: 65%;" step="100" min="100" max="2000" value="100">
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
-                                        <p class="text-muted">Additional disk size, excluding the default OS disk</p>
-                                </div>
+					<p class="text-muted">Additional disk size, excluding the default OS disk</p>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -305,7 +303,7 @@ function updateTotals()
 {
 	// See what specification is selected
 	var spec = $('input[name=spec]').filter(function(index){
-                        return $(this).is(':checked');
+		return $(this).is(':checked');
 	});
 	if (spec.length != 0)
 	{
