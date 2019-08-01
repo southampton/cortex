@@ -2,11 +2,10 @@
 {% block head -%}
 	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
 	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
-
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/bootstrap-datetimepicker.min.css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}">
 	<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}"></script> 
 	<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script> 
-	<script src="{{ url_for('static', filename='js/vendor/bootstrap-datetimepicker.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}"></script>
 {% endblock %}
 {% block body %}
 <div class="page-header">
@@ -28,9 +27,9 @@
 		<div class="col-md-6 form-group">
 			<label for="snapshot_expiry">Expiry Date:<span class="required">*</span></label>
 			<div class='input-group date' id='expirypicker'>
-				<input type='text' class="form-control" id="snapshot_expiry" name="snapshot_expiry" placeholder="Date after this snapshot can be deleted: YYYY-MM-DD" required="required" {% if 'snapshot_expiry' in values %}value="{{ values['snapshot_expiry'] }}"{% endif %}/>
-				<span class="input-group-addon">
-					<span class="glyphicon glyphicon-calendar"></span>
+				<input type='text' class="form-control datetimepicker-input" id="snapshot_expiry" name="snapshot_expiry" placeholder="Date after this snapshot can be deleted: YYYY-MM-DD" required="required" data-target="expirypicker" {% if 'snapshot_expiry' in values %}value="{{ values['snapshot_expiry'] }}"{% endif %}/>
+				<span class="input-group-append" data-target="#expirypicker" data-toggle="datetimepicker">
+					<div class="input-group-text"><i class="fa fa-calendar"></i></div>
 				</span>
 			</div>
 			<script>
