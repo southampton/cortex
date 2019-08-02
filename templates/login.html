@@ -26,24 +26,12 @@
 		</style>
 		<![endif]-->
 
-		<style type="text/css">
-		@media (min-width: 768px)
-		{
-			body
-			{
-				background-color: none;
-				background-image: url('/static/images/login.jpg');
-				background-size: cover;	
-			}
-		}
-
-		</style>
-
 		<noscript>
 			<meta http-equiv="refresh" content="0; url={{ url_for('nojs')}}" />
 		</noscript>
 
 		<script src="{{ url_for('static', filename='js/vendor/jquery.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/popper.js') }}?version={{ config.VERSION }}"></script>
 		<script src="{{ url_for('static', filename='js/vendor/bootstrap.min.js') }}"></script>
 		<script type="text/javascript" src="{{ url_for('static', filename='js/login.js') }}"></script>
 		<script type="text/javascript">
@@ -65,24 +53,28 @@
 			<div class="loginbox animated zoomIn" id="loginbox">
 				<h1>cortex</h1>
 				{% for category, message in get_flashed_messages(with_categories=true) %}
-				<div class="alert {{ category }} fade in">
+				<div class="alert {{ category }}">
 					<a data-dismiss="alert" class="close" href="#">×</a>
 					{{ message|safe }}
 				</div>
 				{% endfor %}
 
 				<form id="loginform" role="form" action="{{ url_for('login') }}" method="POST" class="text-left">
-					<input name="_csrf_token" type="d-none" value="{{ csrf_token() }}"/>
+					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 					{% if next %}
-					<input name="next" type="d-none" value="{{next}}"/>
+					<input name="next" type="hidden" value="{{next}}"/>
 					{% endif %}
 					<div class="form-group row">
-						<label for="username">Username:</label>
-						<input type="text" class="login-input form-control" id="loginUsername" name="username">
+						<div class="col-md-12">
+							<label for="username">Username:</label>
+							<input type="text" class="login-input form-control" id="loginUsername" name="username">
+						</div>
 					</div>
 					<div class="form-group row">
-						<label for="password">Password:</label>
-						<input type="password" class="login-input form-control" id="loginPassword" name="password">
+						<div class="col-md-12">
+							<label for="password">Password:</label>
+							<input type="password" class="login-input form-control" id="loginPassword" name="password">
+						</div>
 					</div>
 					<div class="checkbox d-none">
 						<label>

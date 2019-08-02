@@ -67,6 +67,13 @@ label
 		margin-top: 10px;
 		font-size: 100px;
 	}
+
+	body
+	{
+		background-color: none;
+		background-image: url('/static/images/login.jpg');
+		background-size: cover;	
+	}
 }
 
 /* floating uoslogo */
