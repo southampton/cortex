@@ -270,7 +270,6 @@ def systems_add_existing():
 		if 'link_vmware' in request.form:
 			# Search for a VM with the correct name		
 			curd.execute("SELECT `uuid` FROM `vmware_cache_vm` WHERE `name` = %s", (hostname,))
-			print((curd._last_executed))
 			vm_results = curd.fetchall()
 
 			if len(vm_results) == 0:
@@ -285,7 +284,6 @@ def systems_add_existing():
 		if 'link_servicenow' in request.form:
 			# Search for a CI with the correct name
 			curd.execute("SELECT `sys_id` FROM `sncache_cmdb_ci` WHERE `name` = %s", (hostname,))
-			print((curd._last_executed))
 			ci_results = curd.fetchall()
 
 			if len(ci_results) == 0:

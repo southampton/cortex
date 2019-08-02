@@ -31,7 +31,6 @@ def admin_tasks():
 		'filter_warnings': request.args.get('filter_warnings', "1"),
 		'filter_failed': request.args.get('filter_failed', "1")
 	}
-	print(filters)
 
 	# Render the page
 	return render_template('admin/tasks.html', active='admin', title="Tasks", tasktype='all', json_source=url_for('admin_tasks_json', tasktype='all'), filters=filters)
