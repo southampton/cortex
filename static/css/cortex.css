@@ -860,3 +860,6 @@ table.puppet-report td.msg
 	white-space: pre-wrap;
 }
 .CodeMirror{border:1px solid #eee !important;height:auto !important;}
+table.role-table tr > td { padding-left: 10px }
+table.role-table { margin-bottom: 0px }
+table.role-table tr td:last-of-type { padding-right: 10px; }
