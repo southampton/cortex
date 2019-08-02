@@ -236,10 +236,10 @@
 					</ul>
 				</div>
 				<form class="navbar-form d-sm-none justify-content-center d-none d-md-inline-block navbar-search" role="search" method="GET" action="{{url_for('systems_search')}}">
-                                        <div class="form-group row" style="margin-bottom: 0px;">
-                                                <input type="text" class="form-control" placeholder="Search for systems..." name="query">
-                                        </div>
-                                </form>
+					<div class="form-group row" style="margin-bottom: 0px;">
+						<input type="text" class="form-control" placeholder="Search for systems..." name="query">
+					</div>
+				</form>
 				<ul class="nav navbar-nav float-right">
 					<li class="nav-item"><a class="hidden-search nav-link" data-toggle="modal" data-target="#search"><i class="fa fa-fw fa-search"></i></a></li>
 					<li class="nav-item {%if not classic_layout %}d-sm-none{%endif%}"><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fa fa-fw fa-dashboard"></i> <span class="hide-when-narrow">Dashboard</span></a></li>

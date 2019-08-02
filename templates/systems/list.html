@@ -158,7 +158,7 @@ $(function() {
 							$(this).find('.btn').toggleClass('btn-primary');
 						} 
 						$(this).find('.btn').toggleClass('btn-secondary');
-                                	});
+					});
 				}
 				return window.history.state['dtState'];
 			}
@@ -302,14 +302,14 @@ $(function() {
 			dataType: 'json',
 		});
 	});
-    	$('.btn-toggle').click(function() {
-   		$(this).find('.btn').toggleClass('active');  
-    		if ($(this).find('.btn-primary').size()>0) {
-    			$(this).find('.btn').toggleClass('btn-primary');
-    		} 
-    		$(this).find('.btn').toggleClass('btn-secondary');
+	$('.btn-toggle').click(function() {
+		$(this).find('.btn').toggleClass('active');
+		if ($(this).find('.btn-primary').size()>0) {
+			$(this).find('.btn').toggleClass('btn-primary');
+		} 
+		$(this).find('.btn').toggleClass('btn-secondary');
 		systemsTable.state.save();
-       });
+	});
 });
 $(function () {
 	$('[data-toggle="popover"]').popover()

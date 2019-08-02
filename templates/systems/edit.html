@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}">
 <script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script>                
+<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script>
 <script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}"></script>
 {% endblock %}
 {% block body %}
@@ -162,25 +162,25 @@
 		<div class="form-group row">
 			<label class="col-sm-2 control-label" for="expiry_date">Expiry Date:</label>
 			<div class="col-sm-10 col-md-9">
-                                <div class="input-group date" id="expirypicker" data-target-input="nearest">
-                                        <input type="text" {% if not does_user_have_system_permission(system['id'],"edit.expiry","systems.all.edit.expiry") %}readonly="readonly" {% endif %}class="form-control datetimepicker-input" id="expiry_date" name="expiry_date" data-target="expirypicker"/>
-                                        <div class="input-group-append" data-target="#expirypicker" data-toggle="datetimepicker">
-                                                <div class="input-group-text"><i class="fa fa-calendar"></i> </div>
-                                        </div>
-                                </div>
+				<div class="input-group date" id="expirypicker" data-target-input="nearest">
+					<input type="text" {% if not does_user_have_system_permission(system['id'],"edit.expiry","systems.all.edit.expiry") %}readonly="readonly" {% endif %}class="form-control datetimepicker-input" id="expiry_date" name="expiry_date" data-target="expirypicker"/>
+					<div class="input-group-append" data-target="#expirypicker" data-toggle="datetimepicker">
+						<div class="input-group-text"><i class="fa fa-calendar"></i> </div>
+					</div>
+				</div>
 				<div class="form-text">Set the date for when the system should be expired. Leave field blank for no expiration date.</div>
-                                <script>
-                                        $(function ()
+				<script>
+					$(function ()
 										{
-                                                $('#expirypicker').datetimepicker({
-                                                        viewMode: 'days',
-                                                        format: 'YYYY-MM-DD',
+						$('#expirypicker').datetimepicker({
+							viewMode: 'days',
+							format: 'YYYY-MM-DD',
 							useCurrent: false,
 							defaultDate: '{{ system.expiry_date or '' }}'
-                                                });
-                                        });
-                                </script>
-                        </div>
+						});
+					});
+				</script>
+			</div>
 		</div>
 
 		<div class="form-group row">
