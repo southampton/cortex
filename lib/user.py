@@ -50,6 +50,7 @@ def clear_session():
 	session.pop('logged_in', None)
 	session.pop('username', None)
 	session.pop('id', None)
+	session.pop('cas_ticket', None)
 	session.pop('_csrf_token', None)
 
 ################################################################################

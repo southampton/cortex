@@ -6,46 +6,50 @@
 {% endblock %}
 {% block body %}
 <div class="page-header">
-<h3><i class="fa fa-pie-chart fa-fw"></i> Statistics - Operating Systems</h3>
+<h4><i class="fa fa-pie-chart fa-fw"></i> Statistics - Operating Systems</h4>
 </div>
 <div class="container" role="main">
-	<div class="col-md-6">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">OS estate</h3>
+	<div class="row">
+		<div class="col-md-6">
+			<div class="card card-default">
+				<div class="card-header">
+					<h4 class="card-title">OS estate</h4>
+				</div>
+				<div class="card-body">
+					<div id="chart_os"></div>
+				</div>
 			</div>
-			<div class="panel-body">
-				<div id="chart_os"></div>
+		</div>
+		<div class="col-md-6">
+			<div class="card card-default">
+				<div class="card-header">
+					<h4 class="card-title">Linux systems</h4>
+				</div>
+				<div class="card-body">
+					<div id="chart_linux"></div>
+				</div>
 			</div>
 		</div>
 	</div>
-	<div class="col-md-6">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Linux systems</h3>
-			</div>
-			<div class="panel-body">
-				<div id="chart_linux"></div>
-			</div>
-		</div>
-	</div>
-	<div class="col-md-6">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Windows servers</h3>
-			</div>
-			<div class="panel-body">
-				<div id="chart_windows"></div>
+	<div class="row">
+		<div class="col-md-6">
+			<div class="card card-default">
+				<div class="card-header">
+					<h4 class="card-title">Windows servers</h4>
+				</div>
+				<div class="card-body">
+					<div id="chart_windows"></div>
+				</div>
 			</div>
 		</div>
-	</div>
-	<div class="col-md-6">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Windows desktops</h3>
-			</div>
-			<div class="panel-body">
-				<div id="chart_windows_desktops"></div>
+		<div class="col-md-6">
+			<div class="card card-default">
+				<div class="card-header">
+					<h4 class="card-title">Windows desktops</h4>
+				</div>
+				<div class="card-body">
+					<div id="chart_windows_desktops"></div>
+				</div>
 			</div>
 		</div>
 	</div>

@@ -9,47 +9,47 @@
 		<link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/cortex-v3.png') }}">
 		
 		{#- CSS #}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/font-awesome.min.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/font-awesome.min.css') }}?version={{ config.VERSION }}">
 		{%- if theme == "dark" %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-dark.min.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-dark.min.css') }}?version={{ config.VERSION }}">
 		{%- else %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap.min.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap.min.css') }}?version={{ config.VERSION }}">
 		{%- endif %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/dataTables.bootstrap.min.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/datatables.min.css') }}?version={{ config.VERSION }}">
 		{%- if classic_layout %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-classic.css') }}?version=4.0">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-classic.css') }}?version={{ config.VERSION }}">
 		{%- endif %}
 
 		{#- JavaScript #}
-		<script src="{{ url_for('static', filename='js/vendor/jquery.min.js') }}"></script>
-		<script src="{{ url_for('static', filename='js/vendor/bootstrap.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/jquery.min.js') }}?version={{ config.VERSION }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/datatables.min.js') }}?version={{ config.VERSION }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/popper.js') }}?version={{ config.VERSION }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/bootstrap.min.js') }}?version={{ config.VERSION }}"></script>
 		{#- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries #}
 		<!--[if lt IE 9]>
 			<script src="{{ url_for('static', filename='js/vendor/html5shiv.js') }}"></script>
 		<![endif]-->
-		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/jquery.dataTables.min.js') }}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/dataTables.bootstrap.min.js') }}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='js/mousetrap.min.js') }}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='js/cortex.js') }}?version=4.0"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='js/mousetrap.min.js') }}?version={{ config.VERSION }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='js/cortex.js') }}?version={{ config.VERSION }}"></script>
 		{%- block head %}{% endblock %}
 		{#- This must come after 'block head' to allow us to do global customisations #}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}?version=4.0">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}?version={{ config.VERSION }}">
 		{%- if theme == "dark" %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-dark.css') }}?version=4.0">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-dark.css') }}?version={{ config.VERSION }}">
 		{%- else %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-normal.css') }}?version=4.0">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-normal.css') }}?version={{ config.VERSION }}">
 		{%- endif %}
 	</head>
 	<body class="{{ "cortex-classic" if classic_layout else "cortex-normal" }}">
 		{%- if banner_message %}<div class="banner">{{ banner_message }}</div>{% endif %}
 		{%- if menu.systems and menu.systems|length > 0 %}
-		<div id="search" class="modal" tabindex="-1" role="dialog">
-			<div class="modal-dialog">
+		<div id="search" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="search-systems-modal" aria-hidden="true">
+			<div class="modal-dialog" role="document">
 				<div class="modal-content">
 					<form role="search" method="GET" action="{{url_for('systems_search')}}">
 						<div class="modal-header">
-							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 							<h4 class="modal-title">Search for systems</h4>
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 						</div>
 						<div class="modal-body">
 							<div class="form-group">
@@ -57,13 +57,13 @@
 							</div>
 						</div>
 						<div class="modal-footer">
-							<div class="pull-left checkbox">
+							<div class="mr-auto custom-checkbox">
 								<label>
 									<input type="checkbox" name="imfeelinglucky" value="yes" checked="checked">
 									I'm Feeling Lucky
 								</label>
 							</div>
-							<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 							<button type="submit" class="btn btn-primary">Search</button>
 						</div>
 					</form>
@@ -72,13 +72,13 @@
 		</div>
 		{%- endif %}
 		{%- if menu.puppet and menu.puppet|length > 0 %}
-		<div id="puppet-search" class="modal" tabindex="-1" role="dialog">
+		<div id="puppet-search" class="modal fade" tabindex="-1" role="dialog">
 			<div class="modal-dialog">
 				<div class="modal-content">
 					<form role="search" method="GET" action="{{url_for('puppet_search')}}">
 						<div class="modal-header">
-							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 							<h4 class="modal-title">Search for a Puppet configuration</h4>
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 						</div>
 						<div class="modal-body">
 							<p>You can search for classes such as 'uos_common_dns' or variables such as '$content'.</p>
@@ -87,7 +87,7 @@
 							</div>
 						</div>
 						<div class="modal-footer">
-							<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 							<button type="submit" class="btn btn-primary">Search</button>
 						</div>
 					</form>
@@ -96,18 +96,18 @@
 		</div>
 		{%- endif %}
 		<div id="prefs" class="modal fade" tabindex="-1" role="dialog">
-			<div class="modal-dialog">
+			<div class="modal-dialog modal-md">
 				<div class="modal-content">
 					<form role="search" method="POST" action="{{url_for('preferences')}}">
 						<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 						<div class="modal-header">
-							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 							<h4 class="modal-title">Preferences</h4>
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 						</div>
 						<div class="modal-body" style="padding-bottom: 100px">
-							<div class="form-group">
+							<div class="form-group row">
 								<div class="col-sm-10">
-									<div class="checkbox">
+									<div class="custom-checkbox">
 										<label>
 											<input type="checkbox" name="uihorizontal" value="yes" {%if classic_layout %}checked="checked"{%endif%}>
 											Use alternative horizontal user interface layout<br/>
@@ -128,7 +128,7 @@
 							</div>
 						</div>
 						<div class="modal-footer">
-							<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 							<button type="submit" class="btn btn-primary">Save</button>
 						</div>
 					</form>
@@ -136,14 +136,12 @@
 			</div>
 		</div>
 
-		<div class="navbar navbar-fixed-top navbar-default {%if not classic_layout %}visible-xs{%endif%} navbar-expand-lg" role="navigation">
+		<div class="navbar fixed-top bg-dark navbar-dark navbar-default {%if not classic_layout %}d-sm-none{%endif%} navbar-expand-lg" role="navigation">
 			<div class="container-fluid">
-				<div class="navbar-header">
-					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse-1">
+				<div class="navbar-brand">
+					<button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse-1">
 						<span class="sr-only">Toggle navigation</span>
-						<span class="icon-bar"></span>
-						<span class="icon-bar"></span>
-						<span class="icon-bar"></span>
+						<span class="navbar-toggler-icon"></span>
 					</button>
 					<a href="{{ url_for('dashboard') }}" class="navbar-brand">cortex</a>
 				</div>
@@ -152,108 +150,108 @@
 				<div class="navbar-collapse collapse" id="navbar-collapse-1">	
 					<ul class="nav navbar-nav">
 						{%- if menu.favourites and menu.favourites|length > 0 %}
-						<li class="{%if not classic_layout %}visible-xs {%endif%}dropdown{%if active == 'favourites'%} active{%endif%}">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Favourites <b class="caret"></b></a>
-							<ul class="dropdown-menu">
+						<li class="nav-item {%if not classic_layout %} d-sm-none {%endif%}dropdown">
+							<a href="#" id="navbar-favourites-dropdown" class="dropdown-toggle nav-link {%if active == 'favourites'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Favourites <b class="caret"></b></a>
+							<div class="dropdown-menu" aria-labelledby="navbar-favourites-dropdown">
 								{% for item in menu.favourites -%}
-								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
+								<a class="dropdown-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 								{%- endfor %}
-							</ul>
+							</div>
 						</li>
 						{%- endif %}
 						{%- if menu.systems and menu.systems|length > 0 %}
-						<li class="{%if not classic_layout %}visible-xs {%endif%}dropdown{%if active == 'systems'%} active{%endif%}">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Systems <b class="caret"></b></a>
-							<ul class="dropdown-menu">
+						<li class="nav-item {%if not classic_layout %} d-sm-none {%endif%}dropdown">
+							<a href="#" id="navbar-systems-dropdown" class="nav-link {%if active == 'systems'%} active{%endif%} dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Systems <b class="caret"></b></a>
+							<div class="dropdown-menu" aria-labelledby="navbar-systems-dropdown">
 								{% for item in menu.systems -%}
-								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
+								<a class="dropdown-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 								{%- endfor %}
-							</ul>
+							</div>
 						</li>
 						{%- endif %}
 						{%- if workflows and workflows|length > 0 %}
-						<li class="{%if not classic_layout %}visible-xs {%endif%}dropdown{%if active == 'create'%} active{%endif%}">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Workflows <b class="caret"></b></a>
-							<ul class="dropdown-menu">
+						<li class="nav-item {%if not classic_layout %} d-sm-none {%endif%}dropdown">
+							<a href="#" id="navbar-workflows-dropdown" class="nav-link dropdown-toggle {%if active == 'create'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Workflows <b class="caret"></b></a>
+							<div class="dropdown-menu" aria-labelledby="navbar-workflows-dropdown">
 								{% for func in workflows|sort(attribute='order') -%}
-								<li><a href="{{ url_for(func.name)}}"><i class="fa fa-plus-circle fa-fw"></i> {{ func.title }}</a></li>
+								<a class="dropdown-item" href="{{ url_for(func.name)}}"><i class="fa fa-plus-circle fa-fw"></i> {{ func.title }}</a>
 								{%- endfor %}
-							</ul>
+							</div>
 						</li>
 						{%- endif %}
 						{%- if menu.vmware and menu.vmware|length > 0 %}
-						<li class="{%if not classic_layout %}visible-xs {%endif%}dropdown{%if active == 'vmware'%} active{%endif%}">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown">VMware <b class="caret"></b></a>
-							<ul class="dropdown-menu">
+						<li class="nav-item {%if not classic_layout %} d-sm-none {%endif%}dropdown">
+							<a href="#" id="navbar-VMware-dropdown" class="nav-link dropdown-toggle {%if active == 'vmware'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">VMware <b class="caret"></b></a>
+							<div class="dropdown-menu" aria-labelledby="navbar-VMware-dropdown">
 								{% for item in menu.vmware -%}
-								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
+								<a class="dropdown-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 								{%- endfor %}
-							</ul>
+							</div>
 						</li>
 						{%- endif %}
 						{%- if menu.puppet and menu.puppet|length > 0 %}
-						<li class="{%if not classic_layout %}visible-xs {%endif%}dropdown{%if active == 'puppet'%} active{%endif%}">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Puppet <b class="caret"></b></a>
-							<ul class="dropdown-menu">
+						<li class="nav-item {%if not classic_layout %} d-sm-none {%endif%}dropdown">
+							<a href="#" id="navbar-puppet-dropdown" class="nav-link dropdown-toggle {%if active == 'puppet'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Puppet <b class="caret"></b></a>
+							<div class="dropdown-menu" aria-labelledby="navbar-puppet-dropdown">
 								{% for item in menu.puppet -%}
 									{% if item.link == "*puppet_search" -%}
-								<li><a data-toggle="modal" data-target="#puppet-search" href="#"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
+								<a class="dropdown-item" data-toggle="modal" data-target="#puppet-search" href="#"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 									{% else -%}
-								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
+								<a class="dropdown-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 									{%- endif %}
 								{%- endfor %}
-							</ul>
+							</div>
 						</li>
 						{%- endif %}
 						{%- if menu.certificates and menu.certificates|length > 0 %}
-						<li class="{%if not classic_layout %}visible-xs {%endif%}dropdown{%if active == 'certificates'%} active{%endif%}">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Certificates <b class="caret"></b></a>
-							<ul class="dropdown-menu">
+						<li class="nav-item {%if not classic_layout %} d-sm-none {%endif%}dropdown">
+							<a href="#" id="navbar-certificates-dropdown" class="nav-link dropdown-toggle {%if active == 'certificates'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Certificates <b class="caret"></b></a>
+							<div class="dropdown-menu" aria-labelledby="navbar-certificates-dropdown">
 								{% for item in menu.certificates -%}
-								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
+								<a class="dropdown-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 								{%- endfor %}
-							</ul>
+							</div>
 						</li>
 						{%- endif %}
 						{%- if menu.perms and menu.perms|length > 0 %}
-						<li class="{%if not classic_layout %}visible-xs {%endif%}dropdown{%if active == 'perms'%} active{%endif%}">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Permissions <b class="caret"></b></a>
-							<ul class="dropdown-menu">
+						<li class="nav-item {%if not classic_layout %} d-sm-none {%endif%}dropdown">
+							<a href="#" id="navbar-permissions-dropdown" class="dropdown-toggle nav-link {%if active == 'perms'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Permissions <b class="caret"></b></a>
+							<div class="dropdown-menu" aria-labelledby="navbar-permissions-dropdown">
 								{% for item in menu.perms -%}
-								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
+								<a class="dropdown-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 								{%- endfor %}
-							</ul>
+							</div>
 						</li>
 						{%- endif %}
 						{%- if menu.admin and menu.admin|length > 0 %}
-						<li class="{%if not classic_layout %}visible-xs {%endif%}dropdown{%if active == 'admin'%} active{%endif%}">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Advanced <b class="caret"></b></a>
-							<ul class="dropdown-menu">
+						<li class="nav-item {%if not classic_layout %} d-sm-none {%endif%}dropdown">
+							<a href="#" id="navbar-advanced-dropdown" class="nav-link dropdown-toggle {%if active == 'admin'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Advanced <b class="caret"></b></a>
+							<div class="dropdown-menu" aria-labelledby="navbar-advanced-dropdown">
 								{% for item in menu.admin -%}
-								<li><a href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a></li>
+								<a class="dropdown-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
 								{%- endfor %}
-							</ul>
+							</div>
 						</li>
 						{%- endif %}
 					</ul>
-					<ul class="nav navbar-nav navbar-right">
-						<li><a class="hidden-search" data-toggle="modal" data-target="#search"><i class="fa fa-fw fa-search"></i></a></li>
-						<li{%if not classic_layout %} class="visible-xs"{%endif%}><a href="{{ url_for('dashboard') }}"><i class="fa fa-fw fa-dashboard"></i> <span class="hide-when-narrow">Dashboard</span></a></li>
-						<li class="dropdown{%if active == 'user'%} active{%endif%}">
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-fw fa-user"></i> <span class="hide-when-narrow">{{ session.username }}</span><b class="caret"></b></a>
-							<ul class="dropdown-menu">
-								<li><a data-toggle="modal" data-target="#prefs" href="#"><i class="fa fa-fw fa-cog"></i> Preferences</a></li>
-								<li><a href="{{ url_for('user_groups') }}"><i class="fa fa-users fa-fw"></i> AD Groups</a></li>
-								<li><a href="{{ url_for('logout') }}"><i class="fa fa-sign-out fa-fw"></i> Sign Out</a></li>
-							</ul>
-						</li>
-					</ul>
-					<form class="navbar-form navbar-right hidden-xs hidden-sm navbar-search" role="search" method="GET" action="{{url_for('systems_search')}}">
-						<div class="form-group">
-							<input type="text" class="form-control" placeholder="Search for systems..." name="query">
-						</div>
-					</form>
 				</div>
+				<form class="navbar-form d-sm-none justify-content-center d-none d-md-inline-block navbar-search" role="search" method="GET" action="{{url_for('systems_search')}}">
+					<div class="form-group row" style="margin-bottom: 0px;">
+						<input type="text" class="form-control" placeholder="Search for systems..." name="query">
+					</div>
+				</form>
+				<ul class="nav navbar-nav float-right">
+					<li class="nav-item"><a class="hidden-search nav-link" data-toggle="modal" data-target="#search"><i class="fa fa-fw fa-search"></i></a></li>
+					<li class="nav-item {%if not classic_layout %}d-sm-none{%endif%}"><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fa fa-fw fa-dashboard"></i> <span class="hide-when-narrow">Dashboard</span></a></li>
+					<li class="nav-item dropdown{%if active == 'user'%} active{%endif%}">
+						<a href="#" id="user-menu-dropdown" class="nav-link dropdown-toggle {%if active == 'user'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-fw fa-user"></i> <span class="hide-when-narrow">{{ session.username }}</span><b class="caret"></b></a>
+						<div class="dropdown-menu" aria-labelledby="user-menu-dropdown">
+							<a class="dropdown-item" data-toggle="modal" data-target="#prefs" href="#"><i class="fa fa-fw fa-cog"></i> Preferences</a>
+							<a class="dropdown-item" href="{{ url_for('user_groups') }}"><i class="fa fa-users fa-fw"></i> AD Groups</a>
+							<a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fa fa-sign-out fa-fw"></i> Sign Out</a>
+						</div>
+					</li>
+				</ul>
 				{%- endif %}
 			</div>
 		</div>
@@ -286,21 +284,21 @@
 						<a tabindex="0" role="button" data-mpop="vmware-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'vmware'%} menu-active{%endif%}"><i class="fa fa-fw fa-line-chart fa-2x"></i><span class="sidebar-hidden">VMware</span></a>
 						{%- endif %}
 						{%- if menu.puppet and menu.puppet|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="puppet-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%}"><i class="fa fa-fw fa-magic fa-2x"></i><span class="sidebar-hidden">Puppet</span></a>
+						<a href="{{ menu.puppet[0].link }}" tabindex="0" role="button" data-mpop="puppet-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%}"><i class="fa fa-fw fa-magic fa-2x"></i><span class="sidebar-hidden">Puppet</span></a>
 						{%- endif %}
 						{%- if menu.certificates and menu.certificates|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="certificates-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'certificates'%} menu-active{%endif%}"><i class="fa fa-fw fa-certificate fa-2x"></i><span class="sidebar-hidden">Certificates</span></a>
+						<a href="{{ menu.certificates[0].link }}" tabindex="0" role="button" data-mpop="certificates-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'certificates'%} menu-active{%endif%}"><i class="fa fa-fw fa-certificate fa-2x"></i><span class="sidebar-hidden">Certificates</span></a>
 						{%- endif %}
 						{%- if menu.perms and menu.perms|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="perms-menu" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%}"><i class="fa fa-fw fa-lock fa-2x"></i><span class="sidebar-hidden">Permissions</span></a>
+						<a tabindex="0" role="button" data-mpop="perms-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%}"><i class="fa fa-fw fa-lock fa-2x"></i><span class="sidebar-hidden">Permissions</span></a>
 						{%- endif %}
 						{%- if menu.admin and menu.admin|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="settings-menu"  data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%}"><i class="fa fa-fw fa-sliders fa-2x"></i><span class="sidebar-hidden">Advanced</span></a>
+						<a tabindex="0" role="button" data-mpop="settings-menu"  data-container="body" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%}"><i class="fa fa-fw fa-sliders fa-2x"></i><span class="sidebar-hidden">Advanced</span></a>
 						{%- endif %}
 						<a href="{{ url_for('about') }}" class="list-group-item {%if active == 'about'%} menu-active{%endif%}"><i class="fa fa-fw fa-info-circle fa-2x"></i><span class="sidebar-hidden">About</span></a>
 					</div>
 					<div class="list-group list-group-bottom list-group-menu">
-						<a tabindex="0" role="button" data-mpop="user-menu" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'user'%} menu-active{%endif%}"><i class="fa fa-fw fa-user fa-2x"></i><span class="sidebar-hidden">{{session.get('username','User')}}</span></a>
+						<a tabindex="0" role="button" data-mpop="user-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'user'%} menu-active{%endif%}"><i class="fa fa-fw fa-user fa-2x"></i><span class="sidebar-hidden">{{session.get('username','User')}}</span></a>
 					</div>
 				</div>
 				<div id="main" class="main">
@@ -320,7 +318,7 @@
 	{%- if not classic_layout %}
 	{#- Popup menus (popover content is loaded via the id) #}
 		{%- if menu.favourites and menu.favourites|length > 0 %}
-			<div id="favourites-menu" class="hidden">
+			<div id="favourites-menu" class="d-none">
 			<ul class="list-group list-group-popover">
 				{% for item in menu.favourites -%}
 				<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
@@ -330,7 +328,7 @@
 		{%- endif %}
 		
 		{%- if menu.systems and menu.systems|length > 0 %}
-			<div id="systems-menu" class="hidden">
+			<div id="systems-menu" class="d-none">
 			<ul class="list-group list-group-popover">
 				{% for item in menu.systems -%}
 				<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
@@ -340,7 +338,7 @@
 		{%- endif %}
 
 		{%- if workflows and workflows|length > 0 %}
-			<div id="workflows-menu" class="hidden">
+			<div id="workflows-menu" class="d-none">
 			<ul class="list-group list-group-popover">
 				{% for func in workflows|sort(attribute='order') -%}
 				<a class="list-group-item" href="{{ url_for(func.name)}}"><i class="fa fa-plus-circle fa-fw"></i> {{ func.title }}</a>
@@ -350,7 +348,7 @@
 		{%- endif %}
 
 		{%- if menu.vmware and menu.vmware|length > 0 %}
-			<div id="vmware-menu" class="hidden">
+			<div id="vmware-menu" class="d-none">
 			<ul class="list-group list-group-popover">
 				{% for item in menu.vmware -%}
 				<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
@@ -360,7 +358,7 @@
 		{%- endif %}
 
 		{%- if menu.puppet and menu.puppet|length > 0 %}
-			<div id="puppet-menu" class="hidden">
+			<div id="puppet-menu" class="d-none">
 			<ul class="list-group list-group-popover">
 				{% for item in menu.puppet -%}
 				{% if item.link == "*puppet_search" -%}
@@ -374,7 +372,7 @@
 		{%- endif %}
 
 		{%- if menu.certificates and menu.certificates|length > 0 %}
-			<div id="certificates-menu" class="hidden">
+			<div id="certificates-menu" class="d-none">
 			<ul class="list-group list-group-popover">
 				{% for item in menu.certificates -%}
 				<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
@@ -384,7 +382,7 @@
 		{%- endif %}
 
 		{%- if menu.perms and menu.perms|length > 0 %}
-			<div id="perms-menu" class="hidden">
+			<div id="perms-menu" class="d-none">
 			<ul class="list-group list-group-popover">
 				{% for item in menu.perms -%}
 				<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
@@ -394,7 +392,7 @@
 		{%- endif %}
 
 		{%- if menu.admin and menu.admin|length > 0 %}
-			<div id="settings-menu" class="hidden">
+			<div id="settings-menu" class="d-none">
 			<ul class="list-group list-group-popover">
 				{% for item in menu.admin -%}
 				<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
@@ -403,7 +401,7 @@
 			</div>
 		{%- endif %}
 		
-		<div id="user-menu" class="hidden">
+		<div id="user-menu" class="d-none">
 		<ul class="list-group list-group-popover">
 			<a class="list-group-item" data-toggle="modal" data-target="#prefs" href="#"><i class="fa fa-fw fa-cog"></i> Preferences</a>
 			<a class="list-group-item" href="{{ url_for('user_groups') }}"><i class="fa fa-users fa-fw"></i> AD Groups</a>

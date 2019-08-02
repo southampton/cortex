@@ -2,55 +2,6 @@
 {% block body %}
 {% import 'node-header.html' as node %}
 {% import 'puppet/header.html' as puppeth %}
-
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/Lato-Fonts.css') }}">
-<style type="text/css">
-.message
-{
-	font-family: monospace;
-	font-size: 90%;
-	white-space: pre-wrap;
-}
-.admin-block
-{
-	padding-left: auto;
-	padding-right: auto;
-	border-radius: 12px;
-	box-shadow: 0px 0px 2px 2px rgba(0,0,0,.2);
-	margin: 5px 0px 20px 0px;
-	padding: 10px;
-	padding-top: 10px;
-	padding-bottom: 10px;
-	text-align: center;
-	font-family: 'Lato', sans-serif;
-}
-.admin-block-header
-{
-	box-shadow: none;
-}
-.admin-block h2
-{
-	color: #FFFFFF;
-	font-size: 1.5em;
-	margin: 0px;
-}
-.admin-block-header h2
-{
-	color: #555;
-}
-.level-err
-{
-	color: #ff4136;
-}
-.level-info
-{
-	color: #158cba;
-}
-.col-md-1
-{
-	text-align: center;
-}
-</style>
 {{ node.header(system,active="puppet" ) }}
 {{ puppeth.header(system,active="puppet_reports",title="Reports" ) }}
 <p class="text-muted pull-right">Received: <span class="date">{{ report.received.strftime('%Y/%m/%d %H:%M:%S') }}</span>. Run time: {{ report.run_time }}</p>
@@ -58,55 +9,55 @@
 </div>
 <div class="row">
 	<div class="col-md-2" style="padding-top:1.3em">
-		<div class="admin-block admin-block-header">
+		<div class="admin-block admin-block-sm admin-block-header">
 			<h2>Events:</h2>
 		</div>
 	</div>
-	<div class="col-md-1">
+	<div class="col-md-1 text-center">
 		Total
-		<div class="admin-block bg-primary" title="Total">
+		<div class="admin-block admin-block-sm bg-primary" title="Total">
 			<h2><span>{% if metrics.events and metrics.events.total %} {{ metrics.events.total }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
-	<div class="col-md-1">
+	<div class="col-md-1 text-center">
 		Success
-		<div class=" admin-block bg-success" title="Success">
+		<div class="admin-block admin-block-sm bg-success" title="Success">
 			<h2><span>{% if metrics.events and metrics.events.success %} {{ metrics.events.success }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
-	<div class="col-md-1">
+	<div class="col-md-1 text-center">
 		Failed
-		<div class=" admin-block bg-danger" title="Failure">
+		<div class="admin-block admin-block-sm bg-danger" title="Failure">
 			<h2><span>{% if metrics.events and metrics.events.failure %} {{ metrics.events.failure }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
-	<div class="col-md-1"></div>
+	<div class="col-md-1 text-center"></div>
 	<div class="col-md-2" style="padding-top:1.3em">
-		<div class="admin-block admin-block-header">
+		<div class="admin-block admin-block-sm admin-block-header">
 			<h2>Resources:</h2>
 		</div>
 	</div>
-	<div class="col-md-1">
+	<div class="col-md-1 text-center">
 		Total
-		<div class="admin-block bg-primary" title="Total">
+		<div class="admin-block admin-block-sm bg-primary" title="Total">
 			<h2><span>{% if metrics.resources and metrics.resources.total %} {{ metrics.resources.total }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
-	<div class="col-md-1">
+	<div class="col-md-1 text-center">
 		Unchanged
-		<div class="admin-block bg-success" title="Unchanged">
+		<div class="admin-block admin-block-sm bg-success" title="Unchanged">
 			<h2><span>{% if metrics.resources and metrics.resources.total and metrics.resources.changed %} {{ metrics.resources.total - metrics.resources.changed }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
-	<div class="col-md-1">
+	<div class="col-md-1 text-center">
 		Changed
-		<div class="admin-block bg-warning" title="Changed">
+		<div class="admin-block admin-block-sm bg-warning" title="Changed">
 			<h2><span>{% if metrics.resources and metrics.resources.changed %} {{ metrics.resources.changed }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
 </div>
 <div class="page-header"></div>
-<table class="table table-condensed table-striped">
+<table class="table table-sm table-striped puppet-report">
 	<thead>
 		<tr>
 			<th style="width:10em">Time</th>
@@ -119,13 +70,13 @@
 		<tr class="level-{{ log.level }}">
 			<td>{{ log.time[0:19].replace('T', ' ') }}</td>
 			<td>{{ log.level }}</td>
-			<td class="message">{{ log.source }}: {{ log.message }}</td>
+			<td class="msg">{{ log.source }}: {{ log.message }}</td>
 		</tr>
 {%-     endfor %}
 	</tbody>
 </table>
 <script>
-$('.date').text(function() { 
+$('.date').text(function() {
 	var date = new Date(new Date($(this).text() + ' UTC').toString());
 	return date.getFullYear() + '-' + ('0' + (date.getMonth()+1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2) + ' ' + ('0' + date.getHours()).slice(-2) + ':' + ('0' + date.getMinutes()).slice(-2) + ':' + ('0' + date.getSeconds()).slice(-2);
 });

@@ -1,46 +1,41 @@
 {% extends "layout.html" %}
 {% block body %}
 
-<style type="text/css">
-a.server-link { text-decoration: none !important; color: inherit; }
-a.server-link:hover { text-decoration: underline !important; }
-</style>
+	<div class="page-header">
+		<h3><span class="fa fa-send"></span> System Requests
+			<small><strong>&nbsp;Legend:</strong>
+				<i title='Request has been approved' class='fa fa-fw fa-check icon-state icon-legend icon-on'></i>Approved
+				<i title='Request has been rejected' class='fa fa-fw fa-times icon-state icon-legend icon-off'></i>Rejected
+				<i title='Request is pending review' class='fa fa-fw fa-clock-o icon-state icon-legend icon-pause'></i>Pending
+			</small>
+		</h3>
+	</div>
 
-<div class="page-header">
-	<h3><span class="fa fa-send"></span> System Requests
-		<small><strong>&nbsp;Legend:</strong>
-			<i title='Request has been approved' class='fa fa-fw fa-check icon-state icon-legend icon-on'></i>Approved
-			<i title='Request has been rejected' class='fa fa-fw fa-times icon-state icon-legend icon-off'></i>Rejected
-			<i title='Request is pending review' class='fa fa-fw fa-clock-o icon-state icon-legend icon-pause'></i>Pending
-		</small>
-	</h3>
-</h3>
-</div>
-
-<ul id="status-tabs" class="nav nav-tabs" style="margin-bottom:1em">
-	{%- for status in statuses %}
-	<li {% if loop.index0 == 0 and not q %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-status="{{ status[0] }}" role="tab">{{ status[1] }}</a></li>
-	{%- endfor %}
-	<li {% if q or statuses|length == 0 %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-status="*ALL" role="tab">All</a></li>
-</ul>
-<div id="systemsWrapper">
-<table class="table table-condensed table-striped" id="requests">
-	<thead>
-		<tr>
-			<th class="tablesorter-inner">ID</th>
-			<th class="tablesorter-inner">Status</th>
-			<th class="tablesorter-inner">Requested by</th>
-			<th class="tablesorter-inner">Hostname</th>
-			<th class="tablesorter-inner">Requested at</th>
-			<th class="tablesorter-inner">Last updated at</th>
-			<th class="tablesorter-inner">Last updated by</th>
-			<th></th>
-		</tr>
-	</thead>
-	<tbody>
-	</tbody>
-</table>
-</div>
+	<ul id="status-tabs" class="nav nav-tabs" style="margin-bottom:1em">
+		{%- for status in statuses %}
+		<li class="nav-item" role="presentation"><a class="nav-link {% if loop.index0 == 0 and not q %}active {% endif %}" style="cursor:pointer" data-status="{{ status[0] }}" role="tab">{{ status[1] }}</a></li>
+		{%- endfor %}
+		<li class="nav-item" role="presentation"><a class="nav-link {% if q or statuses|length == 0 %}active {% endif %}" style="cursor:pointer" data-status="*ALL" role="tab">All</a></li>
+	</ul>
+	<div id="systemsWrapper">
+		<table class="table table-sm table-striped" id="requests">
+			<thead>
+				<tr>
+					<th class="tablesorter-inner">ID</th>
+					<th class="tablesorter-inner">Status</th>
+					<th class="tablesorter-inner">Requested by</th>
+					<th class="tablesorter-inner">Hostname</th>
+					<th class="tablesorter-inner">Requested at</th>
+					<th class="tablesorter-inner">Last updated at</th>
+					<th class="tablesorter-inner">Last updated by</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+	</div>
+</div> <!-- I'm assuming that this is the div that ends the <div id="main" class="main"> ? -->
 <script type="text/javascript">
 $(function() {
 	var systemsTable = $('#requests').DataTable({
@@ -54,21 +49,21 @@ $(function() {
 		"stateLoadCallback": function (settings) {
 			if (window.history.state != undefined)
 			{
-				$('#status-tabs li').removeClass('active');
-				$('#status-tabs li a[data-status=\"' + window.history.state['tab'] + '\"]').closest('li').addClass('active');
+				$('#status-tabs li a').removeClass('active');
+				$('#status-tabs li a[data-status=\"' + window.history.state['tab'] + '\"]').addClass('active');
 				return window.history.state['dtState'];
 			}
 			return {}
 		},
 		"stateSaveCallback": function (settings, data) {
-			var statusname = $('#status-tabs li.active a').attr('data-status');
+			var statusname = $('#status-tabs li a.active').attr('data-status');
 			window.history.replaceState({dtState: data, tab: statusname}, "SystemsListState");
 		},
 		"ajax": {
 			"url": "{{ url_for('sysrequests_json') }}",
 			"type": "POST",
 			"data": function (d) {
-				d.filter_group = $('#status-tabs li.active a').attr('data-status');
+				d.filter_group = $('#status-tabs li a.active').attr('data-status');
 				d.order_column = 0;
 			}
 		},
@@ -85,11 +80,11 @@ $(function() {
 			} else if (data[1] == 2) {
 				$('td:eq(1)', row).html("<i title='Request has been approved' class='fa fa-fw fa-check icon-state icon-legend icon-on'></i>Approved");
 			}
-			$('td:eq(7)', row).html('<a title="View" class="btn btn-xs btn-default" style="margin-right:0.1em" href="/request/view/' + data[0] + '"><i class="fa fa-fw fa-info-circle"></i></a>');
+			$('td:eq(7)', row).html('<a title="View" class="btn btn-sm btn-secondary" style="margin-right:0.1em" href="/request/view/' + data[0] + '"><i class="fa fa-fw fa-info-circle"></i></a>');
 		}
 	});
-	$('#status-tabs li').click(function() {
-		$('#status-tabs li').removeClass('active');
+	$('#status-tabs li a').click(function() {
+		$('#status-tabs li a').removeClass('active');
 		$(this).addClass('active');
 		$('#systemsWrapper').fadeOut(150, function() {
 			systemsTable.ajax.reload(function() {

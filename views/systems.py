@@ -270,7 +270,6 @@ def systems_add_existing():
 		if 'link_vmware' in request.form:
 			# Search for a VM with the correct name		
 			curd.execute("SELECT `uuid` FROM `vmware_cache_vm` WHERE `name` = %s", (hostname,))
-			print((curd._last_executed))
 			vm_results = curd.fetchall()
 
 			if len(vm_results) == 0:
@@ -285,7 +284,6 @@ def systems_add_existing():
 		if 'link_servicenow' in request.form:
 			# Search for a CI with the correct name
 			curd.execute("SELECT `sys_id` FROM `sncache_cmdb_ci` WHERE `name` = %s", (hostname,))
-			print((curd._last_executed))
 			ci_results = curd.fetchall()
 
 			if len(ci_results) == 0:
@@ -994,14 +992,12 @@ def systems_json():
 	"""Used by DataTables to extract information from the systems table in
 	the database. The parameters and return format are as dictated by 
 	DataTables"""
-
 	# Check user permissions
 	if not (does_user_have_permission("systems.all.view") or does_user_have_permission("systems.own.view")):
 		abort(403)
 
 	# Extract information from DataTables
 	(draw, start, length, order_column, order_asc, search) = _systems_extract_datatables()
-
 	# Validate and convert the ordering column number to the name of the
 	# column as it is in the database
 	if order_column == 0:
@@ -1019,7 +1015,6 @@ def systems_json():
 	else:
 		app.logger.warn('Invalid ordering column parameter in DataTables request')
 		abort(400)
-
 	# Validate the system class filter group. This is the name of the
 	# currently selected tab on the page that narrows down by system
 	# class, e.g .srv, vhost, etc.
@@ -1028,7 +1023,6 @@ def systems_json():
 		# The filtering on starting with * ignores some special filter groups
 		if request.form['filter_group'] != '' and request.form['filter_group'][0] != '*':
 			filter_group = str(request.form['filter_group'])
-
 	# Filter group being *OTHER should hide our group names and filter on 
 	only_other = False
 	if request.form['filter_group'] == '*OTHER':
@@ -1059,6 +1053,7 @@ def systems_json():
 	if 'show_favourites_only' in request.form:
 		if str(request.form['show_favourites_only']) != '0':
 			show_favourites_for = session.get('username')
+
 	toggle_queries = False
 	if 'toggle_queries' in request.form:
 		if str(request.form['toggle_queries']) != '0':

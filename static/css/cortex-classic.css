@@ -2,3 +2,21 @@ body
 {
 	padding-top: 70px;
 }
+.navbar
+{
+	padding-top: 0;
+	padding-bottom: 0;
+}
+.banner
+{
+	position: relative;
+	top: -18px;
+	margin-bottom: -5px !important;
+}
+@media (min-width: 992px)
+{
+	.dashblock
+	{
+		margin-right: -15px !important;
+	}
+}

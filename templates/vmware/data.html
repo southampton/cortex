@@ -1,16 +1,17 @@
 {% extends "layout.html" %}
 {% block body %}
 <div class="page-header">
-<h3><i class="fa fa-th fa-fw"></i> VMware Data<a class="btn btn-primary btn-sm pull-right" href="{{ url_for('vmware_download_csv') }}"><i class="fa fa-fw fa-download"></i> Download CSV</a>
+<h4><i class="fa fa-th fa-fw"></i> VMware Data<a class="btn btn-primary pull-right" href="{{ url_for('vmware_download_csv') }}"><i class="fa fa-fw fa-download"></i> Download CSV</a>
 	<small><strong>&nbsp;Legend:</strong>
 		<i title='VM Powered On' class='fa fa-fw fa-play icon-state icon-legend icon-on'></i>On
 		<i title='VM Powered Off' class='fa fa-fw fa-stop icon-state icon-legend icon-off'></i>Off
 		<i title='VM Suspended' class='fa fa-fw fa-pause icon-state icon-legend icon-pause'></i>Suspended
 		<i title='Unknown State' class='fa fa-fw fa-question icon-state icon-legend icon-unknown'></i>Unknown
 	</small>
-</h3>
+</h4>
+<div class="text-muted">This page shows all the virtual machines as reported by all associated vCenters.</div>
 </div>
-<table class="table table-condensed table-striped" id="data">
+<table class="table table-sm table-striped" id="data">
 	<thead>
 		<tr>
 			<th style="width:0.3em"></th>
@@ -50,6 +51,13 @@
 		"lengthMenu": [[10,15,20,50,100,-1], [10,15,20,50,100,'All']],
 		"pageLength": 20,
 		"order": [[1, 'asc']],
+{%- if classic_layout %}
+		"fixedHeader": {
+			"headerOffset": 52
+		},
+{%- else %}
+		"fixedHeader": true,
+{%- endif %}
 		"columns": [{ "orderable": false, "targets": 0 }, null, null, null, null, null, null, null, null, null],
 		"searching": true,
 	});
