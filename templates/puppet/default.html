@@ -4,7 +4,7 @@
 
 <script>
 $(document).ready(function() {
-	var classes_editor = CodeMirror.fromTextArea(document.getElementById('classes'), 
+	var classes_editor = CodeMirror.fromTextArea(document.getElementById('classes'),
 	{
 		mode: 'yaml',
 		gutters: ["CodeMirror-lint-markers"],
@@ -13,7 +13,7 @@ $(document).ready(function() {
 		viewportMargin: Infinity,
 	});
 
-	classes_editor.setOption("extraKeys", 
+	classes_editor.setOption("extraKeys",
 	{
 		Tab: function(cm) {
 			var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");

@@ -18,7 +18,7 @@
 {%- macro renderdict(d) %}
 <ul class="catalog">
 {%- for key,value in d|dictsort %}
-	<li><strong>{{ key }}:&nbsp;</strong> 
+	<li><strong>{{ key }}:&nbsp;</strong>
 {%-     if d[key] is mapping -%}
 		{{ renderdict(d[key]) }}
 {%-     elif d[key] is sequence and d[key] is not string -%}
@@ -42,7 +42,7 @@
 <div class="catalog">
 	<ul>
 	{%- for key,value in catalog|dictsort %}
-		<li><strong>{{ key }}:&nbsp;</strong> 
+		<li><strong>{{ key }}:&nbsp;</strong>
 	{%-     if value is mapping -%}
 			{{ renderdict(value) }}
 	{%-     else -%}

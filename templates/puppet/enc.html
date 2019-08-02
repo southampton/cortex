@@ -26,7 +26,7 @@
 </div>
 
 <script>
-$(document).ready(function() 
+$(document).ready(function()
 {
 	// This function will get the name of the last puppet class which appeared in the textarea	
 	function getLastMatch(class_editor, puppetModulesArray) {
@@ -154,7 +154,7 @@ $(document).ready(function()
 			CodeMirror.commands.autocomplete(cm, CodeMirror.hint.dictionaryHint, {});
 		}
 	});
-	var variables_editor = CodeMirror.fromTextArea(document.getElementById('variables'), 
+	var variables_editor = CodeMirror.fromTextArea(document.getElementById('variables'),
 	{
 		mode: 'yaml',
 		gutters: ["CodeMirror-lint-markers"],
@@ -163,7 +163,7 @@ $(document).ready(function()
 		viewportMargin: Infinity
 	});
 
-	classes_editor.setOption("extraKeys", 
+	classes_editor.setOption("extraKeys",
 	{
 		Tab: function(cm) {
 			var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
@@ -175,7 +175,7 @@ $(document).ready(function()
 			}
 		},
 	});
-	variables_editor.setOption("extraKeys", 
+	variables_editor.setOption("extraKeys",
 	{
 		Tab: function(cm) {
 			var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
@@ -183,7 +183,7 @@ $(document).ready(function()
 		}
 	});
 
-	var encyaml = CodeMirror.fromTextArea(document.getElementById('encyaml'), 
+	var encyaml = CodeMirror.fromTextArea(document.getElementById('encyaml'),
 	{
 		mode: 'yaml',
 		lint: true,
@@ -265,7 +265,7 @@ $(document).ready(function()
 				Nodes will also apply classes from the default classes. You cannot specify <a href="https://puppet.com/docs/puppet/latest/lang_resources.html">resources</a> here.</p>
 				<p>Use the <strong>Global Variables</strong> field to define the global puppet variables that will be sent to all the
 				classes imported by this node.</p>
-				<p>The format of these fields is <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a>. Use two spaces for 
+				<p>The format of these fields is <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a>. Use two spaces for
 				indentation. Do not use tabs, but you can safely press the <kbd>tab</kbd> key within the editor (it will enter two spaces for you).
 				You can also press <kbd>Ctrl+Space</kbd> to see suggestions of the names of classes and parameters.</p>
 				<div class="text-center">

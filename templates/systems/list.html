@@ -87,7 +87,7 @@
 <div>
 	<div class="pull-right">
 		<a href="#" data-toggle="modal" data-target="#advanced_search_help">Advanced Search:</a>&nbsp;
-		<div class="btn-group btn-toggle" id="toggle_queries"> 
+		<div class="btn-group btn-toggle" id="toggle_queries">
 			<button id="query_search_on" class="btn btn-sm btn-secondary">ON</button>
 			<button id="query_search_off" class="btn btn-sm btn-primary active">OFF</button>
 		</div>
@@ -153,10 +153,10 @@ $(function() {
 				$('#class-tabs li a[data-class=\"' + window.history.state['tab'] + '\"]').addClass('active');
 				if(window.history.state['toggle_queries'] == "ON"){
 					$('#toggle_queries').each(function(){
-						$(this).find('.btn').toggleClass('active');  
+						$(this).find('.btn').toggleClass('active');
 						if ($(this).find('.btn-primary').size()>0) {
 							$(this).find('.btn').toggleClass('btn-primary');
-						} 
+						}
 						$(this).find('.btn').toggleClass('btn-secondary');
 					});
 				}
@@ -306,7 +306,7 @@ $(function() {
 		$(this).find('.btn').toggleClass('active');
 		if ($(this).find('.btn-primary').size()>0) {
 			$(this).find('.btn').toggleClass('btn-primary');
-		} 
+		}
 		$(this).find('.btn').toggleClass('btn-secondary');
 		systemsTable.state.save();
 	});

@@ -292,36 +292,21 @@
 		{% endif %}
 	</div>
 </div>
-
 <script type="text/javascript">
-$( document ).ready(function() 
+$(document).ready(function()
 {
-	/* What is this doing?? */
-	$('#revoke').on('show.bs.modal', function (event)
-	{
-		var link = $(event.relatedTarget)
-
-		$('#revoke-permission-text').text(link.data('name'));
-		$('#revoke-permission-id').val(link.data('pid'));
-	})
-
 	$('#remove').on('show.bs.modal', function (event)
 	{
 		var link = $(event.relatedTarget)
-
 		$('#remove-who-text').text(link.data('name'));
 		$('#remove-who-id').val(link.data('wid'));
 	})
-	
 	$('#removeSystem').on('show.bs.modal', function (event)
 	{
 		var link = $(event.relatedTarget)
-
 		$('#remove-what-text').text(link.data('name'));
 		$('#remove-what-id').val(link.data('sid'));
 	})
-
-
 });
 </script>
 {% endblock %}

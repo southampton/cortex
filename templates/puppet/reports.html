@@ -38,11 +38,12 @@ $('#data').DataTable({
 	"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 	"pageLength": 15,
 	"order": [[0, 'desc']],
-	"columns": [{"render": function(data) { 
-				var date = new Date(new Date(data + ' UTC').toString());
-				return date.getFullYear() + '-' + ('0' + (date.getMonth()+1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2) + ' ' + ('0' + date.getHours()).slice(-2) + ':' + ('0' + date.getMinutes()).slice(-2) + ':' + ('0' + date.getSeconds()).slice(-2);
-				}
-			}, null, null, null, null, null, { "orderable": false, "targets": 0 }]
+	"columns": [{
+		"render": function(data) {
+			var date = new Date(new Date(data + ' UTC').toString());
+			return date.getFullYear() + '-' + ('0' + (date.getMonth()+1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2) + ' ' + ('0' + date.getHours()).slice(-2) + ':' + ('0' + date.getMinutes()).slice(-2) + ':' + ('0' + date.getSeconds()).slice(-2);
+		}
+	}, null, null, null, null, null, { "orderable": false, "targets": 0 }]
 });
 </script>
 {% endblock %}
