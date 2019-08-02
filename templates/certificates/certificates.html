@@ -1,12 +1,4 @@
 {% extends "layout.html" %}
-{% block head %}
-		<style type="text/css">
-			abbr[title] { border-bottom: none; cursor: default }
-			a.cert-link { text-decoration: none !important; color: inherit }
-			a.cert-link abbr[title] { cursor: pointer }
-			a.cert-link:hover abbr[title] { cursor: pointer; text-decoration: underline !important }
-		</style>
-{% endblock %}
 {% block body %}
 <div class="modal fade" id="filter" role="dialog">
 	<div class="modal-dialog">
@@ -61,7 +53,7 @@
 	</h4>
 	<div class="text-muted">The list below shows both automatically detected and manually inserted certificates.</div>
 </div>
-<table class="table table-condensed table-striped table-sm" id="data">
+<table class="table table-condensed table-striped table-sm" id="cert-data">
 	<thead>
 		<tr>
 			<th title="The CN of the Subject of the certificate. Hover over a row to see the full DN.">Subject CN</th>
@@ -93,7 +85,7 @@
 	// Define variable for nodes table.
 	var nodes;
 	$(function() {
-		nodes = $('#data').DataTable({
+		nodes = $('#cert-data').DataTable({
 			"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 			"pageLength": 15,
 			"order": [[0, 'asc']],

@@ -610,12 +610,10 @@ a.btn-secondary
 	display: inline-flex;
 	align-items: center;
 }
-
 .form-control-plaintext
 {
 	color: inherit;
 }
-
 .admin-block
 {
 	border-radius: 24px;
@@ -641,13 +639,13 @@ a.btn-secondary
 }
 .admin-block p
 {
-	color: #FFFFFF;
+	color: #fff;
 	font-size: 1em;
 	font-weight: bold;
 }
 .admin-block h2
 {
-	color: #FFFFFF;
+	color: #fff;
 	font-size: 1.25em;
 	margin-bottom: 15px;
 }
@@ -657,6 +655,8 @@ a.btn-secondary
 	font-weight: bold;
 	color: #FFFFFF;
 }
+.admin-block-header {box-shadow: none !important}
+.admin-block-header h2 {color: #555}
 .bg-default
 {
 	background-color: #aaa;
@@ -665,7 +665,20 @@ a.btn-secondary
 {
 	color: #fff;
 }
-
+.admin-block-sm
+{
+	border-radius: 12px;
+	box-shadow: 0px 0px 2px 2px rgba(0,0,0,.2);
+	margin: 5px 0px 20px 0px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	text-align: center;
+}
+.admin-block-sm h2
+{
+	font-size: 1.5em;
+	margin: 0px;
+}
 .sidebar .list-group a
 {
 	cursor: pointer
@@ -733,3 +746,117 @@ div.tab-pane#paste, div.tab-pane#upload
 	border-color: #f0f0f0;
 	padding: 15px 15px 0px 15px;
 }
+table#cert-data abbr[title] { border-bottom: none; cursor: default }
+a.cert-link { text-decoration: none !important; color: inherit }
+a.cert-link abbr[title] { cursor: pointer }
+a.cert-link:hover abbr[title] { cursor: pointer; text-decoration: underline !important }
+.dashblock
+{
+	border-radius: 24px;
+	box-shadow: 0px 0px 2px 2px rgba(0,0,0,.2);
+	margin-bottom: 20px;
+	padding: 20px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	text-align: left;
+	font-size: 1em;
+	font-size: 1.5vw;
+}
+@media (min-width: 992px)
+{
+	.dashblock
+	{
+		border-top-right-radius: 0px;
+		border-bottom-right-radius: 0px;
+		font-size: 1.5em;
+		font-size: 1.5vw;
+		margin-right: -40px;
+	}
+	.equal, .equal > div[class*='col-']
+	{
+		display: -webkit-flex;
+		display: flex;
+		flex: 1 1 auto;
+	}
+	.equal .card
+	{
+		width: 100%;
+	}
+	.network-body
+	{
+		max-height: 20em;
+		overflow-y: scroll;
+	}
+	.system-record-body
+	{
+		max-height: 22em;
+		overflow-y: scroll;	
+	}
+}
+@media (min-width: 1200px)
+{
+	.dashblock
+	{
+		font-size: 2em;
+		font-size: 1.5vw;
+	}
+}
+.nolpad { padding-left: 8px }
+.norpad { padding-right: 0px }
+.colpad { padding-left: 8px }
+a.server-link { text-decoration: none !important; color: inherit }
+a.server-link:hover { text-decoration: underline !important }
+#dash-ram { color: #fff }
+#vmware-clusters .tab-pane { margin-top: 20px }
+#vmware-history .c3-chart-lines .c3-circles .c3-circle { display: none }
+#status-log p.event{margin: 1em 0em 1em 2em;font-size: 16px}
+#status-log i.fa-check{color:#2c2}
+#status-log i.fa-times{color:#c22}
+#status-log i.fa-exclamation{color:#c82}
+#status-log i.fa{margin-right: 1em}
+#taskStatus { font-weight: bold; }
+.class-select-box
+{
+	padding: 20px;
+	text-align: center;
+}
+.class-select-box h1
+{
+	font-size: 4em;
+	font-weight: bold;
+}
+.class-select-box p { font-size: 1.5em }
+table.system-overview-table tr > td:first-child
+{
+	text-align: right;
+	font-weight: bolder;
+}
+.power-icon { width: 50% }
+.power-icon #power-icon {
+	font-size: 0.8em;
+	line-height: 1.6em;
+}
+div.facts, div.catalog
+{
+	overflow-x: scroll;
+	width: calc(100vw - 250px);
+}
+div.facts ul, div.catalog ul
+{
+	font-family: monospace;
+}
+div.puppet-run-info
+{
+	position:absolute;
+	right:40px;
+	margin-top:-10px;
+}
+.level-err { color: #ff4136 }
+.level-info { color: #158cba }
+table.puppet-report td.msg
+{
+	font-family: monospace;
+	font-size: 90%;
+	white-space: pre-wrap;
+}
+.CodeMirror{border:1px solid #eee !important;height:auto !important;}

@@ -1,25 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
 
-<style type="text/css">
-.cselect
-{
-	padding: 20px;
-	text-align: center;
-}
-
-.cselect h1
-{
-	font-size: 4em;
-	font-weight: bold;
-}
-
-.cselect p
-{
-	font-size: 1.5em;
-}
-</style>
-
 <div class="modal fade" id="allocate" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -95,7 +76,7 @@ $( document ).ready(function()
 <div class="row">
 {%- if classes|length != 0 %}
 {%- for class in classes %}
-	<div class="col-md-4 cselect">
+	<div class="col-md-4 class-select-box">
 		<div class="card card-header">
 		<h1>{{class.name}}</h1>
 		<p>{{class.comment}}</p>

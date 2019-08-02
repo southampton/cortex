@@ -1,59 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
-<style type="text/css">
-.dashblock
-{
-	border-radius: 24px;
-	box-shadow: 0px 0px 2px 2px rgba(0,0,0,.2);
-	margin-bottom: 20px;
-	padding: 20px;
-	padding-top: 10px;
-	padding-bottom: 10px;
-	text-align: left;
-	font-size: 1em;
-	font-size: 1.5vw;
-}
-@media (min-width: 992px)
-{
-	.dashblock
-	{
-		border-top-right-radius: 0px;
-		border-bottom-right-radius: 0px;
-		font-size: 1.5em;
-		font-size: 1.5vw;
-		{%- if classic_layout %}margin-right: -15px;{%else%}margin-right: -40px;{%endif%}
-	}
-}
-@media (min-width: 1200px)
-{
-	.dashblock
-	{
-		font-size: 2em;
-		font-size: 1.5vw;
-	}
-}
-.nolpad
-{
-	padding-left: 8px;
-}
-.norpad
-{
-	padding-right: 0px;
-}
-.colpad
-{
-	padding-left: 8px;
-}
-a.server-link { text-decoration: none !important; color: inherit; }
-a.server-link:hover { text-decoration: underline !important; }
-.bg-success
-{
-	color: #FFFFFF;
-}
-</style>
-
 {%- if does_user_have_permission('systems.all.view') %}
-
 <div class="row">
 	<div class="col-md-9">
 {%- endif -%}
@@ -188,10 +135,10 @@ a.server-link:hover { text-decoration: underline !important; }
 {%- if does_user_have_permission('systems.all.view') %}
 	</div>
 	<div class="col-md-3 d-none d-sm-none d-md-block">  <!--d-none d-sm-none> -->
-		<div class="dashblock bg-primary">
+		<div id="dash-vms" class="dashblock bg-primary">
 			<strong><i class="fa fa-fw fa-server"></i> {{ vm_count }}</strong> Virtual machines<br/>
 		</div>
-		<div class="dashblock bg-teal">
+		<div id="dash-os" class="dashblock bg-teal">
 			<div class="row row">
 				<div class="col-1 text-right norpad">
 					<i class="fa fa-fw fa-linux"></i>
@@ -248,20 +195,20 @@ a.server-link:hover { text-decoration: underline !important; }
 				</div>
 			</div>
 		</div>
-		<div class="dashblock bg-lorange">
+		<div id="dash-snow" class="dashblock bg-lorange">
 			<strong><i class="fa fa-fw fa-book"></i> {{ ci_count }}</strong> ServiceNow CIs
 		</div>
-		<div class="dashblock bg-dorange">
+		<div id="dash-tasks" class="dashblock bg-dorange">
 			<a href="{{ url_for('admin_tasks_active') }}"><strong><i class="fa fa-fw fa-cog"></i> {{ task_progress_count }}</strong> Tasks in progress<br/></a>
 			<a href="{{ url_for('admin_tasks', filter_succeeded='0', filter_failed='0') }}"><strong><i class="fa fa-fw fa-exclamation-triangle"></i> {{ task_warning_count }}</strong> Recent tasks with warnings<br/></a>
 			<a href="{{ url_for('admin_tasks', filter_succeeded='0', filter_warnings='0') }}"><strong><i class="fa fa-fw fa-times"></i> {{ task_failed_count }}</strong> Recent failed tasks</a>
 		</div>
-		<div class="dashblock bg-success">
+		<div id="dash-ram" class="dashblock bg-success">
 			<strong><i class="fa fa-fw fa-database"></i> {{ total_ram | filesizeformat(binary=True) }}</strong> RAM total<br/>
 			<strong><i class="fa fa-fw fa-bar-chart"></i> {{ total_vm_ram | filesizeformat(binary=True) }}</strong> RAM allocated <br/>
 			<strong><i class="fa fa-fw fa-line-chart"></i> {{ total_ram_usage | filesizeformat(binary=True) }}</strong> RAM usage
 		</div>
-		<div class="dashblock bg-purple">
+		<div id="dash-puppet" class="dashblock bg-purple">
 			<a href="{{ url_for('puppet_nodes', status='changed') }}"><strong><i class="fa fa-fw fa-download"></i> {{ stats['changed'] }}</strong> Puppet nodes changed<br/></a>
 			<a href="{{ url_for('puppet_nodes', status='failed') }}"><strong><i class="fa fa-fw fa-times"></i> {{ stats['failed'] }}</strong> Puppet nodes failed</a>
 		</div>

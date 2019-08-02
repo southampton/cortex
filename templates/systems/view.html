@@ -3,37 +3,6 @@
 {% endblock %}
 {% block body %}
 {% import 'node-header.html' as node %}
-
-<style type="text/css">
-@media (min-width: 992px)
-{
-	.equal, .equal > div[class*='col-']
-	{
-		display: -webkit-flex;
-		display: flex;
-		flex: 1 1 auto;
-	}
-
-	.equal .card
-	{
-		width: 100%;
-	}
-
-	.equal .card
-	{
-		min-height: 15em;
-	}
-	.system-record-body
-	{
-		max-height: 22em;
-		overflow-y: scroll;	
-	}
-	.form-group > div {
-		float: right;
-	}
-}
-</style>
-
 <form role="form" class="form-horizontal">
 {{ node.header(system,active="info" ) }}
 	<div class="row equal">

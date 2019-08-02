@@ -1,67 +1,20 @@
 {% extends "layout.html" %}
 {% block head %}
+<link href="{{ url_for('static', filename='css/vendor/c3.min.css') }}" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/c3.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/d3.min.js') }}"></script>
 {% endblock %}
 {% block body %}
 {% import 'node-header.html' as node %}
-
-<link href="{{ url_for('static', filename='css/vendor/c3.min.css') }}" rel="stylesheet" type="text/css">
-<style type="text/css">
-
-.graphic {
-	width: 50%;
-}
-
-#power-icon {
-	font-size: 0.8em;
-	line-height: 1.6em;
-}
-
-form {
-	display: inline;
-}
-
-tr > td:first-child {
-	text-align: right;
-	font-weight: bolder;
-}
-
-@media (min-width: 992px)
-{
-	.equal, .equal > div[class*='col-']
-	{
-		display: -webkit-flex;
-		display: flex;
-		flex: 1 1 auto;
-	}
-
-	.equal .card
-	{
-		width: 100%;
-	}
-
-	.equal .card
-	{
-		min-height: 15em;
-	}
-
-	.network-body
-	{
-		max-height: 20em;
-		overflow-y: scroll;
-	}
-
-}
-</style>
-
 {{ node.header(system,active="overview" ) }}
 <div class="row equal">
 	<div class="col-md-4">
-		<div class="card ">
+		<div class="card">
 			<div class="card-header">
 				<h4 class="card-title">System Record</h4>
 			</div>
 			<div class="card-body">
-				<table class="table">
+				<table class="table system-overview-table">
 					<tr><td>Comment:</td><td>{{ system.allocation_comment or '' }}</td></tr>
 					<tr><td>Allocated by:</td><td>{{ system.allocation_who or 'Unknown' }}</td></tr>
 					<tr><td>Allocation Date:</td><td>{{ system.allocation_date or '' }}</td></tr>
@@ -80,11 +33,11 @@ tr > td:first-child {
 				<div class="row">
 					<div class="col-md-12" id="network_loading">Loading...</div>
 					<div class="col-md-6">
-						<table class="table" id="net_table">
+						<table class="table system-overview-table" id="net_table">
 						</table>
 					</div>
 					<div class="col-md-6">
-						<table class="table" id="dns_table">
+						<table class="table system-overview-table" id="dns_table">
 						</table>
 					</div>
 				</div>
@@ -126,7 +79,7 @@ tr > td:first-child {
 </div>
 <div class="row equal">
 	<div class="col-md-12">
-		<div class="card ">
+		<div class="card">
 			<div class="card-header">
 				<h4 class="card-title">System Status</h4>
 			</div>
@@ -134,9 +87,9 @@ tr > td:first-child {
 				{% if system.vmware_uuid %}
 				<div class="col-md-4">
 					<div style="text-align:center">
-						<div class="fa-stack fa-5x graphic"><i class="fa fa-desktop fa-stack-2x"></i><i id="power-icon"></i></div>
+						<div class="fa-stack fa-5x power-icon"><i class="fa fa-desktop fa-stack-2x"></i><i id="power-icon"></i></div>
 					</div>
-					<table class="table">
+					<table class="table system-overview-table">
 						<tr><td>Power State:</td><td class="power_state"></td></tr>
 						<tr><td>Uptime:</td><td id="uptime"></td></tr>
 						<tr><td>Spec:</td><td>{{ system.vmware_cpus or 'unknown' }} vCPU, {{ system.vmware_ram or 'unknown' }} MB RAM</td></tr>
@@ -174,8 +127,8 @@ tr > td:first-child {
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
+				<h4 class="modal-title">Power On System</h4>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title">Power on</h4>
 			</div>
 			<div class="modal-body">
 				<p class="warn-pwr-on"><span class="fa fa-warning"></span> The system appears to already be powered on.</p>
@@ -196,8 +149,8 @@ tr > td:first-child {
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
+				<h4 class="modal-title">Power Off System</h4>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title">Power off</h4>
 			</div>
 			<div class="modal-body">
 				<p class="warn-pwr-off"><span class="fa fa-warning"></span> The system appears to already be powered off.</p>
@@ -228,8 +181,8 @@ tr > td:first-child {
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
+				<h4 class="modal-title">Reset System</h4>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title">Reset system</h4>
 			</div>
 			<div class="modal-body">
 				<p>Are you sure you wish to reset the system?</p>
@@ -247,8 +200,6 @@ tr > td:first-child {
 </div><!-- /.modal -->
 {% endif %}
 {% if system.vmware_uuid %}
-<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/c3.min.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/d3.min.js') }}"></script>
 <script>
 function secondsToString(seconds) {
 	if (seconds <= 0) return 'N/A';
