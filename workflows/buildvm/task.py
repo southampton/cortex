@@ -1,4 +1,6 @@
 #### Combined standard/sandbox VM Workflow Task
+import requests
+import requests.exceptions
 import time
 
 def run(helper, options):
@@ -38,6 +40,8 @@ def run(helper, options):
 		vm_folder_moid = options['vm_folder_moid']
 		dns_aliases = options['dns_aliases']
 		set_backup = options['wfconfig']['SET_BACKUP']
+		entca_servers = options['wfconfig']['ENTCA_SERVERS']
+		entca_default_san_domain = ''
 	elif workflow == 'sandbox':
 		prefix = options['wfconfig']['SB_PREFIX']
 		vcenter_tag = options['wfconfig']['SB_VCENTER_TAG']
@@ -61,6 +65,8 @@ def run(helper, options):
 		vm_folder_moid = None
 		dns_aliases = []
 		set_backup = options['wfconfig']['SB_SET_BACKUP']
+		entca_servers = options['wfconfig']['ENTCA_SERVERS']
+		entca_default_san_domain = options['wfconfig']['SB_DEFAULT_SAN_DOMAIN']
 	elif workflow == 'student':
 		prefix = options['wfconfig']['STU_PREFIX']
 		vcenter_tag = options['wfconfig']['STU_VCENTER_TAG']
@@ -295,6 +301,60 @@ def run(helper, options):
 
 
 
+	## Register Linux VMs with the built in Puppet ENC #####################
+
+	# Only for Linux VMs...
+	if workflow != 'student' and os_type == helper.lib.OS_TYPE_BY_NAME['Linux'] and options['template'] != 'rhel6c':
+		# Start the event
+		helper.event("puppet_enc_register", "Registering with Puppet ENC")
+
+		# Register with the Puppet ENC
+		helper.lib.puppet_enc_register(system_dbid, system_name + "." + puppet_cert_domain, options['env'])
+
+		# End the event
+		helper.end_event("Registered with Puppet ENC")
+
+
+
+	## Create Enterprise CA certificate ####################################
+
+	# Only for Linux VMs...
+	if workflow != 'student' and os_type == helper.lib.OS_TYPE_BY_NAME['Linux'] and options['template'] != 'rhel6c':
+		# Start the event
+		helper.event("entca_create_cert", "Creating certificate on Enterprise CA")
+
+		if type(entca_servers) is str:
+			entca_servers = [entca_servers]
+
+		for entca in entca_servers:
+			# Standard
+			if workflow == 'standard':
+				try:
+					r = requests.post('https://' + entca['hostname'] + '/create_entca_certificate', json={'fqdn': system_name + '.' + entca['entdomain']}, headers={'Content-Type': 'application/json', 'X-Client-Secret': entca['api_token']}, verify=entca['verify_ssl'])
+				except:
+					helper.end_event(success=False, description="Error communicating with " + entca['hostname'] + ' Error code: ' + str(r.status_code))
+				else:
+					if r.status_code == 200:
+						helper.end_event(success=True, description="Created certificate on Enterprise CA")
+					else:
+						helper.end_event(success=False, description="Error creating certificate on Enterprise CA")
+
+			elif workflow == 'sandbox':
+				try:
+					r = requests.post('https://' + entca['hostname'] + '/create_entca_certificate', json={'fqdn': system_name + '.' + entca['entdomain'], 'sans': [system_name + '.' + entca_default_san_domain]}, headers={'Content-Type': 'application/json', 'X-Client-Secret': entca['api_token']}, verify=entca['verify_ssl'])
+				except:
+					helper.end_event(success=False, description="Error communicating with " + entca['hostname'])
+				else:
+					if r.status_code == 200:
+						helper.end_event(success=True, description="Created certificate on Enterprise CA")
+					else:
+						helper.end_event(success=False, description="Error creating certificate on Enterprise CA")
+
+			else:
+				helper.end_event(success=False, description="Invalid workflow encountered")
+
+
+
 	## Power on the VM #####################################################
 
 	# Start the event
@@ -317,21 +377,6 @@ def run(helper, options):
 
 	# End the event
 	helper.end_event(description="VM powered up")	
-
-
-
-	## Register Linux VMs with the built in Puppet ENC #####################
-
-	# Only for Linux VMs...
-	if workflow != 'student' and os_type == helper.lib.OS_TYPE_BY_NAME['Linux'] and options['template'] != 'rhel6c':
-		# Start the event
-		helper.event("puppet_enc_register", "Registering with Puppet ENC")
-
-		# Register with the Puppet ENC
-		helper.lib.puppet_enc_register(system_dbid, system_name + "." + puppet_cert_domain, options['env'])
-
-		# End the event
-		helper.end_event("Registered with Puppet ENC")
 
 
 

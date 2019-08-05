@@ -180,7 +180,7 @@ def action_check_system(action, helper, wfconfig):
 				helper.flash("Warning - An error occured when communicating with Enterprise CA", "warning")
 			else:
 				if r.status_code == 200:
-					system_actions.append({'id': 'entca.delete', 'desc': 'Delete certificate from Enterprise CA', 'detail': system['name'] + '.' + entca['entdomain'] + ' to be removed from Enterprise CA ' + entca['hostname'], 'data': {'hostname': system['name'] + '.' + entca['entdomain']}})
+					system_actions.append({'id': 'entca.delete', 'desc': 'Delete certificate from Enterprise CA', 'detail': system['name'] + '.' + entca['entdomain'] + ' to be removed from Enterprise CA ' + entca['hostname'], 'data': {'hostname': system['name'] + '.' + entca['entdomain'], 'entca_hostname': entca['hostname'], 'entca_api_token': entca['api_token'], 'entca_verify_ssl': entca['verify_ssl']}})
 				elif r.status_code == 404:
 					helper.flash('Warning - Certificate not found on ' + entca['hostname'] + ' for ' + system['name'] + '.' + entca['entdomain'], 'warning')
 				else:
@@ -453,12 +453,17 @@ def action_ad_delete(action, helper):
 
 def action_entca_delete(action, helper):
 	try:
-		r = requests.post('https://' + entca['hostname'] + '/delete_entca_certificate', json={'fqdn': action['data']['hostname']}, headers={'Content-Type': 'application/json', 'X-Client-Secret': entca['api_token']}, verify=entca['verify_ssl'])
+		r = requests.post('https://' + action['data']['entca_hostname'] + '/delete_entca_certificate', json={'fqdn': action['data']['hostname']}, headers={'Content-Type': 'application/json', 'X-Client-Secret': action['data']['entca_api_token']}, verify=action['data']['entca_verify_ssl'])
 	except:
-		helper.end_event(success=False, description="Error whilst communicating with " + entca['hostname'])
+		helper.end_event(success=False, description='Error whilst communicating with ' + action['data']['entca_hostname'])
+		return False
+
+	if r.status_code != 200:
+		helper.end_event(success=False, description='Failed to remove certificate from ' + action['data']['entca_hostname'])
+		return False
 	else:
-		if r.status_code != 200:
-			helper.end_event(success=False, description="Failed to remove certificate from " + entca['hostname'])
+		helper.end_event(success=True, description='Certificate ' + action['data']['hostname'] + ' removed from ' + action['data']['entca_hostname'])
+		return True
 
 ################################################################################
 
