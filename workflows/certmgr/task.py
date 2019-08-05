@@ -157,7 +157,7 @@ def create_entca_cert(helper, options):
 
 	# Call the UoS Enterprise CA API to request the cert
 	helper.event('generate_entca_cert', 'Requesting certificate for ' + options['fqdn'] + ' from Enterprise CA API')
-	r = requests.post('https://' + options['entca']['hostname'] + '/create_soton_certificate', json={'fqdn': options['fqdn'], 'sans': options['aliases']}, headers={'Content-Type': 'application/json', 'X-Client-Secret': options['entca']['api_token']}, verify=options['entca']['verify_ssl'])
+	r = requests.post('https://' + options['entca']['hostname'] + '/create_entca_certificate', json={'fqdn': options['fqdn'], 'sans': options['aliases']}, headers={'Content-Type': 'application/json', 'X-Client-Secret': options['entca']['api_token']}, verify=options['entca']['verify_ssl'])
 	if r is None:
 		raise Exception('Request to Enterprise CA API Create Certificate Endpoint failed')
 	if r.status_code != 200:

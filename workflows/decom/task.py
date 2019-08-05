@@ -175,7 +175,7 @@ def action_check_system(action, helper, wfconfig):
 
 		for entca in entca_servers:
 			try:
-				r = requests.get('https://' + entca['hostname'] + '/get_soton_certificate/' + system['name'] + '.' + entca['entdomain'], headers={'X-Client-Secret': entca['api_token']}, verify=entca['verify_ssl'])
+				r = requests.get('https://' + entca['hostname'] + '/get_entca_certificate/' + system['name'] + '.' + entca['entdomain'], headers={'X-Client-Secret': entca['api_token']}, verify=entca['verify_ssl'])
 			except:
 				helper.flash("Warning - An error occured when communicating with Enterprise CA", "warning")
 			else:
@@ -453,7 +453,7 @@ def action_ad_delete(action, helper):
 
 def action_entca_delete(action, helper):
 	try:
-		r = requests.post('https://' + entca['hostname'] + '/delete_soton_certificate', json={'fqdn': action['data']['hostname']}, headers={'Content-Type': 'application/json', 'X-Client-Secret': entca['api_token']}, verify=entca['verify_ssl'])
+		r = requests.post('https://' + entca['hostname'] + '/delete_entca_certificate', json={'fqdn': action['data']['hostname']}, headers={'Content-Type': 'application/json', 'X-Client-Secret': entca['api_token']}, verify=entca['verify_ssl'])
 	except:
 		helper.end_event(success=False, description="Error whilst communicating with " + entca['hostname'])
 	else:
