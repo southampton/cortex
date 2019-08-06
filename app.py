@@ -643,6 +643,7 @@ Username:             %s
 		  `sncache_cmdb_ci`.`os` AS `cmdb_os`,
 		  `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description`,
 		  `sncache_cmdb_ci`.`virtual` AS `cmdb_is_virtual`,
+		  `vmware_cache_vm`.`id` AS `vmware_moid`,
 		  `vmware_cache_vm`.`name` AS `vmware_name`,
 		  `vmware_cache_vm`.`vcenter` AS `vmware_vcenter`,
 		  `vmware_cache_vm`.`uuid` AS `vmware_uuid`,
@@ -664,9 +665,9 @@ Username:             %s
 		LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`
 		LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid`
 		LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` 
-		LEFT JOIN `realname_cache` AS  `allocation_who_realname_cache` ON `systems`.`allocation_who` = `allocation_who_realname_cache`.`username`
-		LEFT JOIN `realname_cache` AS  `primary_owner_who_realname_cache` ON `systems`.`primary_owner_who` = `primary_owner_who_realname_cache`.`username`
-		LEFT JOIN `realname_cache` AS  `secondary_owner_who_realname_cache` ON `systems`.`secondary_owner_who` = `secondary_owner_who_realname_cache`.`username`""")
+		LEFT JOIN `realname_cache` AS `allocation_who_realname_cache` ON `systems`.`allocation_who` = `allocation_who_realname_cache`.`username`
+		LEFT JOIN `realname_cache` AS `primary_owner_who_realname_cache` ON `systems`.`primary_owner_who` = `primary_owner_who_realname_cache`.`username`
+		LEFT JOIN `realname_cache` AS `secondary_owner_who_realname_cache` ON `systems`.`secondary_owner_who` = `secondary_owner_who_realname_cache`.`username`""")
        	
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `roles` (
 		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,

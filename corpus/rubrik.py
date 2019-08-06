@@ -27,7 +27,6 @@ class Rubrik(object):
 		except requests.exceptions.HTTPError as e:
 			raise
 
-
 	def get_request(self, api_call, payload=None):
 		url = urljoin(self.api_url_base, api_call)
 		try:
@@ -58,20 +57,65 @@ class Rubrik(object):
 		"""Gets the backup SLA categories from Rubrik"""
 		return self.get_request('sla_domain')
 
-	def get_vm(self, name):
+	def get_vcenter_managed_id(self, vcenter_hostname):
+		"""Gets the Managed ID of the vCenter object in Rubrik for a given vCenter hostname."""
+
+		# Get all the vCenter information from Rubrik
+		vcenters = self.get_request('vmware/vcenter')
+
+		# For case insensitive comparison
+		vcenter_hostname = vcenter_hostname.lower()
+
+		# Iterate over the vCenters
+		vcManagedId = None
+		for vc in vcenters['data']:
+			# If this is the right vCenter
+			if vc['hostname'].lower() == vcenter_hostname:
+				vcManagedId = vc['id']
+				break
+
+		if vcManagedId is None:
+			raise RuntimeError('Failed to find vCenter "' + vcenter + '" in Rubrik')
+
+		return vcManagedId
+
+	def get_vm_managed_id(self, system):
+		"""Works out the Rubrik Managed ID of a VM"""
+
+		# Format of Rurrik Managed ID is:
+		# VirtualMachine:::<vcenter-rubrik-managed-id>-<vm-moId>
+
+		if 'vmware_vcenter' not in system or 'vmware_moid' not in system:
+			raise KeyError('Missing vCenter or moId information from system')
+
+		if system['vmware_vcenter'] is None or system['vmware_moid'] is None:
+			raise RuntimeError('No vCenter or moId information available')
+
+		# Get the vCenter managed ID
+		vcManagedId = self.get_vcenter_managed_id(system['vmware_vcenter'])
+
+		# Remove the leading "vCenter:::" text
+		vcManagedId = vcManagedId[10:]
+
+		return "VirtualMachine:::" + vcManagedId + "-" + system['vmware_moid']
+
+	def get_vm(self, system):
 		"""Detailed view of a VM
-		param id ID of the virtual machine
+		param system The details of the system as a dict-like object (i.e. row from systems_info_view)
 		"""
 		try:
-			#try to get the only vm in the response
-			try:
-				return self.get_request('vmware/vm', {'name': quote(name), 'limit':
-			1})['data'][0]
-			except IndexError:
-				# In the event the system is not found
-				return None
-		except KeyError:
-			raise Exception('VM not found')
+			vm_id = self.get_vm_managed_id(system)
+		except Exception as e:
+			import traceback
+			app.logger.error('Error getting Rubrik VM ID:\n' + traceback.format_exc())
+			raise Exception('Error getting Rubrik VM ID: ' + str(e))
+
+		try:
+			return self.get_request('vmware/vm/' + quote(vm_id))
+		except Exception as e:
+			import traceback
+			app.logger.error('Error getting Rubrik VM ID:\n' + traceback.format_exc())
+			raise Exception('Error getting VM from Rubrik: ' + str(e))
 
 	def get_vm_snapshots(self, id):
 		"""Get a list of snapshots for the vm"""
