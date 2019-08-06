@@ -8,7 +8,7 @@ from cortex.corpus import Corpus
 from cortex.api import api_manager, api_login_required
 from cortex.api.exceptions import InvalidPermissionException, NoResultsFoundException
 from cortex.api.parsers import pagination_arguments
-from cortex.api.serializers.certificates import certificates_serializer, page_certificates_serializer
+from cortex.api.serializers.certificates import certificates_serializer, page_certificates_serializer, certificates_full_serializer
 
 from cortex.lib.user import does_user_have_permission
 
@@ -31,16 +31,17 @@ class CertificatesCollection(Resource):
 		Returns a paginated list of rows from the certificates table.
 		"""
 
-		args = pagination_arguments.parse_args(request)
-		page = int(args.get('page', 1))
-		per_page = int(args.get('per_page', 10))
-
-		limit_start = (page-1)*per_page
-		limit_length = per_page
-
+		# Check if we have permission (API token has all permissions)
 		if 'api_token_valid' not in session or session['api_token_valid'] is not True:
 			if not does_user_have_permission("certificates.view"):
 				raise InvalidPermissionException
+
+		# Parse pagination arguments
+		args = pagination_arguments.parse_args(request)
+		page = int(args.get('page', 1))
+		per_page = int(args.get('per_page', 10))
+		limit_start = (page - 1) * per_page
+		limit_length = per_page
 
 		# Parse our arguments
 		certificates_args = certificates_arguments.parse_args(request)
@@ -66,7 +67,6 @@ class CertificatesCollection(Resource):
 
 		# Get the list of certificates
 		curd.execute('SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`subjectDN` AS `subjectDN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, `certificate`.`issuerCN` AS `issuerCN`, `certificate`.`issuerDN` AS `issuerDN`, MAX(`scan_result`.`when`) AS `lastSeen`, COUNT(DISTINCT `scan_result`.`host`) AS `numHosts`, `certificate`.`keySize` AS `keySize` FROM `certificate` LEFT JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest` LEFT JOIN `certificate_sans` ON `certificate`.`digest` = `certificate_sans`.`cert_digest`' + where_clause + ' GROUP BY `certificate`.`digest` LIMIT ' + str(limit_start) + ',' + str(limit_length), tuple(query_parts))
-
 		results = curd.fetchall()
 
 		return {
@@ -82,24 +82,47 @@ class CertificatesCollection(Resource):
 @api_manager.doc(params={'digest':'The SHA-1 digest of the certificate'})
 class CertificateItem(Resource):
 	"""
-	API for individual certificates.
+	API for individual certificate functions.
 	"""
 
 	@api_login_required('get', True)
-	@api_manager.marshal_with(certificates_serializer)
+	@api_manager.marshal_with(certificates_full_serializer)
 	def get(self, digest):
+		# Check if we have permission (API token has all permissions)
 		if 'api_token_valid' not in session or session['api_token_valid'] is not True:
 			if not does_user_have_permission("certificates.view"):
 				raise InvalidPermissionException
 
 		curd = g.db.cursor(mysql.cursors.DictCursor)
 		curd.execute('SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`subjectDN` AS `subjectDN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, `certificate`.`issuerCN` AS `issuerCN`, `certificate`.`issuerDN` AS `issuerDN`, MAX(`scan_result`.`when`) AS `lastSeen`, COUNT(DISTINCT `scan_result`.`host`) AS `numHosts`, `certificate`.`keySize` AS `keySize` FROM `certificate` LEFT JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest` WHERE `digest` = %s GROUP BY `certificate`.`digest`', (digest,))
-		result = curd.fetchone()
+		cert_result = curd.fetchone()
 
-		if result is None:
+		if cert_result is None:
 			return certificates_namespace.abort(404, 'Certificate not found')
 
-		return result
+		# Find out where the certificate was seen and when
+		curd.execute('SELECT `when` AS `timestamp`, CONCAT(`host`, ":", `port`) AS `location`, `chain_state` FROM `scan_result` WHERE `cert_digest` = %s ORDER BY `timestamp` DESC', (digest,))
+		seen_result = curd.fetchall()
+
+		# Find out all the SANs
+		curd.execute('SELECT `san` FROM `certificate_sans` WHERE `cert_digest` = %s', (digest,))
+		sans_result = [row['san'] for row in curd.fetchall()]
+
+		# Return the result
+		return {
+			'digest': cert_result['digest'],
+			'subjectCN': cert_result['subjectCN'],
+			'subjectDN': cert_result['subjectDN'],
+			'notBefore': cert_result['notBefore'],
+			'notAfter': cert_result['notAfter'],
+			'issuerCN': cert_result['issuerCN'],
+			'issuerDN': cert_result['issuerDN'],
+			'lastSeen': cert_result['lastSeen'],
+			'numHosts': cert_result['numHosts'],
+			'keySize': cert_result['keySize'],
+			'sans': sans_result,
+			'seenAt': seen_result,
+		}
 
 	@api_login_required('delete', allow_api_token=True)
 	@api_manager.response(204, 'Certificate was deleted')
@@ -108,6 +131,7 @@ class CertificateItem(Resource):
 		Removes a certificate from the list of known certificates
 		"""
 
+		# Check if we have permission (API token has all permissions)
 		if 'api_token_valid' not in session or session['api_token_valid'] is not True:
 			if not does_user_have_permission("certificates.view"):
 				raise InvalidPermissionException
@@ -120,8 +144,10 @@ class CertificateItem(Resource):
 		if result is None:
 			return certificates_namespace.abort(404, 'Certificate not found')
 
+		# Delete the certificate
 		curd.execute('DELETE FROM `certificate` WHERE `digest` = %s', (digest,))
 		g.db.commit()
 
+		# Return HTTP No Content
 		return "", 204
 

@@ -19,3 +19,14 @@ page_certificates_serializer = api_manager.inherit('Paginated certificates', pag
 	'items': fields.List(fields.Nested(certificates_serializer))
 })
 
+cert_last_seen_serializer = api_manager.model('certificate_last_seen', {
+	'timestamp': fields.DateTime(required=True, description='The date and time the certificate was seen at this location'),
+	'location': fields.String(required=True, description='The IP address and post where the certificate was seen'),
+	'chain_state': fields.Integer(required=True, description='The state of the chain')
+})
+
+certificates_full_serializer = api_manager.inherit('Full certificate details', certificates_serializer, {
+	'sans': fields.List(fields.String(required=True, description='A subject alternate name')),
+	'seenAt': fields.List(fields.Nested(cert_last_seen_serializer))
+})
+
