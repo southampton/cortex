@@ -1,5 +1,5 @@
 from flask import request, session, g
-from flask_restplus import Resource, reqparse
+from flask_restplus import Resource, reqparse, inputs
 import math
 import MySQLdb as mysql
 
@@ -16,6 +16,9 @@ certificates_namespace = api_manager.namespace('certificates', description='Cert
 
 certificates_arguments = reqparse.RequestParser()
 certificates_arguments.add_argument('cn_or_san', type=str, required=False, default=None, help='A subject CN or SAN to search for')
+certificates_arguments.add_argument('expired', type=inputs.boolean, required=False, default=None, help='Show only (true) or hide (false) expired certificates')
+certificates_arguments.add_argument('self_signed', type=inputs.boolean, required=False, default=None, help='Show only (true) or hide (false) self-signed certificates')
+certificates_arguments.add_argument('key_size', type=int, required=False, default=None, help='Show only certificates whose key size is a certain number of bits')
 
 @certificates_namespace.route('/')
 class CertificatesCollection(Resource):
@@ -46,19 +49,44 @@ class CertificatesCollection(Resource):
 		# Parse our arguments
 		certificates_args = certificates_arguments.parse_args(request)
 		cn_or_san = certificates_args.get('cn_or_san', None)
+		expired = certificates_args.get('expired', None)
+		self_signed = certificates_args.get('self_signed', None)
+		key_size = certificates_args.get('key_size', None)
 
-		# Build a where clause
-		where_clause = ''
+		# Build WHERE clauses
+		where_clauses = []
 		query_parts = []
-		if cn_or_san is not None:
+		if cn_or_san is not None and cn_or_san != '':
 			# Search for the CN or SAN
-			where_clause = ' WHERE `certificate`.`subjectCN` = %s OR `certificate_sans`.`san` = %s'
+			where_clauses.append('(`certificate`.`subjectCN` = %s OR `certificate_sans`.`san` = %s)')
 
 			# Add on query param for CN
 			query_parts.append(cn_or_san)
 
 			# Add on query param for SAN, which need a "DNS:" prefix
 			query_parts.append('DNS:' + cn_or_san)
+
+		if expired is not None:
+			if expired is True:
+				where_clauses.append('`certificate`.`notAfter` < UTC_TIMESTAMP()')
+			else:
+				where_clauses.append('`certificate`.`notAfter` >= UTC_TIMESTAMP()')
+
+		if self_signed is not None:
+			if self_signed is True:
+				where_clauses.append('`certificate`.`issuerDN` = `certificate`.`subjectDN`')
+			else:
+				where_clauses.append('`certificate`.`issuerDN` != `certificate`.`subjectDN`')
+
+		if key_size is not None:
+			where_clauses.append('`certificate`.`keySize` = %s')
+			query_parts.append(key_size)
+
+		# Build the total WHERE clause
+		if len(where_clauses) > 0:
+			where_clause = ' WHERE ' + (' AND '.join(where_clauses))
+		else:
+			where_clause = ''
 
 		# Get the number of certificates
 		curd = g.db.cursor(mysql.cursors.DictCursor)
