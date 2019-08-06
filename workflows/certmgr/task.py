@@ -13,7 +13,7 @@ import DNS
 
 def run(helper, options):
 	# check if workflows are locked
-	if not helper.lib.checkWorkflowLock:
+	if not helper.lib.checkWorkflowLock():
 		raise Exception("Workflows are currently locked")
 
 	# Configuration of task
@@ -155,7 +155,7 @@ def create_entca_cert(helper, options):
 	# Get the configuration
 	config = options['wfconfig']
 
-	# Call the UoS Enterprise CA API to request the cert
+	# Call the Enterprise CA API to request the cert
 	helper.event('generate_entca_cert', 'Requesting certificate for ' + options['fqdn'] + ' from Enterprise CA API')
 	r = requests.post('https://' + options['entca']['hostname'] + '/create_entca_certificate', json={'fqdn': options['fqdn'], 'sans': options['aliases']}, headers={'Content-Type': 'application/json', 'X-Client-Secret': options['entca']['api_token']}, verify=options['entca']['verify_ssl'])
 	if r is None:

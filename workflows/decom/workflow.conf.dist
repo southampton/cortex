@@ -20,7 +20,7 @@ ENTCA_SERVERS=[
         {'id': 'entca_prod', 'hostname': 'entca-api.mydomain.tld', 'entdomain': 'mydomain.tld', 'api_token': 'password', 'verify_ssl': True,},
 ]
 
-# Whether to enable the deleting of metricsfrom Graphite
+# Whether to enable the deleting of metrics from Graphite
 GRAPHITE_DELETE_ENABLE=True
 
 # A list of suffixes to append to the hostname when searching for the metrics in Graphite

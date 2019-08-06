@@ -4,9 +4,8 @@ import requests.exceptions
 import time
 
 def run(helper, options):
-	if not helper.lib.checkWorkflowLock:
+	if not helper.lib.checkWorkflowLock():
 		raise Exception("Workflows are currently locked")
-
 
 	# Find out which workflow we're wanting to run
 	workflow = options['workflow']
@@ -40,8 +39,11 @@ def run(helper, options):
 		vm_folder_moid = options['vm_folder_moid']
 		dns_aliases = options['dns_aliases']
 		set_backup = options['wfconfig']['SET_BACKUP']
-		entca_servers = options['wfconfig']['ENTCA_SERVERS']
-		entca_default_san_domain = ''
+		entca_default_san_domain = None
+		if 'ENTCA_SERVERS' in options['wfconfig']:
+			entca_servers = options['wfconfig']['ENTCA_SERVERS']
+		else:   
+			entca_servers = None		
 	elif workflow == 'sandbox':
 		prefix = options['wfconfig']['SB_PREFIX']
 		vcenter_tag = options['wfconfig']['SB_VCENTER_TAG']
@@ -65,8 +67,14 @@ def run(helper, options):
 		vm_folder_moid = None
 		dns_aliases = []
 		set_backup = options['wfconfig']['SB_SET_BACKUP']
-		entca_servers = options['wfconfig']['ENTCA_SERVERS']
-		entca_default_san_domain = options['wfconfig']['SB_DEFAULT_SAN_DOMAIN']
+		if 'ENTCA_SERVERS' in options['wfconfig']:
+			entca_servers = options['wfconfig']['ENTCA_SERVERS']
+		else:
+			entca_servers = None
+		if 'SB_DEFAULT_SAN_DOMAIN' in options['wfconfig']:
+			entca_default_san_domain = options['wfconfig']['SB_DEFAULT_SAN_DOMAIN']
+		else:
+			entca_default_san_domain = None
 	elif workflow == 'student':
 		prefix = options['wfconfig']['STU_PREFIX']
 		vcenter_tag = options['wfconfig']['STU_VCENTER_TAG']
@@ -93,11 +101,14 @@ def run(helper, options):
 		vm_folder_moid = options['wfconfig']['STU_VM_FOLDER']
 		dns_aliases = options['dns_aliases']
 		set_backup = options['wfconfig']['STU_SET_BACKUP']
+		entca_servers = None
+		entca_default_san_domain = None
 
 		# Override primary owner to match allocated_by
 		options['primary_owner_who'] = helper.username
 		options['primary_owner_role'] = 'Student'
-
+	else:
+		raise Exception('Invalid buildvm workflow encountered')
 
 	## Allocate a hostname #################################################
 
@@ -318,8 +329,8 @@ def run(helper, options):
 
 	## Create Enterprise CA certificate ####################################
 
-	# Only for Linux VMs...
-	if workflow != 'student' and os_type == helper.lib.OS_TYPE_BY_NAME['Linux'] and options['template'] != 'rhel6c':
+	# Only if we have Enterprise CA configuration and only for Linux VMs...
+	if entca_servers is not None and os_type == helper.lib.OS_TYPE_BY_NAME['Linux'] and options['template'] != 'rhel6c':
 		# Start the event
 		helper.event("entca_create_cert", "Creating certificate on Enterprise CA")
 
@@ -327,31 +338,20 @@ def run(helper, options):
 			entca_servers = [entca_servers]
 
 		for entca in entca_servers:
-			# Standard
-			if workflow == 'standard':
-				try:
-					r = requests.post('https://' + entca['hostname'] + '/create_entca_certificate', json={'fqdn': system_name + '.' + entca['entdomain']}, headers={'Content-Type': 'application/json', 'X-Client-Secret': entca['api_token']}, verify=entca['verify_ssl'])
-				except:
-					helper.end_event(success=False, description="Error communicating with " + entca['hostname'] + ' Error code: ' + str(r.status_code))
-				else:
-					if r.status_code == 200:
-						helper.end_event(success=True, description="Created certificate on Enterprise CA")
-					else:
-						helper.end_event(success=False, description="Error creating certificate on Enterprise CA")
+			# Build our data for the request
+			json_data = {'fqdn': system_name + '.' + entca['entdomain']}
+			if entca_default_san_domain is not None:
+				json_data = {'sans': [system_name + '.' + entca_default_san_domain]}
 
-			elif workflow == 'sandbox':
-				try:
-					r = requests.post('https://' + entca['hostname'] + '/create_entca_certificate', json={'fqdn': system_name + '.' + entca['entdomain'], 'sans': [system_name + '.' + entca_default_san_domain]}, headers={'Content-Type': 'application/json', 'X-Client-Secret': entca['api_token']}, verify=entca['verify_ssl'])
-				except:
-					helper.end_event(success=False, description="Error communicating with " + entca['hostname'])
-				else:
-					if r.status_code == 200:
-						helper.end_event(success=True, description="Created certificate on Enterprise CA")
-					else:
-						helper.end_event(success=False, description="Error creating certificate on Enterprise CA")
-
+			try:
+				r = requests.post('https://' + entca['hostname'] + '/create_entca_certificate', json={'fqdn': system_name + '.' + entca['entdomain']}, headers={'Content-Type': 'application/json', 'X-Client-Secret': entca['api_token']}, verify=entca['verify_ssl'])
+			except:
+				helper.end_event(success=False, description='Error communicating with ' + entca['hostname'])
 			else:
-				helper.end_event(success=False, description="Invalid workflow encountered")
+				if r.status_code == 200:
+					helper.end_event(success=True, description="Created certificate on Enterprise CA")
+				else:
+					helper.end_event(success=False, description='Error creating certificate on Enterprise CA. Error code: ' + str(r.status_code))
 
 
 

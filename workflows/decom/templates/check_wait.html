@@ -17,7 +17,7 @@
 <div class="row" style="display:none" id="task_warning">
 	<div class="col-md-12">
 		<p style="margin: 1em 0em 1em 2em;font-size: 16px">The task to check the system for decommissioning completed <strong>with warnings</strong>. You may wish to review the <a href="{{ url_for('task_status', id=task_id) }}" target="_blank">task details</a> for more information. This usually occurs when Cortex fails to communicate with one or more external services, so continuing with decommissioning may <strong>not</strong> fully decommission the system.</p>
-		<p style="margin: 1em 0em 1em 2em;font-size: 16px">You can proceed (<strong>carefully</strong>) with the decommissioning process here: <a href="{{ url_for('decom_step_check_complete', id=task_id)}}">proceed with decommission</a></p>
+		<p style="margin: 1em 0em 1em 2em;font-size: 16px">You can proceed (<strong>carefully</strong>) with the decommissioning process here: <a href="{{ url_for('decom_step_check_complete', id=task_id)}}">proceed with decommission</a>. You will still be given the opportunity to review the steps that Cortex will perform before the decommission takes place.</p>
 	</div>
 </div>
 

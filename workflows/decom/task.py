@@ -6,7 +6,7 @@ import ldap
 
 def run(helper, options):
 	# check if workflows are locked
-	if not helper.lib.checkWorkflowLock:
+	if not helper.lib.checkWorkflowLock():
 		raise Exception("Workflows are currently locked")
 
 	# Iterate over the actions that we have to perform

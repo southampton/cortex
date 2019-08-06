@@ -13,7 +13,7 @@
 		<div class="checkbox">
 			<label>
 				<input type="checkbox" name="runaction" value="{{ loop.index0 }}" checked>
-				<span class="badge">{{ loop.index0 }}</span><i class="fa fa-fw fa-arrow-right"></i> {{action.desc}}
+				<span class="badge badge-primary">{{ loop.index0 }}</span><i class="fa fa-fw fa-arrow-right"></i> {{action.desc}}
 				<br/><span class="text-muted">{{action.detail|safe}}</span>
 			</label>
 		</div>
@@ -21,7 +21,7 @@
 	{%endfor%}
 	</ul>
 
-	<p class="lead text-center">You are about to decommission <strong>{{system.name}}</strong>, whose description is <strong>{{system.allocation_comment}}</strong>, and is in the <strong{% if system.cmdb_environment|lower == "production" %} class="text-danger"{% elif system.cmdb_environment|lower == "pre-production" or system.cmdb_environment == "preproduction" %} class="text-warning"{% endif %}>{{system.cmdb_environment}}</strong> environment. It was created on <strong>{{system.allocation_date}}</strong>.<br />If this is correct, click the Decommission button below to confirm and start the decommission process.</p>
+	<p class="mt-3 lead text-center">You are about to decommission <span class="font-weight-bold">{{system.name}}</span>, whose description is <span class="font-weight-bold">{{system.allocation_comment}}</span>, and is in the <span class="font-weight-bold {% if system.cmdb_environment|lower == "production" %}text-danger{% elif system.cmdb_environment|lower == "pre-production" or system.cmdb_environment == "preproduction" %}text-warning{% endif %}">{{system.cmdb_environment}}</span> environment. It was created on <span class="font-weight-bold">{{system.allocation_date}}</span>.<br />If this is correct, click the Decommission button below to confirm and start the decommission process.</p>
 	<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 	<input name="actions" type="hidden" value="{{json_data}}"/>
 	<div class="text-center">
