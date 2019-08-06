@@ -70,7 +70,7 @@
 		</div>
 		<div class="col-md-4 form-group">
 			<label for="">SSL Profile:</label></br/>
-			<label for="create_ssl_profile" style="top:0.5em;position:relative"><input type="checkbox" id="create_ssl_profile" name="create_ssl_profile" {% if 'create_ssl_profile' not in values or ('create_ssl_profile' in values and values['create_ssl_profile']) %}checked="checked" {% endif %}/> Create SSL Profile on the NLBs</label>
+			<label for="create_ssl_profile" style="top:0.5em;position:relative"><input type="checkbox" id="create_ssl_profile" name="create_ssl_profile" {% if ('create_ssl_profile' in values and providers_dict[values['provider']]['create_ssl_profile']) or ('provider' not in values and providers_dict[default_provider]['create_ssl_profile']) %}checked="checked" {% endif %}/> Create SSL Profile on the NLBs</label>
 		</div>
 
 	</div>
@@ -98,6 +98,11 @@ var provider_expire_enable = {
 	'{{ provider.id }}': {% if provider.selectable_expiration %}true{% else %}false{% endif %},
 {%- endfor %}
 }
+var provider_profile_enable = {
+{%- for provider in providers %}
+	'{{ provider.id }}': {% if provider.create_ssl_profile %}true{% else %}false{% endif %},
+{%- endfor %}
+}
 
 $('#env').change(function() {
 	$('#domain').val(env_domain_map[$('#env').val()]);
@@ -120,7 +125,14 @@ $('#provider').change(function() {
 	{
 		$('#length').attr('readonly', 'readonly');
 	}
-
+	if (provider_profile_enable[$('#provider').val()])
+	{
+		$('#create_ssl_profile').prop('checked', true);
+	}
+	else
+	{
+		$('#create_ssl_profile').removeAttr('checked');
+	}
 });
 </script>
 {% endblock %}

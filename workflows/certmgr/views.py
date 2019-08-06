@@ -23,7 +23,7 @@ import OpenSSL as openssl
 # For securely passing the actions list via the browser
 from itsdangerous import JSONWebSignatureSerializer
 
-workflow = CortexWorkflow(__name__, check_config={'PROVIDERS': list, 'DEFAULT_PROVIDER': str, 'ENVS': list, 'DEFAULT_ENV': str, 'KEY_SIZES': list, 'DEFAULT_KEY_SIZE': int, 'LENGTHS': list, 'DEFAULT_LENGTH': int, 'NLBS': list, 'ACME_SERVERS': list, 'NLB_INTERMEDIATE_CN_FILES': dict, 'NLB_INTERMEDIATE_CN_OCSP_STAPLING_PARAMS': dict, 'CLIENT_SSL_PROFILE_PREFIX': str, 'CLIENT_SSL_PROFILE_SUFFIX': str, 'CERT_SELF_SIGNED_C': str, 'CERT_SELF_SIGNED_ST': str, 'CERT_SELF_SIGNED_L': str, 'CERT_SELF_SIGNED_O': str, 'CERT_SELF_SIGNED_OU': str, 'ACME_DNS_VIEW': str, 'DNS_WAIT_TIME': int, 'CERT_CACHE_TIME': int, 'EXTERNAL_DNS_SERVER_IP': str})
+workflow = CortexWorkflow(__name__, check_config={'PROVIDERS': list, 'DEFAULT_PROVIDER': str, 'ENVS': list, 'DEFAULT_ENV': str, 'KEY_SIZES': list, 'DEFAULT_KEY_SIZE': int, 'LENGTHS': list, 'DEFAULT_LENGTH': int, 'NLBS': list, 'ACME_SERVERS': list, 'ENTCA_SERVERS': list, 'NLB_INTERMEDIATE_CN_FILES': dict, 'NLB_INTERMEDIATE_CN_OCSP_STAPLING_PARAMS': dict, 'CLIENT_SSL_PROFILE_PREFIX': str, 'CLIENT_SSL_PROFILE_SUFFIX': str, 'CERT_SELF_SIGNED_C': str, 'CERT_SELF_SIGNED_ST': str, 'CERT_SELF_SIGNED_L': str, 'CERT_SELF_SIGNED_O': str, 'CERT_SELF_SIGNED_OU': str, 'ACME_DNS_VIEW': str, 'DNS_WAIT_TIME': int, 'CERT_CACHE_TIME': int, 'EXTERNAL_DNS_SERVER_IP': str})
 workflow.add_permission('certmgr.create', 'Create SSL Certificate')
 
 # FQDN regex
@@ -148,9 +148,12 @@ def certmgr_create():
 	# Turn ACME servers in to a dict
 	acme_dict = { acme['id']: acme for acme in wfconfig['ACME_SERVERS'] }
 
+	# Turn ENTCA servers in to a dict
+	entca_dict = { entca['id']: entca for entca in wfconfig['ENTCA_SERVERS'] }
+
 	if request.method == 'GET':
 		## Show form
-		return render_template(__name__ + "::create.html", title="Create SSL Certificate", envs=wfconfig['ENVS'], envs_dict=envs_dict, default_env=wfconfig['DEFAULT_ENV'], providers=wfconfig['PROVIDERS'], providers_dict=providers_dict, default_provider=wfconfig['DEFAULT_PROVIDER'], key_sizes=wfconfig['KEY_SIZES'], default_key_size=wfconfig['DEFAULT_KEY_SIZE'], cert_lengths=wfconfig['LENGTHS'], default_cert_length=wfconfig['DEFAULT_LENGTH'], nlbs=wfconfig['NLBS'], nlbs_dict=nlbs_dict, acme_servers=wfconfig['ACME_SERVERS'], acme_dict=acme_dict )
+		return render_template(__name__ + "::create.html", title="Create SSL Certificate", envs=wfconfig['ENVS'], envs_dict=envs_dict, default_env=wfconfig['DEFAULT_ENV'], providers=wfconfig['PROVIDERS'], providers_dict=providers_dict, default_provider=wfconfig['DEFAULT_PROVIDER'], key_sizes=wfconfig['KEY_SIZES'], default_key_size=wfconfig['DEFAULT_KEY_SIZE'], cert_lengths=wfconfig['LENGTHS'], default_cert_length=wfconfig['DEFAULT_LENGTH'], nlbs=wfconfig['NLBS'], nlbs_dict=nlbs_dict, acme_servers=wfconfig['ACME_SERVERS'], acme_dict=acme_dict, entca_servers=wfconfig['ENTCA_SERVERS'], entca_dict=entca_dict)
 
 	elif request.method == 'POST':
 		valid_form = True
@@ -214,7 +217,7 @@ def certmgr_create():
 
 		# If we've got some errors, go back to the form
 		if not valid_form:
-			return render_template(__name__ + "::create.html", title="Create SSL Certificate", envs=wfconfig['ENVS'], envs_dict=envs_dict, default_env=wfconfig['DEFAULT_ENV'], providers=wfconfig['PROVIDERS'], providers_dict=providers_dict, default_provider=wfconfig['DEFAULT_PROVIDER'], key_sizes=wfconfig['KEY_SIZES'], default_key_size=wfconfig['DEFAULT_KEY_SIZE'], cert_lengths=wfconfig['LENGTHS'], default_cert_length=wfconfig['DEFAULT_LENGTH'], nlbs=wfconfig['NLBS'], nlbs_dict=nlbs_dict, acme_servers=wfconfig['ACME_SERVERS'], acme_dict=acme_dict, values=form_fields)
+			return render_template(__name__ + "::create.html", title="Create SSL Certificate", envs=wfconfig['ENVS'], envs_dict=envs_dict, default_env=wfconfig['DEFAULT_ENV'], providers=wfconfig['PROVIDERS'], providers_dict=providers_dict, default_provider=wfconfig['DEFAULT_PROVIDER'], key_sizes=wfconfig['KEY_SIZES'], default_key_size=wfconfig['DEFAULT_KEY_SIZE'], cert_lengths=wfconfig['LENGTHS'], default_cert_length=wfconfig['DEFAULT_LENGTH'], nlbs=wfconfig['NLBS'], nlbs_dict=nlbs_dict, acme_servers=wfconfig['ACME_SERVERS'], acme_dict=acme_dict, values=form_fields, entca_servers=wfconfig['ENTCA_SERVERS'], entca_dict=entca_dict)
 
 		# Build the options
 		options = {}
@@ -226,6 +229,7 @@ def certmgr_create():
 		options['create_ssl_profile'] = form_fields['create_ssl_profile']
 		options['nlb'] = nlbs_dict[envs_dict[form_fields['env']]['nlb']]
 		options['acme'] = acme_dict[envs_dict[form_fields['env']]['acme']]
+		options['entca'] = entca_dict[envs_dict[form_fields['env']]['entca']]
 		options['key_size'] = int(form_fields['key_size'])
 		options['length'] = int(form_fields['length'])
 
