@@ -10,14 +10,11 @@ from cortex.lib.user import does_user_have_permission
 import cortex.lib.core
 import MySQLdb as mysql
 
-
-
-
 puppet_modules_info_namespace = api_manager.namespace('puppet', description='Puppet API')
 @puppet_modules_info_namespace.route('/modules_info')
 class Puppet(Resource):
 	"""
-	API Handler for POST requests
+	API Handler for Puppet module info
 	"""
 
 	@app.disable_csrf_check
@@ -45,6 +42,5 @@ class Puppet(Resource):
 						description = tag['text']
 						tag_name = tag['tag_name']
 						curd.execute("INSERT INTO `puppet_modules_info` (`module_name`, `class_name`, `class_parameter`, `description`, `tag_name`) VALUES (%s, %s, %s, %s, %s)", (module_name, class_name, class_parameter, description, tag_name))
-		# commit the changes		
+		# commit the changes
 		curd.connection.commit()
-

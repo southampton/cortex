@@ -92,7 +92,6 @@ def invalid_permission_handler(e):
 	return {'message':str(e), 'error_code': e.status_code}, e.status_code
 
 # Add the namespaces.
-
 from cortex.api.endpoints.systems_info_view import systems_info_view_namespace
 from cortex.api.endpoints.tasks import tasks_namespace
 from cortex.api.endpoints.dns import dns_namespace
