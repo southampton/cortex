@@ -1,5 +1,6 @@
 #### Combined standard/sandbox VM Workflow Task
 import time
+import json
 
 def run(helper, options):
 
@@ -86,6 +87,11 @@ def run(helper, options):
 		options['primary_owner_who'] = helper.username
 		options['primary_owner_role'] = 'Student'
 
+	# Store some of the values that are part of the task output
+	task_output = {}
+        if('service_recipe_name' in options and 'vm_recipe_name' in options):
+                task_output['service_recipe_name'] = options['service_recipe_name']
+                task_output['vm_recipe_name'] = options['vm_recipe_name']
 
 	## Allocate a hostname #################################################
 
@@ -98,7 +104,7 @@ def run(helper, options):
 	# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
 	system_name = system_info.keys()[0]
 	system_dbid = system_info.values()[0]
-
+	
 
 	# Update the system with some options.
 	helper.lib.update_system(
@@ -111,6 +117,9 @@ def run(helper, options):
 
 	# End the event
 	helper.end_event(description="Allocated system name: " + system_name)
+	
+	# Save the system name
+	task_output['allocated_vm_name'] = system_name
 
 	## Allocate an IPv4 Address and create a host object (standard only) ###
 
@@ -127,10 +136,9 @@ def run(helper, options):
 
 		# End the event
 		helper.end_event(description="Allocated the IP address " + ipv4addr)
+		task_output['ip_address'] = ipv4addr
 	else:
 		ipv4addr = None
-
-
 
 	## Create the virtual machine post-clone specification #################
 
@@ -346,11 +354,12 @@ def run(helper, options):
 
 		# End the event
 		helper.end_event(success=True, description="Created ServiceNow CMDB CI: " + str(cmdb_id))
+		task_output['cmdb_id'] = cmdb_id
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
-
-
-
+	print("===========================================================================================================================================================================================")
+	print("TASK_ID: " + str(helper.get_task_id()) + " \n OUTPUT: " +json.dumps(task_output) + " \n QUERY: "+ ("UPDATE `tasks` SET `task_output` = %s WHERE `id` = %s" % (json.dumps(task_output), helper.get_task_id())))
+	helper.execute_query("UPDATE `tasks` SET `task_output` = %s WHERE `id` = %s;", params=(json.dumps(task_output), helper.get_task_id(),))
 	## Link ticket to CI (standard VM only) ################################
 
 	if workflow == 'standard' and 'CREATE_CI_RELS' in options['wfconfig'] and len(options['wfconfig']['CREATE_CI_RELS']) > 0:

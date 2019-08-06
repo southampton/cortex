@@ -366,6 +366,16 @@ Username:             %s
 		  PRIMARY KEY (`name`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 		
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `service_task` (
+		  `service_task_id` mediumint(11) NOT NULL,
+		  `vm_task_id` mediumint(11) NOT NULL UNIQUE,
+		  `vm_allocated_name` varchar(128) NOT NULL UNIQUE,
+		  `vm_recipe_name` varchar(128) NOT NULL,
+		  `service_recipe_name` varchar(128) NOT NULL,
+                  PRIMARY KEY (`vm_task_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `vm_recipes` (
 		  `name` varchar(255) NOT NULL,
 		  `purpose` text NOT NULL,
@@ -435,6 +445,7 @@ Username:             %s
 		  `end` datetime DEFAULT NULL,
 		  `status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '0: in progress, 1: success, 2: failure, 3: warning',
 		  `description` text,
+		  `task_output` text DEFAULT NULL,
 		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 

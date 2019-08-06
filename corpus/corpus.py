@@ -1954,7 +1954,7 @@ class Corpus(object):
 		return status
 
 	############################################################################
-
+	
 	def neocortex_task_wait(self, task):
 		"""Waits for a NeoCortex task to finish"""
 
@@ -1969,6 +1969,29 @@ class Corpus(object):
 
 			## Let's not busy wait CPU 100%...
 			time.sleep(1)
+
+	############################################################################
+
+	def neocortex_multi_tasks_wait(self, task_list):
+		"""Waits for a NeoCortex list of tasks to finish"""
+
+		while True:
+			for task in task_list:
+				
+				# Get the task status
+				status = self.neocortex_task_get_status(task)
+
+				# Status of zero is in-progress, so remove elements
+				# from the list when it's not that
+				if status is not None and int(status) != 0:
+					task_list = [t for t in task_list if not task]
+
+				# If all the tasks have been removed, return the status
+				if len(task_list) == 0:
+					return status
+
+				## Let's not busy wait CPU 100%...
+				time.sleep(1)
 
 	############################################################################
 

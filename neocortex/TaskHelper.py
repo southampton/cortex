@@ -79,8 +79,11 @@ class TaskHelper(object):
 			self._log_fatal_error("The task failed because VMware returned an error: " + str(ex))
 			self._end_task(success=False)
 		except Exception as ex:
+			tb = traceback.format_exc()
 			self._log_exception(ex)
 			self._end_task(success=False)
+		finally:
+			self._log_exception(tb)
 
 	def db_connect(self):
 		"""Returns a connection to the Cortex database"""
@@ -89,12 +92,27 @@ class TaskHelper(object):
 
 	def _log_exception(self, ex):
 		"""Logs an exception into the events for this task"""
-
 		exception_type = str(type(ex).__name__)
 		exception_message = str(ex)
 		self.curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())", 
 			('neocortex.task',self.task_id, self.workflow_name + "." + 'exception', self.username, "The task failed because an exception was raised: " + exception_type + " - " + exception_message, self.STATUS_FAILED))
 		self.db.commit()
+	def execute_query(self, query, params=None):
+		# Execute query
+		if params is None:
+			self.curd.execute(query)
+		else:
+			self.curd.execute(query, params)
+
+		# Commit changes to the db
+		self.db.commit()	
+		
+		# try to fetch the results
+		try:
+			result = self.curd.fetchall()
+			return result
+		except Exception as e:
+			pass
 
 	def _log_fatal_error(self, message):
 		"""Logs a fatal error into the events for this task"""
@@ -201,4 +219,5 @@ class TaskHelper(object):
 		# Fatal errors raise runtime errors.
 		if category.lower() == 'fatal':
 			raise RuntimeError(message)
-
+	def get_task_id(self):
+		return self.task_id

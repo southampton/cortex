@@ -45,7 +45,7 @@ def createservice():
 		autocomplete_service_recipes_names = get_service_recipes_list()
 		autocomplete_vm_recipes_names = get_vm_recipes_list()
 		
-		return workflow.render_template("create_service.html", clusters=clusters, environments=environments, title="Create Service", default_cluster=workflow.config['SB_DEFAULT_CLUSTER'], default_env=workflow.config['SB_DEFAULT_ENV'], os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'], autocomplete_users=autocomplete_users, autocomplete_service_recipes_names=autocomplete_service_recipes_names, autocomplete_vm_recipes_names=autocomplete_vm_recipes_names, folders=folders, network_names=workflow.config['NETWORK_NAMES'], networks_order=workflow.config['NETWORK_ORDER'])
+		return workflow.render_template("create_service.html", clusters=clusters, environments=environments, title="Create Service", os_names=workflow.config['OS_DISP_NAMES'], os_order=workflow.config['OS_ORDER'], autocomplete_users=autocomplete_users, autocomplete_service_recipes_names=autocomplete_service_recipes_names, autocomplete_vm_recipes_names=autocomplete_vm_recipes_names, folders=folders, network_names=workflow.config['NETWORK_NAMES'], networks_order=workflow.config['NETWORK_ORDER'])
 	elif request.method == 'POST' and 'action' in request.form and request.form['action']=="create_recipe": # if it is POST, then it does need validation
 				
 		# Get the form in a dict
@@ -143,7 +143,6 @@ def createservice():
 		options = {}
 		options['workflow'] = 'service' # this is not really important, but I might delete it later
 		options['vm_recipes'] = {}
-		
 		for vm_recipe in form['service_vms'].keys():
 			"""
 			if 'sockets' not in form['service_vms'][vm_recipe] or 'cores' not in form['service_vms'][vm_recipe] or 'ram' not in form['service_vms'][vm_recipe] or 'disk' not in form['service_vms'][vm_recipe] or 'template' not in form['service_vms'][vm_recipe] or 'cluster' not in form['service_vms'][vm_recipe] or 'environment' not in form['service_vms'][vm_recipe] or 'network' not in form['service_vms'][vm_recipe]:
@@ -164,25 +163,21 @@ def createservice():
 			options['vm_recipes'][vm_recipe]['purpose'] = form['service_vms'][vm_recipe]['purpose']
 			options['vm_recipes'][vm_recipe]['comments'] = form['service_vms'][vm_recipe]['comments']
 			options['vm_recipes'][vm_recipe]['sendmail'] = form['sendmail']
-			# workflow config is universal and is added for the whole service at the top
 			options['vm_recipes'][vm_recipe]['expiry'] = form['expiry']
-			############################################################################################
 			options['vm_recipes'][vm_recipe]['network'] = form['service_vms'][vm_recipe]['network']
-			############################################################################################
 			options['vm_recipes'][vm_recipe]['primary_owner_who'] = form['service_vms'][vm_recipe].get('primary_owner_who', None)
 			options['vm_recipes'][vm_recipe]['primary_owner_role'] = form['service_vms'][vm_recipe].get('primary_owner_role', None)
 			options['vm_recipes'][vm_recipe]['secondary_owner_who'] = form['service_vms'][vm_recipe].get('secondary_owner_who', None)
 			options['vm_recipes'][vm_recipe]['secondary_owner_role'] = form['service_vms'][vm_recipe].get('secondary_owner_role', None)
-			#####################################################################
 			options['vm_recipes'][vm_recipe]['dns_aliases'] = form['service_vms'][vm_recipe].get('dns_aliases', None)
 			options['vm_recipes'][vm_recipe]['vm_folder_moid'] = form['service_vms'][vm_recipe].get('vm_folder_moid', None)
-			#####################################################################			
+			options['vm_recipes'][vm_recipe]['task'] = form['task']
+			options['vm_recipes'][vm_recipe]['service_recipe_name'] = form['service_name']
 			if 'NOTIFY_EMAILS' in app.config:
 				options['vm_recipes'][vm_recipe]['notify_emails'] = app.config['NOTIFY_EMAILS']
 			else:
 				options['vm_recipes'][vm_recipe]['notify_emails'] = []
 		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and sets up a service containing multiple VMs.")
-		#return json.dumps(options, indent=1)
 		return redirect(url_for('task_status', id=task_id))
 	else:
 		return "Look at me, I just did nothing"

@@ -108,7 +108,11 @@
 		<img src="https://www.solidbackgrounds.com/images/2880x1800/2880x1800-light-sky-blue-solid-color-background.jpg">
 		<div class="carousel-item-content-center name-service">
 			<div class="form-group w-25">
-				<div class="input-group">
+				<div class="input-group d-none" id="service-now-task">
+                                        <h4 class="w-100" style="text-align: left;">ServiceNow Task:<span class="required">*</span></h4>
+					<input class="form-control w-100" id="task" name="task" placeholder="e.g. CTASK0123456 or PRJTASK0987654" autofocus />
+                                </div>
+				<div class="input-group" style="margin-top: 2.5%;">
 					<label for="service_name" class="h4 w-100 text-left" style="margin-bottom: 10px;">Service recipe name:</label>
 					<input id="service_name" class="form-control form-control-lg" type="text" name="service_name" placeholder="'Service_name'" aria-label="Service_name" value="" required>
 					<div class="input-group-append">
@@ -140,8 +144,9 @@
 						});
 					</script>
 				</div>
-				<h4 style="margin-top:1em; text-align: left;">Environment<span class="required">*</span></h4>
-					<div>
+				<div class="input-group">
+					<h4 style="margin-top:1em; text-align: left; width: 100%;">Environment<span class="required">*</span></h4>
+					<div class="w-100">
 						<select class="selectpicker-disabled w-100" name="env" id="env">
 							<option></option>
 							{% for environment in environments -%}
@@ -149,7 +154,8 @@
 							{%- endfor %}
 						</select>
 					</div>
-				<div class="input-group" style="margin-top: 10%;">
+				</div>
+				<div class="input-group" style="margin-top: 7.5%;">
 					<input type="checkbox" name="sendmail" id="sendmail" style="margin-right:0.4em; width: 1rem; height: 1rem; align-self: center;" checked="checked" /><label class="h4" for="sendmail" style="position:relative; top:-2px; margin-bottom: 0px!important;">Notify me by e-mail when done</label>	
 				</div>
 			</div>
@@ -183,13 +189,9 @@
 -->
 <datalist id="autocomplete-VMs">
 	<option></option>
-	<option value="banner_database_1">banner_database_1</option>
-	<option value="banner_database_2">banner_database_2</option>
-	<option value="banner_database_3">banner_database_3</option>
-	<option value="banner_database_4">banner_database_4</option>
-	<option value="something_else">something_else</option>
-	<option value="app_server">app_server</option>
-	<option value="magic_layer">magic_layer</option>
+	{% for vm_recipe_name in autocomplete_vm_recipes_names %}
+	<option id="{{vm_recipe_name['name']}}">{{vm_recipe_name['name']}}</option>
+	{% endfor %}
 </datalist>
 <datalist id="autocomplete-service-templates">
 	<option></option>
@@ -218,7 +220,7 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-				<button type="button" class="btn btn-primary" id="new-vm-recipe">Save changes</button>
+				<button type="button" class="btn btn-primary" id="new-vm-recipe">Save Changes</button>
 			</div>
 		</div>
 	</div>
@@ -489,6 +491,10 @@ $(document).ready(function(){
 		});
 	});
 	$('#vm-carousel').on('slide.bs.carousel', function (e, stuff) {
+		if(e.from == 0 && e.direction == "left"){
+			$("#vm-carousel .selectpicker-disabled").addClass("selectpicker").removeClass("selectpicker-disabled");
+			$(".selectpicker").selectpicker();
+		}
 		// check if all the conditions
 		if(e.from == 1 && e.direction == "left"){
 			var current_slide = $(this).find('.carousel-item.active');
@@ -509,9 +515,11 @@ $(document).ready(function(){
 		} else {
 			var vm_recipe_name = $("#vm-recipe-input").val();
 		}
+		if($(this).val() )
 		$("#vm-recipe-input").val("");
-		
-
+		if(recipe_data){
+			$("#service-now-task").removeClass("d-none");
+		}
 		var general_description = vm_recipe_name+" general description";
 		
 		// careful on the next line, is there a use case when the user will use the same recipe twice ? if that's the case, you need to find something else for the ID
@@ -557,10 +565,12 @@ $(document).ready(function(){
 			modal.find(".modal-body #vm-configuration").eq(0).attr('href', "#config-"+vm_recipe_name);
 			modal.find(".modal-body #puppet-code").eq(0).attr('id', "puppet-code-"+vm_recipe_name);
 			modal.find(".modal-body #config").eq(0).attr('id', "config-"+vm_recipe_name);
-			
+			console.log("pre-loop");
 			modal.find(".selectpicker-disabled").each(function(){
+				console.log("before");
                                 $(this).addClass("selectpicker").removeClass("selectpicker-disabled");
                                 $(this).selectpicker();
+				console.log("after");
                         });
 			
 			// Apply existing configuration if it already exists
@@ -571,16 +581,20 @@ $(document).ready(function(){
                                 modal.find(".modal-body #primary_owner_role").eq(0).attr('value', recipe_data['primary_owner_role']);
                                 modal.find(".modal-body #secondary_owner_who").eq(0).attr('value', recipe_data['secondary_owner_who']);
                                 modal.find(".modal-body #secondary_owner_role").eq(0).attr('value', recipe_data['secondary_owner_role']);
-                                modal.find(".modal-body #sockets-sldier").eq(0).attr('value', recipe_data['sockets']);
+				modal.find(".modal-body #sockets-sldier").eq(0).attr('value', recipe_data['sockets']);
                                 modal.find(".modal-body #ram-slider").eq(0).attr('value', recipe_data['ram']);
                                 modal.find(".modal-body #disk-slider").eq(0).attr('value', recipe_data['disk']);
                                 modal.find(".modal-body #cores-slider").eq(0).attr('value', recipe_data['cores']);
+				/*
+				modal.find(".modal-body #sockets-sldier").eq(0).trigger('input', [recipe_data['sockets']]);
+                                modal.find(".modal-body #ram-slider").eq(0).trigger('input', [recipe_data['ram']]);
+                                modal.find(".modal-body #disk-slider").eq(0).trigger('input', [recipe_data['disk']]);
+                                modal.find(".modal-body #cores-slider").eq(0).trigger('input', [recipe_data['cores']]);
+				*/
 				modal.find(".modal-body #template").eq(0).val(recipe_data['os']);
 				modal.find(".modal-body #template").eq(0).selectpicker('refresh');
 				modal.find(".modal-body #cluster").eq(0).val(recipe_data['location_cluster']);
 				modal.find(".modal-body #cluster").eq(0).selectpicker('refresh');
-				console.log(modal.find(".modal-body #network").eq(0));
-				console.log(recipe_data['network']);
 				modal.find(".modal-body #network").eq(0).val(recipe_data['network']);
                                 modal.find(".modal-body #network").eq(0).selectpicker('refresh');
 				modal.find(".modal-body #vm_folder_moid").eq(0).val(recipe_data['vm_folder_moid']);
@@ -600,13 +614,15 @@ $(document).ready(function(){
 			sliders.each(function(){
 				$(this).parent().find(".output").eq(0).html($(this).val());
 			});
-			sliders.on('input', function() {
+			sliders.on('input', function(event, value){
+				if(value){
+					console.log(value);
+				}
 				$(this).parent().find(".output").eq(0).html($(this).val());
 				$('#config-'+vm_recipe_name+' #val_vcpus').text($('#config-'+vm_recipe_name+" #sockets-slider").val() * $('#config-'+vm_recipe_name+" #cores-slider").val());
 				$('#config-'+vm_recipe_name+' #val_ram').text($('#config-'+vm_recipe_name+" #ram-slider").val());
 				$('#config-'+vm_recipe_name+' #val_disk').text($('#config-'+vm_recipe_name+" #disk-slider").val());
 			});
-			
 			modal.on('shown.bs.modal', function (e) {
 				var delete_button = e.relatedTarget;
 				if($(delete_button).hasClass('no-modal')) {
