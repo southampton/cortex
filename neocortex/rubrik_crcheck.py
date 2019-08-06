@@ -6,7 +6,7 @@ def run(helper, options):
 
 	helper.event('get_current_status', 'Getting the current Cortex-defined backup status of systems')
 	curd = helper.db.cursor(mysql.cursors.DictCursor)
-	curd.execute("SELECT `id`, `name`, `cmdb_environment`, `enable_backup` FROM `systems_info_view` WHERE `decom_date` IS NULL AND `enable_backup` != 2")
+	curd.execute("SELECT * FROM `systems_info_view` WHERE `decom_date` IS NULL AND `enable_backup` != 2")
 	vms_in_server = curd.fetchall()
 	helper.end_event(description='Retrieved all the systems')
 
@@ -37,7 +37,7 @@ def run(helper, options):
 	changes = 0
 	for cortex_vm_data in vms_in_server:
 		# retrieving the info that Rubrik has on the device
-		rubrik_vm_data = rubrik_connection.get_vm(cortex_vm_data['name'])
+		rubrik_vm_data = rubrik_connection.get_vm(cortex_vm_data)
 		
 		# If Rubrik doesn't have any data on it, there's nothing we can do. This should NOT happen though - it's possibly pointing to user error
 		if rubrik_vm_data == None:

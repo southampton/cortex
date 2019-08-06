@@ -386,7 +386,7 @@ def system_backup(id):
 			abort(404)
 
 		try:
-			vm = rubrik.get_vm(system['name'])
+			vm = rubrik.get_vm(system)
 		except:
 			abort(500)
 
@@ -410,7 +410,7 @@ def system_backup(id):
 		abort(404)
 
 	try:
-		vm = rubrik.get_vm(system['name'])
+		vm = rubrik.get_vm(system)
 	except:
 		abort(500)
 
@@ -783,14 +783,15 @@ def system_edit(id):
 				review_status = system['review_status']
 				review_task = system['review_task']
 
-			if system['enable_backup'] in [1, 2] and enable_backup == 0:
+			if int(system['enable_backup']) in [1, 2] and int(enable_backup) == 0:
 				rubrik = cortex.lib.rubrik.Rubrik()
 				try:
-					vm = rubrik.get_vm(system['name'])
+					vm = rubrik.get_vm(system)
 				except Exception as e:
 					flash("Failed to get VM from Rubrik", "alert-danger")
 				else:
 					rubrik.update_vm(vm['id'], {'configuredSlaDomainId': 'UNPROTECTED'})
+					flash("Re-configured system to NOT backup in Rubrik!", "alert-warning")
 
 			# Update the system
 			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `enable_backup` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, enable_backup, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, id))

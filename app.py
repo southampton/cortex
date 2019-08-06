@@ -142,7 +142,7 @@ Further Details:
 		disable_csrf_check decorator."""
 
 		## Throw away requests with methods we don't support
-		if request.method not in ('GET', 'HEAD', 'POST'):
+		if request.method not in ('GET', 'HEAD', 'POST', 'DELETE'):
 			abort(405)
 
 		# For methods that require CSRF checking
@@ -643,6 +643,7 @@ Username:             %s
 		  `sncache_cmdb_ci`.`os` AS `cmdb_os`,
 		  `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description`,
 		  `sncache_cmdb_ci`.`virtual` AS `cmdb_is_virtual`,
+		  `vmware_cache_vm`.`id` AS `vmware_moid`,
 		  `vmware_cache_vm`.`name` AS `vmware_name`,
 		  `vmware_cache_vm`.`vcenter` AS `vmware_vcenter`,
 		  `vmware_cache_vm`.`uuid` AS `vmware_uuid`,
@@ -664,9 +665,9 @@ Username:             %s
 		LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`
 		LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid`
 		LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` 
-		LEFT JOIN `realname_cache` AS  `allocation_who_realname_cache` ON `systems`.`allocation_who` = `allocation_who_realname_cache`.`username`
-		LEFT JOIN `realname_cache` AS  `primary_owner_who_realname_cache` ON `systems`.`primary_owner_who` = `primary_owner_who_realname_cache`.`username`
-		LEFT JOIN `realname_cache` AS  `secondary_owner_who_realname_cache` ON `systems`.`secondary_owner_who` = `secondary_owner_who_realname_cache`.`username`""")
+		LEFT JOIN `realname_cache` AS `allocation_who_realname_cache` ON `systems`.`allocation_who` = `allocation_who_realname_cache`.`username`
+		LEFT JOIN `realname_cache` AS `primary_owner_who_realname_cache` ON `systems`.`primary_owner_who` = `primary_owner_who_realname_cache`.`username`
+		LEFT JOIN `realname_cache` AS `secondary_owner_who_realname_cache` ON `systems`.`secondary_owner_who` = `secondary_owner_who_realname_cache`.`username`""")
        	
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `roles` (
 		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
@@ -828,6 +829,7 @@ Username:             %s
 		  (1, "systems.all.view"), 
 		  (1, "systems.all.view.puppet"), 
 		  (1, "systems.all.view.puppet.catalog"), 
+		  (1, "systems.all.view.puppet.classify"), 
 		  (1, "systems.all.view.rubrik"),
 		  (1, "systems.all.edit.expiry"), 
 		  (1, "systems.all.edit.review"), 
@@ -837,6 +839,7 @@ Username:             %s
 		  (1, "systems.all.edit.puppet"),
 		  (1, "systems.all.edit.rubrik"), 
 		  (1, "systems.all.edit.owners"), 
+		  (1, "systems.own.view"),
 		  (1, "systems.allocate_name"), 
 		  (1, "systems.add_existing"),
 		  (1, "vmware.view"), 
@@ -866,10 +869,12 @@ Username:             %s
 		  (1, "sysrequests.all.view"),
 		  (1, "sysrequests.all.approve"),
 		  (1, "sysrequests.all.reject"),
+		  (1, "sysrequests.own.view"),
 		  (1, "api.get"),
 		  (1, "api.post"),
 		  (1, "api.put"),
 		  (1, "api.delete"),
+		  (1, "control.all.vmware.power"),
 		  (1, "certificates.view"),
 		  (1, "certificates.stats"),
 		  (1, "certificates.add")

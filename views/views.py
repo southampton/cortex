@@ -81,10 +81,6 @@ def dashboard():
 	# OS VM stats
 	types = cortex.lib.vmware.get_os_stats()
 
-	# select SUM(`ram`) from vmware_cache_clusters;
-	# select SUM(`ram_usage`) from vmware_cache_clusters;
-	# select SUM(`memoryMB`) FROM `vmware_cache_vm`;
-
 	curd.execute("SELECT SUM(`ram`) AS `total` FROM `vmware_cache_clusters`")
 	total_ram = curd.fetchone()['total'] or 0
 
@@ -95,12 +91,17 @@ def dashboard():
 	total_vm_ram = (curd.fetchone()['total'] or 0) * 1024 * 1024
 
 	# Puppet Stats
-	# Get the current time minus 2 hours.
-	now_minus_2 = datetime.datetime.now() - datetime.timedelta(hours=2)
-	stats = {
-		'failed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract","certname",["and",["=", "latest_report_status", "failed"], ["=", "latest_report_noop", false], [">", "report_timestamp", "{0}"]]]'.format(now_minus_2.isoformat()))),
-		'changed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname",["and",["=", "latest_report_status", "changed"],["=", "latest_report_noop", false], [">", "report_timestamp", "{0}"]]]'.format(now_minus_2.isoformat()))),
-	}
+	try:
+		# Get the current time minus 2 hours.
+		now_minus_2 = datetime.datetime.now() - datetime.timedelta(hours=2)
+		stats = {
+			'failed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract","certname",["and",["=", "latest_report_status", "failed"], ["=", "latest_report_noop", false], [">", "report_timestamp", "{0}"]]]'.format(now_minus_2.isoformat()))),
+			'changed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname",["and",["=", "latest_report_status", "changed"],["=", "latest_report_noop", false], [">", "report_timestamp", "{0}"]]]'.format(now_minus_2.isoformat()))),
+		}
+	except Exception as e:
+		import traceback
+		app.logger.error("Failed to talk to PuppetDB on dashboard:\n" + traceback.format_exc())
+		stats = { 'failed': '???', 'changed': '???' }
 	
 	return render_template('dashboard.html', active="dashboard", 
 		vm_count=vm_count, 
