@@ -4,6 +4,7 @@ from functools import wraps
 import json
 
 import cortex
+from cortex import app
 import cortex.lib.user
 import cortex.lib.core
 from cortex.api.exceptions import InvalidPermissionException, UnauthorizedException, NoResultsFoundException
@@ -17,39 +18,56 @@ api_manager = Api(
 	doc='/docs'
 )
 
-def send_auth_required_response():
+def send_auth_required_response(allow_api_token = False):
 	"""
 	Send a 401 response.
 	"""
-	return Response (
-		response = json.dumps({'message':'Authentication is required: please provide your username and password via HTTP authentication.', 'error_code':401}),
+	x_auth_token_message = ""
+	if allow_api_token:
+		x_auth_token_message = " or an API token via the X-Auth-Token header"
+	return Response(
+		response = json.dumps({'message':'Authentication is required: please provide your username and password via HTTP authentication' + x_auth_token_message + '.', 'error_code': 401}),
 		status = 401,
 		headers = {'WWW-Authenticate': 'Basic realm="Login Required"'},
 		mimetype = 'application/json',
 	)
 
-def api_login_required(require_permission=None):
+def api_login_required(require_permission=None, allow_api_token=False):
 	def decorator(f):
 		"""
 		This is a decorator function that ensures the user has logged into the API.
 		"""
 		@wraps(f)
 		def decorated_function(*args, **kwargs):
+			token_auth = False
 			if not cortex.lib.user.is_logged_in():
 				auth = request.authorization
 				if not auth:
-					return send_auth_required_response()
-				if not cortex.lib.user.authenticate(auth.username, auth.password):
-					raise UnauthorizedException
+					if not allow_api_token:
+						return send_auth_required_response(allow_api_token)
+					else:
+						if 'X-Auth-Token' not in request.headers:
+							return send_auth_required_response(allow_api_token)
+						else:
+							if app.config['CORTEX_API_AUTH_TOKEN'] != request.headers['X-Auth-Token']:
+								raise UnauthorizedException
+							else:
+								token_auth = True
+				else:
+					if not cortex.lib.user.authenticate(auth.username, auth.password):
+						raise UnauthorizedException
 
-				# Mark as logged on
-				session['username'] = auth.username.lower()
-				session['logged_in'] = True
+				if not token_auth:
+					# Mark as logged on
+					session['username'] = auth.username.lower()
+					session['logged_in'] = True
 
-				# Log a successful login
-				cortex.lib.core.log(__name__, 'cortex.api.login', '' + session['username'] + ' logged in using ' + request.user_agent.string)
+					# Log a successful login
+					cortex.lib.core.log(__name__, 'cortex.api.login', '' + session['username'] + ' logged in (on API) using ' + request.user_agent.string)
+				else:
+					session['api_token_valid'] = True
 
-			if require_permission is not None:
+			if not token_auth and require_permission is not None:
 				if not cortex.lib.user.does_user_have_permission('api.{0}'.format(require_permission)):
 					raise InvalidPermissionException
 			return f(*args, **kwargs)
@@ -74,17 +92,18 @@ def invalid_permission_handler(e):
 	return {'message':str(e), 'error_code': e.status_code}, e.status_code
 
 # Add the namespaces.
-
 from cortex.api.endpoints.systems_info_view import systems_info_view_namespace
 from cortex.api.endpoints.tasks import tasks_namespace
 from cortex.api.endpoints.dns import dns_namespace
 from cortex.api.endpoints.puppet import puppet_modules_info_namespace
+from cortex.api.endpoints.certificates import certificates_namespace
 
 api_manager.namespaces.pop(0)
 api_manager.add_namespace(systems_info_view_namespace)
 api_manager.add_namespace(tasks_namespace)
 api_manager.add_namespace(dns_namespace)
 api_manager.add_namespace(puppet_modules_info_namespace)
+api_manager.add_namespace(certificates_namespace)
 
 # Create an API Blueprint.
 api_blueprint = Blueprint('api', __name__, url_prefix='/api')
