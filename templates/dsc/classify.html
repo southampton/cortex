@@ -67,45 +67,72 @@ $(document).ready(function()
 		<div class="panel-body" style="padding-bottom:0em">
 			<div class="form-group">
 				<label title="The roles that this box fulfils" class="col-sm-2 control-label">Roles:</label>
-				<div class="col-lg-16">
+				<div class="col-lg-15">
 					<select multiple data-style="bg-white rounded-pill px-40 py-3 shadow-sm" class="selectpicker w-100" id="roles" name="roles" data-width="75%"> 
 						{% for role in roles %}
 							<option value="{{ role }}">{{ role }}</option>
 						{% endfor %}
 					</select>
+					<button class="btn btn-success btn-sm btn-default" style="padding-left: 10px">Add</button>
+					<button class="btn btn-danger btn-sm btn-default" style="padding-left: 10px">Remove</button>
+				</div>
+				<div class="col-lg-16" style="text-align: center;">
+					<p>
+						Currently selected roles are: {% for role in set_roles %} {{ role }} {% endfor %}
+					</p>
 				</div>
 			</div>
 			<input type="hidden" id="selected_values" name="selected_values">
 		</div>
 	</div>
-<div class="row">
-	<div class="col-md-9">
-		<div class="panel panel-default">
-			<div class="panel-heading">DSC Configurations 
-				<div class="pull-right">
-					<button class="btn btn-success btn-xs" type="submit" id="reset" value="reset" name="button">Save and Reset</button>
+<div class="panel-group" id="accordion">
+	{% for role in set_roles %}
+		{% if role != 'AllNodes'%}
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h4 class="panel-title">
+						<a class="role-parent" data-toggle="collapse" data-parent="#accordion" data-role="{{ role }}" href="#{{ role }}"> {{ role }} </a>
+						<div class="pull-right">
+							<button class="btn btn-default btn-xs" type="button" id="select_all" value="select_all" name="button" onclick="checkAll( {{role}} )">Select All</button>
+							<button class="btn btn-default btn-xs" type="button" id="deselect_all" value="deselect_all" name="button" onclick="uncheckAll( {{role}} )">Deselect All</button>
+						</div>
+					</h4>
+				</div>
+				<div id="{{ role }}" class="panel-collapse collapse">
+					      <div class="panel-body">
+					      	
+					      	{% for config in role_info[role] %}
+					      		<div class="checkbox">
+									<label><input class="chkboxes" type="checkbox" value="{{ config['Name'] }}"  role="{{ role }}">{{ config['Name'] }}</label>
+								</div>
+					      	{% endfor %}
+					      </div>
 				</div>
 			</div>
-			<div class="panel-body" style="padding:0px">
-				<textarea id="configurations" name="configurations" placholder="Configurations to include can be entered here">{{ yaml }}</textarea>
-			</div>
-		</div>
-		<div class="text-center">
-			<button class="btn btn-primary btn-lg" type="submit" id="save_changes" value="save_changes" name="button">Save and Generate</button>
-		</div>
-	</div>
-	<div class="col-md-3">
-		<div class="panel panel-default">
-			<div class="panel-heading">Help</div>
-			<div class="panel-body">
-				<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>
-				<p>"Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</p>
-				<p> Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?"</p>
-			</div>
-		</div>
-	</div>
-</div>
+		{% endif %}
+	{% endfor %}
 
+</div> 
+<div class="row" id="element">
+	<div class="panel panel-default">
+		<div class="panel-heading" >DSC Configurations 
+			<div class="pull-right">
+				<button class="btn btn-success btn-xs" type="submit" id="reset" value="reset" name="button">Save and Reset</button>
+				<button class="btn btn-light btn-xs" type="button" id="show_yaml" value="show_yaml" name="button">Show</button>
+				<button class="btn btn-light btn-xs" type="button" id="hide_yaml" value="hide_yaml" name="button">Hide</button>
+			</div>
+		</div>
+		<div class="panel-body" style="padding:0px" id='yaml_display'>
+			<textarea id="configurations" name="configurations" placholder="Configurations to include can be entered here">{{ yaml }}</textarea>
+		</div>
+	</div>
+	<div class="text-center">
+		<button class="btn btn-primary btn-lg" type="submit" id="save_changes" value="save_changes" name="button" style="padding-right: 15px">Save and Generate</button>
+		<button class="btn btn-success btn-lg" type="submit" id="push_changes" value="push_changes" name="button">Push to Box</button>
+	</div>	
+</div>
+<input type="hidden" name="checked_values" id="checked_values" value="">
+</form>
 
 <script type="text/javascript">
 
@@ -114,15 +141,41 @@ window.onload = function() {
 	$('.selectpicker').selectpicker('val', exist_roles);
 };
 
-$("#save_changes").click(function(){
+function checkAll(r){
+	$("input[role=\""+r['id']+"\"]").prop("checked", true);
+}
+
+function uncheckAll(r){
+	$("input[role=\""+r['id']+"\"]").prop('checked', false);
+}
+
+$("#save_changes").click(function(e){
 	$("#selected_values").val($('.selectpicker').selectpicker('val'));
+	var json = {}
+	$(".role-parent").each(function(){
+			var role = $(this).attr('data-role');
+			var checked = $(this).closest(".panel").find(".chkboxes:checkbox:checked").map(function(i,elem){return $(this).val()});
+			json[role] = checked;
+	});
+	$("#checked_values").val(JSON.stringify(json));
+
+
 	$("#dsc_form").submit();
 });
 $("#reset").click(function(){
 	$("#selected_values").val($('.selectpicker').selectpicker('val'));
 	$("#dsc_form").submit();
 });
-
+$(document).ready(function() {
+	$("#yaml_display").hide();
+	
+    $("#hide_yaml").click(function(){
+    	$("#yaml_display").hide();
+    });
+    $("#show_yaml").click(function(){
+    	$("#yaml_display").show();
+    });
+});
 
 </script>
 
