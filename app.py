@@ -142,7 +142,7 @@ Further Details:
 		disable_csrf_check decorator."""
 
 		## Throw away requests with methods we don't support
-		if request.method not in ('GET', 'HEAD', 'POST'):
+		if request.method not in ('GET', 'HEAD', 'POST', 'DELETE'):
 			abort(405)
 
 		# For methods that require CSRF checking
