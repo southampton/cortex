@@ -21,26 +21,30 @@ from pyVmomi import vim
 
 def generate_new_yaml(proxy, oldRole, oldConfig, newRole, newConfig):
 	#configs should be passed in as string
-	oldConfig = json.loads(oldConfig)
-	newConfig = json.loads(newConfig)
+	if newRole == "":
+		return json.dumps("")
+	else:
+		oldConfig = json.loads(oldConfig)
+		newConfig = json.loads(newConfig)
 
-	roles_info = cortex.lib.dsc.get_roles(proxy)
+		roles_info = cortex.lib.dsc.get_roles(proxy)
 
-	removed_values = list(set(oldRole) - set(newRole))
-	added_values = list(set(newRole) - set(oldRole))
+		removed_values = list(set(oldRole) - set(newRole))
+		added_values = list(set(newRole) - set(oldRole))
 
-	modified_config = newConfig
+		modified_config = newConfig
 
-	for added in added_values:
-		modified_config[added] = roles_info[added]
-
+		for added in added_values:
+			if added == "":
+				continue
+			modified_config[added] = roles_info[added]
 	
-	for removed in removed_values:
-		del modified_config[removed]
+		for removed in removed_values:
+			if removed == "":
+				continue
+			del modified_config[removed]
 
-
-
-	return json.dumps(modified_config)
+		return json.dumps(modified_config)
 
 
 
@@ -62,7 +66,6 @@ def generate_reset_yaml(proxy, roles):
 def dsc_classify_machine(id):
 
 	system = cortex.lib.systems.get_system_by_id(id)
-	# return jsonify(system)
 
 	if system == None:
 		abort(404)
@@ -75,6 +78,8 @@ def dsc_classify_machine(id):
 	for role in roles_info:
 		default_roles.append(role)
 
+	# return jsonify(roles_info['UOSWebCustomSite_Install'][0]['Name'])
+
 	# retrieve all the systems
 	# default_roles = ['Default', 'SQLServer', 'Web Server', 't1', 't2']
 	curd.execute("SELECT `roles`, `config` FROM `dsc_config` WHERE `system_id` = %s", (id, ))
@@ -85,18 +90,20 @@ def dsc_classify_machine(id):
 	if existing_data is not None:
 		exist_role = existing_data['roles'].split(',')
 		exist_config = yaml.dump(json.loads(existing_data['config']))
-		
-
 	
 
 	if request.method == 'GET':
 		
 		if does_user_have_permission('dsc.view'):
-			return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=default_roles, yaml=exist_config, set_roles=exist_role)
+			return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=default_roles, yaml=exist_config, set_roles=exist_role, role_info=roles_info)
 		else:
 			abort(403)
 	elif request.method == 'POST':
-		# return jsonify(request.form)
+
+
+		checked_boxes = json.loads(request.form['checked_values'])
+		for group in checked_boxes:
+			del checked_boxes[group]['prevObject']
 		if request.form['button'] == 'save_changes':
 			#check for permissions
 			if not does_user_have_permission('dsc.edit'):
@@ -112,7 +119,7 @@ def dsc_classify_machine(id):
 				flash('Invalid YAML syntax for classes: ' + str(e), 'alert-danger')
 				error = True
 				raise e
-			
+
 			if data != None:
 				roles = json.dumps((data))
 				if roles != ",".join(exist_role):
@@ -143,4 +150,4 @@ def dsc_classify_machine(id):
 		exist_role = existing_data['roles'].split(',')
 		exist_config = yaml.dump(json.loads(existing_data['config']))
 
-	return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=default_roles, yaml=exist_config, set_roles=exist_role)
+	return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=default_roles, yaml=exist_config, set_roles=exist_role, role_info=roles_info)
