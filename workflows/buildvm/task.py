@@ -133,7 +133,7 @@ def run(helper, options):
 	)
 
 	# End the event
-	helper.end_event(description="Allocated system name: " + system_name)
+	helper.end_event(description="Allocated system name: {{system_link id='" + str(system_dbid) + "'}}" + system_name + "{{/system_link}}")
 
 	## Allocate an IPv4 Address and create a host object (standard only) ###
 

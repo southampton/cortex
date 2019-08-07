@@ -13,7 +13,7 @@
 		<div class="checkbox">
 			<label>
 				<input type="checkbox" name="runaction" value="{{ loop.index0 }}" checked>
-				<span class="badge badge-primary">{{ loop.index0 }}</span><i class="fa fa-fw fa-arrow-right"></i> {{action.desc}}
+				<span class="badge badge-primary">{{ loop.index0 }}</span><i class="fa fa-fw fa-arrow-right"></i> {{action.desc|parse_cortex_links|safe}}
 				<br/><span class="text-muted">{{action.detail|safe}}</span>
 			</label>
 		</div>

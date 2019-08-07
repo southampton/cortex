@@ -228,14 +228,14 @@ def build_servicenow_vm(helper, buildvm_config, task_sys_id, task_friendly_id, f
 	helper.end_event(description='NeoCortex task ' + str(nc_task_id) + ' kicked off for task ' + task_friendly_id)
 
 	# Create an event to wait for the task
-	helper.event('wait_neocortex_task', 'Waiting for NeoCortex task ' + str(nc_task_id) + ' to complete')
+	helper.event('wait_neocortex_task', 'Waiting for NeoCortex task {{task_link id="' + str(nc_task_id) + '"}}' + str(nc_task_id) + '{{/task_link}} to complete')
 	
 	# Wait for the NeoCortex task to complete
 	result = helper.lib.neocortex_task_wait(nc_task_id)
 
 	# A result of 1 is completed successfully
 	if result == 1:
-		helper.end_event(description='NeoCortex task ' + str(nc_task_id) + ' completed successfully')
+		helper.end_event(description='NeoCortex task {{task_link id="' + str(nc_task_id) + '"}}' + str(nc_task_id) + '{{/task_link}} completed successfully')
 	else:
 		# Raise an exception to end this build. The exception andles the ServiceNow task state
-		raise Exception("NeoCortex task " + str(nc_task_id) + " did not complete successfully. Check the task for errors.")
+		raise Exception("NeoCortex task {{task_link id='" + str(nc_task_id) + "'}}" + str(nc_task_id) + "{{/task_link}} did not complete successfully. Check the task for errors.")
