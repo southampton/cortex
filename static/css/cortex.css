@@ -3,6 +3,7 @@
  * Global Cortex CSS Styles
  */
 @import url(vendor/Orbitron-Fonts.css);
+@import url(vendor/Source-Sans-Pro-Fonts.css);
 
 body
 {
@@ -19,7 +20,7 @@ body
 	width: 100%;
 }
 
-@media (min-width: 768px)
+@media (min-width: 576px)
 {
 	#main
 	{
@@ -49,23 +50,12 @@ body
 
 }
 
-@media only screen and (min-width: 810px) and (max-width: 952px)  {
-	body {
-		padding-top: 110px;
-	}
-}
-
-@media only screen and (max-width: 810px)  {
-	body {
-		padding-top: 160px;
-	}
-}
-@media only screen and (max-width: 1410px)  {
+@media only screen and (max-width: 1420px)  {
 	.hidden-search {
 		display: block !important;
 	}
 	.navbar-search {
-		display: none;
+		display: none !important;
 	}
 	.hide-when-narrow {
 		display: none;
@@ -74,10 +64,10 @@ body
 
 /* Sidebar */
 .sidebar {
-  display: none;
+	display: none;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 576px) {
 	.sidebar
 	{
 		position: fixed;
@@ -94,7 +84,7 @@ body
 	}
 }
 
-/* Sidebar Collapseable */
+/* Sidebar Collapsible */
 #sidebar-small
 {
 	width: 55px;
@@ -160,11 +150,11 @@ table#classes td:last-child
 	margin-top: 5px;
 }
 
-@media (max-width: 768px)
+@media (max-width: 576px)
 {
 	body
 	{
-		padding-top: 50px;
+		padding-top: 68px;
 	}
 }
 
@@ -603,10 +593,13 @@ h4 small {
 	padding: 10px 15px;
 }
 
+table.table-sm a.btn-secondary
+{
+	font-size: 12px; /* no default in bootstrap 4 */
+}
 a.btn-secondary 
 {
 	color: #555555; /* default is blue */
-	font-size: 12px; /* no default in bootstrap 4 */
 	display: inline-flex;
 	align-items: center;
 }
@@ -868,3 +861,10 @@ table.puppet-report td.msg
 table.role-table tr > td { padding-left: 10px }
 table.role-table { margin-bottom: 0px }
 table.role-table tr td:last-of-type { padding-right: 10px; }
+
+div.advanced-search
+{
+	border-bottom: 1px solid #f0f0f0;
+	padding-bottom: .75em;
+	padding-top: .5em;
+}

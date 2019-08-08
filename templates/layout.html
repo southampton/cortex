@@ -148,7 +148,7 @@
 			
 				{%- if session.logged_in %}
 				<div class="navbar-collapse collapse" id="navbar-collapse-1">	
-					<ul class="nav navbar-nav">
+					<ul class="nav navbar-nav mr-auto">
 						{%- if menu.favourites and menu.favourites|length > 0 %}
 						<li class="nav-item {%if not classic_layout %} d-sm-none {%endif%}dropdown">
 							<a href="#" id="navbar-favourites-dropdown" class="dropdown-toggle nav-link {%if active == 'favourites'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Favourites <b class="caret"></b></a>
@@ -234,24 +234,24 @@
 						</li>
 						{%- endif %}
 					</ul>
-				</div>
-				<form class="navbar-form d-sm-none justify-content-center d-none d-md-inline-block navbar-search" role="search" method="GET" action="{{url_for('systems_search')}}">
-					<div class="form-group row" style="margin-bottom: 0px;">
-						<input type="text" class="form-control" placeholder="Search for systems..." name="query">
-					</div>
-				</form>
-				<ul class="nav navbar-nav float-right">
-					<li class="nav-item"><a class="hidden-search nav-link" data-toggle="modal" data-target="#search"><i class="fa fa-fw fa-search"></i></a></li>
-					<li class="nav-item {%if not classic_layout %}d-sm-none{%endif%}"><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fa fa-fw fa-dashboard"></i> <span class="hide-when-narrow">Dashboard</span></a></li>
-					<li class="nav-item dropdown{%if active == 'user'%} active{%endif%}">
-						<a href="#" id="user-menu-dropdown" class="nav-link dropdown-toggle {%if active == 'user'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-fw fa-user"></i> <span class="hide-when-narrow">{{ session.username }}</span><b class="caret"></b></a>
-						<div class="dropdown-menu" aria-labelledby="user-menu-dropdown">
-							<a class="dropdown-item" data-toggle="modal" data-target="#prefs" href="#"><i class="fa fa-fw fa-cog"></i> Preferences</a>
-							<a class="dropdown-item" href="{{ url_for('user_groups') }}"><i class="fa fa-users fa-fw"></i> AD Groups</a>
-							<a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fa fa-sign-out fa-fw"></i> Sign Out</a>
+					<form class="navbar-form d-sm-none justify-content-center d-none d-md-inline-block navbar-search" role="search" method="GET" action="{{url_for('systems_search')}}">
+						<div class="form-group row" style="margin-bottom: 0px;">
+							<input type="text" class="form-control" placeholder="Search for systems..." name="query">
 						</div>
-					</li>
-				</ul>
+					</form>
+					<ul class="nav navbar-nav">
+						<li class="nav-item"><a class="hidden-search nav-link" data-toggle="modal" data-target="#search"><i class="fa fa-fw fa-search"></i></a></li>
+						<li class="nav-item {%if not classic_layout %}d-sm-none{%endif%}"><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fa fa-fw fa-dashboard"></i> <span class="hide-when-narrow">Dashboard</span></a></li>
+						<li class="nav-item dropdown{%if active == 'user'%} active{%endif%}">
+							<a href="#" id="user-menu-dropdown" class="nav-link dropdown-toggle {%if active == 'user'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-fw fa-user"></i> <span class="hide-when-narrow">{{ session.username }}</span><b class="caret"></b></a>
+							<div class="dropdown-menu" aria-labelledby="user-menu-dropdown">
+								<a class="dropdown-item" data-toggle="modal" data-target="#prefs" href="#"><i class="fa fa-fw fa-cog"></i> Preferences</a>
+								<a class="dropdown-item" href="{{ url_for('user_groups') }}"><i class="fa fa-users fa-fw"></i> AD Groups</a>
+								<a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fa fa-sign-out fa-fw"></i> Sign Out</a>
+							</div>
+						</li>
+					</ul>
+				</div>
 				{%- endif %}
 			</div>
 		</div>

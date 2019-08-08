@@ -37,7 +37,7 @@
 						</table>
 					</div>
 					<div class="col-md-6">
-						<table class="table system-overview-table" id="dns_table">
+						<table class="table system-overview-table" id="route_table">
 						</table>
 					</div>
 				</div>
@@ -356,8 +356,9 @@ function update_data(data) {
 	}
 
 	{#IP r#}
+	$('#route_table').empty();
 	if (data.net.routes.length == 0) {
-		$('#net_table').append(
+		$('#route_table').append(
 			$('<tr>', {class: 'ip_routes'}).append(
 				$('<td>').text('IP Routes:'),
 				$('<td>')
@@ -365,7 +366,7 @@ function update_data(data) {
 		);
 	}
 	for (route in data.net.routes){
-		$('#net_table').append(
+		$('#route_table').append(
 			$('<tr>', {class: 'ip_routes'}).append(
 				$('<td>').text(route == 0 ? 'IP Routes:' : ''),
 				$('<td>').text('gateway' in data.net.routes[route] ? data.net.routes[route].network + '/' + data.net.routes[route].prefix + ' via ' + data.net.routes[route].gateway : data.net.routes[route].network + '/' + data.net.routes[route].prefix + ' on link')
@@ -373,10 +374,9 @@ function update_data(data) {
 		);
 	}
 
-	$('#dns_table').empty();
 	{#DNS#}
 	if (data.dns_resolvers.length == 0) {
-		$('#dns_table').append(
+		$('#net_table').append(
 			$('<tr>', {class: 'dns_resolver'}).append(
 				$('<td>').text('DNS Resolvers:'),
 				$('<td>')
@@ -384,7 +384,7 @@ function update_data(data) {
 		);
 	}
 	for (resolver in data.dns_resolvers){
-		$('#dns_table').append(
+		$('#net_table').append(
 			$('<tr>', {class: 'dns_resolver'}).append(
 				$('<td>').text(resolver == 0 ? 'DNS resolvers:' : ''),
 				$('<td>').text(data.dns_resolvers[resolver])
@@ -393,7 +393,7 @@ function update_data(data) {
 	}
 
 	{#Search Domain#}
-	$('#dns_table').append(
+	$('#net_table').append(
 		$('<tr>', {class: 'search_domain'}).append(
 			$('<td>').text('Search Domain:'),
 			$('<td>').text(data.search_domain)
