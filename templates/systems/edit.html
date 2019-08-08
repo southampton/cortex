@@ -125,7 +125,7 @@
 				<option value="1"{% if system.enable_backup == 1 %} selected="selected"{% endif %}>Backup this System</option>
 				<option value="2"{% if system.enable_backup == 2 %} selected="selected"{% endif %}>Unknown - Do not change backup policy</option>
 			</select>
-			<div class="form-text">This field determines whether Cortex will set a default policy for the VM is it is set to Do Not Protect in Rubrik.</div>
+			<div class="form-text">This field determines whether Cortex will set a default policy for the VM if it is set to Do Not Protect in Rubrik. Policy checks occur once an hour.</div>
 		</div>
 	</div>
 
