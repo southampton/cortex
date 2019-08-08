@@ -831,6 +831,11 @@ table.system-overview-table tr > td:first-child
 	text-align: right;
 	font-weight: bolder;
 }
+table.system-overview-table tr td
+{
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;
+}
 .power-icon { width: 50% }
 .power-icon #power-icon {
 	font-size: 0.8em;

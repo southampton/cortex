@@ -504,7 +504,10 @@ def system(id):
 	system['review_status_text'] = cortex.lib.systems.REVIEW_STATUS_BY_ID[system['review_status']]
 
 	if system['puppet_certname']:
-		system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
+		try:
+			system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
+		except Exception as e:
+			system['puppet_node_status'] = 'unknown'
 
 	# Generate a 'pretty' display name. This is the format '<realname> (<username>)'
 	system['allocation_who'] = cortex.lib.systems.generate_pretty_display_name(system['allocation_who'], system['allocation_who_realname'])
