@@ -300,6 +300,7 @@ def admin_events_json(event_source):
 			record[1] = record[1].strftime('%Y-%m-%d %H:%M:%S %Z')
 		if type(record[2]) is datetime.datetime:
 			record[2] = record[2].strftime('%Y-%m-%d %H:%M:%S %Z')
+		record[4] = app.parse_cortex_links(record[4])
 
 		if record[6] is None:
 			record[6] = "N/A"
