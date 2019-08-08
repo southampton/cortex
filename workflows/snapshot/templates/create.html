@@ -26,7 +26,7 @@
 		</div>
 		<div class="col-md-6 form-group">
 			<label for="snapshot_expiry">Expiry Date:<span class="required">*</span></label>
-			<div class='input-group date' id='expirypicker'>
+			<div class='input-group date' id='expirypicker' data-target-input="nearest">
 				<input type='text' class="form-control datetimepicker-input" id="snapshot_expiry" name="snapshot_expiry" placeholder="Date after this snapshot can be deleted: YYYY-MM-DD" required="required" data-target="expirypicker" {% if 'snapshot_expiry' in values %}value="{{ values['snapshot_expiry'] }}"{% endif %}/>
 				<span class="input-group-append" data-target="#expirypicker" data-toggle="datetimepicker">
 					<div class="input-group-text"><i class="fa fa-calendar"></i></div>
