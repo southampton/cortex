@@ -359,6 +359,7 @@ Username:             %s
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `service_recipes` (
 		  `name` varchar(255) NOT NULL,
 		  `env` varchar(255) NOT NULL,
+		  `workflow_type` varchar(64) NOT NULL,
 		  `email_notification` varchar(64) NOT NULL,
 		  `vms_list` text NOT NULL,
 		  `description` text DEFAULT NULL,

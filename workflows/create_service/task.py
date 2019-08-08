@@ -19,6 +19,7 @@ def run(helper, options):
 		options['vm_recipes'][vm_recipe]['vm_recipe_name'] = vm_recipe
 		options['vm_recipes'][vm_recipe]['service_task_id'] = helper.task_id
 		vm_task_id = neocortex.create_task("buildvm", username, options['vm_recipes'][vm_recipe], description="Creates and sets up a virtual machine (sandbox VMware environment)")
+		print(options['vm_recipes'][vm_recipe]['puppet_code'])
 		recipe_to_id_map[vm_recipe] = vm_task_id
 		helper.end_event("Probably created the VM")
 
@@ -36,18 +37,33 @@ def run(helper, options):
 	print("==================================================++++++++++++++++++++++++++++++++++++++++++++++===========================================")
 	print(json.dumps(tasks_output))
 	for recipe_name in recipe_to_id_map.keys():
-		puppet_code_template = options['vm_recipes'][vm_recipe]['vm_recipe_name']
+		puppet_code_template = options['vm_recipes'][recipe_name]['puppet_code']
 		puppet_code_parsed = puppet_parse_references(helper, puppet_code_template, tasks_output)
+	
+		## Check with Clayton if he actually wants to be able to create services in the sandbox domain
+		## If that's the case, then you need some if statements here to check if it's sandbox or stadard?
+		
+		puppet_certname = tasks_output[recipe_name]['allocated_vm_name'] + "." + options['wfconfig']['PUPPET_CERT_DOMAIN']
+
+		helper.event("update_puppet", "Updating the puppet code for " + recipe_name)
+		helper.execute_query('UPDATE `puppet_nodes` SET `classes` = %s WHERE `certname` = %s', (puppet_code_parsed, puppet_certname,))
+		helper.end_event("Puppet code for " + recipe_name + " updated.")
 		print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 		print("PARSED PUPPET: " + puppet_code_parsed)
-
-
-
+	
 
 def puppet_parse_references(helper, puppet_code_template, tasks_output):
-	systems_references = re.findall("{{\w*}}", puppet_code_template)
+	systems_references = re.findall("{{\w*\.\w*}}", puppet_code_template)
 	
 	reference_to_system_name = {}
 	for system_reference in systems_references:
-		puppet_code_template = re.sub(system_reference, tasks_output[system_reference]['allocated_vm_name'], puppet_code_template)
+		temp = system_reference[2:-2]
+		
+		try:
+			(recipe_name, attribute) = (temp.split(".")[0], temp.split(".")[1])
+			puppet_code_template = re.sub(system_reference, tasks_output[recipe_name][attribute], puppet_code_template)
+		except Exception as e:
+			print(str(e))
+			continue
+
 	return puppet_code_template

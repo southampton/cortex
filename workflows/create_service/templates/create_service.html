@@ -1,11 +1,13 @@
 {% extends "layout.html" %}
 
 {% block head -%}
-		<!-- IMPORT SELECTPICKER -->
+		{# IMPORT SELECTPICKER #}
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
 		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
-		<!-- IMPORT CUSTOM STYLESHEET FOR CAROUSEL-->
+
+		{# IMPORT CUSTOM STYLESHEET FOR CAROUSEL #}
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/carousel.css') }}">
+
 		{#- CodeMirror style -#}
 		<link href="{{ url_for('static', filename='css/vendor/codemirror.min.css') }}" rel="stylesheet">
 		<link href="{{ url_for('static', filename='css/vendor/lint.min.css') }}" rel="stylesheet">
@@ -23,6 +25,7 @@
 		<script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}"></script>
+
 		{#- Override CodeMirror style - must come after CodeMirror style imports -#}
 		<style type="text/css">
 		.CodeMirror {
@@ -37,9 +40,13 @@
 
 <div class="page-header">
 	<h3><i class="fa fa-plus-circle fa-fw"></i> Create a New Service</h3>
-	<p class="text-muted">This workflow will create a new service (in a chosen environment I guess). Hostnames will be automatically allocated from the 'srv' group, and will automatically have IP addresses assigned from Infoblox. ServiceNow CI's will also be created.</p>
+	<p class="text-muted">This workflow will create a new service in the chosen environment. Hostnames will be automatically allocated from the 'srv' group, and will automatically have IP addresses assigned from Infoblox. ServiceNow CIs will also be created. Can build standard or sandbox services.</p>
 </div>
 
+<!--
+	This is the main carousel body. The rest of the page is generated dynamically
+	depending on the user input. Whatever is added here will be static.
+-->
 <div id="vm-carousel" class="carousel slide" data-ride="carousel" data-interval="false" data-wrap="false">
 	<ol class="carousel-indicators">
 		<li data-target="#vm-carousel" data-slide-to="0" class="active"></li>
@@ -47,17 +54,22 @@
 	<form id="service_request_form" method="POST" role="form">
 		<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 		<input type="hidden" id="action" name="action" value="create_recipe"/>
+		<input type="hidden" id="workflow_type" name="workflow_type" value="standard"/>
 		<div class="carousel-inner">
 			<div class="carousel-item active">
 				<img class="first-slide" src="https://www.officemax.co.nz/Images/ProductImages/500/2012286.jpg" alt="First slide">
 				<div class="container">
 					<div class="carousel-caption" id="choose-action">
-						<a id="use-existing" class="btn btn-lg btn-primary" data-target="#add-service-existing-template" data-toggle="modal">Use existing service template</a>
+						<a id="use-existing" class="btn btn-lg btn-primary" data-target="#add-service-existing-template" data-toggle="modal">Use a service template</a>
 						<hr class="hr-text" data-content="OR">
-						<a id="create-service-template" class="btn btn-lg btn-success">Create your own service template</a>
+						<a id="create-service-template" class="btn btn-lg btn-success">Create a service template</a>
+					<div class="carousel-caption" style="display: inline-flex; justify-content: center;">
+						<h3 style="color: #777; margin-bottom:0px; margin-right: 20px; align-self: center;">Choose a workflow type:</h2>
+						<div class="btn-group btn-toggle" id="toggle_queries">
+                                                        <button id="query_search_on" class="btn btn-lg btn-primary active" data-value="standard">Standard</button>
+                                                        <button id="query_search_off" class="btn btn-lg btn-secondary" data-value="sandbox">Sandbox</button>
+                                                </div>
 					</div>
-					<div class="carousel-caption">
-						<h2 style="color: #777;">1. Choose an action</h2>
 					</div>
 				</div>
 			</div>
@@ -73,7 +85,10 @@
 	</a>
 </div>
 
-
+<!--
+	This modal pups up when the user tries to use
+	an existing service recipe
+-->
 <div class="modal fade" id="add-service-existing-template" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
                 <div class="modal-content">
@@ -102,7 +117,7 @@
 
 <div id="create-service-template-form">
 	<!--
-		This is the step where you get to give your new service template a name. Something like Banner or Agresso...
+		This is the step where you get to give your new service template a name
 	-->
 	<div class="carousel-item" id="create-service-template-item">
 		<img src="https://www.solidbackgrounds.com/images/2880x1800/2880x1800-light-sky-blue-solid-color-background.jpg">
@@ -115,9 +130,10 @@
 				<div class="input-group" style="margin-top: 2.5%;">
 					<label for="service_name" class="h4 w-100 text-left" style="margin-bottom: 10px;">Service recipe name:</label>
 					<input id="service_name" class="form-control form-control-lg" type="text" name="service_name" placeholder="'Service_name'" aria-label="Service_name" value="" required>
-					<div class="input-group-append">
-						<button class="btn btn-success" type="button" href="#vm-carousel" role="button" data-slide="next">Next</button>
-					</div>
+				</div>
+				<div id="service_description_input_group" class="input-group" style="margin-top: 2.5%;">
+					<label for="servuce_description" class="h4 w-100 text-left" style="margin-bottom: 10px;">Recipe description:</label>
+					<textarea class="form-control" id="service_description" name="service_description" placeholder="A general description for the service recipe" style="height: 9em;"></textarea>
 				</div>
 				<div class="input-group" style="margin-top: 2.5%;">
 					<label for="expiry" class="h4 w-100 text-left" style="margin-bottom: 10px;">Expiry date (optional)</label>
@@ -129,6 +145,9 @@
 						<div style="text-align: justify;">Set the date when all the VMs belonging to this service will be powered off.</div>
 
 					</div>
+					<!-- 
+						Initialize the expiry date picker
+					-->
 					<script>
 						$(function () {
 							$('#expirypicker').datetimepicker({
@@ -160,9 +179,6 @@
 				</div>
 			</div>
 		</div>
-		<div class="carousel-caption">
-			<h2>2. Name the recipe</h2>
-		</div>
 	</div>
 	<!-- 
 		This is the step where you get to choose the VMs that make up your service.
@@ -174,7 +190,6 @@
 			</div>
 		</div>
 		<div class="carousel-caption">
-			<h1 class="d-inline-flex" style="position: relative; margin-bottom: 0px!important; vertical-align: middle; margin-right: 5px; color: #777;">3.</h1>
 			<div class="btn-group" role="group" id="choose-vm-action">
 				<button type="button" class="btn btn-lg btn-primary" data-target="#add-vm-existing-recipe" data-toggle="modal">Add a VM</button>
 				<button type="submit" id="submit_service_request" class="btn btn-success btn-lg btn-submit">Submit</button>
@@ -184,8 +199,7 @@
 </div>
 
 <!--
-	This is the list of existing VM recipes (it only contains names,
-	it will load the recipes from mysql using ajax. Hardcoded for now.
+	Datalist of names of existing VM recipes
 -->
 <datalist id="autocomplete-VMs">
 	<option></option>
@@ -193,6 +207,9 @@
 	<option id="{{vm_recipe_name['name']}}">{{vm_recipe_name['name']}}</option>
 	{% endfor %}
 </datalist>
+<!--
+	Datalist of names of existing service recipes
+-->
 <datalist id="autocomplete-service-templates">
 	<option></option>
 	{% for service_name in autocomplete_service_recipes_names %}
@@ -225,17 +242,18 @@
 		</div>
 	</div>
 </div>
-<!--
-	This modal contains the puppet code and the VM specs, which should be editable by the user.
 
-	#################################################################################
-        TODO: add some tabs to this modal since the specs of the VM might change as well.
-        #################################################################################
+
+
+<!--
+	This modal contains the puppet code and the VM specs, which can be edited by the user.
 	
 	Params:
 	* id
 	* title
-	* modal-body  this is where you should add the tabs and the codemirror thing for puppet
+	* modal-body  this is where you should add the tabs and the codemirror for puppet
+	
+	* The configuration options are kept inside the nav-tabs.
 -->
 <div class="modal fade" id="vm-recipe-template-modal" tabindex="-1" role="dialog" aria-hidden="true">
 	<div class="modal-dialog modal-xl modal-dialog-centered" role="document">
@@ -249,11 +267,12 @@
 				<ul class="nav nav-tabs" style="margin-bottom:1em" role="tablist">
 					<li class="nav-item"><a class="nav-link active" id="vm-puppet" data-toggle="tab" style="cursor:pointer" href="#puppet-code">Puppet</a></li>
 					<li class="nav-item"><a class="nav-link" id="vm-configuration" data-toggle="tab" style="cursor:pointer" href="#config">Configuration</a></li>
+					<li class="nav-item"><a class="nav-link" id="vm-description-tab" data-toggle="tab" style="cursor:pointer" href="#vm-description">General description</a></li>
 				</ul>
 				<div class="tab-content">
 					<div id="puppet-code" class="tab-pane container fade active show">
 						<h3>Puppet Code</h3>
-						<textarea class="form-control" id="puppet_classes" name="puppet_classes" placeholder="Classes to include can be entered here"> </textarea>
+						<textarea class="form-control" id="puppet_classes" name="puppet_classes" style="height: 550px;" placeholder="Classes to include can be entered here"> </textarea>
 					</div>
 					<div id="config" class="tab-pane container fade">
 						<h3>VM Config</h3>
@@ -385,6 +404,10 @@
 							</div>
 						</div>
 					</div>
+					<div id="vm-description" class="tab-pane container fade">
+                                                <h3>General VM recipe description</h3>
+                                                <textarea class="form-control" id="vm_description" name="vm_description" placeholder="A general description for a VM recipe"></textarea>
+                                        </div>
 				</div>
 		
 				<div class="modal-footer">
@@ -426,42 +449,82 @@
 
 <script type="text/javascript">
 
+function generate_carousel_indicators(form_steps, was_clicked, action){
+	
+	// Checks how many new slides need to be generated
+	form_steps = form_steps + ($('#create-service-template-form > div').appendTo('.carousel-inner')).length;
+	
+	// Add the necessary number of carousel indicators
+	for(var i=1; i<form_steps; i++){
+		$('<li data-target="#vm-carousel" data-slide-to="'+(i)+'"></li>').appendTo('.carousel-indicators');
+	}
+	
+	// Change the toggle value such that in case the button is clicked again, this stuff won't be generated twice
+	was_clicked = true;
+	
+}
+
+function load_recipe_on_screen(template_data){
+	console.log("loading");
+	// For each VM recipe, trigger a click event which will generate the cards on the final slide
+	Object.keys(template_data['vms_recipes']).forEach(function(key, index){
+		$("#new-vm-recipe").trigger("click", [template_data['vms_recipes'][key], key]);
+	});
+	
+	// Set the value of the input which contains the service name
+	$("#vm-carousel #service_name").attr('value', template_data['name']);
+	// If using a template, the user should not be able to edit the service recipe name
+	$("#vm-carousel #service_name").prop('readonly', true);
+	$("#vm-carousel #service_description_input_group").addClass('d-none');
+	// If the recipe contains an expiry date, then destroy the old
+	// datetime picker and create a new one with the current expiry_date
+	if('expiry_date' in template_data){
+		$('#expirypicker').datetimepicker('destroy');
+		$('#expirypicker').datetimepicker({
+						viewMode: 'days',
+						format: 'YYYY-MM-DD',
+						minDate: moment(),
+						useCurrent: false,
+						widgetPositioning: {
+							horizontal: 'right',
+							vertical: 'top',
+						},
+						date: new Date(template_data['expiry_date']),
+		});
+	}
+	
+	// Enable, update and refresh the selectpicker on the 2nd slide
+	$("#env").removeClass("selectpicker-disabled").addClass("selectpicker");
+	$("#env").val(template_data['env']);
+	$("#env").selectpicker('refresh');
+	
+	// Set the value of the email notification input
+	$("#vm-carousel #sendmail").prop('checked', template_data['email_notification'] == "on" ? true : false);
+
+}
+
 $(document).ready(function(){
+
 	var form_steps = 1;
 	var was_clicked = false;
 	var action = "create_recipe";
+
 	$("#create-service-template").click(function (e, template_data){
 		$("#action").attr('value', action);
 		if(!was_clicked){
-			form_steps = form_steps + ($('#create-service-template-form > div').appendTo('.carousel-inner')).length;
-			for(var i=1; i<form_steps; i++){
-				$('<li data-target="#vm-carousel" data-slide-to="'+(i)+'"></li>').appendTo('.carousel-indicators');
+			
+			generate_carousel_indicators(form_steps, was_clicked, action);
+
+
+			if(template_data) load_recipe_on_screen(template_data);
+
+			// Enable, update and refresh the selectpicker on the 2nd slide
+			else{
+				$("#env").removeClass("selectpicker-disabled").addClass("selectpicker");
+				$("#env").selectpicker();
 			}
-			was_clicked = true;
-			if(template_data){
-				Object.keys(template_data['vms_recipes']).forEach(function(key, index){
-					$("#new-vm-recipe").trigger("click", [template_data['vms_recipes'][key], key]);
-				});
-				$("#vm-carousel #service_name").attr('value', template_data['name']);
-				if('expiry_date' in template_data){
-					$('#expirypicker').datetimepicker('destroy');
-					$('#expirypicker').datetimepicker({
-									viewMode: 'days',
-									format: 'YYYY-MM-DD',
-									minDate: moment(),
-									useCurrent: false,
-									widgetPositioning: {
-										horizontal: 'right',
-										vertical: 'top',
-									},
-									date: new Date(template_data['expiry_date']),
-					});
-				}
-				$("#env").addClass("selectpicker").removeClass("selectpicker-disabled");
-				$("#env").val(template_data['env']);
-                                $("#env").selectpicker();
-				$("#vm-carousel #sendmail").prop('checked', template_data['email_notification'] == "on" ? true : false);
-			}
+			
+			// go to the next step
 			$("#vm-carousel").carousel('next');
 			
 		} else {
@@ -490,17 +553,15 @@ $(document).ready(function(){
 			},
 		});
 	});
+
+	// Add event listener on carousel slide
 	$('#vm-carousel').on('slide.bs.carousel', function (e, stuff) {
-		if(e.from == 0 && e.direction == "left"){
-			$("#vm-carousel .selectpicker-disabled").addClass("selectpicker").removeClass("selectpicker-disabled");
-			$(".selectpicker").selectpicker();
-		}
-		// check if all the conditions
+		
+		// do not allow the user to progress if they haven't chosen a service name
 		if(e.from == 1 && e.direction == "left"){
 			var current_slide = $(this).find('.carousel-item.active');
 			var current_service_name = $(current_slide).find("input[name=service_name]").eq(0).val();
 			if(!current_service_name){
-				$(current_slide).find("input[name=service_name]").eq(0).popover('show');
 				e.preventDefault();
 			} else{
 				$(this).trigger('slide.bs.carousel');
@@ -508,6 +569,7 @@ $(document).ready(function(){
 		}
 		
 	});
+
 	$("#new-vm-recipe").click(function(e, recipe_data, recipe_name){
 		$("input[name=number_of_vms]").attr('value', parseInt($("input[name=number_of_vms]").attr('value'))+1);
 		if(recipe_name) {
@@ -520,9 +582,7 @@ $(document).ready(function(){
 		if(recipe_data){
 			$("#service-now-task").removeClass("d-none");
 		}
-		var general_description = vm_recipe_name+" general description";
-		
-		// careful on the next line, is there a use case when the user will use the same recipe twice ? if that's the case, you need to find something else for the ID
+		var general_description = (recipe_data && recipe_data['description']) ? recipe_data['description'] : vm_recipe_name;
 		
 		var card = $("#vm-card").clone();
 		card.toggleClass('d-none');
@@ -531,8 +591,10 @@ $(document).ready(function(){
 		card.find(".card-header h4").eq(0).html(vm_recipe_name);
 		card.find(".card-header input").eq(0).attr('value', vm_recipe_name);
 		card.find(".card-body p").eq(0).html(general_description);
+		
+		// Event listener for the deletion button
 		card.find(".card-header a").eq(0).click(function(e) {
-			e.stopPropagation();
+			e.stopPropagation(); // prevent the button from triggering the modal
 			var row = $(this).closest(".row");
 			if(row.find(".card").length == 1){
 				row.remove();
@@ -545,6 +607,10 @@ $(document).ready(function(){
                         }
 
 		});
+		
+		/* This is how cards are added to the slide
+		*  Need to come up with a function that does this instead.
+		*/
 		var number_of_cards = $(".vm-card").length -1;
 		if(number_of_cards % 3 == 0){
 			var row = $($.parseHTML('<div class="row col-md-12"></div>'));
@@ -554,25 +620,28 @@ $(document).ready(function(){
 			$("#vms-card-list .row").last().append(card);
 		}
 		
-		//$("#vms-card-list").append(card); // append the card to the carousel item
 		if($("#"+vm_recipe_name+"-modal").length == 0){
+			// clone the modal
 			var modal = $("#vm-recipe-template-modal").clone();
+
+			// manually initialize the selectpickers
+			modal.find(".selectpicker-disabled").each(function(){
+				$(this).addClass("selectpicker").removeClass("selectpicker-disabled");
+				$(this).selectpicker();
+			});
 			
+			// Change the clone's relevant IDs so they can be referenced later			
 			modal.attr('id', vm_recipe_name+"-modal");
 			modal.find(".modal-header h5").eq(0).html("Config "+ vm_recipe_name);
 			modal.find(".modal-body textarea").eq(0).attr('id', vm_recipe_name+"-textarea");
 			modal.find(".modal-body #vm-puppet").eq(0).attr('href', "#puppet-code-"+vm_recipe_name);
 			modal.find(".modal-body #vm-configuration").eq(0).attr('href', "#config-"+vm_recipe_name);
+			modal.find(".modal-body #vm-description-tab").eq(0).attr('href', '#vm-description-'+vm_recipe_name);
 			modal.find(".modal-body #puppet-code").eq(0).attr('id', "puppet-code-"+vm_recipe_name);
 			modal.find(".modal-body #config").eq(0).attr('id', "config-"+vm_recipe_name);
-			console.log("pre-loop");
-			modal.find(".selectpicker-disabled").each(function(){
-				console.log("before");
-                                $(this).addClass("selectpicker").removeClass("selectpicker-disabled");
-                                $(this).selectpicker();
-				console.log("after");
-                        });
+			modal.find(".modal-body #vm-description").eq(0).attr('id', "vm-description-"+vm_recipe_name);
 			
+
 			// Apply existing configuration if it already exists
 			if(recipe_data){
 				modal.find(".modal-body #purpose").eq(0).attr('value', recipe_data['purpose']);
@@ -585,12 +654,6 @@ $(document).ready(function(){
                                 modal.find(".modal-body #ram-slider").eq(0).attr('value', recipe_data['ram']);
                                 modal.find(".modal-body #disk-slider").eq(0).attr('value', recipe_data['disk']);
                                 modal.find(".modal-body #cores-slider").eq(0).attr('value', recipe_data['cores']);
-				/*
-				modal.find(".modal-body #sockets-sldier").eq(0).trigger('input', [recipe_data['sockets']]);
-                                modal.find(".modal-body #ram-slider").eq(0).trigger('input', [recipe_data['ram']]);
-                                modal.find(".modal-body #disk-slider").eq(0).trigger('input', [recipe_data['disk']]);
-                                modal.find(".modal-body #cores-slider").eq(0).trigger('input', [recipe_data['cores']]);
-				*/
 				modal.find(".modal-body #template").eq(0).val(recipe_data['os']);
 				modal.find(".modal-body #template").eq(0).selectpicker('refresh');
 				modal.find(".modal-body #cluster").eq(0).val(recipe_data['location_cluster']);
@@ -599,37 +662,46 @@ $(document).ready(function(){
                                 modal.find(".modal-body #network").eq(0).selectpicker('refresh');
 				modal.find(".modal-body #vm_folder_moid").eq(0).val(recipe_data['vm_folder_moid']);
                                 modal.find(".modal-body #vm_folder_moid").eq(0).selectpicker('refresh');
+				modal.find(".modal-body #vm_description").eq(0).val(general_description);
 			}
-			
+		
+			// Append the cloned modal's html to the carousel	
 			$(".carousel-inner").append(modal);
 
-			///////////////////////////////////////////////////////////////////////////////////
-
-			//// Set the input name attribute to contain the vm_recipe_name
+			// Set the input name attribute to contain the vm_recipe_name
 			modal.find("input, textarea, .selectpicker").each(function(){
 				$(this).attr('name', ("service_vms["+vm_recipe_name+"]"+"["+$(this).attr('name')+"]"));
 			});
-
+			
+			// Link each slider to its label
 			var sliders = $('#config-'+vm_recipe_name+" .slider-input");
 			sliders.each(function(){
 				$(this).parent().find(".output").eq(0).html($(this).val());
 			});
+
+			// On input update the label value and the config summary
 			sliders.on('input', function(event, value){
-				if(value){
-					console.log(value);
-				}
 				$(this).parent().find(".output").eq(0).html($(this).val());
 				$('#config-'+vm_recipe_name+' #val_vcpus').text($('#config-'+vm_recipe_name+" #sockets-slider").val() * $('#config-'+vm_recipe_name+" #cores-slider").val());
 				$('#config-'+vm_recipe_name+' #val_ram').text($('#config-'+vm_recipe_name+" #ram-slider").val());
 				$('#config-'+vm_recipe_name+' #val_disk').text($('#config-'+vm_recipe_name+" #disk-slider").val());
 			});
+			
+			// Get and set the puppet code
+			puppet_code = recipe_data ? recipe_data['puppet_code'] : '';
+			$("#"+vm_recipe_name+'-textarea').html(puppet_code);
+
+			// On 'show modal', set up CodeMirror
 			modal.on('shown.bs.modal', function (e) {
 				var delete_button = e.relatedTarget;
+				
+				// Prevent the delete button from triggering the 'show modal' event
 				if($(delete_button).hasClass('no-modal')) {
 					e.stopPropagation();
 				}  
+
+
 				if($(this).find(".CodeMirror").length == 0){
-					puppet_code = recipe_data ? recipe_data['puppet_code'] : '';
 					var classes_editor = CodeMirror.fromTextArea(document.getElementById(vm_recipe_name+'-textarea'), 
 					{
 						mode: 'yaml',
@@ -638,14 +710,29 @@ $(document).ready(function(){
 						indentUnit: 2,
 						viewportMargin: Infinity,
 					});
+					
+					// Set editor size
 					classes_editor.setSize(1100,500);
-					classes_editor.setValue(puppet_code);
 				}
 			});
 
 		}
-		$("#add-vm-existing-recipe").modal('hide'); // hide the modal in the end
+
+		// Ensure the modal is hidden
+		$("#add-vm-existing-recipe").modal('hide');
 	});
+	
+	// Sandbox/Standard toggle button event listener
+	$('.btn-toggle').click(function(e) {
+		e.preventDefault(); // prevents the form submission
+		$(this).find('.btn').toggleClass('active');
+		if ($(this).find('.btn-primary').size()>0) {
+			$(this).find('.btn').toggleClass('btn-primary');
+		}
+		$(this).find('.btn').toggleClass('btn-secondary');
+		$("#workflow_type").val($(this).find(".active").attr("data-value"));
+	});
+
 });
 
 </script>

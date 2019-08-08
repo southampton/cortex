@@ -357,8 +357,6 @@ def run(helper, options):
 		task_output['cmdb_id'] = cmdb_id
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
-	print("===========================================================================================================================================================================================")
-	print("TASK_ID: " + str(helper.get_task_id()) + " \n OUTPUT: " +json.dumps(task_output) + " \n QUERY: "+ ("UPDATE `tasks` SET `task_output` = %s WHERE `id` = %s" % (json.dumps(task_output), helper.get_task_id())))
 	helper.execute_query("UPDATE `tasks` SET `task_output` = %s WHERE `id` = %s;", params=(json.dumps(task_output), helper.get_task_id(),))
 	## Link ticket to CI (standard VM only) ################################
 
