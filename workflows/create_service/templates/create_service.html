@@ -128,12 +128,12 @@
 					<input class="form-control w-100" id="task" name="task" placeholder="e.g. CTASK0123456 or PRJTASK0987654" autofocus />
                                 </div>
 				<div class="input-group" style="margin-top: 2.5%;">
-					<label for="service_name" class="h4 w-100 text-left" style="margin-bottom: 10px;">Service recipe name:</label>
+					<label for="service_name" class="h4 w-100 text-left" style="margin-bottom: 10px;">Service recipe name<span class="required">*</span></label>
 					<input id="service_name" class="form-control form-control-lg" type="text" name="service_name" placeholder="'Service_name'" aria-label="Service_name" value="" required>
 				</div>
 				<div id="service_description_input_group" class="input-group" style="margin-top: 2.5%;">
-					<label for="servuce_description" class="h4 w-100 text-left" style="margin-bottom: 10px;">Recipe description:</label>
-					<textarea class="form-control" id="service_description" name="service_description" placeholder="A general description for the service recipe" style="height: 9em;"></textarea>
+					<label for="servuce_description" class="h4 w-100 text-left" style="margin-bottom: 10px;">Recipe description<span class="required">*</span></label>
+					<textarea class="form-control" id="service_description" name="service_description" placeholder="A general description for the service recipe" style="height: 9em;" required></textarea>
 				</div>
 				<div class="input-group" style="margin-top: 2.5%;">
 					<label for="expiry" class="h4 w-100 text-left" style="margin-bottom: 10px;">Expiry date (optional)</label>
@@ -166,7 +166,7 @@
 				<div class="input-group">
 					<h4 style="margin-top:1em; text-align: left; width: 100%;">Environment<span class="required">*</span></h4>
 					<div class="w-100">
-						<select class="selectpicker-disabled w-100" name="env" id="env">
+						<select class="selectpicker-disabled w-100" name="env" id="env" required>
 							<option></option>
 							{% for environment in environments -%}
 							<option value="{{ environment.id }}"{% if default_env == environment.id %} selected="selected"{% endif %}>{{ environment.name }}</option>
@@ -175,7 +175,10 @@
 					</div>
 				</div>
 				<div class="input-group" style="margin-top: 7.5%;">
-					<input type="checkbox" name="sendmail" id="sendmail" style="margin-right:0.4em; width: 1rem; height: 1rem; align-self: center;" checked="checked" /><label class="h4" for="sendmail" style="position:relative; top:-2px; margin-bottom: 0px!important;">Notify me by e-mail when done</label>	
+				<div class="custom-control custom-switch">
+					<input type="checkbox" class="custom-control-input" id="sendmail" name="sendmail" style="margin-right:0.4em; width: 1rem; height: 1rem; align-self: center;" checked="checked">
+					<label class="custom-control-label h4" for="sendmail" style="position:relative; top:-2px; margin-bottom: 0px!important;">Send me an email notification</label>
+				</div>
 				</div>
 			</div>
 		</div>
@@ -204,7 +207,7 @@
 <datalist id="autocomplete-VMs">
 	<option></option>
 	{% for vm_recipe_name in autocomplete_vm_recipes_names %}
-	<option id="{{vm_recipe_name['name']}}">{{vm_recipe_name['name']}}</option>
+	<option id="{{vm_recipe_name['name']}}">{{vm_recipe_name['name']}}<a><i class="fa fa-trash" aria-hidden="true"></i></a></option>
 	{% endfor %}
 </datalist>
 <!--
@@ -231,7 +234,7 @@
 			</div>
 			<div class="modal-body">
 				<div class="row">
-					<div class="col-sm-3 offset-1">Choose an existing VM Recipe</div>
+					<div class="col-sm-3 offset-1">Choose a VM Recipe or type in a new name to create one</div>
 					<div class="col-sm-6"><input id="vm-recipe-input" class="form-control w-100" list="autocomplete-VMs" autocomplete="off" maxlength="64"></div>
 				</div>
 			</div>
@@ -473,9 +476,11 @@ function load_recipe_on_screen(template_data){
 	
 	// Set the value of the input which contains the service name
 	$("#vm-carousel #service_name").attr('value', template_data['name']);
+
 	// If using a template, the user should not be able to edit the service recipe name
 	$("#vm-carousel #service_name").prop('readonly', true);
 	$("#vm-carousel #service_description_input_group").addClass('d-none');
+
 	// If the recipe contains an expiry date, then destroy the old
 	// datetime picker and create a new one with the current expiry_date
 	if('expiry_date' in template_data){
@@ -515,7 +520,6 @@ $(document).ready(function(){
 			
 			generate_carousel_indicators(form_steps, was_clicked, action);
 
-
 			if(template_data) load_recipe_on_screen(template_data);
 
 			// Enable, update and refresh the selectpicker on the 2nd slide
@@ -553,17 +557,33 @@ $(document).ready(function(){
 			},
 		});
 	});
-
 	// Add event listener on carousel slide
 	$('#vm-carousel').on('slide.bs.carousel', function (e, stuff) {
 		
-		// do not allow the user to progress if they haven't chosen a service name
+		// do not allow the user to go back once they've chosen an action
+		if(e.from == 1 && e.direction == "right"){
+			e.preventDefault();
+		}
+		
 		if(e.from == 1 && e.direction == "left"){
+
+			// collect data about the current values of the input fields on the current slide
 			var current_slide = $(this).find('.carousel-item.active');
 			var current_service_name = $(current_slide).find("input[name=service_name]").eq(0).val();
-			if(!current_service_name){
+			var current_service_description = $(current_slide).find("textarea[name=service_description]").eq(0).val();
+			var current_service_env = $(current_slide).find("select[name=env]").eq(0).val();
+			var service_now_task = $(current_slide).find("input[name=task]").eq(0).val();
+			var action_type = $("input[name=action]").val();
+			
+			// If any required fields is empty
+			if(!current_service_name|| !current_service_description || !current_service_env || (!service_now_task && action_type=="use_recipe")){
+				// prevents the carousel from going to the next slide
 				e.preventDefault();
+				
+				// manually attempt form submission
+				$("#service_request_form").find(":submit").click();
 			} else{
+				// else everything's fine, go to the next slide
 				$(this).trigger('slide.bs.carousel');
 			}
 		}
@@ -571,155 +591,189 @@ $(document).ready(function(){
 	});
 
 	$("#new-vm-recipe").click(function(e, recipe_data, recipe_name){
-		$("input[name=number_of_vms]").attr('value', parseInt($("input[name=number_of_vms]").attr('value'))+1);
-		if(recipe_name) {
-			var vm_recipe_name = recipe_name
-		} else {
-			var vm_recipe_name = $("#vm-recipe-input").val();
-		}
-		if($(this).val() )
-		$("#vm-recipe-input").val("");
-		if(recipe_data){
-			$("#service-now-task").removeClass("d-none");
-		}
-		var general_description = (recipe_data && recipe_data['description']) ? recipe_data['description'] : vm_recipe_name;
-		
-		var card = $("#vm-card").clone();
-		card.toggleClass('d-none');
-		card.attr('id', vm_recipe_name);
-		card.attr('data-target', "#"+vm_recipe_name+"-modal");
-		card.find(".card-header h4").eq(0).html(vm_recipe_name);
-		card.find(".card-header input").eq(0).attr('value', vm_recipe_name);
-		card.find(".card-body p").eq(0).html(general_description);
-		
-		// Event listener for the deletion button
-		card.find(".card-header a").eq(0).click(function(e) {
-			e.stopPropagation(); // prevent the button from triggering the modal
-			var row = $(this).closest(".row");
-			if(row.find(".card").length == 1){
-				row.remove();
-			} else {
-				$(this).closest(".card").remove();
-			}
-			var modal = $("#" + vm_recipe_name + "-modal");
-                        if(modal.length){
-	                        modal.remove();
-                        }
-
-		});
-		
-		/* This is how cards are added to the slide
-		*  Need to come up with a function that does this instead.
-		*/
-		var number_of_cards = $(".vm-card").length -1;
-		if(number_of_cards % 3 == 0){
-			var row = $($.parseHTML('<div class="row col-md-12"></div>'));
-			row.append(card);
-			$("#vms-card-list").append(row);
-		} else {
-			$("#vms-card-list .row").last().append(card);
-		}
-		
-		if($("#"+vm_recipe_name+"-modal").length == 0){
-			// clone the modal
-			var modal = $("#vm-recipe-template-modal").clone();
-
-			// manually initialize the selectpickers
-			modal.find(".selectpicker-disabled").each(function(){
-				$(this).addClass("selectpicker").removeClass("selectpicker-disabled");
-				$(this).selectpicker();
-			});
+		var vm_recipe_name = $("#vm-recipe-input").val();
+		if(!recipe_data && !recipe_name && vm_recipe_name){
 			
-			// Change the clone's relevant IDs so they can be referenced later			
-			modal.attr('id', vm_recipe_name+"-modal");
-			modal.find(".modal-header h5").eq(0).html("Config "+ vm_recipe_name);
-			modal.find(".modal-body textarea").eq(0).attr('id', vm_recipe_name+"-textarea");
-			modal.find(".modal-body #vm-puppet").eq(0).attr('href', "#puppet-code-"+vm_recipe_name);
-			modal.find(".modal-body #vm-configuration").eq(0).attr('href', "#config-"+vm_recipe_name);
-			modal.find(".modal-body #vm-description-tab").eq(0).attr('href', '#vm-description-'+vm_recipe_name);
-			modal.find(".modal-body #puppet-code").eq(0).attr('id', "puppet-code-"+vm_recipe_name);
-			modal.find(".modal-body #config").eq(0).attr('id', "config-"+vm_recipe_name);
-			modal.find(".modal-body #vm-description").eq(0).attr('id', "vm-description-"+vm_recipe_name);
+			$.ajax({
+                        	type: "POST",
+                        	async: true,
+                       		global: false,
+                         	url: '/workflows/create_service/get_vm_recipe',
+                         	data: JSON.stringify({"vm_recipe_name": vm_recipe_name}),
+                         	contentType: "application/json; charset=utf-8",
+                         	dataType: "json",
+                         	success: function(vm_recipe_data){
+                                 	$("#add-service-existing-template").modal('hide');
+                                 	$("#new-vm-recipe").trigger("click", [vm_recipe_data, vm_recipe_name]);
+                         	},
+                         	failure: function(error_message){
+                                 	alert("There is no VM recipe with that name. Create your own one");
+                                 	$("#add-service-existing-template").modal('hide');
+					$("#new-vm-recipe").trigger("click", [vm_recipe_name]);
+                         	},
+                 	});
+		}
+		
+		else {
+			if(recipe_name) {
+				var vm_recipe_name = recipe_name
+			} 
 			
+			if($(this).val())
+			$("#vm-recipe-input").val("");
 
-			// Apply existing configuration if it already exists
 			if(recipe_data){
-				modal.find(".modal-body #purpose").eq(0).attr('value', recipe_data['purpose']);
-                                modal.find(".modal-body #comments").eq(0).attr('value', recipe_data['comments']);
-                                modal.find(".modal-body #primary_owner_who").eq(0).attr('value', recipe_data['primary_owner_who']);
-                                modal.find(".modal-body #primary_owner_role").eq(0).attr('value', recipe_data['primary_owner_role']);
-                                modal.find(".modal-body #secondary_owner_who").eq(0).attr('value', recipe_data['secondary_owner_who']);
-                                modal.find(".modal-body #secondary_owner_role").eq(0).attr('value', recipe_data['secondary_owner_role']);
-				modal.find(".modal-body #sockets-sldier").eq(0).attr('value', recipe_data['sockets']);
-                                modal.find(".modal-body #ram-slider").eq(0).attr('value', recipe_data['ram']);
-                                modal.find(".modal-body #disk-slider").eq(0).attr('value', recipe_data['disk']);
-                                modal.find(".modal-body #cores-slider").eq(0).attr('value', recipe_data['cores']);
-				modal.find(".modal-body #template").eq(0).val(recipe_data['os']);
-				modal.find(".modal-body #template").eq(0).selectpicker('refresh');
-				modal.find(".modal-body #cluster").eq(0).val(recipe_data['location_cluster']);
-				modal.find(".modal-body #cluster").eq(0).selectpicker('refresh');
-				modal.find(".modal-body #network").eq(0).val(recipe_data['network']);
-                                modal.find(".modal-body #network").eq(0).selectpicker('refresh');
-				modal.find(".modal-body #vm_folder_moid").eq(0).val(recipe_data['vm_folder_moid']);
-                                modal.find(".modal-body #vm_folder_moid").eq(0).selectpicker('refresh');
-				modal.find(".modal-body #vm_description").eq(0).val(general_description);
+				$("#service-now-task").removeClass("d-none");
 			}
-		
-			// Append the cloned modal's html to the carousel	
-			$(".carousel-inner").append(modal);
+			var general_description = (recipe_data && recipe_data['description']) ? recipe_data['description'] : vm_recipe_name;
+			
+			var card = $("#vm-card").clone();
+			card.toggleClass('d-none');
+			card.attr('id', vm_recipe_name);
+			card.attr('data-target', "#"+vm_recipe_name+"-modal");
+			card.find(".card-header h4").eq(0).html(vm_recipe_name);
+			card.find(".card-header input").eq(0).attr('value', vm_recipe_name);
+			card.find(".card-body p").eq(0).html(general_description);
+			
+			// Event listener for the deletion button
+			card.find(".card-header a").eq(0).click(function(e) {
+				
+				// prevent the button from triggering the modal
+				e.stopPropagation();
+							
+				var row = $(this).closest(".row");
+				
+				if(row.find(".card").length == 1){
+					row.remove();
+				} else {
+					$(this).closest(".card").remove();
+				}
+				var modal = $("#" + vm_recipe_name + "-modal");
+				if(modal.length){
+					modal.remove();
+				}
 
-			// Set the input name attribute to contain the vm_recipe_name
-			modal.find("input, textarea, .selectpicker").each(function(){
-				$(this).attr('name', ("service_vms["+vm_recipe_name+"]"+"["+$(this).attr('name')+"]"));
 			});
 			
-			// Link each slider to its label
-			var sliders = $('#config-'+vm_recipe_name+" .slider-input");
-			sliders.each(function(){
-				$(this).parent().find(".output").eq(0).html($(this).val());
-			});
+			/*
+			*  This is how cards are added to the slide
+			*  Need to come up with a function that does this instead.
+			*/
+			var number_of_cards = $(".vm-card").length -1;
+			if(number_of_cards % 3 == 0){
+				var row = $($.parseHTML('<div class="row col-md-12"></div>'));
+				row.append(card);
+				$("#vms-card-list").append(row);
+			} else {
+				$("#vms-card-list .row").last().append(card);
+			}
+			
+			if($("#"+vm_recipe_name+"-modal").length == 0){
+				// clone the modal
+				var modal = $("#vm-recipe-template-modal").clone();
 
-			// On input update the label value and the config summary
-			sliders.on('input', function(event, value){
-				$(this).parent().find(".output").eq(0).html($(this).val());
+				// manually initialize the selectpickers
+				modal.find(".selectpicker-disabled").each(function(){
+					$(this).addClass("selectpicker").removeClass("selectpicker-disabled");
+					$(this).selectpicker();
+				});
+				
+				// Change the clone's relevant IDs so they can be referenced later			
+				modal.attr('id', vm_recipe_name+"-modal");
+				modal.find(".modal-header h5").eq(0).html("Config "+ vm_recipe_name);
+				modal.find(".modal-body textarea").eq(0).attr('id', vm_recipe_name+"-textarea");
+				modal.find(".modal-body #vm-puppet").eq(0).attr('href', "#puppet-code-"+vm_recipe_name);
+				modal.find(".modal-body #vm-configuration").eq(0).attr('href', "#config-"+vm_recipe_name);
+				modal.find(".modal-body #vm-description-tab").eq(0).attr('href', '#vm-description-'+vm_recipe_name);
+				modal.find(".modal-body #puppet-code").eq(0).attr('id', "puppet-code-"+vm_recipe_name);
+				modal.find(".modal-body #config").eq(0).attr('id', "config-"+vm_recipe_name);
+				modal.find(".modal-body #vm-description").eq(0).attr('id', "vm-description-"+vm_recipe_name);
+				
+
+				// Apply existing configuration if it already exists
+				if(recipe_data){
+					modal.find(".modal-body #purpose").eq(0).attr('value', recipe_data['purpose']);
+					modal.find(".modal-body #comments").eq(0).attr('value', recipe_data['comments']);
+					modal.find(".modal-body #primary_owner_who").eq(0).attr('value', recipe_data['primary_owner_who']);
+					modal.find(".modal-body #primary_owner_role").eq(0).attr('value', recipe_data['primary_owner_role']);
+					modal.find(".modal-body #secondary_owner_who").eq(0).attr('value', recipe_data['secondary_owner_who']);
+					modal.find(".modal-body #secondary_owner_role").eq(0).attr('value', recipe_data['secondary_owner_role']);
+					modal.find(".modal-body #sockets-sldier").eq(0).attr('value', recipe_data['sockets']);
+					modal.find(".modal-body #ram-slider").eq(0).attr('value', recipe_data['ram']);
+					modal.find(".modal-body #disk-slider").eq(0).attr('value', recipe_data['disk']);
+					modal.find(".modal-body #cores-slider").eq(0).attr('value', recipe_data['cores']);
+					modal.find(".modal-body #template").eq(0).val(recipe_data['os']);
+					modal.find(".modal-body #template").eq(0).selectpicker('refresh');
+					modal.find(".modal-body #cluster").eq(0).val(recipe_data['location_cluster']);
+					modal.find(".modal-body #cluster").eq(0).selectpicker('refresh');
+					modal.find(".modal-body #network").eq(0).val(recipe_data['network']);
+					modal.find(".modal-body #network").eq(0).selectpicker('refresh');
+					modal.find(".modal-body #vm_folder_moid").eq(0).val(recipe_data['vm_folder_moid']);
+					modal.find(".modal-body #vm_folder_moid").eq(0).selectpicker('refresh');
+					modal.find(".modal-body #vm_description").eq(0).val(general_description);
+				}
+			
+				// Append the cloned modal's html to the carousel	
+				$(".carousel-inner").append(modal);
+
+				// Set the input name attribute to contain the vm_recipe_name
+				modal.find("input, textarea, .selectpicker").each(function(){
+					$(this).attr('name', ("service_vms["+vm_recipe_name+"]"+"["+$(this).attr('name')+"]"));
+				});
+				
+				// Link each slider to its label
+				var sliders = $('#config-'+vm_recipe_name+" .slider-input");
+				sliders.each(function(){
+					$(this).parent().find(".output").eq(0).html($(this).val());
+				});
+				
+				// Initial update for the summary
 				$('#config-'+vm_recipe_name+' #val_vcpus').text($('#config-'+vm_recipe_name+" #sockets-slider").val() * $('#config-'+vm_recipe_name+" #cores-slider").val());
 				$('#config-'+vm_recipe_name+' #val_ram').text($('#config-'+vm_recipe_name+" #ram-slider").val());
 				$('#config-'+vm_recipe_name+' #val_disk').text($('#config-'+vm_recipe_name+" #disk-slider").val());
-			});
-			
-			// Get and set the puppet code
-			puppet_code = recipe_data ? recipe_data['puppet_code'] : '';
-			$("#"+vm_recipe_name+'-textarea').html(puppet_code);
-
-			// On 'show modal', set up CodeMirror
-			modal.on('shown.bs.modal', function (e) {
-				var delete_button = e.relatedTarget;
 				
-				// Prevent the delete button from triggering the 'show modal' event
-				if($(delete_button).hasClass('no-modal')) {
-					e.stopPropagation();
-				}  
+				// On input update the label value and the config summary
+				sliders.on('input', function(event, value){
+					$(this).parent().find(".output").eq(0).html($(this).val());
+					$('#config-'+vm_recipe_name+' #val_vcpus').text($('#config-'+vm_recipe_name+" #sockets-slider").val() * $('#config-'+vm_recipe_name+" #cores-slider").val());
+					$('#config-'+vm_recipe_name+' #val_ram').text($('#config-'+vm_recipe_name+" #ram-slider").val());
+					$('#config-'+vm_recipe_name+' #val_disk').text($('#config-'+vm_recipe_name+" #disk-slider").val());
+				});
+				
+				// Get and set the puppet code
+				puppet_code = recipe_data ? recipe_data['puppet_code'] : '';
+				$("#"+vm_recipe_name+'-textarea').html(puppet_code);
 
-
-				if($(this).find(".CodeMirror").length == 0){
-					var classes_editor = CodeMirror.fromTextArea(document.getElementById(vm_recipe_name+'-textarea'), 
-					{
-						mode: 'yaml',
-						gutters: ["CodeMirror-lint-markers"],
-						lint: true,
-						indentUnit: 2,
-						viewportMargin: Infinity,
-					});
+				// On 'show modal', set up CodeMirror
+				modal.on('shown.bs.modal', function (e) {
+					var delete_button = e.relatedTarget;
 					
-					// Set editor size
-					classes_editor.setSize(1100,500);
-				}
-			});
+					// Prevent the delete button from triggering the 'show modal' event
+					if($(delete_button).hasClass('no-modal')) {
+						e.stopPropagation();
+					}  
 
+					// If CodeMirror hasn't already been initialized
+					if($(this).find(".CodeMirror").length == 0){
+						var classes_editor = CodeMirror.fromTextArea(document.getElementById(vm_recipe_name+'-textarea'), 
+						{
+							mode: 'yaml',
+							gutters: ["CodeMirror-lint-markers"],
+							lint: true,
+							indentUnit: 2,
+							viewportMargin: Infinity,
+						});
+						
+						// Set editor size
+						classes_editor.setSize(1100,500);
+					}
+				});
+
+			}
+
+			// Ensure the modal is hidden
+			$("#add-vm-existing-recipe").modal('hide');
 		}
-
-		// Ensure the modal is hidden
-		$("#add-vm-existing-recipe").modal('hide');
 	});
 	
 	// Sandbox/Standard toggle button event listener

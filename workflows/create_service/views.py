@@ -271,6 +271,28 @@ def get_service_recipe():
 	# Return as JSON
 	return jsonify(service_recipe)
 
+@workflow.route("get_vm_recipe",title='Get a VM recipe', methods=['POST'], menu=False)
+@app.disable_csrf_check
+def get_vm_recipe():
+
+        # Get the db cursor
+        curd = g.db.cursor(mysql.cursors.DictCursor)
+
+        # Get the VM recipe name from the request form     
+        vm_recipe_name = ""
+        if 'vm_recipe_name' in request.get_json():
+                vm_recipe_name = request.get_json()['vm_recipe_name']
+
+        # Query the database to get the VM recipe
+        curd.execute("SELECT * FROM `vm_recipes` WHERE `name`=%s", (vm_recipe_name,))
+
+	# Fetch the VM recipe
+	vm_recipe= curd.fetchone()
+
+        # Return as JSON
+        return jsonify(vm_recipe)
+
+
 # Helper that parses the request data
 def parse_request_form(form):
 	

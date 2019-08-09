@@ -219,3 +219,8 @@ input[type=range] {
 	width: 55%;
 	display: inline;
 }
+
+#sendmail:hover {	
+	margin-top: 0px!important;
+    	border-bottom-width: 0px!important;
+}
