@@ -150,6 +150,11 @@ table#classes td:last-child
 	margin-top: 5px;
 }
 
+.card-header
+{
+	padding: 0.5rem 1rem;
+}
+
 @media (max-width: 576px)
 {
 	body

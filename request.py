@@ -113,6 +113,8 @@ def context_processor():
 		certificates.append({'link': url_for('certificates'), 'title': 'Certificates', 'icon': 'fa-certificate'})
 	if does_user_have_permission("certificates.stats"):
 		certificates.append({'link': url_for('certificate_statistics'), 'title': 'Statistics', 'icon': 'fa-pie-chart'})
+	if does_user_have_permission("certificates.add"):
+		certificates.append({'link': url_for('certificates_add'), 'title': 'Add Certificate', 'icon': 'fa-plus'})
 
 	# Set up the Admin menu, based on permissions
 	admin = []
