@@ -517,12 +517,16 @@ span.required
 .mtask
 {
 	min-height: 160px;
+	padding-top: 1.0rem;
 }
-.mtask h3
+.mtask h4
 {
 	margin-top: 0px;
 }
-
+.mtask h4 .fa
+{
+	margin-right: 0.15em;
+}
 /* Bootstrap 4.0 fixes:
  * the *-xs classes have been removed
  * in Bootstrap 4.0, so some of them
