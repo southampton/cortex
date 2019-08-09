@@ -3,17 +3,16 @@
 {% include 'puppet/codemirror.html' %}
 
 <div class="page-header">
-<h3><i class="fa fa-fw fa-info-circle"></i> Puppet Help</h3>
+<h4><i class="fa fa-fw fa-info-circle"></i> Puppet Help</h4>
 </div>
 
 <script>
-$(document).ready(function() 
+$(document).ready(function()
 {
 	var phelp1 = CodeMirror.fromTextArea(document.getElementById('phelp1'), {mode: 'yaml', indentUnit: 2, readOnly: true});
 	var phelp2 = CodeMirror.fromTextArea(document.getElementById('phelp2'), {mode: 'yaml', indentUnit: 2, readOnly: true});
 	var phelp3 = CodeMirror.fromTextArea(document.getElementById('phelp3'), {mode: 'yaml', indentUnit: 2, readOnly: true});
 	var phelp4 = CodeMirror.fromTextArea(document.getElementById('phelp4'), {mode: 'yaml', indentUnit: 2, readOnly: true});
-
 	phelp1.setSize('100%', 130);
 	phelp2.setSize('100%', 110);
 	phelp3.setSize('100%', 250);
@@ -23,19 +22,19 @@ $(document).ready(function()
 
 				<h2>Introduction</h2>
 
-				<p>Cortex functions as a Puppet <i>External Node Classifier</i> or "ENC". You can use it to define what Puppet classes are used by nodes. Puppet uses a <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a> 
+				<p>Cortex functions as a Puppet <i>External Node Classifier</i> or "ENC". You can use it to define what Puppet classes are used by nodes. Puppet uses a <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a>
 				based syntax for how ENCs tell Puppet what classes and parameters to load. Cortex exposes this syntax to you 'as-is', this allows you as the administrator to have full control over what a node's configuration is.
 				You define, using YAML, a set of classes to import and global variables to set. Cortex also determines a node's environment through the ENC functionality.</p>
-				<p>PuppetLabs documentation for the YAML syntax can be found here: <a href="https://docs.puppetlabs.com/guides/external_nodes.html#enc-output-format">https://docs.puppetlabs.com/guides/external_nodes.html</a></p> 
+				<p>PuppetLabs documentation for the YAML syntax can be found here: <a href="https://docs.puppetlabs.com/guides/external_nodes.html#enc-output-format">https://docs.puppetlabs.com/guides/external_nodes.html</a></p>
 
-				<h3>How does Cortex build a node's configuration?</h3>
+				<h4>How does Cortex build a node's configuration?</h4>
 				<p>When building the configuration for a node, which is to say the classes to import and variables to set, Cortex checks in three places to determine what to do:</p>
 				<ul>
 					<li>Default classes configuration (unless the node has opted out)</li>
 					<li>The configuration for groups that the node is a member of</li>
 					<li>The configuration for the particular node</li>
 				</ul>
-				<p>At each stage Cortex adds classes (and their parameters) to be imported. The subsequent stage can add different classes to import 
+				<p>At each stage Cortex adds classes (and their parameters) to be imported. The subsequent stage can add different classes to import
 				but cannot prevent a class from being imported which was imported in the stage above. For example:
 				</p>
 				<ul>
@@ -57,8 +56,8 @@ $(document).ready(function()
 					<li>A node may opt out out of the 'default classes'. This allows it to override the base configuration. It cannot opt out of group configuration - instead remove it from groups as needed.</li>
 				</ul>
 
-				<h3>Class overrides</h3>
-				<p>Puppet does not allow a class to be defined twice but the Cortex ENC does let you define a class twice. If you define a class in 'default classes' and also define it in the node 
+				<h4>Class overrides</h4>
+				<p>Puppet does not allow a class to be defined twice but the Cortex ENC does let you define a class twice. If you define a class in 'default classes' and also define it in the node
 				configuration then Cortex will simply import the class once. If class parameters are set in multiple places then Cortex ENC will use the parameters set last, e.g:</p>
 				<ul>
 					<li>the default classes config imports the class "acme" with the parameter "widget-colour" set to "Red"</li>
@@ -68,9 +67,9 @@ $(document).ready(function()
 				<p>In the above example the widget-colour will be set to Blue, as the node's priority is always highest, then groups, then the default classes.</p>
 				<p>Class overrides in Cortex allow basic defaults to be set in the 'default classes' section and allows nodes to override these without having to use Hiera.</p>
 
-				<h3>YAML Syntax</h3>
+				<h4>YAML Syntax</h4>
 				<h4>Comments</h4>
-				<p>It is useful to add comments to explain what a class import does or why it is present. In YAML comment lines starting with a hash '#' character.</p> 
+				<p>It is useful to add comments to explain what a class import does or why it is present. In YAML comment lines starting with a hash '#' character.</p>
 				<h4>Classes</h4>
 				<p>Each line of the editor should be the name of class to import, with no indentation and ending with a single colon character. For example:</p>
 
@@ -102,8 +101,8 @@ aptsetup:
   - "deb localrepo.example.com/ubuntu lucid vendor"
 
 # example of passing a hash to a class
-sshd: 
-  sshd_settings: 
+sshd:
+  sshd_settings:
 	password_allowed: "yes"
 	root_allowed: "no"
 </textarea>
@@ -124,7 +123,7 @@ array_variable:
   - c
 
 # global variable with a hash as the value
-hash_variable: 
+hash_variable:
   opt1: a
   opt2: b
   opt3: c

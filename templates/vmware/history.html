@@ -5,49 +5,49 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/vendor/d3.min.js') }}"></script>
 {% endblock %}
 {% block body %}
-<style type="text/css">
-.c3-chart-lines .c3-circles .c3-circle {
-	display: none;
-}
-</style>
 <div class="page-header">
-<h3><i class="fa fa-pie-chart fa-fw"></i> Statistics - VMware History</h3>
+<h4><i class="fa fa-pie-chart fa-fw"></i> Statistics - VMware History</h4>
 </div>
-<div class="container" role="main">
+<div class="container" role="main" id="vmware-history">
 	<form method="GET" action="">
 		<p>These graphs show how then number of VMs have changed over time. Showing the last <input type="number" name="d" value="{{ d }}" /> days. <button type="submit">Update</button></p>
 	</form>
-	<div class="col-md-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Total VMs</h3>
-			</div>
-			<div class="panel-body">
-				<div id="chart_history_1"></div>
-			</div>
-		</div>
-	</div>
-	<div class="col-md-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Linux VMs</h3>
-			</div>
-			<div class="panel-body">
-				<div id="chart_history_2"></div>
+	<div class="row">
+		<div class="col-md-12">
+			<div class="card card-default">
+				<div class="card-header">
+					<h4 class="card-title">Total VMs</h4>
+				</div>
+				<div class="card-body">
+					<div id="chart_history_1"></div>
+				</div>
 			</div>
 		</div>
 	</div>
-	<div class="col-md-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Windows VMs</h3>
-			</div>
-			<div class="panel-body">
-				<div id="chart_history_3"></div>
+	<div class="row">
+		<div class="col-md-12">
+			<div class="card card-default">
+				<div class="card-header">
+					<h4 class="card-title">Linux VMs</h4>
+				</div>
+				<div class="card-body">
+					<div id="chart_history_2"></div>
+				</div>
 			</div>
 		</div>
 	</div>
-
+	<div class="row">
+		<div class="col-md-12">
+			<div class="card card-default">
+				<div class="card-header">
+					<h4 class="card-title">Windows VMs</h4>
+				</div>
+				<div class="card-body">
+					<div id="chart_history_3"></div>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
 <script>
 	var chart_history_1 = c3.generate({

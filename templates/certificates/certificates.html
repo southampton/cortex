@@ -1,24 +1,16 @@
 {% extends "layout.html" %}
-{% block head %}
-		<style type="text/css">
-			abbr[title] { border-bottom: none; cursor: default }
-			a.cert-link { text-decoration: none !important; color: inherit }
-			a.cert-link abbr[title] { cursor: pointer }
-			a.cert-link:hover abbr[title] { cursor: pointer; text-decoration: underline !important }
-		</style>
-{% endblock %}
 {% block body %}
 <div class="modal fade" id="filter" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form role="form" method="GET" class="form-horizontal">
 				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 					<h4 class="modal-title">Certificate filters</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				</div>
 				<div class="modal-body">
 					<p>Use the options below to determine which certificates appear in the list.</p>
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label" for="validity">Validity:</label>
 						<div class="col-sm-9">
 							<select class="form-control" id="validity" name="validity">
@@ -29,7 +21,7 @@
 						</div>
 					</div>
 
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label" for="type">Type:</label>
 						<div class="col-sm-9">
 							<select class="form-control" id="type" name="self_signed">
@@ -41,7 +33,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 					<button type="submit" class="btn btn-primary">Apply Filter</button>
 				</div>
 			</form>
@@ -51,17 +43,17 @@
 
 
 <div class="page-header">
-	<h3>
+	<h4>
 		<div class="pull-right">
-			<button data-toggle="modal" data-target="#filter" type="button" class="btn btn-sm pull-right btn-default" style="margin-left:5px"><i class="fa fa-fw fa-filter"></i> Filter</button>
-			<a href="{{ url_for('certificates_add') }}" class="btn btn-sm btn-success"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs">Add Certificate</span></a>
-			<a href="{{ url_for('certificates_download_csv') }}" class="btn btn-sm btn-primary"><i class="fa fa-fw fa-download"></i> <span class="hidden-sm hidden-xs">Download CSV</span></a>
+			<button data-toggle="modal" data-target="#filter" type="button" class="btn btn-md pull-right btn-secondary" style="margin-left:5px"><i class="fa fa-fw fa-filter"></i> Filter</button>
+			<a href="{{ url_for('certificates_add') }}" class="btn btn-md btn-success"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs">Add Certificate</span></a>
+			<a href="{{ url_for('certificates_download_csv') }}" class="btn btn-md btn-primary"><i class="fa fa-fw fa-download"></i> <span class="hidden-sm hidden-xs">Download CSV</span></a>
 		</div>
 		<i class="fa fa-fw fa-shield"></i> Certificates
-	</h3>
-	<p class="text-muted">The list below shows both automatically detected and manually inserted certificates.</p>
+	</h4>
+	<div class="text-muted">The list below shows both automatically detected and manually inserted certificates.</div>
 </div>
-<table class="table table-condensed table-striped" id="data">
+<table class="table table-condensed table-striped table-sm" id="cert-data">
 	<thead>
 		<tr>
 			<th title="The CN of the Subject of the certificate. Hover over a row to see the full DN.">Subject CN</th>
@@ -84,7 +76,7 @@
 			<td>{% if cert.lastSeen %}<abbr title="{{ cert.lastSeen }}">{{ cert.lastSeen.strftime("%Y-%m-%d") }}</abbr>{% else %}Unknown{% endif %}</td>
 			<td>{{ cert.numHosts }}</td>
 			<td>{{ cert.keySize or "Unknown" }}</td>
-			<td><a href="{{url_for('certificate_edit',digest=cert.digest) }}" class="btn btn-default btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a></td>
+			<td><a href="{{url_for('certificate_edit',digest=cert.digest) }}" class="btn btn-secondary btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a></td>
 		</tr>
 {%- endfor %}
 	</tbody>
@@ -93,10 +85,17 @@
 	// Define variable for nodes table.
 	var nodes;
 	$(function() {
-		nodes = $('#data').DataTable({
+		nodes = $('#cert-data').DataTable({
 			"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 			"pageLength": 15,
 			"order": [[0, 'asc']],
+{%- if classic_layout %}
+		"fixedHeader": {
+			"headerOffset": 52
+		},
+{%- else %}
+		"fixedHeader": true,
+{%- endif %}
 			"stateSave": true,
 			"columns": [null, null, null, null, null, null, null, { "orderable": false, "targets": 0 }]
 		});

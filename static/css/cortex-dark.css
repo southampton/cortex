@@ -4,7 +4,7 @@
 	color: #FFFFFF;
 	background-color: #242448;
 }
-
+table tr td
 .bg-success
 {
 	color: #FFFFFF;
@@ -45,6 +45,12 @@
 {
 	color: #FFFFFF;
 	background-color: #244848;
+}
+
+/* Brighten this for the dark theme */
+i.icon-unknown
+{
+	color: #36f;
 }
 
 .c3-tooltip
@@ -88,4 +94,54 @@
 .sidebar
 {
 	background-color: #060606;
+}
+
+.dataTables_wrapper, a.btn-secondary, .modal-title, .page-header, h4 small, .nav-link, .card-header, .sidebar > div > a, .list-group-popover > a , .card-body {
+	color: white!important;
+}
+
+.card {
+	border-width: 0px!important;
+}
+
+.sidebar {
+	border-right: 0px!important;
+}
+
+#search label {
+	color: white;
+}
+form {
+	color: white!important;
+}
+.bootstrap-select>.dropdown-toggle, .show>.btn-light.dropdown-toggle, .bootstrap-select>.dropdown-toggle:active, .btn-light:not(:disabled):not(.disabled):active {
+	background-color: white !important;
+	color: #777;
+}
+
+p, .text-muted {
+	color: white !important;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #252525 !important;
+}
+
+.nav-link {
+	padding-left: 1em;
+	padding-right: 1em;
+}
+div.tab-pane#paste, div.tab-pane#upload
+{
+	border-color: #444;
+}
+table tr td
+{
+	color: #fff;
+}
+div.advanced-search
+{
+	border-bottom-color: #444;
+	padding-bottom: .45em;
+	padding-top: .15em;
 }

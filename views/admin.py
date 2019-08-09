@@ -3,6 +3,7 @@
 from cortex import app
 import cortex.lib.core
 import cortex.lib.admin
+from cortex.lib.workflow import get_workflows_locked_details
 from cortex.lib.user import does_user_have_permission
 from cortex.lib.admin import set_kv_setting, get_kv_setting
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
@@ -30,7 +31,6 @@ def admin_tasks():
 		'filter_warnings': request.args.get('filter_warnings', "1"),
 		'filter_failed': request.args.get('filter_failed', "1")
 	}
-	print(filters)
 
 	# Render the page
 	return render_template('admin/tasks.html', active='admin', title="Tasks", tasktype='all', json_source=url_for('admin_tasks_json', tasktype='all'), filters=filters)
@@ -300,6 +300,7 @@ def admin_events_json(event_source):
 			record[1] = record[1].strftime('%Y-%m-%d %H:%M:%S %Z')
 		if type(record[2]) is datetime.datetime:
 			record[2] = record[2].strftime('%Y-%m-%d %H:%M:%S %Z')
+		record[4] = app.parse_cortex_links(record[4])
 
 		if record[6] is None:
 			record[6] = "N/A"
@@ -531,7 +532,7 @@ def admin_maint():
 	"""Allows the user to kick off scheduled jobs on demand"""
 
 	# Check user permissions
-	if not does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow", "maintenance.cert_scan", "maintenance.student_vm"]):
+	if not does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow", "maintenance.cert_scan", "maintenance.student_vm", "maintenance.lock_workflows", "maintenance.rubrik_policy_check"]):
 		abort(403)
 
 	# Connect to NeoCortex and the database
@@ -549,10 +550,7 @@ def admin_maint():
 	rubrik_crcheck = None
 
 	# get the lock status of the page
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
-	workflows_lock_status = curd.fetchone()
-	
+	workflows_lock_status = get_workflows_locked_details()
 
 	if request.method == 'GET':
 		# See which tasks are already running
@@ -579,7 +577,7 @@ def admin_maint():
 		return render_template('admin/maint.html', active='admin',
 			sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id,
 			vmexpire_task_id=vmexpire_task_id, sync_puppet_servicenow_id=sync_puppet_servicenow_id,
-			cert_scan_id=cert_scan_id, student_vm_build_id=student_vm_build_id, pause_vm_builds=lock_workflows , title="Maintenance Tasks", lock_status=json.loads(workflows_lock_status['value'])
+			cert_scan_id=cert_scan_id, student_vm_build_id=student_vm_build_id, pause_vm_builds=lock_workflows , title="Maintenance Tasks", lock_status=workflows_lock_status
 		)
 
 	else:
@@ -616,25 +614,25 @@ def admin_maint():
 			task_id = neocortex.start_internal_task(session['username'], 'cert_scan.py', '_cert_scan', description="Scans configured subnets for certificates used for SSL/TLS")
 		elif module == 'student_vm_build':
 			# Check user permissions
-			if not does_user_have_permission(""):
+			if not does_user_have_permission("maintenance.student_vm"):
 				abort(403)
 			task_id = neocortex.start_internal_task(session['username'], 'servicenow_vm_build.py', '_servicenow_vm_build', description="Checks for outstanding VM build requests in ServiceNow and starts them")
 		elif module == 'toggle_workflow_lock':
-			if not does_user_have_permission("maintenance.expire_vm"):
+			if not does_user_have_permission("maintenance.lock_workflows"):
 				abort(403)
 			curd = g.db.cursor(mysql.cursors.DictCursor)
-			curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
+			curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;', ('workflow_lock_status',))
 			res = curd.fetchone()
 			task_id = neocortex.start_internal_task(session['username'], 'lock_workflows.py', '_lock_workflows', description="Locks the workflows from being started", options={'page_load_lock_status' : res})
 		elif module == 'rubrik_crcheck':
-			if not does_user_have_permission("maintenance.expired_vm"):
-				task_id = neocortex.start_internal_task(session['username'], 'rubrik_crcheck.py', '_rubrik_policy_check', description="Checks the backup systems of policies against the ones in Rubrik")
+			if not does_user_have_permission("maintenance.rubrik_policy_check"):
+				abort(403)
+			task_id = neocortex.start_internal_task(session['username'], 'rubrik_crcheck.py', '_rubrik_policy_check', description="Checks the backup systems of policies against the ones in Rubrik")
 		else:
 			app.logger.warn('Unknown module name specified when starting task')
 			abort(400)
 
 		# Show the user the status of the task
-		# return jsonify(task_id)
 		return redirect(url_for('task_status', id=task_id))
 
 ################################################################################

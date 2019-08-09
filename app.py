@@ -16,6 +16,12 @@ from logging import Formatter
 import redis
 import MySQLdb as mysql
 import traceback
+import re
+import markupsafe
+
+# Regular expressions for Jinja links filter
+SYSTEM_LINK_RE = re.compile(r"""\{\{ *system_link +id *= *(?P<quote>["']?) *(?P<link_id>[0-9]+) *(?P=quote) *\}\}(?P<link_text>[^{]*)\{\{ */system_link *\}\}""", re.IGNORECASE)
+TASK_LINK_RE = re.compile(r"""\{\{ *task_link +id *= *(?P<quote>["']?) *(?P<link_id>[0-9]+) *(?P=quote) *\}\}(?P<link_text>[^{]*)\{\{ */task_link *\}\}""", re.IGNORECASE)
 
 class CortexFlask(Flask):
 	## A list of dict's, each representing a workflow 'create' function
@@ -42,6 +48,7 @@ class CortexFlask(Flask):
 		# CSRF token function in templates
 		self.jinja_env.globals['csrf_token'] = self._generate_csrf_token
 		self.jinja_env.globals['utcnow'] = datetime.datetime.utcnow
+		self.jinja_env.filters['parse_cortex_links'] = self.parse_cortex_links
 
 		# Load the __init__.py config defaults
 		self.config.from_object("cortex.defaultcfg")
@@ -141,7 +148,7 @@ Further Details:
 		disable_csrf_check decorator."""
 
 		## Throw away requests with methods we don't support
-		if request.method not in ('GET', 'HEAD', 'POST'):
+		if request.method not in ('GET', 'HEAD', 'POST', 'DELETE'):
 			abort(405)
 
 		# For methods that require CSRF checking
@@ -149,9 +156,9 @@ Further Details:
 			# Get the function that is rendering the current view
 			view = self.view_functions.get(request.endpoint)
 			view_location = view.__module__ + '.' + view.__name__
-
-			# If the view is not exempt
-			if not view_location in self._exempt_views:
+			
+			# If the view is not part of the API and it's not exempt
+			if re.search("[\w]*cortex\.api\.endpoints[\w]*", view.__module__) is None and not view_location in self._exempt_views:
 				token = session.get('_csrf_token')
 				if not token or token != request.form.get('_csrf_token'):
 					if 'username' in session:
@@ -175,7 +182,6 @@ Further Details:
 				return render_template('some_view.html')
 		:param view: The view to be wrapped by the decorator.
 		"""
-
 		view_location = view.__module__ + '.' + view.__name__
 		self._exempt_views.add(view_location)
 		self.logger.debug('Added CSRF check exemption for ' + view_location)
@@ -305,7 +311,80 @@ Username:             %s
 
 		), exc_info=exc_info)
 
-################################################################################
+	################################################################################
+
+	def parse_cortex_links(self, s, make_safe=True):
+		"""Primarily aimed at being a Jinja filter, this allows for the following
+		to be put in to text that will resolve it to a hyperlink in HTML:
+		{{system_link id="123"}}link text{{/system_link}}
+		{{task_link id="456"}}link text{{/task_link}}
+		"""
+
+		# These is the list of regexs
+		regexs = [SYSTEM_LINK_RE, TASK_LINK_RE]
+
+		# Start with our result equalling our input, and start searching at the beginning)
+		result = s
+		search_index = 0
+
+		# Whilst there's more string to search...
+		while search_index < len(result):
+			# Setup search for the first matching regex
+			lowest_index = len(result)
+			lowest_re_result = None
+			lowest_regex = None
+
+			# Iterate over all our regexs and find the one that matches earliest in our string
+			for regex in regexs:
+				# Note we start our search at start_index so we don't re-evaluate stuff we've already parsed
+				re_result = regex.search(result[search_index:])
+
+				# If we got a hit on this regex and it's earlier in the string than the previous...
+				if re_result is not None and re_result.span()[0] < lowest_index:
+					# Make a note!
+					lowest_re_result = re_result
+					lowest_regex = regex
+					lowest_index = lowest_re_result.span()[0]
+
+			# If we found no matching regexs, then there are no more changes to make, so stop searching
+			if lowest_regex is None:
+				break
+
+			# Replace the text appropriately depending on what we found
+			if lowest_regex is SYSTEM_LINK_RE:
+				if make_safe:
+					link_text = str(markupsafe.escape(lowest_re_result.group('link_text')))
+				else:   
+					link_text = lowest_re_result.group('link_text')
+				url = url_for('system', id=int(lowest_re_result.group('link_id')))
+				inserted_text = "<a href='" + url + "'>" + link_text + "</a>"
+			elif lowest_regex is TASK_LINK_RE:
+				if make_safe:
+					link_text = str(markupsafe.escape(lowest_re_result.group('link_text')))
+				else:   
+					link_text = lowest_re_result.group('link_text')
+				url = url_for('task_status', id=int(lowest_re_result.group('link_id')))
+				inserted_text = "<a href='" + url + "'>" + link_text + "</a>"
+
+			# Update our string and variables
+			before_text = result[0:search_index + lowest_re_result.span()[0]]
+			if make_safe:
+				old_length = len(before_text)
+				# Make safe the text that we haven't already made safe before
+				before_text = result[0:search_index] + str(markupsafe.escape(result[search_index:search_index + lowest_re_result.span()[0]]))
+				additional_length = len(before_text) - old_length
+			else:   
+				additional_length = 0
+			result = before_text + inserted_text + result[search_index + lowest_re_result.span()[1]:]
+			search_index = additional_length + search_index + lowest_re_result.span()[0] + len(inserted_text)
+
+		if make_safe:
+			# Make the trailing part of the string safe
+			result = result[0:search_index] + str(markupsafe.escape(result[search_index:]))
+
+		return result
+
+	################################################################################
 
 	def init_database(self):
 		"""Ensures cortex can talk to the database (rather than waiting for a HTTP
@@ -360,10 +439,25 @@ Username:             %s
 		except Exception as ex:
 			pass
 
+		try:
+			cursor.execute("""CREATE INDEX `events_name_index` ON `events` (`name`)""")
+		except Exception as ex:
+			pass
+
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `kv_settings` (
 		  `key` varchar(64) NOT NULL,
 		  `value` text,
 		  PRIMARY KEY (`key`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_modules_info` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `module_name` varchar(256) NOT NULL,
+		  `class_name` varchar(256) NOT NULL,
+		  `class_parameter` varchar(256) NOT NULL,
+		  `description` text DEFAULT NULL,
+		  `tag_name` varchar(255) DEFAULT NULL,
+		  PRIMARY KEY (`id`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `systems` (
@@ -386,7 +480,7 @@ Username:             %s
 		  `primary_owner_role` varchar(64) DEFAULT NULL,
 		  `secondary_owner_who` varchar(64) DEFAULT NULL,
 		  `secondary_owner_role` varchar(64) DEFAULT NULL,
-		  `enable_backup` tinyint(1) DEFAULT 1,
+		  `enable_backup` tinyint(1) DEFAULT 2,
 		  PRIMARY KEY (`id`),
 		  KEY `class` (`class`),
 		  KEY `name` (`name`(255)),
@@ -609,7 +703,7 @@ Username:             %s
 		except Exception as e:
 			pass
 		try:
-			cursor.execute("""ALTER TABLE `systems` ADD `enable_backup` tinyint(1) DEFAULT 1""")
+			cursor.execute("""ALTER TABLE `systems` ADD `enable_backup` tinyint(1) DEFAULT 2""")
 		except Exception as e:
 			pass
 
@@ -645,6 +739,7 @@ Username:             %s
 		  `sncache_cmdb_ci`.`os` AS `cmdb_os`,
 		  `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description`,
 		  `sncache_cmdb_ci`.`virtual` AS `cmdb_is_virtual`,
+		  `vmware_cache_vm`.`id` AS `vmware_moid`,
 		  `vmware_cache_vm`.`name` AS `vmware_name`,
 		  `vmware_cache_vm`.`vcenter` AS `vmware_vcenter`,
 		  `vmware_cache_vm`.`uuid` AS `vmware_uuid`,
@@ -662,13 +757,13 @@ Username:             %s
 		  `puppet_nodes`.`classes` AS `puppet_classes`,
 		  `puppet_nodes`.`variables` AS `puppet_variables`,
 		  `systems`.`enable_backup` AS `enable_backup`
-                FROM `systems` 
+		FROM `systems` 
 		LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`
 		LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid`
 		LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` 
-		LEFT JOIN `realname_cache` AS  `allocation_who_realname_cache` ON `systems`.`allocation_who` = `allocation_who_realname_cache`.`username`
-		LEFT JOIN `realname_cache` AS  `primary_owner_who_realname_cache` ON `systems`.`primary_owner_who` = `primary_owner_who_realname_cache`.`username`
-		LEFT JOIN `realname_cache` AS  `secondary_owner_who_realname_cache` ON `systems`.`secondary_owner_who` = `secondary_owner_who_realname_cache`.`username`""")
+		LEFT JOIN `realname_cache` AS `allocation_who_realname_cache` ON `systems`.`allocation_who` = `allocation_who_realname_cache`.`username`
+		LEFT JOIN `realname_cache` AS `primary_owner_who_realname_cache` ON `systems`.`primary_owner_who` = `primary_owner_who_realname_cache`.`username`
+		LEFT JOIN `realname_cache` AS `secondary_owner_who_realname_cache` ON `systems`.`secondary_owner_who` = `secondary_owner_who_realname_cache`.`username`""")
        	
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `roles` (
 		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
@@ -830,6 +925,7 @@ Username:             %s
 		  (1, "systems.all.view"), 
 		  (1, "systems.all.view.puppet"), 
 		  (1, "systems.all.view.puppet.catalog"), 
+		  (1, "systems.all.view.puppet.classify"), 
 		  (1, "systems.all.view.rubrik"),
 		  (1, "systems.all.edit.expiry"), 
 		  (1, "systems.all.edit.review"), 
@@ -839,10 +935,14 @@ Username:             %s
 		  (1, "systems.all.edit.puppet"),
 		  (1, "systems.all.edit.rubrik"), 
 		  (1, "systems.all.edit.owners"), 
+		  (1, "systems.own.view"),
 		  (1, "systems.allocate_name"), 
 		  (1, "systems.add_existing"),
 		  (1, "vmware.view"), 
-		  (1, "puppet.dashboard.view"), 
+		  (1, "puppet.dashboard.view"),
+		  (1, "puppet.modules_info.view"),
+		  (1, "puppet.modules_info.add"),
+		  (1, "puppet.modules_info.edit"),   
 		  (1, "puppet.nodes.view"), 
 		  (1, "puppet.default_classes.view"), 
 		  (1, "puppet.default_classes.edit"), 
@@ -858,15 +958,19 @@ Username:             %s
 		  (1, "maintenance.sync_puppet_servicenow"),
 		  (1, "maintenance.cert_scan"),
 		  (1, "maintenance.student_vm"),
+		  (1, "maintenance.lock_workflows"),
+		  (1, "maintenance.rubrik_policy_check"),
 		  (1, "api.register"),
 		  (1, "workflows.all"),
 		  (1, "sysrequests.all.view"),
 		  (1, "sysrequests.all.approve"),
 		  (1, "sysrequests.all.reject"),
+		  (1, "sysrequests.own.view"),
 		  (1, "api.get"),
 		  (1, "api.post"),
 		  (1, "api.put"),
 		  (1, "api.delete"),
+		  (1, "control.all.vmware.power"),
 		  (1, "certificates.view"),
 		  (1, "certificates.stats"),
 		  (1, "certificates.add")
@@ -885,52 +989,57 @@ Username:             %s
 		before workflows are run"""
 
 		## The ORDER MATTERS! It determines the order used on the Roles page
-		self.permissions        = [
-			{'name': 'systems.all.view',		       'desc': 'View any system'},
-			{'name': 'systems.own.view',		       'desc': 'View systems allocated by the user'},
-			{'name': 'systems.all.view.puppet',	       'desc': 'View Puppet reports and facts on any system'},
+		self.permissions = [
+			{'name': 'systems.all.view',                   'desc': 'View any system'},
+			{'name': 'systems.own.view',                   'desc': 'View systems allocated by the user'},
+			{'name': 'systems.all.view.puppet',            'desc': 'View Puppet reports and facts on any system'},
 			{'name': 'systems.all.view.puppet.classify',   'desc': 'View Puppet classify on any system'},
 			{'name': 'systems.all.view.puppet.catalog',    'desc': 'View Puppet catalog on any system'},
 			{'name': 'systems.all.view.rubrik',            'desc': 'View Rubrik backups for any system'},
-			{'name': 'systems.all.edit.expiry',	       'desc': 'Modify the expiry date of any system'},
-			{'name': 'systems.all.edit.review',	       'desc': 'Modify the review status of any system'},
-			{'name': 'systems.all.edit.vmware',	       'desc': 'Modify the VMware link on any system'},
-			{'name': 'systems.all.edit.cmdb',	       'desc': 'Modify the CMDB link on any system'},
-			{'name': 'systems.all.edit.comment',	       'desc': 'Modify the comment on any system'},
-			{'name': 'systems.all.edit.puppet',	       'desc': 'Modify Puppet settings on any system'},
+			{'name': 'systems.all.edit.expiry',            'desc': 'Modify the expiry date of any system'},
+			{'name': 'systems.all.edit.review',            'desc': 'Modify the review status of any system'},
+			{'name': 'systems.all.edit.vmware',            'desc': 'Modify the VMware link on any system'},
+			{'name': 'systems.all.edit.cmdb',              'desc': 'Modify the CMDB link on any system'},
+			{'name': 'systems.all.edit.comment',           'desc': 'Modify the comment on any system'},
+			{'name': 'systems.all.edit.puppet',            'desc': 'Modify Puppet settings on any system'},
 			{'name': 'systems.all.edit.rubrik',            'desc': 'Modify Rubrik settings on any system'},
 			{'name': 'systems.all.edit.owners',            'desc': 'Modify the system owners on any system'},
-			{'name': 'vmware.view',			       'desc': 'View VMware data and statistics'},
-			{'name': 'puppet.dashboard.view',	       'desc': 'View the Puppet dashboard'},
-			{'name': 'puppet.nodes.view',		       'desc': 'View the list of Puppet nodes'},
-			{'name': 'puppet.default_classes.view',	       'desc': 'View the list of Puppet default classes'},
-			{'name': 'puppet.default_classes.edit',	       'desc': 'Modify the list of Puppet default classes'},
-			{'name': 'classes.view',		       'desc': 'View the list of system class definitions'},
-			{'name': 'classes.edit',		       'desc': 'Edit system class definitions'},
-			{'name': 'tasks.view',			       'desc': 'View the details of all tasks (not just your own)'},
-			{'name': 'events.view',			       'desc': 'View the details of all events (not just your own)'},
-			{'name': 'specs.view',			       'desc': 'View the VM Specification Settings'},
-			{'name': 'specs.edit',			       'desc': 'Edit the VM Specification Settings'},
-			{'name': 'maintenance.vmware',		       'desc': 'Run VMware maintenance tasks'},
-			{'name': 'maintenance.cmdb',		       'desc': 'Run CMDB maintenance tasks'},
-			{'name': 'maintenance.expire_vm',	       'desc': 'Run the Expire VM maintenance task'},
-			{'name': 'maintenance.sync_puppet_servicenow', 'desc': 'Run the Sync Puppet with Servicenow task'},
+			{'name': 'vmware.view',                        'desc': 'View VMware data and statistics'},
+			{'name': 'puppet.dashboard.view',              'desc': 'View the Puppet dashboard'},
+			{'name': 'puppet.modules_info.view',           'desc': 'View the Puppet modules info'},
+			{'name': 'puppet.modules_info.add',            'desc': 'Add  to the Puppet modules info'},
+			{'name': 'puppet.modules_info.edit',           'desc': 'Modify the Puppet modules info'},
+			{'name': 'puppet.nodes.view',                  'desc': 'View the list of Puppet nodes'},
+			{'name': 'puppet.default_classes.view',        'desc': 'View the list of Puppet default classes'},
+			{'name': 'puppet.default_classes.edit',        'desc': 'Modify the list of Puppet default classes'},
+			{'name': 'classes.view',                       'desc': 'View the list of system class definitions'},
+			{'name': 'classes.edit',                       'desc': 'Edit system class definitions'},
+			{'name': 'tasks.view',                         'desc': 'View the details of all tasks (not just your own)'},
+			{'name': 'events.view',                        'desc': 'View the details of all events (not just your own)'},
+			{'name': 'specs.view',                         'desc': 'View the VM Specification Settings'},
+			{'name': 'specs.edit',                         'desc': 'Edit the VM Specification Settings'},
+			{'name': 'maintenance.vmware',                 'desc': 'Run VMware maintenance tasks'},
+			{'name': 'maintenance.cmdb',                   'desc': 'Run CMDB maintenance tasks'},
+			{'name': 'maintenance.expire_vm',              'desc': 'Run the Expire VM maintenance task'},
+			{'name': 'maintenance.sync_puppet_servicenow', 'desc': 'Run the Sync Puppet with ServiceNow task'},
 			{'name': 'maintenance.cert_scan',              'desc': 'Run the Certificate Scan task'},
-			{'name': 'maintenance.student_vm',             'desc': 'Run the Student VM Build Task'},
-			{'name': 'api.register',		       'desc': 'Manually register Linux machines (rebuilds / physical machines)'},
-			{'name': 'admin.permissions',		       'desc': 'Modify permissions'},
-			{'name': 'workflows.all',		       'desc': 'Use any workflow or workflow function'},
+			{'name': 'maintenance.student_vm',             'desc': 'Run the Student VM Build task'},
+			{'name': 'maintenance.lock_workflows',         'desc': 'Run the Lock/Unlock Workflows task'},
+			{'name': 'maintenance.rubrik_policy_check',    'desc': 'Run the Rubrik Policy check task'},
+			{'name': 'api.register',                       'desc': 'Manually register Linux machines (rebuilds / physical machines)'},
+			{'name': 'admin.permissions',                  'desc': 'Modify permissions'},
+			{'name': 'workflows.all',                      'desc': 'Use any workflow or workflow function'},
 
-			{'name': 'sysrequests.own.view',	       'desc': 'View system requests owned by the user'},
-			{'name': 'sysrequests.all.view',	       'desc': 'View any system request'},
-			{'name': 'sysrequests.all.approve',	       'desc': 'Approve any system request'},
-			{'name': 'sysrequests.all.reject',	       'desc': 'Reject any system request'},
-			{'name': 'control.all.vmware.power',	       'desc': 'Contol the power settings of any VM'},
+			{'name': 'sysrequests.own.view',               'desc': 'View system requests owned by the user'},
+			{'name': 'sysrequests.all.view',               'desc': 'View any system request'},
+			{'name': 'sysrequests.all.approve',            'desc': 'Approve any system request'},
+			{'name': 'sysrequests.all.reject',             'desc': 'Reject any system request'},
+			{'name': 'control.all.vmware.power',           'desc': 'Contol the power settings of any VM'},
 
-			{'name': 'api.get',			       'desc': 'Send GET requests to the Cortex API.'},
-			{'name': 'api.post',			       'desc': 'Send POST requests to the Cortex API.'},
-			{'name': 'api.put',			       'desc': 'Send PUT requests to the Cortex API.'},
-			{'name': 'api.delete',			       'desc': 'Send DELETE requests to the Cortex API.'},
+			{'name': 'api.get',                            'desc': 'Send GET requests to the Cortex API'},
+			{'name': 'api.post',                           'desc': 'Send POST requests to the Cortex API'},
+			{'name': 'api.put',                            'desc': 'Send PUT requests to the Cortex API'},
+			{'name': 'api.delete',                         'desc': 'Send DELETE requests to the Cortex API'},
 
 			{'name': 'certificates.view',                  'desc': 'View the list of discovered certificates and their details'},
 			{'name': 'certificates.stats',                 'desc': 'View the statistics about certificates'},
@@ -952,5 +1061,6 @@ Username:             %s
 			{'name': 'edit.comment',                'desc': 'Change the comment'},
 			{'name': 'edit.owners',                 'desc': 'Change the system owners'},
 			{'name': 'edit.puppet',                 'desc': 'Change Puppet settings'},
+			{'name': 'edit.rubrik',                 'desc': 'Change Rubrik backup settings'},
 			{'name': 'control.vmware.power',        'desc': 'Control the VMware power state'},
 		]

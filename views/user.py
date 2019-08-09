@@ -50,7 +50,6 @@ def login():
 
 ###############################################################################
 
-
 @app.route('/cas', methods=['GET', 'POST'])
 @app.disable_csrf_check
 def cas():
@@ -110,7 +109,7 @@ def logout():
 		# Tell cas about the logout
 		return redirect(cas_client.get_logout_url())
 	else:
-		return login()
+		return redirect(url_for('login'))
 
 ################################################################################
 
@@ -162,7 +161,5 @@ def preferences():
 	else:
 		g.redis.delete('user:' + session['username'] + ':preferences:interface:sidebar')
 	
-
-	# return jsonify({'a':session['username']})
 	flash("Your preferences have been saved","alert-success")
 	return redirect(url_for('dashboard'))

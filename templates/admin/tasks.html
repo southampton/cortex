@@ -1,24 +1,24 @@
 {% extends "layout.html" %}
 {% block body %}
 <div class="page-header">
-<h3>
+<h4>
 	<div class="pull-right divider-left">
-		<button id="hide_frequent" type="button" class="btn btn-sm btn-success btn-filter active" {{ 'disabled' if not json_source }}><i class="fa fa-fw fa-check-square-o"></i> Hide Frequent Tasks</button>
+		<button id="hide_frequent" type="button" class="btn btn-md btn-success btn-filter active" {{ 'disabled' if not json_source }}><i class="fa fa-fw fa-check-square-o"></i> Hide Frequent Tasks</button>
 	</div>
 
 	<div class="pull-right divider-left">
-		<button id="filter_succeeded" type="button" class="btn btn-sm btn-filter {{ 'btn-success active' if filters.get('filter_succeeded', '1') == '1' else 'btn-default' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_succeeded', '1') == '1' else 'fa-square-o' }}"></i> Succeeded</button>
-		<button id="filter_warnings" type="button" class="btn btn-sm btn-filter {{ 'btn-success active' if filters.get('filter_warnings', '1') == '1' else 'btn-default' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_warnings', '1') == '1' else 'fa-square-o' }}"></i> Warnings</button>
-		<button id="filter_failed" type="button" class="btn btn-sm btn-filter {{ 'btn-success active' if filters.get('filter_failed', '1') == '1' else 'btn-default' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_failed', '1') == '1' else 'fa-square-o' }}"></i> Failed</button>
+		<button id="filter_succeeded" type="button" class="btn btn-md btn-filter {{ 'btn-success active' if filters.get('filter_succeeded', '1') == '1' else 'btn-secondary' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_succeeded', '1') == '1' else 'fa-square-o' }}"></i> Succeeded</button>
+		<button id="filter_warnings" type="button" class="btn btn-md btn-filter {{ 'btn-success active' if filters.get('filter_warnings', '1') == '1' else 'btn-secondary' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_warnings', '1') == '1' else 'fa-square-o' }}"></i> Warnings</button>
+		<button id="filter_failed" type="button" class="btn btn-md btn-filter {{ 'btn-success active' if filters.get('filter_failed', '1') == '1' else 'btn-secondary' }}" {{ 'disabled' if not json_source }}><i class="fa fa-fw {{ 'fa-check-square-o' if filters.get('filter_failed', '1') == '1' else 'fa-square-o' }}"></i> Failed</button>
 	</div>
 	<div class="pull-right">
-		<a class="btn btn-sm {% if tasktype == 'all' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_tasks') }}">All</a>
-		<a class="btn btn-sm {% if tasktype == 'active' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_tasks_active') }}">Active</a>
-		<a class="btn btn-sm {% if tasktype == 'user' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_tasks_user') }}">User</a>
-		<a class="btn btn-sm {% if tasktype == 'system' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('admin_tasks_system') }}">System</a>
+		<a class="btn btn-md {% if tasktype == 'all' %}btn-primary{% else %}btn-secondary{% endif %}" href="{{ url_for('admin_tasks') }}">All</a>
+		<a class="btn btn-md {% if tasktype == 'active' %}btn-primary{% else %}btn-secondary{% endif %}" href="{{ url_for('admin_tasks_active') }}">Active</a>
+		<a class="btn btn-md {% if tasktype == 'user' %}btn-primary{% else %}btn-secondary{% endif %}" href="{{ url_for('admin_tasks_user') }}">User</a>
+		<a class="btn btn-md {% if tasktype == 'system' %}btn-primary{% else %}btn-secondary{% endif %}" href="{{ url_for('admin_tasks_system') }}">System</a>
 	</div>
 	<i class="fa fa-fw fa-tasks"></i> {{ title }}
-</h3>
+</h4>
 <div class="text-muted">
 {%- if tasktype == 'all' %}
 The list below shows all past and present tasks that have been run on the system
@@ -33,7 +33,7 @@ The list below shows all past and present system-started tasks
 </div>
 
 <div id="tasksWrapper">
-	<table class="table table-condensed table-striped" id="tasks">
+	<table class="table table-sm table-striped" id="tasks">
 		<thead>
 			<tr>
 				<th>ID</th>
@@ -56,7 +56,7 @@ The list below shows all past and present system-started tasks
 				<td>{% if task.start and task.end %}{{ task.end - task.start }}{% endif %}</td>
 				<td>{{ task.username }}</td>
 				<td>{% if task.status == 0 %}<span style="color:#22c">In Progress</span>{% elif task.status == 1 %}<span style="color:#2c2">Succeeded</span>{% elif task.status == 2 %}<span style="color:#c22">Failed</span>{% elif task.status == 3 %}<span style="color:#c82">Warnings</span>{% else %}Unknown{% endif %}</td>
-				<td><a class="btn btn-xs btn-default" href="{{ url_for('task_status', id=task.id) }}"><i class="fa fa-fw fa-info"></i> Details</a></td>
+				<td><a class="btn btn-xs btn-secondary" href="{{ url_for('task_status', id=task.id) }}"><i class="fa fa-fw fa-info"></i> Details</a></td>
 			</tr>
 {%- endfor %}
 		</tbody>
@@ -68,6 +68,13 @@ The list below shows all past and present system-started tasks
 		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 		"pageLength": 15,
 		"order": [[0, 'desc']],
+{%- if classic_layout %}
+		"fixedHeader": {
+			"headerOffset": 52
+		},
+{%- else %}
+		"fixedHeader": true,
+{%- endif %}
 		"columns": [null, null, null, null, { "orderable": false }, null, null, { "orderable": false, "targets": 0 }],
 		"searching": true,
 {%- if json_source %}
@@ -90,7 +97,7 @@ The list below shows all past and present system-started tasks
 			else if (data[6] == 2) { $('td:eq(6)', row).html('<span style="color:#c22">Failed</span>'); }
 			else if (data[6] == 3) { $('td:eq(6)', row).html('<span style="color:#c82">Warnings</span>'); }
 			else                   { $('td:eq(6)', row).html('Unknown'); }
-			$('td:eq(7)', row).html('<a class="btn btn-xs btn-default" href="/task/status/' + data[0] + '"><i class="fa fa-fw fa-info"></i> Details</a>');
+			$('td:eq(7)', row).html('<a class="btn btn-xs btn-secondary" href="/task/status/' + data[0] + '"><i class="fa fa-fw fa-info"></i> Details</a>');
 		}
 {%- endif %}
 	});
@@ -119,16 +126,16 @@ The list below shows all past and present system-started tasks
 	});	
 
 	$('#filter_succeeded').click(function() {
-		toggleFilterButton('#filter_succeeded', 'btn-default')
+		toggleFilterButton('#filter_succeeded', 'btn-secondary')
 		reloadTable()
 	});
 	$('#filter_warnings').click(function() {
-		toggleFilterButton('#filter_warnings', 'btn-default')
+		toggleFilterButton('#filter_warnings', 'btn-secondary')
 		reloadTable()
 	});
 
 	$('#filter_failed').click(function() {
-		toggleFilterButton('#filter_failed', 'btn-default')
+		toggleFilterButton('#filter_failed', 'btn-secondary')
 		reloadTable()
 	});
 

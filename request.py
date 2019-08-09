@@ -66,10 +66,9 @@ def context_processor():
 	# Favourites menu
 	favourites = []
 	if does_user_have_permission("systems.own.view") or does_user_have_permission("systems.all.view"):
-		favourites = [{'link': url_for('favourites'), 'title': 'All Favourites', 'icon': 'fa-star'},
-		{'link': url_for('favourites_by_type', system_type='srv'), 'title': 'Favourited srv systems', 'icon': 'fa-star'},
-		{'link': url_for('favourites_by_type', system_type='play'), 'title': 'Favourited play systems', 'icon': 'fa-star'},
-	]
+		favourites = [{'link': url_for('favourites'), 'title': 'All Favourites', 'icon': 'fa-star'}]
+		for fav_class in app.config['FAVOURITE_CLASSES']:
+			favourites.append({'link': url_for('favourites_by_type', system_type=fav_class), 'title': 'Favourited ' + fav_class + ' systems', 'icon': 'fa-star'})
 
 	# Set up the Systems menu, based on a single permission
 	systems = []
@@ -115,6 +114,8 @@ def context_processor():
 		certificates.append({'link': url_for('certificates'), 'title': 'Certificates', 'icon': 'fa-certificate'})
 	if does_user_have_permission("certificates.stats"):
 		certificates.append({'link': url_for('certificate_statistics'), 'title': 'Statistics', 'icon': 'fa-pie-chart'})
+	if does_user_have_permission("certificates.add"):
+		certificates.append({'link': url_for('certificates_add'), 'title': 'Add Certificate', 'icon': 'fa-plus'})
 
 	# Set up the Admin menu, based on permissions
 	admin = []
@@ -126,7 +127,7 @@ def context_processor():
 		admin.append({'link': url_for('admin_events'), 'title': 'Events', 'icon': 'fa-list-alt'})
 	if does_user_have_permission("specs.view"):
 		admin.append({'link': url_for('admin_specs'), 'title': 'VM Specs', 'icon': 'fa-sliders'})
-	if does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow", "maintenance.cert_scan"]):
+	if does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow", "maintenance.cert_scan", "maintenance.lock_workflows", "maintenance.rubrik_policy_check", "maintenance.student_vm"]):
 		admin.append({'link': url_for('admin_maint'), 'title': 'Maintenance', 'icon': 'fa-gears'})
 	if does_user_have_permission("systems.allocate_name"):
 		admin.append({'link': url_for('systems_new'), 'title': 'Allocate system name', 'icon': 'fa-plus'})

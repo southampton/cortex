@@ -5,8 +5,8 @@
 {% endblock %}
 {% block body %}
 <div class="page-header">
-<h3>Create SSL Certificate</h3>
-<p class="text-muted">This workflow automates the creation of SSL certificates.</p>
+<h4><i class="fa fa-plus-circle fa-fw"></i> Create SSL Certificate</h4>
+<div class="text-muted">This workflow automates the creation of SSL certificates.</div>
 </div>
 <style type="text/css">
 .submit
@@ -23,7 +23,7 @@
 <form id="cert_form" method="POST" role="form">
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 	<div class="row">
-		<div class="col-md-12"><h3 style="margin-top:0px">Certificate Details</h3></div>
+		<div class="col-md-12"><h4>Certificate Details</h4></div>
 		<div class="col-md-6 form-group">
 			<label for="provider">Provider:</label>
 			<select class="form-control" name="provider" id="provider">
@@ -54,7 +54,7 @@
 		</div>
 		<div class="col-md-4 form-group">
 			<label for="key_size">Key Size:</label>
-			<select class="form-control" name="key_size" id="key_size"{% if ('provider' in values and not providers_dict[values['provider']]['selectable_key_size']) or ('provider' not in values and not providers_dict[default_provider]['selectable_key_size']) %} readonly="readonly"{% endif %}>
+			<select class="form-control" name="key_size" id="key_size"{% if ('provider' in values and not providers_dict[values['provider']]['selectable_key_size']) or ('provider' not in values and not providers_dict[default_provider]['selectable_key_size']) %} disabled="disabled"{% endif %}>
 {%- for ks in key_sizes %}
 				<option value="{{ ks }}"{% if ('key_size' in values and values['key_size'] == ks) or ('key_size' not in values and ks == default_key_size) %} selected="selected"{% endif %}>{{ ks }} bit</option>
 {%- endfor %}
@@ -62,7 +62,7 @@
 		</div>
 		<div class="col-md-4 form-group">
 			<label for="length">Validity Length:</label>
-			<select class="form-control" name="length" id="length"{% if ('length' in values and not providers_dict[values['provider']]['selectable_expiration']) or ('provider' not in values and not providers_dict[default_provider]['selectable_expiration']) %} readonly="readonly"{% endif %}>
+			<select class="form-control" name="length" id="length"{% if ('length' in values and not providers_dict[values['provider']]['selectable_expiration']) or ('provider' not in values and not providers_dict[default_provider]['selectable_expiration']) %} disabled="disabled"{% endif %}>
 {%- for cert_length in cert_lengths %}
 				<option value="{{ cert_length }}"{% if ('cert_length' in values and values['cert_length'] == cert_length) or ('cert_length' not in values and cert_length == default_cert_length) %} selected="selected"{% endif %}>{{ cert_length }} days</option>
 {%- endfor %}
@@ -70,15 +70,15 @@
 		</div>
 		<div class="col-md-4 form-group">
 			<label for="">SSL Profile:</label></br/>
-			<label for="create_ssl_profile" style="top:0.5em;position:relative"><input type="checkbox" id="create_ssl_profile" name="create_ssl_profile" {% if 'create_ssl_profile' not in values or ('create_ssl_profile' in values and values['create_ssl_profile']) %}checked="checked" {% endif %}/> Create SSL Profile on the NLBs</label>
+			<label for="create_ssl_profile" style="top:0.5em;position:relative"><input type="checkbox" id="create_ssl_profile" name="create_ssl_profile" {% if ('create_ssl_profile' in values and providers_dict[values['provider']]['create_ssl_profile']) or ('provider' not in values and providers_dict[default_provider]['create_ssl_profile']) %}checked="checked" {% endif %}/> Create SSL Profile on the NLBs</label>
 		</div>
 
 	</div>
-	<h3>Create</h3>
+	<h4>Create</h4>
 	<div class="row">
 		<div class="col-md-12">
 			<p style="text-align:center">Once you have populated all the necessary information about the service, click the button below to create the certificate. A private key, certificate and (where necessary) certificate chain will be provided. Note that for Let's Encrypt certificates, a DNS change needs to be made to perform the ACME challenge to create the certificate and as such, the CN you provide as the hostname/domain above should not already exist in DNS.</p>
-			<p style="text-align:center"><input type="submit" class="btn btn-lg btn-success" value="validate" name="submit" id="submit" /></p>
+			<p style="text-align:center"><input type="submit" class="btn btn-lg btn-success" value="Create" name="submit" id="submit" /></p>
 		</div>
 	</div>
 </form>
@@ -98,6 +98,11 @@ var provider_expire_enable = {
 	'{{ provider.id }}': {% if provider.selectable_expiration %}true{% else %}false{% endif %},
 {%- endfor %}
 }
+var provider_profile_enable = {
+{%- for provider in providers %}
+	'{{ provider.id }}': {% if provider.create_ssl_profile %}true{% else %}false{% endif %},
+{%- endfor %}
+}
 
 $('#env').change(function() {
 	$('#domain').val(env_domain_map[$('#env').val()]);
@@ -105,22 +110,30 @@ $('#env').change(function() {
 $('#provider').change(function() {
 	if (provider_key_size_enable[$('#provider').val()])
 	{
-		$('#key_size').removeAttr('readonly');
+		$('#key_size').removeAttr('disabled');
 	}
 	else
 	{
-		$('#key_size').attr('readonly', 'readonly');
+		$('#key_size').attr('disabled', 'disabled');
 	}
 
 	if (provider_expire_enable[$('#provider').val()])
 	{
-		$('#length').removeAttr('readonly');
+		$('#length').removeAttr('disabled');
 	}
 	else
 	{
-		$('#length').attr('readonly', 'readonly');
+		$('#length').attr('disabled', 'disabled');
 	}
 
+	if (provider_profile_enable[$('#provider').val()])
+	{
+		$('#create_ssl_profile').prop('checked', true);
+	}
+	else
+	{
+		$('#create_ssl_profile').removeAttr('checked');
+	}
 });
 </script>
 {% endblock %}

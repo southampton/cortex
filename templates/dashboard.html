@@ -1,67 +1,14 @@
 {% extends "layout.html" %}
 {% block body %}
-<style type="text/css">
-.dashblock
-{
-	border-radius: 24px;
-	box-shadow: 0px 0px 2px 2px rgba(0,0,0,.2);
-	margin-bottom: 20px;
-	padding: 20px;
-	padding-top: 10px;
-	padding-bottom: 10px;
-	text-align: left;
-	font-size: 1em;
-	font-size: 1.5vw;
-}
-@media (min-width: 992px)
-{
-	.dashblock
-	{
-		border-top-right-radius: 0px;
-		border-bottom-right-radius: 0px;
-		font-size: 1.5em;
-		font-size: 1.5vw;
-		{%- if classic_layout %}margin-right: -15px;{%else%}margin-right: -40px;{%endif%}
-	}
-}
-@media (min-width: 1200px)
-{
-	.dashblock
-	{
-		font-size: 2em;
-		font-size: 1.5vw;
-	}
-}
-.nolpad
-{
-	padding-left: 8px;
-}
-.norpad
-{
-	padding-right: 0px;
-}
-.colpad
-{
-	padding-left: 8px;
-}
-a.server-link { text-decoration: none !important; color: inherit; }
-a.server-link:hover { text-decoration: underline !important; }
-.bg-success
-{
-	color: #FFFFFF;
-}
-</style>
-
 {%- if does_user_have_permission('systems.all.view') %}
-
 <div class="row">
 	<div class="col-md-9">
 {%- endif -%}
 		{%- if syscount > 0 %}
-		<div class="panel panel-default">
-			<div class="panel-heading"><h3 class="panel-title">Your recent systems</h3></div>
-			<div class="panel-body">
-				<table class="table table-condensed table-striped" id="your-systems">
+		<div class="card card-default">
+			<div class="card-header"><h4 class="card-title">Your recent systems</h4></div>
+			<div class="card-body">
+				<table class="table table-sm table-striped" id="your-systems">
 					<thead>
 						<tr>
 							<th>Name</th>
@@ -84,7 +31,7 @@ a.server-link:hover { text-decoration: underline !important; }
 							<td>{{ system.cmdb_environment }}</td>
 							<td>{{ system.cmdb_operational_status }}</td>
 							<td>{{ system.allocation_date }}</td>
-							<td><a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
+							<td><a title="View" class="btn btn-xs btn-secondary" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
 						</tr>
 						{%- endfor %}
 					</tbody>
@@ -105,11 +52,11 @@ a.server-link:hover { text-decoration: underline !important; }
 			</div>
 		</div>
 		{%- endif %}
-		<div class="panel panel-default">
-			<div class="panel-heading"><h3 class="panel-title">Your recent tasks</h3></div>
-			<div class="panel-body">
+		<div class="card card-default">
+			<div class="card-header"><h4 class="card-title">Your recent tasks</h4></div>
+			<div class="card-body">
 				{%- if tasks and tasks|length > 0 %}
-				<table class="table table-condensed table-striped" id="tasks" style="margin-bottom:0">
+				<table class="table table-sm table-striped" id="tasks" style="margin-bottom:0">
 					<thead>
 						<tr>
 							<th>Details</th>
@@ -126,7 +73,7 @@ a.server-link:hover { text-decoration: underline !important; }
 							<td>{{ task.start or '' }}</td>
 							<td>{{ task.end or '' }}</td>
 							<td>{% if task.status == 0 %}<span style="color:#22c">In Progress</span>{% elif task.status == 1 %}<span style="color:#2c2">Finished</span>{% elif task.status == 2 %}<span style="color:#c22">Failed</span>{% elif task.status == 3 %}<span style="color:#c82">Warnings</span>{% else %}Unknown{% endif %}</td>
-							<td><a class="btn btn-xs btn-default" href="{{ url_for('task_status', id=task.id) }}"><i class="fa fa-fw fa-search"></i></a></td>
+							<td><a class="btn btn-xs btn-secondary" href="{{ url_for('task_status', id=task.id) }}"><i class="fa fa-fw fa-search"></i></a></td>
 						</tr>
 						{%- endfor %}
 					</tbody>
@@ -138,10 +85,10 @@ a.server-link:hover { text-decoration: underline !important; }
 		</div>
 
 		{%- if does_user_have_permission('systems.all.view') %}
-		<div class="panel panel-default">
-			<div class="panel-heading"><h3 class="panel-title">Recently created systems</h3></div>
-			<div class="panel-body">
-			<table class="table table-condensed table-striped" id="recent-systems">
+		<div class="card card-default">
+			<div class="card-header"><h4 class="card-title">Recently created systems</h4></div>
+			<div class="card-body">
+			<table class="table table-sm table-striped" id="recent-systems">
 				<thead>
 					<tr>
 						<th>Name</th>
@@ -164,7 +111,7 @@ a.server-link:hover { text-decoration: underline !important; }
 						<td>{{ system.cmdb_environment }}</td>
 						<td>{{ system.cmdb_operational_status }}</td>
 						<td>{{ system.allocation_date }}</td>
-						<td><a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
+						<td><a title="View" class="btn btn-xs btn-secondary" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
 					</tr>
 					{%- endfor %}
 				</tbody>
@@ -187,81 +134,81 @@ a.server-link:hover { text-decoration: underline !important; }
 		{%- endif %}
 {%- if does_user_have_permission('systems.all.view') %}
 	</div>
-	<div class="col-md-3 hidden-xs hidden-sm">
-		<div class="dashblock bg-primary">
+	<div class="col-md-3 d-none d-sm-none d-md-block">  <!--d-none d-sm-none> -->
+		<div id="dash-vms" class="dashblock bg-primary">
 			<strong><i class="fa fa-fw fa-server"></i> {{ vm_count }}</strong> Virtual machines<br/>
 		</div>
-		<div class="dashblock bg-teal">
+		<div id="dash-os" class="dashblock bg-teal">
 			<div class="row row">
-				<div class="col-xs-1 text-right norpad">
+				<div class="col-1 text-right norpad">
 					<i class="fa fa-fw fa-linux"></i>
 				</div>
-				<div class="col-xs-4 col-md-3 col-lg-2 text-right nolpad norpad">
+				<div class="col-4 col-md-3 col-lg-2 text-right nolpad norpad">
 					<strong>{{ types['linux'] }}</strong>
 				</div>
-				<div class="col-xs-7 col-md-8 col-lg-9 colpad">
+				<div class="col-7 col-md-8 col-lg-9 colpad">
 					Linux
 				</div>
 			</div>
 			<div class="row">
-				<div class="col-xs-1 text-right norpad">
+				<div class="col-1 text-right norpad">
 					<i class="fa fa-fw fa-windows"></i>
 				</div>
-				<div class="col-xs-4 col-md-3 col-lg-2 text-right nolpad norpad">
+				<div class="col-4 col-md-3 col-lg-2 text-right nolpad norpad">
 					<strong>{{ types['windows_server'] }}</strong>
 				</div>
-				<div class="col-xs-7 col-md-8 col-lg-9 colpad">
+				<div class="col-7 col-md-8 col-lg-9 colpad">
 					Windows
 				</div>
 			</div>
 			<div class="row">
-				<div class="col-xs-1 text-right norpad">
+				<div class="col-1 text-right norpad">
 					<i class="fa fa-fw fa-desktop"></i>
 				</div>
-				<div class="col-xs-4 col-md-3 col-lg-2 text-right nolpad norpad">
+				<div class="col-4 col-md-3 col-lg-2 text-right nolpad norpad">
 					<strong>{{ types['windows_desktop'] }}</strong>
 				</div>
-				<div class="col-xs-7 col-md-8 col-lg-9 colpad">
+				<div class="col-7 col-md-8 col-lg-9 colpad">
 					Desktops
 				</div>
 			</div>
 			<div class="row">
-				<div class="col-xs-1 text-right norpad">
+				<div class="col-1 text-right norpad">
 					<i class="fa fa-fw fa-cube"></i>
 				</div>
-				<div class="col-xs-4 col-md-3 col-lg-2 text-right nolpad norpad">
+				<div class="col-4 col-md-3 col-lg-2 text-right nolpad norpad">
 					<strong>{{ types['bsd'] }}</strong>
 				</div>
-				<div class="col-xs-7 col-md-8 col-lg-9 colpad">
+				<div class="col-7 col-md-8 col-lg-9 colpad">
 					BSD
 				</div>
 			</div>
 			<div class="row">
-				<div class="col-xs-1 text-right norpad">
+				<div class="col-1 text-right norpad">
 					<i class="fa fa-fw fa-cubes"></i>
 				</div>
-				<div class="col-xs-4 col-md-3 col-lg-2 text-right nolpad norpad">
+				<div class="col-4 col-md-3 col-lg-2 text-right nolpad norpad">
 					<strong>{{ types['other'] }}</strong>
 				</div>
-				<div class="col-xs-7 col-md-8 col-lg-9 colpad">
+				<div class="col-7 col-md-8 col-lg-9 colpad">
 					Other
 				</div>
 			</div>
 		</div>
-		<div class="dashblock bg-lorange">
+		<div id="dash-snow" class="dashblock bg-lorange">
 			<strong><i class="fa fa-fw fa-book"></i> {{ ci_count }}</strong> ServiceNow CIs
 		</div>
-		<div class="dashblock bg-dorange">
+		<div id="dash-tasks" class="dashblock bg-dorange">
 			<a href="{{ url_for('admin_tasks_active') }}"><strong><i class="fa fa-fw fa-cog"></i> {{ task_progress_count }}</strong> Tasks in progress<br/></a>
 			<a href="{{ url_for('admin_tasks', filter_succeeded='0', filter_failed='0') }}"><strong><i class="fa fa-fw fa-exclamation-triangle"></i> {{ task_warning_count }}</strong> Recent tasks with warnings<br/></a>
 			<a href="{{ url_for('admin_tasks', filter_succeeded='0', filter_warnings='0') }}"><strong><i class="fa fa-fw fa-times"></i> {{ task_failed_count }}</strong> Recent failed tasks</a>
 		</div>
-		<div class="dashblock bg-success">
+		<div id="dash-ram" class="dashblock bg-success">
 			<strong><i class="fa fa-fw fa-database"></i> {{ total_ram | filesizeformat(binary=True) }}</strong> RAM total<br/>
 			<strong><i class="fa fa-fw fa-bar-chart"></i> {{ total_vm_ram | filesizeformat(binary=True) }}</strong> RAM allocated <br/>
 			<strong><i class="fa fa-fw fa-line-chart"></i> {{ total_ram_usage | filesizeformat(binary=True) }}</strong> RAM usage
 		</div>
-		<div class="dashblock bg-purple">
+		<div id="dash-puppet" class="dashblock bg-purple">
 			<a href="{{ url_for('puppet_nodes', status='changed') }}"><strong><i class="fa fa-fw fa-download"></i> {{ stats['changed'] }}</strong> Puppet nodes changed<br/></a>
 			<a href="{{ url_for('puppet_nodes', status='failed') }}"><strong><i class="fa fa-fw fa-times"></i> {{ stats['failed'] }}</strong> Puppet nodes failed</a>
 		</div>

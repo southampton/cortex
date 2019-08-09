@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from cortex import app
-from cortex.lib.workflow import CortexWorkflow
+from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
 from cortex.lib.user import get_user_list_from_cache
 import cortex.lib.core
 import cortex.lib.admin
@@ -21,13 +21,8 @@ workflow.add_permission('buildvm.standard', 'Create Standard VM')
 
 @workflow.route("sandbox",title='Create Sandbox VM', order=20, permission="buildvm.sandbox", methods=['GET', 'POST'])
 def sandbox():
-
-	# Check if workflows are currently locked 
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
-	current_value = curd.fetchone()
-	if json.loads(current_value['value'])['status'] == 'Locked':
-		raise Exception("Workflows are currently locked. \n Please try again later.")
+	# Don't go any further if workflows are currently locked
+	raise_if_workflows_locked()
 
 	# Get the list of clusters
 	all_clusters = cortex.lib.core.vmware_list_clusters(workflow.config['SB_VCENTER_TAG'])
@@ -112,13 +107,8 @@ def sandbox():
 
 @workflow.route("standard",title='Create Standard VM', order=10, permission="buildvm.standard", methods=['GET', 'POST'])
 def standard():
-
-	# Check if workflows are currently locked 
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
-	current_value = curd.fetchone()
-	if json.loads(current_value['value'])['status'] == 'Locked':
-		raise Exception("Workflows are currently locked. \n Please try again later.")
+	# Don't go any further if workflows are currently locked
+	raise_if_workflows_locked()
 
 	# Get the list of clusters
 	all_clusters = cortex.lib.core.vmware_list_clusters(workflow.config['VCENTER_TAG'])
@@ -266,28 +256,28 @@ def validate_data(r, templates, envs):
 
 	sockets = int(sockets)
 	if vm_spec_config_json is not None and 'slider-sockets' in vm_spec_config_json and vm_spec_config_json['slider-sockets'].get('min', None) is not None and vm_spec_config_json['slider-sockets'].get('max', None) is not None:
-		if not vm_spec_config_json['slider-sockets']['min'] <= ram <= vm_spec_config_json['slider-sockets']['max']:
+		if not int(vm_spec_config_json['slider-sockets']['min']) <= sockets <= int(vm_spec_config_json['slider-sockets']['max']):
 			raise ValueError('Invalid number of sockets selected')
 	elif not 1 <= sockets <= 16:
 		raise ValueError('Invalid number of sockets selected')
 
 	cores = int(cores)
 	if vm_spec_config_json is not None and 'slider-cores' in vm_spec_config_json and vm_spec_config_json['slider-cores'].get('min', None) is not None and vm_spec_config_json['slider-cores'].get('max', None) is not None:
-		if not vm_spec_config_json['slider-cores']['min'] <= ram <= vm_spec_config_json['slider-cores']['max']:
+		if not int(vm_spec_config_json['slider-cores']['min']) <= cores <= int(vm_spec_config_json['slider-cores']['max']):
 			raise ValueError('Invalid number of cores per socket selected')
 	elif not 1 <= cores <= 16:
 		raise ValueError('Invalid number of cores per socket selected')
 
 	ram = int(ram)
 	if vm_spec_config_json is not None and 'slider-ram' in vm_spec_config_json and vm_spec_config_json['slider-ram'].get('min', None) is not None and vm_spec_config_json['slider-ram'].get('max', None) is not None:
-		if not vm_spec_config_json['slider-ram']['min'] <= ram <= vm_spec_config_json['slider-ram']['max']:
+		if not int(vm_spec_config_json['slider-ram']['min']) <= ram <= int(vm_spec_config_json['slider-ram']['max']):
 			raise ValueError('Invalid amount of RAM selected')		
 	elif not 2 <= ram <= 32:
 		raise ValueError('Invalid amount of RAM selected')
 
 	disk = int(disk)
 	if vm_spec_config_json is not None and 'slider-disk' in vm_spec_config_json and vm_spec_config_json['slider-disk'].get('min', None) is not None and vm_spec_config_json['slider-disk'].get('max', None) is not None:
-		if not vm_spec_config_json['slider-disk']['min'] <= ram <= vm_spec_config_json['slider-disk']['max']:
+		if not int(vm_spec_config_json['slider-disk']['min']) <= disk <= int(vm_spec_config_json['slider-disk']['max']):
 			raise ValueError('Invalid disk capacity selected')
 	elif not 100 <= disk <= 2000:
 		raise ValueError('Invalid disk capacity selected')

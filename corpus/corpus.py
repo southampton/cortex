@@ -82,7 +82,7 @@ class Corpus(object):
 
 	################################################################################
 
-	def allocate_name(self, class_name, comment, username, expiry=None):
+	def allocate_name(self, class_name, comment, username, expiry=None, set_backup=2):
 		"""Allocates 'num' systems, of type 'class_name' each with the given
 		comment. Returns a dictionary with mappings between each new name
 		and the corresponding row ID in the database table."""
@@ -112,7 +112,7 @@ class Corpus(object):
 		#    this function can carry on.
 
 		## 1. Lock the table to prevent other requests issuing names whilst we are
-		cur.execute('LOCK TABLE `classes` WRITE, `systems` WRITE; ')
+		cur.execute('LOCK TABLE `classes` WRITE, `systems` WRITE;')
 
 		# 2a. Get the class (along with the next nubmer to allocate)
 		try:
@@ -134,21 +134,16 @@ class Corpus(object):
 			## 3. Increment the number by the number we're simultaneously allocating
 			cur.execute("UPDATE `classes` SET `lastid` = %s WHERE `name` = %s", (int(class_data['lastid']) + int(num), class_name))
 
-
-
 			## 4. Create the server
 			new_number = int(class_data['lastid']) + 1
 			new_name   = self.pad_system_name(class_name, new_number, class_data['digits'])
 
-			cur.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `expiry_date`) VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s)",
-				(self.SYSTEM_TYPE_BY_NAME['System'], class_name, new_number, new_name, username, comment, expiry))
+			cur.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `expiry_date`, `enable_backup`) VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s)",
+				(self.SYSTEM_TYPE_BY_NAME['System'], class_name, new_number, new_name, username, comment, expiry, set_backup))
 
 			# this is the return
 			new_systems['name'] = new_name
 			new_systems['id'] = cur.lastrowid
-
-			# store a record of the new system so we can give this back to the browser in a minute
-			# new_systems[new_name] = cur.lastrowid
 
 			## 5. All names are now created and the table incremented. Time to commit.
 			self.db.commit()
@@ -300,7 +295,7 @@ class Corpus(object):
 			aliases = []
 
 		# Append the new alias(es) - only if they don't already exist
-		if type(new_aliases) is str or type(new_aliases) is str:
+		if type(new_aliases) is str:
 			if new_aliases not in aliases:
 				aliases.append(new_aliases)
 		elif type(new_aliases) is list:
@@ -345,7 +340,7 @@ class Corpus(object):
 			aliases = []
 
 		# Remove the alias(es)
-		if type(remove_aliases) is str or type(remove_aliases) is str:
+		if type(remove_aliases) is str:
 			aliases.remove(remove_aliases)
 		elif type(remove_aliases) is list:
 			for alias in remove_aliases:
@@ -1442,7 +1437,7 @@ class Corpus(object):
 
 		# Determine the new status it needs to be, which depends on 
 		# whether it is virtual or not
-		if (type(virtual) is bool and virtual is True) or ((type(virtual) is str or type(virtual) is str) and virtual.lower() == "true"):
+		if (type(virtual) is bool and virtual is True) or (type(virtual) is str and virtual.lower() == "true"):
 			new_status = "Deleted"
 		else:
 			new_status = "Decommissioned"
@@ -1567,6 +1562,11 @@ class Corpus(object):
 		# Get the current state of the notify variable
 		notify = self.redis_get_vm_data(vm, 'notify')
 
+		# StrictRedis.get() returns bytes(), so decode it
+		if notify is not None:
+			if type(notify) is bytes:
+				notify = notify.decode('utf-8')
+
 		# Start a timer
 		timer = 0
 
@@ -1585,6 +1585,11 @@ class Corpus(object):
 
 			# Get the lastest value of the notify
 			notify = self.redis_get_vm_data(vm, 'notify')
+
+			# StrictRedis.get() returns bytes(), so decode it
+			if notify is not None:
+				if type(notify) is bytes:
+					notify = notify.decode('utf-8')
 
 		# Return the latest value, which may be None if the in-guest installer
 		# never runs. Otherwise it can be any other value, which may not
@@ -2108,12 +2113,10 @@ class Corpus(object):
 
 	############################################################################
 
-	def checkWorkflowLock():
+	def checkWorkflowLock(self):
 		curd = self.db.cursor(mysql.cursors.DictCursor)
-		curd.execute('LOCK TABLE kv_settings;')
-		curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
+		curd.execute('SELECT `value` FROM `kv_settings` WHERE `key` = %s;', ('workflow_lock_status',))
 		current_value = curd.fetchone()
-		curd.execute('UNLOCK TABLES;')
 		if json.loads(current_value['value'])['status'] == 'Unlocked':
 			return True
 		else:

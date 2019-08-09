@@ -252,8 +252,6 @@ def vmware_history():
 	stats_desktop_vms = curd.fetchall()
 
 	# Render
-	# return jsonify(stats_desktop_vms)
-
 	return render_template('vmware/history.html', active='vmware', stats_vms=stats_vms, stats_linux_vms=stats_linux_vms, stats_windows_vms=stats_windows_vms, stats_desktop_vms=stats_desktop_vms, title='VMware History', d=d)
 
 ################################################################################
@@ -265,7 +263,7 @@ def vmware_csv_stream(cursor):
 	row = cursor.fetchone()
 
 	# Write CSV header
-	output = io.BytesIO()
+	output = io.StringIO()
 	writer = csv.writer(output)
 	writer.writerow(['Name', 'Cluster/Host', 'Annotation', 'Power State', 'IP Address', 'Operating System', 'vCPUs', 'RAM (MeB)', 'H/W Version', 'Tools State', 'Tools Version'])
 	yield output.getvalue()
@@ -274,23 +272,11 @@ def vmware_csv_stream(cursor):
 	while row is not None:
 		# There's no way to flush (and empty) a CSV writer, so we create
 		# a new one each time
-		output = io.BytesIO()
+		output = io.StringIO()
 		writer = csv.writer(output)
 
 		# Generate output row
 		outrow = [row['name'], row['cluster'], row['annotation'], row['powerState'], row['ipaddr'], row['guestFullName'], row['numCPU'], row['memoryMB'], row['hwVersion'], row['toolsRunningStatus'], row['toolsVersionStatus']]
-
-		# For each element in the output row...
-		for i in range(0, len(outrow)):
-			# ...if it's not None...
-			if outrow[i]:
-				# ...if the element is unicode...
-				if type(outrow[i]) == str:
-					# ...decode from utf-8 into a ASCII-compatible byte string
-					outrow[i] = outrow[i].encode('utf-8')
-				else:
-					# ...otherwise just chuck it out as a string
-					outrow[i] = str(outrow[i])
 
 		# Write the output row to the stream
 		writer.writerow(outrow)

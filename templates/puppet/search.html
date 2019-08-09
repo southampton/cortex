@@ -1,10 +1,10 @@
 {% extends "layout.html" %}
 {% block body %}
 <div class="page-header">
-<h3><i class="fa fa-fw fa-server"></i> Puppet search results</h3>
+<h4><i class="fa fa-fw fa-server"></i> Puppet search results</h4>
 <p class="text-muted">Puppet in Cortex only searches servers registered with the "Puppet 2016" Puppet Master, existing servers will not appear below until they are migrated.</p>
 </div>
-<table class="table table-condensed table-striped" id="data">
+<table class="table table-sm table-striped" id="data">
 	<thead>
 		<tr>
 			<th>System Name</th>
@@ -20,8 +20,8 @@
 			<td><a href="{{url_for('puppet_enc_edit',node=node.certname) }}">{{ node.name }}</a></td>
 			<td>{{ node.certname }}</td>
 			<td>{{ node.env }}</td>
-			<td class="status-{{ node.status }}"><a href="{{ url_for('puppet_dashboard_status', status=node.status) }}">{{ node.status }}</a></td>
-			<td><a href="{{url_for('puppet_enc_edit',node=node.certname) }}" class="btn btn-default btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a></td>
+			<td class="status-{{ node.status }}"><a href="{{ url_for('puppet_nodes', status=node.status) }}">{{ node.status }}</a></td>
+			<td><a href="{{url_for('puppet_enc_edit',node=node.certname) }}" class="btn btn-secondary btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a></td>
 		</tr>
 {%- endfor %}
 	</tbody>

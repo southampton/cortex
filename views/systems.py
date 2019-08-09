@@ -271,7 +271,6 @@ def systems_add_existing():
 		if 'link_vmware' in request.form:
 			# Search for a VM with the correct name		
 			curd.execute("SELECT `uuid` FROM `vmware_cache_vm` WHERE `name` = %s", (hostname,))
-			print((curd._last_executed))
 			vm_results = curd.fetchall()
 
 			if len(vm_results) == 0:
@@ -286,7 +285,6 @@ def systems_add_existing():
 		if 'link_servicenow' in request.form:
 			# Search for a CI with the correct name
 			curd.execute("SELECT `sys_id` FROM `sncache_cmdb_ci` WHERE `name` = %s", (hostname,))
-			print((curd._last_executed))
 			ci_results = curd.fetchall()
 
 			if len(ci_results) == 0:
@@ -346,16 +344,19 @@ def systems_new():
 		# Allocate the names asked for
 		try:
 			# To prevent code duplication, this is done remotely by Neocortex. So, connect:
-			neocortex   = cortex.lib.core.neocortex_connect()
+			neocortex = cortex.lib.core.neocortex_connect()
 
 			# Allocate the name
-			new_systems = neocortex.allocate_name(class_name, system_comment, username=session['username'], num=system_number)
+			new_systems = []
+			for x in range(system_number):
+				new_systems.append(neocortex.allocate_name(class_name, system_comment, username=session['username']))
 		except Exception as ex:
 			flash("A fatal error occured when trying to allocate names: " + str(ex), "alert-danger")
 			return redirect(url_for('systems_new'))
 
-		for new_system_name in new_systems:
-			cortex.lib.core.log(__name__, "systems.name.allocate", "New system name allocated: " + new_system_name,related_id=new_systems[new_system_name])
+		# Logging
+		for new_system in new_systems:
+			cortex.lib.core.log(__name__, "systems.name.allocate", "New system name allocated: " + new_system['name'], related_id=new_system['id'])
 
 		# If the user only wanted one system, redirect back to the systems
 		# list page and flash up success. If they requested more than one
@@ -363,7 +364,7 @@ def systems_new():
 		# change the comments on all of the systems.
 		if len(new_systems) == 1:
 			flash("System name allocated successfully", "alert-success")
-			return redirect(url_for('system', id=new_systems[list(new_systems.keys())[0]]))
+			return redirect(url_for('system', id=new_systems[0]['id']))
 		else:
 			return render_template('systems/new-bulk.html', systems=new_systems, comment=system_comment, title="Systems")
 
@@ -377,7 +378,7 @@ def system_backup(id):
 
 	if request.method == 'POST':
 
-		if not does_user_have_permission("systems.all.edit.rubrik"):
+		if not does_user_have_system_permission(id,"edit.rubrik","systems.all.edit.rubrik"):
 			abort(403)
 
 		# Get the name of the vm
@@ -386,20 +387,22 @@ def system_backup(id):
 			abort(404)
 
 		try:
-			vm = rubrik.get_vm(system['name'])
+			vm = rubrik.get_vm(system)
 		except:
 			abort(500)
 
 		mode = request.form.get('mode')
 		if mode in ('INHERIT', 'UNPROTECTED'):
-				rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
+			rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
+			flash('SLA Domain updated', 'alert-success')
 		elif 'sla_domain' in request.form:
 			rubrik.update_vm(vm['id'], {'configuredSlaDomainId': request.form.get('sla_domain')})
+			flash('SLA Domain updated', 'alert-success')
 		else:
 			abort(400)
 
-	# Check user permissions. User must have either systems.all.view.rubrik
-	if not does_user_have_permission("systems.all.view.rubrik"):
+	# Check user permissions. User must have either systems.all.view.rubrik or edit.rubrik (there's no separate view at present)
+	if not does_user_have_system_permission(id,"edit.rubrik","systems.all.view.rubrik"):
 		abort(403)
 
 	# Get the name of the vm
@@ -408,7 +411,7 @@ def system_backup(id):
 		abort(404)
 
 	try:
-		vm = rubrik.get_vm(system['name'])
+		vm = rubrik.get_vm(system)
 	except:
 		abort(500)
 
@@ -502,7 +505,10 @@ def system(id):
 	system['review_status_text'] = cortex.lib.systems.REVIEW_STATUS_BY_ID[system['review_status']]
 
 	if system['puppet_certname']:
-		system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
+		try:
+			system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
+		except Exception as e:
+			system['puppet_node_status'] = 'unknown'
 
 	# Generate a 'pretty' display name. This is the format '<realname> (<username>)'
 	system['allocation_who'] = cortex.lib.systems.generate_pretty_display_name(system['allocation_who'], system['allocation_who_realname'])
@@ -781,15 +787,15 @@ def system_edit(id):
 				review_status = system['review_status']
 				review_task = system['review_task']
 
-			if system['enable_backup'] == 1 and enable_backup == 0:
-				
+			if int(system['enable_backup']) in [1, 2] and int(enable_backup) == 0:
+				rubrik = cortex.lib.rubrik.Rubrik()
 				try:
-					vm = rubrik.get_vm(system['name'])
+					vm = rubrik.get_vm(system)
 				except Exception as e:
 					flash("Failed to get VM from Rubrik", "alert-danger")
 				else:
-					rubrik = cortex.lib.rubrik.Rubrik()
 					rubrik.update_vm(vm['id'], {'configuredSlaDomainId': 'UNPROTECTED'})
+					flash("Re-configured system to NOT backup in Rubrik!", "alert-warning")
 
 			# Update the system
 			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `enable_backup` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, enable_backup, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, id))
@@ -991,14 +997,12 @@ def systems_json():
 	"""Used by DataTables to extract information from the systems table in
 	the database. The parameters and return format are as dictated by 
 	DataTables"""
-
 	# Check user permissions
 	if not (does_user_have_permission("systems.all.view") or does_user_have_permission("systems.own.view")):
 		abort(403)
 
 	# Extract information from DataTables
 	(draw, start, length, order_column, order_asc, search) = _systems_extract_datatables()
-
 	# Validate and convert the ordering column number to the name of the
 	# column as it is in the database
 	if order_column == 0:
@@ -1016,7 +1020,6 @@ def systems_json():
 	else:
 		app.logger.warn('Invalid ordering column parameter in DataTables request')
 		abort(400)
-
 	# Validate the system class filter group. This is the name of the
 	# currently selected tab on the page that narrows down by system
 	# class, e.g .srv, vhost, etc.
@@ -1025,7 +1028,6 @@ def systems_json():
 		# The filtering on starting with * ignores some special filter groups
 		if request.form['filter_group'] != '' and request.form['filter_group'][0] != '*':
 			filter_group = str(request.form['filter_group'])
-
 	# Filter group being *OTHER should hide our group names and filter on 
 	only_other = False
 	if request.form['filter_group'] == '*OTHER':
@@ -1057,6 +1059,11 @@ def systems_json():
 		if str(request.form['show_favourites_only']) != '0':
 			show_favourites_for = session.get('username')
 
+	toggle_queries = False
+	if 'toggle_queries' in request.form:
+		if str(request.form['toggle_queries']) != '0':
+			toggle_queries = True
+
 	favourites = []
 	favourites = cortex.lib.systems.get_system_favourites(session.get('username'))
 
@@ -1072,10 +1079,10 @@ def systems_json():
 	# Get number of systems that match the query, and the number of systems
 	# within the filter group
 	system_count = cortex.lib.systems.get_system_count(filter_group, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
-	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
+	filtered_count = cortex.lib.systems.get_system_count(filter_group, search, hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_perms_only=show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for, toggle_queries=toggle_queries)
 
 	# Get results of query
-	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for)
+	results = cortex.lib.systems.get_systems(filter_group, search, order_column, order_asc, start, length, hide_inactive, only_other, show_expired, show_nocmdb, show_perms_only, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by, show_favourites_for=show_favourites_for, toggle_queries=toggle_queries)
 
 	# DataTables wants an array in JSON, so we build this here, returning
 	# only the columns we want. We format the date as a string as
@@ -1083,41 +1090,42 @@ def systems_json():
 	# CMDB ID and database ID, and operational status which are not displayed 
 	# verbatim, but can be processed by a DataTables rowCallback
 	system_data = []
-	for row in results:
+	if results:
+		for row in results:
 
-		if row['id'] in favourites:
-			favourited = True
-		else:
-			favourited = False
-		if row['cmdb_id'] is not None and row['cmdb_id'] is not '':
-			cmdb_id = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
-		else:
-			cmdb_id = ''
-
-		if row['allocation_date'] is not None:
-			row['allocation_date'] = row['allocation_date'].strftime('%Y-%m-%d %H:%M:%S')
-		else:
-			row['allocation_date'] = "Unknown"
-
-		if row['allocation_who'] is not None:
-			if row['allocation_who_realname'] is not None:
-				row['allocation_who'] = row['allocation_who_realname']
+			if row['id'] in favourites:
+				favourited = True
 			else:
-				row['allocation_who'] = cortex.lib.user.get_user_realname(row['allocation_who'])
+				favourited = False
+			if row['cmdb_id'] is not None and row['cmdb_id'] is not '':
+				cmdb_id = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
+			else:
+				cmdb_id = ''
 
-		system_data.append({
-			"name": row["name"],
-			"allocation_comment": row["allocation_comment"],
-			"cmdb_environment": row["cmdb_environment"],
-			"allocation_who": row["allocation_who"],
-			"allocation_date": row["allocation_date"],
-			"cmdb_operational_status": row["cmdb_operational_status"],
-			"cmdb_id": cmdb_id,
-			"id": row["id"],
-			"vmware_guest_state": row["vmware_guest_state"],
-			"puppet_certname": row["puppet_certname"],
-			"favourited": favourited
-		})
+			if row['allocation_date'] is not None:
+				row['allocation_date'] = row['allocation_date'].strftime('%Y-%m-%d %H:%M:%S')
+			else:
+				row['allocation_date'] = "Unknown"
+
+			if row['allocation_who'] is not None:
+				if row['allocation_who_realname'] is not None:
+					row['allocation_who'] = row['allocation_who_realname']
+				else:
+					row['allocation_who'] = cortex.lib.user.get_user_realname(row['allocation_who'])
+
+			system_data.append({
+				"name": row["name"],
+				"allocation_comment": row["allocation_comment"],
+				"cmdb_environment": row["cmdb_environment"],
+				"allocation_who": row["allocation_who"],
+				"allocation_date": row["allocation_date"],
+				"cmdb_operational_status": row["cmdb_operational_status"],
+				"cmdb_id": cmdb_id,
+				"id": row["id"],
+				"vmware_guest_state": row["vmware_guest_state"],
+				"puppet_certname": row["puppet_certname"],
+				"favourited": favourited
+			})
 
 	# Return JSON data in the format DataTables wants
 	return jsonify(draw=draw, recordsTotal=system_count, recordsFiltered=filtered_count, data=system_data)
