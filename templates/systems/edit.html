@@ -1,10 +1,10 @@
 {% extends "layout.html" %}
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}">
-<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script>
-<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}?version={{ config.VERSION }}">
+<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}?version={{ config.VERSION }}"></script>
+<script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}?version={{ config.VERSION }}"></script>
+<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}?version={{ config.VERSION }}"></script>
+<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}?version={{ config.VERSION }}"></script>
 {% endblock %}
 {% block body %}
 {% import 'node-header.html' as node %}

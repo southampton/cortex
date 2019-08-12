@@ -5,11 +5,11 @@
 		<meta charset="utf-8">
 		<title>Cortex</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap.min.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap.min.css') }}?version={{ config.VERSION }}">
 		<link rel="icon" type="image/png" href="{{ url_for('static', filename='images/cortex-v3.png') }}">
 		<link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/cortex-v3.png') }}">
-		<link href="{{ url_for('static', filename='css/vendor/animate.min.css') }}" rel="stylesheet">
-		<link href="{{ url_for('static', filename='css/login.css') }}" type="text/css" rel="stylesheet">
+		<link href="{{ url_for('static', filename='css/vendor/animate.min.css') }}?version={{ config.VERSION }}" rel="stylesheet">
+		<link href="{{ url_for('static', filename='css/login.css') }}?version={{ config.VERSION }}" type="text/css" rel="stylesheet">
 
 		<!--[if lt IE 9]>
 		<style type="text/css">
@@ -30,10 +30,10 @@
 			<meta http-equiv="refresh" content="0; url={{ url_for('nojs')}}" />
 		</noscript>
 
-		<script src="{{ url_for('static', filename='js/vendor/jquery.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/jquery.min.js') }}?version={{ config.VERSION }}"></script>
 		<script src="{{ url_for('static', filename='js/vendor/popper.js') }}?version={{ config.VERSION }}"></script>
-		<script src="{{ url_for('static', filename='js/vendor/bootstrap.min.js') }}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='js/login.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/bootstrap.min.js') }}?version={{ config.VERSION }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='js/login.js') }}?version={{ config.VERSION }}"></script>
 		<script type="text/javascript">
 		$( document ).ready(function() {
 			$( "#loginform" ).submit(function( event )

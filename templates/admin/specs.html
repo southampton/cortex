@@ -2,7 +2,7 @@
 {# Include headers from the Puppet codemirror file. #}
 {% block head %}
 {% include 'puppet/codemirror.html' %}
-<script src="{{ url_for('static', filename='js/vendor/javascript.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vendor/javascript.min.js') }}?version={{ config.VERSION }}"></script>
 {% endblock %}	
 {% block body %}
 

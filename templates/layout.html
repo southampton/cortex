@@ -27,7 +27,7 @@
 		<script src="{{ url_for('static', filename='js/vendor/bootstrap.min.js') }}?version={{ config.VERSION }}"></script>
 		{#- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries #}
 		<!--[if lt IE 9]>
-			<script src="{{ url_for('static', filename='js/vendor/html5shiv.js') }}"></script>
+			<script src="{{ url_for('static', filename='js/vendor/html5shiv.js') }}?version={{ config.VERSION }}"></script>
 		<![endif]-->
 		<script type="text/javascript" src="{{ url_for('static', filename='js/mousetrap.min.js') }}?version={{ config.VERSION }}"></script>
 		<script type="text/javascript" src="{{ url_for('static', filename='js/cortex.js') }}?version={{ config.VERSION }}"></script>
