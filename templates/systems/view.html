@@ -137,32 +137,32 @@
 				<div class="card-body">
 					{% if system.vmware_uuid %}
 					<div class="row">
-						<label class="col-sm-5 control-label" for="vm_vcenter">vCenter:</label>
-						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.vmware_vcenter or '' }}</p></div>
+						<label class="col-sm-4 control-label" for="vm_vcenter">Name / vCenter:</label>
+						<div class="col-sm-8"><p class="form-control-plaintext">{{ system.vmware_name }} on {{ system.vmware_vcenter or '' }}</p></div>
 					</div>
 					<div class="row">
-						<label class="col-sm-5 control-label" for="vm_state">Power State:</label>
-						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.vmware_guest_state or '' }}</p></div>
+						<label class="col-sm-4 control-label" for="vm_state">Power State:</label>
+						<div class="col-sm-8"><p class="form-control-plaintext">{{ system.vmware_guest_state or '' }}</p></div>
 					</div>
 					<div class="row">
-						<label class="col-sm-5 control-label" for="vm_tools">VMware Tools:</label>
-						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.vmware_tools_version_status or '' }}</p></div>
+						<label class="col-sm-4 control-label" for="vm_tools">VMware Tools:</label>
+						<div class="col-sm-8"><p class="form-control-plaintext">{{ system.vmware_tools_version_status or '' }}</p></div>
 					</div>
 					<div class="row">
-						<label class="col-sm-5 control-label" for="vm_cpus">Spec:</label>
-						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.vmware_cpus or 'Unknown' }} vCPU, {{ system.vmware_ram or '' }} MB RAM</p></div>
+						<label class="col-sm-4 control-label" for="vm_cpus">Spec:</label>
+						<div class="col-sm-8"><p class="form-control-plaintext">{{ system.vmware_cpus or 'Unknown' }} vCPU, {{ system.vmware_ram or '' }} MB RAM</p></div>
 					</div>
 					<div class="row">
-						<label class="col-sm-5 control-label" for="vm_os">OS:</label>
-						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.vmware_os or '' }}</p></div>
+						<label class="col-sm-4 control-label" for="vm_os">OS:</label>
+						<div class="col-sm-8"><p class="form-control-plaintext">{{ system.vmware_os or '' }}</p></div>
 					</div>
 					<div class="row">
-						<label class="col-sm-5 control-label" for="vm_cpus">Hostname:</label>
-						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.vmware_hostname or 'Unknown' }}</p></div>
+						<label class="col-sm-4 control-label" for="vm_cpus">Hostname:</label>
+						<div class="col-sm-8"><p class="form-control-plaintext">{{ system.vmware_hostname or 'Unknown' }}</p></div>
 					</div>
 					<div class="row">
-						<label class="col-sm-5 control-label" for="vm_ipaddr">IP Address:</label>
-						<div class="col-sm-7"><p class="form-control-plaintext">{{ system.vmware_ipaddr or 'Unknown' }}</p></div>
+						<label class="col-sm-4 control-label" for="vm_ipaddr">IP Address:</label>
+						<div class="col-sm-8"><p class="form-control-plaintext">{{ system.vmware_ipaddr or 'Unknown' }}</p></div>
 					</div>
 					{%else%}
 					<p class="text-muted"><em>This system record has not been linked to VMWare. To do so click the Settings tab.</em></p>

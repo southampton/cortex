@@ -87,9 +87,9 @@ def action_check_system(action, helper, wfconfig):
 
 				if vmobj:
 					if vmobj.runtime.powerState == vim.VirtualMachine.PowerState.poweredOn:
-						system_actions.append({'id': 'vm.poweroff', 'desc': 'Power off the virtual machine ' + system_link, 'detail': 'UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
+						system_actions.append({'id': 'vm.poweroff', 'desc': 'Power off the virtual machine ' + system_link, 'detail': system['vmware_name'] + ' (UUID ' + system['vmware_uuid'] + ') on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
 
-					system_actions.append({'id': 'vm.delete', 'desc': 'Delete the virtual machine ' + system_link, 'detail': ' UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
+					system_actions.append({'id': 'vm.delete', 'desc': 'Delete the virtual machine ' + system_link, 'detail': system['vmware_name'] + ' (UUID ' + system['vmware_uuid'] + ') on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
 
 	## Is the system linked to service now?
 	if 'cmdb_id' in system:
