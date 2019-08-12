@@ -402,30 +402,23 @@ def get_group_id(group_name):
 
 ################################################################################
 
-def get_system_id(system_name):
+def get_system_groups():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT `id` FROM `systems` WHERE `name` = %s', (system_name,))
-	return curd.fetchone()['id']
-
-###############################################################################
-
-def generate_existing_groups():
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT `name`, `id`, `notifyee` FROM `system_groups`')
+	curd.execute('SELECT `id`, `name`, `notifyee` FROM `system_groups`')
 	return curd.fetchall()
 
 ###############################################################################
 
 def generate_group_contents():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	existing_groups = generate_existing_groups()
+	groups = get_system_groups()
 	group_contents = {}
-	for group in existing_groups:
-		group_contents[group['name']] = []
+	for group in groups:
+		group_contents[group['id']] = []
 		curd.execute('SELECT `id`, `name`, `group_id`, `order`, `allocation_comment`, `restart_info` FROM `systems` AS s1 INNER JOIN `system_group_systems` AS s2 ON s1.id = s2.system_id WHERE `group_id` = %s ORDER BY `order`', (group['id'],))
 		group_machines = curd.fetchall()
 		for box in group_machines:
 			box['restart_info'] = json.loads(box['restart_info'])
-			group_contents[group['name']].append({'name' : box['name'], 'alloc_comment' : box['allocation_comment'], 'r_info' : box['restart_info']})
+			group_contents[group['id']].append({'id': box['id'], 'name': box['name'], 'alloc_comment': box['allocation_comment'], 'r_info': box['restart_info']})
 	return group_contents
 

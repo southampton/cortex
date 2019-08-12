@@ -1,281 +1,172 @@
 {% extends "layout.html" %}
-
 {% block head -%}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-slider.min.css') }}">
-		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-slider.min.js') }}"></script>
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
 		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
 
-		<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/bootstrap-datetimepicker.min.css') }}">
-		<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}"></script> 
-		<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script> 
-		<script src="{{ url_for('static', filename='js/vendor/bootstrap-datetimepicker.min.js') }}"></script>
-		<!-- 
-			Sortable scripts
-		 -->
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>jQuery UI Sortable - Default functionality</title>
-		<!-- <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"> -->
-		<link rel="stylesheet" href="/resources/demos/style.css">
-		<style>
-		#sortable { list-style-type: none; margin: 0; padding: 0; width: 60%; }
-		#sortable li { margin: 0 3px 3px 3px; padding: 0.4em; padding-left: 1.5em; font-size: 1.4em; height: 18px; }
-		#sortable li span { position: absolute; margin-left: -1.3em; }
+		<style type="text/css">
+			#sortable { list-style-type: none; margin: 0; padding: 0; width: 60%; }
+			#sortable li { margin: 0 3px 3px 3px; padding: 0.4em; padding-left: 1.5em; font-size: 1.4em; height: 18px; }
+			#sortable li span { position: absolute; margin-left: -1.3em; }
+			.sortable-systems { clear:both; }
+			ul.sortableList li { margin-right: 5px; min-height: 1.9rem; }
 		</style>
-		<!-- <script src="https://code.jquery.com/jquery-1.12.4.js"></script> -->
 		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-
-		
-
-
 {% endblock %}
-
 {% block body %}
-{% import 'node-header.html' as node %}
-
-<script type="text/javascript"> $(document).ready(function(){ $('.reboot_options').hide(); });  </script>
-
-
-
-
-<div class="modal fade" id="create" role="dialog">
+<div class="modal fade" id="group-delete" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form role="form" method="POST" class="form-horizontal">
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input type="hidden" name="task-name" value="delete"/>
+				<input type="hidden" id="group-delete-id" name="id" value=""/>
 				<div class="modal-header">
+					<h4 class="modal-title">Delete Group</h4>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-					<h4 class="modal-title">Create group</h4>
 				</div>
 				<div class="modal-body">
-					<div class="form-group">
-						<label class="col-sm-3 control-label">Name</label>
+					<p>Are you sure you want to remove the group <span id="group-delete-name"></span>?</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+					<button type="submit" class="btn btn-danger">Delete</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="group-remove-system" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form role="form" method="POST" class="form-horizontal">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input type="hidden" name="task-name" value="remove_from_group"/>
+				<input type="hidden" id="group-remove-system-group-id" name="group_id" value=""/>
+				<input type="hidden" id="group-remove-system-system-id" name="system_id" value=""/>
+				<div class="modal-header">
+					<h4 class="modal-title">Remove from Group</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				</div>
+				<div class="modal-body">
+					<p>Are you sure you want to remove the system <span id="group-remove-system-system-name"></span> from the group <span id="group-remove-system-group-name"></span>?</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+					<button type="submit" class="btn btn-danger">Remove</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="group-settings" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form role="form" method="POST" class="form-horizontal">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input type="hidden" id="group-settings-task" name="task-name" value=""/>
+				<input type="hidden" id="group-settings-id" name="id" value=""/>
+				<div class="modal-header">
+					<h4 class="modal-title" id="group-settings-title"></h4>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				</div>
+				<div class="modal-body">
+					<div class="row form-group">
+						<label class="col-sm-3 control-label">Name:</label>
 						<div class="col-sm-9">
-							<input type="hidden" name="task_name" value="create_group"/>
-							<input class="form-control" name="name" id="name" />
+							<input class="form-control" name="name" id="group-settings-name" placeholder="The name of the group" />
 						</div>
 					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label">Notifyee</label>
+					<div class="row form-group">
+						<label class="col-sm-3 control-label">Notifyee:</label>
 						<div class="col-sm-9">
-							<input class="form-control" type="text" name="notifyee" id="notifyee" />
+							<input class="form-control" type="text" name="notifyee" id="group-settings-notifyee" placeholder="An e-mail address to notify about group actions" />
 						</div>
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-					<button type="submit" class="btn btn-primary">Create</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+					<button type="submit" class="btn btn-primary" id="group-settings-submit"></button>
 				</div>
 			</form>
 		</div>
 	</div>
 </div>
 
-
-
-
-<div class="modal fade" id="add" role="dialog">
+<div class="modal fade" id="group-system-settings" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form role="form" method="POST" class="form-horizontal">
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input type="hidden" name="task-name" id="group-system-settings-task" value=""/></input>
+				<input type="hidden" name="group_id" id="group-system-settings-group-id"></input>
 				<div class="modal-header">
+					<h4 class="modal-title" id="group-system-settings-title"></h4>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-					<h4 class="modal-title" id="">Add VM</h4>
 				</div>
 				<div class="modal-body">
-					<div class="form-group">
-						<label class="col-sm-3 control-label">Name</label>
-						<div style="margin-left:1em">
-							<div class="form-group">
-								<input type="hidden" name="task_name" value="add_to_group"/></input>
-								<input type="hidden" name="button_clicked" id="add-VM-modal"></input>
-								<select class="selectpicker" name="systems" id="systems" data-live-search="true">
-									<option></option>
-									{% for box in boxes -%}
-										<option value="{{ box['name'] }}">{{ box['name'] }}</option>
-									{%- endfor %}
-								</select>
-								<input type="hidden" name="task_name" value="configure_box" id="system_options_input"/>
-									<select name="wait_options" class="selectpicker system_options"  id="system_options_add" onchange="changeEventHandler(event);">
-										{% for options in wait_options %}
-											<option value="{{ options }}">{{ options }}</option>
-										{% endfor %}
-									</select>
-								</input>
-								<div id="Check_if_VMware_tools_are_running" class="reboot_options Check_if_VMware_tools_are_running" style="text-align: center;">
-									<p>No further info is needed.</p>
-								</div>
-								<div id="Check_for_ping_result" class="reboot_options Check_for_ping_result" style="text-align: center;">
-									<p>No further info is needed.</p>
-								</div>
-								<div id="Check_on_system_agent" class="reboot_options Check_on_system_agent" style="text-align: center;">
-									<p>No further info is needed.</p>
-								</div>
-								<div id="Check_if_HTTP_is_running" class="reboot_options Check_if_HTTP_is_running" style="margin-top: 7px; margin-left: 4px; margin-right: 4px;">
-									<div class="form-group">
-										<label class="col-sm-3 control-label">Hostname</label>
-										<div class="col-sm-6">
-											<input class="form-control" type="text" name="hostname" id="hostname" />
-										</div>
-									</div>
-									<div class="form-group">
-										<label class="col-sm-3 control-label">URL</label>
-										<div class="col-sm-6">
-											<input class="form-control" type="text" name="url" id="url" />
-										</div>
-									</div>
-									<div class="form-group">
-										<label class="col-sm-3 control-label">Port</label>
-										<div class="col-sm-6">
-											<input class="form-control" type="text" name="port" id="port" />
-										</div>
-									</div>
-									<div class="form-group">
-										<label class="col-sm-3 control-label">Expected Response</label>
-										<div class="col-sm-6">
-											<input class="form-control" type="text" name="expected_response" id="expected_response" />
-										</div>
-									</div>
-									<div class="custom-control custom-checkbox mr-sm-2" style="text-align: center;">
-										<input type="checkbox" class="custom-control-input" id="https_check_tickbox" name='https_check' id='https_check'>
-										<label class="custom-control-label" for="https_check_tickbox">HTTPS Check</label>
-									</div>
-								</div>
+					<div class="row form-group">
+						<label class="col-sm-3 control-label">Name:</label>
+						<select class="selectpicker col-sm-9" name="systems" id="systems" data-live-search="true">
+							<option></option>
+							{% for system in all_systems -%}
+								<option value="{{ system['id'] }}">{{ system['name'] }}: {{ system['allocation_comment'] }}</option>
+							{%- endfor %}
+						</select>
+					</div>
+					<div class="row form-group">
+						<label class="col-sm-3 control-label" for="system-edit-type">Check Type:</label>
+						<select name="wait_options" class="col-sm-9 selectpicker system_options" id="system-edit-type" onchange="changeEventHandler(event);">
+							{% for options in wait_options %}
+								<option value="{{ options }}">{{ options }}</option>
+							{% endfor %}
+						</select>
+					</div>
+					<div id="Check_if_VMware_tools_are_running" class="reboot_options Check_if_VMware_tools_are_running" style="text-align: center;">
+						<p>No further info is needed.</p>
+					</div>
+					<div id="Check_for_ping_result" class="reboot_options Check_for_ping_result" style="text-align: center;">
+						<p>No further info is needed.</p>
+					</div>
+					<div id="Check_on_system_agent" class="reboot_options Check_on_system_agent" style="text-align: center;">
+						<p>No further info is needed.</p>
+					</div>
+					<div id="Check_if_HTTP_is_running" class="reboot_options Check_if_HTTP_is_running" style="margin-top: 7px; margin-left: 4px; margin-right: 4px;">
+						<div class="row form-group">
+							<label class="col-sm-3 control-label" for="system-edit-http-hostname">Hostname:</label>
+							<div class="col-sm-9">
+								<input class="form-control" type="text" name="hostname" id="system-edit-http-hostname" />
 							</div>
 						</div>
-					</div>
+						<div class="row form-group">
+							<label class="col-sm-3 control-label" for="system-edit-http-port">Port:</label>
+							<div class="col-sm-5">
+								<input class="form-control" type="text" name="port" id="system-edit-http-port" />
+							</div>
+							<div class="custom-control custom-checkbox">
+								<input type="checkbox" class="custom-control-input" id="system-edit-http-https" name='https_check'>
+								<label class="custom-control-label" for="system-edit-http-https">HTTPS Check</label>
+							</div>
 
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-					<button type="submit" class="btn btn-primary">Create</button>
-				</div>
-			</form>
-		</div>
-	</div>
-</div>
-
-
-
-
-<div class="modal fade" id="configure_group" role="dialog">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<form role="form" method="POST" class="form-horizontal">
-				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-					<h4 class="modal-title" id="">Configure Group</h4>
-				</div>
-				<div class="modal-body">
-					<div class="form-group">
-						<div style="margin-left:1em">
-							<div class="form-group">
-								<input type="hidden" name="task_name" value="configure_group"/></input>
-								<input type="hidden" name="group_name" id="configure-VM-modal"></input>
-								<div class="form-group">
-									<label class="col-sm-2 control-label">Name</label>
-									<div class="col-sm-9">
-										<input type="hidden" name="task_name" value="create_group"/>
-										<input class="form-control" name="configure_name" id="configure_name" />
-									</div>
-								</div>
-								<div class="form-group">
-									<label class="col-sm-2 control-label">Notifyee</label>
-									<div class="col-sm-9">
-										<input class="form-control" name="configure_notifyee" id="configure_notifyee" />
-									</div>
-								</div>
+						</div>
+						<div class="row form-group">
+							<label class="col-sm-3 control-label" for="system-edit-http-url">URL:</label>
+							<div class="col-sm-9">
+								<input class="form-control" type="text" name="url" id="system-edit-http-url" />
 							</div>
 						</div>
-					</div>
-
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-					<button type="submit" class="btn btn-primary">Create</button>
-				</div>
-			</form>
-		</div>
-	</div>
-</div>
-
-
-
-
-
-<div class="modal fade" id="configure" role="dialog">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<form role="form" method="POST" class="form-horizontal">
-				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-				<input type="hidden" name="box_clicked" id="box_clicked"></input>
-				<input type="hidden" name="group_clicked" id="group_clicked"></input>
-
-				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-					<h4 class="modal-title">Configure Box Settings</h4>
-				</div>
-				<div class="modal-body">
-					<div class="form-group">
-						<label class="col-sm-3 control-label" style="margin-right: 12px">System Reboot:</label>
-						<div style="margin-left: 1em">
-							<div class="form-group" style="">
-								<input type="hidden" name="task_name" value="configure_box" id="system_options_input"/>
-									<select name="wait_options" class="selectpicker"  id="system_options_configure" onchange="changeEventHandler(event);">
-										{% for options in wait_options %}
-											<option value="{{ options }}">{{ options }}</option>
-										{% endfor %}
-									</select>
-								</input>
-									<div id="Check_if_VMware_tools_are_running" class="reboot_options Check_if_VMware_tools_are_running" style="text-align: center;">
-									<p>No further info is needed.</p>
-								</div>
-								<div id="Check_for_ping_result" class="reboot_options Check_for_ping_result" style="text-align: center;">
-									<p>No further info is needed.</p>
-								</div>
-								<div id="Check_on_system_agent" class="reboot_options Check_on_system_agent" style="text-align: center;">
-									<p>No further info is needed.</p>
-								</div>
-								<div id="Check_if_HTTP_is_running" class="reboot_options Check_if_HTTP_is_running" style="margin-top: 7px; margin-left: 4px; margin-right: 4px;">
-									<div class="form-group">
-										<label class="col-sm-3 control-label">Hostname</label>
-										<div class="col-sm-6">
-											<input class="form-control" type="text" name="hostname" id="hostname" />
-										</div>
-									</div>
-									<div class="form-group">
-										<label class="col-sm-3 control-label">URL</label>
-										<div class="col-sm-6">
-											<input class="form-control" type="text" name="url" id="url" />
-										</div>
-									</div>
-									<div class="form-group">
-										<label class="col-sm-3 control-label">Port</label>
-										<div class="col-sm-6">
-											<input class="form-control" type="text" name="port" id="port" />
-										</div>
-									</div>
-									<div class="form-group">
-										<label class="col-sm-3 control-label">Expected Response</label>
-										<div class="col-sm-6">
-											<input class="form-control" type="text" name="expected_response" id="expected_response" />
-										</div>
-									</div>
-									<div class="custom-control custom-checkbox mr-sm-2" style="text-align: center;">
-										<input type="checkbox" class="custom-control-input" id="https_check_tickbox_configure" name='https_check' id='https_check'>
-										<label class="custom-control-label" for="https_check_tickbox_configure">HTTPS Check</label>
-									</div>
-								</div>
+						<div class="row form-group">
+							<label class="col-sm-3 control-label" for="system-edit-http-response">Response:</label>
+							<div class="col-sm-9">
+								<input class="form-control" type="text" name="expected_response" id="system-edit-http-response" />
 							</div>
 						</div>
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-					<button type="submit" class="btn btn-success">Confirm</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+					<button type="submit" class="btn btn-primary" id="group-system-settings-submit"></button>
 				</div>
 			</form>
 		</div>
@@ -288,27 +179,23 @@
 			<form role="form" method="POST" class="form-horizontal">
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 					<h4 class="modal-title">Restart Group</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				</div>
 				<div class="modal-body">
-					<div class="form-group">
-						<label class="col-sm-3 control-label">Name</label>
-						<div style="margin-left: 1em">
-							<div class="form-group">
-								<input type="hidden" name="task_name" value="restart_group"/></input>
-								<select class="selectpicker" name="groups" id="groups" data-live-search="true">
-									<option></option>
-									{% for group in systems.keys() -%}
-										<option value="{{ group }}">{{ group }}</option>
-									{%- endfor %}
-								</select>
-							</div>
-						</div>
+					<div class="form-group row">
+						<label class="col-sm-3 control-label">Name:</label>
+						<input type="hidden" name="task-name" value="restart_group"/>
+						<select class="col-sm-9 selectpicker" name="groups" id="groups" data-live-search="true">
+							<option value=""></option>
+							{% for group in groups -%}
+								<option value="{{ group['id'] }}">{{ group['name'] }}</option>
+							{%- endfor %}
+						</select>
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
 					<button type="submit" class="btn btn-danger">Restart</button>
 				</div>
 			</form>
@@ -316,191 +203,219 @@
 	</div>
 </div>
 
-
-
-
 <div class="page-header">
-	<div class="pull-right">
-		<a data-toggle="modal" data-target="#restart" class="btn btn-sm pull-right btn-danger active"><i class="fa fa-fw fa-minus"></i> <span class="hidden-sm hidden-xs">Restart Group</span></a>
-		<a data-toggle="modal" data-target="#create" class="btn btn-sm pull-right btn-success active" style="margin-right:10px"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs">Create Group</span></a>
-	</div>
-	<h3><i class="fa fa-fw fa-server fa"></i> System Groups</h3>
-	<p class="text-muted">A system group is used to restart systems in a certain order</p>
+	<h4>
+		<div class="pull-right">
+			<a href="#" class="btn btn-success" id="btn-group-create"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs">Create Group</span></a>
+			<a href="#" data-toggle="modal" data-target="#restart" class="btn btn-danger"><i class="fa fa-fw fa-minus"></i> <span class="hidden-sm hidden-xs">Restart Group</span></a>
+		</div>
+		<i class="fa fa-fw fa-server fa"></i> System Groups
+	</h4>
+	<div class="text-muted">A system group is used to categorise systems, and power them on, off or restart them in a certain order</div>
 </div>
-<form id="vm_order" method="POST" role="form">
-	<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+
+{%- if groups|length == 0 %}
+<p class="text-center">There are no system groups at present. You can add one with the <strong>Create Group</strong> button.</p>
 	<div class="panel-group" id="accordion">
-			{% for group in systems %}
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title col-align col-align--center" id="{{ group }}">
-							<a data-toggle="collapse" data-parent="#accordion" href="#collapse{{ loop.index }}">System Group - {{ group }}</a>
-							<a data-toggle="modal" data-target="#add" class="btn btn-xs pull-right btn-success active group-hyperlink" style="margin-right:5px"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs ">Add to Group</span></a>
-							<a data-toggle="modal" data-target="#configure_group" class="btn btn-xs pull-right btn-warning active group-configure" id="group-configure" group="{{ group }}" style="margin-right:5px"><i class="fa fa-fw fa-cog"></i> <span class="hidden-sm hidden-xs ">Configure</span></a>
-							<button type="submit" class="btn btn-xs btn-success btn-danger pull-right remove_group" id="remove_group" group="{{ group }}" style="margin-right:5px"><i class="fa fa-fw fa-minus"></i> Remove </button>
-						</h4>
-					</div>
-					<div id="collapse{{ loop.index }}" class="panel-collapse collapse sortable">
-						<ul class="sortableList">
-						{% for box in systems[group] %}
-
-							<div class="panel-body">
-								<span>
-									<ol id="{{ box['name'] }}" class="sortable-systems" style="float: left">{{ box['name'] }} - {{ box['alloc_comment'] }} - {{ box['r_info']['wait_options'] }}</ol>
-										<a data-toggle="modal" data-target="#configure" class="btn btn-xs pull-right btn-warning active box-configure" box="{{ box['name'] }}" group="{{ group }}" style="margin-left:3px"><i class="fa fa-fw fa-cog"></i> <span class="hidden-sm hidden-xs ">Configure</span></a>
-										<input type="hidden" name="box_to_remove" id="delete_box_name"></input>
-										<input type="hidden" name="group_to_remove_from" id="delete_box_group"></input>
-										<button type="submit" class="btn btn-xs btn-success btn-danger pull-right remove_vm_from_group" id="remove_vm" group="{{ group }}" box="{{ box['name'] }}"><i class="fa fa-fw fa-minus"></i> Remove </button>
-								</span>
-							</div>
-						{% endfor %}
-						</ul>
-					</div>
-				</div>
-			{% endfor %}
-			
-			<button type="submit" class="btn btn-success btn-submit" id="save_changes" style="margin-top: 5px" ><span class="glyphicon glyphicon-ok" aria-hidden="true" ></span> Save Changes</button>
+{%- else %}
+{%-     for group in groups %}
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h4 class="panel-title col-align col-align--center" id="{{ group.id }}" data-id="{{ group.id }}" data-name="{{ group.name }}" data-notifyee="{{ group.notifyee }}">
+					<a data-toggle="collapse" data-parent="#accordion" href="#collapse{{ loop.index }}" class="dropdown-toggle">{{ group.name }}</a>
+					<a href="#" class="btn btn-sm pull-right btn-success btn-group-add-system" style="margin-right:5px"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs">Add to Group</span></a>
+					<a href="#" class="btn btn-sm pull-right btn-warning btn-group-configure" style="margin-right:5px"><i class="fa fa-fw fa-cog"></i> <span class="hidden-sm hidden-xs">Edit</span></a>
+					<a href="#" class="btn btn-sm btn-success btn-danger pull-right btn-group-delete" style="margin-right:5px"><i class="fa fa-fw fa-minus"></i> Delete</a>
+				</h4>
+			</div>
+			<div id="collapse{{ loop.index }}" class="panel-collapse collapse sortable">
+{%-         if systems[group.id] | length == 0 %}
+				<p class="ml-4">There are no systems in this group. You can add some with the <strong>Add to Group</strong> button.</p>
+{%-         else %}
+				<ul class="sortableList" data-group-id="{{ group.id }}" data-group-name="{{ group.name }}">
+{%-             for system in systems[group.id] %}
+					<li data-system-id="{{ system['id'] }}" data-system-name="{{ system['name'] }}" class="sortable-systems">{{ system['name'] }}: {{ system['alloc_comment'] }} - {{ system['r_info']['wait_options'] }}
+						<a href="#" class="btn btn-sm pull-right btn-warning btn-group-configure-system" style="margin-left:3px"><i class="fa fa-fw fa-cog"></i> <span class="hidden-sm hidden-xs">Edit</span></a>
+						<a href="#" class="btn btn-sm btn-success btn-danger pull-right btn-group-remove-system"><i class="fa fa-fw fa-minus"></i> Remove</a>
+					</li>
+{%-             endfor %}
+				</ul>
+{%-         endif %}
+			</div>
+		</div>
+{%-     endfor %}
+		<form id="vm_order" method="POST" role="form">
+			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+			<input type="hidden" name="task-name" id="task-name" value="save_changes"/>
+			<input type="hidden" name="data_of_order" id="locations_of_stuff" value=""/>
+			<button type="submit" class="btn btn-success btn-submit mt-2" id="save_changes">Save Changes</button>
+		</form>
 	</div>
-	<input type="hidden" name="task_name" id="task_name" value="save_changes"/>
-	<input type="hidden" name="data_of_order" id="locations_of_stuff" value=""/>
-</form>
+{%- endif %}
+<script type="text/javascript">
+$('#btn-group-create').click(function(e) {
+	$('#group-settings-name').val("");
+	$('#group-settings-notifyee').val("");
+	$('#group-settings-task').val("create");
+	$('#group-settings-title').text("Create Group");
+	$('#group-settings-submit').text("Create");
+	$('#group-settings').modal();
+	e.preventDefault();
+});
+
+$('.btn-group-configure').click(function(e) {
+	var selected_group = $(e.target).closest('h4');
+	$('#group-settings-id').val(selected_group.data('id'));
+	$('#group-settings-name').val(selected_group.data('name'));
+	$('#group-settings-notifyee').val(selected_group.data('notifyee'));
+	$('#group-settings-task').val("edit");
+	$('#group-settings-title').text("Edit Group");
+	$('#group-settings-submit').text("Save");
+	$('#group-settings').modal();
+	e.preventDefault();
+});
+
+$('.btn-group-delete').click(function(e) {
+	var selected_group = $(e.target).closest('h4');
+	$('#group-delete-id').val(selected_group.data('id'));
+	$('#group-delete-name').text(selected_group.data('name'));
+	$('#group-delete').modal();
+	e.preventDefault();
+});
+
+$(".btn-group-add-system").click(function(e) {
+	var selected_group = $(e.target).closest('h4');
+	$('#group-system-settings-group-id').val(selected_group.data('id'));
+	$('#group-system-settings-task').val('add_to_group');
+	$('#group-system-settings-title').text('Add System');
+	$('#group-system-settings-submit').text('Add');
+	$('#systems').removeProp('disabled');
+	$('#systems').val('');
+	$('#systems').selectpicker('refresh');
+	$('#system-edit-type').val('Check if HTTP is running');
+	$("#system-edit-http-hostname").val('');
+	$("#system-edit-http-url").val('');
+	$("#system-edit-http-port").val('');
+	$("#system-edit-http-response").val('');
+	$('.Check_if_HTTP_is_running').show();
+	$('#group-system-settings').modal();
+	e.preventDefault();
+});
+
+$(".btn-group-remove-system").click(function(e) {
+	var selected_group = $(e.target).closest('ul');
+	var selected_system = $(e.target).closest('li');
+	$('#group-remove-system-group-name').text(selected_group.data('group-name'));
+	$('#group-remove-system-system-name').text(selected_system.data('system-name'));
+	$('#group-remove-system-group-id').val(selected_group.data('group-id'));
+	$('#group-remove-system-system-id').val(selected_system.data('system-id'));
+	$('#group-remove-system').modal();
+	e.preventDefault();
+});
+
+$('#group-settings').on('shown.bs.modal', function() {
+	$('#group-settings-name').focus();
+});
 
 
-<script>
-
-	$(".group-hyperlink").click(function(){
-		console.log($(this).parent().attr('id'));
-		$("#add-VM-modal").val($(this).parent().attr('id'));
-		$('.Check_if_HTTP_is_running').show();
-	});
-
-	$(".group-hyperlink-remove").click(function(){
-		console.log($(this).parent().attr('id'));
-		$("#remove-VM-input").val($(this).parent().attr('id')); 
-	});
-
-	$(".box-hyperlink").click(function(){
-		console.log($(this).attr('id'));
-		$("#box-edit-status").val($(this).attr('id'));
-	});
-
-	$(".remove_group").click(function(e){
-		$("#delete_box_group").val($(this).attr('group'));
-		$("#task_name").val("remove_group");
-	});
-
-	$(".remove_vm_from_group").click(function(e){
-		$("#delete_box_name").val($(this).attr('box'));
-		$("#delete_box_group").val($(this).attr('group'));
-		$("#task_name").val("remove_from_group");
-	});
-
-	$(".group-configure").click(function(e){
-		$("#configure-VM-modal").val($(this).attr('group'));
-		var selected_group = $(this).attr('group')
-		var groups = JSON.parse('{{ existing_groups|tojson|safe }}');
-		groups.forEach(function (item, index){
-			if (item.name === selected_group){
-				$("#configure_name").val(item.name);
-				$("#configure_notifyee").val(item.notifyee);
-			}
-		})
-	})
-
-
-
-	$(".box-configure").click(function(e){
-		console.log("attempting to configure group");
-		console.log($(this).attr('box'));
-		$("#box_clicked").val($(this).attr('box'));
-		$("#group_clicked").val($(this).attr('group'));
-		$('.reboot_options').hide();
-		var system_data = JSON.parse('{{ systems|tojson|safe }}');
-		var selected; var hostname; var url; var port; var exp_resp; var https_check;
-		system_data = system_data[$(this).attr('group')];
-		system_data.forEach(function (item, index){
-			if (item.name === $("#box_clicked").val()){
-				selected = item.r_info.wait_options;
-				$('#system_options_configure').val(selected);
-				console.log($('#system_options_configure'));
-				selected = selected.split(' ').join('_');
-				if (selected === "Check_if_HTTP_is_running"){
-					hostname = item.r_info.http_checks.hostname;
-					url = item.r_info.http_checks.url;
-					port = item.r_info.http_checks.port;
-					exp_resp = item.r_info.expected_response;
-					https_check = item.r_info.http_checks.https;
-				}
-			}
-		});
-		
-		if (selected === "Check_if_HTTP_is_running"){
-			$('.Check_if_HTTP_is_running').show();
-
-			var hostnames = $("input[name=hostname]");
-			var urls = $("input[name=url]");
-			var ports = $("input[name=port]");
-			var exp_resps = $("input[name=expected_response]");
-
-			for (x = 0; x < hostnames.length; x++){
-				hostnames[x].value = hostname;
-				urls[x].value = url;
-				ports[x].value = port;
-				exp_resps[x].value = exp_resp;
-				if (https_check === 'on'){
-					$("#https_check_tickbox_configure").attr('checked', true);
-				}
-			}
-		} else if (selected === "Check_if_VMware_tools_are_running"){
-			$('.Check_if_VMware_tools_are_running').show();
-		} else if (selected === "Check_for_ping_result"){
-			$('.Check_for_ping_result').show();
-		} else if (selected === 'Check_on_system_agent'){
-			$('.Check_on_system_agent').show();
+$(".btn-group-configure-system").click(function(e){
+	var selected_group = $(e.target).closest('ul').data('group-id');
+	var selected_system = $(e.target).closest('li').data('system-id');
+	$('#group-system-settings-group-id').val(selected_group);
+	$('#group-system-settings-system-id').val(selected_system);
+	$('#group-system-settings-task').val('edit_system');
+	$('#group-system-settings-title').text('Edit System');
+	$('#group-system-settings-submit').text('Save');
+	$('#systems').prop('disabled', 'disabled');
+	$('.reboot_options').hide();
+	var groups_data = JSON.parse('{{ systems|tojson|safe }}');
+	var group_data = groups_data[selected_group];
+	group_data.some(function(e) {
+		if (e['id'] == selected_system)
+		{
+			system_data = e;
+			return true;
 		}
+		return false;
 	});
+	var selected = system_data.r_info.wait_options;
+	$('#systems').val(selected_system);
+	$('#system-edit-type').val(selected);
+	$('#systems').selectpicker('refresh');
+	$('#system-edit-type').selectpicker('refresh');
+	if (selected == "Check if HTTP is running")
+	{
+		https_check = system_data.r_info.http_checks.https;
+		$('.Check_if_HTTP_is_running').show();
 
-	function changeEventHandler(event) {
-		console.log(event.target);
-		var selected = $(event.target).val();
-		$('.reboot_options').hide();
-		selected = selected.split(' ').join('_');
-		// alert(selected)
-		if (selected === "Check_if_HTTP_is_running"){
-			$('.Check_if_HTTP_is_running').show();
-		} else if (selected === "Check_if_VMware_tools_are_running"){
-			$('.Check_if_VMware_tools_are_running').show();
-		} else if (selected === "Check_for_ping_result"){
-			$('.Check_for_ping_result').show();
-		} else if (selected === 'Check_on_system_agent'){
-			$('.Check_on_system_agent').show();
+		$("#system-edit-http-hostname").val(system_data.r_info.http_checks.hostname);
+		$("#system-edit-http-url").val(system_data.r_info.http_checks.url);
+		$("#system-edit-http-port").val(system_data.r_info.http_checks.port);
+		$("#system-edit-http-response").val(system_data.r_info.http_checks.expected_response);
+		if (https_check == 'on')
+		{
+			$("#system-edit-http-https").attr('checked', true);
 		}
 	}
+	else if (selected == "Check if VMware tools are running")
+	{
+		$('.Check_if_VMware_tools_are_running').show();
+	} 
+	else if (selected == "Check for ping result")
+	{
+		$('.Check_for_ping_result').show();
+	}
+	else if (selected == 'Check on system agent')
+	{
+		$('.Check_on_system_agent').show();
+	}
+
+	$('#group-system-settings').modal();
+	e.preventDefault();
+});
+
+function changeEventHandler(event) {
+	var selected = $(event.target).val();
+	$('.reboot_options').hide();
+	if (selected == "Check if HTTP is running"){
+		$('.Check_if_HTTP_is_running').show();
+	} else if (selected == "Check if VMware tools are running"){
+		$('.Check_if_VMware_tools_are_running').show();
+	} else if (selected == "Check for ping result"){
+		$('.Check_for_ping_result').show();
+	} else if (selected == 'Check on system agent'){
+		$('.Check_on_system_agent').show();
+	}
+}
+
+$(function() {
+	$(".sortableList").sortable();
+	$(".sortableList").disableSelection();
+	$('.reboot_options').hide();
+});
+
+$("#group-system-settings-submit").click(function() {
+	// Enable this so it gets submitted on the form
+	$('#systems').removeProp('disabled');
+});
+
+$("#save_changes").click(function() { 
+	var systems_list = $('#vm_order').find(".sortable-systems").map(function() {return $(this).attr('id');});
+	var groups = $('ul[data-group-id]');
+	var result = {};
+	for (var i = 0; i < groups.length; i++)
+	{
+		system_ids = []
+		var systems = $(groups[i]).find('li[data-system-id]');
+		for (var j = 0; j < systems.length; j++)
+		{
+			system_ids.push($(systems[j]).data('system-id'));
+		}
+		result[$(groups[i]).data('group-id')] = system_ids;
+	}
+	$('#locations_of_stuff').attr('value', JSON.stringify(result));
+	console.log("done");
+	//$('#vm_order').submit();
+});
 </script>
-<script>
-
-$( function() {
-  $( ".sortableList" ).sortable();
-  $( ".sortableList" ).disableSelection();
-} );
-
-</script>
-<script>
-
-	$("#save_changes").click( function() { 
-		var systems_list = $('#vm_order').find(".sortable-systems").map(function() {return $(this).attr('id');});
-		// console.log(systems_list['length']);
-		// for (var i = 0; i < systems_list['length']; i++ ){
-		// 	console.log(i);
-		// }
-		console.log(JSON.stringify(systems_list));
-		console.log($('#locations_of_stuff').val());
-		$('#locations_of_stuff').attr('value', JSON.stringify(systems_list));
-		console.log($('#locations_of_stuff'));
-		$('#vm_order').submit();
-
-	});
-	
-</script>
-
 {% endblock %}
