@@ -19,47 +19,114 @@ import cortex.lib.rubrik
 from flask.views import MethodView
 from pyVmomi import vim
 
+
 def generate_new_yaml(proxy, oldRole, oldConfig, newRole, newConfig):
-	#configs should be passed in as string
+	#configs should be passed in as dictionary
+	roles_info = cortex.lib.dsc.get_roles(proxy)
+
 	if newRole == "":
 		return json.dumps("")
-	else:
-		oldConfig = json.loads(oldConfig)
-		newConfig = json.loads(newConfig)
 
-		roles_info = cortex.lib.dsc.get_roles(proxy)
+	# modified_config = json.loads(generate_reset_yaml(proxy, json.dumps(newRole)))
 
-		removed_values = list(set(oldRole) - set(newRole))
-		added_values = list(set(newRole) - set(oldRole))
 
-		modified_config = newConfig
+	old_keys = list(oldRole.keys())
+	new_keys = list(newRole.keys())
 
-		for added in added_values:
-			if added == "":
+	roles_to_add = list(set(new_keys) - set(old_keys))
+	roles_to_remove = list(set(old_keys) - set(new_keys))
+
+	if roles_to_add == "":
+		roles_to_add = []
+
+	roles_to_check = [role for role in new_keys if role not in (roles_to_add + roles_to_remove) ]
+
+	modified_config = {}
+	modified_config['AllNodes'] = newConfig['AllNodes']
+	for role in roles_to_check:
+		if newRole[role]['length'] == 0:
+			print('skipped ' + role )
+			continue
+		print(role)
+		modified_config[role] = []
+		prop_in_new = []
+		prop_in_old = []
+
+		for x in range(newRole[role]['length']):
+			prop_in_new.append(newRole[role][str(x)])
+		for x in range(oldRole[role]['length']):
+			prop_in_old.append(oldRole[role][str(x)])
+		
+		# find the added, removed and unchanged values
+		# generate the details for the new ones
+		# retrieve old values for the old one
+
+		#new
+		added_props = list(set(prop_in_new) - set(prop_in_old))
+		removed_props = list(set(prop_in_old) - set(prop_in_new))
+		props_unchanged = [prop for prop in prop_in_new if prop not in (added_props + removed_props) ]
+		print(added_props, props_unchanged, removed_props)
+
+		for prop in added_props:
+			for existing_prop in roles_info[role]:
+				if existing_prop['Name'] == prop:
+					modified_config[role].append(existing_prop)
+
+		for prop in props_unchanged:
+			if role == 'AllNodes':
 				continue
-			modified_config[added] = roles_info[added]
-	
-		for removed in removed_values:
-			if removed == "":
-				continue
-			del modified_config[removed]
-
-		return json.dumps(modified_config)
+			for existing_prop in newConfig[role]:
+				if existing_prop['Name'] == prop:
+					modified_config[role].append(existing_prop)
 
 
 
-############################################################################
+
+
+	return json.dumps(modified_config)
+
+
+
+
+
+
+
+###########################################################################
 
 def generate_reset_yaml(proxy, roles):
+	# return jsonify()
+	# return json.dumps("")
+	roles = json.loads(roles)
 	roles_info = cortex.lib.dsc.get_roles(proxy)
 	config = {}
+	config['AllNodes'] = roles_info['AllNodes']
 	for role in roles:
 		if role == '':
 			continue
-		config[role] = roles_info[role]
+		if roles[role]['length'] == 0:
+			continue
+		config[role] = []
+		for x in range(roles[role]['length']):
+			name = roles[role][str(x)]
+			for settings in roles_info[role]:
+				if settings['Name'] == name:
+					config[role].append(settings)
+		# config[role] = roles_info[role]
 	return json.dumps(config)
 
-############################################################################
+
+###########################################################################
+
+def get_roles_and_checks(roles, checks):
+	completed_roles = {}
+	for role in roles:
+		try:
+			completed_roles[role] = checks[role]
+		except Exception as e:
+			pass
+
+
+###########################################################################
 
 @app.route('/dsc/classify/<id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
@@ -73,23 +140,28 @@ def dsc_classify_machine(id):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	default_roles = []
+	# get a proxy to connect to dsc
 	dsc_proxy = cortex.lib.dsc.dsc_connect()
 	roles_info = cortex.lib.dsc.get_roles(dsc_proxy)
+	
+	# get a list of the roles
 	for role in roles_info:
 		default_roles.append(role)
 
-	# return jsonify(roles_info['UOSWebCustomSite_Install'][0]['Name'])
 
 	# retrieve all the systems
-	# default_roles = ['Default', 'SQLServer', 'Web Server', 't1', 't2']
 	curd.execute("SELECT `roles`, `config` FROM `dsc_config` WHERE `system_id` = %s", (id, ))
 	existing_data = curd.fetchone()
 	exist_role = ""
+
 	exist_config = ""
 	# get existing info
 	if existing_data is not None:
-		exist_role = existing_data['roles'].split(',')
-		exist_config = yaml.dump(json.loads(existing_data['config']))
+		exist_role = json.loads(existing_data['roles'])
+		try:
+			exist_config = yaml.dump(json.loads(existing_data['config']))
+		except json.decoder.JSONDecodeError as e:
+			exist_config = yaml.dump("")
 	
 
 	if request.method == 'GET':
@@ -98,56 +170,86 @@ def dsc_classify_machine(id):
 			return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=default_roles, yaml=exist_config, set_roles=exist_role, role_info=roles_info)
 		else:
 			abort(403)
+
 	elif request.method == 'POST':
+		# return jsonify(request.form)
+		if request.form['button'] == 'push_to_dsc':
 
 
-		checked_boxes = json.loads(request.form['checked_values'])
-		for group in checked_boxes:
-			del checked_boxes[group]['prevObject']
-		if request.form['button'] == 'save_changes':
-			#check for permissions
-			if not does_user_have_permission('dsc.edit'):
-				abort(403)
+			curd.execute('SELECT system_id, roles, config FROM dsc_config WHERE system_id = "%s"', (id, ))
+			box_details = curd.fetchone()
 			
-			# get the new role and configuration entered
-			role = request.form.get('selected_values', '')
-			configuration = request.form['configurations']
+			system_name = system['name']	
+			#return jsonify(str(type(json.loads(existing_data['config']))))
+			cortex.lib.dsc.send_config(dsc_proxy, system_name,json.loads(existing_data['config']))
+		else:	
+			checked_boxes = json.loads(request.form['checked_values'])
 			
-			try:
-				data = yaml.safe_load(configuration)
-			except Exception as e:
-				flash('Invalid YAML syntax for classes: ' + str(e), 'alert-danger')
-				error = True
-				raise e
+			# remove unnecessary detail from the dictionary
+			for group in checked_boxes:
+				del checked_boxes[group]['prevObject']
+				del checked_boxes[group]['context']
+			
+			for val in request.form['selected_values'].split(','):
+				if val not in checked_boxes.keys():
+					checked_boxes[val] = {'length':0}
 
-			if data != None:
-				roles = json.dumps((data))
-				if roles != ",".join(exist_role):
-					new_yaml = generate_new_yaml(dsc_proxy, exist_role, json.dumps(yaml.load(exist_config)), role.split(","), json.dumps(yaml.load(configuration)))
-					# return new_yaml
+			keys_to_remove = []
 
-				# return jsonify(((new_yaml)))
-				# cortex.lib.dsc.dsc_generate_files(dsc_proxy, system['name'], new_yaml)
+			for key in checked_boxes.keys():
+				if key not in request.form['selected_values'].split(','):
+					keys_to_remove.append(key)
 
-				curd.execute('REPLACE INTO dsc_config (system_id, roles, config) VALUES (%s, %s, %s)', (id, role, new_yaml))
-				# curd.execute('REPLACE INTO dsc_config (system_id, roles) VALUES (%s, %s)', (id, role))
+			for key in keys_to_remove:
+				del checked_boxes[key] 
+
+			if request.form['button'] == 'save_changes':
+				#check for permissions
+				if not does_user_have_permission('dsc.edit'):
+					abort(403)
+				
+				# get the new role and configuration entered
+				configuration = request.form['configurations']
+				role = json.dumps(checked_boxes)
+				try:
+					data = yaml.safe_load(configuration)
+				except Exception as e:
+					flash('Invalid YAML syntax for classes: ' + str(e), 'alert-danger')
+					error = True
+					raise e
+
+				if data != None:
+					roles = json.dumps((data))
+					if roles != exist_role:
+						# return generate_new_yaml(dsc_proxy, exist_role, yaml.safe_load(exist_config), json.loads(role), yaml.safe_load(configuration))
+						new_yaml = generate_new_yaml(dsc_proxy, exist_role, yaml.safe_load(exist_config), json.loads(role), yaml.safe_load(configuration))
+
+
+					curd.execute('REPLACE INTO dsc_config (system_id, roles, config) VALUES (%s, %s, %s)', (id, role, new_yaml))
+					g.db.commit()
+
+
+
+			elif request.form['button'] == 'reset':
+				role = json.dumps(checked_boxes)
+				# return jsonify(json.loads(role))
+				new_config = generate_reset_yaml(dsc_proxy, role)
+				# new_config = json.dumps("")
+				# return jsonify(json.loads(new_config))
+				curd.execute('REPLACE INTO dsc_config (system_id, roles, config) VALUES (%s, %s, %s)', (id, role, new_config))
 				g.db.commit()
 
-
-
-		elif request.form['button'] == 'reset':
-			role = request.form.get('selected_values', '')
-			new_config = generate_reset_yaml(dsc_proxy, role.split(","))
-			curd.execute('REPLACE INTO dsc_config (system_id, roles, config) VALUES (%s, %s, %s)', (id, role, new_config))
-			g.db.commit()
-		
 
 	curd.execute("SELECT roles, config FROM dsc_config WHERE system_id = %s", (id, ))
 	existing_data = curd.fetchone()
 	exist_role = ""
 	exist_config = ""
 	if existing_data is not None:
-		exist_role = existing_data['roles'].split(',')
-		exist_config = yaml.dump(json.loads(existing_data['config']))
+		exist_role = json.loads(existing_data['roles'])
+		try:
+			exist_config = yaml.dump(json.loads(existing_data['config']))
+		except json.decoder.JSONDecodeError as e:
+			exist_config = yaml.dump("")
+	
 
 	return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=default_roles, yaml=exist_config, set_roles=exist_role, role_info=roles_info)
