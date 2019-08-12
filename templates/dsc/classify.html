@@ -66,15 +66,17 @@ $(document).ready(function()
 		</div>
 		<div class="panel-body" style="padding-bottom:0em">
 			<div class="form-group">
-				<label title="The roles that this box fulfils" class="col-sm-2 control-label">Roles:</label>
+				<label title="The roles that this box fulfils" class="col-xs-1 control-label">Roles:</label>
 				<div class="col-lg-15">
-					<select multiple data-style="bg-white rounded-pill px-40 py-3 shadow-sm" class="selectpicker w-100" id="roles" name="roles" data-width="75%"> 
+					<select multiple data-style="bg-white rounded-pill px-40 py-3 shadow-sm" class="selectpicker w-100" id="roles" name="roles" data-width="85%"> 
 						{% for role in roles %}
-							<option value="{{ role }}">{{ role }}</option>
+							{% if role != 'AllNodes' %}
+								<option value="{{ role }}">{{ role }}</option>
+							{% endif %}
 						{% endfor %}
 					</select>
-					<button class="btn btn-success btn-sm btn-default" style="padding-left: 10px">Add</button>
-					<button class="btn btn-danger btn-sm btn-default" style="padding-left: 10px">Remove</button>
+					<button class="btn btn-success btn-sm btn-default hidden"  style="padding-left: 10px">Add</button>
+					<button class="btn btn-danger btn-sm btn-default hidden" style="padding-left: 10px">Remove</button>
 				</div>
 				<div class="col-lg-16" style="text-align: center;">
 					<p>
@@ -102,8 +104,8 @@ $(document).ready(function()
 					      <div class="panel-body">
 					      	
 					      	{% for config in role_info[role] %}
-					      		<div class="checkbox">
-									<label><input class="chkboxes" type="checkbox" value="{{ config['Name'] }}"  role="{{ role }}">{{ config['Name'] }}</label>
+					    		<div class="checkbox">
+									<label><input class="chkboxes" type="checkbox" value="{{ config['Name'] }}" {% if config['Name'] in set_roles[role].values() %} checked {% endif %} role="{{ role }}">{{ config['Name'] }}</label>
 								</div>
 					      	{% endfor %}
 					      </div>
@@ -128,7 +130,7 @@ $(document).ready(function()
 	</div>
 	<div class="text-center">
 		<button class="btn btn-primary btn-lg" type="submit" id="save_changes" value="save_changes" name="button" style="padding-right: 15px">Save and Generate</button>
-		<button class="btn btn-success btn-lg" type="submit" id="push_changes" value="push_changes" name="button">Push to Box</button>
+		<button class="btn btn-success btn-lg" type="submit" id="push_to_dsc" value="push_to_dsc" name="button">Push to Box</button>
 	</div>	
 </div>
 <input type="hidden" name="checked_values" id="checked_values" value="">
@@ -137,7 +139,7 @@ $(document).ready(function()
 <script type="text/javascript">
 
 window.onload = function() {
-	var exist_roles = {{ set_roles|tojson }};
+	var exist_roles = Object.keys({{ set_roles|tojson }});
 	$('.selectpicker').selectpicker('val', exist_roles);
 };
 
@@ -162,6 +164,21 @@ $("#save_changes").click(function(e){
 
 	$("#dsc_form").submit();
 });
+
+$('#reset').click(function(argument) {
+	$("#selected_values").val($('.selectpicker').selectpicker('val'));
+	var json = {}
+	$(".role-parent").each(function(){
+			var role = $(this).attr('data-role');
+			var checked = $(this).closest(".panel").find(".chkboxes:checkbox:checked").map(function(i,elem){return $(this).val()});
+			json[role] = checked;
+	});
+	$("#checked_values").val(JSON.stringify(json));
+
+
+	$("#dsc_form").submit();
+});
+
 $("#reset").click(function(){
 	$("#selected_values").val($('.selectpicker').selectpicker('val'));
 	$("#dsc_form").submit();
