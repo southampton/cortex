@@ -414,8 +414,9 @@
 				</div>
 		
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>  <!--  Maybe make this button cancel the changes made while the modal was open? -->
-					<button type="button" class="btn btn-primary" data-dismiss="modal">Save changes</button>
+					<button type="button" class="btn btn-warning remove-vm-reference" data-dismiss="modal"><i class="fa fa-times" aria-hidden="true"i style="margin-right: 0.2rem;"></i>Remove From Service Recipe</button>
+					<button type="button" class="btn btn-danger remove-vm-recipe" data-dismiss="modal"><i class="fa fa-trash" aria-hidden="true" style="margin-right: 0.2rem;"></i>Delete Permanently</button>
+					<button type="button" class="btn btn-primary save-vm-recipe-changes" data-dismiss="modal"><i class="fa fa-save" aria-hidden="true" style="margin-right: 0.2rem;"></i>Save Changes</button>
 				</div>
 			</div>
 		</div>
@@ -433,10 +434,9 @@
 <div class="card d-none vm-card h-100" id="vm-card" style="margin: 0.4rem; width: 30%" data-target="#" data-toggle="modal">
 	<div class="card-header">
 			<input type="hidden" name="vm_recipe_name[]" value="" />
-			<h4 class="float-left" style="margin-top: 4px; margin-bottom: 4px;"></h4>
-			<a class="btn btn-danger float-right no-modal" style="color:white;"><i class="fa fa-trash" aria-hidden="true"></i> Delete</a> 
+			<h4 class="float-left" style="margin-top: 4px; margin-bottom: 4px; overflow: hidden; white-space: nowrap; width: 100%; text-overflow: ellipsis;"></h4>
 	</div>
-	<div class="card-body">
+	<div class="card-body" style="height: 90px; overflow-y: auto;">
 		<p>Some general description</p>
 	</div>
 </div>
@@ -451,6 +451,56 @@
 
 
 <script type="text/javascript">
+
+// Helper function which determines if a service recipe already exists
+function service_recipe_exists(recipe_name){
+	var service_recipes_list = $("#autocomplete-service-templates option").map(function(){
+		return $(this).attr('id');
+	}).toArray();
+	
+	return service_recipes_list.includes(recipe_name);
+}
+
+function valOrFunction(val, ctx, args) {
+	if (typeof val == "function") {
+		return val.apply(ctx, args);
+	} else {
+		return val;
+	}
+}
+
+function invalid_input_helper(target_jQuery_selector, options){
+
+	// get the DOM element of the target
+	var target_DOM = $(target_jQuery_selector)[0];
+	
+	target_DOM.setCustomValidity(valOrFunction(options.defaultText, window, [target_DOM]));
+
+	if(target_DOM.value == ""){
+		target_DOM.setCustomValidity(valOrFunction(options.emptyText, window, [target_DOM]));
+	} else {
+		
+		// Set a custom pattern for the input validity
+		$(target_jQuery_selector).attr('pattern', options.pattern);
+		
+		// Set a custom message to be displayed when the pattern is not matched
+		target_DOM.setCustomValidity(valOrFunction(options.invalidText, window, [target_DOM]));	
+		
+		// Check validity and trigger an invalid event if the input is not valid
+		if(!target_DOM.checkValidity()){
+			$("#service_request_form").find(":submit").click();
+		}
+		
+		// Reset the pattern to nothing
+		$(target_jQuery_selector).removeAttr('pattern');
+	}
+	
+	// This deactivates the custom
+	// Needs to be executed only once after the first input event if fired 
+	$(target_jQuery_selector).one('input', function(){
+		target_DOM.setCustomValidity("");
+	});
+}
 
 function generate_carousel_indicators(form_steps, was_clicked, action){
 	
@@ -468,7 +518,6 @@ function generate_carousel_indicators(form_steps, was_clicked, action){
 }
 
 function load_recipe_on_screen(template_data){
-	console.log("loading");
 	// For each VM recipe, trigger a click event which will generate the cards on the final slide
 	Object.keys(template_data['vms_recipes']).forEach(function(key, index){
 		$("#new-vm-recipe").trigger("click", [template_data['vms_recipes'][key], key]);
@@ -479,7 +528,7 @@ function load_recipe_on_screen(template_data){
 
 	// If using a template, the user should not be able to edit the service recipe name
 	$("#vm-carousel #service_name").prop('readonly', true);
-	$("#vm-carousel #service_description_input_group").addClass('d-none');
+	$("#service_description").prop('readonly', true);
 
 	// If the recipe contains an expiry date, then destroy the old
 	// datetime picker and create a new one with the current expiry_date
@@ -519,11 +568,12 @@ $(document).ready(function(){
 		if(!was_clicked){
 			
 			generate_carousel_indicators(form_steps, was_clicked, action);
-
+			
+			// Basically, if the user is using an existing service recipe
 			if(template_data) load_recipe_on_screen(template_data);
-
-			// Enable, update and refresh the selectpicker on the 2nd slide
-			else{
+			
+			else {
+				// Enable, update and refresh the selectpicker on the 2nd slide
 				$("#env").removeClass("selectpicker-disabled").addClass("selectpicker");
 				$("#env").selectpicker();
 			}
@@ -575,23 +625,41 @@ $(document).ready(function(){
 			var service_now_task = $(current_slide).find("input[name=task]").eq(0).val();
 			var action_type = $("input[name=action]").val();
 			
-			// If any required fields is empty
-			if(!current_service_name|| !current_service_description || !current_service_env || (!service_now_task && action_type=="use_recipe")){
-				// prevents the carousel from going to the next slide
-				e.preventDefault();
+			// add an event listener to check if the user is trying to use an existing service name
+			if(current_service_name && action_type == "create_recipe" && service_recipe_exists($("#service_name").val())){
 				
-				// manually attempt form submission
-				$("#service_request_form").find(":submit").click();
-			} else{
+				// prevent the carousel from going to the next slide
+				e.preventDefault();
+
+				// customize the popover message
+				invalid_input_helper("#service_name", {
+					defaultText: "Please fill in this field!",
+					emptyText: "Please fill in this field!",
+					invalidText:"This service recipe name already exists!",
+					pattern: "^(?!"+$("#service_name").val()+").*$",
+				});
+
+			} else if(!current_service_name || (!current_service_description && action_type == "create_recipe") || !current_service_env || (!service_now_task && action_type=="use_recipe")){
+				// prevents the carousel from going to the next slide
+                                e.preventDefault();
+                                
+                                // manually attempt form submission if the validity is false
+				if(!$("#service_request_form")[0].checkValidity()){
+					$("#service_request_form").find(":submit").click();
+				}
+
+			} else {
 				// else everything's fine, go to the next slide
-				$(this).trigger('slide.bs.carousel');
+                                $(this).trigger('slide.bs.carousel');
 			}
 		}
+		
 		
 	});
 
 	$("#new-vm-recipe").click(function(e, recipe_data, recipe_name){
 		var vm_recipe_name = $("#vm-recipe-input").val();
+		
 		if(!recipe_data && !recipe_name && vm_recipe_name){
 			
 			$.ajax({
@@ -616,7 +684,10 @@ $(document).ready(function(){
 		
 		else {
 			if(recipe_name) {
-				var vm_recipe_name = recipe_name
+				var vm_recipe_name = recipe_name;
+				// remove this from the datalist so it cannot be used twice
+				$("option#"+vm_recipe_name).remove();
+				
 			} 
 			
 			if($(this).val())
@@ -630,6 +701,7 @@ $(document).ready(function(){
 			var card = $("#vm-card").clone();
 			card.toggleClass('d-none');
 			card.attr('id', vm_recipe_name);
+			card.attr('data-exists', recipe_name ? 'true' : 'false'); // since a VM recipe cannot be used twice, you need to know if it should be added back to the list once the card gets deleted
 			card.attr('data-target', "#"+vm_recipe_name+"-modal");
 			card.find(".card-header h4").eq(0).html(vm_recipe_name);
 			card.find(".card-header input").eq(0).attr('value', vm_recipe_name);
@@ -641,6 +713,14 @@ $(document).ready(function(){
 				// prevent the button from triggering the modal
 				e.stopPropagation();
 							
+				var is_existing_recipe = card.attr('data-exists');
+				var name = card.attr('id'); 
+				
+				// if this recipe existed before, add it back to the datalist
+				if(is_existing_recipe == "true"){
+					$("#autocomplete-VMs").append("<option id='"+name+"'>"+name+"</option>");
+				}
+				
 				var row = $(this).closest(".row");
 				
 				if(row.find(".card").length == 1){
@@ -715,7 +795,34 @@ $(document).ready(function(){
 			
 				// Append the cloned modal's html to the carousel	
 				$(".carousel-inner").append(modal);
-
+				
+				// Add event listeners for the existing recipes to update them
+				// when the 'Save Changes' button is clicked
+				if(card.attr('data-exists') == 'true'){
+					console.log("there is a card with true");
+					modal.find(".save-vm-recipe-changes").eq(0).click(function(){
+						console.log("save button has been pressed");
+						// get all the input fields values
+						var form_data = $("#"+vm_recipe_name+"-modal [name]").map(function(){
+									var val=$(this).val();
+									var rec_name=$(this).attr('name');
+									return {name: rec_name, value: val};
+								});
+						console.log(form_data);
+						$.ajax({
+							type: "POST",
+							async: true,
+							global: false,
+							url: '{{url_for("update_vm_recipe")}}',
+							data: $.param(form_data),
+							dataType: "json",
+							success: function(data){
+								console.log(data);
+							},
+						});
+					});
+				}
+				
 				// Set the input name attribute to contain the vm_recipe_name
 				modal.find("input, textarea, .selectpicker").each(function(){
 					$(this).attr('name', ("service_vms["+vm_recipe_name+"]"+"["+$(this).attr('name')+"]"));
@@ -766,6 +873,10 @@ $(document).ready(function(){
 						
 						// Set editor size
 						classes_editor.setSize(1100,500);
+						// Update the textarea
+						classes_editor.on('change', function(){
+							classes_editor.save();
+						});
 					}
 				});
 
@@ -774,6 +885,8 @@ $(document).ready(function(){
 			// Ensure the modal is hidden
 			$("#add-vm-existing-recipe").modal('hide');
 		}
+		// reset the input field's value
+		$("#vm-recipe-input").val("");
 	});
 	
 	// Sandbox/Standard toggle button event listener

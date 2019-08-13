@@ -19,7 +19,6 @@ def run(helper, options):
 		options['vm_recipes'][vm_recipe]['vm_recipe_name'] = vm_recipe
 		options['vm_recipes'][vm_recipe]['service_task_id'] = helper.task_id
 		vm_task_id = neocortex.create_task("buildvm", username, options['vm_recipes'][vm_recipe], description="Creates and sets up a virtual machine (sandbox VMware environment)")
-		print(options['vm_recipes'][vm_recipe]['puppet_code'])
 		recipe_to_id_map[vm_recipe] = vm_task_id
 		helper.end_event("Probably created the VM")
 
@@ -34,8 +33,6 @@ def run(helper, options):
 		vm_task_id = recipe_to_id_map[key]
 		result = helper.execute_query("SELECT `task_output` FROM `tasks` WHERE `id` = %s;", params=(vm_task_id,))[0] # [0] cause execute_query returns a tuple (uses fetchall)
 		tasks_output[key] = json.loads(result['task_output'])
-	print("==================================================++++++++++++++++++++++++++++++++++++++++++++++===========================================")
-	print(json.dumps(tasks_output))
 	for recipe_name in recipe_to_id_map.keys():
 		puppet_code_template = options['vm_recipes'][recipe_name]['puppet_code']
 		puppet_code_parsed = puppet_parse_references(helper, puppet_code_template, tasks_output)
@@ -48,12 +45,10 @@ def run(helper, options):
 		helper.event("update_puppet", "Updating the puppet code for " + recipe_name)
 		helper.execute_query('UPDATE `puppet_nodes` SET `classes` = %s WHERE `certname` = %s', (puppet_code_parsed, puppet_certname,))
 		helper.end_event("Puppet code for " + recipe_name + " updated.")
-		print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-		print("PARSED PUPPET: " + puppet_code_parsed)
 	
 
 def puppet_parse_references(helper, puppet_code_template, tasks_output):
-	systems_references = re.findall("{{\w*\.\w*}}", puppet_code_template)
+	systems_reference = re.findall("{{\w*\.\w*}}", puppet_code_template)
 	
 	reference_to_system_name = {}
 	for system_reference in systems_references:

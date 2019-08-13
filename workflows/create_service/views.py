@@ -104,10 +104,9 @@ def createservice():
 							`os`,
 							`location_cluster`,
 							`puppet_code`,
-							`expiry`,
 							`description`,
 							`network`,
-							`vm_folder_moid`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (vm_name, purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, template, cluster, puppet_classes, expiry, description, network, vm_folder_moid,))
+							`vm_folder_moid`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (vm_name, purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, template, cluster, puppet_classes, description, network, vm_folder_moid,))
 		
 		# Commit the changes
 		g.db.commit()
@@ -206,7 +205,7 @@ def createservice():
 	elif request.method=='POST' and 'action' in request.form and request.form['action']=="update_recipe":
 		print("recipe should be updated")
 
-	else:
+	else: 
 		return "Look at me, I just did nothing"
 
 @workflow.route("get_service_recipe",title='Get a recipe', methods=['POST'], menu=False)
@@ -270,6 +269,63 @@ def get_service_recipe():
 								}
 	# Return as JSON
 	return jsonify(service_recipe)
+
+@workflow.route("update_vm_recipe",title='Update a VM recipe', methods=['POST'], menu=False)
+@app.disable_csrf_check
+def update_vm_recipe():
+
+        # Get the db cursor
+        curd = g.db.cursor(mysql.cursors.DictCursor)
+	
+	form = parse_request_form(request.form)['service_vms']
+	
+	# The form should only contain one VM, so extract its name
+	vm_name = next(iter(form))
+	
+	# Extract form data
+	purpose = form[vm_name]['purpose']
+	comments = form[vm_name]['comments']
+	primary_owner_who = form[vm_name]['primary_owner_who']
+	primary_owner_role = form[vm_name]['primary_owner_role']
+	secondary_owner_who = form[vm_name]['secondary_owner_who']
+	secondary_owner_role = form[vm_name]['secondary_owner_role']
+	sockets = form[vm_name]['sockets']
+	cores = form[vm_name]['cores']
+	ram = form[vm_name]['ram']
+	disk = form[vm_name]['disk']
+	os = form[vm_name]['template']
+	location_cluster = form[vm_name]['cluster']
+	puppet_code = form[vm_name]['puppet_classes']
+	description = form[vm_name]['vm_description']
+	network = form[vm_name]['network']
+	vm_folder_moid = form[vm_name]['vm_folder_moid']
+	
+	# Update the table
+	curd.execute("""UPDATE `vm_recipes` 
+			SET `purpose` = %s,
+			`comments` = %s,
+			`primary_owner_who` = %s,
+			`primary_owner_role` = %s,
+			`secondary_owner_who` = %s,
+			`secondary_owner_role` = %s,
+			`sockets` = %s,
+			`cores` = %s,
+			`ram` = %s,
+			`disk` = %s,
+			`os` = %s,
+			`location_cluster` = %s,
+			`puppet_code` = %s,
+			`description` = %s,
+			`network` = %s,
+			`vm_folder_moid` = %s
+			WHERE `name` = %s;""", (purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, os, location_cluster, puppet_code, description, network, vm_folder_moid, vm_name,))
+	
+	# Commit the changes
+	g.db.commit()
+
+	# Maybe return a 200 OK later
+	return json.dumps(form)
+
 
 @workflow.route("get_vm_recipe",title='Get a VM recipe', methods=['POST'], menu=False)
 @app.disable_csrf_check
@@ -368,6 +424,4 @@ def validate_form(required_keys, request_dict):
 	
 	for key in required_keys:
 		if key not in request_dict.keys():
-			return redirect(url_for('create'))
-		
-
+			return redirect(url_for('createservice'))
