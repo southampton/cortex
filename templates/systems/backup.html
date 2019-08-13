@@ -14,6 +14,9 @@
 </div>
 {%- else -%}
 <div class="row">
+	<div class="col-md-12 mb-3"><span style="font-size:16px">This system exists in Rubrik. You can change the SLA domain and view the recent backup history below.{% if 'RUBRIK_VIEW_URL' in config and config.RUBRIK_VIEW_URL != '' %} To see the full details about it's backup status, or to perform restores, click</span> <a href="{{ config.RUBRIK_VIEW_URL.format(id=vm.id) }}" class="btn btn-sm btn-primary" target="_blank">View in Rubrik</a>{% endif %}</div>
+</div>
+<div class="row">
 	<div class="col-md-6">
 		<div class="card">
 			<div class="card-header">
