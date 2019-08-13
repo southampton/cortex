@@ -1,6 +1,7 @@
 #!/bin/env python
 
 import Pyro4
+import Pyro4.errors
 import os
 import imp
 import sys
@@ -10,6 +11,14 @@ import json
 
 config = { 'WINRPC': { 'devdomain': { 'host': 'srv02391.devdomain.soton.ac.uk', 'port': 1888, 'key': 'chang3me' } } }
 env = 'devdomain'
+
+def dsc_test_connect():
+	with Pyro4.Proxy('PYRO:CortexWindowsRPC@' + str(config['WINRPC'][env]['host']) + ':' + str(config['WINRPC'][env]['port'])) as proxy:
+		try:
+			proxy._pyroBind()
+			print("YES IS ON")
+		except Pyro4.errors.CommunicationError as e:
+			raise e
 
 
 #######################################################

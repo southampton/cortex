@@ -78,43 +78,40 @@ $(document).ready(function()
 					<button class="btn btn-success btn-sm btn-default hidden"  style="padding-left: 10px">Add</button>
 					<button class="btn btn-danger btn-sm btn-default hidden" style="padding-left: 10px">Remove</button>
 				</div>
-				<div class="col-lg-16" style="text-align: center;">
-					<p>
-						Currently selected roles are: {% for role in set_roles %} {{ role }} {% endfor %}
-					</p>
-				</div>
 			</div>
 			<input type="hidden" id="selected_values" name="selected_values">
 		</div>
 	</div>
-<div class="panel-group" id="accordion">
-	{% for role in set_roles %}
-		{% if role != 'AllNodes'%}
-			<div class="panel panel-default">
-				<div class="panel-heading">
-					<h4 class="panel-title">
-						<a class="role-parent" data-toggle="collapse" data-parent="#accordion" data-role="{{ role }}" href="#{{ role }}"> {{ role }} </a>
-						<div class="pull-right">
-							<button class="btn btn-default btn-xs" type="button" id="select_all" value="select_all" name="button" onclick="checkAll( {{role}} )">Select All</button>
-							<button class="btn btn-default btn-xs" type="button" id="deselect_all" value="deselect_all" name="button" onclick="uncheckAll( {{role}} )">Deselect All</button>
-						</div>
-					</h4>
-				</div>
-				<div id="{{ role }}" class="panel-collapse collapse">
-					      <div class="panel-body">
-					      	
-					      	{% for config in role_info[role] %}
-					    		<div class="checkbox">
-									<label><input class="chkboxes" type="checkbox" value="{{ config['Name'] }}" {% if config['Name'] in set_roles[role].values() %} checked {% endif %} role="{{ role }}">{{ config['Name'] }}</label>
-								</div>
-					      	{% endfor %}
-					      </div>
-				</div>
-			</div>
-		{% endif %}
-	{% endfor %}
+{% if set_roles|length > 1 %}
+	<div class="panel-group" id="accordion">
+		{% for role in set_roles %}
+			{% if role != 'AllNodes'%}
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h4 class="panel-title">
+							<a class="role-parent" data-toggle="collapse" data-parent="#accordion" data-role="{{ role }}" href="#{{ role }}"> {{ role }} </a>
+							<div class="pull-right">
+								<button class="btn btn-default btn-xs" type="button" id="select_all" value="select_all" name="button" onclick="checkAll( {{role}} )">Select All</button>
+								<button class="btn btn-default btn-xs" type="button" id="deselect_all" value="deselect_all" name="button" onclick="uncheckAll( {{role}} )">Deselect All</button>
+							</div>
+						</h4>
+					</div>
 
-</div> 
+					<div id="{{ role }}" class="panel-collapse collapse">
+						      <div class="panel-body">
+						      	
+						      	{% for config in role_info[role] %}
+						    		<div class="checkbox">
+										<label><input class="chkboxes" type="checkbox" value="{{ config['Name'] }}" {% if config['Name'] in set_roles[role].values() %} checked {% endif %} role="{{ role }}">{{ config['Name'] }}</label>
+									</div>
+						      	{% endfor %}
+						      </div>
+					</div>
+				</div>
+			{% endif %}
+		{% endfor %}
+	</div> 
+{% endif %}
 <div class="row" id="element">
 	<div class="panel panel-default">
 		<div class="panel-heading" >DSC Configurations 

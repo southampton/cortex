@@ -1,24 +1,12 @@
 from cortex import app
-import cortex.lib.core
-import cortex.lib.systems
-import cortex.lib.cmdb
-import cortex.lib.classes
 import cortex.lib.dsc
+import Pyro4.errors
 from cortex.lib.user import does_user_have_permission, does_user_have_system_permission, does_user_have_any_system_permission, is_system_enrolled
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
-import json
-import re
-import werkzeug
 import MySQLdb as mysql
+import json
 import yaml
-import csv
-import io
-import requests
-import cortex.lib.rubrik
-from flask.views import MethodView
-from pyVmomi import vim
-
 
 def generate_new_yaml(proxy, oldRole, oldConfig, newRole, newConfig):
 	#configs should be passed in as dictionary
@@ -75,20 +63,14 @@ def generate_new_yaml(proxy, oldRole, oldConfig, newRole, newConfig):
 		for prop in props_unchanged:
 			if role == 'AllNodes':
 				continue
-			for existing_prop in newConfig[role]:
-				if existing_prop['Name'] == prop:
-					modified_config[role].append(existing_prop)
-
-
-
-
-
+			try:
+				for existing_prop in newConfig[role]:
+					if existing_prop['Name'] == prop:
+						modified_config[role].append(existing_prop)
+			except Exception as e:
+				flash('No config found for ' + role + ':' + existing_prop['Name'] + '. If you want to remove this role, please unselect it.','alert-danger')
+				continue
 	return json.dumps(modified_config)
-
-
-
-
-
 
 
 ###########################################################################
@@ -132,6 +114,8 @@ def get_roles_and_checks(roles, checks):
 @cortex.lib.user.login_required
 def dsc_classify_machine(id):
 
+	#ADD in test to see if the dsc machine is responding
+
 	system = cortex.lib.systems.get_system_by_id(id)
 
 	if system == None:
@@ -141,9 +125,9 @@ def dsc_classify_machine(id):
 
 	default_roles = []
 	# get a proxy to connect to dsc
+
 	dsc_proxy = cortex.lib.dsc.dsc_connect()
 	roles_info = cortex.lib.dsc.get_roles(dsc_proxy)
-	
 	# get a list of the roles
 	for role in roles_info:
 		default_roles.append(role)
@@ -223,19 +207,12 @@ def dsc_classify_machine(id):
 					if roles != exist_role:
 						# return generate_new_yaml(dsc_proxy, exist_role, yaml.safe_load(exist_config), json.loads(role), yaml.safe_load(configuration))
 						new_yaml = generate_new_yaml(dsc_proxy, exist_role, yaml.safe_load(exist_config), json.loads(role), yaml.safe_load(configuration))
-
-
 					curd.execute('REPLACE INTO dsc_config (system_id, roles, config) VALUES (%s, %s, %s)', (id, role, new_yaml))
 					g.db.commit()
 
-
-
 			elif request.form['button'] == 'reset':
 				role = json.dumps(checked_boxes)
-				# return jsonify(json.loads(role))
 				new_config = generate_reset_yaml(dsc_proxy, role)
-				# new_config = json.dumps("")
-				# return jsonify(json.loads(new_config))
 				curd.execute('REPLACE INTO dsc_config (system_id, roles, config) VALUES (%s, %s, %s)', (id, role, new_config))
 				g.db.commit()
 
