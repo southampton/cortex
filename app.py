@@ -17,6 +17,11 @@ import redis
 import MySQLdb as mysql
 import traceback
 import re
+import markupsafe
+
+# Regular expressions for Jinja links filter
+SYSTEM_LINK_RE = re.compile(r"""\{\{ *system_link +id *= *(?P<quote>["']?) *(?P<link_id>[0-9]+) *(?P=quote) *\}\}(?P<link_text>[^{]*)\{\{ */system_link *\}\}""", re.IGNORECASE)
+TASK_LINK_RE = re.compile(r"""\{\{ *task_link +id *= *(?P<quote>["']?) *(?P<link_id>[0-9]+) *(?P=quote) *\}\}(?P<link_text>[^{]*)\{\{ */task_link *\}\}""", re.IGNORECASE)
 
 class CortexFlask(Flask):
 	## A list of dict's, each representing a workflow 'create' function
@@ -43,6 +48,7 @@ class CortexFlask(Flask):
 		# CSRF token function in templates
 		self.jinja_env.globals['csrf_token'] = self._generate_csrf_token
 		self.jinja_env.globals['utcnow'] = datetime.datetime.utcnow
+		self.jinja_env.filters['parse_cortex_links'] = self.parse_cortex_links
 
 		# Load the __init__.py config defaults
 		self.config.from_object("cortex.defaultcfg")
@@ -142,7 +148,7 @@ Further Details:
 		disable_csrf_check decorator."""
 
 		## Throw away requests with methods we don't support
-		if request.method not in ('GET', 'HEAD', 'POST'):
+		if request.method not in ('GET', 'HEAD', 'POST', 'DELETE'):
 			abort(405)
 
 		# For methods that require CSRF checking
@@ -305,7 +311,80 @@ Username:             %s
 
 		), exc_info=exc_info)
 
-################################################################################
+	################################################################################
+
+	def parse_cortex_links(self, s, make_safe=True):
+		"""Primarily aimed at being a Jinja filter, this allows for the following
+		to be put in to text that will resolve it to a hyperlink in HTML:
+		{{system_link id="123"}}link text{{/system_link}}
+		{{task_link id="456"}}link text{{/task_link}}
+		"""
+
+		# These is the list of regexs
+		regexs = [SYSTEM_LINK_RE, TASK_LINK_RE]
+
+		# Start with our result equalling our input, and start searching at the beginning)
+		result = s
+		search_index = 0
+
+		# Whilst there's more string to search...
+		while search_index < len(result):
+			# Setup search for the first matching regex
+			lowest_index = len(result)
+			lowest_re_result = None
+			lowest_regex = None
+
+			# Iterate over all our regexs and find the one that matches earliest in our string
+			for regex in regexs:
+				# Note we start our search at start_index so we don't re-evaluate stuff we've already parsed
+				re_result = regex.search(result[search_index:])
+
+				# If we got a hit on this regex and it's earlier in the string than the previous...
+				if re_result is not None and re_result.span()[0] < lowest_index:
+					# Make a note!
+					lowest_re_result = re_result
+					lowest_regex = regex
+					lowest_index = lowest_re_result.span()[0]
+
+			# If we found no matching regexs, then there are no more changes to make, so stop searching
+			if lowest_regex is None:
+				break
+
+			# Replace the text appropriately depending on what we found
+			if lowest_regex is SYSTEM_LINK_RE:
+				if make_safe:
+					link_text = str(markupsafe.escape(lowest_re_result.group('link_text')))
+				else:   
+					link_text = lowest_re_result.group('link_text')
+				url = url_for('system', id=int(lowest_re_result.group('link_id')))
+				inserted_text = "<a href='" + url + "'>" + link_text + "</a>"
+			elif lowest_regex is TASK_LINK_RE:
+				if make_safe:
+					link_text = str(markupsafe.escape(lowest_re_result.group('link_text')))
+				else:   
+					link_text = lowest_re_result.group('link_text')
+				url = url_for('task_status', id=int(lowest_re_result.group('link_id')))
+				inserted_text = "<a href='" + url + "'>" + link_text + "</a>"
+
+			# Update our string and variables
+			before_text = result[0:search_index + lowest_re_result.span()[0]]
+			if make_safe:
+				old_length = len(before_text)
+				# Make safe the text that we haven't already made safe before
+				before_text = result[0:search_index] + str(markupsafe.escape(result[search_index:search_index + lowest_re_result.span()[0]]))
+				additional_length = len(before_text) - old_length
+			else:   
+				additional_length = 0
+			result = before_text + inserted_text + result[search_index + lowest_re_result.span()[1]:]
+			search_index = additional_length + search_index + lowest_re_result.span()[0] + len(inserted_text)
+
+		if make_safe:
+			# Make the trailing part of the string safe
+			result = result[0:search_index] + str(markupsafe.escape(result[search_index:]))
+
+		return result
+
+	################################################################################
 
 	def init_database(self):
 		"""Ensures cortex can talk to the database (rather than waiting for a HTTP
@@ -357,6 +436,11 @@ Username:             %s
 
 		try:
 			cursor.execute("""CREATE INDEX `related_events_key` ON `events` (`related_id`)""")
+		except Exception as ex:
+			pass
+
+		try:
+			cursor.execute("""CREATE INDEX `events_name_index` ON `events` (`name`)""")
 		except Exception as ex:
 			pass
 
@@ -638,6 +722,7 @@ Username:             %s
 		  `sncache_cmdb_ci`.`os` AS `cmdb_os`,
 		  `sncache_cmdb_ci`.`short_description` AS `cmdb_short_description`,
 		  `sncache_cmdb_ci`.`virtual` AS `cmdb_is_virtual`,
+		  `vmware_cache_vm`.`id` AS `vmware_moid`,
 		  `vmware_cache_vm`.`name` AS `vmware_name`,
 		  `vmware_cache_vm`.`vcenter` AS `vmware_vcenter`,
 		  `vmware_cache_vm`.`uuid` AS `vmware_uuid`,
@@ -655,13 +740,13 @@ Username:             %s
 		  `puppet_nodes`.`classes` AS `puppet_classes`,
 		  `puppet_nodes`.`variables` AS `puppet_variables`,
 		  `systems`.`enable_backup` AS `enable_backup`
-                FROM `systems` 
+		FROM `systems` 
 		LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`
 		LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid`
 		LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` 
-		LEFT JOIN `realname_cache` AS  `allocation_who_realname_cache` ON `systems`.`allocation_who` = `allocation_who_realname_cache`.`username`
-		LEFT JOIN `realname_cache` AS  `primary_owner_who_realname_cache` ON `systems`.`primary_owner_who` = `primary_owner_who_realname_cache`.`username`
-		LEFT JOIN `realname_cache` AS  `secondary_owner_who_realname_cache` ON `systems`.`secondary_owner_who` = `secondary_owner_who_realname_cache`.`username`""")
+		LEFT JOIN `realname_cache` AS `allocation_who_realname_cache` ON `systems`.`allocation_who` = `allocation_who_realname_cache`.`username`
+		LEFT JOIN `realname_cache` AS `primary_owner_who_realname_cache` ON `systems`.`primary_owner_who` = `primary_owner_who_realname_cache`.`username`
+		LEFT JOIN `realname_cache` AS `secondary_owner_who_realname_cache` ON `systems`.`secondary_owner_who` = `secondary_owner_who_realname_cache`.`username`""")
        	
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `roles` (
 		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
@@ -823,6 +908,7 @@ Username:             %s
 		  (1, "systems.all.view"), 
 		  (1, "systems.all.view.puppet"), 
 		  (1, "systems.all.view.puppet.catalog"), 
+		  (1, "systems.all.view.puppet.classify"), 
 		  (1, "systems.all.view.rubrik"),
 		  (1, "systems.all.edit.expiry"), 
 		  (1, "systems.all.edit.review"), 
@@ -832,6 +918,7 @@ Username:             %s
 		  (1, "systems.all.edit.puppet"),
 		  (1, "systems.all.edit.rubrik"), 
 		  (1, "systems.all.edit.owners"), 
+		  (1, "systems.own.view"),
 		  (1, "systems.allocate_name"), 
 		  (1, "systems.add_existing"),
 		  (1, "vmware.view"), 
@@ -861,10 +948,12 @@ Username:             %s
 		  (1, "sysrequests.all.view"),
 		  (1, "sysrequests.all.approve"),
 		  (1, "sysrequests.all.reject"),
+		  (1, "sysrequests.own.view"),
 		  (1, "api.get"),
 		  (1, "api.post"),
 		  (1, "api.put"),
 		  (1, "api.delete"),
+		  (1, "control.all.vmware.power"),
 		  (1, "certificates.view"),
 		  (1, "certificates.stats"),
 		  (1, "certificates.add")

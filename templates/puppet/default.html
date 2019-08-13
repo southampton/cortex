@@ -4,7 +4,7 @@
 
 <script>
 $(document).ready(function() {
-	var classes_editor = CodeMirror.fromTextArea(document.getElementById('classes'), 
+	var classes_editor = CodeMirror.fromTextArea(document.getElementById('classes'),
 	{
 		mode: 'yaml',
 		gutters: ["CodeMirror-lint-markers"],
@@ -13,7 +13,7 @@ $(document).ready(function() {
 		viewportMargin: Infinity,
 	});
 
-	classes_editor.setOption("extraKeys", 
+	classes_editor.setOption("extraKeys",
 	{
 		Tab: function(cm) {
 			var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
@@ -26,14 +26,14 @@ $(document).ready(function() {
 <form class="form-horizontal" method="POST" role="form">
 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 	<div class="page-header">
-		<h3><i class="fa fa-fw fa-globe"></i> Puppet default classes</h3>
-		<p class="text-muted">This is the default configuration applied to Puppet nodes unless they have opted out</p>
+		<h4><i class="fa fa-fw fa-globe"></i> Puppet default classes</h4>
+		<div class="text-muted">This is the default configuration applied to Puppet nodes unless they have opted out</div>
 	</div>
 <div class="row">
 	<div class="col-md-9">
-		<div class="panel panel-default">
-			<div class="panel-heading">Classes</div>
-			<div class="panel-body" style="padding:0px">
+		<div class="card card-default">
+			<div class="card-header">Classes</div>
+			<div class="card-body" style="padding:0px">
 				<textarea id="classes" name="classes">{{ classes }}</textarea>
 			</div>
 		</div>
@@ -42,9 +42,9 @@ $(document).ready(function() {
 		{% endif -%}
 	</div>
 	<div class="col-md-3">
-		<div class="panel panel-default">
-			<div class="panel-heading">Help</div>
-			<div class="panel-body">
+		<div class="card card-default">
+			<div class="card-header">Help</div>
+			<div class="card-body">
 				<p>Use this field to define the classes that all nodes will import by default. You can also
 				define parameters for the classes. Node configuration can override class parameters set here but cannot prevent the classes being imported.</p>
 				<p>The format of this field is <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a>. Use two spaces for indentation. Do not use tabs, but you can safely

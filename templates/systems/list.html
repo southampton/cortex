@@ -1,17 +1,12 @@
 {% extends "layout.html" %}
 {% block body %}
 
-<style type="text/css">
-a.server-link { text-decoration: none !important; color: inherit; }
-a.server-link:hover { text-decoration: underline !important; }
-</style>
-
 <div class="modal" id="advanced_search_help" role="dialog">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				<h4 class="modal-title">Advanced Search Help</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 			</div>
 
 			<div class="modal-body">
@@ -68,16 +63,16 @@ a.server-link:hover { text-decoration: underline !important; }
 			</div>
 
 			<div class="modal-footer">
-				<button data-dismiss="modal" type="button" class="btn btn-default">Close</button>
+				<button data-dismiss="modal" type="button" class="btn btn-secondary">Close</button>
 			</div>
 		</div>
 	</div>
 </div>
 
 <div class="page-header">
-	<button id="hide_inactive" type="button" class="btn btn-sm pull-right {% if hide_inactive %}btn-success active{%else%}btn-danger{%endif%}" style="margin-left:4px" data-toggle="popover" data-trigger="hover" data-placement="left" title="Hide Inactive Systems" data-content="When ticked, systems that are not in ServiceNow or VMware will not be shown, nor will systems that are not marked as 'In Service' in ServiceNow."><i class="fa fa-fw {% if hide_inactive %}fa-check-square-o{%else%}fa-square-o{%endif%}"></i> Hide Inactive Systems</button>
-	<h3><i class="fa {% if favourites %}fa-star{% else %}fa-server{% endif %} fa-fw"></i>{% if expired %} Expired Systems{% elif nocmdb %} VMs Missing a CMDB Record{% elif perms_only %} Systems with permissions{% elif favourites %}Favourites{% else %} Systems{% endif %}
-		{% if does_user_have_permission("systems.all.view") %}<a class="btn btn-primary btn-sm pull-right" href="{{ url_for('systems_download_csv') }}"><i class="fa fa-fw fa-download"></i> Download CSV</a>{% endif %}
+	<button id="hide_inactive" type="button" class="btn pull-right {% if hide_inactive %}btn-success active{%else%}btn-danger{%endif%}" style="margin-left:4px" data-toggle="popover" data-trigger="hover" data-placement="left" title="Hide Inactive Systems" data-content="When ticked, systems that are not in ServiceNow or VMware will not be shown, nor will systems that are not marked as 'In Service' in ServiceNow."><i class="fa fa-fw {% if hide_inactive %}fa-check-square-o{%else%}fa-square-o{%endif%}"></i> Hide Inactive Systems</button>
+	<h4><i class="fa {% if favourites %}fa-star{% else %}fa-server{% endif %} fa-fw"></i>{% if expired %} Expired Systems{% elif nocmdb %} VMs Missing a CMDB Record{% elif perms_only %} Systems with permissions{% elif favourites %}Favourites{% else %} Systems{% endif %}
+		{% if does_user_have_permission("systems.all.view") %}<a class="btn btn-primary pull-right" href="{{ url_for('systems_download_csv') }}"><i class="fa fa-fw fa-download"></i> Download CSV</a>{% endif %}
 		<small><strong>&nbsp;Legend:</strong>
 			<i title='System is linked to VMware and the VM is powered on' class='fa fa-fw fa-play icon-state icon-legend icon-on'></i>On
 			<i title='System is linked to VMware and the VM is powered off' class='fa fa-fw fa-stop icon-state icon-legend icon-off'></i>Off
@@ -86,25 +81,27 @@ a.server-link:hover { text-decoration: underline !important; }
 			<i title='System is favourited' class='fa fa-fw fa-star icon-state icon-legend icon-favourited'></i>Favourited
 			<i title='System is not favourited' class='fa fa-fw fa-star-o icon-state icon-legend'></i>Not favourited
 		</small>
-	</h3>
+	</h4>
+	<div class="text-muted">This lists all of the systems that Cortex contains data for, which may not be all systems in VMware or ServiceNow.</div>
 </div>
-<div>	<div class="pull-right">
+<div>
+	<div class="pull-right advanced-search">
 		<a href="#" data-toggle="modal" data-target="#advanced_search_help">Advanced Search:</a>&nbsp;
-		<div class="btn-group btn-toggle" id="toggle_queries"> 
-			<button id="query_search_on" class="btn btn-sm btn-default">ON</button>
+		<div class="btn-group btn-toggle" id="toggle_queries">
+			<button id="query_search_on" class="btn btn-sm btn-secondary">ON</button>
 			<button id="query_search_off" class="btn btn-sm btn-primary active">OFF</button>
 		</div>
 	</div>
+
 	<ul id="class-tabs" class="nav nav-tabs" style="margin-bottom:1em">
 		{%- for class in classes %}
-		<li {% if (display and display == class.name) or (not display and loop.index0 == 0 and not q and not expired and not nocmdb) %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="{{ class.name }}" data-vmware="{{ class.link_vmware }}" role="tab">{{ class.name }}</a></li>
+		<li class="nav-item"><a class="{% if (display and display == class.name) or (not display and loop.index0 == 0 and not q and not expired and not nocmdb) %}active {% endif%}nav-link" style="cursor:pointer" data-class="{{ class.name }}" data-toggle="tab" data-vmware="{{ class.link_vmware }}">{{ class.name }}</a></li>
 		{%- endfor %}
-		{% if classes|length > 0 %}<li role="presentation"><a style="cursor:pointer" data-class="*OTHER" data-vmware="1" role="tab">Other/Legacy</a></li>{% endif %}
-		<li {% if (display and display == 'all') or q or classes|length == 0 or expired or nocmdb %}class="active" {% endif %}role="presentation"><a style="cursor:pointer" data-class="*ALL" data-vmware="1" role="tab">All</a></li>
+		{% if classes|length > 0 %}<li class="nav-item"><a class="nav-link" style="cursor:pointer" data-class="*OTHER" data-vmware="1" data-toggle="tab">Other/Legacy</a></li>{% endif %}
+		<li class="nav-item"><a class="nav-link {% if (display and display == 'all') or q or classes|length == 0 or expired or nocmdb %}active{% endif %}" style="cursor:pointer" data-class="*ALL" data-vmware="1" data-toggle="tab">All</a></li>
 	</ul>
-</div>
 <div id="systemsWrapper">
-<table class="table table-condensed table-striped" id="systems">
+<table class="table table-sm table-striped" id="systems">
 	<thead>
 		<tr>
 			<th><div class="tablesorter-inner">Name</div></th>
@@ -113,7 +110,7 @@ a.server-link:hover { text-decoration: underline !important; }
 			<th width="150px"><div class="tablesorter-inner">Allocated By</div></th>
 			<th width="125px"><div class="tablesorter-inner">Allocation Date</div></th>
 			<th width="100px"><div class="tablesorter-inner">Status</div></th>
-			<th width="85px"></th>
+			<th width="125px"></th>
 		</tr>
 	</thead>
 	<tbody>
@@ -127,6 +124,13 @@ $(function() {
 		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 		"pageLength": 15,
 		"order": [[0, 'desc']],
+{%- if classic_layout %}
+		"fixedHeader": {
+			"headerOffset": 52
+		},
+{%- else %}
+		"fixedHeader": true,
+{%- endif %}
 		"columns": [
 			{"data": "name"},
 			{"data": "allocation_comment"},
@@ -145,23 +149,23 @@ $(function() {
 		"stateLoadCallback": function (settings) {
 			if (window.history.state != undefined)
 			{
-				$('#class-tabs li').removeClass('active');
-				$('#class-tabs li a[data-class=\"' + window.history.state['tab'] + '\"]').closest('li').addClass('active');
+				$('#class-tabs li a').removeClass('active');
+				$('#class-tabs li a[data-class=\"' + window.history.state['tab'] + '\"]').addClass('active');
 				if(window.history.state['toggle_queries'] == "ON"){
 					$('#toggle_queries').each(function(){
-						$(this).find('.btn').toggleClass('active');  
+						$(this).find('.btn').toggleClass('active');
 						if ($(this).find('.btn-primary').size()>0) {
 							$(this).find('.btn').toggleClass('btn-primary');
-						} 
-						$(this).find('.btn').toggleClass('btn-default');
-                                	});
+						}
+						$(this).find('.btn').toggleClass('btn-secondary');
+					});
 				}
 				return window.history.state['dtState'];
 			}
 			return {}
 		},
 		"stateSaveCallback": function (settings, data) {
-			var classname = $('#class-tabs li.active a').attr('data-class');
+			var classname = $('#class-tabs li a.active').attr('data-class');
 			var toggle_queries_status = $('#toggle_queries .active').eq(0).html();
 			window.history.replaceState({dtState: data, tab: classname, toggle_queries: toggle_queries_status}, "SystemsListState");
 		},
@@ -169,7 +173,7 @@ $(function() {
 			"url": "{{ url_for('systems_json') }}",
 			"type": "POST",
 			"data": function (d) {
-				d.filter_group = $('#class-tabs li.active a').attr('data-class');
+				d.filter_group = $('#class-tabs li a.active').attr('data-class');
 				d.hide_inactive = ($('#hide_inactive').hasClass('btn-success') ? "1" : "0");
 				d.show_expired = {% if expired %}"1"{% else %}"0"{% endif %};
 				d.show_nocmdb = {% if nocmdb %}"1"{% else %}"0"{% endif %};
@@ -187,7 +191,7 @@ $(function() {
 		"rowCallback": function(row, data, index) {
 			{#- data[6] is CMDB URL, data[7] is database ID, data[5] is operational status, data[9] is Puppet Cert Name #}
 			$('td:eq(6)', row).html(
-				'<a title="View" class="btn btn-xs btn-default" style="margin-right:0.5em" href="/systems/overview/' + data["id"] + '">' +
+				'<a title="View" class="btn btn-xs btn-secondary" style="margin-right:0.5em" href="/systems/overview/' + data["id"] + '">' +
 				'	<i class="fa fa-fw fa-info-circle"></i>' +
 				'</a>' + (data["cmdb_id"] != '' ?
 				'<a title="CMDB" style="margin-right:0.5em" class="btn btn-xs btn-primary" href="' + data["cmdb_id"] + '" target="_blank">' +
@@ -213,7 +217,7 @@ $(function() {
 				var favourite = '<span data-system-id="' + data["id"] + '" id="btn_favourite" style="margin-right:0.5em"><i class="fa fa-fw fa-star-o icon-favourites"></i></span>';
 			}
 
-			if ($('#class-tabs li.active a').attr('data-vmware') == 1)
+			if ($('#class-tabs li a.active').attr('data-vmware') == 1)
 			{
 				if (data["vmware_guest_state"] == "poweredOn")
 				{
@@ -238,8 +242,8 @@ $(function() {
 			}
 		}
 	});
-	$('#class-tabs li').click(function() {
-		$('#class-tabs li').removeClass('active');
+	$('#class-tabs li a').click(function() {
+		$('#class-tabs li a').removeClass('active');
 		$(this).addClass('active');
 		$('#systemsWrapper').fadeOut(150, function() {
 			systemsTable.ajax.reload(function() {
@@ -298,14 +302,14 @@ $(function() {
 			dataType: 'json',
 		});
 	});
-    	$('.btn-toggle').click(function() {
-   		$(this).find('.btn').toggleClass('active');  
-    		if ($(this).find('.btn-primary').size()>0) {
-    			$(this).find('.btn').toggleClass('btn-primary');
-    		} 
-    		$(this).find('.btn').toggleClass('btn-default');
+	$('.btn-toggle').click(function() {
+		$(this).find('.btn').toggleClass('active');
+		if ($(this).find('.btn-primary').size()>0) {
+			$(this).find('.btn').toggleClass('btn-primary');
+		}
+		$(this).find('.btn').toggleClass('btn-secondary');
 		systemsTable.state.save();
-       });
+	});
 });
 $(function () {
 	$('[data-toggle="popover"]').popover()

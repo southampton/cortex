@@ -2,7 +2,7 @@
 
 def run(helper, options):
 	# check if workflows are locked
-	if not helper.lib.checkWorkflowLock:
+	if not helper.lib.checkWorkflowLock():
 		raise Exception("Workflows are currently locked")
 	
 	# Configuration of task
@@ -21,7 +21,7 @@ def run(helper, options):
 	system_dbid = system_info['id']
 
 	# End the event
-	helper.end_event(description="Allocated system name " + system_name)
+	helper.end_event(description="Allocated system name: {{system_link id='" + str(system_dbid) + "'}}" + system_name + "{{/system_link}}")
 
 	## Allocate an IPv4 Address and create a host object ###################
 	if options['alloc_ip']:

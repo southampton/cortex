@@ -1,67 +1,20 @@
 {% extends "layout.html" %}
 {% block head %}
+<link href="{{ url_for('static', filename='css/vendor/c3.min.css') }}?version={{ config.VERSION }}" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/c3.min.js') }}?version={{ config.VERSION }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/d3.min.js') }}?version={{ config.VERSION }}"></script>
 {% endblock %}
 {% block body %}
 {% import 'node-header.html' as node %}
-
-<link href="{{ url_for('static', filename='css/vendor/c3.min.css') }}" rel="stylesheet" type="text/css">
-<style type="text/css">
-
-.graphic {
-	width: 50%;
-}
-
-#power-icon {
-	font-size: 0.8em;
-	line-height: 1.6em;
-}
-
-form {
-	display: inline;
-}
-
-tr > td:first-child {
-	text-align: right;
-	font-weight: bolder;
-}
-
-@media (min-width: 992px)
-{
-	.equal, .equal > div[class*='col-']
-	{
-		display: -webkit-flex;
-		display: flex;
-		flex: 1 1 auto;
-	}
-
-	.equal .panel
-	{
-		width: 100%;
-	}
-
-	.equal .panel
-	{
-		min-height: 15em;
-	}
-
-	.network-body
-	{
-		max-height: 20em;
-		overflow-y: scroll;
-	}
-
-}
-</style>
-
 {{ node.header(system,active="overview" ) }}
 <div class="row equal">
 	<div class="col-md-4">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">System Record</h3>
+		<div class="card">
+			<div class="card-header">
+				<h4 class="card-title">System Record</h4>
 			</div>
-			<div class="panel-body">
-				<table class="table">
+			<div class="card-body">
+				<table class="table system-overview-table">
 					<tr><td>Comment:</td><td>{{ system.allocation_comment or '' }}</td></tr>
 					<tr><td>Allocated by:</td><td>{{ system.allocation_who or 'Unknown' }}</td></tr>
 					<tr><td>Allocation Date:</td><td>{{ system.allocation_date or '' }}</td></tr>
@@ -71,20 +24,20 @@ tr > td:first-child {
 		</div>
 	</div>
 	<div class="col-md-5">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Network</h3>
+		<div class="card ">
+			<div class="card-header">
+				<h4 class="card-title">Network</h4>
 			</div>
-			<div class="panel-body network-body">
+			<div class="card-body network-body">
 				{% if system.vmware_uuid %}
 				<div class="row">
 					<div class="col-md-12" id="network_loading">Loading...</div>
 					<div class="col-md-6">
-						<table class="table" id="net_table">
+						<table class="table system-overview-table" id="net_table">
 						</table>
 					</div>
 					<div class="col-md-6">
-						<table class="table" id="dns_table">
+						<table class="table system-overview-table" id="route_table">
 						</table>
 					</div>
 				</div>
@@ -95,11 +48,11 @@ tr > td:first-child {
 		</div>
 	</div>
 	<div class="col-md-3">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Power Control</h3>
+		<div class="card ">
+			<div class="card-header">
+				<h4 class="card-title">Power Control</h4>
 			</div>
-			<div class="panel-body">
+			<div class="card-body">
 				{% if system.vmware_uuid %}
 				{#<p><span class="fa fa-info"></span> You can control the power state of the system should it become unresponsive. To avoid losing data, graceful shutdowns should be issued by logging into the system.</p>#}
 				<div class="text-center" style="margin:0.5em">
@@ -126,17 +79,17 @@ tr > td:first-child {
 </div>
 <div class="row equal">
 	<div class="col-md-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">System Status</h3>
+		<div class="card">
+			<div class="card-header">
+				<h4 class="card-title">System Status</h4>
 			</div>
-			<div id="systemStatusPanel" class="panel-body row">
+			<div id="systemStatusPanel" class="card-body row">
 				{% if system.vmware_uuid %}
 				<div class="col-md-4">
 					<div style="text-align:center">
-						<div class="fa-stack fa-5x graphic"><i class="fa fa-desktop fa-stack-2x"></i><i id="power-icon"></i></div>
+						<div class="fa-stack fa-5x power-icon"><i class="fa fa-desktop fa-stack-2x"></i><i id="power-icon"></i></div>
 					</div>
-					<table class="table">
+					<table class="table system-overview-table">
 						<tr><td>Power State:</td><td class="power_state"></td></tr>
 						<tr><td>Uptime:</td><td id="uptime"></td></tr>
 						<tr><td>Spec:</td><td>{{ system.vmware_cpus or 'unknown' }} vCPU, {{ system.vmware_ram or 'unknown' }} MB RAM</td></tr>
@@ -146,11 +99,11 @@ tr > td:first-child {
 					</table>
 				</div>
 				<div class="col-md-8">
-					<div class="col-md-6">
+					<div class="col-md-6 float-left">
 						<div id="chart_cpu"></div>
 						<h4>Estimated CPU Usage</h4>
 					</div>
-					<div class="col-md-6">
+					<div class="col-md-6 float-left">
 						<div id="chart_mem"></div>
 						<h4>Active Memory Usage</h4>
 					</div>
@@ -174,15 +127,15 @@ tr > td:first-child {
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
+				<h4 class="modal-title">Power On System</h4>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title">Power on</h4>
 			</div>
 			<div class="modal-body">
 				<p class="warn-pwr-on"><span class="fa fa-warning"></span> The system appears to already be powered on.</p>
 				<p>Power on the system from an off state?</p>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
 					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 					<input type="hidden" name="power_action" value="on"/>
@@ -196,8 +149,8 @@ tr > td:first-child {
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
+				<h4 class="modal-title">Power Off System</h4>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title">Power off</h4>
 			</div>
 			<div class="modal-body">
 				<p class="warn-pwr-off"><span class="fa fa-warning"></span> The system appears to already be powered off.</p>
@@ -208,7 +161,7 @@ tr > td:first-child {
 				</ul>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
 					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 					<input type="hidden" name="power_action" value="shutdown"/>
@@ -228,14 +181,14 @@ tr > td:first-child {
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
+				<h4 class="modal-title">Reset System</h4>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title">Reset system</h4>
 			</div>
 			<div class="modal-body">
 				<p>Are you sure you wish to reset the system?</p>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
 					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 					<input type="hidden" name="power_action" value="reset"/>
@@ -247,13 +200,11 @@ tr > td:first-child {
 </div><!-- /.modal -->
 {% endif %}
 {% if system.vmware_uuid %}
-<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/c3.min.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/d3.min.js') }}"></script>
 <script>
 function secondsToString(seconds) {
 	if (seconds <= 0) return 'N/A';
 	var numyears = Math.floor(seconds / 31536000);
-	var numdays = Math.floor((seconds % 31536000) / 86400); 
+	var numdays = Math.floor((seconds % 31536000) / 86400);
 	var numhours = Math.floor(((seconds % 31536000) % 86400) / 3600);
 	var numminutes = Math.floor((((seconds % 31536000) % 86400) % 3600) / 60);
 	var numseconds = (((seconds % 31536000) % 86400) % 3600) % 60;
@@ -269,7 +220,7 @@ function secondsToString(seconds) {
 var chart_mem = c3.generate({
 	bindto: '#chart_mem',
 	size: {
-		height: 200,
+		height: 300,
 	},
 	data: {
 		columns: [
@@ -294,7 +245,7 @@ var chart_mem = c3.generate({
 var chart_cpu = c3.generate({
 	bindto: '#chart_cpu',
 	size: {
-		height: 200,
+		height: 300,
 	},
 	data: {
 		columns: [
@@ -405,8 +356,9 @@ function update_data(data) {
 	}
 
 	{#IP r#}
+	$('#route_table').empty();
 	if (data.net.routes.length == 0) {
-		$('#net_table').append(
+		$('#route_table').append(
 			$('<tr>', {class: 'ip_routes'}).append(
 				$('<td>').text('IP Routes:'),
 				$('<td>')
@@ -414,7 +366,7 @@ function update_data(data) {
 		);
 	}
 	for (route in data.net.routes){
-		$('#net_table').append(
+		$('#route_table').append(
 			$('<tr>', {class: 'ip_routes'}).append(
 				$('<td>').text(route == 0 ? 'IP Routes:' : ''),
 				$('<td>').text('gateway' in data.net.routes[route] ? data.net.routes[route].network + '/' + data.net.routes[route].prefix + ' via ' + data.net.routes[route].gateway : data.net.routes[route].network + '/' + data.net.routes[route].prefix + ' on link')
@@ -422,10 +374,9 @@ function update_data(data) {
 		);
 	}
 
-	$('#dns_table').empty();
 	{#DNS#}
 	if (data.dns_resolvers.length == 0) {
-		$('#dns_table').append(
+		$('#net_table').append(
 			$('<tr>', {class: 'dns_resolver'}).append(
 				$('<td>').text('DNS Resolvers:'),
 				$('<td>')
@@ -433,7 +384,7 @@ function update_data(data) {
 		);
 	}
 	for (resolver in data.dns_resolvers){
-		$('#dns_table').append(
+		$('#net_table').append(
 			$('<tr>', {class: 'dns_resolver'}).append(
 				$('<td>').text(resolver == 0 ? 'DNS resolvers:' : ''),
 				$('<td>').text(data.dns_resolvers[resolver])
@@ -442,7 +393,7 @@ function update_data(data) {
 	}
 
 	{#Search Domain#}
-	$('#dns_table').append(
+	$('#net_table').append(
 		$('<tr>', {class: 'search_domain'}).append(
 			$('<td>').text('Search Domain:'),
 			$('<td>').text(data.search_domain)

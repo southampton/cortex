@@ -1,20 +1,18 @@
 {% extends "layout.html" %}
 {% block head -%}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-slider.min.css') }}">
-		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-slider.min.js') }}"></script>
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
-		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
-
-		<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/bootstrap-datetimepicker.min.css') }}">
-		<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}"></script> 
-		<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script> 
-		<script src="{{ url_for('static', filename='js/vendor/bootstrap-datetimepicker.min.js') }}"></script>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}?version={{ config.VERSION }}">
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}?version={{ config.VERSION }}"></script>
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}?version={{ config.VERSION }}">
+		<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}?version={{ config.VERSION }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}?version={{ config.VERSION }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}?version={{ config.VERSION }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}?version={{ config.VERSION }}"></script>
 {% endblock %}
 {% block body %}
 
 <div class="page-header">
-<h3><i class="fa fa-plus-circle fa-fw"></i> Create Standard Virtual Machine</h3>
-<p class="text-muted">This workflow will create a VM on the production environment. A hostname will be automatically allocated from the 'srv' group, and will automatically have an IP address assigned from Infoblox. A ServiceNow CI will also be created.</p>
+<h4><i class="fa fa-plus-circle fa-fw"></i> Create Standard Virtual Machine</h4>
+<div class="text-muted">This workflow will create a VM on the production environment. A hostname will be automatically allocated from the 'srv' group, and will automatically have an IP address assigned from Infoblox. A ServiceNow CI will also be created.</div>
 </div>
 
 <style type="text/css">
@@ -22,40 +20,28 @@
 {
 	width: 80% !important;
 }
-
-{# Fixes slider tooltips appearing on top of bootstrap-select dropdowns -#}
-.tooltip
-{
-	z-index: 100;
-}
-
 .blocks .btn
 {
 	width: 2.5em;
 }
-
 .btn-group .btn-primary, .btn-group .btn-warning, .btn-group .btn-success
 {
 	opacity: 0.7;
 	font-size: 14px;
 }
-
 .active
 {
 	opacity: 1 !important;
 }
-
 .submit
 {
 	padding-bottom: 2em;
 	margin-left: 1em;
 }
-
 .btn-submit
 {
 	font-size: 2em;
 }
-
 div.specname
 {
 	font-size: 200%; /* Relative to btn-primary */
@@ -63,7 +49,6 @@ div.specname
 	line-height: 90%;
 	padding-right: 0.4em;
 }
-
 div.specdetails
 {
 	float:left;
@@ -82,26 +67,32 @@ div.specdetails
 	<div class="row">
 		<div class="col-md-12">
 			<h4 style="margin-top:0">1. Enter request details</h4>
-			<div class="form-group col-md-3">
-				<label for="task">ServiceNow Task:<span class="required">*</span></label><input class="form-control" id="task" name="task" placeholder="e.g. CTASK0123456 or PRJTASK0987654" autofocus />
+			<div class="row">
+				<div class="form-group col-md-3">
+					<label for="task">ServiceNow Task:<span class="required">*</span></label><input class="form-control" id="task" name="task" placeholder="e.g. CTASK0123456 or PRJTASK0987654" autofocus />
+				</div>
+				<div class="form-group col-md-9">
+					<label for="purpose">Purpose:<span class="required">*</span></label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" />
+				</div>
 			</div>
-			<div class="form-group col-md-9">
-				<label for="purpose">Purpose:<span class="required">*</span></label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" />
+			<div class="row">
+				<div class="form-group col-md-12">
+					<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
+				</div>
 			</div>
-			<div class="form-group col-md-12">
-				<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
-			</div>
-			<div class="form-group col-md-3">
-				<label for="primary_owner_who">Primary Owner:<span class="required">*</span></label><input class="form-control" list="autocompleteUsers" autocomplete="off" id="primary_owner_who" name="primary_owner_who" placeholder="Primary owner's username" maxlength="64"/>
-			</div>
-			<div class="form-group col-md-3">
-				<label for="primary_owner_role">Primary Owner Role:<span class="required">*</span></label><input class="form-control" id="primary_owner_role" name="primary_owner_role" placeholder="Primary owner's role" maxlength="64"/>
-			</div>
-			<div class="form-group col-md-3">
-				<label for="secondary_owner_who">Secondary Owner:</label><input class="form-control" list="autocompleteUsers" autocomplete="off" id="secondary_owner_who" name="secondary_owner_who" placeholder="Secondary owner's username" maxlength="64"/>
-			</div>
-			<div class="form-group col-md-3">
-				<label for="secondary_owner_role">Secondary Owner Role:</label><input class="form-control" id="secondary_owner_role" name="secondary_owner_role" placeholder="Secondary owner's role" maxlength="64"/>
+			<div class="row">
+				<div class="form-group col-md-3">
+					<label for="primary_owner_who">Primary Owner:<span class="required">*</span></label><input class="form-control" list="autocompleteUsers" autocomplete="off" id="primary_owner_who" name="primary_owner_who" placeholder="Primary owner's username" maxlength="64"/>
+				</div>
+				<div class="form-group col-md-3">
+					<label for="primary_owner_role">Primary Owner Role:<span class="required">*</span></label><input class="form-control" id="primary_owner_role" name="primary_owner_role" placeholder="Primary owner's role" maxlength="64"/>
+				</div>
+				<div class="form-group col-md-3">
+					<label for="secondary_owner_who">Secondary Owner:</label><input class="form-control" list="autocompleteUsers" autocomplete="off" id="secondary_owner_who" name="secondary_owner_who" placeholder="Secondary owner's username" maxlength="64"/>
+				</div>
+				<div class="form-group col-md-3">
+					<label for="secondary_owner_role">Secondary Owner Role:</label><input class="form-control" id="secondary_owner_role" name="secondary_owner_role" placeholder="Secondary owner's role" maxlength="64"/>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -118,41 +109,47 @@ div.specdetails
 	<div class="row" style="margin-top: 1.6em">
 		<div class="col-md-12">
 			<h4>3. Customise Specification</h4>
-			<div class="form-group col-md-3" style="margin-top:2.4em">
-				<label for="sockets" style="margin-right: 15px;position:relative;top:1px">Sockets:</label>
-				{% if vm_spec_config_json and 'slider-sockets' in vm_spec_config_json %}
-				<input style="width:65%" name="sockets" id="sockets" data-slider-id="slider-sockets" type="text" data-slider-min="{{vm_spec_config_json['slider-sockets'].get('min',1)}}" data-slider-max="{{vm_spec_config_json['slider-sockets'].get('max',16)}}" data-slider-step="{{vm_spec_config_json['slider-sockets'].get('step',1)}}" data-slider-value="{{vm_spec_config_json['slider-sockets'].get('value',1)}}" />
-				{% else %}
-				<input style="width:65%" name="sockets" id="sockets" data-slider-id="slider-sockets" type="text" data-slider-min="1" data-slider-max="16" data-slider-step="1" data-slider-value="1" />
-				{% endif %}
-				<p class="text-muted">Number of CPU sockets</p>
-			</div>
-			<div class="form-group col-md-3" style="margin-top:2.4em">
-				<label for="cores" style="margin-right: 15px;position:relative;top:1px">Cores:</label>
-				{% if vm_spec_config_json and 'slider-cores' in vm_spec_config_json %}
-				<input style="width:65%" name="cores" id="cores" data-slider-id="slider-cores" type="text" data-slider-min="{{vm_spec_config_json['slider-cores'].get('min',1)}}" data-slider-max="{{vm_spec_config_json['slider-cores'].get('max',16)}}" data-slider-step="{{vm_spec_config_json['slider-cores'].get('step',1)}}" data-slider-value="{{vm_spec_config_json['slider-cores'].get('value',1)}}" />
-				{% else %}
-				<input style="width:65%" name="cores" id="cores" data-slider-id="slider-cores" type="text" data-slider-min="1" data-slider-max="16" data-slider-step="1" data-slider-value="1" />
-				{% endif %}
-				<p class="text-muted">Number of cores per socket</p>
-			</div>
-			<div class="form-group col-md-3" style="margin-top:2.4em">
-				<label for="ram" style="margin-right: 15px;position:relative;top:1px">RAM (GB):</label>
-				{% if vm_spec_config_json and 'slider-ram' in vm_spec_config_json %}
-				<input style="width:65%" name="ram" id="ram" data-slider-id="slider-ram" type="text" data-slider-min="{{vm_spec_config_json['slider-ram'].get('min',2)}}" data-slider-max="{{vm_spec_config_json['slider-ram'].get('max',32)}}" data-slider-step="{{vm_spec_config_json['slider-ram'].get('step',2)}}" data-slider-value="{{vm_spec_config_json['slider-ram'].get('value',2)}}" />
-				{% else %}
-				<input style="width:65%" name="ram" id="ram" data-slider-id="slider-ram" type="text" data-slider-min="2" data-slider-max="32" data-slider-step="2" data-slider-value="2" />
-				{% endif %}
-				<p class="text-muted">Total amount of RAM, including video RAM</p>
-			</div>
-			<div class="form-group col-md-3" style="margin-top:2.4em">
-				<label for="disk" style="margin-right: 15px;position:relative;top:1px">Disk (GB):</label>
-				{% if vm_spec_config_json and 'slider-disk' in vm_spec_config_json %}
-				<input style="width:65%" name="disk" id="disk" data-slider-id="slider-disk" type="text" data-slider-min="{{vm_spec_config_json['slider-disk'].get('min', 2)}}" data-slider-max="{{vm_spec_config_json['slider-disk'].get('max', 2000)}}" data-slider-step="{{vm_spec_config_json['slider-disk'].get('step', 100)}}" data-slider-value="{{vm_spec_config_json['slider-disk'].get('value', 100)}}" />
-				{% else %}
-				<input style="width:65%" name="disk" id="disk" data-slider-id="slider-disk" type="text" data-slider-min="2" data-slider-max="2000" data-slider-step="100" data-slider-value="100" />
-				{% endif %}
-				<p class="text-muted">Additional disk size, for <samp>/srv</samp> or <samp>G:\</samp> (not the OS disk)</p>
+			<div class="row">
+				<div class="form-group col-md-3" style="margin-top:0.5em">
+					<label for="sockets-slider">Sockets:</label>
+					{% if vm_spec_config_json and 'slider-sockets' in vm_spec_config_json %}
+					<input class="slider form-control-range slider-input" type="range" id="sockets-slider" name="sockets" style="width: 65%;" step="{{vm_spec_config_json['slider-sockets'].get('step',1)}}" min="{{vm_spec_config_json['slider-sockets'].get('min',1)}}" max="{{vm_spec_config_json['slider-sockets'].get('max',16)}}" value="{{vm_spec_config_json['slider-sockets'].get('value',1)}}" style="width: 65%;" />
+					{% else %}
+					<input class="slider form-control-range slider-input" name="sockets" id="sockets-slider" type="range" min="1" max="16" step="1" value="1" style="width: 65%;" />
+					{% endif %}
+					<span class="badge badge-primary output" style="font-size: 14px;"></span>
+					<p class="text-muted">Number of CPU sockets</p>
+				</div>
+				<div class="form-group col-md-3" style="margin-top:0.5em">
+					<label for="cores-slider">Cores:</label>
+					{% if vm_spec_config_json and 'slider-cores' in vm_spec_config_json %}
+					<input class="slider form-control-range slider-input" style="width:65%" name="cores" id="cores-slider" type="range" min="{{vm_spec_config_json['slider-cores'].get('min',1)}}" max="{{vm_spec_config_json['slider-cores'].get('max',16)}}" step="{{vm_spec_config_json['slider-cores'].get('step',1)}}" value="{{vm_spec_config_json['slider-cores'].get('value',1)}}" style="width: 65%;" />
+					{% else %}
+					<input class="slider form-control-range slider-input" style="width:65%" name="cores" id="cores-slider" type="range" min="1" max="16" step="1" value="1" style="width: 65%;"/>
+					{% endif %}
+					<span class="badge badge-primary output" style="font-size: 14px;"></span>
+					<p class="text-muted">Number of cores per socket</p>
+				</div>
+				<div class="form-group col-md-3" style="margin-top:0.5em">
+					<label for="ram-slider">RAM (GB):</label>
+					{% if vm_spec_config_json and 'slider-ram' in vm_spec_config_json %}
+					<input class="slider form-control-range slider-input" name="ram" id="ram-slider" type="range" min="{{vm_spec_config_json['slider-ram'].get('min',2)}}" max="{{vm_spec_config_json['slider-ram'].get('max',32)}}" step="{{vm_spec_config_json['slider-ram'].get('step',2)}}" value="{{vm_spec_config_json['slider-ram'].get('value',2)}}" style="width: 65%;" />
+					{% else %}
+					<input class="slider form-control-range slider-input" name="ram" id="ram-slider" type="range" min="2" max="32" step="2" value="2" style="width: 65%;" />
+					{% endif %}
+					<span class="badge badge-primary output" style="font-size: 14px;"></span>
+					<p class="text-muted">Total amount of RAM, including video RAM</p>
+				</div>
+				<div class="form-group col-md-3" style="margin-top:0.5em">
+					<label for="disk-slider">Disk (GB):</label>
+					{% if vm_spec_config_json and 'slider-disk' in vm_spec_config_json %}
+					<input class="slider form-control-range slider-input" name="disk" id="disk-slider" type="range" min="{{vm_spec_config_json['slider-disk'].get('min', 2)}}" max="{{vm_spec_config_json['slider-disk'].get('max', 2000)}}" step="{{vm_spec_config_json['slider-disk'].get('step', 100)}}" value="{{vm_spec_config_json['slider-disk'].get('value', 100)}}" style="width: 65%;" />
+					{% else %}
+					<input class="slider form-control-range slider-input" name="disk" id="disk-slider" type="range" min="2" max="2000" step="100" value="100"  style="width: 65%;" />
+					{% endif %}
+					<span class="badge badge-primary output" style="font-size: 14px;"></span>
+					<p class="text-muted">Additional disk size, for <samp>/srv</samp> or <samp>G:\</samp> (not the OS disk)</p>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -208,11 +205,11 @@ div.specdetails
 	<div class="row" style="margin-top: 1.0em">
 		<div class="col-md-4">
 			<h4>8. Expiry date (optional)</h4>
-			<div style="margin-left: 1em">
-				<div class='input-group date' id='expirypicker'>
-					<input type='text' class="form-control" id="expiry" name="expiry" placeholder="Date of automatic power off: YYYY-MM-DD" />
-					<span class="input-group-addon">
-						<span class="glyphicon glyphicon-calendar"></span>
+			<div class="form-group" style="margin-left: 1em">
+				<div class='input-group date' id='expirypicker' data-target-input="nearest">
+					<input type='text' class="form-control datetimepicker-input" id="expiry" name="expiry" placeholder="Date of automatic power off: YYYY-MM-DD" data-target="expirypicker" />
+					<span class="input-group-append" data-target="#expirypicker" data-toggle="datetimepicker">
+						<div class="input-group-text"><i class="fa fa-calendar"></i></div>
 					</span>
 				</div>
 				<script>
@@ -280,7 +277,6 @@ div.specdetails
 {% if vm_spec_json %}
 // Dictionary of base VM specifications
 var specs = {{ vm_spec_json | tojson }};
-
 {% else %}
 // Dictionary of base VM specifications
 var specs = {
@@ -322,7 +318,6 @@ var specs = {
 {% if vm_spec_config_json and 'spec-order' in vm_spec_config_json %}
 // Specify an order to display them in as dictionaries aren't ordered
 var specs_order = {{ vm_spec_config_json['spec-order'] | tojson}};
-
 {% else %}
 // Specify an order to display them in as dictionaries aren't ordered
 var specs_order = ["spec1", "spec2", "spec3", "spec4"]
@@ -338,7 +333,9 @@ var cost_per_gb_disk = {{ vm_spec_config_json.get('cost_per_gb_disk', 30) }};
 function updateTotals()
 {
 	// See what specification is selected
-	var spec = $('label.active input[name=spec]')
+        var spec = $('input[name=spec]').filter(function(index){
+                        return $(this).is(':checked');
+        });
 	if (spec.length != 0)
 	{
 		// Extract information from specs
@@ -350,21 +347,20 @@ function updateTotals()
 		var spec_cost = spec['cost'];
 
 		// Set minimums on sliders (resets slider values to their minimum)
-		setSliderMinimum('#ram', spec_ram);
-		setSliderMinimum('#disk', spec_disk);
+		setSliderMinimum('#ram-slider', spec_ram);
+		setSliderMinimum('#disk-slider', spec_disk);
 
 		// Extract customisations
-		var cust_sockets = $('#sockets').slider('getValue');
-		var cust_cores = $('#cores').slider('getValue');
-		var cust_ram = $('#ram').slider('getValue');
-		var cust_disk = $('#disk').slider('getValue');
+		var cust_sockets = $('#sockets-slider').val();
+		var cust_cores = $('#cores-slider').val();
+		var cust_ram = $('#ram-slider').val();
+		var cust_disk = $('#disk-slider').val();
 
 		// Calculate VM cost (spec base cost plus additional CPU/RAM/Disk costs)
 		var cpu_cost = (((cust_sockets * cust_cores) - (spec_sockets * spec_cores)) * cost_per_vcpu);
 		var ram_cost = ((cust_ram - spec_ram) * cost_per_gb_ram);
 		var disk_cost = ((cust_disk - spec_disk) * cost_per_gb_disk);
 		var total_cost = spec_cost + cpu_cost + ram_cost + disk_cost;
-
 		// Update display
 		$('#val_vcpus').text(cust_sockets * cust_cores);
 		$('#val_ram').text(cust_ram);
@@ -381,20 +377,29 @@ function updateTotals()
 // Helper functions
 function setSliderValue(selector, val)
 {
-	if ($(selector).slider('getValue') != val)
-	{
-		$(selector).slider('setValue', val);
-	}
+        if ($(selector).val() != val)
+        {
+                $(selector).val(val);
+                var selector_label = $(selector).parent().find(".output").eq(0);
+                var selector_label_value = parseInt(selector_label.html());
+                selector_label.html(val);
+        }
 }
 
 function setSliderMinimum(selector, minimum)
 {
-	if ($(selector).slider('getAttribute', 'min') != minimum)
-	{
-		$(selector).slider('setAttribute', 'min', minimum);
-		$(selector).slider('refresh');
-	}
+        if ($(selector).attr('min') != minimum)
+        {
+                $(selector).attr('min', minimum);
+                var selector_label = $(selector).parent().find(".output").eq(0);
+                var selector_label_value = parseInt(selector_label.html());
+                if(selector_label_value != minimum){
+                        selector_label.html(minimum);
+                }
+                setSliderValue(selector, minimum);
+        }
 }
+
 
 // Update the totals at startup
 $(document).ready(function()
@@ -409,27 +414,26 @@ $(document).ready(function()
 		if (!("display" in specs[spec])){
 			specs[spec].display = (parseInt(idx) + 1);
 		}
-		html = html + '<label class="btn btn-primary' + (first ? ' active' : '') + '"><input type="radio" name="spec" value="' + spec + '"><div class="specname">'+ specs[spec].display + '</div><div class="specdetails">' + (specs[spec].sockets * specs[spec].cores) + ' CPU<br/>' + specs[spec].ram + ' GB RAM<br/>' + specs[spec].disk + ' GB Disk</div><div class="clearfix"></div></label>';
+		/* html = html + '<label class="btn btn-primary' + (first ? ' active' : '') + '"><input type="radio" name="spec" value="' + spec + '"><div class="specname">'+ specs[spec].display + '</div><div class="specdetails">' + (specs[spec].sockets * specs[spec].cores) + ' CPU<br/>' + specs[spec].ram + ' GB RAM<br/>' + specs[spec].disk + ' GB Disk</div><div class="clearfix"></div></label>';
+		$('#specs').html(html);i */
+		html = html + '<label id="spec-template-'+ (parseInt(idx) + 1) + '" class="btn btn-primary spec-template' + (first ? ' active' : '') + '" style="cursor: pointer;"><input type="radio" name="spec" style="position: absolute; clip: rect(0, 0, 0, 0);" value="' + spec + '"><div class="specname">' + specs[spec].display + '</div><div class="specdetails">' + (specs[spec].sockets * specs[spec].cores) + ' CPU<br/>' + specs[spec].ram + ' GB RAM<br/>' + specs[spec].disk + ' GB Disk</div><div class="clearfix"></div></label>';
 		$('#specs').html(html);
-
 		if (first) { first = false; }
 	}
-
-	// Setup sliders
-	$('#sockets').slider({tooltip: 'always'});
-	$('#cores').slider({tooltip: 'always'});
-	$('#ram').slider({tooltip: 'always'});
-	$('#disk').slider({tooltip: 'always'});
+	
+	$("label.active > input[type=radio][name=spec]").prop('checked', true); // whichever label is active needs to also be checked
 
 	// Update the totals when the inputs change
-	$('input').change(function() { updateTotals(); });
-	$('input[type=radio]').change(function() {
-		var spec = $('label.active input[name=spec]');
+	$('input[type=range], input[type=radio][name=spec]').on('input', function() { updateTotals(); });
+	$('input[type=radio][name=spec]').change(function() {
+		var spec = $('input[name=spec]').filter(function(index){
+                        return $(this).is(':checked');
+                });
 		var spec = specs[$(spec[0]).val()];
 		var spec_sockets = spec['sockets'];
 		var spec_cores = spec['cores'];
-		setSliderValue('#sockets', spec_sockets);
-		setSliderValue('#cores', spec_cores);
+		setSliderValue('#sockets-slider', spec_sockets);
+		setSliderValue('#cores-slider', spec_cores);
 		updateTotals();
 	});
 	
@@ -517,5 +521,18 @@ $('#create').click(function(e) {
 		});
 	}
 });
+var sliders = $(".slider-input");
+
+sliders.each(function(){
+        $(this).parent().find(".output").eq(0).html($(this).val());
+});
+
+sliders.on('input', function() {
+        $(this).parent().find(".output").eq(0).html($(this).val());
+        $('#val_vcpus').text($("#sockets-slider").val() * $("#cores-slider").val());
+        $('#val_ram').text($("#ram-slider").val());
+        $('#val_disk').text($("#disk-slider").val());
+});
+
 </script>
 {% endblock %}

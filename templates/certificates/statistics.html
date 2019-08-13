@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
 {% block head %}
-<link href="{{ url_for('static', filename='css/vendor/c3.min.css') }}" rel="stylesheet" type="text/css">
-<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/c3.min.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/d3.min.js') }}"></script>
+<link href="{{ url_for('static', filename='css/vendor/c3.min.css') }}?version={{ config.VERSION }}" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/c3.min.js') }}?version={{ config.VERSION }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/d3.min.js') }}?version={{ config.VERSION }}"></script>
 {% endblock %}
 {% block body %}
 <div class="page-header">
@@ -10,35 +10,35 @@
 </div>
 <div class="container" role="main">
 	<div class="col-md-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Issuers</h3>
+		<div class="card card-default">
+			<div class="card-header">
+				<h3 class="card-title">Issuers</h3>
 			</div>
-			<div class="panel-body">
+			<div class="card-body">
 				<div id="chart_issuers"></div>
 			</div>
 		</div>
 	</div>
 	<div class="col-md-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Certificates Expiring In <select id="days" name="days">
+		<div class="card card-default">
+			<div class="card-header">
+				<h3 class="card-title">Certificates Expiring In <select id="days" name="days">
 {% for day_choice in [30, 60, 90, 180, 365, 730] -%}
 					<option value="{{ day_choice }}"{% if day_choice == days %} selected="selected"{% endif %}>{{ day_choice }}</option>
 {% endfor %}
 				</select> Days</h3>
 			</div>
-			<div class="panel-body">
+			<div class="card-body">
 				<div id="chart_expiring"></div>
 			</div>
 		</div>
 	</div>
 	<div class="col-md-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Unique Certificates Discovered</h3>
+		<div class="card card-default">
+			<div class="card-header">
+				<h3 class="card-title">Unique Certificates Discovered</h3>
 			</div>
-			<div class="panel-body">
+			<div class="card-body">
 				<div id="chart_discovered"></div>
 			</div>
 		</div>
@@ -86,7 +86,7 @@
 				tick: {
 					multiline: false,
 					centered: true,
-					culling: { 
+					culling: {
 						max: 15
 					},
 				}

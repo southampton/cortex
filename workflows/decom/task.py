@@ -6,7 +6,7 @@ import ldap
 
 def run(helper, options):
 	# check if workflows are locked
-	if not helper.lib.checkWorkflowLock:
+	if not helper.lib.checkWorkflowLock():
 		raise Exception("Workflows are currently locked")
 
 	# Iterate over the actions that we have to perform
@@ -31,6 +31,8 @@ def run(helper, options):
 			r = action_puppet_master_delete(action, helper)
 		elif action['id'] == "ad.delete":
 			r = action_ad_delete(action, helper)
+		elif action['id'] == "entca.delete":
+			r = action_entca_delete(action, helper)
 		elif action['id'] == "ticket.ops":
 			r = action_ticket_ops(action, helper, options['wfconfig'])
 		elif action['id'] == "tsm.decom":
@@ -73,6 +75,8 @@ def action_check_system(action, helper, wfconfig):
 	else:
 		helper.end_event(success=True, description='System ID: {} ({}) Found'.format(system_id, system['name']))
 
+	system_link = '{{system_link id="' + str(system['id']) + '"}}' + system['name'] + '{{/system_link}}'
+
 	## Is the system linked to vmware?
 	if 'vmware_uuid' in system:
 		if system['vmware_uuid'] is not None:
@@ -83,9 +87,9 @@ def action_check_system(action, helper, wfconfig):
 
 				if vmobj:
 					if vmobj.runtime.powerState == vim.VirtualMachine.PowerState.poweredOn:
-						system_actions.append({'id': 'vm.poweroff', 'desc': 'Power off the virtual machine ' + system['name'], 'detail': 'UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
+						system_actions.append({'id': 'vm.poweroff', 'desc': 'Power off the virtual machine ' + system_link, 'detail': system['vmware_name'] + ' (UUID ' + system['vmware_uuid'] + ') on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
 
-					system_actions.append({'id': 'vm.delete', 'desc': 'Delete the virtual machine ' + system['name'], 'detail': ' UUID ' + system['vmware_uuid'] + ' on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
+					system_actions.append({'id': 'vm.delete', 'desc': 'Delete the virtual machine ' + system_link, 'detail': system['vmware_name'] + ' (UUID ' + system['vmware_uuid'] + ') on ' + system['vmware_vcenter'], 'data': {'uuid': system['vmware_uuid'], 'vcenter': system['vmware_vcenter']}})
 
 	## Is the system linked to service now?
 	if 'cmdb_id' in system:
@@ -165,7 +169,26 @@ def action_check_system(action, helper, wfconfig):
 		except Exception as ex:
 			helper.flash("Warning - An error occured when communicating with Active Directory: " + str(type(ex)) + " - " + str(ex), "warning")
 
+	# Check Enterprise CA certificate
+	if 'ENTCA_SERVERS' in wfconfig and wfconfig['ENTCA_SERVERS'] is not None:
+		entca_servers = wfconfig['ENTCA_SERVERS']
+		if type(entca_servers) is str:
+			entca_servers = [entca_servers]
 
+		for entca in entca_servers:
+			try:
+				r = requests.get('https://' + entca['hostname'] + '/get_entca_certificate/' + system['name'] + '.' + entca['entdomain'], headers={'X-Client-Secret': entca['api_token']}, verify=entca['verify_ssl'])
+			except:
+				helper.flash("Warning - An error occured when communicating with Enterprise CA", "warning")
+			else:
+				if r.status_code == 200:
+					system_actions.append({'id': 'entca.delete', 'desc': 'Delete certificate from Enterprise CA', 'detail': system['name'] + '.' + entca['entdomain'] + ' to be removed from Enterprise CA ' + entca['hostname'], 'data': {'hostname': system['name'] + '.' + entca['entdomain'], 'entca_hostname': entca['hostname'], 'entca_api_token': entca['api_token'], 'entca_verify_ssl': entca['verify_ssl']}})
+				elif r.status_code == 404:
+					helper.flash('Warning - Certificate not found on ' + entca['hostname'] + ' for ' + system['name'] + '.' + entca['entdomain'], 'warning')
+				else:
+					helper.flash('Warning - An error occured when communicating with Enterprise CA, code: ' + str(r.status_code), 'warning')
+
+	# RHN 5
 	if 'RHN5_ENABLE_DECOM' in wfconfig and wfconfig['RHN5_ENABLE_DECOM']: 
 		## Work out the URL for any RHN systems
 		rhnurl = helper.lib.config['RHN5_URL']
@@ -427,6 +450,22 @@ def action_ad_delete(action, helper):
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to remove AD object: " + str(e))
 		return False
+
+################################################################################
+
+def action_entca_delete(action, helper):
+	try:
+		r = requests.post('https://' + action['data']['entca_hostname'] + '/delete_entca_certificate', json={'fqdn': action['data']['hostname']}, headers={'Content-Type': 'application/json', 'X-Client-Secret': action['data']['entca_api_token']}, verify=action['data']['entca_verify_ssl'])
+	except:
+		helper.end_event(success=False, description='Error whilst communicating with ' + action['data']['entca_hostname'])
+		return False
+
+	if r.status_code != 200:
+		helper.end_event(success=False, description='Failed to remove certificate from ' + action['data']['entca_hostname'])
+		return False
+	else:
+		helper.end_event(success=True, description='Certificate ' + action['data']['hostname'] + ' removed from ' + action['data']['entca_hostname'])
+		return True
 
 ################################################################################
 

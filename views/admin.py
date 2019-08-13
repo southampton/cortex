@@ -31,7 +31,6 @@ def admin_tasks():
 		'filter_warnings': request.args.get('filter_warnings', "1"),
 		'filter_failed': request.args.get('filter_failed', "1")
 	}
-	print(filters)
 
 	# Render the page
 	return render_template('admin/tasks.html', active='admin', title="Tasks", tasktype='all', json_source=url_for('admin_tasks_json', tasktype='all'), filters=filters)
@@ -301,6 +300,7 @@ def admin_events_json(event_source):
 			record[1] = record[1].strftime('%Y-%m-%d %H:%M:%S %Z')
 		if type(record[2]) is datetime.datetime:
 			record[2] = record[2].strftime('%Y-%m-%d %H:%M:%S %Z')
+		record[4] = app.parse_cortex_links(record[4])
 
 		if record[6] is None:
 			record[6] = "N/A"

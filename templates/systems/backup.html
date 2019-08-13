@@ -14,12 +14,15 @@
 </div>
 {%- else -%}
 <div class="row">
+	<div class="col-md-12 mb-3"><span style="font-size:16px">This system exists in Rubrik. You can change the SLA domain and view the recent backup history below.{% if 'RUBRIK_VIEW_URL' in config and config.RUBRIK_VIEW_URL != '' %} To see the full details about it's backup status, or to perform restores, click</span> <a href="{{ config.RUBRIK_VIEW_URL.format(id=vm.id) }}" class="btn btn-sm btn-primary" target="_blank">View in Rubrik</a>{% endif %}</div>
+</div>
+<div class="row">
 	<div class="col-md-6">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">SLA Domain</h3>
+		<div class="card">
+			<div class="card-header">
+				<h4 class="card-title">SLA Domain</h4>
 			</div>
-			<div class="panel-body">
+			<div class="card-body">
 				<p style="font-size:120%;font-weight:bold">Effective SLA Domain:&nbsp;&nbsp;<span class="fa fa-shield fa-2x rubrikshield" style="color: {{ vm.effectiveSlaDomain.uiColor or '#000' }};"></span> {{ vm.effectiveSlaDomainName }}</p>
 				{%- if system.enable_backup == 0 %}
 					This system is set to not backup in Cortex. Please change this in the settings tab before assigning a Rubrik SLA domain.
@@ -42,9 +45,9 @@
 						</select>
 					</div>
 					<div class="col-sm-2">
-{% if does_user_have_system_permission(system.id,'edit.rubrik','systems.all.edit.rubrik') -%}
-						<button type="submit" class="btn btn-success" style="margin-left:1em">Save</button>
-{% endif -%}
+					{% if does_user_have_system_permission(system.id,'edit.rubrik','systems.all.edit.rubrik') -%}
+						<button type="submit" class="btn btn-success" style="margin-left:1em; margin-top: 1em;">Save</button>
+					{% endif -%}
 					</div>
 				</form>
 				{% endif -%}
@@ -52,12 +55,12 @@
 		</div>
 	</div>
 	<div class="col-md-6">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title">Recent backups</h3>
+		<div class="card">
+			<div class="card-header">
+				<h4 class="card-title">Recent backups</h4>
 			</div>
-			<div class="panel-body">
-				<table class="table table-striped table-condensed">
+			<div class="card-body">
+				<table class="table table-striped table-sm">
 					<thead>
 						<tr>
 							<th>Snapshot ID</th>

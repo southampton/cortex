@@ -10,7 +10,17 @@ TICKET_OPENER_SYS_ID=""
 # The domains to search in for the hostname for DNS objects to delete. Can be a string or a list of strings
 DNS_DOMAINS=["mydomain.tld"]
 
-# Whether to enable the deleting of metricsfrom Graphite
+# The ENTCA server(s) configuration. Fields are:
+# - id: A unique identifier for the ACME server
+# - hostname: The hostname of the server for API access
+# - entdomain: The domainname of the certififcates to be removed from the Enterprise CA
+# - api_token: The pre-shared token to use for accessing the API
+# - verify_ssl: Whether to verify SSL on the ACME server API
+ENTCA_SERVERS=[
+        {'id': 'entca_prod', 'hostname': 'entca-api.mydomain.tld', 'entdomain': 'mydomain.tld', 'api_token': 'password', 'verify_ssl': True,},
+]
+
+# Whether to enable the deleting of metrics from Graphite
 GRAPHITE_DELETE_ENABLE=True
 
 # A list of suffixes to append to the hostname when searching for the metrics in Graphite

@@ -95,6 +95,9 @@ class TaskHelper(object):
 			('neocortex.task',self.task_id, self.workflow_name + "." + 'exception', self.username, "The task failed because an exception was raised: " + exception_type + " - " + exception_message, self.STATUS_FAILED))
 		self.db.commit()
 
+		import traceback
+		syslog.syslog('Unhandled exception caused task to end:\n' + traceback.format_exc())
+
 	def _log_fatal_error(self, message):
 		"""Logs a fatal error into the events for this task"""
 

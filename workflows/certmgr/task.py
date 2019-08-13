@@ -13,7 +13,7 @@ import DNS
 
 def run(helper, options):
 	# check if workflows are locked
-	if not helper.lib.checkWorkflowLock:
+	if not helper.lib.checkWorkflowLock():
 		raise Exception("Workflows are currently locked")
 
 	# Configuration of task
@@ -23,6 +23,8 @@ def run(helper, options):
 		result = create_self_signed_cert(helper, options)
 	elif options['provider']['type'] == 'acme':
 		result = create_acme_cert(helper, options)
+	elif options['provider']['type'] == 'entca':
+		result = create_entca_cert(helper, options)
 
 # Uploads a certificate and key pair to the load balancers
 def upload_cert_key_to_nlb(helper, options, cert, key):
@@ -147,6 +149,34 @@ def create_acme_cert(helper, options):
 			upload_cert_key_to_nlb(helper, options, acme_response['certificate'], acme_response['privatekey'])
 
 		create_ssl_profile(helper, options, acme_response['chain_cn'])
+
+# For Enterprise certificates
+def create_entca_cert(helper, options):
+	# Get the configuration
+	config = options['wfconfig']
+
+	# Call the Enterprise CA API to request the cert
+	helper.event('generate_entca_cert', 'Requesting certificate for ' + options['fqdn'] + ' from Enterprise CA API')
+	r = requests.post('https://' + options['entca']['hostname'] + '/create_entca_certificate', json={'fqdn': options['fqdn'], 'sans': options['aliases']}, headers={'Content-Type': 'application/json', 'X-Client-Secret': options['entca']['api_token']}, verify=options['entca']['verify_ssl'])
+	if r is None:
+		raise Exception('Request to Enterprise CA API Create Certificate Endpoint failed')
+	if r.status_code != 200:
+		raise Exception('Request to Enterprise CA API Create Certificate Endpoint failed with error code ' + str(r.status_code) + ': ' + r.text)
+	entca_response = r.json()
+	helper.end_event(description='Requested certificate from Enterprise CA API')
+
+	# Cache the certificates
+	helper.event('prep_download', description="Preparing certificates for download")
+	redis_cache_cert(helper, options, entca_response['certificate'], entca_response['privatekey'], entca_response['chain'])
+	helper.end_event(description='Certificates ready for download', success=True)
+
+	# If we need to create an SSL profile...
+	if options['create_ssl_profile']:
+		# Upload to NLB if required
+		if options['provider']['nlb_upload']:
+			upload_cert_key_to_nlb(helper, options, entca_response['certificate'], entca_response['privatekey'])
+
+		create_ssl_profile(helper, options, entca_response['chain_cn'])
 
 # For self-signed certificates
 def create_self_signed_cert(helper, options):

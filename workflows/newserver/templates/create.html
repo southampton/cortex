@@ -1,13 +1,13 @@
 {% extends "layout.html" %}
 {% block head -%}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
-		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}?version={{ config.VERSION }}">
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}?version={{ config.VERSION }}"></script>
 {% endblock %}
 {% block body %}
 
 <div class="page-header">
-<h3>Create System Record</h3>
-<p class="text-muted">This workflow will allocate a hostname, allocate an IP address by creating a Host object in Infoblox, and create a ServiceNow CI for the newly created server, linking it to a ServiceNow task. Options marked with<span class="required">*</span> are required.</p>
+<h4><i class="fa fa-plus-circle fa-fw"></i> Create System Record</h4>
+<div class="text-muted">This workflow will allocate a hostname, allocate an IP address by creating a Host object in Infoblox, and create a ServiceNow CI for the newly created server, linking it to a ServiceNow task. Options marked with<span class="required">*</span> are required.</div>
 </div>
 
 <style type="text/css">
@@ -36,11 +36,13 @@ span.required
 	<div class="row">
 		<div class="col-md-12">
 			<h4 style="margin-top:0">1. Enter details</h4>
-			<div class="form-group col-md-3">
-				<label for="task">ServiceNow Task:</label><input class="form-control" id="task" name="task" placeholder="e.g. INCTASK0123456, PRJTASK0987654 or CTASK012345" autofocus />
-			</div>
-			<div class="form-group col-md-9">
-				<label for="purpose">Purpose:<span class="required">*</span></label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the server, e.g. VMware appliance" autofocus />
+			<div class="row col-md-12" style="padding-right: 0px">
+				<div class="form-group col-md-3">
+					<label for="task">ServiceNow Task:</label><input class="form-control" id="task" name="task" placeholder="e.g. INCTASK0123456, PRJTASK0987654 or CTASK012345" autofocus />
+				</div>
+				<div class="form-group col-md-9" style="padding-right: 0px;">
+					<label for="purpose">Purpose:<span class="required">*</span></label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the server, e.g. VMware appliance" autofocus />
+				</div>
 			</div>
 			<div class="form-group col-md-12">
 				<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
@@ -102,7 +104,7 @@ span.required
 						<option value="{{ network.id }}"{% if default_network == network.id %} selected="selected"{% endif %}>{{ network.name }}</option>
 {%- endfor %}
 					</select>
-					<h5 style="font-weight:bold">DNS Domain<span class="required">*</span></h5>
+					<h5 class="mt-3" style="font-weight:bold">DNS Domain<span class="required">*</span></h5>
 					<select class="selectpicker" name="domain" id="domain">
 {%- if not default_domain %}
 						<option></option>

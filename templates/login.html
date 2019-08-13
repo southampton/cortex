@@ -1,15 +1,15 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
 		<meta charset="utf-8">
 		<title>Cortex</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap.min.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap.min.css') }}?version={{ config.VERSION }}">
 		<link rel="icon" type="image/png" href="{{ url_for('static', filename='images/cortex-v3.png') }}">
 		<link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/cortex-v3.png') }}">
-		<link href="{{ url_for('static', filename='css/vendor/animate.min.css') }}" rel="stylesheet">
-		<link href="{{ url_for('static', filename='css/login.css') }}" type="text/css" rel="stylesheet">
+		<link href="{{ url_for('static', filename='css/vendor/animate.min.css') }}?version={{ config.VERSION }}" rel="stylesheet">
+		<link href="{{ url_for('static', filename='css/login.css') }}?version={{ config.VERSION }}" type="text/css" rel="stylesheet">
 
 		<!--[if lt IE 9]>
 		<style type="text/css">
@@ -26,26 +26,14 @@
 		</style>
 		<![endif]-->
 
-		<style type="text/css">
-		@media (min-width: 768px)
-		{
-			body
-			{
-				background-color: none;
-				background-image: url('/static/images/login.jpg');
-				background-size: cover;	
-			}
-		}
-
-		</style>
-
 		<noscript>
 			<meta http-equiv="refresh" content="0; url={{ url_for('nojs')}}" />
 		</noscript>
 
-		<script src="{{ url_for('static', filename='js/vendor/jquery.min.js') }}"></script>
-		<script src="{{ url_for('static', filename='js/vendor/bootstrap.min.js') }}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='js/login.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/jquery.min.js') }}?version={{ config.VERSION }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/popper.js') }}?version={{ config.VERSION }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/bootstrap.min.js') }}?version={{ config.VERSION }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='js/login.js') }}?version={{ config.VERSION }}"></script>
 		<script type="text/javascript">
 		$( document ).ready(function() {
 			$( "#loginform" ).submit(function( event )
@@ -57,7 +45,7 @@
 		</script>
 	</head>
 	<body>
-		<div class="hidden-xs uoslogo">
+		<div class="d-none uoslogo">
 			<img src="{{ url_for('static', filename='images/uoslogowhite.png') }}"></img>
 		</div>
 
@@ -65,7 +53,7 @@
 			<div class="loginbox animated zoomIn" id="loginbox">
 				<h1>cortex</h1>
 				{% for category, message in get_flashed_messages(with_categories=true) %}
-				<div class="alert {{ category }} fade in">
+				<div class="alert {{ category }}">
 					<a data-dismiss="alert" class="close" href="#">×</a>
 					{{ message|safe }}
 				</div>
@@ -76,21 +64,25 @@
 					{% if next %}
 					<input name="next" type="hidden" value="{{next}}"/>
 					{% endif %}
-					<div class="form-group">
-						<label for="username">Username:</label>
-						<input type="text" class="login-input form-control" id="loginUsername" name="username">
+					<div class="form-group row">
+						<div class="col-md-12">
+							<label for="username">Username:</label>
+							<input type="text" class="login-input form-control" id="loginUsername" name="username">
+						</div>
 					</div>
-					<div class="form-group">
-						<label for="password">Password:</label>
-						<input type="password" class="login-input form-control" id="loginPassword" name="password">
+					<div class="form-group row">
+						<div class="col-md-12">
+							<label for="password">Password:</label>
+							<input type="password" class="login-input form-control" id="loginPassword" name="password">
+						</div>
 					</div>
-					<div class="checkbox hidden-xs">
+					<div class="checkbox d-none">
 						<label>
 							<input type="checkbox" class="" value="sec" id="sec" name="sec"> Keep me logged in on this computer <span class="glyphicon glyphicon-question-sign" data-toggle="popover" data-placement="bottom" title="Login Security" data-trigger="hover" data-content="If you are on a private computer you trust then selecting this option will keep you logged in even if you close the browser window. Do not use this on public or shared computers."></span>
 						</label>
 					</div>
 					<div class="form-group text-center submit-box">
-						<button class="btn btn-default btn-lg" type="submit">Login</button>
+						<button class="btn btn-secondary btn-lg" type="submit">Login</button>
 					</div>
 				</form>
 			</div>
