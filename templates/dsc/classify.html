@@ -82,7 +82,7 @@ $(document).ready(function()
 			<input type="hidden" id="selected_values" name="selected_values">
 		</div>
 	</div>
-{% if set_roles|length > 1 %}
+{% if set_roles|length > 0 %}
 	<div class="panel-group" id="accordion">
 		{% for role in set_roles %}
 			{% if role != 'AllNodes'%}
