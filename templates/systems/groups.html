@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
-{% block prebootstrap -%}
-		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-{% endblock %}
+{% block prebootstrap %}
+		<script src="{{ url_for('static', filename='js/vendor/jquery-ui-sortable.min.js') }}"></script>
+{%- endblock %}
 {% block head -%}
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
 		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
@@ -114,13 +114,13 @@
 							<option></option>
 							{% for system in all_systems -%}
 								<option value="{{ system['id'] }}">{{ system['name'] }}: {{ system['allocation_comment'] }}</option>
-							{%- endfor %}
+							{% endfor %}
 						</select>
 					</div>
 					<div class="row form-group">
 						<label class="col-sm-3 control-label" for="system-edit-type">Check Type:</label>
 						<select name="wait_options" class="col-sm-9 selectpicker system_options" id="system-edit-type" onchange="changeEventHandler(event);">
-							{% for key, value in wait_options.items() %}
+							{% for key, value in wait_options.items() -%}
 								<option value="{{ key }}">{{ value }}</option>
 							{% endfor %}
 						</select>
@@ -232,7 +232,7 @@
 {%-             for system in systems[group.id] %}
 					<li data-system-id="{{ system['id'] }}" data-system-name="{{ system['name'] }}" class="sortable-systems">{{ system['name'] }}: {{ system['alloc_comment'] }} - {{ wait_options[system['r_info']['wait_options']] }}
 						<a href="#" class="btn btn-sm btn-success btn-danger pull-right btn-group-remove-system" style="margin-left:3px"><i class="fa fa-fw fa-minus"></i> Remove</a>
-						<a href="#" class="btn btn-sm pull-right btn-warning btn-group-configure-system"><i class="fa fa-fw fa-cog"></i> <span class="hidden-sm hidden-xs">Edit</span></a>
+						<a href="#" class="btn btn-sm pull-right btn-primary btn-group-configure-system"><i class="fa fa-fw fa-cog"></i> <span class="hidden-sm hidden-xs">Edit</span></a>
 					</li>
 {%-             endfor %}
 				</ul>
@@ -298,9 +298,9 @@ $(".btn-group-add-system").click(function(e) {
 	$('#systems').selectpicker('refresh');
 	$('#system-edit-type').val('check_http');
 	$("#system-edit-http-hostname").val('');
-	$("#system-edit-http-url").val('');
-	$("#system-edit-http-port").val('');
-	$("#system-edit-http-response").val('');
+	$("#system-edit-http-url").val('/');
+	$("#system-edit-http-port").val('80');
+	$("#system-edit-http-response").val('HTTP/1.1 200');
 	$('#check_http').show();
 	$('#group-system-settings').modal();
 	e.preventDefault();
@@ -320,7 +320,6 @@ $(".btn-group-remove-system").click(function(e) {
 $('#group-settings').on('shown.bs.modal', function() {
 	$('#group-settings-name').focus();
 });
-
 
 $(".btn-group-configure-system").click(function(e){
 	var selected_group = $(e.target).closest('ul').data('group-id');
@@ -398,8 +397,6 @@ $("#save_changes").click(function() {
 		result[$(groups[i]).data('group-id')] = system_ids;
 	}
 	$('#locations_of_stuff').attr('value', JSON.stringify(result));
-	console.log("done");
-	//$('#vm_order').submit();
 });
 </script>
 {% endblock %}
