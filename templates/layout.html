@@ -24,6 +24,7 @@
 		<script src="{{ url_for('static', filename='js/vendor/jquery.min.js') }}?version={{ config.VERSION }}"></script>
 		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/datatables.min.js') }}?version={{ config.VERSION }}"></script>
 		<script src="{{ url_for('static', filename='js/vendor/popper.js') }}?version={{ config.VERSION }}"></script>
+		{%- block prebootstrap %}{% endblock %}
 		<script src="{{ url_for('static', filename='js/vendor/bootstrap.min.js') }}?version={{ config.VERSION }}"></script>
 		{#- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries #}
 		<!--[if lt IE 9]>
