@@ -175,30 +175,24 @@
 	</div>
 </div>
 
-<div class="modal fade" id="restart" role="dialog">
+<div class="modal fade" id="group-control" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form role="form" method="POST" class="form-horizontal">
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input type="hidden" id="group-control-id" name="id" value="restart_group"/>
 				<div class="modal-header">
-					<h4 class="modal-title">Restart Group</h4>
+					<h4 class="modal-title">Control Group</h4>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				</div>
 				<div class="modal-body">
-					<div class="form-group row">
-						<label class="col-sm-3 control-label">Name:</label>
-						<input type="hidden" name="task-name" value="restart_group"/>
-						<select class="col-sm-9 selectpicker" name="groups" id="groups" data-live-search="true">
-							<option value=""></option>
-							{% for group in groups -%}
-								<option value="{{ group['id'] }}">{{ group['name'] }}</option>
-							{%- endfor %}
-						</select>
-					</div>
+					<p>Choose an action below to change the current power state of the group <span id="group-control-name"></span>. This action will be immediate - you will not be prompted again.</p>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-					<button type="submit" class="btn btn-danger">Restart</button>
+					<button type="submit" class="btn btn-success" name="task-name" value="power_on_group">Power On</button>
+					<button type="submit" class="btn btn-warning" name="task-name" value="restart_group">Restart</button>
+					<button type="submit" class="btn btn-danger" name="task-name" value="power_off_group">Power Off</button>
 				</div>
 			</form>
 		</div>
@@ -209,7 +203,6 @@
 	<h4>
 		<div class="pull-right">
 			<a href="#" class="btn btn-success" id="btn-group-create"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs">Create Group</span></a>
-			<a href="#" data-toggle="modal" data-target="#restart" class="btn btn-danger"><i class="fa fa-fw fa-minus"></i> <span class="hidden-sm hidden-xs">Restart Group</span></a>
 		</div>
 		<i class="fa fa-fw fa-server fa"></i> System Groups
 	</h4>
@@ -225,9 +218,10 @@
 			<div class="panel-heading">
 				<h4 class="panel-title col-align col-align--center" id="{{ group.id }}" data-id="{{ group.id }}" data-name="{{ group.name }}" data-notifyee="{{ group.notifyee }}">
 					<a data-toggle="collapse" data-parent="#accordion" href="#collapse{{ loop.index }}" class="dropdown-toggle">{{ group.name }}</a>
+					<a href="#" class="btn btn-sm pull-right btn-danger btn-group-delete" style="margin-right:5px"><i class="fa fa-fw fa-minus"></i> Delete</a>
+					<a href="#" class="btn btn-sm pull-right btn-warning btn-group-control" style="margin-right:5px"><i class="fa fa-fw fa-power-off"></i> Control</a>
+					<a href="#" class="btn btn-sm pull-right btn-primary btn-group-configure" style="margin-right:5px"><i class="fa fa-fw fa-cog"></i> <span class="hidden-sm hidden-xs">Edit</span></a>
 					<a href="#" class="btn btn-sm pull-right btn-success btn-group-add-system" style="margin-right:5px"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs">Add to Group</span></a>
-					<a href="#" class="btn btn-sm pull-right btn-warning btn-group-configure" style="margin-right:5px"><i class="fa fa-fw fa-cog"></i> <span class="hidden-sm hidden-xs">Edit</span></a>
-					<a href="#" class="btn btn-sm btn-success btn-danger pull-right btn-group-delete" style="margin-right:5px"><i class="fa fa-fw fa-minus"></i> Delete</a>
 				</h4>
 			</div>
 			<div id="collapse{{ loop.index }}" class="panel-collapse collapse sortable">
@@ -236,7 +230,7 @@
 {%-         else %}
 				<ul class="sortableList" data-group-id="{{ group.id }}" data-group-name="{{ group.name }}">
 {%-             for system in systems[group.id] %}
-					<li data-system-id="{{ system['id'] }}" data-system-name="{{ system['name'] }}" class="sortable-systems">{{ system['name'] }}: {{ system['alloc_comment'] }} - {{ system['r_info']['wait_options'] }}
+					<li data-system-id="{{ system['id'] }}" data-system-name="{{ system['name'] }}" class="sortable-systems">{{ system['name'] }}: {{ system['alloc_comment'] }} - {{ wait_options[system['r_info']['wait_options']] }}
 						<a href="#" class="btn btn-sm pull-right btn-warning btn-group-configure-system" style="margin-left:3px"><i class="fa fa-fw fa-cog"></i> <span class="hidden-sm hidden-xs">Edit</span></a>
 						<a href="#" class="btn btn-sm btn-success btn-danger pull-right btn-group-remove-system"><i class="fa fa-fw fa-minus"></i> Remove</a>
 					</li>
@@ -282,6 +276,14 @@ $('.btn-group-delete').click(function(e) {
 	$('#group-delete-id').val(selected_group.data('id'));
 	$('#group-delete-name').text(selected_group.data('name'));
 	$('#group-delete').modal();
+	e.preventDefault();
+});
+
+$('.btn-group-control').click(function(e) {
+	var selected_group = $(e.target).closest('h4');
+	$('#group-control-id').val(selected_group.data('id'));
+	$('#group-control-name').text(selected_group.data('name'));
+	$('#group-control').modal();
 	e.preventDefault();
 });
 

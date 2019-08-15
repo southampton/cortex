@@ -1199,7 +1199,7 @@ def system_groups():
 	all_systems = cortex.lib.systems.get_systems()
 
 	# Get all of the groups
-	groups = cortex.lib.systems.get_system_groups()
+	groups = cortex.lib.systems.get_system_groups(order='name')
 	group_contents = cortex.lib.systems.generate_group_contents()
 	
 	wait_for_options = {'check_http': 'Check if HTTP is up', 'check_vmware_tools': 'Check if VMware Tools is running', 'check_ping': 'Check for ping result', 'check_agent': 'Check on system agent'}

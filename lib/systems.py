@@ -402,9 +402,13 @@ def get_group_id(group_name):
 
 ################################################################################
 
-def get_system_groups():
+def get_system_groups(order = 'id'):
+	# Verify order is in a known set of good values
+	if order not in ['id', 'name', 'notifyee']:
+		raise ValueError('order')
+
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT `id`, `name`, `notifyee` FROM `system_groups`')
+	curd.execute('SELECT `id`, `name`, `notifyee` FROM `system_groups` ORDER BY `' + order + '`')
 	return curd.fetchall()
 
 ###############################################################################
