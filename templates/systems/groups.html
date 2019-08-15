@@ -120,21 +120,21 @@
 					<div class="row form-group">
 						<label class="col-sm-3 control-label" for="system-edit-type">Check Type:</label>
 						<select name="wait_options" class="col-sm-9 selectpicker system_options" id="system-edit-type" onchange="changeEventHandler(event);">
-							{% for options in wait_options %}
-								<option value="{{ options }}">{{ options }}</option>
+							{% for key, value in wait_options.items() %}
+								<option value="{{ key }}">{{ value }}</option>
 							{% endfor %}
 						</select>
 					</div>
-					<div id="Check_if_VMware_tools_are_running" class="reboot_options Check_if_VMware_tools_are_running" style="text-align: center;">
+					<div id="check_vmware_tools" class="reboot_options" style="text-align: center;">
 						<p>No further info is needed.</p>
 					</div>
-					<div id="Check_for_ping_result" class="reboot_options Check_for_ping_result" style="text-align: center;">
+					<div id="check_ping" class="reboot_options" style="text-align: center;">
 						<p>No further info is needed.</p>
 					</div>
-					<div id="Check_on_system_agent" class="reboot_options Check_on_system_agent" style="text-align: center;">
+					<div id="check_agent" class="reboot_options" style="text-align: center;">
 						<p>No further info is needed.</p>
 					</div>
-					<div id="Check_if_HTTP_is_running" class="reboot_options Check_if_HTTP_is_running" style="margin-top: 7px; margin-left: 4px; margin-right: 4px;">
+					<div id="check_http" class="reboot_options" style="margin-top: 7px; margin-left: 4px; margin-right: 4px;">
 						<div class="row form-group">
 							<label class="col-sm-3 control-label" for="system-edit-http-hostname">Hostname:</label>
 							<div class="col-sm-9">
@@ -294,12 +294,12 @@ $(".btn-group-add-system").click(function(e) {
 	$('#systems').removeProp('disabled');
 	$('#systems').val('');
 	$('#systems').selectpicker('refresh');
-	$('#system-edit-type').val('Check if HTTP is running');
+	$('#system-edit-type').val('check_http');
 	$("#system-edit-http-hostname").val('');
 	$("#system-edit-http-url").val('');
 	$("#system-edit-http-port").val('');
 	$("#system-edit-http-response").val('');
-	$('.Check_if_HTTP_is_running').show();
+	$('#check_http').show();
 	$('#group-system-settings').modal();
 	e.preventDefault();
 });
@@ -345,10 +345,9 @@ $(".btn-group-configure-system").click(function(e){
 	$('#system-edit-type').val(selected);
 	$('#systems').selectpicker('refresh');
 	$('#system-edit-type').selectpicker('refresh');
-	if (selected == "Check if HTTP is running")
+	if (selected == "check_http")
 	{
 		https_check = system_data.r_info.http_checks.https;
-		$('.Check_if_HTTP_is_running').show();
 
 		$("#system-edit-http-hostname").val(system_data.r_info.http_checks.hostname);
 		$("#system-edit-http-url").val(system_data.r_info.http_checks.url);
@@ -359,18 +358,7 @@ $(".btn-group-configure-system").click(function(e){
 			$("#system-edit-http-https").attr('checked', true);
 		}
 	}
-	else if (selected == "Check if VMware tools are running")
-	{
-		$('.Check_if_VMware_tools_are_running').show();
-	} 
-	else if (selected == "Check for ping result")
-	{
-		$('.Check_for_ping_result').show();
-	}
-	else if (selected == 'Check on system agent')
-	{
-		$('.Check_on_system_agent').show();
-	}
+	$('#' + selected).show();
 
 	$('#group-system-settings').modal();
 	e.preventDefault();
@@ -379,15 +367,7 @@ $(".btn-group-configure-system").click(function(e){
 function changeEventHandler(event) {
 	var selected = $(event.target).val();
 	$('.reboot_options').hide();
-	if (selected == "Check if HTTP is running"){
-		$('.Check_if_HTTP_is_running').show();
-	} else if (selected == "Check if VMware tools are running"){
-		$('.Check_if_VMware_tools_are_running').show();
-	} else if (selected == "Check for ping result"){
-		$('.Check_for_ping_result').show();
-	} else if (selected == 'Check on system agent'){
-		$('.Check_on_system_agent').show();
-	}
+	$('#' + selected).show();
 }
 
 $(function() {

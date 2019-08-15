@@ -1202,7 +1202,7 @@ def system_groups():
 	groups = cortex.lib.systems.get_system_groups()
 	group_contents = cortex.lib.systems.generate_group_contents()
 	
-	wait_for_options = ['Check if HTTP is running', 'Check if VMware tools are running', 'Check for ping result', 'Check on system agent']
+	wait_for_options = {'check_http': 'Check if HTTP is up', 'check_vmware_tools': 'Check if VMware Tools is running', 'check_ping': 'Check for ping result', 'check_agent': 'Check on system agent'}
 
 	if request.method == 'GET':
 		return render_template('systems/groups.html', title="System Groups", systems=group_contents, all_systems=all_systems, wait_options=wait_for_options, groups=groups)
@@ -1250,7 +1250,7 @@ def system_groups():
 				# Package up the information supplied to us
 				restart_instructions = {}
 				restart_instructions['wait_options'] = request.form['wait_options']
-				if request.form['wait_options'] == 'Check if HTTP is running':
+				if request.form['wait_options'] == 'check_http':
 					restart_instructions['http_checks'] = {
 						'hostname': request.form['hostname'],
 						'url': request.form['url'],
@@ -1307,7 +1307,7 @@ def system_groups():
 
 			# package up the information supplied to us
 			restart_instructions['wait_options'] = request.form['wait_options']
-			if request.form['wait_options'] == 'Check if HTTP is running':
+			if request.form['wait_options'] == 'check_http':
 				restart_instructions['http_checks'] = {'hostname': request.form['hostname'], 'expected_response': request.form['expected_response']}
 				restart_instructions['http_checks']['url'] = request.form['url']
 				restart_instructions['http_checks']['port'] = request.form['port']
