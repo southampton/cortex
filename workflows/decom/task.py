@@ -184,7 +184,8 @@ def action_check_system(action, helper, wfconfig):
 				if r.status_code == 200:
 					system_actions.append({'id': 'entca.delete', 'desc': 'Delete certificate from Enterprise CA', 'detail': system['name'] + '.' + entca['entdomain'] + ' to be removed from Enterprise CA ' + entca['hostname'], 'data': {'hostname': system['name'] + '.' + entca['entdomain'], 'entca_hostname': entca['hostname'], 'entca_api_token': entca['api_token'], 'entca_verify_ssl': entca['verify_ssl']}})
 				elif r.status_code == 404:
-					helper.flash('Warning - Certificate not found on ' + entca['hostname'] + ' for ' + system['name'] + '.' + entca['entdomain'], 'warning')
+					# Do nothing here, this is a valid result
+					pass
 				else:
 					helper.flash('Warning - An error occured when communicating with Enterprise CA, code: ' + str(r.status_code), 'warning')
 
@@ -289,8 +290,8 @@ def action_check_system(action, helper, wfconfig):
 							system_actions.append({'id': 'graphite.delete', 'desc': 'Remove metrics from Graphite / Grafana', 'detail': 'Delete ' + ','.join(js) + ' from ' + helper.lib.config['GRAPHITE_URL'], 'data': {'host': host}})
 					else:
 						helper.flash('Warning - CarbonHTTPInterface returned error code ' + str(r.status_code), 'warning')
-				else:
-					helper.flash('No Graphite URL Supplied, Skipping Step','success')
+			else:
+				helper.flash('No Graphite URL Supplied, Skipping Step', 'success')
 		except Exception as ex:
 			helper.flash('Warning - An error occurred when communicating with ' + str(helper.lib.config['GRAPHITE_URL']) + ': ' + str(ex), 'warning')
 
