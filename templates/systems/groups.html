@@ -231,8 +231,8 @@
 				<ul class="sortableList" data-group-id="{{ group.id }}" data-group-name="{{ group.name }}">
 {%-             for system in systems[group.id] %}
 					<li data-system-id="{{ system['id'] }}" data-system-name="{{ system['name'] }}" class="sortable-systems">{{ system['name'] }}: {{ system['alloc_comment'] }} - {{ wait_options[system['r_info']['wait_options']] }}
-						<a href="#" class="btn btn-sm pull-right btn-warning btn-group-configure-system" style="margin-left:3px"><i class="fa fa-fw fa-cog"></i> <span class="hidden-sm hidden-xs">Edit</span></a>
-						<a href="#" class="btn btn-sm btn-success btn-danger pull-right btn-group-remove-system"><i class="fa fa-fw fa-minus"></i> Remove</a>
+						<a href="#" class="btn btn-sm btn-success btn-danger pull-right btn-group-remove-system" style="margin-left:3px"><i class="fa fa-fw fa-minus"></i> Remove</a>
+						<a href="#" class="btn btn-sm pull-right btn-warning btn-group-configure-system"><i class="fa fa-fw fa-cog"></i> <span class="hidden-sm hidden-xs">Edit</span></a>
 					</li>
 {%-             endfor %}
 				</ul>
