@@ -1969,7 +1969,7 @@ class Corpus(object):
 
 			## Let's not busy wait CPU 100%...
 			time.sleep(1)
-
+	
 	############################################################################
 
 	def neocortex_multi_tasks_wait(self, task_list):

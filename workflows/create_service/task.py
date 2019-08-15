@@ -24,7 +24,6 @@ def run(helper, options):
 
 	helper.event("wait_buildvm","Waiting for all the buildvm tasks to finish")
 	helper.lib.neocortex_multi_tasks_wait(recipe_to_id_map.values())
-	#helper.lib.neocortex_task_wait(vm_task_id)
 	helper.end_event("All buildvm tasks have finished running")
 	
 	# Now that the VMs have been set up, it's time to apply the Puppet code
@@ -48,7 +47,7 @@ def run(helper, options):
 	
 
 def puppet_parse_references(helper, puppet_code_template, tasks_output):
-	systems_reference = re.findall("{{\w*\.\w*}}", puppet_code_template)
+	systems_references = re.findall("{{\w*\.\w*}}", puppet_code_template)
 	
 	reference_to_system_name = {}
 	for system_reference in systems_references:

@@ -385,14 +385,20 @@ def generate_pretty_display_name(who, who_realname):
 def get_service_recipes_list():
 	""" Returns a list of all the names of the existing service recipes."""
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute("SELECT `name` FROM `service_recipes`")
-	service_recipes_names_raw = curd.fetchall()
-	service_recipes_names = []
-	for service_recipe_name in service_recipes_names_raw:
-		service_recipes_names.append(service_recipe_name['name'])
-		
+	curd.execute("SELECT `name`,`description`,`env` FROM `service_recipes`")
+	service_recipes_details_raw = curd.fetchall()
+	service_recipes_details = {}
+	for service_recipe_details in service_recipes_details_raw:
+		env = service_recipe_details['env']
+		if env == 'dev':
+			env = 'Development'
+		elif env == 'preprod':
+			env = 'Pre-Production'
+		elif env == 'prod':
+			env = 'Production'
+		service_recipes_details[service_recipe_details['name']] = {'description': service_recipe_details['description'], 'env': env}
 	curd.close()
-	return service_recipes_names
+	return service_recipes_details
 	
 ################################################################################	
 

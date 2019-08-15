@@ -6,15 +6,10 @@
  * -------------------------------------------------- */
 
 /* Carousel base class */
-.card:hover {
-	cursor: pointer;
-}
 .card{
 	margin-bottom: 0!important;
 }
-#vms-card-list > .card:hover {
-	cursor: pointer;
-}
+
 #vms-card-list {
 	overflow-y: auto;
 }
@@ -220,7 +215,54 @@ input[type=range] {
 	display: inline;
 }
 
-#sendmail:hover {	
-	margin-top: 0px!important;
-    	border-bottom-width: 0px!important;
+.modal .text {
+    word-wrap: break-word;
+}
 
+/* CONTEXT MENU */
+#context-menu {
+  display : none;
+  position: absolute;
+  z-index: 10;
+  padding: 10px 0;
+  width: 200px;
+  background-color: #fff;
+  border: solid 1px #dfdfdf;
+  box-shadow: 1px 1px 2px #cfcfcf;
+  font-size: 1rem;
+  border-radius: 10px;
+}
+
+.context-menu-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.context-menu-item:not(:last-child) {
+  display: block;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #00000045;
+}
+_
+.context-menu-item:last-child {
+  margin-bottom: 0;
+  border-bottom: 0;
+}
+
+.context-menu-link {
+  display: block;
+  padding: 7px 10px;
+  color: #555555;
+  text-decoration: none;
+}
+
+.context-menu-link:hover {
+  color: black;
+  text-decoration: unset;
+  background: #e2e2e28a;;
+}
+
+#context-menu i{
+  margin-right: 5px;
+}

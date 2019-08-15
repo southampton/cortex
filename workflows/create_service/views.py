@@ -41,10 +41,10 @@ def createservice():
 	if request.method == 'GET':
 
 		autocomplete_users = get_user_list_from_cache()
-		autocomplete_service_recipes_names = get_service_recipes_list()
+		service_recipes_details = get_service_recipes_list()
 		autocomplete_vm_recipes_names = get_vm_recipes_list()
 		
-		return workflow.render_template("create_service.html", clusters=clusters, environments=environments, title="Create Service", os_names=workflow.config['OS_DISP_NAMES'], os_order=workflow.config['OS_ORDER'], autocomplete_users=autocomplete_users, autocomplete_service_recipes_names=autocomplete_service_recipes_names, autocomplete_vm_recipes_names=autocomplete_vm_recipes_names, folders=folders, network_names=workflow.config['NETWORK_NAMES'], networks_order=workflow.config['NETWORK_ORDER'])
+		return workflow.render_template("create_service.html", clusters=clusters, environments=environments, title="Create Service", os_names=workflow.config['OS_DISP_NAMES'], os_order=workflow.config['OS_ORDER'], autocomplete_users=autocomplete_users, service_recipes_details=service_recipes_details, autocomplete_vm_recipes_names=autocomplete_vm_recipes_names, folders=folders, network_names=workflow.config['NETWORK_NAMES'], networks_order=workflow.config['NETWORK_ORDER'])
 	elif request.method == 'POST' and 'action' in request.form and request.form['action']=="create_recipe": # if it is POST, then it does need validation
 				
 		# Get the form in a dict
@@ -347,6 +347,54 @@ def get_vm_recipe():
 
         # Return as JSON
         return jsonify(vm_recipe)
+
+@workflow.route("delete_vm_recipe",title='Delete a VM recipe', methods=['POST'], menu=False)
+@app.disable_csrf_check
+def delete_vm_recipe():
+
+        # Get the db cursor
+        curd = g.db.cursor(mysql.cursors.DictCursor)
+
+        # Get the VM recipe name from the request form     
+        vm_recipe_name = ""
+        if 'vm_recipe_name' in request.get_json():
+                vm_recipe_name = request.get_json()['vm_recipe_name']
+
+        # Query the database to get the VM recipe
+        curd.execute("DELETE FROM `vm_recipes` WHERE `name`= %s", (vm_recipe_name,))
+	curd.execute("UPDATE `service_recipes` SET `vms_list` = REPLACE(`vms_list`, %s, '') WHERE `vms_list` LIKE %s;",("(, )?"+vm_recipe_name, "%"+vm_recipe_name+"%",))
+	
+	g.db.commit()
+
+        # Return as JSON
+        return jsonify(vm_recipe_name)
+
+@workflow.route("delete_service_recipe",title='Delete a service recipe', methods=['POST'], menu=False)
+@app.disable_csrf_check
+def delete_service_recipe():
+
+        # Get the db cursor
+        curd = g.db.cursor(mysql.cursors.DictCursor)
+
+        # Get the service recipe name from the request form     
+	service_recipe_name = request.form.get('service_recipe_name', "")
+
+	# Get the list of all VM recipes which belong to this service recipe
+	curd.execute("SELECT `vms_list` FROM `service_recipes` WHERE `name`= %s", (service_recipe_name,))
+	vms_list = curd.fetchone()['vms_list'].split(", ")
+
+	# Delete each VM recipe
+	for vm_recipe_name in vms_list:
+		curd.execute("DELETE FROM `vm_recipes` WHERE `name`= %s", (vm_recipe_name,))
+
+	# Delete the service recipe entry	
+	curd.execute("DELETE FROM `service_recipes` WHERE `name`= %s", (service_recipe_name,))
+		
+	# Commit the changes
+        g.db.commit()
+
+        # Return as JSON -- change this to an 200 OK later
+        return jsonify(service_recipe_name)
 
 
 # Helper that parses the request data
