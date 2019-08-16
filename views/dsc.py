@@ -99,14 +99,8 @@ def generate_reset_yaml(proxy, roles):
 
 ###########################################################################
 
-def get_roles_and_checks(roles, checks):
-	completed_roles = {}
-	for role in roles:
-		try:
-			completed_roles[role] = checks[role]
-		except Exception as e:
-			pass
-
+def get_jobs(selected):
+	return list(set([(r.replace('UOS','')).split('_')[0] for r in selected]))
 
 ###########################################################################
 
@@ -123,14 +117,28 @@ def dsc_classify_machine(id):
 	
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-	default_roles = []
 	# get a proxy to connect to dsc
 
 	dsc_proxy = cortex.lib.dsc.dsc_connect()
 	roles_info = cortex.lib.dsc.get_roles(dsc_proxy)
 	# get a list of the roles
-	for role in roles_info:
-		default_roles.append(role)
+	default_roles = [role for role in roles_info.keys()]
+
+	#generate set of jobs
+	jobs = list(set([((r.replace('UOS', '')).split('_'))[0] for r in default_roles if not any(special_role in r for special_role in ['Generic', 'AllNodes'])]))
+	# return jsonify(jobs)
+	role_selections = {g.replace('UOSGeneric_', '') : [g] for g in [r for r in default_roles if 'UOSGeneric' in r]}
+
+	for job in jobs:
+		role_selections[job] = [r for r in default_roles if job in r]
+
+	# return jsonify(role_selections)
+
+	#add a layer onto the code that displays 'JOBS'
+	#if a job is 'generic' then it'll just display that job
+	#otherwise it should create a dict which maps the role to it's specific config
+	#reconstruct the info that is stored in mysql in exactly the same way that it currently is based on the selection
+	#big undertaking for tomorrow
 
 
 	# retrieve all the systems
@@ -151,14 +159,13 @@ def dsc_classify_machine(id):
 	if request.method == 'GET':
 		
 		if does_user_have_permission('dsc.view'):
-			return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=default_roles, yaml=exist_config, set_roles=exist_role, role_info=roles_info)
+			return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=role_selections.keys(), yaml=exist_config, set_roles=exist_role, role_info=roles_info)
 		else:
 			abort(403)
 
 	elif request.method == 'POST':
 		# return jsonify(request.form)
 		if request.form['button'] == 'push_to_dsc':
-
 
 			curd.execute('SELECT system_id, roles, config FROM dsc_config WHERE system_id = "%s"', (id, ))
 			box_details = curd.fetchone()
@@ -229,4 +236,4 @@ def dsc_classify_machine(id):
 			exist_config = yaml.dump("")
 	
 
-	return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=default_roles, yaml=exist_config, set_roles=exist_role, role_info=roles_info)
+	return render_template('dsc/classify.html',  title="DSC", system=system, active='dsc', roles=role_selections.keys(), yaml=exist_config, set_roles=exist_role, role_info=roles_info)

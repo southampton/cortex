@@ -82,7 +82,7 @@ $(document).ready(function()
 			<input type="hidden" id="selected_values" name="selected_values">
 		</div>
 	</div>
-{% if set_roles|length > 0 %}
+{% if "" not in set_roles.keys() %}
 	<div class="panel-group" id="accordion">
 		{% for role in set_roles %}
 			{% if role != 'AllNodes'%}
@@ -102,7 +102,7 @@ $(document).ready(function()
 						      	
 						      	{% for config in role_info[role] %}
 						    		<div class="checkbox">
-										<label><input class="chkboxes" type="checkbox" value="{{ config['Name'] }}" {% if config['Name'] in set_roles[role].values() %} checked {% endif %} role="{{ role }}">{{ config['Name'] }}</label>
+										<label><input class="chkboxes" type="checkbox" value="{{ config['Name'] }}" {% if config['Name'] in set_roles[role].values() %} checked {% endif %} role="{{ role }}">{{ config['Name'] }}{{ config['GroupName'] }}{{ config['TaskName'] }}</label>
 									</div>
 						      	{% endfor %}
 						      </div>
