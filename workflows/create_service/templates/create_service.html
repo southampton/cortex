@@ -518,10 +518,7 @@
 <div class="card d-none vm-card h-100" id="vm-card" style="margin: 0.4rem; width: 30%">
 	<div class="card-header">
 			<input type="hidden" name="vm_recipe_name[]" value="" />
-			<h4 class="float-left" style="margin-top: 4px; margin-bottom: 4px; overflow: hidden; white-space: nowrap; width: 70%; text-overflow: ellipsis;"></h4>
-			<a class="btn btn-info vm-recipe-info float-right" style="color:white; margin-left:10px;" data-toggle="modal" data-target="#"><i class="fa fa-cogs" aria-hidden="true"></i></a>
-
-			<a class="btn btn-danger float-right no-modal delete-vm-recipe" style="color:white;" data-toggle="modal" data-target="#confirm-delete-vm-modal"><i class="fa fa-trash" aria-hidden="true"></i></a> 
+			<h4 class="float-left" style="margin-top: 4px; margin-bottom: 4px; overflow: hidden; white-space: nowrap; width: 100%; text-overflow: ellipsis;"></h4>
 	</div>
 	<div class="card-body" data-target="#" data-toggle="modal" style="height: 90px; overflow-y: auto;">
 		<p>Some general description</p>
@@ -560,8 +557,14 @@
                                 </button>
                         </div>
                         <div class="modal-body">
-                                <h5 style="text-align: center;">Give a new name to the recipe clone</h5>
-				<input type="text" name="recipe_clone_name" placeholder="Type in a new name for the clone"></input>
+				<div class="row">
+					<div class="col-sm-4">
+						<p style="text-align: center;">Give a new name to the recipe clone:</p>
+					</div>
+					<div class="col-sm-7">
+						<input id="vm-clone-name" type="text" class="form-control" name="recipe_clone_name" placeholder="Type in a new name for the clone"></input>
+					</div>
+				</div>
                         </div>
                         <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -834,6 +837,57 @@ $(document).ready(function(){
 	
 	$("#confirm-clone-vm").click(function(){
 		// just add some stuff here to clone that card and the modal for the old vm, but to replace the ids and the vm_recipe_name	
+		
+		// extract the name of the VM which should be cloned
+		var name = $('#context-menu').attr('data-current-card');
+		
+		var new_name = $("#vm-clone-name").val();
+		/*
+		$.ajax({
+			type: "POST",
+			async: true,
+			global: false,
+			url: '/workflows/create_service/get_vm_recipe',
+			data: JSON.stringify({"vm_recipe_name": name}),
+			contentType: "application/json; charset=utf-8",
+			dataType: "json",
+			success: function(vm_recipe_data){
+				$("#add-service-existing-template").modal('hide');
+				$("#new-vm-recipe").trigger("click", [vm_recipe_data, new_name, true]);
+			},
+			failure: function(error_message){
+				alert("There is no VM recipe with that name. Create your own one");
+				$("#add-service-existing-template").modal('hide');
+				$("#new-vm-recipe").trigger("click", [name]);
+			},
+                });
+		*/
+		var clone = $("#"+name+"-modal").clone();
+
+		var recipe_data = {}
+		recipe_data['puppet_code'] = clone.find("[name=service_vms\\["+name+"\\]\\[puppet_classes\\]]").eq(0).val();
+		recipe_data['purpose'] = clone.find("[name=service_vms\\["+name+"\\]\\[purpose\\]]").eq(0).val();
+		recipe_data['comments'] = clone.find("[name=service_vms\\["+name+"\\]\\[comments\\]]").eq(0).val();
+		recipe_data['primary_owner_who'] = clone.find("[name=service_vms\\["+name+"\\]\\[primary_owner_who\\]]").eq(0).val();
+		recipe_data['primary_owner_role'] = clone.find("[name=service_vms\\["+name+"\\]\\[primary_owner_role\\]]").eq(0).val();
+                recipe_data['secondary_owner_who'] = clone.find("[name=service_vms\\["+name+"\\]\\[secondary_owner_who\\]]").eq(0).val();
+                recipe_data['secondary_owner_role'] = clone.find("[name=service_vms\\["+name+"\\]\\[secondary_owner_role\\]]").eq(0).val();
+                recipe_data['sockets'] = clone.find("[name=service_vms\\["+name+"\\]\\[sockets\\]]").eq(0).val();
+                recipe_data['cores'] = clone.find("[name=service_vms\\["+name+"\\]\\[cores\\]]").eq(0).val();
+                recipe_data['ram'] = clone.find("[name=service_vms\\["+name+"\\]\\[ram\\]]").eq(0).val();
+                recipe_data['disk'] = clone.find("[name=service_vms\\["+name+"\\]\\[disk\\]]").eq(0).val();
+                recipe_data['os'] = clone.find("[name=service_vms\\["+name+"\\]\\[template\\]]").eq(0).val();
+                recipe_data['network'] = clone.find("[name=service_vms\\["+name+"\\]\\[network\\]]").eq(0).val();
+                recipe_data['location_cluster'] = clone.find("[name=service_vms\\["+name+"\\]\\[cluster\\]]").eq(0).val();
+                recipe_data['dns_aliases'] = clone.find("[name=service_vms\\["+name+"\\]\\[dns_aliases\\]]").eq(0).val();
+                recipe_data['vm_folder_moid'] = clone.find("[name=service_vms\\["+name+"\\]\\[vm_folder_moid\\]]").eq(0).val();
+                recipe_data['description'] = clone.find("[name=service_vms\\["+name+"\\]\\[vm_description\\]]").eq(0).val();
+
+		console.log(recipe_data);
+
+		$("#new-vm-recipe").trigger("click", [recipe_data, new_name, true]);
+
+		$("#vm-clone-name").val("");
 	});
 
 	$(".delete-service").click(function(){
@@ -950,9 +1004,13 @@ $(document).ready(function(){
 		
 	});
 
-	$("#new-vm-recipe").click(function(e, recipe_data, recipe_name){
+	$("#new-vm-recipe").click(function(e, recipe_data, recipe_name, is_clone_or_new){
+
+		// extract the recipe name from the input
 		var vm_recipe_name = $("#vm-recipe-input").val();
 		
+		// If the there's no data about the recipe (it is a new recipe)
+		// Try to fetch data about it from the server or just create a blank one if failed
 		if(!recipe_data && !recipe_name && vm_recipe_name){
 			
 			$.ajax({
@@ -976,6 +1034,7 @@ $(document).ready(function(){
 		}
 		
 		else {
+			// If this is part of an existing recipe
 			if(recipe_name) {
 				var vm_recipe_name = recipe_name;
 				// remove this from the datalist so it cannot be used twice
@@ -995,7 +1054,6 @@ $(document).ready(function(){
 			card.toggleClass('d-none');
 			card.attr('id', vm_recipe_name);
 			card.attr('data-exists', recipe_name ? 'true' : 'false'); // since a VM recipe cannot be used twice, you need to know if it should be added back to the list once the card gets deleted
-			card.find(".vm-recipe-info").eq(0).attr('data-target', "#"+vm_recipe_name+"-modal");
 			card.find(".card-header h4").eq(0).html(vm_recipe_name);
 			card.find(".card-header input").eq(0).attr('value', vm_recipe_name);
 			card.find(".card-body p").eq(0).html(general_description);
@@ -1033,7 +1091,9 @@ $(document).ready(function(){
 				modal.find(".modal-body #puppet-code").eq(0).attr('id', "puppet-code-"+vm_recipe_name);
 				modal.find(".modal-body #config").eq(0).attr('id', "config-"+vm_recipe_name);
 				modal.find(".modal-body #vm-description").eq(0).attr('id', "vm-description-"+vm_recipe_name);
-				
+				if(is_clone_or_new == true){
+					modal.find(".modal-body").append("<input type=hidden name='is_clone_or_new' value='true'></input>");
+				}
 
 				// Apply existing configuration if it already exists
 				if(recipe_data){

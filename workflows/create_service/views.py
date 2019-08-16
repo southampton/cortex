@@ -159,6 +159,9 @@ def createservice():
 		# Load each VM recipe
 		for vm_recipe in form['service_vms'].keys():
 			
+			if 'is_clone_or_new' in form['service_vms'][vm_recipe] and form['service_vms'][vm_recipe]['is_clone_or_new'] == 'true':
+				add_vm_recipe(vm_recipe, form['service_name'], form['service_vms'][vm_recipe])
+			
 			#Validate the form for the VM recipe
 			vm_required_keys = ['sockets', 'cores', 'ram', 'disk', 'template', 'cluster', 'environment', 'network']
 			validate_form(vm_required_keys, form['service_vms'][vm_recipe])
@@ -396,6 +399,54 @@ def delete_service_recipe():
         # Return as JSON -- change this to an 200 OK later
         return jsonify(service_recipe_name)
 
+# Helper which adds a VM recipe to the database
+def add_vm_recipe(vm_recipe_name, service_recipe_name, form):
+
+        # Get the db cursor
+        curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	# Get the list of all VM recipes which belong to this service recipe
+	curd.execute("UPDATE `service_recipes` SET `vms_list`=CONCAT(`vms_list`, %s) WHERE `name`= %s", (', '+vm_recipe_name, service_recipe_name,))
+	
+	# Extract the data
+	puppet_classes = form['puppet_classes']
+	purpose = form['purpose']
+	comments = form['comments']
+	primary_owner_who = form['primary_owner_who']
+	primary_owner_role = form['primary_owner_role']
+	secondary_owner_who = form['secondary_owner_who']
+	secondary_owner_role = form['secondary_owner_role']
+	sockets = form['sockets']
+	cores = form['cores']
+	ram = form['ram']
+	disk = form['disk']
+	template = form['template']
+	cluster = form['cluster']
+	network = form['network']
+	vm_folder_moid = form['vm_folder_moid']
+	description = form['vm_description']
+	
+	curd.execute("""INSERT INTO `vm_recipes`(
+						`name`,
+						`purpose`,
+						`comments`,
+						`primary_owner_who`,
+						`primary_owner_role`,
+						`secondary_owner_who`,
+						`secondary_owner_role`,
+						`sockets`,
+						`cores`,
+						`ram`,
+						`disk`,
+						`os`,
+						`location_cluster`,
+						`puppet_code`,
+						`description`,
+						`network`,
+						`vm_folder_moid`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (vm_recipe_name, purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, template, cluster, puppet_classes, description, network, vm_folder_moid,))
+
+        # Commit the changes
+        g.db.commit()
 
 # Helper that parses the request data
 def parse_request_form(form):
