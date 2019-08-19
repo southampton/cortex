@@ -7,6 +7,28 @@ function enableMenuTooltip(selector){
 	});
 }
 
+function jsFlash(message, category, clear){
+	// If we want to clear the current alerts.
+	if (clear) $('.alert').remove();
+	// Add new alert.
+	$('#flashedMessages').prepend($('<div>', {
+		'class': 'alert alert-' + category + ' alert-dismissible fade show',
+		'role': 'alert'
+	}).append($('<button>', {
+		'type': 'button',
+		'class': 'close',
+		'data-dismiss': 'alert',
+		'aria-label': 'Close'
+	}).append($('<span>', {
+		'aria-hidden': 'true'
+	}).html('&times;'))
+	).append(
+		$('<span>').text(message))
+	);
+	console.log("shiiiiiiiiiiiiiiit");
+}
+
+
 /* Tooltips and Popovers */
 $(document).ready(function ()
 {

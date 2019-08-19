@@ -42,6 +42,8 @@
 	<h3><i class="fa fa-plus-circle fa-fw"></i> Create a New Service</h3>
 	<p class="text-muted">This workflow will create a new service in the chosen environment. Hostnames will be automatically allocated from the 'srv' group, and will automatically have IP addresses assigned from Infoblox. ServiceNow CIs will also be created. Can build standard or sandbox services.</p>
 </div>
+<div id="flashedMessages">
+</div>
 
 <!--
 	This is the main carousel body. The rest of the page is generated dynamically
@@ -65,9 +67,9 @@
 						<a id="create-service-template" class="btn btn-lg btn-success">Create a service template</a>
 					<div class="carousel-caption" style="display: inline-flex; justify-content: center;">
 						<h3 style="color: #777; margin-bottom:0px; margin-right: 20px; align-self: center;">Choose a workflow type:</h2>
-						<div class="btn-group btn-toggle" id="toggle_queries">
-                                                        <button id="query_search_on" class="btn btn-lg btn-primary active" data-value="standard">Standard</button>
-                                                        <button id="query_search_off" class="btn btn-lg btn-secondary" data-value="sandbox">Sandbox</button>
+						<div class="btn-group btn-toggle">
+                                                        <button class="btn btn-lg btn-primary active" data-value="standard">Standard</button>
+                                                        <button class="btn btn-lg btn-secondary" data-value="sandbox">Sandbox</button>
                                                 </div>
 					</div>
 					</div>
@@ -127,7 +129,6 @@
                         </div>
                         <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-				<!--<button type="button" class="btn btn-primary" id="submit-template-request">Submit</button> -->
                         </div>
                 </div>
         </div>
@@ -200,6 +201,9 @@
 					</div>
 				</div>
 			</div>
+			<div class="carousel-caption">
+				<button type="button" class="btn btn-lg btn-info" data-target="#add-form-question" data-toggle="modal">Add a form question</button>
+			</div>
 		</div>
 	</div>
 	<!-- 
@@ -217,6 +221,35 @@
 				<button type="submit" id="submit_service_request" class="btn btn-success btn-lg btn-submit">Submit</button>
 			</div>
 		</div>
+        </div>
+</div>
+<!--
+	This modal is used for adding new inputs to the form
+-->
+<div class="modal fade" id="add-form-question" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+                <div class="modal-content">
+                        <div class="modal-header">
+                                <h5 class="modal-title" >Add a Form Question</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                </button>
+                        </div>
+                        <div class="modal-body">
+                                <div class="row">
+                                        <div class="col-sm-3 offset-1">Question/Input description:</div>
+                                        <div class="col-sm-6"><input id="question-text-input" class="form-control w-100"></div>
+                                </div>
+				<div class="row" style="margin-top: 2rem;">
+                                        <div class="col-sm-3 offset-1">Answer</div>
+                                        <div class="col-sm-6"><input id="question-answer" class="form-control w-100"></div>
+                                </div>
+                        </div>
+                        <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-primary" data-dismiss="modal">Save Changes</button>
+                        </div>
+                </div>
         </div>
 </div>
 
@@ -253,8 +286,8 @@
 			</div>
 			<div class="modal-body">
 				<div class="row">
-					<div class="col-sm-3 offset-1">Choose a VM Recipe or type in a new name to create one</div>
-					<div class="col-sm-6"><input id="vm-recipe-input" class="form-control w-100" list="autocomplete-VMs" autocomplete="off" maxlength="64"></div>
+					<div class="col-sm-3 offset-1">Type in a recipe name</div>
+					<div class="col-sm-6"><input id="vm-recipe-input" class="form-control w-100" maxlength="64"></div>
 				</div>
 			</div>
 			<div class="modal-footer">
@@ -264,6 +297,10 @@
 		</div>
 	</div>
 </div>
+<!--
+	Each service recipe which is listed in the datatable will target a modal
+	which contains some more details about it
+-->
 {% for name in service_recipes_details %}
 <div class="modal fade" id="{{name}}-info-modal" tabindex="-1" role="dialog" aria-hidden="true">
 	<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
@@ -293,7 +330,10 @@
 	</div>
 </div>
 {% endfor %}
-
+<!--
+	This modal will pop up when the user attempts to delete a service recipe
+	The text inside the body will get replaced when the modal shows
+-->
 <div class="modal fade" id="confirm-delete-modal" tabindex="-1" role="dialog" aria-hidden="true" data-delete="">
         <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
                 <div class="modal-content">
@@ -313,7 +353,10 @@
                 </div>
         </div>
 </div>
-
+<!--
+	This modal pops up when a user attempts to detelete a VM recipe
+	The text inside the body will get replaced when the modal shows
+-->
 <div class="modal fade" id="confirm-delete-vm-modal" tabindex="-1" role="dialog" aria-hidden="true" data-delete="">
         <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
                 <div class="modal-content">
@@ -334,14 +377,8 @@
         </div>
 </div>
 <!--
-	This modal contains the puppet code and the VM specs, which can be edited by the user.
-	
-	Params:
-	* id
-	* title
-	* modal-body  this is where you should add the tabs and the codemirror for puppet
-	
-	* The configuration options are kept inside the nav-tabs.
+	This modal contains the puppet code, the VM specs and the VM recipe description, which can be edited by the user.
+	Each time a new VM recipe is added, this modal will get cloned and changed a bit depending on the recipe name.
 -->
 <div class="modal fade" id="vm-recipe-template-modal" tabindex="-1" role="dialog" aria-hidden="true">
 	<div class="modal-dialog modal-xl modal-dialog-centered" role="document">
@@ -507,20 +544,20 @@
 	</div>
 </div>
 <!--
-	Whenever a new VM gets added to the form, on of these cards is added on the screen
-	
-	Params:
+	Whenever a new VM gets added to the form, on of these cards is cloned, edited and added to the carousel
+
+	Elements which get edited:
 	* id (vm name)
 	* data-target (the modal id)
 	* the header (vm name)
 	* the body (description)
 -->
-<div class="card d-none vm-card h-100" id="vm-card" style="margin: 0.4rem; width: 30%">
+<div class="card d-none vm-card h-100" id="vm-card" style="margin: 0.4rem; width: 30%" data-toggle="modal" data-target="#">
 	<div class="card-header">
 			<input type="hidden" name="vm_recipe_name[]" value="" />
 			<h4 class="float-left" style="margin-top: 4px; margin-bottom: 4px; overflow: hidden; white-space: nowrap; width: 100%; text-overflow: ellipsis;"></h4>
 	</div>
-	<div class="card-body" data-target="#" data-toggle="modal" style="height: 90px; overflow-y: auto;">
+	<div class="card-body" style="height: 90px; overflow-y: auto;">
 		<p>Some general description</p>
 	</div>
 </div>
@@ -533,6 +570,9 @@
 </datalist>
 {% endif -%}
 
+<!--
+	Context menu which shows up when you right-click one of the VM recipe cards
+-->
 <div id="context-menu">
 	<ul class="context-menu-items">
 		<li class="context-menu-item">
@@ -547,11 +587,15 @@
 	</ul>
 </div>
 
+<!--
+	Since you cannot use the same VM recipe twice, you can clone a VM recipe,
+	but you need to rename it and allocate it a new ID
+-->
 <div class="modal fade" id="vm-clone-modal" tabindex="-1" role="dialog" aria-hidden="true" data-delete="">
         <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
                 <div class="modal-content">
                         <div class="modal-header">
-                                <h5 class="modal-title">Clone a VM</h5>
+                                <h5 class="modal-title">Clone a VM recipe</h5>
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                         <span aria-hidden="true">&times;</span>
                                 </button>
@@ -583,6 +627,15 @@ function service_recipe_exists(recipe_name){
 	}).toArray();
 	
 	return service_recipes_list.includes(recipe_name);
+}
+
+// Helper function which determines if a VM recipe already exists
+function vm_recipe_exists(recipe_name){
+	var vm_recipes_list = $("#vms-card-list .card").map(function(){
+		return $(this).attr('id');
+	}).toArray();
+	
+	return vm_recipes_list.includes(recipe_name);
 }
 
 // Returns a value or evaluates a function passed as an argument
@@ -705,11 +758,16 @@ function config_context_menu(target){
 		
 		// add the name to the current target attribute (used by the menu options which do not trigger modals)
 		$("#context-menu").attr("data-current-card", name);
-
+		
+		// Add the VM recipe name in bold inside the modal
 		$("#confirm-delete-vm-modal .modal-body").find("h5").eq(0).html("Are you sure you want to delete the '<div style=\"font-weight: bold; display:inline;\">"+name+"</div>' recipe?");
+		
+		// This modal is used for all the VM recipes, so the
+		// event listener should be a one-time thing since the definition changes slightly for each VM recipe
 		$("#confirm-delete-vm").one('click', function(){
-
-			/*$.ajax({
+		
+			// Send ajax POST request in order to remove the VM recipe from the database
+			$.ajax({
 				type: "POST",
 				async: true,
 				global: false,
@@ -718,12 +776,12 @@ function config_context_menu(target){
 				data: JSON.stringify({"vm_recipe_name": name}),
 				contentType: "application/json; charset=utf-8",
 				success: function(){
-					console.log("Meow");
+					jsFlash("Successfully deleted the "+name+" VM recipe.", "success", true);
 				},
-			});
-			*/
-			
-			console.log("oh lawd it workin");
+				failure: function(){
+					jsFlash("An error has occured while attempting to delete the "+name+" VM recipe!", "danger", true);
+				},
+			});	
 			
 			// if this recipe existed before, add it back to the datalist
 			var row = target.closest(".row");
@@ -734,7 +792,7 @@ function config_context_menu(target){
 				$("#"+name).remove();
 			}
 		
-			// Destroy the modal
+			// Destroy the modal if it exists
 			var modal = $("#" + name + "-modal");
 			if(modal.length){
 				modal.remove();
@@ -805,12 +863,14 @@ $(document).contextmenu(function(event){
 	if(!$(event.target).parents(".card").length) $('#context-menu').css({"display": "none"});
 });
 
+// This event listener makes it possible to stack bootstrap modals
 $(document).on('show.bs.modal', '.modal', function () {
-    var zIndex = 1040 + (10 * $('.modal:visible').length);
-    $(this).css('z-index', zIndex);
-    setTimeout(function() {
-        $('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
-    }, 0);
+	// increase the default z-index for the new modal
+	var zIndex = 1040 + (10 * $('.modal:visible').length);
+	$(this).css('z-index', zIndex);
+	setTimeout(function() {
+		$('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
+	}, 0);
 });
 
 $(document).ready(function(){
@@ -836,58 +896,44 @@ $(document).ready(function(){
 	
 	
 	$("#confirm-clone-vm").click(function(){
-		// just add some stuff here to clone that card and the modal for the old vm, but to replace the ids and the vm_recipe_name	
-		
 		// extract the name of the VM which should be cloned
 		var name = $('#context-menu').attr('data-current-card');
 		
 		var new_name = $("#vm-clone-name").val();
-		/*
-		$.ajax({
-			type: "POST",
-			async: true,
-			global: false,
-			url: '/workflows/create_service/get_vm_recipe',
-			data: JSON.stringify({"vm_recipe_name": name}),
-			contentType: "application/json; charset=utf-8",
-			dataType: "json",
-			success: function(vm_recipe_data){
-				$("#add-service-existing-template").modal('hide');
-				$("#new-vm-recipe").trigger("click", [vm_recipe_data, new_name, true]);
-			},
-			failure: function(error_message){
-				alert("There is no VM recipe with that name. Create your own one");
-				$("#add-service-existing-template").modal('hide');
-				$("#new-vm-recipe").trigger("click", [name]);
-			},
-                });
-		*/
-		var clone = $("#"+name+"-modal").clone();
+		
+		if(new_name && !vm_recipe_exists(new_name)){
+			var clone = $("#"+name+"-modal").clone();
 
-		var recipe_data = {}
-		recipe_data['puppet_code'] = clone.find("[name=service_vms\\["+name+"\\]\\[puppet_classes\\]]").eq(0).val();
-		recipe_data['purpose'] = clone.find("[name=service_vms\\["+name+"\\]\\[purpose\\]]").eq(0).val();
-		recipe_data['comments'] = clone.find("[name=service_vms\\["+name+"\\]\\[comments\\]]").eq(0).val();
-		recipe_data['primary_owner_who'] = clone.find("[name=service_vms\\["+name+"\\]\\[primary_owner_who\\]]").eq(0).val();
-		recipe_data['primary_owner_role'] = clone.find("[name=service_vms\\["+name+"\\]\\[primary_owner_role\\]]").eq(0).val();
-                recipe_data['secondary_owner_who'] = clone.find("[name=service_vms\\["+name+"\\]\\[secondary_owner_who\\]]").eq(0).val();
-                recipe_data['secondary_owner_role'] = clone.find("[name=service_vms\\["+name+"\\]\\[secondary_owner_role\\]]").eq(0).val();
-                recipe_data['sockets'] = clone.find("[name=service_vms\\["+name+"\\]\\[sockets\\]]").eq(0).val();
-                recipe_data['cores'] = clone.find("[name=service_vms\\["+name+"\\]\\[cores\\]]").eq(0).val();
-                recipe_data['ram'] = clone.find("[name=service_vms\\["+name+"\\]\\[ram\\]]").eq(0).val();
-                recipe_data['disk'] = clone.find("[name=service_vms\\["+name+"\\]\\[disk\\]]").eq(0).val();
-                recipe_data['os'] = clone.find("[name=service_vms\\["+name+"\\]\\[template\\]]").eq(0).val();
-                recipe_data['network'] = clone.find("[name=service_vms\\["+name+"\\]\\[network\\]]").eq(0).val();
-                recipe_data['location_cluster'] = clone.find("[name=service_vms\\["+name+"\\]\\[cluster\\]]").eq(0).val();
-                recipe_data['dns_aliases'] = clone.find("[name=service_vms\\["+name+"\\]\\[dns_aliases\\]]").eq(0).val();
-                recipe_data['vm_folder_moid'] = clone.find("[name=service_vms\\["+name+"\\]\\[vm_folder_moid\\]]").eq(0).val();
-                recipe_data['description'] = clone.find("[name=service_vms\\["+name+"\\]\\[vm_description\\]]").eq(0).val();
+			var recipe_data = {}
+			recipe_data['puppet_code'] = clone.find("[name=service_vms\\["+name+"\\]\\[puppet_classes\\]]").eq(0).val();
+			recipe_data['purpose'] = clone.find("[name=service_vms\\["+name+"\\]\\[purpose\\]]").eq(0).val();
+			recipe_data['comments'] = clone.find("[name=service_vms\\["+name+"\\]\\[comments\\]]").eq(0).val();
+			recipe_data['primary_owner_who'] = clone.find("[name=service_vms\\["+name+"\\]\\[primary_owner_who\\]]").eq(0).val();
+			recipe_data['primary_owner_role'] = clone.find("[name=service_vms\\["+name+"\\]\\[primary_owner_role\\]]").eq(0).val();
+			recipe_data['secondary_owner_who'] = clone.find("[name=service_vms\\["+name+"\\]\\[secondary_owner_who\\]]").eq(0).val();
+			recipe_data['secondary_owner_role'] = clone.find("[name=service_vms\\["+name+"\\]\\[secondary_owner_role\\]]").eq(0).val();
+			recipe_data['sockets'] = clone.find("[name=service_vms\\["+name+"\\]\\[sockets\\]]").eq(0).val();
+			recipe_data['cores'] = clone.find("[name=service_vms\\["+name+"\\]\\[cores\\]]").eq(0).val();
+			recipe_data['ram'] = clone.find("[name=service_vms\\["+name+"\\]\\[ram\\]]").eq(0).val();
+			recipe_data['disk'] = clone.find("[name=service_vms\\["+name+"\\]\\[disk\\]]").eq(0).val();
+			recipe_data['os'] = clone.find("[name=service_vms\\["+name+"\\]\\[template\\]]").eq(0).val();
+			recipe_data['network'] = clone.find("[name=service_vms\\["+name+"\\]\\[network\\]]").eq(0).val();
+			recipe_data['location_cluster'] = clone.find("[name=service_vms\\["+name+"\\]\\[cluster\\]]").eq(0).val();
+			recipe_data['dns_aliases'] = clone.find("[name=service_vms\\["+name+"\\]\\[dns_aliases\\]]").eq(0).val();
+			recipe_data['vm_folder_moid'] = clone.find("[name=service_vms\\["+name+"\\]\\[vm_folder_moid\\]]").eq(0).val();
+			recipe_data['description'] = clone.find("[name=service_vms\\["+name+"\\]\\[vm_description\\]]").eq(0).val();
 
-		console.log(recipe_data);
+			console.log(recipe_data);
 
-		$("#new-vm-recipe").trigger("click", [recipe_data, new_name, true]);
+			$("#new-vm-recipe").trigger("click", [recipe_data, new_name, true]);
 
-		$("#vm-clone-name").val("");
+			$("#vm-clone-name").val("");
+			
+			jsFlash("VM recipe successfully cloned.", "success", true);
+			
+		} else {
+			jsFlash("The name you chose already exists or is invalid!", "danger", true);
+		}
 	});
 
 	$(".delete-service").click(function(){
@@ -902,7 +948,10 @@ $(document).ready(function(){
 				data: $.param({"service_recipe_name": rec_name}),
 				dataType: "json",
 				success: function(data){
-					console.log(data);
+					jsFlash("Successfully deleted the "+rec_name+" service recipe.", "success", true);
+				},
+				failure: function(){
+					jsFlash("Failed to delete the "+rec_name+" service recipe!", "danger", true);
 				},
 			});
 
@@ -935,6 +984,7 @@ $(document).ready(function(){
 		action =  "use_recipe";
 		service_recipe_name = $(this).attr('data-name');
 		$(".hide-on-use").toggleClass("d-none");
+		$('.hide-on-use').find('[name]').prop('required', false);
 		$.ajax({
 			type: "POST",
 			async: true,
@@ -944,11 +994,12 @@ $(document).ready(function(){
 			contentType: "application/json; charset=utf-8",
 			dataType: "json",
 			success: function(recipe_data){
+				jsFlash("Successfully loaded the " +service_recipe_name+ " service recipe.", "success", true);
 				$("#add-service-existing-template").modal('hide');
 		                $("#create-service-template").trigger("click", [recipe_data]);
 			},
 			failure: function(error_message){
-				alert("There is no service recipe with that name. Create your own one");
+				jsFlash("The " +service_recipe_name+ " recipe does not exist. You can create it now.", "info", true);
 				$("#add-service-existing-template").modal('hide');
 				$("#create-service-template").trigger("click");
 			},
@@ -1009,209 +1060,219 @@ $(document).ready(function(){
 		// extract the recipe name from the input
 		var vm_recipe_name = $("#vm-recipe-input").val();
 		
-		// If the there's no data about the recipe (it is a new recipe)
-		// Try to fetch data about it from the server or just create a blank one if failed
-		if(!recipe_data && !recipe_name && vm_recipe_name){
-			
-			$.ajax({
-                        	type: "POST",
-                        	async: true,
-                       		global: false,
-                         	url: '/workflows/create_service/get_vm_recipe',
-                         	data: JSON.stringify({"vm_recipe_name": vm_recipe_name}),
-                         	contentType: "application/json; charset=utf-8",
-                         	dataType: "json",
-                         	success: function(vm_recipe_data){
-                                 	$("#add-service-existing-template").modal('hide');
-                                 	$("#new-vm-recipe").trigger("click", [vm_recipe_data, vm_recipe_name]);
-                         	},
-                         	failure: function(error_message){
-                                 	alert("There is no VM recipe with that name. Create your own one");
-                                 	$("#add-service-existing-template").modal('hide');
-					$("#new-vm-recipe").trigger("click", [vm_recipe_name]);
-                         	},
-                 	});
-		}
-		
-		else {
-			// If this is part of an existing recipe
-			if(recipe_name) {
-				var vm_recipe_name = recipe_name;
-				// remove this from the datalist so it cannot be used twice
-				$("option#"+vm_recipe_name).remove();
+		// If the VM recipe is not already on screen
+		if(!vm_recipe_exists(vm_recipe_name)){
+			// If the there's no data about the recipe (it is a new recipe)
+			// Try to fetch data about it from the server or just create a blank one if failed
+			if(!recipe_data && !recipe_name && vm_recipe_name){
 				
-			} 
-			
-			if($(this).val())
-			$("#vm-recipe-input").val("");
-
-			if(recipe_data){
-				$("#service-now-task").removeClass("d-none");
-			}
-			var general_description = (recipe_data && recipe_data['description']) ? recipe_data['description'] : vm_recipe_name;
-			
-			var card = $("#vm-card").clone();
-			card.toggleClass('d-none');
-			card.attr('id', vm_recipe_name);
-			card.attr('data-exists', recipe_name ? 'true' : 'false'); // since a VM recipe cannot be used twice, you need to know if it should be added back to the list once the card gets deleted
-			card.find(".card-header h4").eq(0).html(vm_recipe_name);
-			card.find(".card-header input").eq(0).attr('value', vm_recipe_name);
-			card.find(".card-body p").eq(0).html(general_description);
-			
-			/*
-			*  This is how cards are added to the slide
-			*  Need to come up with a function that does this instead.
-			*/
-			var number_of_cards = $(".vm-card").length -1;
-			if(number_of_cards % 3 == 0){
-				var row = $($.parseHTML('<div class="row col-md-12"></div>'));
-				row.append(card);
-				$("#vms-card-list").append(row);
-			} else {
-				$("#vms-card-list .row").last().append(card);
-			}
-			config_context_menu(card);
-			if($("#"+vm_recipe_name+"-modal").length == 0){
-				// clone the modal
-				var modal = $("#vm-recipe-template-modal").clone();
-
-				// manually initialize the selectpickers
-				modal.find(".selectpicker-disabled").each(function(){
-					$(this).addClass("selectpicker").removeClass("selectpicker-disabled");
-					$(this).selectpicker();
+				$.ajax({
+					type: "POST",
+					async: true,
+					global: false,
+					url: '/workflows/create_service/get_vm_recipe',
+					data: JSON.stringify({"vm_recipe_name": vm_recipe_name}),
+					contentType: "application/json; charset=utf-8",
+					dataType: "json",
+					success: function(vm_recipe_data){
+						$("#add-service-existing-template").modal('hide');
+						$("#new-vm-recipe").trigger("click", [vm_recipe_data, vm_recipe_name]);
+					},
+					failure: function(error_message){
+						jsFlash("This VM recipe does not exist. You can define it now.", "info", true);
+						$("#add-service-existing-template").modal('hide');
+						$("#new-vm-recipe").trigger("click", [vm_recipe_name]);
+					},
 				});
+			}
+			
+			else {
+				// If this is part of an existing recipe
+				if(recipe_name) {
+					var vm_recipe_name = recipe_name;
+					// remove this from the datalist so it cannot be used twice
+					$("option#"+vm_recipe_name).remove();
+					
+				} 
 				
-				// Change the clone's relevant IDs so they can be referenced later			
-				modal.attr('id', vm_recipe_name+"-modal");
-				modal.find(".modal-header h5").eq(0).html("Config "+ vm_recipe_name);
-				modal.find(".modal-body textarea").eq(0).attr('id', vm_recipe_name+"-textarea");
-				modal.find(".modal-body #vm-puppet").eq(0).attr('href', "#puppet-code-"+vm_recipe_name);
-				modal.find(".modal-body #vm-configuration").eq(0).attr('href', "#config-"+vm_recipe_name);
-				modal.find(".modal-body #vm-description-tab").eq(0).attr('href', '#vm-description-'+vm_recipe_name);
-				modal.find(".modal-body #puppet-code").eq(0).attr('id', "puppet-code-"+vm_recipe_name);
-				modal.find(".modal-body #config").eq(0).attr('id', "config-"+vm_recipe_name);
-				modal.find(".modal-body #vm-description").eq(0).attr('id', "vm-description-"+vm_recipe_name);
-				if(is_clone_or_new == true){
-					modal.find(".modal-body").append("<input type=hidden name='is_clone_or_new' value='true'></input>");
-				}
+				if($(this).val())
+				$("#vm-recipe-input").val("");
 
-				// Apply existing configuration if it already exists
 				if(recipe_data){
-					modal.find(".modal-body #purpose").eq(0).attr('value', recipe_data['purpose']);
-					modal.find(".modal-body #comments").eq(0).attr('value', recipe_data['comments']);
-					modal.find(".modal-body #primary_owner_who").eq(0).attr('value', recipe_data['primary_owner_who']);
-					modal.find(".modal-body #primary_owner_role").eq(0).attr('value', recipe_data['primary_owner_role']);
-					modal.find(".modal-body #secondary_owner_who").eq(0).attr('value', recipe_data['secondary_owner_who']);
-					modal.find(".modal-body #secondary_owner_role").eq(0).attr('value', recipe_data['secondary_owner_role']);
-					modal.find(".modal-body #sockets-sldier").eq(0).attr('value', recipe_data['sockets']);
-					modal.find(".modal-body #ram-slider").eq(0).attr('value', recipe_data['ram']);
-					modal.find(".modal-body #disk-slider").eq(0).attr('value', recipe_data['disk']);
-					modal.find(".modal-body #cores-slider").eq(0).attr('value', recipe_data['cores']);
-					modal.find(".modal-body #template").eq(0).val(recipe_data['os']);
-					modal.find(".modal-body #template").eq(0).selectpicker('refresh');
-					modal.find(".modal-body #cluster").eq(0).val(recipe_data['location_cluster']);
-					modal.find(".modal-body #cluster").eq(0).selectpicker('refresh');
-					modal.find(".modal-body #network").eq(0).val(recipe_data['network']);
-					modal.find(".modal-body #network").eq(0).selectpicker('refresh');
-					modal.find(".modal-body #vm_folder_moid").eq(0).val(recipe_data['vm_folder_moid']);
-					modal.find(".modal-body #vm_folder_moid").eq(0).selectpicker('refresh');
-					modal.find(".modal-body #vm_description").eq(0).val(general_description);
+					$("#service-now-task").removeClass("d-none");
 				}
-			
-				// Append the cloned modal's html to the carousel	
-				$(".carousel-inner").append(modal);
+				var general_description = (recipe_data && recipe_data['description']) ? recipe_data['description'] : vm_recipe_name;
 				
-				// Add event listeners for the existing recipes to update them
-				// when the 'Save Changes' button is clicked
-				if(card.attr('data-exists') == 'true'){
-					console.log("there is a card with true");
-					modal.find(".save-vm-recipe-changes").eq(0).click(function(){
-						console.log("save button has been pressed");
-						// get all the input fields values
-						var form_data = $("#"+vm_recipe_name+"-modal [name]").map(function(){
-									var val=$(this).val();
-									var rec_name=$(this).attr('name');
-									return {name: rec_name, value: val};
-								});
-						console.log(form_data);
-						$.ajax({
-							type: "POST",
-							async: true,
-							global: false,
-							url: '{{url_for("update_vm_recipe")}}',
-							data: $.param(form_data),
-							dataType: "json",
-							success: function(data){
-								console.log(data);
-							},
-						});
+				var card = $("#vm-card").clone();
+				card.toggleClass('d-none');
+				card.attr('id', vm_recipe_name);
+				card.attr('data-exists', recipe_name ? 'true' : 'false'); // since a VM recipe cannot be used twice, you need to know if it should be added back to the list once the card gets deleted
+				card.attr('data-target', '#'+vm_recipe_name+'-modal');
+				card.find(".card-header h4").eq(0).html(vm_recipe_name);
+				card.find(".card-header input").eq(0).attr('value', vm_recipe_name);
+				card.find(".card-body p").eq(0).html(general_description);
+				/*
+				*  This is how cards are added to the slide
+				*  Need to come up with a function that does this instead.
+				*/
+				var number_of_cards = $(".vm-card").length -1;
+				if(number_of_cards % 3 == 0){
+					var row = $($.parseHTML('<div class="row col-md-12"></div>'));
+					row.append(card);
+					$("#vms-card-list").append(row);
+				} else {
+					$("#vms-card-list .row").last().append(card);
+				}
+				
+				config_context_menu(card);
+				
+				if($("#"+vm_recipe_name+"-modal").length == 0){
+					// clone the modal
+					var modal = $("#vm-recipe-template-modal").clone();
+
+					// manually initialize the selectpickers
+					modal.find(".selectpicker-disabled").each(function(){
+						$(this).addClass("selectpicker").removeClass("selectpicker-disabled");
+						$(this).selectpicker();
 					});
-				}
+					
+					// Change the clone's relevant IDs so they can be referenced later			
+					modal.attr('id', vm_recipe_name+"-modal");
+					modal.find(".modal-header h5").eq(0).html("Config "+ vm_recipe_name);
+					modal.find(".modal-body textarea").eq(0).attr('id', vm_recipe_name+"-textarea");
+					modal.find(".modal-body #vm-puppet").eq(0).attr('href', "#puppet-code-"+vm_recipe_name);
+					modal.find(".modal-body #vm-configuration").eq(0).attr('href', "#config-"+vm_recipe_name);
+					modal.find(".modal-body #vm-description-tab").eq(0).attr('href', '#vm-description-'+vm_recipe_name);
+					modal.find(".modal-body #puppet-code").eq(0).attr('id', "puppet-code-"+vm_recipe_name);
+					modal.find(".modal-body #config").eq(0).attr('id', "config-"+vm_recipe_name);
+					modal.find(".modal-body #vm-description").eq(0).attr('id', "vm-description-"+vm_recipe_name);
+					if(is_clone_or_new == true){
+						modal.find(".modal-body").append("<input type=hidden name='is_clone_or_new' value='true'></input>");
+					}
+
+					// Apply existing configuration if it already exists
+					if(recipe_data){
+						modal.find(".modal-body #purpose").eq(0).attr('value', recipe_data['purpose']);
+						modal.find(".modal-body #comments").eq(0).attr('value', recipe_data['comments']);
+						modal.find(".modal-body #primary_owner_who").eq(0).attr('value', recipe_data['primary_owner_who']);
+						modal.find(".modal-body #primary_owner_role").eq(0).attr('value', recipe_data['primary_owner_role']);
+						modal.find(".modal-body #secondary_owner_who").eq(0).attr('value', recipe_data['secondary_owner_who']);
+						modal.find(".modal-body #secondary_owner_role").eq(0).attr('value', recipe_data['secondary_owner_role']);
+						modal.find(".modal-body #sockets-sldier").eq(0).attr('value', recipe_data['sockets']);
+						modal.find(".modal-body #ram-slider").eq(0).attr('value', recipe_data['ram']);
+						modal.find(".modal-body #disk-slider").eq(0).attr('value', recipe_data['disk']);
+						modal.find(".modal-body #cores-slider").eq(0).attr('value', recipe_data['cores']);
+						modal.find(".modal-body #template").eq(0).val(recipe_data['os']);
+						modal.find(".modal-body #template").eq(0).selectpicker('refresh');
+						modal.find(".modal-body #cluster").eq(0).val(recipe_data['location_cluster']);
+						modal.find(".modal-body #cluster").eq(0).selectpicker('refresh');
+						modal.find(".modal-body #network").eq(0).val(recipe_data['network']);
+						modal.find(".modal-body #network").eq(0).selectpicker('refresh');
+						modal.find(".modal-body #vm_folder_moid").eq(0).val(recipe_data['vm_folder_moid']);
+						modal.find(".modal-body #vm_folder_moid").eq(0).selectpicker('refresh');
+						modal.find(".modal-body #vm_description").eq(0).val(general_description);
+					}
 				
-				// Set the input name attribute to contain the vm_recipe_name
-				modal.find("input, textarea, .selectpicker").each(function(){
-					$(this).attr('name', ("service_vms["+vm_recipe_name+"]"+"["+$(this).attr('name')+"]"));
-				});
-				
-				// Link each slider to its label
-				var sliders = $('#config-'+vm_recipe_name+" .slider-input");
-				sliders.each(function(){
-					$(this).parent().find(".output").eq(0).html($(this).val());
-				});
-				
-				// Initial update for the summary
-				$('#config-'+vm_recipe_name+' #val_vcpus').text($('#config-'+vm_recipe_name+" #sockets-slider").val() * $('#config-'+vm_recipe_name+" #cores-slider").val());
-				$('#config-'+vm_recipe_name+' #val_ram').text($('#config-'+vm_recipe_name+" #ram-slider").val());
-				$('#config-'+vm_recipe_name+' #val_disk').text($('#config-'+vm_recipe_name+" #disk-slider").val());
-				
-				// On input update the label value and the config summary
-				sliders.on('input', function(event, value){
-					$(this).parent().find(".output").eq(0).html($(this).val());
+					// Append the cloned modal's html to the carousel	
+					$(".carousel-inner").append(modal);
+					
+					// Add event listeners for the existing recipes to update them
+					// when the 'Save Changes' button is clicked
+					if(card.attr('data-exists') == 'true'){
+						console.log("there is a card with true");
+						modal.find(".save-vm-recipe-changes").eq(0).click(function(){
+							console.log("save button has been pressed");
+							// get all the input fields values
+							var form_data = $("#"+vm_recipe_name+"-modal [name]").map(function(){
+										var val=$(this).val();
+										var rec_name=$(this).attr('name');
+										return {name: rec_name, value: val};
+									});
+							console.log(form_data);
+							$.ajax({
+								type: "POST",
+								async: true,
+								global: false,
+								url: '{{url_for("update_vm_recipe")}}',
+								data: $.param(form_data),
+								dataType: "json",
+								success: function(data){
+									jsFlash("Successfully updated "+vm_recipe_name+".", "success", true);
+
+								},
+							});
+						});
+					}
+					
+					// Set the input name attribute to contain the vm_recipe_name
+					modal.find("input, textarea, .selectpicker").each(function(){
+						$(this).attr('name', ("service_vms["+vm_recipe_name+"]"+"["+$(this).attr('name')+"]"));
+					});
+					
+					// Link each slider to its label
+					var sliders = $('#config-'+vm_recipe_name+" .slider-input");
+					sliders.each(function(){
+						$(this).parent().find(".output").eq(0).html($(this).val());
+					});
+					
+					// Initial update for the summary
 					$('#config-'+vm_recipe_name+' #val_vcpus').text($('#config-'+vm_recipe_name+" #sockets-slider").val() * $('#config-'+vm_recipe_name+" #cores-slider").val());
 					$('#config-'+vm_recipe_name+' #val_ram').text($('#config-'+vm_recipe_name+" #ram-slider").val());
 					$('#config-'+vm_recipe_name+' #val_disk').text($('#config-'+vm_recipe_name+" #disk-slider").val());
-				});
-				
-				// Get and set the puppet code
-				puppet_code = recipe_data ? recipe_data['puppet_code'] : '';
-				$("#"+vm_recipe_name+'-textarea').html(puppet_code);
-
-				// On 'show modal', set up CodeMirror
-				modal.on('shown.bs.modal', function (e) {
-					var delete_button = e.relatedTarget;
 					
-					// Prevent the delete button from triggering the 'show modal' event
-					if($(delete_button).hasClass('no-modal')) {
-						e.stopPropagation();
-					}  
+					// On input update the label value and the config summary
+					sliders.on('input', function(event, value){
+						$(this).parent().find(".output").eq(0).html($(this).val());
+						$('#config-'+vm_recipe_name+' #val_vcpus').text($('#config-'+vm_recipe_name+" #sockets-slider").val() * $('#config-'+vm_recipe_name+" #cores-slider").val());
+						$('#config-'+vm_recipe_name+' #val_ram').text($('#config-'+vm_recipe_name+" #ram-slider").val());
+						$('#config-'+vm_recipe_name+' #val_disk').text($('#config-'+vm_recipe_name+" #disk-slider").val());
+					});
+					
+					// Get and set the puppet code
+					puppet_code = recipe_data ? recipe_data['puppet_code'] : '';
+					$("#"+vm_recipe_name+'-textarea').html(puppet_code);
 
-					// If CodeMirror hasn't already been initialized
-					if($(this).find(".CodeMirror").length == 0){
-						var classes_editor = CodeMirror.fromTextArea(document.getElementById(vm_recipe_name+'-textarea'), 
-						{
-							mode: 'yaml',
-							gutters: ["CodeMirror-lint-markers"],
-							lint: true,
-							indentUnit: 2,
-							viewportMargin: Infinity,
-						});
+					// On 'show modal', set up CodeMirror
+					modal.on('shown.bs.modal', function (e) {
+						var delete_button = e.relatedTarget;
 						
-						// Set editor size
-						classes_editor.setSize(1100,500);
-						// Update the textarea
-						classes_editor.on('change', function(){
-							classes_editor.save();
-						});
-					}
-				});
+						// Prevent the delete button from triggering the 'show modal' event
+						if($(delete_button).hasClass('no-modal')) {
+							e.stopPropagation();
+						}  
 
+						// If CodeMirror hasn't already been initialized
+						if($(this).find(".CodeMirror").length == 0){
+							var classes_editor = CodeMirror.fromTextArea(document.getElementById(vm_recipe_name+'-textarea'), 
+							{
+								mode: 'yaml',
+								gutters: ["CodeMirror-lint-markers"],
+								lint: true,
+								indentUnit: 2,
+								viewportMargin: Infinity,
+							});
+							
+							// Set editor size
+							classes_editor.setSize(1100,500);
+							// Update the textarea
+							classes_editor.on('change', function(){
+								classes_editor.save();
+							});
+						}
+					});
+
+				}
+
+				// Ensure the modal is hidden
+				$("#add-vm-existing-recipe").modal('hide');
 			}
-
-			// Ensure the modal is hidden
+			// reset the input field's value
+			$("#vm-recipe-input").val("");
+		} else {
 			$("#add-vm-existing-recipe").modal('hide');
+			$("#vm-recipe-input").val("");
+			alert("This VM recipe already exists!");
 		}
-		// reset the input field's value
-		$("#vm-recipe-input").val("");
 	});
 	
 	// Sandbox/Standard toggle button event listener

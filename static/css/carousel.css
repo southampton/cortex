@@ -10,6 +10,10 @@
 	margin-bottom: 0!important;
 }
 
+.card:hover {
+	cursor: pointer;
+}
+
 #vms-card-list {
 	overflow-y: auto;
 }
