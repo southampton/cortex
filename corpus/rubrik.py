@@ -1,19 +1,17 @@
-from flask import g
-
 import requests
 
 from urllib.parse import urljoin
 from urllib.parse import quote
 
 class Rubrik(object):
-	"""A restful client for Rubrik"""
+	"""A RESTful client for Rubrik"""
 
 	def __init__(self, helper):
-		app = helper
-		self.api_url_base = app.config['RUBRIK_API_URL_BASE']
+		self.helper = helper
+		self.api_url_base = helper.config['RUBRIK_API_URL_BASE']
 		self.headers = {'Accept': 'application/json'}
-		self.rubrik_api_user = app.config['RUBRIK_API_USER']
-		self.rubrik_api_pass = app.config['RUBRIK_API_PASS']
+		self.rubrik_api_user = helper.config['RUBRIK_API_USER']
+		self.rubrik_api_pass = helper.config['RUBRIK_API_PASS']
 		self.get_api_token()
 
 	def get_api_token(self):
@@ -82,7 +80,7 @@ class Rubrik(object):
 	def get_vm_managed_id(self, system):
 		"""Works out the Rubrik Managed ID of a VM"""
 
-		# Format of Rurrik Managed ID is:
+		# Format of Rubrik Managed ID is:
 		# VirtualMachine:::<vcenter-rubrik-managed-id>-<vm-moId>
 
 		if 'vmware_vcenter' not in system or 'vmware_moid' not in system:
@@ -107,14 +105,14 @@ class Rubrik(object):
 			vm_id = self.get_vm_managed_id(system)
 		except Exception as e:
 			import traceback
-			app.logger.error('Error getting Rubrik VM ID:\n' + traceback.format_exc())
+			self.helper.logger.error('Error getting Rubrik VM ID:\n' + traceback.format_exc())
 			raise Exception('Error getting Rubrik VM ID: ' + str(e))
 
 		try:
 			return self.get_request('vmware/vm/' + quote(vm_id))
 		except Exception as e:
 			import traceback
-			app.logger.error('Error getting Rubrik VM ID:\n' + traceback.format_exc())
+			self.helper.logger.error('Error getting Rubrik VM ID:\n' + traceback.format_exc())
 			raise Exception('Error getting VM from Rubrik: ' + str(e))
 
 	def get_vm_snapshots(self, id):

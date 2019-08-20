@@ -13,6 +13,29 @@ import time
 from setproctitle import setproctitle #pip install setproctitle
 from corpus import Corpus
 
+class TaskHelperLogger(object):
+	"""This is a Python-logging-like object that is used by TaskHelper, so that
+	certain classes don't need to care whether they get an "app" object or a
+	TaskHelper object if they only need logger and config."""
+
+	def log(self, lvl, msg, *args, **kwargs):
+		print(str(lvl) + ": " + str(msg).format(args), file=sys.stderr)
+
+	def debug(self, msg, *args, **kwargs):
+		self.log('DEBUG', msg, *args, **kwargs)
+
+	def info(self, msg, *args, **kwargs):
+		self.log('INFO', msg, *args, **kwargs)
+
+	def error(self, msg, *args, **kwargs):
+		self.log('ERROR', msg, *args, **kwargs)
+
+	def warning(self, msg, *args, **kwargs):
+		self.log('WARNING', msg, *args, **kwargs)
+
+	def critical(self, msg, *args, **kwargs):
+		self.log('CRITICAL', msg, *args, **kwargs)
+
 class TaskHelper(object):
 
 	# Task / Event statuses
@@ -39,6 +62,7 @@ class TaskHelper(object):
 		self.username       = username
 		self.event_id       = -1
 		self.event_problems = 0
+		self.logger         = TaskHelperLogger()
 
 	def _signal_handler(self, signal, frame):
 		"""Marks task and event as failed when interrupted by a signal, and then exits"""
