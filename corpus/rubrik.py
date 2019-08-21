@@ -3,6 +3,13 @@ import requests
 from urllib.parse import urljoin
 from urllib.parse import quote
 
+class RubrikVMNotFound(Exception):
+	pass
+
+class RubrikVCenterNotFound(Exception):
+	def __init__(self, vcenter):
+		self.vcenter = vcenter
+
 class Rubrik(object):
 	"""A RESTful client for Rubrik"""
 
@@ -73,7 +80,7 @@ class Rubrik(object):
 				break
 
 		if vcManagedId is None:
-			raise RuntimeError('Failed to find vCenter "' + vcenter + '" in Rubrik')
+			raise RubrikVCenterNotFound(vcenter)
 
 		return vcManagedId
 
@@ -110,10 +117,17 @@ class Rubrik(object):
 
 		try:
 			return self.get_request('vmware/vm/' + quote(vm_id))
-		except Exception as e:
+		except requests.exceptions.HTTPError as e1:
+			if e1.response is not None and e1.response.status_code == 404:
+				raise RubrikVMNotFound()
+			else:
+				import traceback
+				self.helper.logger.error('Error getting Rubrik VM ID:\n' + traceback.format_exc())
+				raise Exception('Error getting VM from Rubrik: ' + str(e1))
+		except Exception as e2:
 			import traceback
 			self.helper.logger.error('Error getting Rubrik VM ID:\n' + traceback.format_exc())
-			raise Exception('Error getting VM from Rubrik: ' + str(e))
+			raise Exception('Error getting VM from Rubrik: ' + str(e2))
 
 	def get_vm_snapshots(self, id):
 		"""Get a list of snapshots for the vm"""
