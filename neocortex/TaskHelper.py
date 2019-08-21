@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import Pyro4
-import syslog
+import logging
 import signal
 import os
 import imp
@@ -12,29 +12,6 @@ import json
 import time
 from setproctitle import setproctitle #pip install setproctitle
 from corpus import Corpus
-
-class TaskHelperLogger(object):
-	"""This is a Python-logging-like object that is used by TaskHelper, so that
-	certain classes don't need to care whether they get an "app" object or a
-	TaskHelper object if they only need logger and config."""
-
-	def log(self, lvl, msg, *args, **kwargs):
-		print(str(lvl) + ": " + str(msg).format(args), file=sys.stderr)
-
-	def debug(self, msg, *args, **kwargs):
-		self.log('DEBUG', msg, *args, **kwargs)
-
-	def info(self, msg, *args, **kwargs):
-		self.log('INFO', msg, *args, **kwargs)
-
-	def error(self, msg, *args, **kwargs):
-		self.log('ERROR', msg, *args, **kwargs)
-
-	def warning(self, msg, *args, **kwargs):
-		self.log('WARNING', msg, *args, **kwargs)
-
-	def critical(self, msg, *args, **kwargs):
-		self.log('CRITICAL', msg, *args, **kwargs)
 
 class TaskHelper(object):
 
@@ -62,18 +39,18 @@ class TaskHelper(object):
 		self.username       = username
 		self.event_id       = -1
 		self.event_problems = 0
-		self.logger         = TaskHelperLogger()
+		self.logger         = logging.getLogger('neocortex')
 
 	def _signal_handler(self, signal, frame):
 		"""Marks task and event as failed when interrupted by a signal, and then exits"""
 
-		syslog.syslog('task id ' + str(self.task_id) + ' caught exit signal')
+		self.logger.info('task id ' + str(self.task_id) + ' caught exit signal')
 
 		self.end_event(success=False)
 		self.event('neocortex.shutdown','The task was terminated because neocortex was asked to shutdown')
 		self._end_task(success=False)
 
-		syslog.syslog('task id ' + str(self.task_id) + ' marked as finished')
+		self.logger.warning('task id ' + str(self.task_id) + ' marked as finished')
 		sys.exit(0)
 
 	def run(self, task_module, options):
@@ -120,7 +97,7 @@ class TaskHelper(object):
 		self.db.commit()
 
 		import traceback
-		syslog.syslog('Unhandled exception caused task to end:\n' + traceback.format_exc())
+		self.logger.error('Unhandled exception caused task to end:\n' + traceback.format_exc())
 
 	def _log_fatal_error(self, message):
 		"""Logs a fatal error into the events for this task"""
@@ -213,6 +190,8 @@ class TaskHelper(object):
 		self.curd.execute("UPDATE `tasks` SET `status` = %s, `end` = NOW() WHERE `id` = %s", (status, self.task_id))
 		self.db.commit()
 		self.event_problems = 0
+
+		self.logger.info('Task ' + str(self.task_id) + ' ended')
 
 	def get_problem_count(self):
 		"""Returns the number of events within the task that have failed or finished with warnings."""
