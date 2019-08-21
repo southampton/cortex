@@ -82,7 +82,7 @@ $(document).ready(function()
 			<input type="hidden" id="selected_values" name="selected_values">
 		</div>
 	</div>
-{% if "" not in set_roles.keys() %}
+{% if True %}
 	<div class="panel-group" id="accordion">
 		{% for role in set_roles %}
 			{% if role != 'AllNodes'%}
@@ -102,7 +102,7 @@ $(document).ready(function()
 						      	
 						      	{% for config in role_info[role] %}
 						    		<div class="checkbox">
-										<label><input class="chkboxes" type="checkbox" value="{{ config['Name'] }}" {% if config['Name'] in set_roles[role].values() %} checked {% endif %} role="{{ role }}">{{ config['Name'] }}{{ config['GroupName'] }}{{ config['TaskName'] }}</label>
+										<label><input class="chkboxes" type="checkbox" value="{{ config['Name'] }}{{ config['GroupName'] }}{{ config['TaskName'] }}" {% if config['Name'] in set_roles[role].values() or config['GroupName'] in set_roles[role].values() or config['TaskName'] in set_roles[role].values() %} checked {% endif %} role="{{ role }}">{{ config['Name'] }}{{ config['GroupName'] }}{{ config['TaskName'] }}</label>
 									</div>
 						      	{% endfor %}
 						      </div>
@@ -136,8 +136,9 @@ $(document).ready(function()
 <script type="text/javascript">
 
 window.onload = function() {
-	var exist_roles = Object.keys({{ set_roles|tojson }});
-	$('.selectpicker').selectpicker('val', exist_roles);
+	var exist_roles = Object.keys({{ selectpicker_tick|tojson }});
+	$('.selectpicker').selectpicker('val', {{ selectpicker_tick|tojson }});
+
 };
 
 function checkAll(r){
