@@ -99,10 +99,6 @@ def generate_reset_yaml(proxy, roles):
 
 ###########################################################################
 
-def get_jobs(selected):
-	return list(set([(r.replace('UOS','')).split('_')[0] for r in selected]))
-
-###########################################################################
 
 @app.route('/dsc/classify/<id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
@@ -125,20 +121,15 @@ def dsc_classify_machine(id):
 	default_roles = [role for role in roles_info.keys()]
 
 	#generate set of jobs
-	jobs = list(set([((r.replace('UOS', '')).split('_'))[0] for r in default_roles if not any(special_role in r for special_role in ['Generic', 'AllNodes'])]))
+	jobs = list({((r.replace('UOS', '')).split('_'))[0] for r in default_roles if not any(special_role in r for special_role in ['Generic', 'AllNodes'])})
 	# return jsonify(jobs)
-	role_selections = {g.replace('UOSGeneric_', '') : [g] for g in [r for r in default_roles if 'UOSGeneric' in r]}
 
+	role_selections = {}
 	for job in jobs:
 		role_selections[job] = [r for r in default_roles if job in r]
 
 	# return jsonify(role_selections)
 
-	#add a layer onto the code that displays 'JOBS'
-	#if a job is 'generic' then it'll just display that job
-	#otherwise it should create a dict which maps the role to it's specific config
-	#reconstruct the info that is stored in mysql in exactly the same way that it currently is based on the selection
-	#big undertaking for tomorrow
 
 
 	# retrieve all the systems
@@ -154,46 +145,55 @@ def dsc_classify_machine(id):
 			exist_config = yaml.dump(json.loads(existing_data['config']))
 		except json.decoder.JSONDecodeError as e:
 			exist_config = yaml.dump("")
-	
+
+	values_to_tick = { ((l.replace("UOS","")).split("_"))[0] for l in exist_role if 'UOSGeneric' not in l}
+	for item in [g for g in default_roles if 'UOSGeneric' in g]:
+		exist_role[item] = {'length':0} if (item not in exist_role.keys()) else exist_role[item]
+
+
 
 	if request.method == 'GET':
 		
 		if does_user_have_permission('dsc.view'):
-			return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=role_selections.keys(), yaml=exist_config, set_roles=exist_role, role_info=roles_info)
+
+			return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=role_selections.keys(), yaml=exist_config, set_roles=exist_role, role_info=roles_info, selectpicker_tick=list(values_to_tick))
 		else:
 			abort(403)
 
 	elif request.method == 'POST':
-		# return jsonify(request.form)
 		if request.form['button'] == 'push_to_dsc':
-
-			curd.execute('SELECT system_id, roles, config FROM dsc_config WHERE system_id = "%s"', (id, ))
+			curd.execute('SELECT system_id, roles, config FROM dsc_config WHERE system_id = "%s";', (id, ))
 			box_details = curd.fetchone()
 			
-			system_name = system['name']	
+			system_name = system['name']
 			#return jsonify(str(type(json.loads(existing_data['config']))))
 			cortex.lib.dsc.send_config(dsc_proxy, system_name,json.loads(existing_data['config']))
-		else:	
+		else:
 			checked_boxes = json.loads(request.form['checked_values'])
-			
+			# return jsonify(checked_boxes)
+			expanded_selected_values = []
+			# return jsonify(request.form)
+			if request.form['selected_values'] != '':
+				for val in request.form['selected_values'].split(','):
+					expanded_selected_values += role_selections[val]
+
 			# remove unnecessary detail from the dictionary
 			for group in checked_boxes:
 				del checked_boxes[group]['prevObject']
 				del checked_boxes[group]['context']
 			
-			for val in request.form['selected_values'].split(','):
+			for val in expanded_selected_values:
 				if val not in checked_boxes.keys():
 					checked_boxes[val] = {'length':0}
 
 			keys_to_remove = []
 
 			for key in checked_boxes.keys():
-				if key not in request.form['selected_values'].split(','):
+				if key not in expanded_selected_values:
 					keys_to_remove.append(key)
 
 			for key in keys_to_remove:
 				del checked_boxes[key] 
-
 			if request.form['button'] == 'save_changes':
 				#check for permissions
 				if not does_user_have_permission('dsc.edit'):
@@ -202,6 +202,7 @@ def dsc_classify_machine(id):
 				# get the new role and configuration entered
 				configuration = request.form['configurations']
 				role = json.dumps(checked_boxes)
+				# return jsonify(checked_boxes)
 				try:
 					data = yaml.safe_load(configuration)
 				except Exception as e:
@@ -234,6 +235,10 @@ def dsc_classify_machine(id):
 			exist_config = yaml.dump(json.loads(existing_data['config']))
 		except json.decoder.JSONDecodeError as e:
 			exist_config = yaml.dump("")
-	
 
-	return render_template('dsc/classify.html',  title="DSC", system=system, active='dsc', roles=role_selections.keys(), yaml=exist_config, set_roles=exist_role, role_info=roles_info)
+	values_to_tick = { ((l.replace("UOS","")).split("_"))[0] for l in exist_role if 'UOSGeneric' not in l}
+
+	for item in [g for g in default_roles if ('UOSGeneric' in g)]:
+		exist_role[item] = {'length':0} if (item not in exist_role.keys()) else exist_role[item]
+
+	return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=role_selections.keys(), yaml=exist_config, set_roles=exist_role, role_info=roles_info , selectpicker_tick=list(values_to_tick))
