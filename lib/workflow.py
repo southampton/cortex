@@ -184,7 +184,7 @@ class CortexWorkflow(object):
 
 		return decorator
 
-	def action(self, rule, title="Untitled", desc="N/A", order=999, system_permission=None, permission=None, menu=True, **options):
+	def action(self, rule, title="Untitled", desc="N/A", order=999, system_permission=None, permission=None, menu=True, require_vm=False, **options):
 		def decorator(fn):
 			## Require login, and the right permissions
 			fn = login_required(fn)
@@ -213,6 +213,7 @@ class CortexWorkflow(object):
 				'permission':        permission,
 				'desc':              desc,
 				'menu':              menu,
+				'require_vm':        require_vm,
 			})
 
 			app.logger.info("Workflows: Registered a new per-system function '" + fn.__name__ + "' in '" + self.name + "'")

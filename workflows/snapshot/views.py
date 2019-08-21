@@ -12,7 +12,7 @@ workflow.add_permission('systems.all.snapshot', 'Create VMware Snapshots on any 
 workflow.add_permission('systems.snapshot', 'Access the VMware Snapshot form; requires permission on individual systems to snapshot them.')
 workflow.add_system_permission('snapshot', 'Create a VMware snapshot for this system')
 
-@workflow.action('system', title='Snapshot', desc='Take a VMware snapshot of this system', system_permission='snapshot', permission='systems.all.snapshot', methods=['GET', 'POST'])
+@workflow.action('system', title='Snapshot', desc='Take a VMware snapshot of this system', system_permission='snapshot', permission='systems.all.snapshot', require_vm=True, methods=['GET', 'POST'])
 def snapshot_system(id):
 	
 	return redirect(url_for('snapshot_create', systems=id))
@@ -46,7 +46,7 @@ def snapshot_create():
 				else:
 					values['snapshot_systems'].append(vm)
 		
-		return workflow.render_template('create.html', systems=systems, values=values)
+		return workflow.render_template('create.html', title='Create VMware Snapshot', systems=systems, values=values)
 
 	elif request.method == 'POST':
 
@@ -77,7 +77,7 @@ def snapshot_create():
 						error = True
 
 		if error:
-			return workflow.render_template('create.html', systems=systems, values=values)
+			return workflow.render_template('create.html', title='Create VMware Snapshot', systems=systems, values=values)
 		
 		# Task Options
 		options = {}

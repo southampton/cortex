@@ -837,22 +837,25 @@ def system_actions(id):
 	for action in app.wf_system_functions:
 		if action['menu']:
 			## Add to menu ONLY if:
-			### they have workflows.all
-			### they have the per-system permission set in the workflow action
-			### they have the global permission set in the workflow action
+			##  - require_vm is not set OR (it is set and the system is a VM)
+			##  - and one of the following is true:
+			##     - they have workflows.all
+			##     - they have the per-system permission set in the workflow action
+			##     - they have the global permission set in the workflow action
 
-			if does_user_have_permission("workflows.all"):
-				actions.append(action)
-			elif does_user_have_system_permission(id,action['system_permission']):
-				app.logger.debug("User " + session['username'] + " does not have workflows.all")
-				actions.append(action)
-			elif action['permission'] is not None:
-				app.logger.debug("User " + session['username'] + " does not have " + action['system_permission'])
-
-				if does_user_have_permission("workflows." + action['permission']):
+			if (action['require_vm'] and system['vmware_uuid'] is not None) or not action['require_vm']:
+				if does_user_have_permission("workflows.all"):
 					actions.append(action)
-				else:
-					app.logger.debug("User " + session['username'] + " does not have " + action['permission'])
+				elif does_user_have_system_permission(id,action['system_permission']):
+					app.logger.debug("User " + session['username'] + " does not have workflows.all")
+					actions.append(action)
+				elif action['permission'] is not None:
+					app.logger.debug("User " + session['username'] + " does not have " + action['system_permission'])
+
+					if does_user_have_permission("workflows." + action['permission']):
+						actions.append(action)
+					else:
+						app.logger.debug("User " + session['username'] + " does not have " + action['permission'])
 
 	return render_template('systems/actions.html', system=system, active='systems', actions=actions, title=system['name'])
 
