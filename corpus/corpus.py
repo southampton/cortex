@@ -1073,7 +1073,6 @@ class Corpus(object):
 
 	############################################################################
 
-
 	def vmware_wait_for_powerstate(self, vm, powerstate, timeout=30):
 		"""Waits for a virtual machine to be marked as powerstate by VMware."""
 
@@ -1088,7 +1087,6 @@ class Corpus(object):
 
 		# Return whether the VM has reached this state or not.
 		return vm.runtime.powerState == powerstate
-
 
 	############################################################################
 
