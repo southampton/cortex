@@ -1,144 +1,50 @@
-.table
-{
-	color: #fff;
-}
+.table { color: #fff }
+body { color: #fff }
+
 /* Additional bg-classes for dashboard */
-.bg-primary
-{
-	color: #FFFFFF;
-	background-color: #242448;
-}
-table tr td
-.bg-success
-{
-	color: #FFFFFF;
-	background-color: #244824;
-}
-
-.bg-green
-{
-	color: #FFFFFF;
-	background-color: #244824;
-}
-
-.bg-dorange
-{
-	color: #FFFFFF;
-	background-color: #483624;
-}
-
-.bg-lorange
-{
-	color: #FFFFFF;
-	background-color: #484824;
-}
-
-.bg-purple
-{
-	color: #FFFFFF;
-	background-color: #482448;
-}
-
-.bg-lblue
-{
-	color: #FFFFFF;
-	background-color: #242448;
-}
-
-.bg-teal
-{
-	color: #FFFFFF;
-	background-color: #244848;
-}
+.bg-primary { background-color: #242448 }
+.bg-success { background-color: #244824 }
+.bg-green { background-color: #244824 }
+.bg-dorange { background-color: #483624 }
+.bg-lorange { background-color: #484824 }
+.bg-purple { background-color: #482448 }
+.bg-lblue { background-color: #242448 }
+.bg-teal { background-color: #244848 }
 
 /* Brighten this for the dark theme */
-i.icon-unknown
-{
-	color: #36f;
-}
+i.icon-unknown { color: #36f }
 
+/* Graphing tweaks */
 .c3-tooltip
 {
 	-webkit-box-shadow: 7px 7px 12px -9px #000;
 	-moz-box-shadow: 7px 7px 12px -9px #000;
 	box-shadow: 7px 7px 12px -9px #000;
 }
+.c3-tooltip td { background-color: #333 }
+.c3-tooltip tr { border: 1px solid #1c1c1c }
+.c3-legend-item text { fill: #eee }
+.c3-axis text { fill: #ccc }
+.c3-axis g.tick line, .c3-axis path.domain { stroke: #444 }
 
-.c3-tooltip td
-{
-	background-color: #333;
-}
+.banner { background-color: #800 }
+.sidebar { background-color: #111 }
 
-.c3-tooltip tr
-{
-	border: 1px solid #1c1c1c;
-}
-
-.c3-legend-item text
-{
-	fill: #eee;
-}
-
-.c3-axis text
-{
-	fill: #ccc;
-}
-
-.c3-axis g.tick line,
-.c3-axis path.domain
-{
-	stroke: #444;
-}
-
-.banner
-{
-	background-color: #800000;
-}
-
-.sidebar
-{
-	background-color: #060606;
-}
-
-.dataTables_wrapper, a.btn-secondary, .modal-title, .page-header, h4 small, .nav-link, .card-header, .sidebar > div > a, .list-group-popover > a , .card-body {
+.dataTables_wrapper, a.btn-secondary, .modal-title, .page-header, h4 small, .nav-link, .card-header, .sidebar > div > a, .list-group-popover > a, .card-body {
 	color: white!important;
 }
 
-.card {
-	border-width: 0px!important;
-}
+.card { border-width: 0px !important }
+.sidebar { border-right: 0px!important }
 
-.sidebar {
-	border-right: 0px!important;
-}
-
-#search label {
-	color: white;
-}
-form {
-	color: white!important;
-}
 .bootstrap-select>.dropdown-toggle, .show>.btn-light.dropdown-toggle, .bootstrap-select>.dropdown-toggle:active, .btn-light:not(:disabled):not(.disabled):active {
 	background-color: white !important;
 	color: #777;
 }
 
-p, .text-muted {
-	color: white !important;
-}
+.table-striped tbody tr:nth-of-type(odd) { background-color: #252525 !important; }
+div.tab-pane#paste, div.tab-pane#upload { border-color: #444 }
 
-.table-striped tbody tr:nth-of-type(odd) {
-    background-color: #252525 !important;
-}
-
-.nav-link {
-	padding-left: 1em;
-	padding-right: 1em;
-}
-div.tab-pane#paste, div.tab-pane#upload
-{
-	border-color: #444;
-}
 div.advanced-search
 {
 	border-bottom-color: #444;
