@@ -24,22 +24,24 @@ def generate_new_yaml(proxy, oldRole, oldConfig, newRole, newConfig):
 	roles_to_add = list(set(new_keys) - set(old_keys))
 	roles_to_remove = list(set(old_keys) - set(new_keys))
 
-	if roles_to_add == "":
-		roles_to_add = []
-
+	# finds the roles which haven't been added or removed because they are the ones we need to check
 	roles_to_check = [role for role in new_keys if role not in (roles_to_add + roles_to_remove) ]
 
+	# rebuild the config according to the modifications
 	modified_config = {}
+
+	# we have to keep allnodes the same because its being shared to all nodes 
 	modified_config['AllNodes'] = newConfig['AllNodes']
+
+	#now check the roles
 	for role in roles_to_check:
 		if newRole[role]['length'] == 0:
-			print('skipped ' + role )
+			#don't bother if the length is 0, we can skip it
 			continue
-		print(role)
 		modified_config[role] = []
 		prop_in_new = []
 		prop_in_old = []
-
+		#make the required modifications
 		for x in range(newRole[role]['length']):
 			prop_in_new.append(newRole[role][str(x)])
 		for x in range(oldRole[role]['length']):
@@ -49,51 +51,63 @@ def generate_new_yaml(proxy, oldRole, oldConfig, newRole, newConfig):
 		# generate the details for the new ones
 		# retrieve old values for the old one
 
-		#new
+		#find the new and old properties
 		added_props = list(set(prop_in_new) - set(prop_in_old))
 		removed_props = list(set(prop_in_old) - set(prop_in_new))
+		#these are the properties which haven't changed
 		props_unchanged = [prop for prop in prop_in_new if prop not in (added_props + removed_props) ]
-		print(added_props, props_unchanged, removed_props)
 
+		#add the new properties
 		for prop in added_props:
 			for existing_prop in roles_info[role]:
-				if existing_prop['Name'] == prop:
+				name = existing_prop.get('Name')
+				task_name = existing_prop.get('TaskName')
+				group_name = existing_prop.get('GroupName')
+				displayed_tag = name if name != None else (task_name if task_name != None else group_name)
+				if displayed_tag == prop:
 					modified_config[role].append(existing_prop)
 
+		#maintain the old properties
 		for prop in props_unchanged:
 			if role == 'AllNodes':
 				continue
 			try:
 				for existing_prop in newConfig[role]:
-					if existing_prop['Name'] == prop:
+					name = existing_prop.get('Name')
+					task_name = existing_prop.get('TaskName')
+					group_name = existing_prop.get('GroupName')
+					displayed_tag = name if name != None else (task_name if task_name != None else group_name)
+					if displayed_tag == prop:
 						modified_config[role].append(existing_prop)
 			except Exception as e:
+				print(e)
 				flash('No config found for ' + role + ':' + existing_prop['Name'] + '. If you want to remove this role, please unselect it.','alert-danger')
 				continue
+
 	return json.dumps(modified_config)
 
 
 ###########################################################################
 
 def generate_reset_yaml(proxy, roles):
-	# return jsonify()
-	# return json.dumps("")
+	# read the roles in
 	roles = json.loads(roles)
 	roles_info = cortex.lib.dsc.get_roles(proxy)
+	#create the new config
 	config = {}
+	#the only part that can be kept is the allNodes section
 	config['AllNodes'] = roles_info['AllNodes']
 	for role in roles:
-		if role == '':
-			continue
+		# can move on if nothing is inside the role
 		if roles[role]['length'] == 0:
 			continue
+		# get the correct details from the roles and include it
 		config[role] = []
 		for x in range(roles[role]['length']):
 			name = roles[role][str(x)]
 			for settings in roles_info[role]:
 				if settings['Name'] == name:
 					config[role].append(settings)
-		# config[role] = roles_info[role]
 	return json.dumps(config)
 
 
@@ -114,29 +128,26 @@ def dsc_classify_machine(id):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# get a proxy to connect to dsc
-
 	dsc_proxy = cortex.lib.dsc.dsc_connect()
 	roles_info = cortex.lib.dsc.get_roles(dsc_proxy)
 	# get a list of the roles
 	default_roles = [role for role in roles_info.keys()]
-
-	#generate set of jobs
-	jobs = list({((r.replace('UOS', '')).split('_'))[0] for r in default_roles if not any(special_role in r for special_role in ['Generic', 'AllNodes'])})
-	# return jsonify(jobs)
+	
+	# generates set of jobs
+	# removes UOS from the job and takes the part of the string before the '_'
+	# if the job is generic or allnodes (the special 2 that we don't need as they're applied to every box), it ignores it 
+	jobs = list({((r.replace('UOS', '')).split('_'))[0] for r in default_roles if not any(special_role in r for special_role in ['AllNodes', 'Generic'])})
 
 	role_selections = {}
-	for job in jobs:
+	for job in jobs + ['Generic']:
 		role_selections[job] = [r for r in default_roles if job in r]
-
-	# return jsonify(role_selections)
-
 
 
 	# retrieve all the systems
 	curd.execute("SELECT `roles`, `config` FROM `dsc_config` WHERE `system_id` = %s", (id, ))
 	existing_data = curd.fetchone()
-	exist_role = ""
 
+	exist_role = ""
 	exist_config = ""
 	# get existing info
 	if existing_data is not None:
@@ -145,18 +156,18 @@ def dsc_classify_machine(id):
 			exist_config = yaml.dump(json.loads(existing_data['config']))
 		except json.decoder.JSONDecodeError as e:
 			exist_config = yaml.dump("")
+	
+	for generic in role_selections['Generic']:
+		if generic not in exist_role.keys():
+			exist_role[generic] = {'length':0}
 
-	values_to_tick = { ((l.replace("UOS","")).split("_"))[0] for l in exist_role if 'UOSGeneric' not in l}
-	for item in [g for g in default_roles if 'UOSGeneric' in g]:
-		exist_role[item] = {'length':0} if (item not in exist_role.keys()) else exist_role[item]
 
-
-
+	values_to_tick = { ((l.replace("UOS","")).split("_"))[0] for l in exist_role }
+	
 	if request.method == 'GET':
 		
 		if does_user_have_permission('dsc.view'):
-
-			return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=role_selections.keys(), yaml=exist_config, set_roles=exist_role, role_info=roles_info, selectpicker_tick=list(values_to_tick))
+			return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=jobs, yaml=exist_config, set_roles=exist_role, role_info=roles_info, selectpicker_tick=list(values_to_tick))
 		else:
 			abort(403)
 
@@ -166,22 +177,24 @@ def dsc_classify_machine(id):
 			box_details = curd.fetchone()
 			
 			system_name = system['name']
-			#return jsonify(str(type(json.loads(existing_data['config']))))
 			cortex.lib.dsc.send_config(dsc_proxy, system_name,json.loads(existing_data['config']))
 		else:
 			checked_boxes = json.loads(request.form['checked_values'])
-			# return jsonify(checked_boxes)
 			expanded_selected_values = []
-			# return jsonify(request.form)
-			if request.form['selected_values'] != '':
-				for val in request.form['selected_values'].split(','):
-					expanded_selected_values += role_selections[val]
+
+			# if request.form['selected_values'] != '':
+			for val in ((request.form['selected_values']).split(',') + ['Generic']):
+				if val == '':
+					continue
+				expanded_selected_values += role_selections[val]
 
 			# remove unnecessary detail from the dictionary
+
 			for group in checked_boxes:
 				del checked_boxes[group]['prevObject']
 				del checked_boxes[group]['context']
 			
+
 			for val in expanded_selected_values:
 				if val not in checked_boxes.keys():
 					checked_boxes[val] = {'length':0}
@@ -193,16 +206,15 @@ def dsc_classify_machine(id):
 					keys_to_remove.append(key)
 
 			for key in keys_to_remove:
-				del checked_boxes[key] 
+				del checked_boxes[key]
 			if request.form['button'] == 'save_changes':
 				#check for permissions
 				if not does_user_have_permission('dsc.edit'):
 					abort(403)
-				
+									
 				# get the new role and configuration entered
 				configuration = request.form['configurations']
 				role = json.dumps(checked_boxes)
-				# return jsonify(checked_boxes)
 				try:
 					data = yaml.safe_load(configuration)
 				except Exception as e:
@@ -213,7 +225,6 @@ def dsc_classify_machine(id):
 				if data != None:
 					roles = json.dumps((data))
 					if roles != exist_role:
-						# return generate_new_yaml(dsc_proxy, exist_role, yaml.safe_load(exist_config), json.loads(role), yaml.safe_load(configuration))
 						new_yaml = generate_new_yaml(dsc_proxy, exist_role, yaml.safe_load(exist_config), json.loads(role), yaml.safe_load(configuration))
 					curd.execute('REPLACE INTO dsc_config (system_id, roles, config) VALUES (%s, %s, %s)', (id, role, new_yaml))
 					g.db.commit()
@@ -227,7 +238,7 @@ def dsc_classify_machine(id):
 
 	curd.execute("SELECT roles, config FROM dsc_config WHERE system_id = %s", (id, ))
 	existing_data = curd.fetchone()
-	exist_role = ""
+	exist_role = {}
 	exist_config = ""
 	if existing_data is not None:
 		exist_role = json.loads(existing_data['roles'])
@@ -236,9 +247,11 @@ def dsc_classify_machine(id):
 		except json.decoder.JSONDecodeError as e:
 			exist_config = yaml.dump("")
 
+	for generic in role_selections['Generic']:
+		if generic not in exist_role.keys():
+			exist_role[generic] = {'length':0}
+
 	values_to_tick = { ((l.replace("UOS","")).split("_"))[0] for l in exist_role if 'UOSGeneric' not in l}
 
-	for item in [g for g in default_roles if ('UOSGeneric' in g)]:
-		exist_role[item] = {'length':0} if (item not in exist_role.keys()) else exist_role[item]
 
-	return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=role_selections.keys(), yaml=exist_config, set_roles=exist_role, role_info=roles_info , selectpicker_tick=list(values_to_tick))
+	return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=jobs, yaml=exist_config, set_roles=exist_role, role_info=roles_info , selectpicker_tick=list(values_to_tick))
