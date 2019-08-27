@@ -30,7 +30,7 @@ i.icon-unknown { color: #36f }
 .banner { background-color: #800 }
 .sidebar { background-color: #111 }
 
-.dataTables_wrapper, a.btn-secondary, .modal-title, .page-header, h4 small, .nav-link, .card-header, .sidebar > div > a, .list-group-popover > a, .card-body {
+a.btn-secondary, .nav-link, .sidebar > div > a, .list-group-popover > a {
 	color: white!important;
 }
 
@@ -42,12 +42,18 @@ i.icon-unknown { color: #36f }
 	color: #777;
 }
 
+.nav-tabs .nav-link
+{
+	padding-left: 1em;
+	padding-right: 1em;
+}
+
 .table-striped tbody tr:nth-of-type(odd) { background-color: #252525 !important; }
 div.tab-pane#paste, div.tab-pane#upload { border-color: #444 }
 
 div.advanced-search
 {
 	border-bottom-color: #444;
-	padding-bottom: .45em;
+	padding-bottom: .5em;
 	padding-top: .15em;
 }
