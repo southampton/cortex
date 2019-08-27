@@ -1,3 +1,7 @@
+.table
+{
+	color: #fff;
+}
 /* Additional bg-classes for dashboard */
 .bg-primary
 {
@@ -134,10 +138,6 @@ p, .text-muted {
 div.tab-pane#paste, div.tab-pane#upload
 {
 	border-color: #444;
-}
-table tr td
-{
-	color: #fff;
 }
 div.advanced-search
 {
