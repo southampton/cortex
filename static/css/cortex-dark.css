@@ -25,7 +25,7 @@ i.icon-unknown { color: #36f }
 .c3-tooltip tr { border: 1px solid #1c1c1c }
 .c3-legend-item text { fill: #eee }
 .c3-axis text { fill: #ccc }
-.c3-axis g.tick line, .c3-axis path.domain { stroke: #444 }
+.c3-axis g.tick line, .c3-axis path.domain, .c3-chart-arc path { stroke: #444 }
 
 .banner { background-color: #800 }
 .sidebar { background-color: #111 }
