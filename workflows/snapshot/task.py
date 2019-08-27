@@ -31,23 +31,32 @@ def run(helper, options):
 
 				memory = False
 				if options['values']['snapshot_cold']:
-					# Power Off
-					helper.event('vm_poweroff', 'Powering off {} for a cold snapshot'.format(vm_link))
+					power_on_vm = True
 
-					# Attempt to shutdown the guest.
-					task = vm.ShutdownGuest()
-					if not helper.lib.vmware_wait_for_poweroff(vm):
-						# Shutdown task failed.
-						if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
-							task = vm.PowerOffVM_Task()
-							if not helper.lib.vmware_task_wait(task, timeout=30):
-								raise RuntimeError('Failed to power off {}'.format(vm_link))
+					# Only power off if the VM is on, otherwise VMware raises an error
+					if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
+						# Power Off
+						helper.event('vm_poweroff', 'Powering off {} for a cold snapshot'.format(vm_link))
 
-					helper.end_event()
+						# Attempt to shutdown the guest.
+						task = vm.ShutdownGuest()
+
+						# Give the Guest OS three minutes to shutdown
+						if not helper.lib.vmware_wait_for_poweroff(vm, timeout=180):
+							# Shutdown task failed.
+							if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
+								task = vm.PowerOffVM_Task()
+								if not helper.lib.vmware_task_wait(task, timeout=30):
+									raise RuntimeError('Failed to power off {}'.format(vm_link))
+
+						helper.end_event()
+					else:
+						helper.event('vm_alreadyoff', 'VM {} is already off'.format(vm_link), oneshot=True, success=True)
+						power_on_vm = False
+
 				elif options['values']['snapshot_memory']:
 					# Snapshot the VM's memory:
 					memory = True
-
 
 				helper.event('vm_snapshot', 'Attempting to snapshot {}'.format(vm_link))
 				description_text = 'Delete After: {0}\nTaken By: {1}\nTask: {2}\nAdditional Comments: {3}\n'.format(options['values']['snapshot_expiry'], options['values']['snapshot_username'], options['values']['snapshot_task'], options['values']['snapshot_comments'])
@@ -66,14 +75,17 @@ def run(helper, options):
 				helper.end_event(description='Snapshot Complete')
 
 				if options['values']['snapshot_cold']:
-					# Power On
-					helper.event('vm_poweron', 'Powering on {}'.format(vm_link))
-					vm.PowerOn()
+					if power_on_vm:
+						# Power On
+						helper.event('vm_poweron', 'Powering on {}'.format(vm_link))
+						vm.PowerOn()
 
-					if helper.lib.vmware_wait_for_poweron(vm):
-						helper.end_event()
+						if helper.lib.vmware_wait_for_poweron(vm):
+							helper.end_event()
+						else:
+							helper.end_event(success=False, warning=True, description='Failed to power on {}'.format(vm_link))
 					else:
-						helper.end_event(success=False, warning=True, description='Failed to power on {}'.format(vm_link))
+						helper.event('vm_notpoweringon', 'Not powering on {} - was already off before snapshot'.format(vm_link), oneshot=True, success=True)
 					
 		else:
 			helper.end_event(success=False, warning=True, description='Failed to find {}'.format(name))
