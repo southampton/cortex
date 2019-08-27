@@ -30,7 +30,7 @@ i.icon-unknown { color: #36f }
 .banner { background-color: #800 }
 .sidebar { background-color: #111 }
 
-a.btn-secondary, .nav-link, .sidebar > div > a, .list-group-popover > a {
+a.btn-secondary, .sidebar > div > a, .list-group-popover > a {
 	color: white!important;
 }
 
@@ -47,6 +47,8 @@ a.btn-secondary, .nav-link, .sidebar > div > a, .list-group-popover > a {
 	padding-left: 1em;
 	padding-right: 1em;
 }
+
+.nav-tabs .nav-link.disabled { color: #666 }
 
 .table-striped tbody tr:nth-of-type(odd) { background-color: #252525 !important; }
 div.tab-pane#paste, div.tab-pane#upload { border-color: #444 }
