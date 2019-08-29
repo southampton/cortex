@@ -142,14 +142,6 @@ def createservice():
 		# Get the list of environments
 		environments = cortex.lib.core.get_cmdb_environments()
 
-
-		# This needs to be integrated in the form verification for the whole service
-		"""
-		if 'sockets' not in request.form or 'cores' not in request.form or 'ram' not in request.form or 'disk' not in request.form or 'template' not in request.form or 'cluster' not in request.form or 'environment' not in request.form or 'network' not in request.form:
-			flash('You must select options for all questions before creating', 'alert-danger')
-			return redirect(url_for('create'))
-		"""
-
 		# parse the request form
 		form = parse_request_form(request.form)
 
@@ -214,14 +206,8 @@ def createservice():
 		# Redirect to the task status page
 		return redirect(url_for('task_status', id=task_id))
 
-	elif request.method=='POST' and 'action' in request.form and request.form['action']=="delete_recipe":
-		print("recipe should be deleted")
-
-	elif request.method=='POST' and 'action' in request.form and request.form['action']=="update_recipe":
-		print("recipe should be updated")
-
-	else: 
-		return "Look at me, I just did nothing"
+	else:
+		return redirect(url_for('createservice'))
 
 ################################################################################
 
@@ -301,7 +287,7 @@ def update_questions():
 	
 	g.db.commit()
 	
-	return jsonify(form)
+	return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
 
 ################################################################################
 
@@ -358,8 +344,7 @@ def update_vm_recipe():
 	# Commit the changes
 	g.db.commit()
 
-	# Maybe return a 200 OK later
-	return json.dumps(form)
+	return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
 
 ################################################################################
 
@@ -404,8 +389,7 @@ def delete_vm_recipe():
 	
 	g.db.commit()
 
-        # Return as JSON
-        return jsonify(vm_recipe_name)
+        return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
 
 ################################################################################
 
@@ -433,8 +417,7 @@ def delete_service_recipe():
 	# Commit the changes
         g.db.commit()
 
-        # Return as JSON -- change this to an 200 OK later
-        return jsonify(service_recipe_name)
+	return json.dumps({'success':True}), 200, {'ContentType':'application/json'}  
 
 ################################################################################
 
@@ -513,8 +496,6 @@ def parse_request_form(form):
 	#
 	for index in form.keys():
 		if BASE_STRING in index:
-			print("===========================================")
-			print(index)
 			regex_search = re.search("\[(\w+)\]\[(\w+)\]", index)
 			recipe_name = regex_search.group(1)
 			attribute = regex_search.group(2)
@@ -603,7 +584,6 @@ def parse_question_references(text, values_dict):
                         result_list = temp.split(".")
                         for element in result_list:
                                 reference_value = reference_value[element]
-			print(reference_value)
                         text = re.sub(reference, reference_value, text)
                 except Exception as e:
                         # if the reference is not correct, print the error into the error log

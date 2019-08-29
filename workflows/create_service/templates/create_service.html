@@ -59,7 +59,7 @@
 		<input type="hidden" id="workflow_type" name="workflow_type" value="standard"/>
 		<div class="carousel-inner">
 			<div class="carousel-item active">
-				<img class="first-slide" src="https://www.officemax.co.nz/Images/ProductImages/500/2012286.jpg" alt="First slide">
+				<img class="first-slide" src="{{url_for('static', filename='images/sky-blue-solid-color.jpg')}}" alt="First slide">
 				<div class="container">
 					<div class="carousel-caption" id="choose-action">
 						<a id="use-existing" class="btn btn-lg btn-primary" data-target="#add-service-existing-template" data-toggle="modal">Use/Edit a service template</a>
@@ -92,7 +92,7 @@
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-					<button id="save-questions-changes" type="button" class="btn btn-success" data-dismiss="modal">Save</button>
+					<button id="save-questions-changes" type="button" class="btn btn-primary" data-dismiss="modal"><i class="fa fa-save"></i>Save</button>
 				</div>
 			</div>
 		</div>
@@ -162,7 +162,7 @@
 		This is the step where you get to give your new service template a name
 	-->
 	<div class="carousel-item" id="create-service-template-item">
-		<img src="https://www.solidbackgrounds.com/images/2880x1800/2880x1800-light-sky-blue-solid-color-background.jpg">
+		<img src="{{url_for('static', filename='images/dark-blue-solid-color.jpg')}}">
 		<div class="carousel-item-content-center name-service">
 			<div class="form-group w-25">
 				<div class="input-group d-none" id="service-now-task">
@@ -235,7 +235,7 @@
 		This is the step where you get to choose the VMs that make up your service.
 	-->
 	<div class="carousel-item" id="add-vms-template-item">
-                <img src="https://www.officemax.co.nz/Images/ProductImages/500/2012286.jpg">
+                <img src="{{url_for('static', filename='images/sky-blue-solid-color.jpg')}}">
 		<div id="vms-card-list-wrapper" class="carousel-item-content-top">
 			<div class="w-100 h-100" id="vms-card-list">
 			</div>
@@ -1038,7 +1038,6 @@ $(document).ready(function(){
 	});
 	
 	var form_steps = 1;
-	var action = "create_recipe";
 
 	$("#submit-question").click(function(event, question_data){
 		
@@ -1184,7 +1183,7 @@ $(document).ready(function(){
 		// so unbind any previously bound click events from other buttons
 		$("#confirm-delete-modal #confirm").unbind('click');
 
-		// send ajax - visually remove row from the table only on success
+		// use AJAX and remove the row from the datatable on success
 		$("#confirm-delete-modal #confirm").one('click', function(){
 			$.ajax({
 				type: "POST",
@@ -1196,7 +1195,6 @@ $(document).ready(function(){
 				success: function(data){
 					jsFlash("Successfully deleted the "+rec_name+" service recipe.", "success", true);
 					table.row(dataTable_row).remove().draw();
-					
 				},
 				failure: function(){
 					jsFlash("Failed to delete the "+rec_name+" service recipe!", "danger", true);
@@ -1225,7 +1223,8 @@ $(document).ready(function(){
 			$("#env").removeClass("selectpicker-disabled").addClass("selectpicker");
 			$("#env").selectpicker();
 		}
-	
+		
+		// input autofocus does not work inside modals, so trigger it manually
 		$("#add-form-question, #add-vm-existing-recipe, #vm-clone-modal").on('shown.bs.modal', function(){
 			$('input:text:visible:first', this).focus();
 		});
@@ -1233,9 +1232,8 @@ $(document).ready(function(){
 		// go to the next step
 		$("#vm-carousel").carousel('next');
 	});
-	$(".submit-template-request").click(function(e){
-		action =  "use_recipe";
 
+	$(".submit-template-request").click(function(e){
 		$("#action").attr('value', 'use_recipe');
 
 		service_recipe_name = $(this).attr('data-name');
