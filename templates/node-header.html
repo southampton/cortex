@@ -37,7 +37,7 @@
 				{% else %}
 				<a class="dropdown-item disabled" href="#">ServiceNow <i class="fa fa-fw fa-external-link"></i></a>
 				{% endif %}
-				{%- if ('linux' in system.vmware_os.lower() or 'linux' in system.cmdb_os.lower()) and does_user_have_system_permission(system.id, "view.detail", "systems.all.view") %}
+				{%- if ((system.vmware_os != None and 'linux' in system.vmware_os.lower()) or (system.cmdb_os != None and 'linux' in system.cmdb_os.lower())) and does_user_have_system_permission(system.id, "view.detail", "systems.all.view") %}
 				<a class="dropdown-item" href="{{ config['SATELLITE6_URL'] + '/hosts/' + system.name }}">Red Hat Satellite 6 <i class="fa fa-fw fa-external-link"></i></a>
 				{% else %}
 				<a class="dropdown-item disabled">Red Hat Satellite 6 <i class="fa fa-fw fa-external-link"></i></a>

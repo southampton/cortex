@@ -16,6 +16,8 @@ import types
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('service.create', 'Create New Service')
 
+################################################################################
+
 @workflow.route("create",title='Create New Service', order=20, permission="newserver", methods=['GET', 'POST'])
 def createservice():
 	# Get the list of clusters
@@ -52,6 +54,7 @@ def createservice():
 		
 		# Extract the data from the form
 		service_name = form['service_name']
+
 		vms_list = ""
 		# Check if the request form contains only one vm recipe
 		if (not isinstance(form['vm_recipe_name[]'], basestring)) and len(form['vm_recipe_name[]']) > 1:
@@ -60,21 +63,28 @@ def createservice():
 			vms_list = vms_list[:-2] # remove the last comma and space from the list
 		else: # if the length is 1 do not split the list
 			vms_list = form['vm_recipe_name[]']
+
 		environment = form['env']
 		email_notification = form.get('sendmail', "off")
 		expiry = form['expiry']
 		workflow_type = form['workflow_type']
 		service_description = form.get('service_description', None)
+		questions = (json.dumps(form['questions'])) if 'questions' in form else None
+		service_description = parse_question_references(service_description, form)
 		
 		# Insert data into the database
 		if not recipe_exists(service_name, "service", curd):
-			curd.execute("INSERT INTO `service_recipes`(`name`, `env`, `workflow_type`, `vms_list`, `email_notification`, `expiry_date`, `description`) VALUES(%s, %s, %s, %s, %s, %s, %s)", (service_name, environment, workflow_type, vms_list, email_notification, expiry, service_description))
+			curd.execute("INSERT INTO `service_recipes`(`name`, `env`, `workflow_type`, `vms_list`, `email_notification`, `expiry_date`, `description`, `questions`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)", (service_name, environment, workflow_type, vms_list, email_notification, expiry, service_description, questions))
 		
 		if 'service_vms' in form.keys():
 			for vm_name in form['service_vms'].keys():
 				puppet_classes = form['service_vms'][vm_name]['puppet_classes']
+				#purpose = form['service_vms'][vm_name]['purpose']
+				#comments = form['service_vms'][vm_name]['comments']
+
 				purpose = form['service_vms'][vm_name]['purpose']
 				comments = form['service_vms'][vm_name]['comments']
+
 				primary_owner_who = form['service_vms'][vm_name]['primary_owner_who']
 				primary_owner_role = form['service_vms'][vm_name]['primary_owner_role']
 				secondary_owner_who = form['service_vms'][vm_name]['secondary_owner_who']
@@ -87,7 +97,8 @@ def createservice():
 				cluster = form['service_vms'][vm_name]['cluster']
 				network = form['service_vms'][vm_name]['network']
 				vm_folder_moid = form['service_vms'][vm_name]['vm_folder_moid']
-				description = form['service_vms'][vm_name]['vm_description']
+				#description = form['service_vms'][vm_name]['vm_description']
+				description = parse_question_references(form['service_vms'][vm_name]['vm_description'], form)
 				if not recipe_exists(vm_name, "vm", curd):
 					curd.execute("""INSERT INTO `vm_recipes`(
 							`name`,
@@ -106,12 +117,12 @@ def createservice():
 							`puppet_code`,
 							`description`,
 							`network`,
-							`vm_folder_moid`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (vm_name, purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, template, cluster, puppet_classes, description, network, vm_folder_moid,))
+							`vm_folder_moid`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (vm_name, purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, template, cluster, puppet_classes, description, network, vm_folder_moid,))
 		
 		# Commit the changes
 		g.db.commit()
 
-		return json.dumps(request.form.to_dict())
+		return redirect(url_for('createservice'))
 	elif request.method=='POST' and 'action' in request.form and request.form['action']=="use_recipe":
 		# Get the list of clusters
 		all_clusters = cortex.lib.core.vmware_list_clusters(workflow.config['VCENTER_TAG'])
@@ -155,7 +166,8 @@ def createservice():
 		# Initialise the the base options		
 		options['vm_recipes'] = {}
 		options['wfconfig'] = workflow.config
- 
+		options['questions'] = form['questions'] if 'questions' in form else None
+
 		# Load each VM recipe
 		for vm_recipe in form['service_vms'].keys():
 			
@@ -211,6 +223,8 @@ def createservice():
 	else: 
 		return "Look at me, I just did nothing"
 
+################################################################################
+
 @workflow.route("get_service_recipe",title='Get a recipe', methods=['POST'], menu=False)
 @app.disable_csrf_check
 def get_service_recipe():
@@ -240,6 +254,7 @@ def get_service_recipe():
 		service_recipe['email_notification'] = service_recipe_raw['email_notification']
 		service_recipe['expiry_date'] = service_recipe_raw['expiry_date']
 		service_recipe['description'] = service_recipe_raw['description']
+		service_recipe['questions'] = service_recipe_raw['questions']
 		service_recipe['vms_recipes'] = {}
 
 		# For each vm in the list
@@ -272,6 +287,23 @@ def get_service_recipe():
 								}
 	# Return as JSON
 	return jsonify(service_recipe)
+
+################################################################################
+
+@workflow.route("update_questions",title='Update the additional questions for a service recipe', methods=['POST'], menu=False)
+@app.disable_csrf_check
+def update_questions():
+	
+	form = parse_request_form(request.form)
+	
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute("UPDATE `service_recipes` SET `questions` = %s WHERE `name` = %s", (json.dumps(form['questions']), form['service_name'],))
+	
+	g.db.commit()
+	
+	return jsonify(form)
+
+################################################################################
 
 @workflow.route("update_vm_recipe",title='Update a VM recipe', methods=['POST'], menu=False)
 @app.disable_csrf_check
@@ -329,6 +361,7 @@ def update_vm_recipe():
 	# Maybe return a 200 OK later
 	return json.dumps(form)
 
+################################################################################
 
 @workflow.route("get_vm_recipe",title='Get a VM recipe', methods=['POST'], menu=False)
 @app.disable_csrf_check
@@ -351,6 +384,8 @@ def get_vm_recipe():
         # Return as JSON
         return jsonify(vm_recipe)
 
+################################################################################
+
 @workflow.route("delete_vm_recipe",title='Delete a VM recipe', methods=['POST'], menu=False)
 @app.disable_csrf_check
 def delete_vm_recipe():
@@ -371,6 +406,8 @@ def delete_vm_recipe():
 
         # Return as JSON
         return jsonify(vm_recipe_name)
+
+################################################################################
 
 @workflow.route("delete_service_recipe",title='Delete a service recipe', methods=['POST'], menu=False)
 @app.disable_csrf_check
@@ -398,6 +435,8 @@ def delete_service_recipe():
 
         # Return as JSON -- change this to an 200 OK later
         return jsonify(service_recipe_name)
+
+################################################################################
 
 # Helper which adds a VM recipe to the database
 def add_vm_recipe(vm_recipe_name, service_recipe_name, form):
@@ -443,10 +482,12 @@ def add_vm_recipe(vm_recipe_name, service_recipe_name, form):
 						`puppet_code`,
 						`description`,
 						`network`,
-						`vm_folder_moid`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (vm_recipe_name, purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, template, cluster, puppet_classes, description, network, vm_folder_moid,))
+						`vm_folder_moid`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (vm_recipe_name, purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, template, cluster, puppet_classes, description, network, vm_folder_moid,))
 
         # Commit the changes
         g.db.commit()
+
+################################################################################
 
 # Helper that parses the request data
 def parse_request_form(form):
@@ -454,8 +495,9 @@ def parse_request_form(form):
 	# Constant: the key under which all the VM recipes are kept inside the form sent by the template
 	BASE_STRING = "service_vms"
 	
-	result_dict = {}
+	ADDITIONAL_QUESTIONS = "questions"
 
+	result_dict = {}
 	# The dict generated by this loop will look pretty much like:
 	#
 	# form = {"service_name": "banner",
@@ -471,7 +513,9 @@ def parse_request_form(form):
 	#
 	for index in form.keys():
 		if BASE_STRING in index:
-			regex_search = re.search("\[(.*)\]\[(.*)\]", index)
+			print("===========================================")
+			print(index)
+			regex_search = re.search("\[(\w+)\]\[(\w+)\]", index)
 			recipe_name = regex_search.group(1)
 			attribute = regex_search.group(2)
 			value = form[index]
@@ -481,10 +525,25 @@ def parse_request_form(form):
 				result_dict[BASE_STRING][recipe_name] = {attribute:value}
 			elif attribute not in result_dict[BASE_STRING][recipe_name].keys():
 				result_dict[BASE_STRING][recipe_name][attribute] = value
+		# a little bit of code duplication, but this might not be as similar later	
+		elif ADDITIONAL_QUESTIONS in index:
+			regex_search = re.search("\[(.+)\]\[(.+)\]", index)
+
+			question = regex_search.group(1)
+			attribute = regex_search.group(2)
+			value = form[index]
+			
+			if ADDITIONAL_QUESTIONS not in result_dict.keys():
+				result_dict[ADDITIONAL_QUESTIONS] = {question : {attribute:value}}
+			elif question not in result_dict[ADDITIONAL_QUESTIONS].keys():
+				result_dict[ADDITIONAL_QUESTIONS][question] = {attribute:value}
+			elif attribute not in result_dict[ADDITIONAL_QUESTIONS][question].keys():
+				result_dict[ADDITIONAL_QUESTIONS][question][attribute] = value
 		else:
-			result_dict[index] = form.getlist(index) if len(form.getlist(index)) > 1 else form[index]
-		
+                        result_dict[index] = form.getlist(index) if len(form.getlist(index)) > 1 else form[index]
 	return result_dict
+
+################################################################################
 
 # Helper function that determines if a recipe for the enitity with the given name already exists
 def recipe_exists(recipe_name, entity, cursor):
@@ -516,6 +575,8 @@ def recipe_exists(recipe_name, entity, cursor):
 		app.logger.warn('There is no entity of this type')
 		return abort(400)
 
+################################################################################
+
 # Helper which ensures that all the required keys
 # from a given list are present in a request form
 # so you don't have to write extremely long if statements
@@ -524,3 +585,29 @@ def validate_form(required_keys, request_dict):
 	for key in required_keys:
 		if key not in request_dict.keys():
 			return redirect(url_for('createservice'))
+
+################################################################################
+
+def parse_question_references(text, values_dict):
+
+        # Find all the substrings which match the given regex, such ass {{some_reference.allocated_vm_name}}
+        references = re.findall("{{\w+(?:\.\w+)*}}", text)
+
+        reference_to_system_name = {}
+        for reference in references:
+                # temp var which contains the reference without the curly brackets
+                temp = reference[2:-2]
+                reference_value = values_dict
+                try:
+                        # try to split the string
+                        result_list = temp.split(".")
+                        for element in result_list:
+                                reference_value = reference_value[element]
+			print(reference_value)
+                        text = re.sub(reference, reference_value, text)
+                except Exception as e:
+                        # if the reference is not correct, print the error into the error log
+                        print(str(e))
+                        # continue without breaking the for loop
+                        continue
+        return text

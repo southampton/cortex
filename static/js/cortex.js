@@ -25,7 +25,6 @@ function jsFlash(message, category, clear){
 	).append(
 		$('<span>').text(message))
 	);
-	console.log("shiiiiiiiiiiiiiiit");
 }
 
 

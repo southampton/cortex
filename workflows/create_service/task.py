@@ -23,14 +23,14 @@ def run(helper, options):
 
 		options['vm_recipes'][vm_recipe]['vm_recipe_name'] = vm_recipe
 		options['vm_recipes'][vm_recipe]['service_task_id'] = helper.task_id
+		options['vm_recipes'][vm_recipe]['purpose'] = parse_references(options['vm_recipes'][vm_recipe]['purpose'], options)
+		options['vm_recipes'][vm_recipe]['comments'] = parse_references(options['vm_recipes'][vm_recipe]['comments'], options)
 		
 		# Start the buildvm task
 		vm_task_id = neocortex.create_task("buildvm", username, options['vm_recipes'][vm_recipe], description="Creates and sets up a virtual machine (sandbox VMware environment)")
 
 		# Map the recipe name to the task ID
 		recipe_to_id_map[vm_recipe] = vm_task_id
-
-		#helper.end_event("Probably created the VM")
 
 	# All the buildvm tasks have started, but they all need to finish before the puppet code can be applied
 	helper.event("wait_buildvm","Waiting for all the buildvm tasks to finish")
@@ -48,11 +48,13 @@ def run(helper, options):
 		# map the recipe name to a task output
 		tasks_output[key] = json.loads(result['task_output'])
 
-	#  
+	tasks_output['questions'] = options['questions']
+
 	for recipe_name in recipe_to_id_map.keys():
+	
 		# Replaces the references in the recipe code
 		puppet_code_recipe = options['vm_recipes'][recipe_name]['puppet_code']
-		puppet_code_parsed = puppet_parse_references(helper, puppet_code_recipe, tasks_output)
+		puppet_code_parsed = parse_references(puppet_code_recipe, tasks_output)
 		
 		puppet_certname = tasks_output[recipe_name]['allocated_vm_name'] + "." + options['wfconfig']['PUPPET_CERT_DOMAIN']
 		
@@ -60,28 +62,31 @@ def run(helper, options):
 		helper.event("update_puppet", "Updating the puppet code for " + recipe_name)
 		helper.execute_query('UPDATE `puppet_nodes` SET `classes` = %s WHERE `certname` = %s', (puppet_code_parsed, puppet_certname,))
 		helper.end_event("Puppet code for " + recipe_name + " updated.")
+	message = "Cortex has finished building your Service. The details of the service can be found below.\n"
+	message += '\n'
 	
+################################################################################
 
-# Helper function which replaces the references in the puppet code with 
-# the actual values
-def puppet_parse_references(helper, puppet_code_recipe, tasks_output):
-	
-	# Find all the substrings which match the given regex, such ass {{some_reference.allocated_vm_name}}
-	systems_references = re.findall("{{\w*\.\w*}}", puppet_code_recipe)
-	
-	reference_to_system_name = {}
-	for system_reference in systems_references:
-		# temp var which contains the reference without the curly brackets
-		temp = system_reference[2:-2]
+def parse_references(text, values_dict):
 
-		try:
-			# try to split the string
-			(recipe_name, attribute) = (temp.split(".")[0], temp.split(".")[1])
-			puppet_code_recipe = re.sub(system_reference, tasks_output[recipe_name][attribute], puppet_code_recipe)
-		except Exception as e:
-			# if the reference is not correct, print the error into the error log
-			print(str(e))
-			# continue without breaking the for loop
-			continue
+        # Find all the substrings which match the given regex, such ass {{some_reference.allocated_vm_name}}
+        references = re.findall("{{\w+(?:\.\w+)*}}", text)
 
-	return puppet_code_recipe
+        reference_to_system_name = {}
+        for reference in references:
+                # temp var which contains the reference without the curly brackets
+                temp = reference[2:-2]
+                reference_value = values_dict
+                try:
+                        # try to split the string
+                        result_list = temp.split(".")
+                        for element in result_list:
+                                reference_value = reference_value[element]
+                        print(reference_value)
+                        text = re.sub(reference, reference_value, text)
+                except Exception as e:
+                        # if the reference is not correct, print the error into the error log
+                        print(str(e))
+                        # continue without breaking the for loop
+                        continue
+        return text

@@ -364,6 +364,7 @@ Username:             %s
 		  `vms_list` text NOT NULL,
 		  `description` text DEFAULT NULL,
 		  `expiry_date` datetime DEFAULT NULL,
+		  `questions` text DEFAULT NULL,
 		  PRIMARY KEY (`name`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 		
