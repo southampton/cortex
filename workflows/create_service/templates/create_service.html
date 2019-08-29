@@ -725,6 +725,9 @@
 </div>
 
 <script type="text/javascript">
+/****************************************************************
+* HELPER FUNCTIONS
+*****************************************************************/
 
 // Helper function which determines if a service recipe already exists
 function service_recipe_exists(recipe_name){
@@ -999,29 +1002,30 @@ function collect_questions() {
 	return questions_data.serialize();
 }
 
-// When clicking anywhere, hide the context menu
-$(document).click(function(){
-	$('#context-menu').css({"display": "none"});
-});
-
-// Hide the context menu whenever the user clicks on anything that's
-// not a card
-$(document).contextmenu(function(event){
-	if(!$(event.target).parents(".card").length) $('#context-menu').css({"display": "none"});
-});
-
-// This event listener makes it possible to stack bootstrap modals
-$(document).on('show.bs.modal', '.modal', function () {
-	// increase the default z-index for the new modal
-	var zIndex = 1040 + (10 * $('.modal:visible').length);
-	$(this).css('z-index', zIndex);
-	setTimeout(function() {
-		$('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
-	}, 0);
-});
-
 $(document).ready(function(){
+	
+	// On click hide the context menu
+	$(document).click(function(){
+		$('#context-menu').css({"display": "none"});
+	});
 
+	// Hide the context menu whenever the user clicks on anything that's
+	// not a card
+	$(document).contextmenu(function(event){
+		if(!$(event.target).parents(".card").length) $('#context-menu').css({"display": "none"});
+	});
+
+	// This event listener makes it possible to stack bootstrap modals
+	$(document).on('show.bs.modal', '.modal', function () {
+		// increase the default z-index for the new modal
+		var zIndex = 1040 + (10 * $('.modal:visible').length);
+		$(this).css('z-index', zIndex);
+		setTimeout(function() {
+			$('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1).addClass('modal-stack');
+		}, 0);
+	});
+
+	
 	// Set up datatable
 	var systemsTable = $('#service-recipes-table').DataTable({
 		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
@@ -1540,8 +1544,13 @@ $(document).ready(function(){
 			$(this).find('.btn').toggleClass('btn-primary');
 		}
 		$(this).find('.btn').toggleClass('btn-secondary');
+
+		// update the input to be sandbox or standard
 		$("#workflow_type").val($(this).find(".active").attr("data-value"));
 	});
+	
+	// Cannot submit a service recipe that doesn't contain
+	// at least a VM recipe
 	$("#service_request_form").submit(function(e){
 		if(!$(this).find(".card").length){
 			e.preventDefault();
