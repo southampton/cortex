@@ -97,6 +97,39 @@
 			</div>
 		</div>
 	</div>
+	<!--
+		This modal is used for adding new inputs to the form
+	-->
+	<div class="modal fade" id="add-form-question" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" >Add a Form Question</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-sm-3 offset-1">Question/Input description:</div>
+						<div class="col-sm-6"><input id="question-text-input" class="form-control w-100"></div>
+					</div>
+					<div class="row" style="margin-top: 2rem;">
+						<div class="col-sm-3 offset-1">Answer:</div>
+						<div class="col-sm-6"><input id="question-answer" class="form-control w-100"></div>
+					</div>
+					<div class="row" style="margin-top: 2rem;">
+						<div class="col-sm-3 offset-1">Question Reference:</div>
+						<div class="col-sm-6"><input id="question-name-value" class="form-control w-100" pattern="\w+" /></div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+					<button id="submit-question" type="button" class="btn btn-primary">Submit Question</button>
+				</div>
+			</div>
+		</div>
+	</div>
 
 	</form>
 	<a class="carousel-control-prev" href="#vm-carousel" role="button" data-slide="prev">
@@ -250,7 +283,7 @@
 </div>
 <!--
 	This modal is used for adding new inputs to the form
--->
+
 <div class="modal fade" id="add-form-question" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
                 <div class="modal-content">
@@ -281,7 +314,7 @@
                 </div>
         </div>
 </div>
-
+-->
 <!--
 	This is a row div which is used as a template when a new question is added
 -->
@@ -358,16 +391,6 @@
         </div>
 </div>
 
-
-<!--
-	Datalist of names of existing VM recipes
--->
-<datalist id="autocomplete-VMs">
-	<option></option>
-	{% for vm_recipe_name in autocomplete_vm_recipes_names %}
-	<option id="{{vm_recipe_name['name']}}">{{vm_recipe_name['name']}}<a><i class="fa fa-trash" aria-hidden="true"></i></a></option>
-	{% endfor %}
-</datalist>
 <!--
 	Datalist of names of existing service recipes
 -->
@@ -1002,6 +1025,10 @@ function collect_questions() {
 	return questions_data.serialize();
 }
 
+/*************************************************
+* EVENT LISTENERS
+**************************************************/
+
 $(document).ready(function(){
 	
 	// On click hide the context menu
@@ -1042,69 +1069,80 @@ $(document).ready(function(){
 	});
 	
 	var form_steps = 1;
+	
+	$('#question-name-value').on('input', function(event) {
+		$("#question-name-value")[0].setCustomValidity("");
+		event.target.checkValidity();
+	}).on('invalid', function(event) {
+
+		$("#service_request_form").find(":submit").click();
+		$("#question-name-value")[0].setCustomValidity("Please only use letters, digits and underscores.");
+	});
 
 	$("#submit-question").click(function(event, question_data){
 		
-		// Extract the input values
-		var text = question_data ? question_data['text'] : $('#question-text-input').val();
-		var answer = question_data ? question_data['answer'] : $('#question-answer').val();
-		var name_value = question_data ? question_data['question_reference'] : $('#question-name-value').val();
+		if(!question_data && $("#question-name-value")[0].validity.valid){
 
-		if(text && name_value && !input_name_exists(name_value)){
+			// Extract the input values
+			var text = question_data ? question_data['text'] : $('#question-text-input').val();
+			var answer = question_data ? question_data['answer'] : $('#question-answer').val();
+			var name_value = question_data ? question_data['question_reference'] : $('#question-name-value').val();
 
-			// clone the template
-			var question_row = $(".question-row").clone();
-			
-			// remove the display:none class
-			question_row.removeClass("d-none");
-			question_row.removeClass("question-row");
-			
-			// edit inner HTML and attributes
-			question_row.attr("id", name_value);
-	                question_row.find(".question-text").eq(0).html(text);
-	                question_row.find(".answer-input").eq(0).val(answer);
-	                question_row.find(".answer-input").eq(0).attr('name', 'questions['+name_value+'][answer]');
-	                question_row.find("[name=text]").eq(0).val(text);
-	                question_row.find("[name=text]").eq(0).attr('name', 'questions['+name_value+'][text]');
+			if(text && name_value && !input_name_exists(name_value)){
+				
+				// clone the template
+				var question_row = $(".question-row").clone();
+				
+				// remove the display:none class
+				question_row.removeClass("d-none");
+				question_row.removeClass("question-row");
+				
+				// edit inner HTML and attributes
+				question_row.attr("id", name_value);
+				question_row.find(".question-text").eq(0).html(text);
+				question_row.find(".answer-input").eq(0).val(answer);
+				question_row.find(".answer-input").eq(0).attr('name', 'questions['+name_value+'][answer]');
+				question_row.find("[name=text]").eq(0).val(text);
+				question_row.find("[name=text]").eq(0).attr('name', 'questions['+name_value+'][text]');
 
-			// add an event listener to the delete button
-			question_row.find(".delete-question").eq(0).click(function(){
-				$("#confirm-delete-question-modal #confirm").unbind('click');
-				$("#confirm-delete-question-modal #confirm").click(function(){
-					$("#" + name_value).remove();
+				// add an event listener to the delete button
+				question_row.find(".delete-question").eq(0).click(function(){
+					// All questions use the same modal for confirmation
+					// so unbind any previously bound click event listeners
+					$("#confirm-delete-question-modal #confirm").unbind('click');
+					$("#confirm-delete-question-modal #confirm").click(function(){
+						$("#" + name_value).remove();
 
-					// If in edit mode, run ajax to asynchronously remove the quesiton from the database
-					if($("#action").val()=="use_recipe"){
-						$('#save-questions-changes').trigger('click', ["Successfully deleted the question with the reference: '"+name_value+"'."]);
-					} else {
-						jsFlash("Successfully deleted the question with the reference: '"+name_value+"'.", "success", true);
-					}
+						// If in edit mode, run ajax to asynchronously remove the quesiton from the database
+						if($("#action").val()=="use_recipe"){
+							$('#save-questions-changes').trigger('click', ["Successfully deleted the question with the reference: '"+name_value+"'."]);
+						} else {
+							jsFlash("Successfully deleted the question with the reference: '"+name_value+"'.", "success", true);
+						}
+					});
 				});
-			});
-			
-			// add event listener for the info modal (all questions will use the same modal)
-			// the modal's inner HTML gets changed on click
-			question_row.find(".question-info").eq(0).click(function(){
-				$("#question-info-modal").find(".full-text-info").html("<p class='font-weight-bold'>\{\{questions."+name_value+".text\}\}:</p>" + text);
-				$("#question-info-modal").find(".answer-info").html("<p class='font-weight-bold'>\{\{questions."+name_value+".answer\}\}:</p>" + answer);
-			});
+				
+				// add event listener for the info modal (all questions will use the same modal)
+				// the modal's inner HTML gets changed on click
+				question_row.find(".question-info").eq(0).click(function(){
+					$("#question-info-modal").find(".full-text-info").html("<p class='font-weight-bold'>\{\{questions."+name_value+".text\}\}:</p>" + text);
+					$("#question-info-modal").find(".answer-info").html("<p class='font-weight-bold'>\{\{questions."+name_value+".answer\}\}:</p>" + answer);
+				});
 
-			// Append the new question to the modal
-			$('#current-additional-questions .modal-body').append(question_row);
-			
-			// Refresh the input values
-			$('#question-text-input').val("");
-			$('#question-answer').val("");
-			$('#question-name-value').val("");
-			
-			// If the event is triggered from an actual click in edit mode
-			// trigger AJAX and save the changes asynchronously
-			if($('#action').val() == 'use_recipe' && !question_data) $('#save-questions-changes').trigger('click');
-
-		} else {
-			// The form is invalid, prevent the modal from closing
-			event.preventDefault();
-			// add something here like a pop up
+				// Append the new question to the modal
+				$('#current-additional-questions .modal-body').append(question_row);
+				
+				// Refresh the input values
+				$('#question-text-input').val("");
+				$('#question-answer').val("");
+				$('#question-name-value').val("");
+				
+				// If the event is triggered from an actual click in edit mode
+				// trigger AJAX and save the changes asynchronously
+				if($('#action').val() == 'use_recipe' && !question_data) $('#save-questions-changes').trigger('click');
+				
+				$('#add-form-question').modal('toggle');
+			}
 		}
 	});
 	
@@ -1313,8 +1351,14 @@ $(document).ready(function(){
                                 $(this).trigger('slide.bs.carousel');
 			}
 		}
-		
-		
+	});
+	
+	$('#vm-recipe-input').on('input', function(e){
+		e.target.checkValidity();
+		$(this)[0].setCustomValidity("");
+	}).on('invalid', function(){
+		$("#service_request_form").find(":submit").click();
+		$(this)[0].setCustomValidity("Please only use letter, digits or underscores.");
 	});
 
 	$("#new-vm-recipe").click(function(e, recipe_data, recipe_name, is_clone_or_new){
@@ -1530,9 +1574,8 @@ $(document).ready(function(){
 				jsFlash("This VM recipe already exists!", "danger", true);
 			}
 		} else {
-			$("#add-vm-existing-recipe").modal('hide');
 			$("#vm-recipe-input").val("");
-			jsFlash("The name you've chosen contains illegal character. Please use only letters, numbers and underscores.", "danger", true);
+			jsFlash("The name you've chosen contains illegal characters. Please use only letters, numbers and underscores.", "danger", true);
 		}
 	});
 	
