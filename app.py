@@ -380,6 +380,7 @@ Username:             %s
 		
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `vm_recipes` (
 		  `name` varchar(255) NOT NULL,
+		  `service_name` varchar(255) NOT NULL,
 		  `purpose` text NOT NULL,
 		  `comments` text DEFAULT NULL,
 		  `primary_owner_who` varchar(64) DEFAULT NULL,
@@ -398,7 +399,7 @@ Username:             %s
 		  `spec` varchar(64) DEFAULT NULL,
 		  `network` varchar(64) NOT NULL,
 		  `vm_folder_moid` varchar(255) DEFAULT NULL,
-		  PRIMARY KEY (`name`)
+		  PRIMARY KEY (`name`, `service_name`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")		
 
 		try:

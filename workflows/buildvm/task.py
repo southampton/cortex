@@ -105,7 +105,8 @@ def run(helper, options):
 	system_name = system_info.keys()[0]
 	system_dbid = system_info.values()[0]
 	
-
+	task_output['system_dbid'] = system_dbid
+	
 	# Update the system with some options.
 	helper.lib.update_system(
 		system_dbid,
@@ -119,7 +120,7 @@ def run(helper, options):
 	helper.end_event(description="Allocated system name: " + system_name)
 	
 	# Save the system name
-	task_output['allocated_vm_name'] = system_name
+	task_output['system_name'] = system_name
 
 	## Allocate an IPv4 Address and create a host object (standard only) ###
 

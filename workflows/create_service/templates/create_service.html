@@ -281,40 +281,7 @@
 		</div>
         </div>
 </div>
-<!--
-	This modal is used for adding new inputs to the form
 
-<div class="modal fade" id="add-form-question" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
-                <div class="modal-content">
-                        <div class="modal-header">
-                                <h5 class="modal-title" >Add a Form Question</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                </button>
-                        </div>
-                        <div class="modal-body">
-                                <div class="row">
-                                        <div class="col-sm-3 offset-1">Question/Input description:</div>
-                                        <div class="col-sm-6"><input id="question-text-input" class="form-control w-100"></div>
-                                </div>
-				<div class="row" style="margin-top: 2rem;">
-                                        <div class="col-sm-3 offset-1">Answer:</div>
-                                        <div class="col-sm-6"><input id="question-answer" class="form-control w-100"></div>
-                                </div>
-				<div class="row" style="margin-top: 2rem;">
-                                        <div class="col-sm-3 offset-1">Question Reference:</div>
-                                        <div class="col-sm-6"><input id="question-name-value" class="form-control w-100" pattern="\w+" /></div>
-                                </div>
-                        </div>
-                        <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                <button id="submit-question" type="button" class="btn btn-primary" data-dismiss="modal">Submit question</button>
-                        </div>
-                </div>
-        </div>
-</div>
--->
 <!--
 	This is a row div which is used as a template when a new question is added
 -->
@@ -758,7 +725,8 @@ function service_recipe_exists(recipe_name){
 		return $(this).attr('id');
 	}).toArray();
 	
-	return service_recipes_list.includes(recipe_name);
+	//return service_recipes_list.includes(recipe_name);
+	return false;
 }
 
 // Helper function which determines if a VM recipe already exists
@@ -886,7 +854,7 @@ function load_recipe_on_screen(template_data){
 		$.each(questions, function(key, value){
 			var question_reference = key
 			var question_data = questions[question_reference];
-
+			
 			question_data['question_reference'] = question_reference
 
 			$('#submit-question').trigger('click', [question_data]);
@@ -928,7 +896,13 @@ function config_context_menu(target){
 		// This modal is used for all the VM recipes, so the
 		// event listener should be a one-time thing since the definition changes slightly for each VM recipe
 		$("#confirm-delete-vm").one('click', function(){
-		
+			
+			var vm_data = $($.parseHTML('<input type="hidden" name="vm_recipe_name" value="'+name+'" />')[0]);
+			var service_name = $('#service_name')[0];
+			vm_data.push(service_name);
+			
+			vm_data =  vm_data.serialize();
+			
 			// Send ajax POST request in order to remove the VM recipe from the database
 			$.ajax({
 				type: "POST",
@@ -936,8 +910,7 @@ function config_context_menu(target){
 				global: false,
 				url: '{{url_for("delete_vm_recipe")}}',
 				dataType: "json",
-				data: JSON.stringify({"vm_recipe_name": name}),
-				contentType: "application/json; charset=utf-8",
+				data: vm_data,
 				success: function(){
 					jsFlash("Successfully deleted the "+name+" VM recipe.", "success", true);
 				},
@@ -1015,16 +988,6 @@ function get_position(e) {
 
 }
 
-// Helper which returns specific parts of the form
-function collect_questions() {
-	
-	var questions_data = $('#current-additional-questions input');
-	var service_data = $('#service_name')[0];
-	questions_data.push(service_data);
-
-	return questions_data.serialize();
-}
-
 /*************************************************
 * EVENT LISTENERS
 **************************************************/
@@ -1070,24 +1033,30 @@ $(document).ready(function(){
 	
 	var form_steps = 1;
 	
+	// When adding a new question, show custom popover on invalid input
 	$('#question-name-value').on('input', function(event) {
+		// reset custom validity to default for empty inputs
 		$("#question-name-value")[0].setCustomValidity("");
+		// this will trigger an invalid event if the input does not follow the given pattern
 		event.target.checkValidity();
 	}).on('invalid', function(event) {
-
+		// force form submission so the popover appears
 		$("#service_request_form").find(":submit").click();
+		// custom invalid input message
 		$("#question-name-value")[0].setCustomValidity("Please only use letters, digits and underscores.");
 	});
 
 	$("#submit-question").click(function(event, question_data){
 		
-		if(!question_data && $("#question-name-value")[0].validity.valid){
+		// if the event is triggered manually in jQuery or if the question reference (name-value) is valid
+		if(question_data || (!question_data && $("#question-name-value")[0].validity.valid)){
 
 			// Extract the input values
 			var text = question_data ? question_data['text'] : $('#question-text-input').val();
 			var answer = question_data ? question_data['answer'] : $('#question-answer').val();
 			var name_value = question_data ? question_data['question_reference'] : $('#question-name-value').val();
 
+			// if the question text and reference are not empty and if the reference does not exist already
 			if(text && name_value && !input_name_exists(name_value)){
 				
 				// clone the template
@@ -1141,7 +1110,8 @@ $(document).ready(function(){
 				// trigger AJAX and save the changes asynchronously
 				if($('#action').val() == 'use_recipe' && !question_data) $('#save-questions-changes').trigger('click');
 				
-				$('#add-form-question').modal('toggle');
+				// Hide the modal if it is visible
+				$('#add-form-question').modal('hide');
 			}
 		}
 	});
@@ -1150,12 +1120,19 @@ $(document).ready(function(){
 		// Only run AJAX when in edit mode. When creating a recipe everything will be
 		// saved on submission
 		if($('#action').val() == "use_recipe"){
+			
+			// Select and serialize only the inputs that you need for the question
+			var questions_data = $('#current-additional-questions input');
+			var service_data = $('#service_name')[0];
+			questions_data.push(service_data);
+			questions_data = questions_data.serialize();
+
 			$.ajax({
 				type: "POST",
 				async: true,
 				global: false,
 				url: '{{url_for("update_questions")}}',
-				data: collect_questions(), // collect the DOM elements of the inputs which need to be submitted
+				data: questions_data,
 				dataType: "json",
 				success: function(){
 					jsFlash(success_message ? success_message : "Successfully saved your changes.", "success", true);
@@ -1174,8 +1151,10 @@ $(document).ready(function(){
 		// extract the name of the VM which should be cloned
 		var name = $('#context-menu').attr('data-current-card');
 		
+		// get the name of the clone
 		var new_name = $("#vm-clone-name").val();
 		
+		// as long as the VM name does not exist already
 		if(new_name && !vm_recipe_exists(new_name)){
 
 			// a jQuery clone() does not preserve the value of the selectpickers for some reason
@@ -1202,7 +1181,6 @@ $(document).ready(function(){
 			recipe_data['vm_folder_moid'] = clone.find("[name=service_vms\\["+name+"\\]\\[vm_folder_moid\\]]").eq(0).val();
 			recipe_data['description'] = clone.find("[name=service_vms\\["+name+"\\]\\[vm_description\\]]").eq(0).val();
 
-			
 			$("#new-vm-recipe").trigger("click", [recipe_data, new_name, true]);
 
 			$("#vm-clone-name").val("");
@@ -1210,6 +1188,9 @@ $(document).ready(function(){
 			jsFlash("VM recipe successfully cloned.", "success", true);
 			
 		} else {
+			// the name is invalid, so just erase it
+			$("#vm-clone-name").val("");
+			// modal is hidden on button click, so just show the error message
 			jsFlash("The name you chose already exists or is invalid!", "danger", true);
 		}
 	});
@@ -1225,6 +1206,9 @@ $(document).ready(function(){
 		// so unbind any previously bound click events from other buttons
 		$("#confirm-delete-modal #confirm").unbind('click');
 
+		// Create and serialize input jQuery object for the service name
+		var service_name = $($.parseHTML('<input type="hidden" name="service_name" value="' + rec_name + '" />')).serialize();
+		
 		// use AJAX and remove the row from the datatable on success
 		$("#confirm-delete-modal #confirm").one('click', function(){
 			$.ajax({
@@ -1232,7 +1216,7 @@ $(document).ready(function(){
 				async: true,
 				global: false,
 				url: '{{url_for("delete_service_recipe")}}',
-				data: $.param({"service_recipe_name": rec_name}),
+				data: service_name,
 				dataType: "json",
 				success: function(data){
 					jsFlash("Successfully deleted the "+rec_name+" service recipe.", "success", true);
@@ -1283,14 +1267,16 @@ $(document).ready(function(){
 		// The fields like the service description don't need to be filled in on use/edit
 		$(".hide-on-use").toggleClass("d-none");
 		$('.hide-on-use').find('[name]').prop('required', false);
-		
+	
+		// Create and serialize input jQuery object for service recipe name
+		var service_name = $($.parseHTML('<input type="hidden" name="service_recipe_name" value="'+service_recipe_name+'" />')).serialize();
+
 		$.ajax({
 			type: "POST",
 			async: true,
 			global: false,
 			url: '{{url_for("get_service_recipe")}}',
-			data: JSON.stringify({"service_recipe_name": service_recipe_name}),
-			contentType: "application/json; charset=utf-8",
+			data: service_name,
 			dataType: "json",
 			success: function(recipe_data){
 				jsFlash("Successfully loaded the " +service_recipe_name+ " service recipe.", "success", true);
@@ -1353,6 +1339,7 @@ $(document).ready(function(){
 		}
 	});
 	
+	// Custom messages on invalid input
 	$('#vm-recipe-input').on('input', function(e){
 		e.target.checkValidity();
 		$(this)[0].setCustomValidity("");
@@ -1361,7 +1348,7 @@ $(document).ready(function(){
 		$(this)[0].setCustomValidity("Please only use letter, digits or underscores.");
 	});
 
-	$("#new-vm-recipe").click(function(e, recipe_data, recipe_name, is_clone_or_new){
+	$("#new-vm-recipe").click(function(e, recipe_data, recipe_name, is_clone){
 		// extract the recipe name from the input
 		var vm_recipe_name = recipe_name ? recipe_name : $("#vm-recipe-input").val();
 
@@ -1372,15 +1359,20 @@ $(document).ready(function(){
 			if(!vm_recipe_exists(vm_recipe_name)){
 				// If the the event was triggered with no data about the recipe (it is a new recipe)
 				// Try to fetch data about it from the server or just create a blank one if failed
-				if(!recipe_data && !recipe_name && vm_recipe_name){
+				if(!recipe_data && !recipe_name){
 					
+					// Select and serialize the parts of the form which you need to submit
+					var vm_data = $($.parseHTML('<input type="hidden" name="vm_recipe_name" value="'+vm_recipe_name+'" />'));
+					var service_name = $('#service_name')[0];
+					vm_data.push(service_name);
+					vm_data =  vm_data.serialize();
+
 					$.ajax({
 						type: "POST",
 						async: true,
 						global: false,
 						url: '{{url_for("get_vm_recipe")}}',
-						data: JSON.stringify({"vm_recipe_name": vm_recipe_name}),
-						contentType: "application/json; charset=utf-8",
+						data: vm_data,
 						dataType: "json",
 						success: function(vm_recipe_data){
 							$("#add-service-existing-template").modal('hide');
@@ -1403,6 +1395,7 @@ $(document).ready(function(){
 					}
 					var general_description = (recipe_data && recipe_data['description']) ? recipe_data['description'] : vm_recipe_name;
 					
+					// clone and edit the card template
 					var card = $("#vm-card").clone();
 					card.toggleClass('d-none');
 					card.attr('id', vm_recipe_name);
@@ -1424,9 +1417,12 @@ $(document).ready(function(){
 						$("#vms-card-list .row").last().append(card);
 					}
 					
+					// set up the context menu for this card
 					config_context_menu(card);
 					
+					// set up the config modal for this card
 					if($("#"+vm_recipe_name+"-modal").length == 0){
+
 						// clone the modal
 						var modal = $("#vm-recipe-template-modal").clone();
 
@@ -1446,9 +1442,6 @@ $(document).ready(function(){
 						modal.find(".modal-body #puppet-code").eq(0).attr('id', "puppet-code-"+vm_recipe_name);
 						modal.find(".modal-body #config").eq(0).attr('id', "config-"+vm_recipe_name);
 						modal.find(".modal-body #vm-description").eq(0).attr('id', "vm-description-"+vm_recipe_name);
-						if(is_clone_or_new == true){
-							modal.find(".modal-body").append("<input type=hidden name='is_clone_or_new' value='true'></input>");
-						}
 
 						// Apply existing configuration if it already exists
 						if(recipe_data){
@@ -1568,6 +1561,32 @@ $(document).ready(function(){
 				}
 				// reset the input field's value
 				$("#vm-recipe-input").val("");
+
+				if($('#action').val() == 'use_recipe' && (!recipe_data || is_clone)){
+					
+					// Extract all the form elements from the modal + the service name and serialize them
+					var vm_data = $('#' + vm_recipe_name + '-modal [name]');
+					var service_data = $('#service_name')[0];
+					vm_data.push(service_data);
+
+					vm_data = vm_data.serialize();
+					
+					// Send async POST request to add the new VM recipe to the service recipe
+					$.ajax({
+                                                type: "POST",
+                                                async: true,
+                                                global: false,
+                                                url: '{{url_for("add_vm_recipe")}}',
+                                                data: vm_data,
+                                                dataType: "json",
+                                                success: function(){
+							jsFlash("Successfully added the VM to this recipe", "success", true);
+                                                },
+                                                failure: function(error_message){
+                                                        jsFlash("Could not add the VM recipe to this service", "danger", true);
+                                                },
+                                        });
+				}
 			} else {
 				$("#add-vm-existing-recipe").modal('hide');
 				$("#vm-recipe-input").val("");

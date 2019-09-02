@@ -19,7 +19,7 @@ def run(helper, options):
 
 	for vm_recipe in options['vm_recipes']:
 		# Fire new event
-		helper.event("create_vm", "Creating "+ vm_recipe)
+		helper.event("create_vm", "Running buildvm task for "+ vm_recipe)
 
 		options['vm_recipes'][vm_recipe]['vm_recipe_name'] = vm_recipe
 		options['vm_recipes'][vm_recipe]['service_task_id'] = helper.task_id
@@ -35,7 +35,7 @@ def run(helper, options):
 	# All the buildvm tasks have started, but they all need to finish before the puppet code can be applied
 	helper.event("wait_buildvm","Waiting for all the buildvm tasks to finish")
 	helper.lib.neocortex_multi_tasks_wait(recipe_to_id_map.values())
-	helper.end_event("All buildvm tasks have finished running")
+	helper.end_event(description="All buildvm tasks have finished running")
 	
 	# Now that the VMs have been set up, apply the Puppet code
 	tasks_output = {}
@@ -56,20 +56,43 @@ def run(helper, options):
 		puppet_code_recipe = options['vm_recipes'][recipe_name]['puppet_code']
 		puppet_code_parsed = parse_references(puppet_code_recipe, tasks_output)
 		
-		puppet_certname = tasks_output[recipe_name]['allocated_vm_name'] + "." + options['wfconfig']['PUPPET_CERT_DOMAIN']
+		puppet_certname = tasks_output[recipe_name]['system_name'] + "." + options['wfconfig']['PUPPET_CERT_DOMAIN']
 		
 		# Updates the puppet code
 		helper.event("update_puppet", "Updating the puppet code for " + recipe_name)
 		helper.execute_query('UPDATE `puppet_nodes` SET `classes` = %s WHERE `certname` = %s', (puppet_code_parsed, puppet_certname,))
-		helper.end_event("Puppet code for " + recipe_name + " updated.")
-	message = "Cortex has finished building your Service. The details of the service can be found below.\n"
+		helper.end_event(description="Puppet code for " + recipe_name + " updated.")
+
+	subject = 'Cortex has finished building your service, ' + str(options['service_name'])
+
+	message = "Cortex has finished building your service. The details of the service can be found below.\n"
 	message += '\n'
+	if options['workflow_type'] == 'standard':
+		message += 'ServiceNow Task: ' + str(options['task']) + '; \n'
+	if 'expiry' in options and options['expiry'] is not None:
+		message += 'All the VMs which are part of this service will expire on: ' + str(options['expiry']) + '; \n'
+	
+	message += '\n'
+	message += 'The service contains the following VMs: \n'
+	message += '\n'
+	
+	for recipe_name in recipe_to_id_map.keys():
+		message += str(recipe_name) + ' with the real name ' + tasks_output[recipe_name]['system_name'] + ': https://' + str(helper.config['CORTEX_DOMAIN']) + '/systems/edit/' + str(tasks_output[recipe_name]['system_dbid']) + '; \n'
+
+	message += 'All the VMs were built in the ' + options['env'] + ' environment. \n'
+	message += '\n'
+	message += 'More information can be found on Cortex at https://' + str(helper.config['CORTEX_DOMAIN']) + '. \n'
+	
+	# Send the email to the user who started the task
+	
+	if 'sendmail' in options and options['sendmail'] is not None:
+		helper.lib.send_email(helper.username, subject, message)
 	
 ################################################################################
 
 def parse_references(text, values_dict):
 
-        # Find all the substrings which match the given regex, such ass {{some_reference.allocated_vm_name}}
+        # Find all the substrings which match the given regex, such ass {{some_reference.system_name}}
         references = re.findall("{{\w+(?:\.\w+)*}}", text)
 
         reference_to_system_name = {}

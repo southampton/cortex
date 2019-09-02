@@ -99,9 +99,10 @@ def createservice():
 				vm_folder_moid = form['service_vms'][vm_name]['vm_folder_moid']
 				#description = form['service_vms'][vm_name]['vm_description']
 				description = parse_question_references(form['service_vms'][vm_name]['vm_description'], form)
-				if not recipe_exists(vm_name, "vm", curd):
+				if not recipe_exists(vm_name, "vm", curd, service_recipe_name=service_name):
 					curd.execute("""INSERT INTO `vm_recipes`(
 							`name`,
+							`service_name`,
 							`purpose`,
 							`comments`,
 							`primary_owner_who`,
@@ -117,7 +118,7 @@ def createservice():
 							`puppet_code`,
 							`description`,
 							`network`,
-							`vm_folder_moid`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (vm_name, purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, template, cluster, puppet_classes, description, network, vm_folder_moid,))
+							`vm_folder_moid`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (vm_name, service_name, purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, template, cluster, puppet_classes, description, network, vm_folder_moid,))
 		
 		# Commit the changes
 		g.db.commit()
@@ -155,7 +156,13 @@ def createservice():
 		# Initialise the options dict
 		options = {}
 		
-		# Initialise the the base options		
+		# Initialise the the base options
+		options['service_name'] = form['service_name']
+		options['workflow_type'] = form['workflow_type']
+		options['task'] = form['task']
+		options['expiry'] = form.get('expiry', None)
+		options['sendmail'] = form.get('sendmail', None)
+		options['env'] = form['env']
 		options['vm_recipes'] = {}
 		options['wfconfig'] = workflow.config
 		options['questions'] = form['questions'] if 'questions' in form else None
@@ -163,8 +170,7 @@ def createservice():
 		# Load each VM recipe
 		for vm_recipe in form['service_vms'].keys():
 			
-			if 'is_clone_or_new' in form['service_vms'][vm_recipe] and form['service_vms'][vm_recipe]['is_clone_or_new'] == 'true':
-				add_vm_recipe(vm_recipe, form['service_name'], form['service_vms'][vm_recipe])
+			#if 'is_clone_or_new' in form['service_vms'][vm_recipe] and form['service_vms'][vm_recipe]['is_clone_or_new'] == 'true':
 			
 			#Validate the form for the VM recipe
 			vm_required_keys = ['sockets', 'cores', 'ram', 'disk', 'template', 'cluster', 'environment', 'network']
@@ -183,7 +189,7 @@ def createservice():
 			options['vm_recipes'][vm_recipe]['env'] = form['env']
 			options['vm_recipes'][vm_recipe]['purpose'] = form['service_vms'][vm_recipe]['purpose']
 			options['vm_recipes'][vm_recipe]['comments'] = form['service_vms'][vm_recipe]['comments']
-			options['vm_recipes'][vm_recipe]['sendmail'] = form.get('sendmail', 'off')
+			options['vm_recipes'][vm_recipe]['sendmail'] = None
 			options['vm_recipes'][vm_recipe]['expiry'] = form.get('expiry', None)
 			options['vm_recipes'][vm_recipe]['network'] = form['service_vms'][vm_recipe]['network']
 			options['vm_recipes'][vm_recipe]['primary_owner_who'] = form['service_vms'][vm_recipe].get('primary_owner_who', None)
@@ -218,10 +224,11 @@ def get_service_recipe():
 	# Get the db cursor
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-	# Get the service recipe name from the request form	
-	service_recipe_name = ""
-	if 'service_recipe_name' in request.get_json():
-		service_recipe_name = request.get_json()['service_recipe_name']
+	# Parse request form
+	form = parse_request_form(request.form)
+	
+	# Extract the service recipe name
+	service_recipe_name = form['service_recipe_name']
 
 	# Query the database to get the service recipe
 	curd.execute("SELECT * FROM `service_recipes` WHERE `name`=%s", (service_recipe_name,))
@@ -247,7 +254,7 @@ def get_service_recipe():
 		for vm_recipe_name in service_recipe_raw['vms_list'].split(", "):
 			
 			# Query the database
-			curd.execute("SELECT * FROM `vm_recipes` WHERE `name`=%s", (vm_recipe_name,))
+			curd.execute("SELECT * FROM `vm_recipes` WHERE `name`=%s and `service_name`=%s", (vm_recipe_name, service_recipe_name,))
 			
 			# Fetch the VM recipe
 			vm_recipe= curd.fetchone()
@@ -303,6 +310,8 @@ def update_vm_recipe():
 	# The form should only contain one VM, so extract its name
 	vm_name = next(iter(form))
 	
+	service_name = request.form['service_name']
+	
 	# Extract form data
 	purpose = form[vm_name]['purpose']
 	comments = form[vm_name]['comments']
@@ -339,7 +348,7 @@ def update_vm_recipe():
 			`description` = %s,
 			`network` = %s,
 			`vm_folder_moid` = %s
-			WHERE `name` = %s;""", (purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, os, location_cluster, puppet_code, description, network, vm_folder_moid, vm_name,))
+			WHERE `name` = %s AND `service_name`=%s;""", (purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, os, location_cluster, puppet_code, description, network, vm_folder_moid, vm_name, service_name,))
 	
 	# Commit the changes
 	g.db.commit()
@@ -355,13 +364,14 @@ def get_vm_recipe():
         # Get the db cursor
         curd = g.db.cursor(mysql.cursors.DictCursor)
 
-        # Get the VM recipe name from the request form     
-        vm_recipe_name = ""
-        if 'vm_recipe_name' in request.get_json():
-                vm_recipe_name = request.get_json()['vm_recipe_name']
+	form = parse_request_form(request.form)
+
+	service_name = form['service_name']
+
+        vm_recipe_name = vm_name = form['vm_recipe_name']
 
         # Query the database to get the VM recipe
-        curd.execute("SELECT * FROM `vm_recipes` WHERE `name`=%s", (vm_recipe_name,))
+        curd.execute("SELECT * FROM `vm_recipes` WHERE `name`=%s AND `service_name`=%s", (vm_recipe_name, service_name,))
 
 	# Fetch the VM recipe
 	vm_recipe= curd.fetchone()
@@ -378,13 +388,14 @@ def delete_vm_recipe():
         # Get the db cursor
         curd = g.db.cursor(mysql.cursors.DictCursor)
 
-        # Get the VM recipe name from the request form     
-        vm_recipe_name = ""
-        if 'vm_recipe_name' in request.get_json():
-                vm_recipe_name = request.get_json()['vm_recipe_name']
+	form = parse_request_form(request.form)
+	
+	service_name = form['service_name']
+	
+        vm_recipe_name = form['vm_recipe_name']
 
         # Query the database to get the VM recipe
-        curd.execute("DELETE FROM `vm_recipes` WHERE `name`= %s", (vm_recipe_name,))
+        curd.execute("DELETE FROM `vm_recipes` WHERE `name`= %s AND `service_name`=%s", (vm_recipe_name, service_name,))
 	curd.execute("UPDATE `service_recipes` SET `vms_list` = REPLACE(`vms_list`, %s, '') WHERE `vms_list` LIKE %s;",("(, )?"+vm_recipe_name, "%"+vm_recipe_name+"%",))
 	
 	g.db.commit()
@@ -401,7 +412,7 @@ def delete_service_recipe():
         curd = g.db.cursor(mysql.cursors.DictCursor)
 
         # Get the service recipe name from the request form     
-	service_recipe_name = request.form.get('service_recipe_name', "")
+	service_recipe_name = request.form.get('service_name', None)
 
 	# Get the list of all VM recipes which belong to this service recipe
 	curd.execute("SELECT `vms_list` FROM `service_recipes` WHERE `name`= %s", (service_recipe_name,))
@@ -409,7 +420,7 @@ def delete_service_recipe():
 
 	# Delete each VM recipe
 	for vm_recipe_name in vms_list:
-		curd.execute("DELETE FROM `vm_recipes` WHERE `name`= %s", (vm_recipe_name,))
+		curd.execute("DELETE FROM `vm_recipes` WHERE `name`= %s AND `service_name` = %s", (vm_recipe_name, service_recipe_name,))
 
 	# Delete the service recipe entry	
 	curd.execute("DELETE FROM `service_recipes` WHERE `name`= %s", (service_recipe_name,))
@@ -422,7 +433,13 @@ def delete_service_recipe():
 ################################################################################
 
 # Helper which adds a VM recipe to the database
-def add_vm_recipe(vm_recipe_name, service_recipe_name, form):
+@workflow.route("add_vm_recipe",title='Add a VM recipe', methods=['POST'], menu=False)
+@app.disable_csrf_check
+def add_vm_recipe():
+	
+	form = parse_request_form(request.form)
+	vm_recipe_name = next(iter(form['service_vms']))
+	service_recipe_name = form['service_name']
 
         # Get the db cursor
         curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -431,25 +448,26 @@ def add_vm_recipe(vm_recipe_name, service_recipe_name, form):
 	curd.execute("UPDATE `service_recipes` SET `vms_list`=CONCAT(`vms_list`, %s) WHERE `name`= %s", (', '+vm_recipe_name, service_recipe_name,))
 	
 	# Extract the data
-	puppet_classes = form['puppet_classes']
-	purpose = form['purpose']
-	comments = form['comments']
-	primary_owner_who = form['primary_owner_who']
-	primary_owner_role = form['primary_owner_role']
-	secondary_owner_who = form['secondary_owner_who']
-	secondary_owner_role = form['secondary_owner_role']
-	sockets = form['sockets']
-	cores = form['cores']
-	ram = form['ram']
-	disk = form['disk']
-	template = form['template']
-	cluster = form['cluster']
-	network = form['network']
-	vm_folder_moid = form['vm_folder_moid']
-	description = form['vm_description']
+	puppet_classes = form['service_vms'][vm_recipe_name]['puppet_classes']
+	purpose = form['service_vms'][vm_recipe_name]['purpose']
+	comments = form['service_vms'][vm_recipe_name]['comments']
+	primary_owner_who = form['service_vms'][vm_recipe_name]['primary_owner_who']
+	primary_owner_role = form['service_vms'][vm_recipe_name]['primary_owner_role']
+	secondary_owner_who = form['service_vms'][vm_recipe_name]['secondary_owner_who']
+	secondary_owner_role = form['service_vms'][vm_recipe_name]['secondary_owner_role']
+	sockets = form['service_vms'][vm_recipe_name]['sockets']
+	cores = form['service_vms'][vm_recipe_name]['cores']
+	ram = form['service_vms'][vm_recipe_name]['ram']
+	disk = form['service_vms'][vm_recipe_name]['disk']
+	template = form['service_vms'][vm_recipe_name]['template']
+	cluster = form['service_vms'][vm_recipe_name]['cluster']
+	network = form['service_vms'][vm_recipe_name]['network']
+	vm_folder_moid = form['service_vms'][vm_recipe_name]['vm_folder_moid']
+	description = form['service_vms'][vm_recipe_name]['vm_description']
 	
 	curd.execute("""INSERT INTO `vm_recipes`(
 						`name`,
+						`service_name`,
 						`purpose`,
 						`comments`,
 						`primary_owner_who`,
@@ -465,10 +483,13 @@ def add_vm_recipe(vm_recipe_name, service_recipe_name, form):
 						`puppet_code`,
 						`description`,
 						`network`,
-						`vm_folder_moid`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (vm_recipe_name, purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, template, cluster, puppet_classes, description, network, vm_folder_moid,))
+						`vm_folder_moid`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (vm_recipe_name, service_recipe_name, purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, template, cluster, puppet_classes, description, network, vm_folder_moid,))
 
         # Commit the changes
         g.db.commit()
+		
+	# Return an OK 200
+	return json.dumps({'success':True}), 200, {'ContentType':'application/json'}
 
 ################################################################################
 
@@ -493,7 +514,6 @@ def parse_request_form(form):
 	#		  ... and so on
 	#		  }
 	#	  }
-	#
 	for index in form.keys():
 		if BASE_STRING in index:
 			regex_search = re.search("\[(\w+)\]\[(\w+)\]", index)
@@ -527,7 +547,7 @@ def parse_request_form(form):
 ################################################################################
 
 # Helper function that determines if a recipe for the enitity with the given name already exists
-def recipe_exists(recipe_name, entity, cursor):
+def recipe_exists(recipe_name, entity, cursor, service_recipe_name=None):
 	
 	# Check if service recipe exists
 	if entity is "service":
@@ -543,7 +563,7 @@ def recipe_exists(recipe_name, entity, cursor):
 	# Check if VM recipe exists
 	elif entity is "vm":
 		
-		cursor.execute("SELECT COUNT(`name`) AS count FROM `vm_recipes` WHERE `name`=%s", (recipe_name,))
+		cursor.execute("SELECT COUNT(`name`) AS count FROM `vm_recipes` WHERE `name`=%s AND `service_name` = %s;", (recipe_name, service_recipe_name))
 		
 		result = cursor.fetchone()
 		
@@ -571,7 +591,7 @@ def validate_form(required_keys, request_dict):
 
 def parse_question_references(text, values_dict):
 
-        # Find all the substrings which match the given regex, such ass {{some_reference.allocated_vm_name}}
+        # Find all the substrings which match the given regex, such ass {{some_reference.system_name}}
         references = re.findall("{{\w+(?:\.\w+)*}}", text)
 
         reference_to_system_name = {}
