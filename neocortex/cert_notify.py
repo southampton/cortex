@@ -29,6 +29,15 @@ class Notifier(object):
 
 		return contents
 
+	def generate_short_description(self, digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where):
+		if subject_cn is None:
+			subject_cn = 'Unknown CN'
+		else:
+			subject_cn = str(subject_cn)
+
+		result = 'Certificate expiry notification: ' + subject_cn + ' during ' + not_after.strftime('%Y-%m-%d')
+		return result
+
 class EmailNotifier(Notifier):
 	"""Notifies about certificate expiry via email."""
 
@@ -37,7 +46,7 @@ class EmailNotifier(Notifier):
 		self.to_address = to_address
 
 	def notify(self, digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where):
-		subject = 'Certificate expiry notification'
+		subject = self.generate_short_description(digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where)
 		contents = self.generate_message_content(digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where)
 		self.helper.lib.send_email(self.to_address, subject, contents)
 
@@ -52,7 +61,7 @@ class TicketNotifier(Notifier):
 		self.request_type = request_type
 
 	def notify(self, digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where):
-		short_description = 'Certificate expiry notification'
+		short_description = self.generate_short_description(digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where)
 		description = self.generate_message_content(digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where)
 		if self.ticket_type == 'incident':
 			self.helper.lib.servicenow_create_ticket(short_description, description, self.opener_sys_id, self.team_name)

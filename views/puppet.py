@@ -41,23 +41,36 @@ def puppet_enc_edit(node):
 	if system == None:
 		abort(404)
 
+
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute("SELECT module_name, class_name, class_parameter, description, tag_name FROM puppet_modules_info;")
+
+	outcome = {}
+	result = curd.fetchall()
 	
+	modules = {}
+
+	for row in result:
+		if row['module_name'] not in modules.keys():
+			modules[row['module_name']] = {row['class_name']:{row['class_parameter']:{'description':row['description'], 'tag_name':row['tag_name']}}}
+		elif row['class_name'] not in modules[row['module_name']]:
+			modules[row['module_name']][row['class_name']] = {row['class_parameter']:{'description':row['description'], 'tag_name':row['tag_name']}}
+		elif row['class_parameter'] not in modules[row['module_name']][row['class_name']]:
+			modules[row['module_name']][row['class_name']][row['class_parameter']] = {'description':row['description'], 'tag_name':row['tag_name']}
 	
 	# On any GET request, just display the information
 	if request.method == 'GET':
-		
 		# If the user has view or edit permission send them the template - otherwise abort with 403.
-		if does_user_have_system_permission(system['id'],"view.puppet.classify","systems.all.view.puppet.classify") or \
-			does_user_have_system_permission(system['id'],"edit.puppet","systems.all.edit.puppet"):
+		if does_user_have_system_permission(system['id'], "view.puppet.classify", "systems.all.view.puppet.classify") or \
+			does_user_have_system_permission(system['id'], "edit.puppet"," systems.all.edit.puppet"):
 
-			return render_template('puppet/enc.html', system=system, active='puppet', environments=environments, title=system['name'], nodename=node, pactive="edit", yaml=cortex.lib.puppet.generate_node_config(system['puppet_certname']))
+			return render_template('puppet/enc.html', variable_names=modules,system=system, active='puppet', environments=environments, title=system['name'], nodename=node, pactive="edit", yaml=cortex.lib.puppet.generate_node_config(system['puppet_certname']))
 		else:
 			abort(403)
 
 	# If the method is POST and the user has edit permission.
 	# Validate the input and then save.
 	elif request.method == 'POST' and does_user_have_system_permission(system['id'],"edit.puppet","systems.all.edit.puppet"):
-
 		# Extract data from form
 		environment = request.form.get('environment', '')
 		classes = request.form.get('classes', '')
@@ -75,7 +88,7 @@ def puppet_enc_edit(node):
 
 		# Validate classes YAML
 		try:
-			data = yaml.load(classes)
+			data = yaml.safe_load(classes)
 		except Exception as e:
 			flash('Invalid YAML syntax for classes: ' + str(e), 'alert-danger')
 			error = True
@@ -89,7 +102,7 @@ def puppet_enc_edit(node):
 
 		# Validate variables YAML
 		try:
-			data = yaml.load(variables)
+			data = yaml.safe_load(variables)
 		except Exception as e:
 			flash('Invalid YAML syntax for variables: ' + str(e), 'alert-danger')
 			error = True
@@ -123,7 +136,6 @@ def puppet_enc_edit(node):
 		flash('Puppet ENC for host ' + system['name'] + ' updated', 'alert-success')
 
 		return redirect(url_for('puppet_enc_edit', node=node))
-
 	else:
 		abort(403)
 
@@ -162,7 +174,7 @@ def puppet_enc_default():
 
 		# Validate classes YAML
 		try:
-			data = yaml.load(classes)
+			data = yaml.safe_load(classes)
 		except Exception as e:
 			flash('Invalid YAML syntax: ' + str(e), 'alert-danger')
 			return render_template('puppet/default.html', classes=classes, active='puppet', title="Default Classes")
@@ -302,7 +314,7 @@ def puppet_dashboard():
 	except Exception as e:
 		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
-	return render_template('puppet/dashboard.html', stats=stats,active='puppet', title="Puppet Dashboard")
+	return render_template('puppet/dashboard.html', stats=stats,active='puppet', title="Puppet Dashboard", environments=cortex.lib.core.get_puppet_environments())
 
 ################################################################################
 
@@ -313,10 +325,17 @@ def puppet_radiator():
 	## No permissions check: this is accessible without logging in
 	try:
 		stats=cortex.lib.puppet.puppetdb_get_node_stats()
+		
 	except Exception as e:
 		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
-	return render_template('puppet/radiator.html', stats=stats, active='puppet')
+	# create dictionary to hold the values the radiator needs
+	top_level_stats = {}
+	for s in stats:
+		#'count' value in the dictionary is the value we need
+		top_level_stats[s] = stats[s]['count']
+
+	return render_template('puppet/radiator.html', stats=top_level_stats, active='puppet')
 
 ################################################################################
 
@@ -327,8 +346,14 @@ def puppet_radiator_body():
 	iffy page refresh."""
 
 	## No permissions check: this is accessible without logging in
+	stats=cortex.lib.puppet.puppetdb_get_node_stats()
+	# create dictionary to hold the values the radiator needs
+	top_level_stats = {}
+	for s in stats:
+		#'count' value in the dictionary is the value we need
+		top_level_stats[s] = stats[s]['count']
 
-	return render_template('puppet/radiator-body.html', stats=cortex.lib.puppet.puppetdb_get_node_stats(), active='puppet')
+	return render_template('puppet/radiator-body.html', stats=top_level_stats, active='puppet')
 
 ################################################################################
 

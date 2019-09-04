@@ -1,11 +1,11 @@
 {% extends "layout.html" %}
 {% block head -%}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
-		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}?version={{ config.VERSION }}">
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}?version={{ config.VERSION }}"></script>
 {% endblock %}
 {% block body %}
 <div class="page-header">
-<h3>Create NLB Web Service</h3>
+<h4><i class="fa fa-plus-circle fa-fw"></i> Create NLB Web Service</h4>
 </div>
 <div class="row">
 	<div class="col-md-{% if details.ssl == 1 %}9{% else %}12{% endif %}">

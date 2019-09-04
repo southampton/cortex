@@ -1,21 +1,19 @@
 {% extends "layout.html" %}
 {% block head -%}
-	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-slider.min.css') }}">
-	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-slider.min.js') }}"></script>
-	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
-	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}?version={{ config.VERSION }}">
+	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}?version={{ config.VERSION }}"></script>
 
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}">
-	<script src="{{ url_for('static', filename='js/vendor/moment.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script>
-	<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}"></script>
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}?version={{ config.VERSION }}">
+	<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}?version={{ config.VERSION }}"></script>
+	<script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}?version={{ config.VERSION }}"></script>
+	<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}?version={{ config.VERSION }}"></script>
+	<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}?version={{ config.VERSION }}"></script>
 {% endblock %}
 {% block body %}
 
 <div class="page-header">
-<h3><i class="fa fa-plus-circle fa-fw"></i> Create Sandbox Virtual Machine</h3>
-<p class="text-muted">This workflow will create a VM on the sandbox environment. A hostname will be automatically allocated from the 'play' group, and the VM will be configured to use DHCP. A ServiceNow CI will also be created automatically.</p>
+<h4><i class="fa fa-plus-circle fa-fw"></i> Create Sandbox Virtual Machine</h4>
+<div class="text-muted">This workflow will create a VM on the sandbox environment. A hostname will be automatically allocated from the 'play' group, and the VM will be configured to use DHCP. A ServiceNow CI will also be created automatically.</div>
 </div>
 
 <style type="text/css">
@@ -23,29 +21,24 @@
 {
 	width: 2.5em;
 }
-
 .btn-group .btn-primary, .btn-group .btn-warning, .btn-group .btn-success
 {
 	opacity: 0.7;
 	font-size: 14px;
 }
-
 .active
 {
 	opacity: 1 !important;
 }
-
 .submit
 {
 	padding-bottom: 2em;
 	margin-left: 1em;
 }
-
 .btn-submit
 {
 	font-size: 2em;
 }
-
 div.specname
 {
 	font-size: 200%; /* Relative to btn-primary */
@@ -53,70 +46,16 @@ div.specname
 	line-height: 90%;
 	padding-right: 0.4em;
 }
-
 div.specdetails
 {
 	float:left;
 	text-align: left
 }
-.slider {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 10px;
-  border-radius: 5px;
-  background: #d3d3d3;
-  outline: none;
-  opacity: 0.7;
-  -webkit-transition: .2s;
-  transition: opacity .2s;
-  cursor: pointer;
-}
-
-.slider:hover {
-  opacity: 1;
-}
-
-.slider::-webkit-slider-thumb {
-	-webkit-appearance: none;
-	appearance: none;
-	border-radius: 50%;
-	background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
-	cursor: pointer;
-	width: 25px;
-	height: 25px;
-	background-color: #337ab7;
-	background-image: -webkit-linear-gradient(top,#149bdf 0,#0480be 100%);
-	background-image: -o-linear-gradient(top,#149bdf 0,#0480be 100%);
-	background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
-	background-repeat: repeat-x;
-	-webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
-	box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
-	border: 0 solid transparent;
-}
-
-.slider::-moz-range-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        border-radius: 50%;
-        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
-        cursor: pointer;
-        width: 25px;
-        height: 25px;
-        background-color: #337ab7;
-        background-image: -webkit-linear-gradient(top,#149bdf 0,#0480be 100%);
-        background-image: -o-linear-gradient(top,#149bdf 0,#0480be 100%);
-        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
-        background-repeat: repeat-x;
-        -webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
-        border: 0 solid transparent;
-
-}
 </style>
 {%- if autocomplete_users %}
 <datalist id="autocompleteUsers">
 {%- for user in autocomplete_users %}
-        <option>{{user.username}}</option>
+		<option>{{user.username}}</option>
 {% endfor -%}
 </datalist>
 {% endif -%}
@@ -125,11 +64,15 @@ div.specdetails
 	<div class="row">
 		<div class="col-md-12">
 			<h4 style="margin-top:0">1. Enter request details</h4>
-			<div class="form-group row col-md-12">
-				<label for="purpose">Purpose:<span class="required">*</span></label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" autofocus />
+			<div class="row">
+				<div class="form-group col-md-12">
+					<label for="purpose">Purpose:<span class="required">*</span></label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" autofocus />
+				</div>
 			</div>
-			<div class="form-group row col-md-12">
-				<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
+			<div class="row">
+				<div class="form-group col-md-12">
+					<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
+				</div>
 			</div>
 			<div class="row">
 				<div class="form-group col-md-3">
@@ -143,7 +86,7 @@ div.specdetails
 				</div>
 				<div class="form-group col-md-3">
 					<label for="secondary_owner_role">Secondary Owner Role:</label><input class="form-control" id="secondary_owner_role" name="secondary_owner_role" placeholder="Secondary owner's role" maxlength="64"/>
-			</div>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -161,30 +104,30 @@ div.specdetails
 		<div class="col-md-12">
 			<h4>3. Customise Specification</h4>
 			<div class="row">
-				<div class="form-group col-md-3" style="margin-top:2.4em">
-					<label for="sockets-slider">Sockets:</label> 
+				<div class="form-group col-md-3" style="margin-top:0.5em">
+					<label for="sockets-slider">Sockets:</label>
 					<input class="slider form-control-range slider-input" type="range" id="sockets-slider" name="sockets" style="width: 65%;" step="1" min="1" max="16" value="1">
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
 					<p class="text-muted">Number of CPU sockets</p>
 				</div>
-				<div class="form-group col-md-3" style="margin-top:2.4em">
-                                        <label for="cores-slider">Cores:</label>    
-                                        <input class="slider form-control-range slider-input" type="range" id="cores-slider" name="cores" style="width: 65%;" step="1" min="1" max="16" value="1">
-					<span class="badge badge-primary output" style="font-size: 14px;"></span> 
-                                        <p class="text-muted">Number of cores per socket</p>
-                                </div>
-				<div class="form-group col-md-3" style="margin-top:2.4em">
-                                        <label for="ram-slider">RAM (GB):</label>    
-                                        <input class="slider form-control-range slider-input" type="range" id="ram-slider" name="ram" style="width: 65%;" step="2" min="2" max="32" value="2">
+				<div class="form-group col-md-3" style="margin-top:0.5em">
+					<label for="cores-slider">Cores:</label>
+					<input class="slider form-control-range slider-input" type="range" id="cores-slider" name="cores" style="width: 65%;" step="1" min="1" max="16" value="1">
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
-                                        <p class="text-muted">Total amount of RAM, including video RAM</p>
-                                </div>
-				<div class="form-group col-md-3" style="margin-top:2.4em">
-                                        <label for="disk-slider">Disk (GB):</label>  
-                                        <input class="slider form-control-range slider-input" type="range" id="disk-slider" name="disk" style="width: 65%;" step="100" min="100" max="2000" value="100">
+					<p class="text-muted">Number of cores per socket</p>
+				</div>
+				<div class="form-group col-md-3" style="margin-top:0.5em">
+					<label for="ram-slider">RAM (GB):</label>
+					<input class="slider form-control-range slider-input" type="range" id="ram-slider" name="ram" style="width: 65%;" step="2" min="2" max="32" value="2">
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
-                                        <p class="text-muted">Additional disk size, excluding the default OS disk</p>
-                                </div>
+					<p class="text-muted">Total amount of RAM, including video RAM</p>
+				</div>
+				<div class="form-group col-md-3" style="margin-top:0.5em">
+					<label for="disk-slider">Disk (GB):</label>
+					<input class="slider form-control-range slider-input" type="range" id="disk-slider" name="disk" style="width: 65%;" step="100" min="100" max="2000" value="100">
+					<span class="badge badge-primary output" style="font-size: 14px;"></span>
+					<p class="text-muted">Additional disk size, for <samp>/srv</samp> or <samp>G:\</samp> (not the OS disk)</p>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -223,7 +166,7 @@ div.specdetails
 
 		<div class="col-md-4">
 			<h4>7. Expiry date (optional)</h4>
-			<div style="margin-left: 1em">
+			<div class="form-group" style="margin-left: 1em">
 				<p>Set the date that this VM will be automatically powered off.</p>
 				<div class='input-group date' id='expirypicker' data-target-input="nearest">
 					<input type='text' class="form-control datetimepicker-input" id="expiry" name="expiry" placeholder="YYYY-MM-DD" data-target="expirypicker" />
@@ -305,7 +248,7 @@ function updateTotals()
 {
 	// See what specification is selected
 	var spec = $('input[name=spec]').filter(function(index){
-                        return $(this).is(':checked');
+		return $(this).is(':checked');
 	});
 	if (spec.length != 0)
 	{

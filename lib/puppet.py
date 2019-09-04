@@ -180,7 +180,7 @@ def generate_node_config(certname):
 	curd.execute("SELECT `value` FROM `kv_settings` WHERE `key` = 'puppet.enc.default'")
 	default_classes = curd.fetchone()
 	if default_classes is not None:
-		default_classes = yaml.load(default_classes['value'])
+		default_classes = yaml.safe_load(default_classes['value'])
 	
 		# YAML load can come back with no actual objects, e.g. comments, blank etc.
 		if default_classes == None:
@@ -196,7 +196,7 @@ def generate_node_config(certname):
 
 	# Decode YAML for classes from the node
 	if len(node['classes'].strip()) != 0:
-		node_classes = yaml.load(node['classes'])
+		node_classes = yaml.safe_load(node['classes'])
 
 		# YAML load can come back with no actual objects, e.g. comments, blank etc.
 		if node_classes == None:
@@ -218,7 +218,7 @@ def generate_node_config(certname):
 	# Decode YAML for environment (Puppet calls them parameters, but we call them [global] variables)
 	variables = None
 	if len(node['variables'].strip()) != 0:
-		params = yaml.load(node['variables'])
+		params = yaml.safe_load(node['variables'])
 
 		if not params == None:
 			response['parameters'] = params
@@ -313,31 +313,45 @@ def puppetdb_get_node_stats(db = None):
 	# Initialise stats
 	count = 0
 	stats = {
-		'changed': 0,
-		'unchanged': 0,
-		'failed': 0,
-		'unreported': 0,
-		'noop': 0,
+		'count': {},
+		'changed': {},
+		'unchanged': {},
+		'failed': {},
+		'unreported': {},
+		'noop': {},
+		'unknown':{}
 	}
+
 	unknown = 0
+	
+	environs = ['count', 'preproduction', 'production', 'development', 'moduledev']
+
+	for k in list(stats.keys()):
+		for e in environs:
+			stats[k][e] = 0
 
 	# Iterate over nodes, counting statii
-	for node in nodes:
-		# Count number of nodes (we can't do len(nodes) as it's a generator)
-		count += 1
-
-		# Check if the node is in noop.
+	for node in nodes:		
+		#noop stats	
 		if node.noop:
-			stats['noop'] += 1
+			# count all the values for noop
+			stats['noop'][node.report_environment] += 1
+			stats['noop']['count'] += 1
+			stats['count'][node.report_environment] += 1
 		else:
-			# Count the status types
+			# if we know the reported status, count the values
 			if node.status in stats:
-				stats[node.status] += 1
+				stats[node.status][node.report_environment] += 1
+				stats[node.status]['count'] += 1
+				stats['count'][node.report_environment] += 1
+			# otherwise mark it as unknown but still count the values
 			else:
-				unknown += 1
-
-	# Put the remaining stats in our dictionary
-	stats['count'] = count
-	stats['unknown'] = unknown
-
+				stats['unknown'][node.report_environment] += 1
+				stats['unknown']['count'] += 1
+				stats['count'][node.report_environment] += 1
+	
+	# get the total count number here
+	stats['count']['count'] = sum(stats['count'].values())
+	
 	return stats
+

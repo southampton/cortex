@@ -1,20 +1,18 @@
 {% extends "layout.html" %}
 {% block head -%}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
-		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
-
-		<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}">
-		<script src="{{ url_for('static', filename='js/vendor/moment.js') }}"></script>
-		<script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}"></script>
-		<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script>
-		<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}"></script>
-
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}?version={{ config.VERSION }}">
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}?version={{ config.VERSION }}"></script>
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}?version={{ config.VERSION }}">
+		<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}?version={{ config.VERSION }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}?version={{ config.VERSION }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}?version={{ config.VERSION }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}?version={{ config.VERSION }}"></script>
 {% endblock %}
 {% block body %}
 
 <div class="page-header">
-<h3><i class="fa fa-plus-circle fa-fw"></i> Create Standard Virtual Machine</h3>
-<p class="text-muted">This workflow will create a VM on the production environment. A hostname will be automatically allocated from the 'srv' group, and will automatically have an IP address assigned from Infoblox. A ServiceNow CI will also be created.</p>
+<h4><i class="fa fa-plus-circle fa-fw"></i> Create Standard Virtual Machine</h4>
+<div class="text-muted">This workflow will create a VM on the production environment. A hostname will be automatically allocated from the 'srv' group, and will automatically have an IP address assigned from Infoblox. A ServiceNow CI will also be created.</div>
 </div>
 
 <style type="text/css">
@@ -22,40 +20,28 @@
 {
 	width: 80% !important;
 }
-
-{# Fixes slider tooltips appearing on top of bootstrap-select dropdowns -#}
-.tooltip
-{
-	z-index: 100;
-}
-
 .blocks .btn
 {
 	width: 2.5em;
 }
-
 .btn-group .btn-primary, .btn-group .btn-warning, .btn-group .btn-success
 {
 	opacity: 0.7;
 	font-size: 14px;
 }
-
 .active
 {
 	opacity: 1 !important;
 }
-
 .submit
 {
 	padding-bottom: 2em;
 	margin-left: 1em;
 }
-
 .btn-submit
 {
 	font-size: 2em;
 }
-
 div.specname
 {
 	font-size: 200%; /* Relative to btn-primary */
@@ -63,72 +49,16 @@ div.specname
 	line-height: 90%;
 	padding-right: 0.4em;
 }
-
 div.specdetails
 {
 	float:left;
 	text-align: left
 }
-.slider {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 10px;
-  border-radius: 5px;
-  background: #d3d3d3;
-  outline: none;
-  opacity: 0.7;
-  -webkit-transition: .2s;
-  transition: opacity .2s;
-  cursor: pointer;
-  display: inline-block;
-}
-
-.slider:hover {
-  opacity: 1;
-}
-
-.slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        border-radius: 50%;
-        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
-        cursor: pointer;
-        width: 25px;
-        height: 25px;
-        background-color: #337ab7;
-        background-image: -webkit-linear-gradient(top,#149bdf 0,#0480be 100%);
-        background-image: -o-linear-gradient(top,#149bdf 0,#0480be 100%);
-        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
-        background-repeat: repeat-x;
-        -webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
-        border: 0 solid transparent;
-}
-
-.slider::-moz-range-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        border-radius: 50%;
-        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
-        cursor: pointer;
-        width: 25px;
-        height: 25px;
-        background-color: #337ab7;
-        background-image: -webkit-linear-gradient(top,#149bdf 0,#0480be 100%);
-        background-image: -o-linear-gradient(top,#149bdf 0,#0480be 100%);
-        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
-        background-repeat: repeat-x;
-        -webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
-        border: 0 solid transparent;
-
-}
-
 </style>
 {%- if autocomplete_users %}
 <datalist id="autocompleteUsers">
 {%- for user in autocomplete_users %}
-        <option>{{user.username}}</option>
+		<option>{{user.username}}</option>
 {% endfor -%}
 </datalist>
 {% endif -%}
@@ -145,8 +75,10 @@ div.specdetails
 					<label for="purpose">Purpose:<span class="required">*</span></label><input class="form-control" id="purpose" name="purpose" placeholder="The purpose of the Virtual Machine, e.g. Corporate Website Web Server" />
 				</div>
 			</div>
-			<div class="form-group row col-md-12">
-				<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
+			<div class="row">
+				<div class="form-group col-md-12">
+					<label for="comments">Comments:</label><input class="form-control" id="comments" name="comments" placeholder="Any other notes to store in the comments section of the CMDB" />
+				</div>
 			</div>
 			<div class="row">
 				<div class="form-group col-md-3">
@@ -178,17 +110,17 @@ div.specdetails
 		<div class="col-md-12">
 			<h4>3. Customise Specification</h4>
 			<div class="row">
-				<div class="form-group col-md-3" style="margin-top:2.4em">
+				<div class="form-group col-md-3" style="margin-top:0.5em">
 					<label for="sockets-slider">Sockets:</label>
 					{% if vm_spec_config_json and 'slider-sockets' in vm_spec_config_json %}
-					<input class="slider form-control-range slider-input fucking-test" type="range" id="sockets-slider" name="sockets" style="width: 65%;" step="{{vm_spec_config_json['slider-sockets'].get('step',1)}}" min="{{vm_spec_config_json['slider-sockets'].get('min',1)}}" max="{{vm_spec_config_json['slider-sockets'].get('max',16)}}" value="{{vm_spec_config_json['slider-sockets'].get('value',1)}}" style="width: 65%;" />
+					<input class="slider form-control-range slider-input" type="range" id="sockets-slider" name="sockets" style="width: 65%;" step="{{vm_spec_config_json['slider-sockets'].get('step',1)}}" min="{{vm_spec_config_json['slider-sockets'].get('min',1)}}" max="{{vm_spec_config_json['slider-sockets'].get('max',16)}}" value="{{vm_spec_config_json['slider-sockets'].get('value',1)}}" style="width: 65%;" />
 					{% else %}
-					<input class="slider form-control-range slider-input test-fail" name="sockets" id="sockets-slider" type="range" min="1" max="16" step="1" value="1" style="width: 65%;" />
+					<input class="slider form-control-range slider-input" name="sockets" id="sockets-slider" type="range" min="1" max="16" step="1" value="1" style="width: 65%;" />
 					{% endif %}
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
 					<p class="text-muted">Number of CPU sockets</p>
 				</div>
-				<div class="form-group col-md-3" style="margin-top:2.4em">
+				<div class="form-group col-md-3" style="margin-top:0.5em">
 					<label for="cores-slider">Cores:</label>
 					{% if vm_spec_config_json and 'slider-cores' in vm_spec_config_json %}
 					<input class="slider form-control-range slider-input" style="width:65%" name="cores" id="cores-slider" type="range" min="{{vm_spec_config_json['slider-cores'].get('min',1)}}" max="{{vm_spec_config_json['slider-cores'].get('max',16)}}" step="{{vm_spec_config_json['slider-cores'].get('step',1)}}" value="{{vm_spec_config_json['slider-cores'].get('value',1)}}" style="width: 65%;" />
@@ -198,17 +130,17 @@ div.specdetails
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
 					<p class="text-muted">Number of cores per socket</p>
 				</div>
-				<div class="form-group col-md-3" style="margin-top:2.4em">
+				<div class="form-group col-md-3" style="margin-top:0.5em">
 					<label for="ram-slider">RAM (GB):</label>
 					{% if vm_spec_config_json and 'slider-ram' in vm_spec_config_json %}
-					<input class="slider form-control-range slider-input {{vm_spec_config_json['slider-ram'].get('max',32)}} lawl" name="ram" id="ram-slider" type="range" min="{{vm_spec_config_json['slider-ram'].get('min',2)}}" max="{{vm_spec_config_json['slider-ram'].get('max',32)}}" step="{{vm_spec_config_json['slider-ram'].get('step',2)}}" value="{{vm_spec_config_json['slider-ram'].get('value',2)}}" style="width: 65%;" />
+					<input class="slider form-control-range slider-input" name="ram" id="ram-slider" type="range" min="{{vm_spec_config_json['slider-ram'].get('min',2)}}" max="{{vm_spec_config_json['slider-ram'].get('max',32)}}" step="{{vm_spec_config_json['slider-ram'].get('step',2)}}" value="{{vm_spec_config_json['slider-ram'].get('value',2)}}" style="width: 65%;" />
 					{% else %}
 					<input class="slider form-control-range slider-input" name="ram" id="ram-slider" type="range" min="2" max="32" step="2" value="2" style="width: 65%;" />
 					{% endif %}
 					<span class="badge badge-primary output" style="font-size: 14px;"></span>
 					<p class="text-muted">Total amount of RAM, including video RAM</p>
 				</div>
-				<div class="form-group col-md-3" style="margin-top:2.4em">
+				<div class="form-group col-md-3" style="margin-top:0.5em">
 					<label for="disk-slider">Disk (GB):</label>
 					{% if vm_spec_config_json and 'slider-disk' in vm_spec_config_json %}
 					<input class="slider form-control-range slider-input" name="disk" id="disk-slider" type="range" min="{{vm_spec_config_json['slider-disk'].get('min', 2)}}" max="{{vm_spec_config_json['slider-disk'].get('max', 2000)}}" step="{{vm_spec_config_json['slider-disk'].get('step', 100)}}" value="{{vm_spec_config_json['slider-disk'].get('value', 100)}}" style="width: 65%;" />
@@ -273,11 +205,11 @@ div.specdetails
 	<div class="row" style="margin-top: 1.0em">
 		<div class="col-md-4">
 			<h4>8. Expiry date (optional)</h4>
-			<div style="margin-left: 1em">
-				<div class='input-group date' id='expirypicker'>
-					<input type='text' class="form-control" id="expiry" name="expiry" placeholder="Date of automatic power off: YYYY-MM-DD" />
-					<span class="input-group-addon">
-						<span class="glyphicon glyphicon-calendar"></span>
+			<div class="form-group" style="margin-left: 1em">
+				<div class='input-group date' id='expirypicker' data-target-input="nearest">
+					<input type='text' class="form-control datetimepicker-input" id="expiry" name="expiry" placeholder="Date of automatic power off: YYYY-MM-DD" data-target="expirypicker" />
+					<span class="input-group-append" data-target="#expirypicker" data-toggle="datetimepicker">
+						<div class="input-group-text"><i class="fa fa-calendar"></i></div>
 					</span>
 				</div>
 				<script>
@@ -303,7 +235,7 @@ div.specdetails
 					<select class="selectpicker" name="vm_folder_moid" id="vm_folder_moid" data-live-search="true">
 						<option></option>
 {% for folder in folders -%}
-                                        <option value="{{ folder['id'] }}">{{ folder['fully_qualified_path'] }}</option>
+										<option value="{{ folder['id'] }}">{{ folder['fully_qualified_path'] }}</option>
 {%- endfor %}
 					</select>
 				</div>

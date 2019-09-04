@@ -1,66 +1,21 @@
 {% extends "layout.html" %}
 {% block head -%}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
-		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}?version={{ config.VERSION }}">
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}?version={{ config.VERSION }}"></script>
 {% endblock %}
 {% block body %}
 <div class="page-header">
 {#- Commenting this out currently as it's not done yet -#}
 {#- <button class="btn btn-sm btn-primary pull-right">Load from file</button> -#}
-<h3>Create NLB Web Service</h3>
-<p class="text-muted">This workflow simplifies the creation of creating web services that are accessed via the NLB. It creates all the necessary objects on the load balancers.</p>
+<h4><i class="fa fa-plus-circle fa-fw"></i> Create NLB Web Service</h4>
+<div class="text-muted">This workflow simplifies the creation of creating web services that are accessed via the NLB. It creates all the necessary objects on the load balancers.</div>
 </div>
-<style type="text/css">
-.submit
-{
-	padding-bottom: 2em;
-	margin-left: 1em;
-}
-
-.btn-submit
-{
-	font-size: 2em;
-}
-
-td.head
-{
-	font-weight: bold;
-}
-
-td.na
-{
-	color: #aaa;
-}
-#advanced-settings-header:hover {
-	cursor: pointer;
-	
-}
-h3
-{
-	margin-top: 20px;
-}
-#advanced-settings-card {
-	padding-bottom: 7px;
-	border-bottom: 1px solid #555555;
-	border-left: 0px;
-	border-right: 0px;
-	border-radius: 0px;
-}
-
-#advanced-settings-header {
-	background-color: inherit;
-	padding-left: 0px;
-}
-#advanced-settings-header[aria-expanded="true"] > h3 > a {
-	color: black;
-}
-</style>
 <form id="nlb_form" method="POST" role="form">
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 	<div class="row">
 		<div class="col-md-6">
 			<div class="row">
-				<div class="col-md-12"><h3 style="margin-top:0px">Service Details</h3></div>
+				<div class="col-md-12"><h4 style="margin-top:0px">Service Details</h4></div>
 				<div class="col-md-12 form-group">
 					<label for="service">Service Name:</label>
 					<input class="form-control" name="service" id="service" placeholder="The human-readable name of the service you are creating to be used in NLB object descriptions e.g. Corporate Website" required="required" autofocus {% if 'service' in values %}value="{{ values['service'] }}" {% endif %}/>
@@ -89,7 +44,7 @@ h3
 		</div>
 		<div class="col-md-6">
 			<div class="row">
-				<div class="col-md-12"><h3 style="margin-top:0px">Service Access</h3></div>
+				<div class="col-md-12"><h4 style="margin-top:0px">Service Access</h4></div>
 				<div class="col-md-12 form-group">
 					<label for="ip">Service IP:</label>
 					<input class="form-control" name="ip" id="ip" placeholder="The IP address of the service. Leave blank to auto-allocate" {% if 'ip' in values %}value="{{ values['ip'] }}" {% endif %}/>
@@ -117,7 +72,7 @@ h3
 			</div>
 		</div>
 	</div>
-	<h3 id="ssl_options_head"{% if 'enable_ssl' in values and not values['enable_ssl'] %} style="display:none"{% endif %}>SSL Options</h3>
+	<h4 id="ssl_options_head"{% if 'enable_ssl' in values and not values['enable_ssl'] %} style="display:none"{% endif %}>SSL Options</h4>
 	<div class="row" id="ssl_options"{% if 'enable_ssl' in values and not values['enable_ssl'] %} style="display:none"{% endif %}>
 		<div class="col-md-12">
 			<label for="redirect_http"><input type="checkbox" id="redirect_http" name="redirect_http" {% if 'redirect_http' not in values or ('redirect_http' in values and values['redirect_http']) %}checked="checked" {% endif %}/> Redirect HTTP to HTTPS. This will add the _sys_https_redirect iRule to the HTTP virtual server, forcing all requests on HTTP to be redirected to their HTTPS equivalent</label>
@@ -151,10 +106,10 @@ h3
 			</select>
 		</div>
 	</div>
-	<h3>Back-end Nodes</h3>
 	<div class="row">
 		<div class="col-md-12">
-			<table class="table table-condensed table-striped">
+			<h4 class="mt-3">Back-end Nodes</h4>
+			<table class="table table-sm table-striped">
 				<thead>
 					<tr>
 						<th>Hostname</th>
@@ -205,43 +160,38 @@ h3
 		</div>
 	</div>
 	<div id="accordion">
-		<div class="card" id="advanced-settings-card">
-			<div class="card-header" style="border: 5px;" id="advanced-settings-header" data-toggle="collapse" data-target="#advanced" aria-expanded="false" aria-controls="advanced">
-				<h3 class="list-group-item" style="margin-top:0px; padding: 0px; border: 0px;"><a>Advanced Options <i class="fa fa-fw fa-plus-circle acc-expand" style="font-size: 31px; float:right;" ></i></a></h3>
-				
+		<a href="#" data-toggle="collapse" data-target="#advanced"><h4 class="list-group-item dropdown-toggle" style="margin-top:0px; padding: 0px; border: 0px;">Advanced Options</span></h4></a>
+		<div class="row collapse" id="advanced" style="padding: 15px;" aria-labelledby="advanced-settings" data-parent="#accordion">
+			<div class="col-md-12 form-group">
+				<label for="outage_page">Outage Page URL:</label>
+				<input class="form-control" name="outage_page" id="outage_page" placeholder="The URL of the page to redirect to if the service is unavailable. Creates a specific HTTP profile." {% if 'outage_page' in values %}value="{{ values['outage_page'] }}" {% endif %}/>
 			</div>
-			<div class="row collapse" id="advanced" style="padding: 15px;" aria-labelledby="advanced-settings" data-parent="#accordion">
-				<div class="col-md-12 form-group">
-					<label for="outage_page">Outage Page URL:</label>
-					<input class="form-control" name="outage_page" id="outage_page" placeholder="The URL of the page to redirect to if the service is unavailable. Creates a specific HTTP profile." {% if 'outage_page' in values %}value="{{ values['outage_page'] }}" {% endif %}/>
-				</div>
-				<div class="col-md-6 form-group">
-					<label for="http_irules">Additional HTTP iRules:</label>
-					<input class="form-control" name="http_irules" id="http_irules" placeholder="Space-separated list of iRules to add to the HTTP Virtual Server" {% if 'http_irules' in values %}value="{{ values['http_irules'] }}" {% endif %}/>
-				</div>
-				<div class="col-md-6 form-group">
-					<label for="https_irules">Additional HTTPS iRules:</label>
-					<input class="form-control" name="https_irules" id="https_irules" placeholder="Space-separated list of iRules to add to the HTTPS Virtual Server" {% if 'https_irules' in values %}value="{{ values['https_irules'] }}" {% endif %}/>
-				</div>
-				<div class="col-md-12 form-group">
-					<label for="ssl_cipher_string">SSL Client Profile:</label>
-					<select class="form-control" name="ssl_client_profile" id="ssl_client_profile">
-		{%- for profile in ssl_client_profiles %}
-						<option value="{{ profile.id }}"{% if ('ssl_client_profile' in values and values['ssl_client_profile'] == profile['id']) or ('ssl_client_profile' not in values and profile['id'] == default_ssl_client_profile) %} selected="selected"{% endif %}>{{ profile['name'] }}</option>
-		{%- endfor %}
-					</select>
-				</div>
-				<div class="col-md-12">
-					<label for="use_xforwardedfor"><input type="checkbox" id="use_xforwardedfor" name="use_xforwardedfor" {% if 'use_xforwardedfor' not in values or ('use_xforwardedfor' in values and values['use_xforwardedfor']) %}checked="checked" {% endif %}/> Add in an X-Forwarded-For header to relay the client's IP address to the backend</label>
-				</div>
+			<div class="col-md-6 form-group">
+				<label for="http_irules">Additional HTTP iRules:</label>
+				<input class="form-control" name="http_irules" id="http_irules" placeholder="Space-separated list of iRules to add to the HTTP Virtual Server" {% if 'http_irules' in values %}value="{{ values['http_irules'] }}" {% endif %}/>
+			</div>
+			<div class="col-md-6 form-group">
+				<label for="https_irules">Additional HTTPS iRules:</label>
+				<input class="form-control" name="https_irules" id="https_irules" placeholder="Space-separated list of iRules to add to the HTTPS Virtual Server" {% if 'https_irules' in values %}value="{{ values['https_irules'] }}" {% endif %}/>
+			</div>
+			<div class="col-md-12 form-group">
+				<label for="ssl_cipher_string">SSL Client Profile:</label>
+				<select class="form-control" name="ssl_client_profile" id="ssl_client_profile">
+{%- for profile in ssl_client_profiles %}
+					<option value="{{ profile.id }}"{% if ('ssl_client_profile' in values and values['ssl_client_profile'] == profile['id']) or ('ssl_client_profile' not in values and profile['id'] == default_ssl_client_profile) %} selected="selected"{% endif %}>{{ profile['name'] }}</option>
+{%- endfor %}
+				</select>
+			</div>
+			<div class="col-md-12">
+				<label for="use_xforwardedfor"><input type="checkbox" id="use_xforwardedfor" name="use_xforwardedfor" {% if 'use_xforwardedfor' not in values or ('use_xforwardedfor' in values and values['use_xforwardedfor']) %}checked="checked" {% endif %}/> Add in an X-Forwarded-For header to relay the client's IP address to the backend</label>
 			</div>
 		</div>
 	</div>
-	<h3>Validate and Create</h3>
+	<h4 class="mt-3">Validate and Create</h4>
 	<div class="row">
 		<div class="col-md-12">
 			<p style="text-align:center">Once you have populated all the necessary information about the service, click the button below to progress to the next stage. Some checks will be performed against the NLB to ensure that objects don't already exist. There will be one more confirmation before the service is actually created.</p>
-			<p style="text-align:center"><input type="submit" class="btn btn-lg btn-success" value="validate" name="submit" id="submit" /></p>
+			<p style="text-align:center"><input type="submit" class="btn btn-lg btn-success" value="Validate" name="submit" id="submit" /></p>
 		</div>
 	</div>
 </form>

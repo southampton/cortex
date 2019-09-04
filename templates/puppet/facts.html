@@ -18,7 +18,7 @@
 {%- macro renderdict(d) %}
 <ul class="facts">
 {%- for key,value in d|dictsort %}
-	<li><strong>{{ key }}:&nbsp;</strong> 
+	<li><strong>{{ key }}:&nbsp;</strong>
 {%-     if d[key] is mapping -%}
 		{{ renderdict(d[key]) }}
 {%-     elif d[key] is sequence and d[key] is not string -%}
@@ -33,26 +33,16 @@
 {% block body %}
 {% import 'node-header.html' as nodeh %}
 {% import 'puppet/header.html' as puppeth %}
-
-<style type="text/css">
-.facts
-{
-	font-family: monospace;
-}
-</style>
-
 {{ nodeh.header(system,active="puppet" ) }}
 {{ puppeth.header(system,active="puppet_facts",title="Facts" ) }}
-
 {%- if node %}
-<p class="text-muted pull-right text-right"><strong>Environment:</strong> {{ node.facts_environment }}<br/> <strong>Facts generated at:</strong> {{ node.facts_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+<div class="puppet-run-info text-muted text-right"><strong>Environment:</strong> {{ node.facts_environment }}<br/> <strong>Facts generated at:</strong> {{ node.facts_timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</div>
 {%- endif %}
-
 {%- if facts %}
-<div style="overflow-x: scroll">
-	<ul class="facts">
+<div class="facts">
+	<ul>
 	{%- for key,value in facts|dictsort %}
-		<li><strong>{{ key }}:&nbsp;</strong> 
+		<li><strong>{{ key }}:&nbsp;</strong>
 	{%-     if value is mapping -%}
 			{{ renderdict(value) }}
 	{%-     else -%}

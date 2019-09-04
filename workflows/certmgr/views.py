@@ -1,17 +1,18 @@
 #!/usr/bin/python
-
+import MySQLdb as mysql
 from cortex import app
-from cortex.lib.workflow import CortexWorkflow
+from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
 import cortex.lib.core
 import cortex.lib.systems
 import cortex.views
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify, Response
 import re, datetime, requests
-from urlparse import urljoin
-
+from urllib.parse import urljoin
+import json
 # For downloading ZIP file
-import zipfile, StringIO
+import zipfile
+from io import BytesIO
 
 # For NLB API
 from f5.bigip import ManagementRoot
@@ -22,7 +23,7 @@ import OpenSSL as openssl
 # For securely passing the actions list via the browser
 from itsdangerous import JSONWebSignatureSerializer
 
-workflow = CortexWorkflow(__name__, check_config={'PROVIDERS': list, 'DEFAULT_PROVIDER': str, 'ENVS': list, 'DEFAULT_ENV': str, 'KEY_SIZES': list, 'DEFAULT_KEY_SIZE': int, 'LENGTHS': list, 'DEFAULT_LENGTH': int, 'NLBS': list, 'ACME_SERVERS': list, 'NLB_INTERMEDIATE_CN_FILES': dict, 'NLB_INTERMEDIATE_CN_OCSP_STAPLING_PARAMS': dict, 'CLIENT_SSL_PROFILE_PREFIX': str, 'CLIENT_SSL_PROFILE_SUFFIX': str, 'CERT_SELF_SIGNED_C': str, 'CERT_SELF_SIGNED_ST': str, 'CERT_SELF_SIGNED_L': str, 'CERT_SELF_SIGNED_O': str, 'CERT_SELF_SIGNED_OU': str, 'ACME_DNS_VIEW': str, 'DNS_WAIT_TIME': int, 'CERT_CACHE_TIME': int, 'EXTERNAL_DNS_SERVER_IP': str})
+workflow = CortexWorkflow(__name__, check_config={'PROVIDERS': list, 'DEFAULT_PROVIDER': str, 'ENVS': list, 'DEFAULT_ENV': str, 'KEY_SIZES': list, 'DEFAULT_KEY_SIZE': int, 'LENGTHS': list, 'DEFAULT_LENGTH': int, 'NLBS': list, 'ACME_SERVERS': list, 'ENTCA_SERVERS': list, 'NLB_INTERMEDIATE_CN_FILES': dict, 'NLB_INTERMEDIATE_CN_OCSP_STAPLING_PARAMS': dict, 'CLIENT_SSL_PROFILE_PREFIX': str, 'CLIENT_SSL_PROFILE_SUFFIX': str, 'CERT_SELF_SIGNED_C': str, 'CERT_SELF_SIGNED_ST': str, 'CERT_SELF_SIGNED_L': str, 'CERT_SELF_SIGNED_O': str, 'CERT_SELF_SIGNED_OU': str, 'ACME_DNS_VIEW': str, 'DNS_WAIT_TIME': int, 'CERT_CACHE_TIME': int, 'EXTERNAL_DNS_SERVER_IP': str})
 workflow.add_permission('certmgr.create', 'Create SSL Certificate')
 
 # FQDN regex
@@ -50,10 +51,10 @@ def get_certificate_from_redis(task):
 	prefix = 'certmgr/' + str(task['id']) + '/'
 
 	if g.redis.exists(prefix + 'certificate') and g.redis.exists(prefix + 'private'):
-		pem_cert = g.redis.get(prefix + 'certificate')
-		pem_key = g.redis.get(prefix + 'private')
+		pem_cert = g.redis.get(prefix + 'certificate').decode('utf-8')
+		pem_key = g.redis.get(prefix + 'private').decode('utf-8')
 		if g.redis.exists(prefix + 'chain'):
-			pem_chain = g.redis.get(prefix + 'chain')
+			pem_chain = g.redis.get(prefix + 'chain').decode('utf-8')
 
 	return (pem_cert, pem_key, pem_chain)
 
@@ -75,7 +76,7 @@ def certmgr_download_zip():
 		abort(404)
 
 	# Open a Zip file in memory for writing
-	zip_data = StringIO.StringIO()
+	zip_data = BytesIO()
 	zip_file = zipfile.ZipFile(zip_data, 'w', zipfile.ZIP_DEFLATED)
 
 	# Add in the certificate and private key
@@ -129,6 +130,9 @@ def certmgr_ajax_get_raw():
 
 @workflow.route('create', title='Create SSL Certificate', order=40, permission="certmgr.create", methods=['GET', 'POST'])
 def certmgr_create():
+	# Don't go any further if workflows are currently locked
+	raise_if_workflows_locked()
+
 	# Get the workflow settings
 	wfconfig = workflow.config
 
@@ -144,9 +148,12 @@ def certmgr_create():
 	# Turn ACME servers in to a dict
 	acme_dict = { acme['id']: acme for acme in wfconfig['ACME_SERVERS'] }
 
+	# Turn ENTCA servers in to a dict
+	entca_dict = { entca['id']: entca for entca in wfconfig['ENTCA_SERVERS'] }
+
 	if request.method == 'GET':
 		## Show form
-		return render_template(__name__ + "::create.html", title="Create SSL Certificate", envs=wfconfig['ENVS'], envs_dict=envs_dict, default_env=wfconfig['DEFAULT_ENV'], providers=wfconfig['PROVIDERS'], providers_dict=providers_dict, default_provider=wfconfig['DEFAULT_PROVIDER'], key_sizes=wfconfig['KEY_SIZES'], default_key_size=wfconfig['DEFAULT_KEY_SIZE'], cert_lengths=wfconfig['LENGTHS'], default_cert_length=wfconfig['DEFAULT_LENGTH'], nlbs=wfconfig['NLBS'], nlbs_dict=nlbs_dict, acme_servers=wfconfig['ACME_SERVERS'], acme_dict=acme_dict )
+		return render_template(__name__ + "::create.html", title="Create SSL Certificate", envs=wfconfig['ENVS'], envs_dict=envs_dict, default_env=wfconfig['DEFAULT_ENV'], providers=wfconfig['PROVIDERS'], providers_dict=providers_dict, default_provider=wfconfig['DEFAULT_PROVIDER'], key_sizes=wfconfig['KEY_SIZES'], default_key_size=wfconfig['DEFAULT_KEY_SIZE'], cert_lengths=wfconfig['LENGTHS'], default_cert_length=wfconfig['DEFAULT_LENGTH'], nlbs=wfconfig['NLBS'], nlbs_dict=nlbs_dict, acme_servers=wfconfig['ACME_SERVERS'], acme_dict=acme_dict, entca_servers=wfconfig['ENTCA_SERVERS'], entca_dict=entca_dict)
 
 	elif request.method == 'POST':
 		valid_form = True
@@ -195,7 +202,7 @@ def certmgr_create():
 				valid_form = False
 
 		if len(form_fields['aliases']) > 0:
-			split_aliases = filter(lambda x: x != '', form_fields['aliases'].split(' '))
+			split_aliases = [x for x in form_fields['aliases'].split(' ') if x != '']
 			for alias in split_aliases:
 				if '.' not in alias:
 					flash('All SANs must be fully qualified domain names', 'alert-danger')
@@ -210,7 +217,7 @@ def certmgr_create():
 
 		# If we've got some errors, go back to the form
 		if not valid_form:
-			return render_template(__name__ + "::create.html", title="Create SSL Certificate", envs=wfconfig['ENVS'], envs_dict=envs_dict, default_env=wfconfig['DEFAULT_ENV'], providers=wfconfig['PROVIDERS'], providers_dict=providers_dict, default_provider=wfconfig['DEFAULT_PROVIDER'], key_sizes=wfconfig['KEY_SIZES'], default_key_size=wfconfig['DEFAULT_KEY_SIZE'], cert_lengths=wfconfig['LENGTHS'], default_cert_length=wfconfig['DEFAULT_LENGTH'], nlbs=wfconfig['NLBS'], nlbs_dict=nlbs_dict, acme_servers=wfconfig['ACME_SERVERS'], acme_dict=acme_dict, values=form_fields)
+			return render_template(__name__ + "::create.html", title="Create SSL Certificate", envs=wfconfig['ENVS'], envs_dict=envs_dict, default_env=wfconfig['DEFAULT_ENV'], providers=wfconfig['PROVIDERS'], providers_dict=providers_dict, default_provider=wfconfig['DEFAULT_PROVIDER'], key_sizes=wfconfig['KEY_SIZES'], default_key_size=wfconfig['DEFAULT_KEY_SIZE'], cert_lengths=wfconfig['LENGTHS'], default_cert_length=wfconfig['DEFAULT_LENGTH'], nlbs=wfconfig['NLBS'], nlbs_dict=nlbs_dict, acme_servers=wfconfig['ACME_SERVERS'], acme_dict=acme_dict, values=form_fields, entca_servers=wfconfig['ENTCA_SERVERS'], entca_dict=entca_dict)
 
 		# Build the options
 		options = {}
@@ -222,6 +229,7 @@ def certmgr_create():
 		options['create_ssl_profile'] = form_fields['create_ssl_profile']
 		options['nlb'] = nlbs_dict[envs_dict[form_fields['env']]['nlb']]
 		options['acme'] = acme_dict[envs_dict[form_fields['env']]['acme']]
+		options['entca'] = entca_dict[envs_dict[form_fields['env']]['entca']]
 		options['key_size'] = int(form_fields['key_size'])
 		options['length'] = int(form_fields['length'])
 

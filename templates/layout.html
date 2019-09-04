@@ -9,36 +9,35 @@
 		<link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/cortex-v3.png') }}">
 		
 		{#- CSS #}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/font-awesome.min.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/font-awesome.min.css') }}?version={{ config.VERSION }}">
 		{%- if theme == "dark" %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-dark.min.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-dark.min.css') }}?version={{ config.VERSION }}">
 		{%- else %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap.min.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap.min.css') }}?version={{ config.VERSION }}">
 		{%- endif %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/dataTables.bootstrap.min.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/datatables.min.css') }}?version={{ config.VERSION }}">
 		{%- if classic_layout %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-classic.css') }}?version=4.0">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-classic.css') }}?version={{ config.VERSION }}">
 		{%- endif %}
 
 		{#- JavaScript #}
-		<script src="{{ url_for('static', filename='js/vendor/jquery.min.js') }}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/jquery.dataTables.min.js') }}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/dataTables.bootstrap.min.js') }}"></script>
-		<script src="{{ url_for('static', filename='js/vendor/popper.js') }}"></script>
-		<script src="{{ url_for('static', filename='js/vendor/bootstrap.min.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/jquery.min.js') }}?version={{ config.VERSION }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/datatables.min.js') }}?version={{ config.VERSION }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/popper.js') }}?version={{ config.VERSION }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/bootstrap.min.js') }}?version={{ config.VERSION }}"></script>
 		{#- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries #}
 		<!--[if lt IE 9]>
-			<script src="{{ url_for('static', filename='js/vendor/html5shiv.js') }}"></script>
+			<script src="{{ url_for('static', filename='js/vendor/html5shiv.js') }}?version={{ config.VERSION }}"></script>
 		<![endif]-->
-		<script type="text/javascript" src="{{ url_for('static', filename='js/mousetrap.min.js') }}"></script>
-		<script type="text/javascript" src="{{ url_for('static', filename='js/cortex.js') }}?version=4.0"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='js/mousetrap.min.js') }}?version={{ config.VERSION }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='js/cortex.js') }}?version={{ config.VERSION }}"></script>
 		{%- block head %}{% endblock %}
 		{#- This must come after 'block head' to allow us to do global customisations #}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}?version=4.0">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex.css') }}?version={{ config.VERSION }}">
 		{%- if theme == "dark" %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-dark.css') }}?version=4.0">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-dark.css') }}?version={{ config.VERSION }}">
 		{%- else %}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-normal.css') }}?version=4.0">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cortex-normal.css') }}?version={{ config.VERSION }}">
 		{%- endif %}
 	</head>
 	<body class="{{ "cortex-classic" if classic_layout else "cortex-normal" }}">
@@ -64,7 +63,7 @@
 									I'm Feeling Lucky
 								</label>
 							</div>
-							<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 							<button type="submit" class="btn btn-primary">Search</button>
 						</div>
 					</form>
@@ -88,7 +87,7 @@
 							</div>
 						</div>
 						<div class="modal-footer">
-							<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 							<button type="submit" class="btn btn-primary">Search</button>
 						</div>
 					</form>
@@ -106,7 +105,7 @@
 							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 						</div>
 						<div class="modal-body" style="padding-bottom: 100px">
-							<div class="form-group">
+							<div class="form-group row">
 								<div class="col-sm-10">
 									<div class="custom-checkbox">
 										<label>
@@ -129,7 +128,7 @@
 							</div>
 						</div>
 						<div class="modal-footer">
-							<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 							<button type="submit" class="btn btn-primary">Save</button>
 						</div>
 					</form>
@@ -149,7 +148,7 @@
 			
 				{%- if session.logged_in %}
 				<div class="navbar-collapse collapse" id="navbar-collapse-1">	
-					<ul class="nav navbar-nav">
+					<ul class="nav navbar-nav mr-auto">
 						{%- if menu.favourites and menu.favourites|length > 0 %}
 						<li class="nav-item {%if not classic_layout %} d-sm-none {%endif%}dropdown">
 							<a href="#" id="navbar-favourites-dropdown" class="dropdown-toggle nav-link {%if active == 'favourites'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Favourites <b class="caret"></b></a>
@@ -235,24 +234,24 @@
 						</li>
 						{%- endif %}
 					</ul>
-				</div>
-				<form class="navbar-form d-sm-none justify-content-center d-none d-md-inline-block navbar-search" role="search" method="GET" action="{{url_for('systems_search')}}">
-                                        <div class="form-group" style="margin-bottom: 0px;">
-                                                <input type="text" class="form-control" placeholder="Search for systems..." name="query">
-                                        </div>
-                                </form>
-				<ul class="nav navbar-nav float-right">
-					<li class="nav-item"><a class="hidden-search nav-link" data-toggle="modal" data-target="#search"><i class="fa fa-fw fa-search"></i></a></li>
-					<li class="nav-item {%if not classic_layout %}d-sm-none{%endif%}"><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fa fa-fw fa-dashboard"></i> <span class="hide-when-narrow">Dashboard</span></a></li>
-					<li class="nav-item dropdown{%if active == 'user'%} active{%endif%}">
-						<a href="#" id="user-menu-dropdown" class="nav-link dropdown-toggle {%if active == 'user'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-fw fa-user"></i> <span class="hide-when-narrow">{{ session.username }}</span><b class="caret"></b></a>
-						<div class="dropdown-menu" aria-labelledby="user-menu-dropdown">
-							<a class="dropdown-item" data-toggle="modal" data-target="#prefs" href="#"><i class="fa fa-fw fa-cog"></i> Preferences</a>
-							<a class="dropdown-item" href="{{ url_for('user_groups') }}"><i class="fa fa-users fa-fw"></i> AD Groups</a>
-							<a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fa fa-sign-out fa-fw"></i> Sign Out</a>
+					<form class="navbar-form d-sm-none justify-content-center d-none d-md-inline-block navbar-search" role="search" method="GET" action="{{url_for('systems_search')}}">
+						<div class="form-group row" style="margin-bottom: 0px;">
+							<input type="text" class="form-control" placeholder="Search for systems..." name="query">
 						</div>
-					</li>
-				</ul>
+					</form>
+					<ul class="nav navbar-nav">
+						<li class="nav-item"><a class="hidden-search nav-link" data-toggle="modal" data-target="#search"><i class="fa fa-fw fa-search"></i></a></li>
+						<li class="nav-item {%if not classic_layout %}d-sm-none{%endif%}"><a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fa fa-fw fa-dashboard"></i> <span class="hide-when-narrow">Dashboard</span></a></li>
+						<li class="nav-item dropdown{%if active == 'user'%} active{%endif%}">
+							<a href="#" id="user-menu-dropdown" class="nav-link dropdown-toggle {%if active == 'user'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-fw fa-user"></i> <span class="hide-when-narrow">{{ session.username }}</span><b class="caret"></b></a>
+							<div class="dropdown-menu" aria-labelledby="user-menu-dropdown">
+								<a class="dropdown-item" data-toggle="modal" data-target="#prefs" href="#"><i class="fa fa-fw fa-cog"></i> Preferences</a>
+								<a class="dropdown-item" href="{{ url_for('user_groups') }}"><i class="fa fa-users fa-fw"></i> AD Groups</a>
+								<a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fa fa-sign-out fa-fw"></i> Sign Out</a>
+							</div>
+						</li>
+					</ul>
+				</div>
 				{%- endif %}
 			</div>
 		</div>
@@ -285,21 +284,21 @@
 						<a tabindex="0" role="button" data-mpop="vmware-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'vmware'%} menu-active{%endif%}"><i class="fa fa-fw fa-line-chart fa-2x"></i><span class="sidebar-hidden">VMware</span></a>
 						{%- endif %}
 						{%- if menu.puppet and menu.puppet|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="puppet-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%}"><i class="fa fa-fw fa-magic fa-2x"></i><span class="sidebar-hidden">Puppet</span></a>
+						<a href="{{ menu.puppet[0].link }}" tabindex="0" role="button" data-mpop="puppet-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'puppet'%} menu-active{%endif%}"><i class="fa fa-fw fa-magic fa-2x"></i><span class="sidebar-hidden">Puppet</span></a>
 						{%- endif %}
 						{%- if menu.certificates and menu.certificates|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="certificates-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'certificates'%} menu-active{%endif%}"><i class="fa fa-fw fa-certificate fa-2x"></i><span class="sidebar-hidden">Certificates</span></a>
+						<a href="{{ menu.certificates[0].link }}" tabindex="0" role="button" data-mpop="certificates-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'certificates'%} menu-active{%endif%}"><i class="fa fa-fw fa-certificate fa-2x"></i><span class="sidebar-hidden">Certificates</span></a>
 						{%- endif %}
 						{%- if menu.perms and menu.perms|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="perms-menu" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%}"><i class="fa fa-fw fa-lock fa-2x"></i><span class="sidebar-hidden">Permissions</span></a>
+						<a tabindex="0" role="button" data-mpop="perms-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%}"><i class="fa fa-fw fa-lock fa-2x"></i><span class="sidebar-hidden">Permissions</span></a>
 						{%- endif %}
 						{%- if menu.admin and menu.admin|length > 0 %}
-						<a tabindex="0" role="button" data-mpop="settings-menu"  data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%}"><i class="fa fa-fw fa-sliders fa-2x"></i><span class="sidebar-hidden">Advanced</span></a>
+						<a tabindex="0" role="button" data-mpop="settings-menu"  data-container="body" class="list-group-item enable-menu-popover{%if active == 'admin'%} menu-active{%endif%}"><i class="fa fa-fw fa-sliders fa-2x"></i><span class="sidebar-hidden">Advanced</span></a>
 						{%- endif %}
 						<a href="{{ url_for('about') }}" class="list-group-item {%if active == 'about'%} menu-active{%endif%}"><i class="fa fa-fw fa-info-circle fa-2x"></i><span class="sidebar-hidden">About</span></a>
 					</div>
 					<div class="list-group list-group-bottom list-group-menu">
-						<a tabindex="0" role="button" data-mpop="user-menu" data-container="body" type="button" class="list-group-item enable-menu-popover{%if active == 'user'%} menu-active{%endif%}"><i class="fa fa-fw fa-user fa-2x"></i><span class="sidebar-hidden">{{session.get('username','User')}}</span></a>
+						<a tabindex="0" role="button" data-mpop="user-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'user'%} menu-active{%endif%}"><i class="fa fa-fw fa-user fa-2x"></i><span class="sidebar-hidden">{{session.get('username','User')}}</span></a>
 					</div>
 				</div>
 				<div id="main" class="main">

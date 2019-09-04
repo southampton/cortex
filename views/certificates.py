@@ -59,7 +59,7 @@ def certificates():
 ################################################################################
 
 def add_openssl_certificate(cert):
-	digest = cert.digest('SHA1').replace(':', '').lower()
+	digest = cert.digest('SHA1').decode('utf-8').replace(':', '').lower()
 	subject = cert.get_subject()
 	subjectHash = cert.subject_name_hash()
 	issuer = cert.get_issuer()
@@ -163,7 +163,7 @@ def certificates_download_csv_stream(cursor):
 	row = cursor.fetchone()
 
 	# Write CSV header
-	output = io.BytesIO()
+	output = io.StringIO()
 	writer = csv.writer(output)
 	writer.writerow(['Digest', 'Subject CN', 'Subject DN', 'Issuer CN', 'Issuer DN', 'Not Valid Before', 'Not Valid After', 'Last Seen', 'Host Count', 'SANs', 'Notes', 'Key Size'])
 	yield output.getvalue()
@@ -172,23 +172,11 @@ def certificates_download_csv_stream(cursor):
 	while row is not None:
 		# There's no way to flush (and empty) a CSV writer, so we create
 		# a new one each time
-		output = io.BytesIO()
+		output = io.StringIO()
 		writer = csv.writer(output)
 
 		# Write a row to the CSV output
 		outrow = [row['digest'], row['subjectCN'], row['subjectDN'], row['issuerCN'], row['issuerDN'], row['notBefore'], row['notAfter'], row['lastSeen'], row['numHosts'], row['sans'], row['notes'], row['keySize']]
-
-		# For each element in the output row...
-		for i in range(0, len(outrow)):
-			# ...if it's not None...
-			if outrow[i]:
-				# ...if the element is unicode...
-				if type(outrow[i]) == unicode:
-					# ...decode from utf-8 into a ASCII-compatible byte string
-					outrow[i] = outrow[i].encode('utf-8')
-				else:
-					# ...otherwise just chuck it out as a string
-					outrow[i] = str(outrow[i])
 
 		# Write the output row to the stream
 		writer.writerow(outrow)
@@ -384,7 +372,7 @@ def certificate_ip_lookup():
 		result['ip'] = ip
 		result['hostname'] = socket.gethostbyaddr(ip)[0]
 		result['success'] = 1
-	except Exception, e:
+	except Exception as e:
 		pass
 
 	return jsonify(result)

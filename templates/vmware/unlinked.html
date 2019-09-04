@@ -9,7 +9,7 @@
 		<i title='Unknown State' class='fa fa-fw fa-question icon-state icon-legend icon-unknown'></i>Unknown
 	</small>
 </h4>
-<p>Virtual machines listed below are not linked to a system record in Cortex. Please link them to a system record if one exists, otherwise determine if the virtual machine should exist at all or create a system record.</p>
+<div class="text-muted">Virtual machines listed below are not linked to a system record in Cortex. Please link them to a system record if one exists, otherwise determine if the virtual machine should exist at all or create a system record.</div>
 </div>
 <table class="table table-sm table-striped" id="data">
 	<thead>
@@ -51,6 +51,13 @@
 		"lengthMenu": [[10,15,20,50,100,-1], [10,15,20,50,100,'All']],
 		"pageLength": 20,
 		"order": [[1, 'asc']],
+{%- if classic_layout %}
+		"fixedHeader": {
+			"headerOffset": 52
+		},
+{%- else %}
+		"fixedHeader": true,
+{%- endif %}
 		"columns": [{ "orderable": false, "targets": 0 }, null, null, null, null, null, null, null, null, null],
 		"searching": true,
 	});

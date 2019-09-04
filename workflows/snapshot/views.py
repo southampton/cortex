@@ -1,25 +1,27 @@
 #!/usr/bin/python
-
 import cortex.lib.core
-from cortex.lib.workflow import CortexWorkflow
+from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
 from cortex.lib.systems import get_systems
 from cortex.lib.user import does_user_have_workflow_permission, does_user_have_system_permission, does_user_have_any_system_permission
-from flask import request, session, redirect, url_for, abort, flash
+from flask import request, session, redirect, url_for, abort, flash, g
 from datetime import datetime
+import json
 
 workflow = CortexWorkflow(__name__, check_config={})
 workflow.add_permission('systems.all.snapshot', 'Create VMware Snapshots on any system')
 workflow.add_permission('systems.snapshot', 'Access the VMware Snapshot form; requires permission on individual systems to snapshot them.')
 workflow.add_system_permission('snapshot', 'Create a VMware snapshot for this system')
 
-@workflow.action('system', title='Snapshot', desc='Take a VMware snapshot of this system', system_permission='snapshot', permission='systems.all.snapshot', methods=['GET', 'POST'])
+@workflow.action('system', title='Snapshot', desc='Take a VMware snapshot of this system', system_permission='snapshot', permission='systems.all.snapshot', require_vm=True, methods=['GET', 'POST'])
 def snapshot_system(id):
 	
 	return redirect(url_for('snapshot_create', systems=id))
 
 @workflow.route('create', title='Create VMware Snapshot', order=40, permission='systems.snapshot', methods=['GET', 'POST'])
 def snapshot_create():
-	
+	# Don't go any further if workflows are currently locked
+	raise_if_workflows_locked()
+
 	# Get systems depending on permissions.
 	if does_user_have_workflow_permission('systems.all.snapshot'):
 		# User can snapshot all systems.
@@ -44,7 +46,7 @@ def snapshot_create():
 				else:
 					values['snapshot_systems'].append(vm)
 		
-		return workflow.render_template('create.html', systems=systems, values=values)
+		return workflow.render_template('create.html', title='Create VMware Snapshot', systems=systems, values=values)
 
 	elif request.method == 'POST':
 
@@ -75,7 +77,7 @@ def snapshot_create():
 						error = True
 
 		if error:
-			return workflow.render_template('create.html', systems=systems, values=values)
+			return workflow.render_template('create.html', title='Create VMware Snapshot', systems=systems, values=values)
 		
 		# Task Options
 		options = {}

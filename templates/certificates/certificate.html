@@ -7,14 +7,14 @@
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 				<input name="action" type="hidden" value="delete"/>
 				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 					<h4 class="modal-title">Delete certificate</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				</div>
 				<div class="modal-body">
 					<p>This will remove the certificate from the database, and will prevent further notifications unless auto-detected again. Are you sure you want to delete this certificate?</p>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 					<button type="submit" class="btn btn-warning">Delete</button>
 				</div>
 			</form>
@@ -28,74 +28,72 @@
 			<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 			<input name="action" type="hidden" value="toggle_notify"/>
 {% if certificate.notify -%}
-			<button type="submit" class="btn btn-success" title="Notifications enabled for this certificate. Click to disable."><i class="fa fa-fw fa-check-square-o"></i> <span class="d-sm-none d-none">Notifications enabled</span></button>
+			<button type="submit" class="btn btn-success" title="Notifications enabled for this certificate. Click to disable."><i class="fa fa-fw fa-check-square-o"></i> Notifications enabled</button>
 {% else -%}
-			<button type="submit" class="btn btn-danger" title="Notifications disabled for this certificate. Click to enable."><i class="fa fa-fw fa-square-o"></i> <span class="d-sm-none d-none">Notifications disabled</span></button>
+			<button type="submit" class="btn btn-danger" title="Notifications disabled for this certificate. Click to enable."><i class="fa fa-fw fa-square-o"></i> Notifications disabled</button>
 {% endif -%}
 		</form>
-		<a data-toggle="modal" data-target="#delete" class="btn btn-danger" title="Remove this certificate from Cortex"><i class="fa fa-fw fa-trash"></i> <span class="d-sm-none d-none">Delete certificate</span></a>
+		<a data-toggle="modal" data-target="#delete" class="btn btn-danger" title="Remove this certificate from Cortex" style="color:#fff"><i class="fa fa-fw fa-trash"></i> Delete certificate</a>
 	</div>
-	<h3><i class="fa fa-fw fa-shield"></i> Certificate</h3>
-	<p class="text-muted">The page shows information about a particular certificate.</p>
+	<h4><i class="fa fa-fw fa-shield"></i> Certificate</h4>
+	<div class="text-muted">The page shows information about a particular certificate.</div>
 </div>
-<h3>Information</h3>
+<h4>Information</h4>
 <div class="row">
-	<form role="form" class="form-horizontal">
 		<div class="col-sm-6">
-			<div class="form-group">
+			<div class="form-group row">
 				<label class="col-sm-2 control-label">Subject&nbsp;CN:</label>
-				<div class="col-sm-10"><p class="form-control-static">{{ certificate.subjectCN }}</p></div>
+				<div class="col-sm-10"><p class="form-control-plaintext">{{ certificate.subjectCN }}</p></div>
 			</div>
-			<div class="form-group">
+			<div class="form-group row">
 				<label class="col-sm-2 control-label">Subject&nbsp;DN:</label>
-				<div class="col-sm-10" style="word-wrap:break-word"><p class="form-control-static">{{ certificate.subjectDN }}</p></div>
+				<div class="col-sm-10" style="word-wrap:break-word"><p class="form-control-plaintext">{{ certificate.subjectDN }}</p></div>
 			</div>
-			<div class="form-group">
+			<div class="form-group row">
 				<label class="col-sm-2 control-label">SANs:</label>
-				<div class="col-sm-10 form-control-static">{% for san in sans %}{{ san.san }}{% if not loop.last %}, {% endif %}{% endfor %}</div>
+				<div class="col-sm-10 form-control-plaintext">{% for san in sans %}{{ san.san }}{% if not loop.last %}, {% endif %}{% endfor %}</div>
 			</div>
-			<div class="form-group">
+			<div class="form-group row">
 				<label class="col-sm-2 control-label">Digest:</label>
-				<div class="col-sm-10 form-control-static">{{ certificate.digest }}</div>
+				<div class="col-sm-10 form-control-plaintext">{{ certificate.digest }}</div>
 			</div>
-			<div class="form-group{% if certificate.keySize and certificate.keySize < 2048 %} text-danger{% endif %}">
+			<div class="form-group row{% if certificate.keySize and certificate.keySize < 2048 %} text-danger{% endif %}">
 				<label class="col-sm-2 control-label">Key Size:</label>
-				<div class="col-sm-10 form-control-static">{% if certificate.keySize %}{{ certificate.keySize }} bits{% else %}Unknown{% endif %}</div>
+				<div class="col-sm-10 form-control-plaintext">{% if certificate.keySize %}{{ certificate.keySize }} bits{% else %}Unknown{% endif %}</div>
 			</div>
 		</div>
 		<div class="col-sm-6">
-			<div class="form-group">
+			<div class="form-group row">
 				<label class="col-sm-2 control-label">Issuer&nbsp;CN:</label>
-				<div class="col-sm-10 form-control-static">{{ certificate.issuerCN }}</div>
+				<div class="col-sm-10 form-control-plaintext">{{ certificate.issuerCN }}</div>
 			</div>
-			<div class="form-group">
+			<div class="form-group row">
 				<label class="col-sm-2 control-label">Issuer&nbsp;DN:</label>
-				<div class="col-sm-10 form-control-static" style="word-wrap:break-word">{{ certificate.issuerDN }}</div>
+				<div class="col-sm-10 form-control-plaintext" style="word-wrap:break-word">{{ certificate.issuerDN }}</div>
 			</div>
-			<div class="form-group">
+			<div class="form-group row">
 				<label class="col-sm-2 control-label">Valid&nbsp;From:</label>
-				<div class="col-sm-10 form-control-static">{{ certificate.notBefore }}</div>
+				<div class="col-sm-10 form-control-plaintext">{{ certificate.notBefore }}</div>
 			</div>
-			<div class="form-group{% if certificate.notAfter < utcnow() %} text-danger{% endif %}">
+			<div class="form-group row{% if certificate.notAfter < utcnow() %} text-danger{% endif %}">
 				<label class="col-sm-2 control-label">Valid&nbsp;Until:</label>
-				<div class="col-sm-10 form-control-static">{{ certificate.notAfter }}</div>
+				<div class="col-sm-10 form-control-plaintext">{{ certificate.notAfter }}</div>
 			</div>
 		</div>
-	</form>
 </div>
-<h3>Notes</h3>
+<h4>Notes</h4>
 <div class="row">
 	<div class="col-sm-12">
 		<p>Additional notes about the certificate can be added in the box below.</p>
 		<textarea class="form-control" id="notes" name="notes" rows="3">{{ certificate.notes or "" }}</textarea>
 	</div>
-	<div class="col-sm-12" style="margin-top: 10px">
-		<button id="notes-save" class="btn btn-sm btn-success">Save Notes</button><span id="notes-info" style="padding-left:10px;display:none">Notes changed. Remember to save!</span>
+	<div class="col-sm-12" style="margin-top:10px;margin-bottom:20px">
+		<button id="notes-save" class="btn btn-success">Save Notes</button><span id="notes-info" style="padding-left:10px;display:none">Notes changed. Remember to save!</span>
 	</div>
 </div>
-<h3>Usage</h3>
+<h4>Usage</h4>
 <p>The table below shows IP addresses and port numbers where this certificate has been detected as in use, and the times at which it was detected. Certificates that were manually added may show no results here if they're not used for SSL/TLS in a range scanned by Cortex.</p>
-<table class="table table-condensed table-striped" id="data">
+<table class="table table-condensed table-striped table-sm" id="data">
 	<thead>
 		<tr>
 			<th>Source</th>

@@ -50,6 +50,8 @@ def clear_session():
 	session.pop('logged_in', None)
 	session.pop('username', None)
 	session.pop('id', None)
+	session.pop('cas_ticket', None)
+	session.pop('_csrf_token', None)
 
 ################################################################################
 
@@ -191,10 +193,10 @@ def get_user_list_from_cache():
 def does_user_have_permission(perm, user=None):
 	"""Returns a boolean indicating if a user has a certain permission or
 	one of a list of permissions.
-	  perm: Either a string or a list of strings that contains the
-	        permission(s) to search for
-	  user: The user whose permissions should be checked. Defaults to
-	        None, which checks the currently logged in user."""
+	perm: Either a string or a list of strings that contains the
+	permission(s) to search for
+	user: The user whose permissions should be checked. Defaults to
+	None, which checks the currently logged in user."""
 
 	# Default to using the current user
 	if user is None:
@@ -290,16 +292,16 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 	on the system specified in system_id. If 'perm' is supplied then the function
 	returns true if the user has the global 'perm' instead (e.g. a global
 	override permission).
-
-	  system_id: The Cortex system id of the system (as found in the
-                     systems table)
-	  sysperm: A string containing the system permission to check for
-	  perm: The global permission, which is the user has, overrides system
+		system_id: The Cortex system id of the system (as found in the
+		systems table)
+		sysperm: A string containing the system permission to check for
+		perm: The global permission, which is the user has, overrides system
 			permissions and causes the function to return True irrespective
 			of whether the user has the system permission or not. Defaults to 
 			None (no global permission is checked for)
-	  user: The user whose permissions should be checked. Defaults to
-	        None, which checks the currently logged in user."""
+		user: The user whose permissions should be checked. Defaults to
+			None, which checks the currently logged in user.
+	"""
 
 	# Default to using the current user
 	if user is None:

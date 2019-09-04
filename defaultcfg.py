@@ -48,7 +48,7 @@ CMDB_URL_FORMAT="http://localhost/cmdb/%s"
 PRJTASK_URL_FORMAT="http://localhost/pm_project_task/%s"
 
 ## Cortex internal version number
-VERSION='4.0.1'
+VERSION='5.1.0'
 
 ## Flask defaults (changed to what we prefer)
 SESSION_COOKIE_SECURE      = False
@@ -184,6 +184,7 @@ SATELLITE6_CLUSTER_COMPUTE_RESOURCE = {
 RUBRIK_API_URL_BASE = ''
 RUBRIK_API_USER = ''
 RUBRIK_API_PASS = ''
+RUBRIK_VIEW_URL = ''
 
 # Puppet Module Documentation Location
 PUPPET_MODULE_DOCS_URL = None
@@ -362,3 +363,5 @@ DEFAULT_DOMAIN='domain'
 # so add on DEFAULT_DOMAIN
 KNOWN_DOMAIN_SUFFIXES=['test', 'dev']
 
+# Classes to show favourite lists for
+FAVOURITE_CLASSES=[]

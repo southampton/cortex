@@ -4,21 +4,21 @@
 	<h4>
 		<div class="pull-right">
 			{% if does_user_have_system_permission(system.id, "edit.puppet", "systems.all.edit.puppet") or does_user_have_system_permission(system['id'],"view.puppet.classify","systems.all.view.puppet.classify") -%}
-			<a class="btn btn-sm {% if active == 'puppet_classify' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('puppet_enc_edit', node=system.puppet_certname) }}">Classify</a>
+			<a class="btn btn-sm {% if active == 'puppet_classify' %}btn-success{% else %}btn-secondary{% endif %}" href="{{ url_for('puppet_enc_edit', node=system.puppet_certname) }}">Classify</a>
 			{% else -%}
-			<a class="btn btn-sm btn-default disabled">Classify</a>
+			<a class="btn btn-sm btn-secondary disabled">Classify</a>
 			{% endif -%}
 			{% if does_user_have_system_permission(system.id, "view.puppet", "systems.all.view.puppet") -%}
-			<a class="btn btn-sm {% if active == 'puppet_reports' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('puppet_reports', node=system.puppet_certname) }}">Reports</a>
-			<a class="btn btn-sm {% if active == 'puppet_facts' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('puppet_facts', node=system.puppet_certname) }}">Facts</a>
+			<a class="btn btn-sm {% if active == 'puppet_reports' %}btn-success{% else %}btn-secondary{% endif %}" href="{{ url_for('puppet_reports', node=system.puppet_certname) }}">Reports</a>
+			<a class="btn btn-sm {% if active == 'puppet_facts' %}btn-success{% else %}btn-secondary{% endif %}" href="{{ url_for('puppet_facts', node=system.puppet_certname) }}">Facts</a>
 			{% else -%}
-			<a class="btn btn-sm btn-default disabled">Reports</a>
-			<a class="btn btn-sm btn-default disabled">Facts</a>
+			<a class="btn btn-sm btn-secondary disabled">Reports</a>
+			<a class="btn btn-sm btn-secondary disabled">Facts</a>
 			{% endif -%}
 			{% if does_user_have_system_permission(system.id, "view.puppet.catalog", "systems.all.view.puppet.catalog") -%}
-			<a class="btn btn-sm {% if active == 'puppet_catalog' %}btn-success{% else %}btn-default{% endif %}" href="{{ url_for('puppet_catalog', node=system.puppet_certname) }}">Catalog</a>
+			<a class="btn btn-sm {% if active == 'puppet_catalog' %}btn-success{% else %}btn-secondary{% endif %}" href="{{ url_for('puppet_catalog', node=system.puppet_certname) }}">Catalog</a>
 			{% else -%}
-			<a class="btn btn-sm btn-default disabled">Catalog</a>
+			<a class="btn btn-sm btn-secondary disabled">Catalog</a>
 			{% endif -%}
 		</div>
 		{%- if title %}

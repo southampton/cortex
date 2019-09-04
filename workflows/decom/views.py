@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from cortex import app
-from cortex.lib.workflow import CortexWorkflow
+from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
 from cortex.lib.errors import stderr
 import cortex.lib.core
 import cortex.lib.systems
@@ -12,8 +12,9 @@ import itsdangerous
 from itsdangerous import JSONWebSignatureSerializer
 import requests
 import requests.exceptions
-from urlparse import urljoin
+from urllib.parse import urljoin
 import ldap
+import json
 
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('systems.all.decom', 'Decommission any system')
@@ -30,8 +31,8 @@ def get_system_actions_from_redis(task):
 	prefix = 'decom/' +  str(task['id']) + '/'
 
 	if g.redis.exists(prefix + 'actions') and g.redis.exists(prefix + 'system'):
-		signed_actions = g.redis.get(prefix + 'actions')
-		system_id = g.redis.get(prefix + 'system')
+		signed_actions = str(g.redis.get(prefix + 'actions'),'utf-8')
+		system_id = str(g.redis.get(prefix + 'system'), 'utf-8')
 	else:
 		raise RuntimeError("Required keys don't exist in Redis. You must complete a decommission within an hour of starting it.")
 
@@ -54,6 +55,8 @@ def get_system_actions_from_redis(task):
 
 @workflow.action("prepare",title='Decommission', desc="Begins the process of decommissioning this system", system_permission="decom", permission="systems.all.decom")
 def decom_step_prepare(id):
+	# Don't go any further if workflows are currently locked
+	raise_if_workflows_locked()
 
 	system = cortex.lib.systems.get_system_by_id(id)
 	if system is None:
@@ -83,21 +86,20 @@ def decom_step_check_start(id):
 @workflow.action("check_wait", title='Decomission', system_permission="decom", permission="systems.all.decom", methods=['GET'], menu=False)
 def decom_step_check_wait(id):
 
-        # Check that the task exists
-        task = cortex.lib.core.task_get(id)
-        if task is None:
-                abort(404)
+	# Check that the task exists
+	task = cortex.lib.core.task_get(id)
+	if task is None:
+		abort(404)
+	if task['module'] != 'decom':
+		abort(400)
 
-        if task['module'] != 'decom':
-                abort(400)
-
-        return workflow.render_template('check_wait.html', title='Checking System...', task_id=int(task['id']))
+	return workflow.render_template('check_wait.html', title='Checking System...', task_id=int(task['id']))
 
 @workflow.action("check_complete", title='Decomission', system_permission="decom", permission="systems.all.decom", methods=['GET'], menu=False)
 def decom_step_check_complete(id):
 
-        # Check that the task exists
-        task = cortex.lib.core.task_get(id)
+	# Check that the task exists
+	task = cortex.lib.core.task_get(id)
 	
 	if task['username'] != session.get('username', None):
 		if task['username'] is not None:

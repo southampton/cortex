@@ -3,6 +3,7 @@
  * Global Cortex CSS Styles
  */
 @import url(vendor/Orbitron-Fonts.css);
+@import url(vendor/Source-Sans-Pro-Fonts.css);
 
 body
 {
@@ -19,7 +20,7 @@ body
 	width: 100%;
 }
 
-@media (min-width: 768px)
+@media (min-width: 576px)
 {
 	#main
 	{
@@ -40,7 +41,8 @@ body
 	text-shadow: 0px 0px 10px rgba(150, 150, 150, 1);
 	color: #999999 !important;
 	position: relative;
-	top: 3px;
+	top: 1px;
+	margin-right: 0.5rem;
 }
 
 .hidden-search {
@@ -48,23 +50,12 @@ body
 
 }
 
-@media only screen and (min-width: 810px) and (max-width: 952px)  {
-	body {
-		padding-top: 110px;
-	}
-}
-
-@media only screen and (max-width: 810px)  {
-	body {
-		padding-top: 160px;
-	}
-}
-@media only screen and (max-width: 1410px)  {
+@media only screen and (max-width: 1420px)  {
 	.hidden-search {
 		display: block !important;
 	}
 	.navbar-search {
-		display: none;
+		display: none !important;
 	}
 	.hide-when-narrow {
 		display: none;
@@ -73,10 +64,10 @@ body
 
 /* Sidebar */
 .sidebar {
-  display: none;
+	display: none;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 576px) {
 	.sidebar
 	{
 		position: fixed;
@@ -93,7 +84,7 @@ body
 	}
 }
 
-/* Sidebar Collapseable */
+/* Sidebar Collapsible */
 #sidebar-small
 {
 	width: 55px;
@@ -127,6 +118,12 @@ span.arrow {
 	font-weight: bold;
 }
 
+/* override bootstrap 4 forcing colour on tables */
+.table
+{
+	color: inherit;
+}
+
 /* override bootstrap's valign top in tables*/
 td, th
 {
@@ -153,11 +150,16 @@ table#classes td:last-child
 	margin-top: 5px;
 }
 
-@media (max-width: 768px)
+.card-header
+{
+	padding: 0.5rem 1rem;
+}
+
+@media (max-width: 576px)
 {
 	body
 	{
-		padding-top: 50px;
+		padding-top: 68px;
 	}
 }
 
@@ -428,6 +430,15 @@ i.icon-favourites:hover
 	}
 }
 
+@media (min-width: 576px)
+{
+	.control-label
+	{
+		text-align: right;
+		padding-top: 7px;
+	}
+}
+
 fieldset
 {
 	margin-bottom: 20px;
@@ -506,12 +517,16 @@ span.required
 .mtask
 {
 	min-height: 160px;
+	padding-top: 1.0rem;
 }
-.mtask h3
+.mtask h4
 {
 	margin-top: 0px;
 }
-
+.mtask h4 .fa
+{
+	margin-right: 0.15em;
+}
 /* Bootstrap 4.0 fixes:
  * the *-xs classes have been removed
  * in Bootstrap 4.0, so some of them
@@ -576,8 +591,7 @@ h4 small {
 
 .list-group-menu > a
 {
-        padding-left: 6px;
-        padding-right: 0px;
+	padding: 10px 0px 10px 6px;
         color: #555555;
 }
 
@@ -588,10 +602,278 @@ h4 small {
 	padding: 10px 15px;
 }
 
+table.table-sm a.btn-secondary
+{
+	font-size: 12px; /* no default in bootstrap 4 */
+}
 a.btn-secondary 
 {
 	color: #555555; /* default is blue */
-	font-size: 12px; /* no default in bootstrap 4 */
 	display: inline-flex;
 	align-items: center;
+}
+.form-control-plaintext
+{
+	color: inherit;
+}
+.admin-block
+{
+	border-radius: 24px;
+	box-shadow: 0px 0px 2px 2px rgba(0,0,0,.2);
+	margin: 9px auto;
+	padding: 2px;
+	padding-top: 2px;
+	padding-bottom: 5px;
+	text-align: center;
+}
+.admin-block:hover
+{
+	box-shadow: 0px 0px 4px 4px rgba(0,0,0,.5);	
+	text-decoration: none !important;
+}
+.col-md-4 > a:hover
+{
+	text-decoration: none;
+}
+.admin-block .row
+{
+	padding-top: 20px;
+}
+.admin-block p
+{
+	color: #fff;
+	font-size: 1em;
+	font-weight: bold;
+}
+.admin-block h2
+{
+	color: #fff;
+	font-size: 1.25em;
+	margin-bottom: 15px;
+}
+.admin-block h1
+{
+	font-size: 1.75em;
+	font-weight: bold;
+	color: #FFFFFF;
+}
+.admin-block-header {box-shadow: none !important}
+.admin-block-header h2 {color: #555}
+.bg-default
+{
+	background-color: #aaa;
+}
+.admin-block a
+{
+	color: #fff;
+}
+.admin-block-sm
+{
+	border-radius: 12px;
+	box-shadow: 0px 0px 2px 2px rgba(0,0,0,.2);
+	margin: 5px 0px 20px 0px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	text-align: center;
+}
+.admin-block-sm h2
+{
+	font-size: 1.5em;
+	margin: 0px;
+}
+.sidebar .list-group a
+{
+	cursor: pointer
+}
+
+.puppet-header a
+{
+	font-size: 12px
+}
+.slider {
+	-webkit-appearance: none;
+	width: 100%;
+	height: 10px;
+	border-radius: 5px;
+	background: #d3d3d3;
+	outline: none;
+	opacity: 0.7;
+	-webkit-transition: .2s;
+	transition: opacity .2s;
+	cursor: pointer;
+	display: inline-block;
+}
+.slider:hover {
+	opacity: 1;
+}
+.slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        border-radius: 50%;
+        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
+        cursor: pointer;
+        width: 25px;
+        height: 25px;
+        background-color: #337ab7;
+        background-image: -webkit-linear-gradient(top,#149bdf 0,#0480be 100%);
+        background-image: -o-linear-gradient(top,#149bdf 0,#0480be 100%);
+        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
+        background-repeat: repeat-x;
+        -webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
+        border: 0 solid transparent;
+}
+.slider::-moz-range-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        border-radius: 50%;
+        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
+        cursor: pointer;
+        width: 25px;
+        height: 25px;
+        background-color: #337ab7;
+        background-image: -webkit-linear-gradient(top,#149bdf 0,#0480be 100%);
+        background-image: -o-linear-gradient(top,#149bdf 0,#0480be 100%);
+        background-image: linear-gradient(to bottom,#149bdf 0,#0480be 100%);
+        background-repeat: repeat-x;
+        -webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.05);
+        border: 0 solid transparent;
+
+}
+div.tab-pane#paste, div.tab-pane#upload
+{
+	border-width: 0px 1px 1px 1px;
+	border-style: solid;
+	border-color: #f0f0f0;
+	padding: 15px 15px 0px 15px;
+}
+table#cert-data abbr[title] { border-bottom: none; cursor: default }
+a.cert-link { text-decoration: none !important; color: inherit }
+a.cert-link abbr[title] { cursor: pointer }
+a.cert-link:hover abbr[title] { cursor: pointer; text-decoration: underline !important }
+.dashblock
+{
+	border-radius: 24px;
+	box-shadow: 0px 0px 2px 2px rgba(0,0,0,.2);
+	margin-bottom: 20px;
+	padding: 20px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	text-align: left;
+	font-size: 1em;
+	font-size: 1.5vw;
+}
+@media (min-width: 992px)
+{
+	.dashblock
+	{
+		border-top-right-radius: 0px;
+		border-bottom-right-radius: 0px;
+		font-size: 1.5em;
+		font-size: 1.5vw;
+		margin-right: -40px;
+	}
+	.equal, .equal > div[class*='col-']
+	{
+		display: -webkit-flex;
+		display: flex;
+		flex: 1 1 auto;
+	}
+	.equal .card
+	{
+		width: 100%;
+	}
+	.network-body
+	{
+		max-height: 20em;
+		overflow-y: scroll;
+	}
+	.system-record-body
+	{
+		max-height: 22em;
+		overflow-y: scroll;	
+	}
+}
+@media (min-width: 1200px)
+{
+	.dashblock
+	{
+		font-size: 2em;
+		font-size: 1.5vw;
+	}
+}
+.nolpad { padding-left: 8px }
+.norpad { padding-right: 0px }
+.colpad { padding-left: 8px }
+a.server-link { text-decoration: none !important; color: inherit }
+a.server-link:hover { text-decoration: underline !important }
+#dash-ram { color: #fff }
+#vmware-clusters .tab-pane { margin-top: 20px }
+#vmware-history .c3-chart-lines .c3-circles .c3-circle { display: none }
+#status-log p.event{margin: 1em 0em 1em 2em;font-size: 16px}
+#status-log i.fa-check{color:#2c2}
+#status-log i.fa-times{color:#c22}
+#status-log i.fa-exclamation{color:#c82}
+#status-log i.fa{margin-right: 1em}
+#taskStatus { font-weight: bold; }
+.class-select-box
+{
+	padding: 20px;
+	text-align: center;
+}
+.class-select-box h1
+{
+	font-size: 4em;
+	font-weight: bold;
+}
+.class-select-box p { font-size: 1.5em }
+table.system-overview-table tr > td:first-child
+{
+	text-align: right;
+	font-weight: bolder;
+}
+table.system-overview-table tr td
+{
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;
+}
+.power-icon { width: 50% }
+.power-icon #power-icon {
+	font-size: 0.8em;
+	line-height: 1.6em;
+}
+div.facts, div.catalog
+{
+	overflow-x: scroll;
+	width: calc(100vw - 250px);
+}
+div.facts ul, div.catalog ul
+{
+	font-family: monospace;
+}
+div.puppet-run-info
+{
+	position:absolute;
+	right:40px;
+	margin-top:-10px;
+}
+.level-err { color: #ff4136 }
+.level-info { color: #158cba }
+table.puppet-report td.msg
+{
+	font-family: monospace;
+	font-size: 90%;
+	white-space: pre-wrap;
+}
+.CodeMirror{border:1px solid #eee !important;height:auto !important;}
+table.role-table tr > td { padding-left: 10px }
+table.role-table { margin-bottom: 0px }
+table.role-table tr td:last-of-type { padding-right: 10px; }
+
+div.advanced-search
+{
+	border-bottom: 1px solid #f0f0f0;
+	padding-bottom: .75em;
+	padding-top: .5em;
 }

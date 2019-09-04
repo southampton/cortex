@@ -1,40 +1,36 @@
 {% extends "layout.html" %}
 {% block body %}
 <div class="page-header">
-	<h3><i class="fa fa-fw fa-shield"></i> Add Certificate</h3>
-	<p class="text-muted">Manually add a certificate to the list of tracked certificates. Notifications will be issued on these, but they will not be automatically removed from the database if not seen.</p>
+	<h4><i class="fa fa-fw fa-shield"></i> Add Certificate</h4>
+	<div class="text-muted">Manually add a certificate to the list of tracked certificates. Notifications will be issued on these, but they will not be automatically removed from the database if not seen.</div>
 </div>
 <div class="row">
 	<div class="col-sm-12">
 		<p>Use the form on the Paste Certificate tab below to manually add a PEM-encoded X509 certificate to the list of certificates tracked by Cortex. Alternatively, use the Upload Certificate tab below to upload a certificate in PEM or PKCS12 format. In all cases, the certificate cannot be password protected.</p>
 	</div>
-	<ul class="nav nav-tabs" role="tablist" id="tablist">
-		<li role="presentation" class="active"><a href="#paste" aria-controls="paste" role="tab" data-toggle="tab">Paste Certificate</a></li>
-		<li role="presentation"><a href="#upload" aria-controls="upload" role="tab" data-toggle="tab">Upload Certificate</a></li>
-	</ul>
-	<div class="tab-content">
-		<div role="tabpanel" class="tab-pane active" id="paste" style="border-width: 0px 1px 1px 1px; border-style: solid; border-color: #e7e7e7; padding: 15px 15px 0px 15px;">
-			<form role="form" method="POST">
-				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-				<div class="form-group">
+	<div class="col-sm-12">
+		<ul class="nav nav-tabs" id="tablist" role="tablist">
+			<li class="nav-item"><a class="nav-link active show" href="#paste" aria-controls="paste" role="tab" data-toggle="tab">Paste Certificate</a></li>
+			<li class="nav-item"><a class="nav-link" href="#upload" aria-controls="upload" role="tab" data-toggle="tab">Upload Certificate</a></li>
+		</ul>
+		<div class="tab-content">
+			<div role="tabpanel" class="tab-pane active" id="paste" aria-labelledby="paste">
+				<form role="form" method="POST">
+					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 					<textarea class="form-control" id="pasted_cert" name="pasted_cert" placeholder="Paste a PEM-encoded X509 certificate here" rows="6"></textarea>
-				</div>
-				<div class="form-group">
-					<button type="submit" class="btn btn-sm btn-primary"><i class="fa fa-fw fa-plus"></i> Add Certificate</button>
-				</div>
-			</form>
-		</div>
-		<div role="tabpanel" class="tab-pane" id="upload" style="border-width: 0px 1px 1px 1px; border-style: solid; border-color: #e7e7e7; padding: 15px 15px 0px 15px;">
-			<form role="form" method="POST" enctype="multipart/form-data">
-				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-				<div class="form-group">
-					<label for="uploaded_cert">Choose Certificate File:</label>
-					<input class="form_control" type="file" name="uploaded_cert" id="uploaded_cert" />
-				</div>
-				<div class="form-group">
-					<button type="submit" class="btn btn-sm btn-primary"><i class="fa fa-fw fa-plus"></i> Add Certificate</button>
-				</div>
-			</form>
+					<button type="submit" class="btn btn-primary" style="margin:15px 0px 15px 0px;"><i class="fa fa-fw fa-plus"></i> Add Certificate</button>
+				</form>
+			</div>
+			<div role="tabpanel" class="tab-pane" id="upload" aria-labelledby="upload">
+				<form role="form" method="POST" enctype="multipart/form-data" class="form-horizontal">
+					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+					<div class="form-group">
+						<label for="uploaded_cert" class="control-label">Choose Certificate File:</label>
+						<input class="form_control" type="file" name="uploaded_cert" id="uploaded_cert" />
+					</div>
+					<button type="submit" class="btn btn-primary" style="margin-bottom:15px"><i class="fa fa-fw fa-plus"></i> Add Certificate</button>
+				</form>
+			</div>
 		</div>
 	</div>
 </div>

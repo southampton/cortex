@@ -1,11 +1,11 @@
 {% extends "layout.html" %}
 {% block head -%}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
-		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}?version={{ config.VERSION }}">
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}?version={{ config.VERSION }}"></script>
 {% endblock %}
 {% block body %}
 <div class="page-header">
-<h3>Add existing system</h3>
+<h4><i class="fa fa-plus fa-fw"></i> Add existing systems</h4>
 </div>
 <div class="alert alert-danger"><strong>Warning!</strong> This is an advanced feature recommended for administrators only. In certain cirumstances, this can cause future name allocations to fail and will allow you to create duplicate hostnames!</div>
 <p>This function exists to allow you to add existing names in to Cortex that have already been used/allocated but are unknown to Cortex. You can use this tool if an old system is missing from the list of systems or if bootstrapping a Puppet master install. If you are adding in a system that doesn't match an existing scheme (e.g. legacy server names), choose Legacy System from the class dropdown.</p>
@@ -71,7 +71,6 @@
 </form>
 <script type="text/javascript">
 $('#class').change(function () {
-	console.log($('#class').val());
 	if ($('#class').val() == "_LEGACY")
 	{
 		$('#number').attr('readonly', 'readonly');

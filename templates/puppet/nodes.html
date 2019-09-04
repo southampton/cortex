@@ -1,9 +1,9 @@
 {% extends "layout.html" %}
 {% block body %}
 <div class="page-header">
-	<button id="hide_unknown" type="button" class="btn btn-sm pull-right {% if hide_unknown %}btn-success active{%else%}btn-danger{%endif%}" style="margin-left:4px" title="Hide Unknown Puppet Nodes" data-toggle="popover" data-trigger="hover" data-placement="left" data-content="When ticked, nodes that have a status of 'unknown' are hidden. This is mainly nodes that are present in Cortex's Puppet nodes table but have no entries in the PuppetDB."><i class="fa fa-fw {% if hide_unknown %}fa-check-square-o{%else%}fa-square-o{%endif%}"></i> Hide Unknown Puppet Nodes</button>
+	<button id="hide_unknown" type="button" class="btn pull-right {% if hide_unknown %}btn-success active{%else%}btn-danger{%endif%}" style="margin-left:4px" title="Hide Unknown Puppet Nodes" data-toggle="popover" data-trigger="hover" data-placement="left" data-content="When ticked, nodes that have a status of 'unknown' are hidden. This is mainly nodes that are present in Cortex's Puppet nodes table but have no entries in the PuppetDB."><i class="fa fa-fw {% if hide_unknown %}fa-check-square-o{%else%}fa-square-o{%endif%}"></i> Hide Unknown Puppet Nodes</button>
 <h4><i class="fa fa-fw fa-server"></i> {{ title }}</h4>
-<p class="text-muted">The nodes listed below are registered with the Cortex Puppet ENC</p>
+<div class="text-muted">The nodes listed below are registered with the Cortex Puppet ENC</div>
 </div>
 <table class="table table-sm table-striped" id="data">
 	<thead>
@@ -24,7 +24,7 @@
 			<td>{{ node.env }}</td>
 			<td>{{ node.clientnoop }}</td>
 			<td class="status-{{ node.status }}"><a href="{{ url_for('puppet_nodes', status=node.status) }}">{{ node.status }}</a></td>
-			<td><a href="{{url_for('puppet_enc_edit',node=node.certname) }}" class="btn btn-secondary btn-md"><i class="fa fa-fw fa-wrench"></i> Manage</a></td>
+			<td><a href="{{url_for('puppet_enc_edit',node=node.certname) }}" class="btn btn-secondary btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a></td>
 		</tr>
 {%- endfor %}
 	</tbody>
@@ -48,6 +48,13 @@ $(function() {
 		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 		"pageLength": 15,
 		"order": [[0, 'asc']],
+{%- if classic_layout %}
+		"fixedHeader": {
+			"headerOffset": 52
+		},
+{%- else %}
+		"fixedHeader": true,
+{%- endif %}
 		"columns": [null, null, null, null, null, { "orderable": false, "targets": 0 }]
 	});
 	$('#hide_unknown').on('click', function(){

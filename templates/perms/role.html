@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block head -%}
-	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
-	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}?version={{ config.VERSION }}">
+	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}?version={{ config.VERSION }}"></script>
 {% endblock %}
 {% block body %}
 
@@ -16,14 +16,14 @@
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				</div>
 				<div class="modal-body">
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label">Name</label>
 						<div class="col-sm-9">
 							<input class="form-control" name="name" id="name" value="{{role.name}}"/>
 						</div>
 					</div>
 
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label">Description</label>
 						<div class="col-sm-9">
 							<input class="form-control" type="text" name="description" id="description" value="{{role.description}}" />
@@ -72,7 +72,7 @@
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				</div>
 				<div class="modal-body">
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-2 control-label">Type</label>
 						<div class="col-sm-10">
 							<select name="type" class="form-control">
@@ -81,7 +81,7 @@
 							</select>
 						</div>
 					</div>
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-2 control-label">Name</label>
 						<div class="col-sm-10">
 							<input class="form-control" name="name" value="" placeholder="User or group name"/>
@@ -108,7 +108,7 @@
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				</div>
 				<div class="modal-body">
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-2 control-label">Name</label>
 						<div class="col-sm-10">
 							<select class="selectpicker" name="name" data-live-search="true" data-width="100%">
@@ -182,7 +182,7 @@
 		<a data-toggle="modal" data-target="#delete" class="btn btn-danger" style="color: white;"><i class="fa fa-fw fa-trash"></i> <span class="d-sm-none d-none d-md-inline">Delete role</span></a>
 	</div>
 	<h4><i class="fa fa-fw fa-user-secret"></i> {{role.name}}</h4>
-	<p class="text-muted">{{role.description}}</p>
+	<div class="text-muted">{{role.description}}</div>
 </div>
 
 <div class="row">
@@ -190,10 +190,10 @@
 		<form role="form" method="POST" class="form-horizontal">
 		<div class="card card-default">
 			<div class="card-header">
-				<strong>Permissions</strong>
 				<div class="pull-right">
 					<button type="submit" class="btn btn-sm btn-primary" style="font-size: 12px;">Save</button>
 				</div>
+				<h4 class="card-title">Permissions</h4>
 			</div>
 		
 			<div class="card-body">
@@ -253,65 +253,60 @@
 	</div>
 	<div class="col-md-6">
 		<div class="card card-default">
-			<div class="card-header"><strong>Users & Groups</strong><div class="pull-right"><a data-toggle="modal" data-target="#add" class="btn btn-sm btn-success"><i class="fa fa-fw fa-plus" style="color: white;"></i></a></a></div></div>
-			<table class="table table-striped table-hover">
-				{% for who in role['who'] %}
-				<tr>
-					<td><span class="text-muted">{% if who['type'] == 0 %}<i class="fa fa-user"></i> User</span> {{who['who']}} {% if who['realname'] %} ({{who['realname']}}) {%endif%} {%elif who['type'] == 1 %}<i class="fa fa-windows"></i> AD Group</span> {{who['who']}}{%else%}Unknown entry{%endif%}</span></td>
-					<td class="text-right"><a data-toggle="modal" data-target="#remove" data-name="{{who['who']}}" data-wid="{{who['id']}}" class="btn btn-sm btn-danger" style="color: white; font-size: 12px;">Remove</a></td>
-				</tr>
-				{%else%}
-				<tr><td colspan="2"><span class="text-muted">No users or groups have been assigned to this role</span></td></tr>
-				{% endfor %}
+			<div class="card-header">
+				<div class="pull-right"><a data-toggle="modal" data-target="#add" class="btn btn-sm btn-success"><i class="fa fa-fw fa-plus" style="color: white;"></i></a></a></div>
+				<h4 class="card-title">Users and groups</h4>
+			</div>
+			<table class="table table-striped table-hover table-sm role-table">
+				<tbody>
+					{% for who in role['who'] %}
+					<tr>
+						<td><span class="text-muted">{% if who['type'] == 0 %}<i class="fa fa-user"></i> User</span> {{who['who']}} {% if who['realname'] %} ({{who['realname']}}) {%endif%} {%elif who['type'] == 1 %}<i class="fa fa-windows"></i> AD Group</span> {{who['who']}}{%else%}Unknown entry{%endif%}</span></td>
+						<td class="text-right"><a data-toggle="modal" data-target="#remove" data-name="{{who['who']}}" data-wid="{{who['id']}}" class="btn btn-sm btn-danger" style="color: white; font-size: 12px;">Remove</a></td>
+					</tr>
+					{%else%}
+					<tr><td colspan="2"><span class="text-muted">No users or groups have been assigned to this role</span></td></tr>
+					{% endfor %}
+				</tbody>
 			</table>
 		</div>
 		{% if 'what' in role %}
 		<div class="card card-default">
-			<div class="card-header"><strong>Systems</strong><div class="pull-right"><a data-toggle="modal" data-target="#addSystem" class="btn btn-sm btn-success" style="color: white;"><i class="fa fa-fw fa-plus"></i></a></a></div></div>
-			<table class="table table-striped table-hover">
-				{% for what in role['what'] %}
-				<tr>
-					<td><span class="text-muted"><i class="fa fa-server"> </i> System</span> {{what['name']}}</td>
-					<td class="text-right"><a data-toggle="modal" data-target="#removeSystem" data-name="{{what['name']}}" data-sid="{{what['system_id']}}" class="btn btn-sm btn-danger" style="color: white; font-size: 12px;">Remove</a></td>
-				</tr>
-				{%else%}
-				<tr><td colspan="2"><span class="text-muted">No systems have been assigned to this role</span></td></tr>
-				{% endfor %}
+			<div class="card-header">
+				<div class="pull-right"><a data-toggle="modal" data-target="#addSystem" class="btn btn-sm btn-success" style="color: white;"><i class="fa fa-fw fa-plus"></i></a></a></div>
+				<h4 class="card-title">Systems</h4>
+			</div>
+			<table class="table table-striped table-hover table-sm role-table">
+				<tbody>
+					{% for what in role['what'] %}
+					<tr>
+						<td><span class="text-muted"><i class="fa fa-server"> </i> System</span> {{what['name']}}</td>
+						<td class="text-right"><a data-toggle="modal" data-target="#removeSystem" data-name="{{what['name']}}" data-sid="{{what['system_id']}}" class="btn btn-sm btn-danger" style="color: white; font-size: 12px;">Remove</a></td>
+					</tr>
+					{%else%}
+					<tr><td colspan="2"><span class="text-muted">No systems have been assigned to this role</span></td></tr>
+					{% endfor %}
+				</tbody>
 			</table>
 		</div>
 		{% endif %}
 	</div>
 </div>
-
 <script type="text/javascript">
-$( document ).ready(function() 
+$(document).ready(function()
 {
-	/* What is this doing?? */
-	$('#revoke').on('show.bs.modal', function (event)
-	{
-		var link = $(event.relatedTarget)
-
-		$('#revoke-permission-text').text(link.data('name'));
-		$('#revoke-permission-id').val(link.data('pid'));
-	})
-
 	$('#remove').on('show.bs.modal', function (event)
 	{
 		var link = $(event.relatedTarget)
-
 		$('#remove-who-text').text(link.data('name'));
 		$('#remove-who-id').val(link.data('wid'));
 	})
-	
 	$('#removeSystem').on('show.bs.modal', function (event)
 	{
 		var link = $(event.relatedTarget)
-
 		$('#remove-what-text').text(link.data('name'));
 		$('#remove-what-id').val(link.data('sid'));
 	})
-
-
 });
 </script>
 {% endblock %}

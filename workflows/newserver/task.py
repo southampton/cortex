@@ -1,6 +1,10 @@
 #### Allocate server task
 
 def run(helper, options):
+	# check if workflows are locked
+	if not helper.lib.checkWorkflowLock():
+		raise Exception("Workflows are currently locked")
+	
 	# Configuration of task
 	puppet_cert_domain = options['wfconfig']['PUPPET_CERT_DOMAIN']
 
@@ -13,16 +17,13 @@ def run(helper, options):
 	system_info = helper.lib.allocate_name(options['classname'], options['purpose'], helper.username)
 
 	# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
-	system_name = system_info.keys()[0]
-	system_dbid = system_info.values()[0]
+	system_name = system_info['name']
+	system_dbid = system_info['id']
 
 	# End the event
-	helper.end_event(description="Allocated system name " + system_name)
-
-
+	helper.end_event(description="Allocated system name: {{system_link id='" + str(system_dbid) + "'}}" + system_name + "{{/system_link}}")
 
 	## Allocate an IPv4 Address and create a host object ###################
-
 	if options['alloc_ip']:
 		# Start the event
 		helper.event("allocate_ipaddress", "Allocating an IP address from " + options['network'])

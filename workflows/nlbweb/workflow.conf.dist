@@ -1,4 +1,4 @@
-# Environments that objects can be created in, with individual suffixes and 
+# Environments that objects can be created in, with individual suffixes and
 # load balancers
 ENVS=[
 	{'id': 'prod', 'name': 'Production',  'suffix': '',      'nlb': 'myprodbalancer.domain',    'network': '192.168.100.0/24'},
@@ -57,7 +57,7 @@ SSL_SELF_SIGNED_WARNING = True
 # The default HTTP profile to inherit from
 HTTP_PROFILE_DEFAULT = '/Common/http'
 
-# The HTTP profile to inherit from when using X-Forwarded-For. Set to None to 
+# The HTTP profile to inherit from when using X-Forwarded-For. Set to None to
 # always create a new HTTP profile when using X-Forwarded-For
 HTTP_PROFILE_XFORWARDEDFOR = None
 

@@ -6,7 +6,7 @@ import json
 import time
 import redis
 import ssl
-import xmlrpclib, httplib # for RHN5 API support
+import xmlrpc.client, http.client # for RHN5 API support
 import re
 import hashlib
 import base64
@@ -24,10 +24,10 @@ from pyVmomi import vim
 from pyVmomi import vmodl
 from pyVim.connect import SmartConnect, Disconnect
 
-from urlparse import urljoin
-from urllib import quote
+from urllib.parse import urljoin
+from urllib.parse import quote
 
-import x509utils
+from . import x509utils
 
 # For signing
 from itsdangerous import JSONWebSignatureSerializer
@@ -82,11 +82,11 @@ class Corpus(object):
 
 	################################################################################
 
-	def allocate_name(self, class_name, comment, username, num=1, expiry=None):
+	def allocate_name(self, class_name, comment, username, expiry=None, set_backup=2):
 		"""Allocates 'num' systems, of type 'class_name' each with the given
 		comment. Returns a dictionary with mappings between each new name
 		and the corresponding row ID in the database table."""
-
+		num = 1
 		# dictionary of new systems
 		new_systems = {}
 
@@ -112,7 +112,7 @@ class Corpus(object):
 		#    this function can carry on.
 
 		## 1. Lock the table to prevent other requests issuing names whilst we are
-		cur.execute('LOCK TABLE `classes` WRITE, `systems` WRITE; ')
+		cur.execute('LOCK TABLE `classes` WRITE, `systems` WRITE;')
 
 		# 2a. Get the class (along with the next nubmer to allocate)
 		try:
@@ -134,16 +134,16 @@ class Corpus(object):
 			## 3. Increment the number by the number we're simultaneously allocating
 			cur.execute("UPDATE `classes` SET `lastid` = %s WHERE `name` = %s", (int(class_data['lastid']) + int(num), class_name))
 
-			## 4. Create the appropriate number of servers
-			for i in xrange(1, num+1):
-				new_number = int(class_data['lastid']) + i
-				new_name   = self.pad_system_name(class_name, new_number, class_data['digits'])
+			## 4. Create the server
+			new_number = int(class_data['lastid']) + 1
+			new_name   = self.pad_system_name(class_name, new_number, class_data['digits'])
 
-				cur.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `expiry_date`) VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s)",
-					(self.SYSTEM_TYPE_BY_NAME['System'], class_name, new_number, new_name, username, comment, expiry))
+			cur.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `expiry_date`, `enable_backup`) VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s)",
+				(self.SYSTEM_TYPE_BY_NAME['System'], class_name, new_number, new_name, username, comment, expiry, set_backup))
 
-				# store a record of the new system so we can give this back to the browser in a minute
-				new_systems[new_name] = cur.lastrowid
+			# this is the return
+			new_systems['name'] = new_name
+			new_systems['id'] = cur.lastrowid
 
 			## 5. All names are now created and the table incremented. Time to commit.
 			self.db.commit()
@@ -167,7 +167,7 @@ class Corpus(object):
 
 		update_fields = []
 		params = ()
-		for field, value in kwargs.iteritems():
+		for field, value in list(kwargs.items()):
 			if field in allowed_fields:
 				update_fields.append(field)
 				params = params + (value,)
@@ -179,7 +179,7 @@ class Corpus(object):
 		params = params + (system_id,)	
 
 		# Get a cursor to the database
-                cur = self.db.cursor(mysql.cursors.DictCursor)	
+		cur = self.db.cursor(mysql.cursors.DictCursor)	
 		cur.execute(query, params)
 		self.db.commit()
 
@@ -295,7 +295,7 @@ class Corpus(object):
 			aliases = []
 
 		# Append the new alias(es) - only if they don't already exist
-		if type(new_aliases) is str or type(new_aliases) is unicode:
+		if type(new_aliases) is str:
 			if new_aliases not in aliases:
 				aliases.append(new_aliases)
 		elif type(new_aliases) is list:
@@ -340,7 +340,7 @@ class Corpus(object):
 			aliases = []
 
 		# Remove the alias(es)
-		if type(remove_aliases) is str or type(remove_aliases) is unicode:
+		if type(remove_aliases) is str:
 			aliases.remove(remove_aliases)
 		elif type(remove_aliases) is list:
 			for alias in remove_aliases:
@@ -1073,7 +1073,6 @@ class Corpus(object):
 
 	############################################################################
 
-
 	def vmware_wait_for_powerstate(self, vm, powerstate, timeout=30):
 		"""Waits for a virtual machine to be marked as powerstate by VMware."""
 
@@ -1088,7 +1087,6 @@ class Corpus(object):
 
 		# Return whether the VM has reached this state or not.
 		return vm.runtime.powerState == powerstate
-
 
 	############################################################################
 
@@ -1261,7 +1259,7 @@ class Corpus(object):
 		table to their relevant item in the CMDB.
 		 - cortex_system_id: The id of the system in the table (not the name)
 		 - cmdb_id: The value to store for the CMDB ID field.
-                 - vmware_uuid: The UUID of the VM in VMware
+		 - vmware_uuid: The UUID of the VM in VMware
 		"""
 
 		# Get a cursor to the database
@@ -1282,8 +1280,8 @@ class Corpus(object):
 		"""Links a ServiceNow 'task' (Incident Task, Project Task, etc.) to a CI so that it appears in the related records. 
 		   Note that you should NOT use this function to link an incident to a CI (even though ServiceNow will kind of let
 		   you do this...)
-		     - ci_sys_id: The sys_id of the created configuration item, as returned by servicenow_create_ci
-		     - task_number: The task number (e.g. INCTASK0123456, PRJTASK0123456) to link to. NOT the sys_id of the task."""
+		    - ci_sys_id: The sys_id of the created configuration item, as returned by servicenow_create_ci
+		    - task_number: The task number (e.g. INCTASK0123456, PRJTASK0123456) to link to. NOT the sys_id of the task."""
 
 		# Request information about the task (incident task, project task, etc.) to get its sys_id
 		r = requests.get('https://' + self.config['SN_HOST'] + '/api/now/v1/table/task?sysparm_fields=sys_id&sysparm_query=number=' + task_number, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json'})
@@ -1329,18 +1327,18 @@ class Corpus(object):
 
 	def servicenow_create_ci(self, ci_name, os_type, os_name, sockets='', cores_per_socket='', ram_mb='', disk_gb='', ipaddr='', virtual=True, environment=None, short_description='', comments='', location=None):
 		"""Creates a new CI within ServiceNow.
-		     - ci_name: The name of the CI, e.g. srv01234
-		     - os_type: The OS type as a number, see OS_TYPE_BY_NAME
-		     - os_name: The name of the OS, as used by ServiceNow
-		     - cpus: The total number of CPUs the CI has
-		     - ram_mb: The amount of RAM of the CI in MeB
-		     - disk_gb: The total amount of disk space in GiB
-		     - ipaddr: The IP address of the CI
-		     - virtual: Boolean indicating if the CI is a VM (True) or Physical (False). Defaults to True.
-		     - environment: The id of the environment (see the application configuration) that the CI is in
-		     - short_description: The value of the short_description (Description) field in ServiceNow. A purpose, or something.
-		     - comments: The value of the comments field in ServiceNow. Any random information.
-		     - location: The value of the location field in ServiceNow
+		 - ci_name: The name of the CI, e.g. srv01234
+		 - os_type: The OS type as a number, see OS_TYPE_BY_NAME
+		 - os_name: The name of the OS, as used by ServiceNow
+		 - cpus: The total number of CPUs the CI has
+		 - ram_mb: The amount of RAM of the CI in MeB
+		 - disk_gb: The total amount of disk space in GiB
+		 - ipaddr: The IP address of the CI
+		 - virtual: Boolean indicating if the CI is a VM (True) or Physical (False). Defaults to True.
+		 - environment: The id of the environment (see the application configuration) that the CI is in
+		 - short_description: The value of the short_description (Description) field in ServiceNow. A purpose, or something.
+		 - comments: The value of the comments field in ServiceNow. Any random information.
+		 - location: The value of the location field in ServiceNow
 
 		On success, returns the sys_id of the object created in ServiceNow.
 		"""
@@ -1437,7 +1435,7 @@ class Corpus(object):
 
 		# Determine the new status it needs to be, which depends on 
 		# whether it is virtual or not
-		if (type(virtual) is bool and virtual is True) or ((type(virtual) is str or type(virtual) is unicode) and virtual.lower() == "true"):
+		if (type(virtual) is bool and virtual is True) or (type(virtual) is str and virtual.lower() == "true"):
 			new_status = "Deleted"
 		else:
 			new_status = "Decommissioned"
@@ -1562,6 +1560,11 @@ class Corpus(object):
 		# Get the current state of the notify variable
 		notify = self.redis_get_vm_data(vm, 'notify')
 
+		# StrictRedis.get() returns bytes(), so decode it
+		if notify is not None:
+			if type(notify) is bytes:
+				notify = notify.decode('utf-8')
+
 		# Start a timer
 		timer = 0
 
@@ -1580,6 +1583,11 @@ class Corpus(object):
 
 			# Get the lastest value of the notify
 			notify = self.redis_get_vm_data(vm, 'notify')
+
+			# StrictRedis.get() returns bytes(), so decode it
+			if notify is not None:
+				if type(notify) is bytes:
+					notify = notify.decode('utf-8')
 
 		# Return the latest value, which may be None if the in-guest installer
 		# never runs. Otherwise it can be any other value, which may not
@@ -1666,7 +1674,7 @@ class Corpus(object):
 		"""Sets various details about the computer object in AD.
 		Args:
 		  hostname (string): The hostname of the computer object to modify
-                  description (string): The description of the computer
+		  description (string): The description of the computer
 		  location (string): The location of the computer
 		Returns:
 		  Nothing."""
@@ -1830,8 +1838,8 @@ class Corpus(object):
 				requests.exceptions.HTTPError if the API call fails
 				LookupError if client is not found """
 		r = requests.get(urljoin(self.config['TSM_API_URL_BASE'], 'clients'),
-		                         auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
-		                         verify=self.config['TSM_API_VERIFY_SERVER'])
+					 auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
+					 verify=self.config['TSM_API_VERIFY_SERVER'])
 		#raise an exception if we get an error
 		r.raise_for_status()
 		#get the specific client details from the response
@@ -1847,9 +1855,9 @@ class Corpus(object):
 			# We found the client(s) so we can now get the details we need
 			for idx, client in enumerate(clients):
 				r = requests.get(urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(client['SERVER'])
-				                         + '/client/' + quote(client['NAME']) + '/detail'),
-				                         auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
-				                         verify=self.config['TSM_API_VERIFY_SERVER'])
+							 + '/client/' + quote(client['NAME']) + '/detail'),
+							 auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
+							 verify=self.config['TSM_API_VERIFY_SERVER'])
 				r.raise_for_status()
 				clients[idx]['DECOMMISSIONED'] = r.json()['DECOMMISSIONED']
 			return clients
@@ -1904,30 +1912,30 @@ class Corpus(object):
 
 			# For version 2.7.9 upwards, we can use an SSL context directly with xmlrpclib
 			if sys.version_info >= (2, 7, 9):
-				client = xmlrpclib.ServerProxy(rhnurl, verbose=0, context=context)
+				client = xmlrpc.client.ServerProxy(rhnurl, verbose=0, context=context)
 
 			# For less than 2.7.9, we need to provide a context to httplib.HTTPSConnection 
 			# (which according to the docs got added in 2.7.9, but it's there in RHEL 7, 
 			# which has 2.7.5... no idea)
 			else:
 				# Define a XML-RPC SafeTransport that accepts a certificate
-				class SafeTransportWithCert(xmlrpclib.SafeTransport):
+				class SafeTransportWithCert(xmlrpc.client.SafeTransport):
 					def __init__(self, use_datetime=0, context=None):
 						self._context = context
 
 						# The base 'Transport' class (and thus SafeTransport as our superclass) is 
 						# an "old-style" object, so we can't use super(), but we need to call the
 						# constructor
-						xmlrpclib.SafeTransport.__init__(self, use_datetime)
+						xmlrpc.client.SafeTransport.__init__(self, use_datetime)
 
 					def make_connection(self, host):
 						if self._connection and host == self._connection[0]:
 							return self._connection[1]
 
-						self._connection = host, httplib.HTTPSConnection(host, None, context = self._context)
+						self._connection = host, http.client.HTTPSConnection(host, None, context = self._context)
 						return self._connection[1]
 
-				client = xmlrpclib.ServerProxy(rhnurl, transport=SafeTransportWithCert(use_datetime=0, context=context), verbose=0)
+				client = xmlrpc.client.ServerProxy(rhnurl, transport=SafeTransportWithCert(use_datetime=0, context=context), verbose=0)
 
 			key = client.auth.login(self.config['RHN5_USER'], self.config['RHN5_PASS'])
 			return (client,key)
@@ -2123,3 +2131,14 @@ class Corpus(object):
 		self.rdb.setex(prefix + 'system', 3600, str(system_id))
 
 		return True	
+
+	############################################################################
+
+	def checkWorkflowLock(self):
+		curd = self.db.cursor(mysql.cursors.DictCursor)
+		curd.execute('SELECT `value` FROM `kv_settings` WHERE `key` = %s;', ('workflow_lock_status',))
+		current_value = curd.fetchone()
+		if json.loads(current_value['value'])['status'] == 'Unlocked':
+			return True
+		else:
+			return False

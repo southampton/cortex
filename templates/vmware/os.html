@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
 {% block head %}
-<link href="{{ url_for('static', filename='css/vendor/c3.min.css') }}" rel="stylesheet" type="text/css">
-<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/c3.min.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/d3.min.js') }}"></script>
+<link href="{{ url_for('static', filename='css/vendor/c3.min.css') }}?version={{ config.VERSION }}" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/c3.min.js') }}?version={{ config.VERSION }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/d3.min.js') }}?version={{ config.VERSION }}"></script>
 {% endblock %}
 {% block body %}
 <div class="page-header">

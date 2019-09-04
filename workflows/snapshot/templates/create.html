@@ -1,22 +1,21 @@
 {% extends "layout.html" %}
 {% block head -%}
-	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
-	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
-
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/bootstrap-datetimepicker.min.css') }}">
-	<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}"></script> 
-	<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script> 
-	<script src="{{ url_for('static', filename='js/vendor/bootstrap-datetimepicker.min.js') }}"></script>
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}?version={{ config.VERSION }}">
+	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}?version={{ config.VERSION }}"></script>
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}?version={{ config.VERSION }}">
+	<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}?version={{ config.VERSION }}"></script>
+	<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}?version={{ config.VERSION }}"></script>
+	<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}?version={{ config.VERSION }}"></script>
 {% endblock %}
 {% block body %}
 <div class="page-header">
-<h3>Create VMware Snapshot</h3>
-<p class="text-muted">This workflow automates the creation of VMware Snapshots.</p>
+<h4><i class="fa fa-plus-circle fa-fw"></i> Create VMware Snapshot</h4>
+<div class="text-muted">This workflow automates the creation of VMware Snapshots.</div>
 </div>
 <form id="snapshot_create_form" method="POST" role="form">
 	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 	<div class="row">
-		<div class="col-md-12"><h3 style="margin-top:0px">Snapshot Details</h3></div>
+		<div class="col-md-12"><h4>Snapshot Details</h4></div>
 		<div class="col-md-12 form-group">
 			<label for="snapshot_name">Snapshot Name:<span class="required">*</span></label>
 			<input class="form-control" name="snapshot_name" id="snapshot_name" placeholder="Text to be used in the snapshot name field in VMware" required="required" autofocus {% if 'snapshot_name' in values %}value="{{ values['snapshot_name'] }}"{% endif %} />
@@ -27,10 +26,10 @@
 		</div>
 		<div class="col-md-6 form-group">
 			<label for="snapshot_expiry">Expiry Date:<span class="required">*</span></label>
-			<div class='input-group date' id='expirypicker'>
-				<input type='text' class="form-control" id="snapshot_expiry" name="snapshot_expiry" placeholder="Date after this snapshot can be deleted: YYYY-MM-DD" required="required" {% if 'snapshot_expiry' in values %}value="{{ values['snapshot_expiry'] }}"{% endif %}/>
-				<span class="input-group-addon">
-					<span class="glyphicon glyphicon-calendar"></span>
+			<div class='input-group date' id='expirypicker' data-target-input="nearest">
+				<input type='text' class="form-control datetimepicker-input" id="snapshot_expiry" name="snapshot_expiry" placeholder="Date after this snapshot can be deleted: YYYY-MM-DD" required="required" data-target="expirypicker" {% if 'snapshot_expiry' in values %}value="{{ values['snapshot_expiry'] }}"{% endif %}/>
+				<span class="input-group-append" data-target="#expirypicker" data-toggle="datetimepicker">
+					<div class="input-group-text"><i class="fa fa-calendar"></i></div>
 				</span>
 			</div>
 			<script>
@@ -54,7 +53,7 @@
 		<div class="col-md-12 form-group">
 			<label for="snapshot_cold"><input type="checkbox" id="snapshot_cold" name="snapshot_cold" {% if 'snapshot_cold' in values and values['snapshot_cold'] %}checked="checked"{% endif %}/> Power off the virtual machine before taking the snapshot.</label>
 		</div>
-		<div class="col-md-12"><h3 style="margin-top:0px">Systems</h3></div>
+		<div class="col-md-12"><h4>Systems</h4></div>
 		<div class="col-md-12">
 			<table class="table table-condensed tabled-striped">
 				<thead>
@@ -93,7 +92,7 @@
 				</tfoot>
 			</table>
 		</div>
-		<div class="col-md-12"><h3 style="margin-top:0px">Create Snapshot</h3></div>
+		<div class="col-md-12"><h4 style="margin-top:0px">Create Snapshot</h4></div>
 		<div class="row w-100">
 			<div class="col-md-12">
 				<p style="text-align:center"><input type="submit" class="btn btn-lg btn-success" value="Create Snapshot" name="submit" id="submit" /></p>				

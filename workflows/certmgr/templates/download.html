@@ -1,41 +1,12 @@
 {% extends "layout.html" %}
 {% block head -%}
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
-		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}?version={{ config.VERSION }}">
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}?version={{ config.VERSION }}"></script>
 {% endblock %}
 {% block body %}
 <div class="page-header">
-<h3 id="heading">Create SSL Certificate - Task In Progress</h3>
+<h4 id="heading">Create SSL Certificate - Task In Progress</h4>
 </div>
-<style type="text/css">
-.submit
-{
-	padding-bottom: 2em;
-	margin-left: 1em;
-}
-
-.btn-submit
-{
-	font-size: 2em;
-}
-
-textarea
-{
-	width: 100%;
-	height: 20em;
-	font-family: Consolas,Monaco,"Lucida Console","Liberation Mono","DejaVu Sans Mono","Bitstream Vera Sans Mono","Courier New",monospace;
-	font-size: 10pt;
-}
-button.copy-to-clipboard
-{
-	position: relative;
-	top: -2px;
-}
-p
-{
-	font-size: 120%;
-}
-</style>
 <div class="row" id="task_waiting">
 	<div class="col-md-12">
 		<p style="margin: 1em 0em 1em 2em;font-size: 16px"><i class="fa fa-fw fa-spin fa-refresh"></i>  Waiting for NeoCortex <a href="{{ url_for('task_status', id=task_id) }}" target="_blank">task {{ task_id }}</a> to complete...</p>
@@ -51,15 +22,21 @@ p
 		<p id="ajax_error_content"></p>
 	</div>
 </div>
-<div class="row" style="display:none" id="task_ready">
-	<div class="col-md-12"><p>The task completed successfully. The key and certificate are available in PEM-encoded format below. Please copy them elsewhere now, as they will be removed from the Cortex server in one hour.</p></div>
-	<div class="col-md-4"><h4>Certificate<button class="btn btn-xs btn-default pull-right copy-to-clipboard" data-copy="certificate">Copy to Clipboard</button></h4><textarea readonly="readonly" id="certificate"></textarea></div>
-	<div class="col-md-4"><h4>Private Key<button class="btn btn-xs btn-default pull-right copy-to-clipboard" data-copy="key">Copy to Clipboard</button></h4><textarea readonly="readonly" id="key"></textarea></div>
-	<div class="col-md-4"><h4>Chain<button class="btn btn-xs btn-default pull-right copy-to-clipboard" data-copy="chain">Copy to Clipboard</button></h4><textarea readonly="readonly" id="chain"></textarea></div>
-	<div class="col-md-12">
-		<h4>Downloads</h4>
-		<p>The above certificates are available for download in various formats below. The Zip file contains the above certificates in the same PEM-encoded format as they are above, that are best used for Apache / nginx. The PKCS12 / PFX file is a password-less PFX file, which is best used with IIS.</p>
-		<p><a class="btn btn-sm btn-primary" href="{{ url_for('certmgr_download_zip', task=task_id) }}">Download ZIP</a> &nbsp;<a class="btn btn-sm btn-primary" href="{{ url_for('certmgr_download_pkcs12', task=task_id) }}">Download PKCS12 / PFX</a></p>
+<div style="display:none" id="task_ready">
+	<div class="row">
+		<div class="col-md-12"><p>The task completed successfully. The key and certificate are available in PEM-encoded format below. Please copy them elsewhere now, as they will be removed from the Cortex server in one hour.</p></div>
+	</div>
+	<div class="row" id="cert-dl-row">
+		<div class="col-md-4"><h4>Certificate<button class="btn btn-sm btn-secondary pull-right copy-to-clipboard" data-copy="certificate">Copy to Clipboard</button></h4><textarea class="w-100 text-monospace" rows="13" readonly="readonly" id="certificate"></textarea></div>
+		<div class="col-md-4"><h4>Private Key<button class="btn btn-sm btn-secondary pull-right copy-to-clipboard" data-copy="key">Copy to Clipboard</button></h4><textarea class="w-100 text-monospace" rows="13" readonly="readonly" id="key"></textarea></div>
+		<div class="col-md-4"><h4>Chain<button class="btn btn-sm btn-secondary pull-right copy-to-clipboard" data-copy="chain">Copy to Clipboard</button></h4><textarea class="w-100 text-monospace" rows="13" readonly="readonly" id="chain"></textarea></div>
+	</div>
+	<div class="row pt-md-3">
+		<div class="col-md-12">
+			<h4>Downloads</h4>
+			<p>The above certificates are available for download in various formats below. The Zip file contains the above certificates in the same PEM-encoded format as they are above, that are best used for Apache / nginx. The PKCS12 / PFX file is a password-less PFX file, which is best used with IIS.</p>
+			<p><a class="btn btn-md btn-primary" href="{{ url_for('certmgr_download_zip', task=task_id) }}">Download ZIP</a> &nbsp;<a class="btn btn-md btn-primary" href="{{ url_for('certmgr_download_pkcs12', task=task_id) }}">Download PKCS12 / PFX</a></p>
+		</div>
 	</div>
 </div>
 <script type="text/javascript">
@@ -90,7 +67,7 @@ var interval = window.setInterval(function() {
 							{
 								$('#chain').text(data['chain']);
 							}
-							$('#task_ready').css('display', 'block');
+							$('#task_ready').css('display', '');
 							$('#heading').text('Create SSL Certificate')
 						}
 					},

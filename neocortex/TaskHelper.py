@@ -114,6 +114,9 @@ class TaskHelper(object):
 		except Exception as e:
 			pass
 
+		import traceback
+		syslog.syslog('Unhandled exception caused task to end:\n' + traceback.format_exc())
+
 	def _log_fatal_error(self, message):
 		"""Logs a fatal error into the events for this task"""
 
@@ -123,6 +126,9 @@ class TaskHelper(object):
 
 	def event(self, name, description, success=True, oneshot=False, warning=False):
 		"""Starts a new event within the tasks, closing an existing one if there was one"""
+
+		# Cast the description to a string
+		description = str(description)
 
 		# Handle closing an existing event if there is still one
 		if self.event_id != -1:
@@ -151,6 +157,10 @@ class TaskHelper(object):
 
 	def end_event(self, success=True, description=None, warning=False):
 		"""Ends the currently running event, updating it's description and status as necessary"""
+
+		# Cast the description to a string
+		if description != None:
+			description = str(description)
 
 		if self.event_id == -1:
 			return False

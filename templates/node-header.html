@@ -1,11 +1,11 @@
 {% macro header(system,active="overview") -%}
 <div style="margin-bottom: 20px">
-	<ul class="nav nav-tabs" id="node-header">
+	<ul class="nav nav-tabs" id="node-header" role="tablist">
 		<li style="padding: 0px 15px; font-size: 28px;"><i class="fa fa-fw fa-server"></i> {{ system.name }}</li>
 		<li class="nav-item"><a class="{% if active == "overview" %}active {%endif%}nav-link" href="{{url_for('system_overview',id=system.id)}}">Overview</a></li>
 		<li class="nav-item"><a class="{% if active == "info" %}active {%endif%}nav-link" href="{{url_for('system',id=system.id)}}">Info</a></li>
 		<li class="nav-item"><a class="{% if active == "edit" %}active {%endif%}nav-link" href="{{url_for('system_edit',id=system.id)}}">Settings</a></li>
-		{% if system.vmware_uuid and does_user_have_permission("systems.all.view.rubrik") -%}
+		{% if system.vmware_uuid and does_user_have_system_permission(system.id, "edit.rubrik", "systems.all.view.rubrik") -%}
 		<li class="nav-item"><a class="{% if active == "backup" %}active {% endif %}nav-link" href="{{url_for('system_backup',id=system.id)}}">Rubrik</a></li>
 		{% else -%}
 		<li class="nav-item"><a class="nav-link disabled">Rubrik</a></li>

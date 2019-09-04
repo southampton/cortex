@@ -7,10 +7,9 @@
 			<form role="form" method="POST" class="form-horizontal">
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 				<input name="action" type="hidden" value="edit_class"/>
-				<input name="class_name" type="hidden" value="" id="edit_class_name_hidden"/>
 				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 					<h4 class="modal-title">Edit class</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				</div>
 				<div class="modal-body">
 					<p>
@@ -18,25 +17,25 @@
 						the class prefix, typically this is five, e.g. srv00000 or srv99999. If you're not sure, it's best to use a three character prefix
 						and five digits.
 					</p>
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label">Prefix</label>
 						<div class="col-sm-9">
-							<p class="form-control-static" id="edit_class_name" name="class_name">N/A</p>
+							<input class="form-control" readonly id="edit_class_name" name="class_name" value="N/A"/>
 						</div>
 					</div>
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label">Digits</label>
 						<div class="col-sm-9">
 							<input class="form-control" id="edit_class_digits" type="number" value="5" max="10" min="1" name="class_digits" />
 						</div>
 					</div>
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label">Comment</label>
 						<div class="col-sm-9">
 							<input class="form-control" id="edit_class_comment" type="text" name="class_comment" />
 						</div>
 					</div>
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label">CMDB Type</label>
 						<div class="col-sm-9">
 							<select class="form-control" id="edit_class_cmdb_type" name="class_cmdb_type">
@@ -47,15 +46,15 @@
 							</select>
 						</div>
 					</div>
-					<div class="form-group">
-						<div class="checkbox col-sm-offset-3 col-sm-9">
+					<div class="form-group row">
+						<div class="checkbox offset-sm-3 col-sm-9">
 							<label>
 								<input type="checkbox" checked="checked" id="edit_class_link_vmware" name="class_link_vmware"> Link to VMware
 							</label>
 						</div>
 					</div>
-					<div class="form-group">
-						<div class="checkbox col-sm-offset-3 col-sm-9">
+					<div class="form-group row">
+						<div class="checkbox offset-sm-3 col-sm-9">
 							<label>
 								<input type="checkbox" checked="checked" id="edit_class_active" name="class_active"> Allow new allocations
 							</label>
@@ -63,7 +62,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
 					<button type="submit" class="btn btn-primary">Save changes</button>
 				</div>
 			</form>
@@ -88,7 +87,7 @@
 				</div>
 				<div class="modal-footer">
 					<button type="submit" class="btn btn-primary">Create</button>
-					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 				</div>
 			</form>
 		</div>
@@ -96,15 +95,14 @@
 </div>
 
 <script type="text/javascript">
-$( document ).ready(function() 
+$( document ).ready(function()
 {
 	$('#edit_class').on('show.bs.modal', function (event)
 	{
 		var button = $(event.relatedTarget)
 		var active = button.data('active')
 		$('#edit_class_active').prop('checked', !button.data('active'));
-		$('#edit_class_name').text(button.data('name'));
-		$('#edit_class_name_hidden').attr('value', button.data('name'));
+		$('#edit_class_name').val(button.data('name'));
 		$('#edit_class_digits').attr('value', button.data('digits'));
 		$('#edit_class_comment').attr('value', button.data('comment'));
 		$('#edit_class_cmdb_type').val(button.data('type'));
@@ -133,30 +131,30 @@ $( document ).ready(function()
 						and five digits.
 					</p>
 
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label">Prefix</label>
-						<div class="col-sm-12">
+						<div class="col-sm-9">
 							<input class="form-control" name="class_name" id="prefix" />
 						</div>
 					</div>
 
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label">Digits</label>
-						<div class="col-sm-12">
+						<div class="col-sm-9">
 							<input class="form-control" type="number" value="5" max="10" min="1" name="class_digits" />
 						</div>
 					</div>
 
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label">Comment</label>
-						<div class="col-sm-12">
+						<div class="col-sm-9">
 							<input class="form-control" type="text" name="class_comment" />
 						</div>
 					</div>
 
-					<div class="form-group">
+					<div class="form-group row">
 						<label class="col-sm-3 control-label">CMDB Type</label>
-						<div class="col-sm-12">
+						<div class="col-sm-9">
 							<select class="form-control" name="class_cmdb_type">
 								<option value="">None</option>
 {%- for type in cmdb_types %}
@@ -166,16 +164,16 @@ $( document ).ready(function()
 						</div>
 					</div>
 
-					<div class="form-group">
-						<div class="checkbox col-sm-offset-3 col-sm-9">
+					<div class="form-group row">
+						<div class="checkbox offset-sm-3 col-sm-9">
 							<label>
 								<input type="checkbox" checked="checked" name="class_link_vmware"> Link to VMware
 							</label>
 						</div>
 					</div>
 
-					<div class="form-group">
-						<div class="checkbox col-sm-offset-3 col-sm-9">
+					<div class="form-group row">
+						<div class="checkbox offset-sm-3 col-sm-9">
 						<label>
 							<input type="checkbox" checked="checked" name="class_active"> Allow new allocations
 						</label>
@@ -198,10 +196,10 @@ $( document ).ready(function()
 	<h4><i class="fa fa-fw fa-table"></i> System Classes</h4>
 </div>
 
-<p>A system class defines a logical group of systems, and specifies the format 
-of a system name (e.g. the hostname). A system class of name 'server' and four 
-digits defines a system name format that would fit the name 'server0099', for 
-example. An inactive system class cannot have new system names assigned, either 
+<p>A system class defines a logical group of systems, and specifies the format
+of a system name (e.g. the hostname). A system class of name 'server' and four
+digits defines a system name format that would fit the name 'server0099', for
+example. An inactive system class cannot have new system names assigned, either
 manually or automatically.</p>
 
 <table class="table table-sm table-striped" id="classes">
@@ -223,7 +221,7 @@ manually or automatically.</p>
 			<td>{% if class.disabled %}<i style="color:#d00" class="fa fa-fw fa-times"></i>{% else %}<i style="color:#0d0" class="fa fa-fw fa-check"></i>{% endif %}</td>
 			<td>{{ class.lastid }}</td>
 			<td>{{ class.comment }}</td>
-			<td><a data-toggle="modal" data-target="#edit_class" data-active="{{class.disabled}}" data-comment="{{class.comment}}" data-name="{{class.name}}" data-digits="{{class.digits}}" data-vmware="{{class.link_vmware}}" data-type="{{class.cmdb_type or ''}}" class="btn btn-default btn-xs"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i><span class="d-sm-none d-none">Edit</span></a></td>
+			<td><a data-toggle="modal" data-target="#edit_class" data-active="{{class.disabled}}" data-comment="{{class.comment}}" data-name="{{class.name}}" data-digits="{{class.digits}}" data-vmware="{{class.link_vmware}}" data-type="{{class.cmdb_type or ''}}" class="btn btn-secondary btn-xs"><i style="margin-right:0.2em" class="fa fa-fw fa-edit"></i><span class="d-sm-none d-none">Edit</span></a></td>
 		</tr>
 {%else%}
 		<tr>

@@ -6,8 +6,9 @@
 # - selectable_expiration: Whether certificate length is selectable for the provider
 # - nlb_upload: Whether certificates need uploading to the NLB
 PROVIDERS=[
-	{'id': 'letsencrypt', 'name': 'Let\'s Encrypt', 'type': 'acme', 'selectable_key_size': False, 'selectable_expiration': False, 'nlb_upload': False},
-	{'id': 'selfsign', 'name': 'Self-signed', 'type': 'self', 'selectable_key_size': True, 'selectable_expiration': True, 'nlb_upload': True}
+	{'id': 'letsencrypt', 'name': 'Let\'s Encrypt', 'type': 'acme', 'selectable_key_size': False, 'selectable_expiration': False, 'nlb_upload': False, 'create_ssl_profile': True,},
+	{'id': 'selfsign', 'name': 'Self-signed', 'type': 'self', 'selectable_key_size': True, 'selectable_expiration': True, 'nlb_upload': True, 'create_ssl_profile': True,}
+	{'id': 'enterpriseca', 'name': 'Enterprise CA', 'type': 'entca', 'selectable_key_size': False, 'selectable_expiration': False, 'nlb_upload': False, 'create_ssl_profile': False,}
 ]
 
 # The ID of the provider to choose by default
@@ -19,8 +20,9 @@ DEFAULT_PROVIDER='letsencrypt'
 # - domain: The default domain to use for certificates in the environment
 # - nlb: The ID of the NLB to create objects on where necessary
 # - acme: The ID of the ACME server to use where necessary
+# - entca: The ID of the ENTCA server to use where necessary
 ENVS=[
-	{'id': 'prod', 'name': 'Production', 'domain': 'mydomain.tld', 'nlb': 'prod', 'acme': 'acme_prod'}
+	{'id': 'prod', 'name': 'Production', 'domain': 'mydomain.tld', 'nlb': 'prod', 'acme': 'acme_prod', 'entca': 'entca_prod',}
 ]
 
 # The ID of the environment to choose by default
@@ -56,6 +58,15 @@ NLBS=[
 # - verify_ssl: Whether to verify the certificate when doing TLS to the ACME server
 ACME_SERVERS=[
 	{'id': 'acme_prod', 'hostname': 'acme.mydomain.tld', 'api_token': 'password', 'verify_ssl': True},
+]
+
+# The ENTCA server(s) configuration. Fields are:
+# - id: A unique identifier for the ACME server
+# - hostname: The hostname of the server for API access
+# - api_token: The pre-shared token to use for accessing the API
+# - verify_ssl: Whether to verify SSL on the ACME server API
+ENTCA_SERVERS=[
+	{'id': 'entca_prod', 'hostname': 'entca-api.mydomain.tld', 'api_token': 'password', 'verify_ssl': True,},
 ]
 
 # A map of CNs of direct provider certificates to the associated file on the NLB
