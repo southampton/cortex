@@ -105,7 +105,6 @@ def parse_references(text, values_dict):
                         result_list = temp.split(".")
                         for element in result_list:
                                 reference_value = reference_value[element]
-                        print(reference_value)
                         text = re.sub(reference, reference_value, text)
                 except Exception as e:
                         # if the reference is not correct, print the error into the error log

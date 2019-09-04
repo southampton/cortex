@@ -130,6 +130,32 @@
 			</div>
 		</div>
 	</div>
+	
+	<!--
+        	This is the modal used to select one of the existing recipes by name
+	-->
+	<div class="modal fade" id="add-vm-existing-recipe" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" >Add a VM Recipe</h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-sm-3 offset-1">Type in a recipe name</div>
+						<div class="col-sm-6"><input id="vm-recipe-input" class="form-control w-100" maxlength="64" type="text" pattern="\w+" name="asdf" /></div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-primary" id="new-vm-recipe">Save Changes</button>
+				</div>
+			</div>
+		</div>
+	</div>
 
 	</form>
 	<a class="carousel-control-prev" href="#vm-carousel" role="button" data-slide="prev">
@@ -359,41 +385,6 @@
 </div>
 
 <!--
-	Datalist of names of existing service recipes
--->
-<datalist id="autocomplete-service-templates">
-	<option></option>
-	{% for name in service_recipes_details %}
-		<option id="{{name}}">{{name}}</option>
-	{% endfor %}
-</datalist>
-
-<!--
-	This is the modal used to select one of the existing recipes by name
--->
-<div class="modal fade" id="add-vm-existing-recipe" tabindex="-1" role="dialog" aria-hidden="true">
-	<div class="modal-dialog modal-xl modal-dialog-centered" role="document">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" >Use Existing Recipe</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-			<div class="modal-body">
-				<div class="row">
-					<div class="col-sm-3 offset-1">Type in a recipe name</div>
-					<div class="col-sm-6"><input id="vm-recipe-input" class="form-control w-100" maxlength="64" pattern="\w+"/></div>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-				<button type="button" class="btn btn-primary" id="new-vm-recipe">Save Changes</button>
-			</div>
-		</div>
-	</div>
-</div>
-<!--
 	Each service recipe which is listed in the datatable will target a modal
 	which contains some more details about it
 -->
@@ -426,6 +417,7 @@
 	</div>
 </div>
 {% endfor %}
+
 <!--
 	This modal will pop up when the user attempts to delete a service recipe
 	The text inside the body will get replaced when the modal shows
@@ -721,12 +713,12 @@
 
 // Helper function which determines if a service recipe already exists
 function service_recipe_exists(recipe_name){
-	var service_recipes_list = $("#autocomplete-service-templates option").map(function(){
-		return $(this).attr('id');
+	
+	var service_recipes_list = $("#service-recipes-table td:first-child").map(function(){
+		return $(this).html();
 	}).toArray();
 	
-	//return service_recipes_list.includes(recipe_name);
-	return false;
+	return service_recipes_list.includes(recipe_name);
 }
 
 // Helper function which determines if a VM recipe already exists
@@ -1083,6 +1075,7 @@ $(document).ready(function(){
 						$("#" + name_value).remove();
 
 						// If in edit mode, run ajax to asynchronously remove the quesiton from the database
+						// Also, make the field required
 						if($("#action").val()=="use_recipe"){
 							$('#save-questions-changes').trigger('click', ["Successfully deleted the question with the reference: '"+name_value+"'."]);
 						} else {
@@ -1097,7 +1090,9 @@ $(document).ready(function(){
 					$("#question-info-modal").find(".full-text-info").html("<p class='font-weight-bold'>\{\{questions."+name_value+".text\}\}:</p>" + text);
 					$("#question-info-modal").find(".answer-info").html("<p class='font-weight-bold'>\{\{questions."+name_value+".answer\}\}:</p>" + answer);
 				});
-
+				
+				if($('#action').val() == 'use_recipe') question_row.find("input").prop('required', true);
+					
 				// Append the new question to the modal
 				$('#current-additional-questions .modal-body').append(question_row);
 				
@@ -1290,7 +1285,21 @@ $(document).ready(function(){
 			},
 		});
 	});
+	
+	// submit the form once the modal is shown (and implicitly when the inputs are focusable) if any input is empty
+	$("#current-additional-questions").on("shown.bs.modal", function(){
+		
+		var has_empty_question_input = $("#current-additional-questions input").map(function(){
+                	return ($(this).val() == "");
+                }).toArray().includes(true);
 
+		if(has_empty_question_input && $('#action').val() == 'use_recipe'){
+			// manually submit the form to trigger the invalid event
+			$("#service_request_form").find(":submit").click();
+		}
+	});
+
+	
 	// Add event listener on carousel slide
 	$('#vm-carousel').on('slide.bs.carousel', function (e, stuff) {
 		
@@ -1308,6 +1317,10 @@ $(document).ready(function(){
 			var current_service_env = $(current_slide).find("select[name=env]").eq(0).val();
 			var service_now_task = $(current_slide).find("input[name=task]").eq(0).val();
 			var action_type = $("input[name=action]").val();
+			
+			var has_empty_question_input = $("#current-additional-questions input").map(function(){
+				return ($(this).val() == "");
+			}).toArray().includes(true);
 			
 			// add an event listener to check if the user is trying to use an existing service name
 			if(current_service_name && action_type == "create_recipe" && service_recipe_exists($("#service_name").val())){
@@ -1331,6 +1344,15 @@ $(document).ready(function(){
 				if(!$("#service_request_form")[0].checkValidity()){
 					$("#service_request_form").find(":submit").click();
 				}
+			
+			// if any of the additional questions hasn't been answered
+			} else if(has_empty_question_input && action_type=="use_recipe"){
+				
+				// Prevent carousel from going to the next slide
+				e.preventDefault();
+				
+				// Show the additional questions modal
+				$("#current-additional-questions").modal('show');
 
 			} else {
 				// else everything's fine, go to the next slide
@@ -1342,10 +1364,11 @@ $(document).ready(function(){
 	// Custom messages on invalid input
 	$('#vm-recipe-input').on('input', function(e){
 		e.target.checkValidity();
-		$(this)[0].setCustomValidity("");
 	}).on('invalid', function(){
-		$("#service_request_form").find(":submit").click();
-		$(this)[0].setCustomValidity("Please only use letter, digits or underscores.");
+		if($(this)[0].validity.patternMismatch){
+			$('#vm-recipe-input')[0].setCustomValidity("Please only use letter, digits or underscores.");
+			$("#service_request_form").find(":submit").click();
+		}
 	});
 
 	$("#new-vm-recipe").click(function(e, recipe_data, recipe_name, is_clone){
@@ -1353,7 +1376,7 @@ $(document).ready(function(){
 		var vm_recipe_name = recipe_name ? recipe_name : $("#vm-recipe-input").val();
 
 		// The vm_recipe_name has to contain word characters only
-		if(/\w+/.test(vm_recipe_name)){
+		if(!/\W/.test(vm_recipe_name) && vm_recipe_name != ""){
 
 			// If the VM recipe is not already on screen
 			if(!vm_recipe_exists(vm_recipe_name)){
@@ -1490,9 +1513,10 @@ $(document).ready(function(){
 										dataType: "json",
 										success: function(data){
 											jsFlash("Successfully updated "+vm_recipe_name+".", "success", true);
-
 										},
 									});
+								} else {
+									jsFlash("Your updates will be saved when you upload the recipe.", "info", true);
 								}
 							});
 						}
@@ -1612,9 +1636,9 @@ $(document).ready(function(){
 	});
 	
 	// Cannot submit a service recipe that doesn't contain
-	// at least a VM recipe
-	$("#service_request_form").submit(function(e){
-		if(!$(this).find(".card").length){
+	// at least one VM recipe
+	$("#service_request_form").submit(function(e, is_invalid){
+		if(!$(this).find(".card").length && $('#vm-recipe-input').val == "") {
 			e.preventDefault();
 			jsFlash("Your service recipe has to contain at least one VM recipe!", "danger", true);
 		}

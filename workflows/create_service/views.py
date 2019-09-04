@@ -70,7 +70,7 @@ def createservice():
 		workflow_type = form['workflow_type']
 		service_description = form.get('service_description', None)
 		questions = (json.dumps(form['questions'])) if 'questions' in form else None
-		service_description = parse_question_references(service_description, form)
+		service_description = form['service_description']
 		
 		# Insert data into the database
 		if not recipe_exists(service_name, "service", curd):
@@ -79,12 +79,8 @@ def createservice():
 		if 'service_vms' in form.keys():
 			for vm_name in form['service_vms'].keys():
 				puppet_classes = form['service_vms'][vm_name]['puppet_classes']
-				#purpose = form['service_vms'][vm_name]['purpose']
-				#comments = form['service_vms'][vm_name]['comments']
-
 				purpose = form['service_vms'][vm_name]['purpose']
 				comments = form['service_vms'][vm_name]['comments']
-
 				primary_owner_who = form['service_vms'][vm_name]['primary_owner_who']
 				primary_owner_role = form['service_vms'][vm_name]['primary_owner_role']
 				secondary_owner_who = form['service_vms'][vm_name]['secondary_owner_who']
@@ -97,8 +93,7 @@ def createservice():
 				cluster = form['service_vms'][vm_name]['cluster']
 				network = form['service_vms'][vm_name]['network']
 				vm_folder_moid = form['service_vms'][vm_name]['vm_folder_moid']
-				#description = form['service_vms'][vm_name]['vm_description']
-				description = parse_question_references(form['service_vms'][vm_name]['vm_description'], form)
+				description = form['service_vms'][vm_name]['vm_description']
 				if not recipe_exists(vm_name, "vm", curd, service_recipe_name=service_name):
 					curd.execute("""INSERT INTO `vm_recipes`(
 							`name`,
@@ -586,28 +581,3 @@ def validate_form(required_keys, request_dict):
 	for key in required_keys:
 		if key not in request_dict.keys():
 			return redirect(url_for('createservice'))
-
-################################################################################
-
-def parse_question_references(text, values_dict):
-
-        # Find all the substrings which match the given regex, such ass {{some_reference.system_name}}
-        references = re.findall("{{\w+(?:\.\w+)*}}", text)
-
-        reference_to_system_name = {}
-        for reference in references:
-                # temp var which contains the reference without the curly brackets
-                temp = reference[2:-2]
-                reference_value = values_dict
-                try:
-                        # try to split the string
-                        result_list = temp.split(".")
-                        for element in result_list:
-                                reference_value = reference_value[element]
-                        text = re.sub(reference, reference_value, text)
-                except Exception as e:
-                        # if the reference is not correct, print the error into the error log
-                        print(str(e))
-                        # continue without breaking the for loop
-                        continue
-        return text
