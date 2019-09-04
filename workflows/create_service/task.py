@@ -92,23 +92,23 @@ def run(helper, options):
 
 def parse_references(text, values_dict):
 
-        # Find all the substrings which match the given regex, such ass {{some_reference.system_name}}
-        references = re.findall("{{\w+(?:\.\w+)*}}", text)
+	# Find all the substrings which match the given regex, such ass {{some_reference.system_name}}
+	references = re.findall("{{\w+(?:\.\w+)*}}", text)
 
-        reference_to_system_name = {}
-        for reference in references:
-                # temp var which contains the reference without the curly brackets
-                temp = reference[2:-2]
-                reference_value = values_dict
-                try:
-                        # try to split the string
-                        result_list = temp.split(".")
-                        for element in result_list:
-                                reference_value = reference_value[element]
-                        text = re.sub(reference, reference_value, text)
-                except Exception as e:
-                        # if the reference is not correct, print the error into the error log
-                        print(str(e))
-                        # continue without breaking the for loop
-                        continue
-        return text
+	reference_to_system_name = {}
+	for reference in references:
+		# temp var which contains the reference without the curly brackets
+		temp = reference[2:-2]
+		reference_value = values_dict
+		try:
+			# try to split the string
+			result_list = temp.split(".")
+			for element in result_list:
+				reference_value = reference_value[element]
+			text = re.sub(reference, reference_value, text)
+		except Exception as e:
+			# if the reference is not correct, print the error into the error log
+			print(str(e))
+			# continue without breaking the for loop
+			continue
+	return text

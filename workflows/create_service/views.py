@@ -297,8 +297,8 @@ def update_questions():
 @app.disable_csrf_check
 def update_vm_recipe():
 
-        # Get the db cursor
-        curd = g.db.cursor(mysql.cursors.DictCursor)
+	# Get the db cursor
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 	
 	form = parse_request_form(request.form)['service_vms']
 	
@@ -356,23 +356,23 @@ def update_vm_recipe():
 @app.disable_csrf_check
 def get_vm_recipe():
 
-        # Get the db cursor
-        curd = g.db.cursor(mysql.cursors.DictCursor)
+	# Get the db cursor
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	form = parse_request_form(request.form)
 
 	service_name = form['service_name']
 
-        vm_recipe_name = vm_name = form['vm_recipe_name']
+	vm_recipe_name = vm_name = form['vm_recipe_name']
 
-        # Query the database to get the VM recipe
-        curd.execute("SELECT * FROM `vm_recipes` WHERE `name`=%s AND `service_name`=%s", (vm_recipe_name, service_name,))
+	# Query the database to get the VM recipe
+	curd.execute("SELECT * FROM `vm_recipes` WHERE `name`=%s AND `service_name`=%s", (vm_recipe_name, service_name,))
 
 	# Fetch the VM recipe
 	vm_recipe= curd.fetchone()
 
-        # Return as JSON
-        return jsonify(vm_recipe)
+	# Return as JSON
+	return jsonify(vm_recipe)
 
 ################################################################################
 
@@ -380,22 +380,22 @@ def get_vm_recipe():
 @app.disable_csrf_check
 def delete_vm_recipe():
 
-        # Get the db cursor
-        curd = g.db.cursor(mysql.cursors.DictCursor)
+	# Get the db cursor
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	form = parse_request_form(request.form)
 	
 	service_name = form['service_name']
 	
-        vm_recipe_name = form['vm_recipe_name']
+	vm_recipe_name = form['vm_recipe_name']
 
-        # Query the database to get the VM recipe
-        curd.execute("DELETE FROM `vm_recipes` WHERE `name`= %s AND `service_name`=%s", (vm_recipe_name, service_name,))
+	# Query the database to get the VM recipe
+	curd.execute("DELETE FROM `vm_recipes` WHERE `name`= %s AND `service_name`=%s", (vm_recipe_name, service_name,))
 	curd.execute("UPDATE `service_recipes` SET `vms_list` = REPLACE(`vms_list`, %s, '') WHERE `vms_list` LIKE %s;",("(, )?"+vm_recipe_name, "%"+vm_recipe_name+"%",))
 	
 	g.db.commit()
 
-        return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
+	return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
 
 ################################################################################
 
@@ -403,10 +403,10 @@ def delete_vm_recipe():
 @app.disable_csrf_check
 def delete_service_recipe():
 
-        # Get the db cursor
-        curd = g.db.cursor(mysql.cursors.DictCursor)
+	# Get the db cursor
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-        # Get the service recipe name from the request form     
+	# Get the service recipe name from the request form     
 	service_recipe_name = request.form.get('service_name', None)
 
 	# Get the list of all VM recipes which belong to this service recipe
@@ -421,7 +421,7 @@ def delete_service_recipe():
 	curd.execute("DELETE FROM `service_recipes` WHERE `name`= %s", (service_recipe_name,))
 		
 	# Commit the changes
-        g.db.commit()
+	g.db.commit()
 
 	return json.dumps({'success':True}), 200, {'ContentType':'application/json'}  
 
@@ -436,8 +436,8 @@ def add_vm_recipe():
 	vm_recipe_name = next(iter(form['service_vms']))
 	service_recipe_name = form['service_name']
 
-        # Get the db cursor
-        curd = g.db.cursor(mysql.cursors.DictCursor)
+	# Get the db cursor
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get the list of all VM recipes which belong to this service recipe
 	curd.execute("UPDATE `service_recipes` SET `vms_list`=CONCAT(`vms_list`, %s) WHERE `name`= %s", (', '+vm_recipe_name, service_recipe_name,))
@@ -480,8 +480,8 @@ def add_vm_recipe():
 						`network`,
 						`vm_folder_moid`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", (vm_recipe_name, service_recipe_name, purpose, comments, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, sockets, cores, ram, disk, template, cluster, puppet_classes, description, network, vm_folder_moid,))
 
-        # Commit the changes
-        g.db.commit()
+	# Commit the changes
+	g.db.commit()
 		
 	# Return an OK 200
 	return json.dumps({'success':True}), 200, {'ContentType':'application/json'}
@@ -536,7 +536,7 @@ def parse_request_form(form):
 			elif attribute not in result_dict[ADDITIONAL_QUESTIONS][question].keys():
 				result_dict[ADDITIONAL_QUESTIONS][question][attribute] = value
 		else:
-                        result_dict[index] = form.getlist(index) if len(form.getlist(index)) > 1 else form[index]
+			result_dict[index] = form.getlist(index) if len(form.getlist(index)) > 1 else form[index]
 	return result_dict
 
 ################################################################################

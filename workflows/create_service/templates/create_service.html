@@ -21,7 +21,7 @@
 		
 		{#- datetime-pickers -#}
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}">
-		<script src="{{ url_for('static', filename='js/vendor/moment.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}"></script>
@@ -1150,7 +1150,7 @@ $(document).ready(function(){
 		var new_name = $("#vm-clone-name").val();
 		
 		// as long as the VM name does not exist already
-		if(new_name && !vm_recipe_exists(new_name)){
+		if(!/\W/.test(new_name) && new_name && !vm_recipe_exists(new_name)){
 
 			// a jQuery clone() does not preserve the value of the selectpickers for some reason
 			var clone = $("#"+name+"-modal");
@@ -1185,7 +1185,7 @@ $(document).ready(function(){
 		} else {
 			// the name is invalid, so just erase it
 			$("#vm-clone-name").val("");
-			// modal is hidden on button click, so just show the error message
+			// modal gets dismissed on button click, so just show the error message
 			jsFlash("The name you chose already exists or is invalid!", "danger", true);
 		}
 	});
