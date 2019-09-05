@@ -8,7 +8,7 @@ import MySQLdb as mysql
 import json
 import yaml
 
-def generate_new_yaml(proxy, oldRole, oldConfig, newRole, newConfig):
+def generate_new_yaml(id, proxy, oldRole, oldConfig, newRole, newConfig):
 	#configs should be passed in as dictionary
 	roles_info = cortex.lib.dsc.get_roles(proxy)
 
@@ -17,6 +17,8 @@ def generate_new_yaml(proxy, oldRole, oldConfig, newRole, newConfig):
 
 	# modified_config = json.loads(generate_reset_yaml(proxy, json.dumps(newRole)))
 
+	
+	system = cortex.lib.systems.get_system_by_id(id)
 
 	old_keys = list(oldRole.keys())
 	new_keys = list(newRole.keys())
@@ -32,6 +34,12 @@ def generate_new_yaml(proxy, oldRole, oldConfig, newRole, newConfig):
 
 	# we have to keep allnodes the same because its being shared to all nodes 
 	modified_config['AllNodes'] = newConfig['AllNodes']
+	# modified_config['AllNodes']['']
+
+	for x, l in enumerate(modified_config['AllNodes']):
+		if 'NodeName' in l:
+			modified_config['AllNodes'][x]['NodeName'] = system['name']
+			modified_config['AllNodes'][x]['Role'] = list(newRole.keys())
 
 	#now check the roles
 	for role in roles_to_check:
@@ -89,14 +97,20 @@ def generate_new_yaml(proxy, oldRole, oldConfig, newRole, newConfig):
 
 ###########################################################################
 
-def generate_reset_yaml(proxy, roles):
+def generate_reset_yaml(id, proxy, roles):
 	# read the roles in
 	roles = json.loads(roles)
 	roles_info = cortex.lib.dsc.get_roles(proxy)
 	#create the new config
 	config = {}
+	
+	system = cortex.lib.systems.get_system_by_id(id)
+	
 	#the only part that can be kept is the allNodes section
+	
+
 	config['AllNodes'] = roles_info['AllNodes']
+	
 	for role in roles:
 		# can move on if nothing is inside the role
 		if roles[role]['length'] == 0:
@@ -225,13 +239,13 @@ def dsc_classify_machine(id):
 				if data != None:
 					roles = json.dumps((data))
 					if roles != exist_role:
-						new_yaml = generate_new_yaml(dsc_proxy, exist_role, yaml.safe_load(exist_config), json.loads(role), yaml.safe_load(configuration))
+						new_yaml = generate_new_yaml(id, dsc_proxy, exist_role, yaml.safe_load(exist_config), json.loads(role), yaml.safe_load(configuration))
 					curd.execute('REPLACE INTO dsc_config (system_id, roles, config) VALUES (%s, %s, %s)', (id, role, new_yaml))
 					g.db.commit()
 
 			elif request.form['button'] == 'reset':
 				role = json.dumps(checked_boxes)
-				new_config = generate_reset_yaml(dsc_proxy, role)
+				new_config = generate_reset_yaml(id, dsc_proxy, role)
 				curd.execute('REPLACE INTO dsc_config (system_id, roles, config) VALUES (%s, %s, %s)', (id, role, new_config))
 				g.db.commit()
 
