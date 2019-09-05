@@ -34,12 +34,12 @@ def generate_new_yaml(id, proxy, oldRole, oldConfig, newRole, newConfig):
 
 	# we have to keep allnodes the same because its being shared to all nodes 
 	modified_config['AllNodes'] = newConfig['AllNodes']
-	# modified_config['AllNodes']['']
 
 	for x, l in enumerate(modified_config['AllNodes']):
-		if 'NodeName' in l:
-			modified_config['AllNodes'][x]['NodeName'] = system['name']
+		if 'Role' in l.keys():
 			modified_config['AllNodes'][x]['Role'] = list(newRole.keys())
+		if 'NodeName' in l.keys():
+			modified_config['AllNodes'][x]['NodeName'] = system['name']
 
 	#now check the roles
 	for role in roles_to_check:
@@ -110,6 +110,15 @@ def generate_reset_yaml(id, proxy, roles):
 	
 
 	config['AllNodes'] = roles_info['AllNodes']
+
+	for x, l in enumerate(config['AllNodes']):
+		print(x, type(l))
+		print(l)
+		print('\n')
+		if 'Role' in l.keys():
+			config['AllNodes'][x]['Role'] = list(roles.keys())
+		if 'NodeName' in l.keys():
+			config['AllNodes'][x]['NodeName'] = system['name']
 	
 	for role in roles:
 		# can move on if nothing is inside the role
