@@ -57,7 +57,7 @@ def createservice():
 
 		vms_list = ""
 		# Check if the request form contains only one vm recipe
-		if (not isinstance(form['vm_recipe_name[]'], basestring)) and len(form['vm_recipe_name[]']) > 1:
+		if (not isinstance(form['vm_recipe_name[]'], str)) and len(form['vm_recipe_name[]']) > 1:
 			for vm in form['vm_recipe_name[]']:
 				vms_list += vm + ", "
 			vms_list = vms_list[:-2] # remove the last comma and space from the list
@@ -213,7 +213,6 @@ def createservice():
 ################################################################################
 
 @workflow.route("get_service_recipe",title='Get a recipe', methods=['POST'], menu=False)
-@app.disable_csrf_check
 def get_service_recipe():
 
 	# Get the db cursor
@@ -279,7 +278,6 @@ def get_service_recipe():
 ################################################################################
 
 @workflow.route("update_questions",title='Update the additional questions for a service recipe', methods=['POST'], menu=False)
-@app.disable_csrf_check
 def update_questions():
 	
 	form = parse_request_form(request.form)
@@ -294,7 +292,6 @@ def update_questions():
 ################################################################################
 
 @workflow.route("update_vm_recipe",title='Update a VM recipe', methods=['POST'], menu=False)
-@app.disable_csrf_check
 def update_vm_recipe():
 
 	# Get the db cursor
@@ -353,7 +350,6 @@ def update_vm_recipe():
 ################################################################################
 
 @workflow.route("get_vm_recipe",title='Get a VM recipe', methods=['POST'], menu=False)
-@app.disable_csrf_check
 def get_vm_recipe():
 
 	# Get the db cursor
@@ -377,7 +373,6 @@ def get_vm_recipe():
 ################################################################################
 
 @workflow.route("delete_vm_recipe",title='Delete a VM recipe', methods=['POST'], menu=False)
-@app.disable_csrf_check
 def delete_vm_recipe():
 
 	# Get the db cursor
@@ -400,7 +395,6 @@ def delete_vm_recipe():
 ################################################################################
 
 @workflow.route("delete_service_recipe",title='Delete a service recipe', methods=['POST'], menu=False)
-@app.disable_csrf_check
 def delete_service_recipe():
 
 	# Get the db cursor
@@ -429,7 +423,6 @@ def delete_service_recipe():
 
 # Helper which adds a VM recipe to the database
 @workflow.route("add_vm_recipe",title='Add a VM recipe', methods=['POST'], menu=False)
-@app.disable_csrf_check
 def add_vm_recipe():
 	
 	form = parse_request_form(request.form)

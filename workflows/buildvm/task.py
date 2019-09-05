@@ -112,10 +112,10 @@ def run(helper, options):
 		raise Exception('Invalid buildvm workflow encountered')
 	
 	# Store some of the values that are part of the task output
-        task_output = {}
-        if('service_recipe_name' in options and 'vm_recipe_name' in options):
-                task_output['service_recipe_name'] = options['service_recipe_name']
-                task_output['vm_recipe_name'] = options['vm_recipe_name']
+	task_output = {}
+	if('service_recipe_name' in options and 'vm_recipe_name' in options):
+		task_output['service_recipe_name'] = options['service_recipe_name']
+		task_output['vm_recipe_name'] = options['vm_recipe_name']
 
 	## Allocate a hostname #################################################
 

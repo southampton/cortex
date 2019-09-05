@@ -1431,7 +1431,6 @@ $(document).ready(function(){
 					var card = $("#vm-card").clone();
 					card.toggleClass('d-none');
 					card.attr('id', vm_recipe_name);
-					card.attr('data-exists', recipe_name ? 'true' : 'false'); // since a VM recipe cannot be used twice, you need to know if it should be added back to the list once the card gets deleted
 					card.attr('data-target', '#'+vm_recipe_name+'-modal');
 					card.find(".card-header h4").eq(0).html(vm_recipe_name);
 					card.find(".card-header input").eq(0).attr('value', vm_recipe_name);
@@ -1504,34 +1503,34 @@ $(document).ready(function(){
 						
 						// Add event listeners for the existing recipes to update them
 						// when the 'Save Changes' button is clicked
-						if(card.attr('data-exists') == 'true'){
-							modal.find(".save-vm-recipe-changes").eq(0).click(function(){
-								if($("#action").val() == "use_recipe"){
-									// get all the input fields values
-									var form_data = $("#"+vm_recipe_name+"-modal [name]");
-									var service_name = $('#service_name')[0];
-									
-									form_data.push(service_name);
-									form_data.push($('#csrf_token')[0]);
-									
-									form_fata = form_data.serialize();
-									
-									$.ajax({
-										type: "POST",
-										async: true,
-										global: false,
-										url: '{{url_for("update_vm_recipe")}}',
-										data: form_data,
-										dataType: "json",
-										success: function(data){
-											jsFlash("Successfully updated "+vm_recipe_name+".", "success", true);
-										},
-									});
-								} else {
-									jsFlash("Your updates will be saved when you upload the recipe.", "info", true);
-								}
-							});
-						}
+						
+						modal.find(".save-vm-recipe-changes").eq(0).click(function(){
+							console.log("You clicked this");
+							if($("#action").val() == "use_recipe"){
+								// get all the input fields values
+								var form_data = $("#"+vm_recipe_name+"-modal [name]");
+								var service_name = $('#service_name')[0];
+								
+								form_data.push(service_name);
+								form_data.push($('#csrf_token')[0]);
+								
+								form_fata = form_data.serialize();
+								
+								$.ajax({
+									type: "POST",
+									async: true,
+									global: false,
+									url: '{{url_for("update_vm_recipe")}}',
+									data: form_data,
+									dataType: "json",
+									success: function(data){
+										jsFlash("Successfully updated "+vm_recipe_name+".", "success", true);
+									},
+								});
+							} else {
+								jsFlash("Your updates will be saved when you upload the recipe.", "info", true);
+							}
+						});
 						
 						// Set the input name attribute to contain the vm_recipe_name
 						modal.find("input, textarea, .selectpicker").each(function(){
