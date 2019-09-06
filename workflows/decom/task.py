@@ -701,10 +701,10 @@ def action_update_decom_date(action, helper):
 
 def action_disenroll_from_dsc(action, helper):
 	curd = helper.db.cursor(mysql.cursors.DictCursor)
- 	try:
+	try:
 		curd.execute("DELETE FROM `dsc_config` WHERE `system_id` = %s", (action['data']['system_id'], ))
 		helper.db.commit()
- 		return True
- 	except Exception as e:
- 		helper.end_event(success=False, description="Failed to remove the VM from DSC: " + str(e))
+		return True
+	except Exception as e:
+		helper.end_event(success=False, description="Failed to remove the VM from DSC: " + str(e))
 		return False

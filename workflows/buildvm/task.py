@@ -1,5 +1,6 @@
 #### Combined standard/sandbox VM Workflow Task
 import time
+import MySQLdb as mysql
 
 import requests
 import requests.exceptions
@@ -383,8 +384,42 @@ def run(helper, options):
 		helper.end_event(success=False, description="VM not powered on after 30 seconds. Check vCenter for more information")
 
 	# End the event
-	helper.end_event(description="VM powered up")
+	helper.end_event(description="VM powered up")	
 
+
+
+	## Register Linux VMs with the built in Puppet ENC #####################
+
+	# Only for Linux VMs...
+	if workflow != 'student' and os_type == helper.lib.OS_TYPE_BY_NAME['Linux'] and options['template'] != 'rhel6c':
+		# Start the event
+		helper.event("puppet_enc_register", "Registering with Puppet ENC")
+
+		# Register with the Puppet ENC
+		helper.lib.puppet_enc_register(system_dbid, system_name + "." + puppet_cert_domain, options['env'])
+
+		# End the event
+		helper.end_event("Registered with Puppet ENC")
+
+	## Register Windows VMs with DSC
+	# Only for Windows VMs
+	try:
+		if workflow != 'student' and os_type == helper.lib.OS_TYPE_BY_NAME['Windows']:
+			# start the event
+			helper.event("dsc_register", "Registering with DSC")
+			curd = helper.db.cursor(mysql.cursors.DictCursor)
+
+
+			# curd.execute("SELECT `id` FROM `systems` WHERE `name` = %s;", (options['machine'], ))
+			# system_id = curd.fetchone()['id']
+
+			# helper.event("updating db", "Adding machine " + options['machine'] + " to dsc")
+			# helper.event('fsd',description='INSERT INTO `dsc_config` (system_id, config, roles) VALUES ( ' + system_dbid + ', "", "");' )
+
+			curd.execute('INSERT INTO `dsc_config` (system_id, config, roles) VALUES (%s, "", "");', (system_dbid, ))
+			helper.db.commit()
+	except Exception as e:
+		helper.flash(str(e))
 
 	## Create the ServiceNow CMDB CI #######################################
 
