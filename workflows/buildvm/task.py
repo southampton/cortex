@@ -1,5 +1,6 @@
 #### Combined standard/sandbox VM Workflow Task
 import time
+import MySQLdb as mysql
 
 def run(helper, options):
 	if not helper.lib.checkWorkflowLock:
@@ -330,6 +331,25 @@ def run(helper, options):
 		# End the event
 		helper.end_event("Registered with Puppet ENC")
 
+	## Register Windows VMs with DSC
+	# Only for Windows VMs
+	try:
+		if workflow != 'student' and os_type == helper.lib.OS_TYPE_BY_NAME['Windows']:
+			# start the event
+			helper.event("dsc_register", "Registering with DSC")
+			curd = helper.db.cursor(mysql.cursors.DictCursor)
+
+
+			# curd.execute("SELECT `id` FROM `systems` WHERE `name` = %s;", (options['machine'], ))
+			# system_id = curd.fetchone()['id']
+
+			# helper.event("updating db", "Adding machine " + options['machine'] + " to dsc")
+			# helper.event('fsd',description='INSERT INTO `dsc_config` (system_id, config, roles) VALUES ( ' + system_dbid + ', "", "");' )
+
+			curd.execute('INSERT INTO `dsc_config` (system_id, config, roles) VALUES (%s, "", "");', (system_dbid, ))
+			helper.db.commit()
+	except Exception as e:
+		helper.flash(str(e))
 
 
 	## Create the ServiceNow CMDB CI #######################################
