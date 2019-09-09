@@ -234,7 +234,7 @@ class Corpus(object):
 
 	################################################################################
 
-	def infoblox_create_host(self, name, subnet = None, aliases = None, ip = None):
+	def infoblox_create_host(self, name, subnet = None, subnet6 = None, aliases = None, ip = None, ip6 = None):
 		payload = {'name': name}
 
 		if subnet is None and ip is None:
@@ -243,8 +243,12 @@ class Corpus(object):
 		# If an IP is not given, make Infoblox allocate it
 		if ip is None:
 			payload['ipv4addrs'] = [{'ipv4addr': 'func:nextavailableip:' + subnet}]
+			if subnet6 is not None:
+				payload['ipv6addrs'] = [{'ipv6addr': 'func:nextavailableip:' + subnet6}]
 		else:
 			payload['ipv4addrs'] = [{'ipv4addr': ip}]
+			if ip6 is not None:
+				payload['ipv6addrs'] = [{'ipv6addr': ip6}]
 
 		# Add on host aliases (CNAMEs) if given
 		if aliases is not None and len(aliases) > 0:
@@ -261,7 +265,10 @@ class Corpus(object):
 				response = r.json()
 
 				try:
-					return response['ipv4addrs'][0]['ipv4addr']
+					ipaddrs = {}
+					ipaddrs["ipv4addr"] = response['ipv4addrs'][0]['ipv4addr']
+					ipaddrs["ipv6addr"] = response['ipv6addrs'][0]['ipv6addr']
+					return ipaddrs
 				except Exception as ex:
 					raise RuntimeError("Malformed JSON response from Infoblox API")
 			else:
