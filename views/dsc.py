@@ -16,7 +16,7 @@ def generate_new_yaml(id, proxy, oldRole, oldConfig, newRole, newConfig):
 		return json.dumps("")
 
 	# modified_config = json.loads(generate_reset_yaml(proxy, json.dumps(newRole)))
-
+	print('newconfig type', type(newConfig))
 	
 	system = cortex.lib.systems.get_system_by_id(id)
 
@@ -33,6 +33,7 @@ def generate_new_yaml(id, proxy, oldRole, oldConfig, newRole, newConfig):
 	modified_config = {}
 
 	# we have to keep allnodes the same because its being shared to all nodes 
+	print('newconfig type', type(newConfig))
 	modified_config['AllNodes'] = newConfig['AllNodes']
 
 	for x, l in enumerate(modified_config['AllNodes']):
@@ -174,16 +175,24 @@ def dsc_classify_machine(id):
 	exist_config = ""
 	# get existing info
 	if existing_data is not None:
-		exist_role = json.loads(existing_data['roles'])
+		# return jsonify(existing_data)
+		if existing_data['roles'] != '':
+			exist_role = json.loads(existing_data['roles'])
+		else:
+			exist_role = json.loads(json.dumps(''))
 		try:
 			exist_config = yaml.dump(json.loads(existing_data['config']))
 		except json.decoder.JSONDecodeError as e:
 			exist_config = yaml.dump("")
 	
-	for generic in role_selections['Generic']:
-		if generic not in exist_role.keys():
+	if type(exist_role) == 'dict':
+		for generic in role_selections['Generic']:
+			if generic not in exist_role.keys():
+				exist_role[generic] = {'length':0}
+	else:
+		exist_role = {}
+		for generic in role_selections['Generic']:
 			exist_role[generic] = {'length':0}
-
 
 	values_to_tick = { ((l.replace("UOS","")).split("_"))[0] for l in exist_role }
 	
@@ -233,10 +242,10 @@ def dsc_classify_machine(id):
 			if request.form['button'] == 'save_changes':
 				#check for permissions
 				if not does_user_have_permission('dsc.edit'):
-					abort(403)
-									
+					abort(403)		
 				# get the new role and configuration entered
 				configuration = request.form['configurations']
+					# return jsonify('we caught it')
 				role = json.dumps(checked_boxes)
 				try:
 					data = yaml.safe_load(configuration)
@@ -248,6 +257,7 @@ def dsc_classify_machine(id):
 				if data != None:
 					roles = json.dumps((data))
 					if roles != exist_role:
+						print('value passed to newconfig', type(yaml.safe_load(configuration)))
 						new_yaml = generate_new_yaml(id, dsc_proxy, exist_role, yaml.safe_load(exist_config), json.loads(role), yaml.safe_load(configuration))
 					curd.execute('REPLACE INTO dsc_config (system_id, roles, config) VALUES (%s, %s, %s)', (id, role, new_yaml))
 					g.db.commit()

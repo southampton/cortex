@@ -291,7 +291,7 @@ def action_check_system(action, helper, wfconfig):
 	dsc_enrolled = [m['system_id'] for m in dsc_enrolled]
 
 	if system['id'] in dsc_enrolled:
-		system_actions.append({'id': 'dsc.disenroll', 'desc': 'Disenroll the VM from DSC', 'detail':'Remove the record of the VM from Cortex.', 'data': {'system_id': system['id']}})
+		system_actions.append({'id': 'dsc.disenroll', 'desc': 'Disenroll the virtual machine from DSC', 'detail':'Remove the record of the virtual machine from Cortex.', 'data': {'system_id': system['id']}})
 	
 
 	# A success message
@@ -569,5 +569,5 @@ def action_disenroll_from_dsc(action, helper):
 		helper.db.commit()
 		return True
 	except Exception as e:
-		helper.end_event(success=False, description="Failed to remove the VM from DSC: " + str(e))
+		helper.end_event(success=False, description="Failed to remove the virtual machine from DSC: " + str(e))
 		return False
