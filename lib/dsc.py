@@ -1,5 +1,5 @@
 #!/bin/env python
-
+from cortex import app
 import Pyro4
 import Pyro4.errors
 import os
@@ -9,11 +9,11 @@ import yaml
 import json
 
 
-config = { 'WINRPC': { 'devdomain': { 'host': 'srv02391.devdomain.soton.ac.uk', 'port': 1888, 'key': 'chang3me' } } }
+# config = { 'WINRPC': { 'devdomain': { 'host': 'srv02391.devdomain.soton.ac.uk', 'port': 1888, 'key': 'chang3me' } } }
 env = 'devdomain'
 
 def dsc_test_connect():
-	with Pyro4.Proxy('PYRO:CortexWindowsRPC@' + str(config['WINRPC'][env]['host']) + ':' + str(config['WINRPC'][env]['port'])) as proxy:
+	with Pyro4.Proxy('PYRO:CortexWindowsRPC@' + str(app.config['WINRPC'][env]['host']) + ':' + str(app.config['WINRPC'][env]['port'])) as proxy:
 		try:
 			proxy._pyroBind()
 			print("YES IS ON")
@@ -24,8 +24,8 @@ def dsc_test_connect():
 #######################################################
 
 def dsc_connect():
-	proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + str(config['WINRPC'][env]['host']) + ':' + str(config['WINRPC'][env]['port']))
-	proxy._pyroHmacKey = str(config['WINRPC'][env]['key'])
+	proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + str(app.config['WINRPC'][env]['host']) + ':' + str(app.config['WINRPC'][env]['port']))
+	proxy._pyroHmacKey = str(app.config['WINRPC'][env]['key'])
 	try:
 		proxy.ping()
 	except Pyro4.errors.PyroError as e:
