@@ -15,14 +15,14 @@
 <style type="text/css">
 
 .bootstrap-select .bs-ok-default::after {
-    width: 10em;
-    height: 10em;
-    border-width: 0 0.1em 0.1em 0;
-    transform: rotate(45deg) translateY(0.5rem);
+	width: 10em;
+	height: 10em;
+	border-width: 0 0.1em 0.1em 0;
+	transform: rotate(45deg) translateY(0.5rem);
 }
 
 .btn.dropdown-toggle:focus {
-    outline: none !important;
+	outline: none !important;
 }
 
 
@@ -59,10 +59,8 @@ $(document).ready(function()
 	<div class="panel panel-default">
 		<div class="panel-heading">DSC Roles
 			<div class="pull-right">
-				<a href="#" class="btn btn-info btn-xs" data-toggle="modal" data-target="#modalyaml">View raw YAML</a>		
+				<button class="btn btn-danger btn-xs" type="submit" id="return_to_default" value="return_to_default" name="button">Reset</button>
 			</div>
-			<button class="btn btn-success btn-xs btn-default pull-right">Classify</button>
-			<button class="btn btn-xs btn-default pull-right">Reports</button>
 		</div>
 		<div class="panel-body" style="padding-bottom:0em">
 			<div class="form-group">
@@ -82,36 +80,35 @@ $(document).ready(function()
 			<input type="hidden" id="selected_values" name="selected_values">
 		</div>
 	</div>
-{% if True %}
-	<div class="panel-group" id="accordion">
-		{% for role in set_roles %}
-			{% if role != 'AllNodes'%}
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<h4 class="panel-title">
-							<a class="role-parent" data-toggle="collapse" data-parent="#accordion" data-role="{{ role }}" href="#{{ role }}"> {{ role }} </a>
-							<div class="pull-right">
-								<button class="btn btn-default btn-xs" type="button" id="select_all" value="select_all" name="button" onclick="checkAll( {{role}} )">Select All</button>
-								<button class="btn btn-default btn-xs" type="button" id="deselect_all" value="deselect_all" name="button" onclick="uncheckAll( {{role}} )">Deselect All</button>
-							</div>
-						</h4>
-					</div>
 
-					<div id="{{ role }}" class="panel-collapse collapse">
-						      <div class="panel-body">
-						      	
-						      	{% for config in role_info[role] %}
-						    		<div class="checkbox">
-										<label><input class="chkboxes" type="checkbox" value="{{ config['Name'] }}{{ config['GroupName'] }}{{ config['TaskName'] }}" {% if config['Name'] in set_roles[role].values() or config['GroupName'] in set_roles[role].values() or config['TaskName'] in set_roles[role].values() %} checked {% endif %} role="{{ role }}">{{ config['Name'] }}{{ config['GroupName'] }}{{ config['TaskName'] }}</label>
-									</div>
-						      	{% endfor %}
-						      </div>
-					</div>
+<div class="panel-group" id="accordion">
+	{% for role in set_roles %}
+		{% if role != 'AllNodes'%}
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h4 class="panel-title">
+						<a class="role-parent" data-toggle="collapse" data-parent="#accordion" data-role="{{ role }}" href="#{{ role }}"> {{ role }} </a>
+						<div class="pull-right">
+							<button class="btn btn-default btn-xs" type="button" id="select_all" value="select_all" name="button" onclick="checkAll( {{role}} )">Select All</button>
+							<button class="btn btn-default btn-xs" type="button" id="deselect_all" value="deselect_all" name="button" onclick="uncheckAll( {{role}} )">Deselect All</button>
+						</div>
+					</h4>
 				</div>
-			{% endif %}
-		{% endfor %}
-	</div> 
-{% endif %}
+
+				<div id="{{ role }}" class="panel-collapse collapse">
+					<div class="panel-body">	
+						{% for config in role_info[role] %}
+							<div class="checkbox">
+								<label><input class="chkboxes" type="checkbox" value="{{ config['Name'] }}{{ config['GroupName'] }}{{ config['TaskName'] }}" {% if config['Name'] in set_roles[role].values() or config['GroupName'] in set_roles[role].values() or config['TaskName'] in set_roles[role].values() %} checked {% endif %} role="{{ role }}">{{ config['Name'] }}{{ config['GroupName'] }}{{ config['TaskName'] }}</label>
+							</div>
+						{% endfor %}
+					  </div>
+				</div>
+			</div>
+		{% endif %}
+	{% endfor %}
+</div> 
+
 <div class="row" id="element">
 	<div class="panel panel-default">
 		<div class="panel-heading" >DSC Configurations 
@@ -150,6 +147,7 @@ function uncheckAll(r){
 	$("input[role=\""+r['id']+"\"]").prop('checked', false);
 }
 
+
 $("#save_changes").click(function(e){
 	$("#selected_values").val($('.selectpicker').selectpicker('val'));
 	var json = {}
@@ -185,12 +183,12 @@ $("#reset").click(function(){
 $(document).ready(function() {
 	$("#yaml_display").hide();
 	
-    $("#hide_yaml").click(function(){
-    	$("#yaml_display").hide();
-    });
-    $("#show_yaml").click(function(){
-    	$("#yaml_display").show();
-    });
+	$("#hide_yaml").click(function(){
+		$("#yaml_display").hide();
+	});
+	$("#show_yaml").click(function(){
+		$("#yaml_display").show();
+	});
 });
 
 </script>

@@ -18,7 +18,6 @@ def run(helper, options):
 	# roles = helper.lib.dsc.get_roles(dsc_proxy)
 	dsc_config = options['dsc_config']
 	config_for_machine = {}
-	print(dsc_config)
 	dsc_proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + str(dsc_config[env]['host']) + ':' + str(dsc_config[env]['port']))
 	dsc_proxy._pyroHmacKey = str(dsc_config[env]['key'])
 
