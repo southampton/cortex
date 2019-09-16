@@ -118,13 +118,6 @@ Further Details:
 			self.logger.addHandler(mail_handler)
 			self.logger = logging.LoggerAdapter(self.logger, log_extra)
 
-		# Debug Toolbar
-		if self.config['DEBUG_TOOLBAR']:
-			self.debug = True
-			from flask_debugtoolbar import DebugToolbarExtension
-			toolbar = DebugToolbarExtension(self)
-			self.logger.info('cortex debug toolbar enabled - DO NOT USE THIS ON LIVE SYSTEMS!')
-
 		# check the database is up and is working
 		self.init_database()
 
