@@ -203,9 +203,25 @@ def dsc_classify_machine(id):
 		if request.form['button'] == 'push_to_dsc':
 			curd.execute('SELECT system_id, roles, config FROM dsc_config WHERE system_id = "%s";', (id, ))
 			box_details = curd.fetchone()
-			
 			system_name = system['name']
 			cortex.lib.dsc.send_config(dsc_proxy, system_name,json.loads(existing_data['config']))
+		elif request.form['button'] == "return_to_default":
+
+			reset_config = {}
+			reset_config['AllNodes'] = roles_info['AllNodes']
+
+			generic_roles = [role for role in roles_info if 'UOSGeneric' in role]
+
+			for x, nested_dictionary in enumerate(reset_config['AllNodes']):
+				if 'NodeName' in nested_dictionary.keys():
+					reset_config['AllNodes'][x]['NodeName'] = system['name']
+				if 'Role' in nested_dictionary.keys():
+					reset_config['AllNodes'][x]['Role'] = generic_roles
+
+			reset_roles = {a : {'length':0} for a in generic_roles}
+			curd.execute('UPDATE `dsc_config` SET config = %s, roles = %s WHERE system_id = %s;', (json.dumps(reset_config), json.dumps(reset_roles), id))
+			g.db.commit()
+
 		else:
 			checked_boxes = json.loads(request.form['checked_values'])
 			expanded_selected_values = []
