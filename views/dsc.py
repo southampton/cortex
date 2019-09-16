@@ -15,8 +15,6 @@ def generate_new_yaml(id, proxy, oldRole, oldConfig, newRole, newConfig):
 	if newRole == "":
 		return json.dumps("")
 
-	# modified_config = json.loads(generate_reset_yaml(proxy, json.dumps(newRole)))
-	print('newconfig type', type(newConfig))
 	
 	system = cortex.lib.systems.get_system_by_id(id)
 
@@ -33,7 +31,6 @@ def generate_new_yaml(id, proxy, oldRole, oldConfig, newRole, newConfig):
 	modified_config = {}
 
 	# we have to keep allnodes the same because its being shared to all nodes 
-	print('newconfig type', type(newConfig))
 	modified_config['AllNodes'] = newConfig['AllNodes']
 
 	for x, l in enumerate(modified_config['AllNodes']):
@@ -113,9 +110,6 @@ def generate_reset_yaml(id, proxy, roles):
 	config['AllNodes'] = roles_info['AllNodes']
 
 	for x, l in enumerate(config['AllNodes']):
-		print(x, type(l))
-		print(l)
-		print('\n')
 		if 'Role' in l.keys():
 			config['AllNodes'][x]['Role'] = list(roles.keys())
 		if 'NodeName' in l.keys():
@@ -130,8 +124,10 @@ def generate_reset_yaml(id, proxy, roles):
 		for x in range(roles[role]['length']):
 			name = roles[role][str(x)]
 			for settings in roles_info[role]:
+				print(settings)
 				if settings['Name'] == name:
 					config[role].append(settings)
+
 	return json.dumps(config)
 
 
@@ -257,7 +253,6 @@ def dsc_classify_machine(id):
 				if data != None:
 					roles = json.dumps((data))
 					if roles != exist_role:
-						print('value passed to newconfig', type(yaml.safe_load(configuration)))
 						new_yaml = generate_new_yaml(id, dsc_proxy, exist_role, yaml.safe_load(exist_config), json.loads(role), yaml.safe_load(configuration))
 					curd.execute('REPLACE INTO dsc_config (system_id, roles, config) VALUES (%s, %s, %s)', (id, role, new_yaml))
 					g.db.commit()

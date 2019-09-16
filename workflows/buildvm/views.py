@@ -94,6 +94,11 @@ def sandbox():
 		options['secondary_owner_who'] = secondary_owner_who
 		options['secondary_owner_role'] = secondary_owner_role
 
+		if 'WINRPC' in app.config:
+			options['dsc_config'] = app.config['WINRPC']
+		else:
+			options['dsc_config'] = app.config['WINRPC']
+
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.lib.core.neocortex_connect()
 		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and sets up a virtual machine (sandbox VMware environment)")
@@ -221,10 +226,17 @@ def standard():
 		options['dns_aliases'] = dns_aliases
 		options['vm_folder_moid'] = vm_folder_moid
 
+
 		if 'NOTIFY_EMAILS' in app.config:
 			options['notify_emails'] = app.config['NOTIFY_EMAILS']
 		else:
 			options['notify_emails'] = []
+
+		if 'WINRPC' in app.config:
+			options['dsc_config'] = app.config['WINRPC']
+		else:
+			options['dsc_config'] = app.config['WINRPC']
+
 
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.lib.core.neocortex_connect()

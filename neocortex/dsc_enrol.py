@@ -1,7 +1,12 @@
 import json
 import MySQLdb as mysql
+import Pyro4
+import Pyro4.errors
+
 
 def run(helper, options):
+
+	env = 'devdomain'
 
 	# Set up cursor to access the DB
 	curd = helper.db.cursor(mysql.cursors.DictCursor)
@@ -9,44 +14,29 @@ def run(helper, options):
 
 	curd.execute("SELECT `id` FROM `systems` WHERE `name` = %s;", (options['machine'], ))
 	system_id = curd.fetchone()['id']
-
 	# dsc_proxy = helper.lib.dsc.dsc_connect()
 	# roles = helper.lib.dsc.get_roles(dsc_proxy)
+	dsc_config = options['dsc_config']
 	config_for_machine = {}
+	print(dsc_config)
+	dsc_proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + str(dsc_config[env]['host']) + ':' + str(dsc_config[env]['port']))
+	dsc_proxy._pyroHmacKey = str(dsc_config[env]['key'])
 
-	# config_for_machine['AllNodes'] = roles['AllNodes']
-	# generic_roles = [role for role in roles if 'UOSGeneric' in role]
+	roles = dsc_proxy.get_roles()
+	
+
+	config_for_machine['AllNodes'] = roles['AllNodes']
+	generic_roles = [role for role in roles if 'UOSGeneric' in role]
+	roles_for_machine = {a : {'length':0} for a in generic_roles}
 
 	# roles_for_machine = {name : {'length':0} for role in generic_roles}
-
-
-	#Delete this once the code is working in neocortex
-	config_for_machine = {
-		"AllNodes": [
-			{
-				"CertificateFile": "F:\\Certs\\DscPublicKey.cer",
-				"NodeName": "XXXXX",
-				"PSDscAllowDomainUser": "True"
-			},
-			{
-				"NodeName": "XXXXX",
-				"Role": [
-					"UOSGeneric_LocalGroupAddRemoveMemeber",
-					"UOSGeneric_Package",
-					"UOSGeneric_ChocolateyPackage",
-					"UOSGeneric_SMBShare",
-					"UOSGeneric_SchedledTask",
-					"UOSGeneric_SXSFeature"
-				]
-			}
-		]
-	}
 	for x, nested_dictionary in enumerate(config_for_machine['AllNodes']):
 		if 'NodeName' in nested_dictionary.keys():
 			config_for_machine['AllNodes'][x]['NodeName'] = options['machine']
+		if 'Role' in nested_dictionary.keys():
+			config_for_machine['AllNodes'][x]['Role'] = list(roles_for_machine.keys())
 
 	# config_for_machine = json.loads(config_for_machine)
-	roles_for_machine = {a : {'length':0} for a in ["UOSGeneric_LocalGroupAddRemoveMemeber","UOSGeneric_Package","UOSGeneric_ChocolateyPackage","UOSGeneric_SMBShare","UOSGeneric_SchedledTask","UOSGeneric_SXSFeature"]}
 
 
 	# helper.event("updating db", "Adding machine " + options['machine'] + " to dsc")
