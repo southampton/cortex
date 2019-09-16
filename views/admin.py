@@ -642,7 +642,7 @@ def admin_maint():
 			task_id = neocortex.start_internal_task(session['username'], 'rubrik_policy_check.py', '_rubrik_policy_check', description="Checks the backup systems of policies against the ones in Rubrik")
 		elif module == 'enrol_machine_into_dsc':
 			if does_user_have_permission("dsc.enrol"):
-				task_id = neocortex.start_internal_task(session['username'], 'dsc_enrol.py', '_enrol_dsc', description="Enrols the selected machine in the dsc configurator", options={'machine' : request.form['systems']})
+				task_id = neocortex.start_internal_task(session['username'], 'dsc_enrol.py', '_enrol_dsc', description="Enrols the selected machine in the dsc configurator", options={'machine' : request.form['systems'], 'dsc_config' : app.config['WINRPC']})
 		else:
 			app.logger.warn('Unknown module name specified when starting task')
 			abort(400)

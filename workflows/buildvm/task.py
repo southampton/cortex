@@ -1,6 +1,8 @@
 #### Combined standard/sandbox VM Workflow Task
 import time
 import MySQLdb as mysql
+import Pyro4
+import json
 
 import requests
 import requests.exceptions
@@ -76,6 +78,7 @@ def run(helper, options):
 		vm_folder_moid = wfconfig("VM_FOLDER")
 		options["primary_owner_who"] = helper.username
 		options["primary_owner_role"] = "Student"
+
 
 	## Allocate a hostname #################################################
 
@@ -404,19 +407,31 @@ def run(helper, options):
 	## Register Windows VMs with DSC
 	# Only for Windows VMs
 	try:
+		dsc_config = options['dsc_config']
 		if workflow != 'student' and os_type == helper.lib.OS_TYPE_BY_NAME['Windows']:
 			# start the event
+			env = 'devdomain'
 			helper.event("dsc_register", "Registering with DSC")
 			curd = helper.db.cursor(mysql.cursors.DictCursor)
+			config_for_machine = {}
+			dsc_proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + str(dsc_config[env]['host']) + ':' + str(dsc_config[env]['port']))
+			dsc_proxy._pyroHmacKey = str(dsc_config[env]['key'])
+
+			roles = dsc_proxy.get_roles()	
+
+			config_for_machine['AllNodes'] = roles['AllNodes']
+			generic_roles = [role for role in roles if 'UOSGeneric' in role]
+			roles_for_machine = {a : {'length':0} for a in generic_roles}
+
+			# roles_for_machine = {name : {'length':0} for role in generic_roles}
+			for x, nested_dictionary in enumerate(config_for_machine['AllNodes']):
+				if 'NodeName' in nested_dictionary.keys():
+					config_for_machine['AllNodes'][x]['NodeName'] = system_name
+				if 'Role' in nested_dictionary.keys():
+					config_for_machine['AllNodes'][x]['Role'] = list(roles_for_machine.keys())
 
 
-			# curd.execute("SELECT `id` FROM `systems` WHERE `name` = %s;", (options['machine'], ))
-			# system_id = curd.fetchone()['id']
-
-			# helper.event("updating db", "Adding machine " + options['machine'] + " to dsc")
-			# helper.event('fsd',description='INSERT INTO `dsc_config` (system_id, config, roles) VALUES ( ' + system_dbid + ', "", "");' )
-
-			curd.execute('INSERT INTO `dsc_config` (system_id, config, roles) VALUES (%s, "", "");', (system_dbid, ))
+			curd.execute('INSERT INTO `dsc_config` (system_id, config, roles) VALUES (%s, %s, %s);', (system_dbid, json.dumps(config_for_machine), json.dumps(roles_for_machine)))
 			helper.db.commit()
 	except Exception as e:
 		helper.flash(str(e))

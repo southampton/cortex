@@ -91,8 +91,16 @@ def validate_data(r, templates, envs):
 		expiry = None
 
 	return (sockets, cores, ram, disk, swap, template, env, expiry)
+"""
+		if 'WINRPC' in app.config:
+			options['dsc_config'] = app.config['WINRPC']
+		else:
+			options['dsc_config'] = app.config['WINRPC']
 
-
+		# Connect to NeoCortex and start the task
+		neocortex = cortex.lib.core.neocortex_connect()
+		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and sets up a virtual machine (sandbox VMware environment)")
+"""
 def get_build_config(build_type, config_key, *args):
 	"""Helper function to return per-build_type config values"""
 	prefix = {
@@ -223,6 +231,12 @@ def build(build_type):
 			options["notify_emails"] = app.config["NOTIFY_EMAILS"]
 		else:
 			options["notify_emails"] = []
+
+		if 'WINRPC' in app.config:
+			options['dsc_config'] = app.config['WINRPC']
+		else:
+			options['dsc_config'] = app.config['WINRPC']
+
 
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.lib.core.neocortex_connect()
