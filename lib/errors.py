@@ -97,6 +97,7 @@ def logerr():
 
 	## Log the critical error (so that it goes to e-mail)
 	app.logger.error("""Request details:
+HTTP Host:            %s
 HTTP Path:            %s
 HTTP Method:          %s
 Client IP Address:    %s
@@ -110,7 +111,7 @@ Traceback:
 
 %s
 """ % (
-
+			request.host,
 			request.path,
 			request.method,
 			request.remote_addr,

@@ -18,6 +18,7 @@ import MySQLdb as mysql
 import traceback
 import re
 import markupsafe
+import socket
 
 # Regular expressions for Jinja links filter
 SYSTEM_LINK_RE = re.compile(r"""\{\{ *system_link +id *= *(?P<quote>["']?) *(?P<link_id>[0-9]+) *(?P=quote) *\}\}(?P<link_text>[^{]*)\{\{ */system_link *\}\}""", re.IGNORECASE)
@@ -80,6 +81,13 @@ class CortexFlask(Flask):
 
 		# set up e-mail alert logging
 		if self.config['EMAIL_ALERTS'] == True:
+			# Get Hostname / FQDN
+			try:
+				log_extra = {'hostname': socket.gethostname(), 'fqdn': socket.getfqdn()}
+			except Exception:
+				log_extra = {'hostname': 'unknown', 'fqdn': 'unknown'}
+
+
 			# Log to file where e-mail alerts are going to
 			self.logger.info('cortex e-mail alerts are enabled and being sent to: ' + str(self.config['ADMINS']))
 
@@ -90,6 +98,9 @@ class CortexFlask(Flask):
 			mail_handler.setLevel(logging.ERROR)
 			mail_handler.setFormatter(Formatter("""
 A fatal error occured in Cortex.
+
+Hostname:           %(hostname)s
+FQDN:               %(fqdn)s
 
 Message type:       %(levelname)s
 Location:           %(pathname)s:%(lineno)d
@@ -102,10 +113,10 @@ Process ID:         %(process)d
 Further Details:
 
 %(message)s
-
 """))
 
 			self.logger.addHandler(mail_handler)
+			self.logger = logging.LoggerAdapter(self.logger, log_extra)
 
 		# Debug Toolbar
 		if self.config['DEBUG_TOOLBAR']:
