@@ -4,9 +4,6 @@ from datetime import timedelta
 ## Debug mode. This engages the web-based debug mode
 DEBUG = False
 
-## Enable the debug toolbar. DO NOT DO THIS ON A PRODUCTION SYSTEM. EVER. It exposes SECRET_KEY.
-DEBUG_TOOLBAR = False
-
 # Key used to sign session data stored in cookies.
 SECRET_KEY = ''
 
