@@ -152,10 +152,14 @@ def api_register_system():
 		cdata['hostname']  = system['name']
 		cdata['fqdn']      = fqdn
 		netaddr = str(g.redis.get('vm/' + system['vmware_uuid'].lower() + '/ipaddress'), 'utf-8')
+		netaddrv6 = str(g.redis.get('vm/' + system['vmware_uuid'].lower() + '/ipv6address'), 'utf-8')
 		if netaddr == None:
 			cdata['ipaddress'] = 'dhcp'
 		else:
 			cdata['ipaddress'] = netaddr
+
+		if netaddrv6 is not None:
+			cdata['ipv6address'] = netaddrv6
 
 		# Mark as done
 		g.redis.setex("vm/" + system['vmware_uuid'] + "/" + "notify", 28800, "inprogress")

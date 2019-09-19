@@ -234,7 +234,7 @@ class Corpus(object):
 
 	################################################################################
 
-	def infoblox_create_host(self, name, subnet = None, aliases = None, ip = None):
+	def infoblox_create_host(self, name, subnet = None, subnet6 = None, aliases = None, ip = None, ip6 = None):
 		payload = {'name': name}
 
 		if subnet is None and ip is None:
@@ -243,8 +243,12 @@ class Corpus(object):
 		# If an IP is not given, make Infoblox allocate it
 		if ip is None:
 			payload['ipv4addrs'] = [{'ipv4addr': 'func:nextavailableip:' + subnet}]
+			if subnet6 is not None:
+				payload['ipv6addrs'] = [{'ipv6addr': 'func:nextavailableip:' + subnet6}]
 		else:
 			payload['ipv4addrs'] = [{'ipv4addr': ip}]
+			if ip6 is not None:
+				payload['ipv6addrs'] = [{'ipv6addr': ip6}]
 
 		# Add on host aliases (CNAMEs) if given
 		if aliases is not None and len(aliases) > 0:
@@ -261,7 +265,10 @@ class Corpus(object):
 				response = r.json()
 
 				try:
-					return response['ipv4addrs'][0]['ipv4addr']
+					ipaddrs = {}
+					ipaddrs["ipv4addr"] = response['ipv4addrs'][0]['ipv4addr']
+					ipaddrs["ipv6addr"] = response['ipv6addrs'][0]['ipv6addr']
+					return ipaddrs
 				except Exception as ex:
 					raise RuntimeError("Malformed JSON response from Infoblox API")
 			else:
@@ -554,7 +561,7 @@ class Corpus(object):
 
 	################################################################################
 
-	def vmware_vm_custspec(self, dhcp=True, gateway=None, netmask=None, ipaddr=None, dns_servers="8.8.8.8", dns_domain="localdomain", os_type=None, os_domain="localdomain", timezone=None, hwClockUTC=True, domain_join_user=None, domain_join_pass=None, fullname=None, orgname=None, productid=""):
+	def vmware_vm_custspec(self, dhcp=True, gateway=None, netmask=None, ipaddr=None, dns_servers="8.8.8.8", dns_domain="localdomain", os_type=None, os_domain="localdomain", timezone=None, hwClockUTC=True, domain_join_user=None, domain_join_pass=None, fullname=None, orgname=None, productid="", ipv6addr=None, gateway6=None, netmask6=None):
 		"""This function generates a vmware VM customisation spec for use in cloning a VM.
 
 		   If you choose DHCP (the default) the gateway, netmask, ipaddr, dns_servers and dns_domain parameters are ignored.
@@ -596,6 +603,13 @@ class Corpus(object):
 			ipSettings.dnsServerList = dns_servers
 			ipSettings.gateway       = [gateway]
 			ipSettings.subnetMask    = netmask
+			if ipv6addr is not None:
+				fixedIP6                    = vim.vm.customization.FixedIpV6()
+				fixedIP6.ipAddress          = ipv6addr
+				ipSettings.ipV6Spec         = vim.vm.customization.IPSettings.IpV6AddressSpec()
+				ipSettings.ipV6Spec.ip      = [fixedIP6]
+				ipSettings.ipV6Spec.gateway = [gateway6]
+				fixedIP6.subnetMask         = netmask6
 
 		## Create the 'adapter mapping'
 		adapterMapping            = vim.vm.customization.AdapterMapping()

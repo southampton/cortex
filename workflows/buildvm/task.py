@@ -18,6 +18,9 @@ def run(helper, options):
 		network = options['wfconfig']['NETWORKS'][options['network']]
 		gateway = options['wfconfig']['GATEWAYS'][options['network']]
 		netmask = options['wfconfig']['NETMASKS'][options['network']]
+		network6 = options['wfconfig']['NETWORKS6'][options['network']]
+		gateway6 = options['wfconfig']['GATEWAYS6'][options['network']]
+		netmask6 = options['wfconfig']['NETMASKS6'][options['network']]
 		dns_servers = options['wfconfig']['DNS_SERVERS']
 		dns_domain = options['wfconfig']['DNS_DOMAIN']
 		puppet_cert_domain = options['wfconfig']['PUPPET_CERT_DOMAIN']
@@ -90,6 +93,9 @@ def run(helper, options):
 		network = options['wfconfig']['STU_NETWORKS'][options['network']]
 		gateway = options['wfconfig']['STU_GATEWAYS'][options['network']]
 		netmask = options['wfconfig']['STU_NETMASKS'][options['network']]
+		network6 = options['wfconfig']['NETWORKS6'][options['network']]
+		gateway6 = options['wfconfig']['GATEWAYS6'][options['network']]
+		netmask6 = options['wfconfig']['NETMASKS6'][options['network']]
 		network_name = options['wfconfig']['STU_NETWORK_NAMES'][options['network']]
 		cluster_storage_pools = options['wfconfig']['STU_CLUSTER_STORAGE_POOLS']
 		cluster_rpool = options['wfconfig']['STU_CLUSTER_RPOOL']
@@ -135,25 +141,38 @@ def run(helper, options):
 	# End the event
 	helper.end_event(description="Allocated system name: {{system_link id='" + str(system_dbid) + "'}}" + system_name + "{{/system_link}}")
 
-	## Allocate an IPv4 Address and create a host object (standard only) ###
+	## Allocate IP Addresses and create a host object (standard or student only) ###
 
 	if workflow in ['standard', 'student']:
+		# Generate a network name string
+		if network6 is None:
+			networkdisplay = network
+		else:
+			networkdisplay = network + " and " + network6
+
 		# Start the event
-		helper.event("allocate_ipaddress", "Allocating an IP address from " + network)
+		helper.event("allocate_ipaddress", "Allocating an IP addresses from " + networkdisplay)
 
 		# Allocate an IP address
-		ipv4addr = helper.lib.infoblox_create_host(system_name + "." + domain, network, aliases=dns_aliases)
+		ipaddrs = helper.lib.infoblox_create_host(system_name + "." + domain, network, network6, aliases=dns_aliases)
 
 		# Handle errors - this will stop the task
-		if ipv4addr is None:
-			raise Exception('Failed to allocate an IP address')
+		if ipaddrs is None:
+			raise Exception('Failed to allocate any IP addresses')
+		if ipaddrs["ipv4addr"] is None:
+			raise Exception('Failed to allocate an IPv4 address')
+		ipv4addr = ipaddrs["ipv4addr"]
 
-		# End the event
-		helper.end_event(description="Allocated the IP address " + ipv4addr)
+		if ipaddrs["ipv6addr"] is None:
+			# End the event
+			helper.end_event(description="Allocated the IPv4 address " + ipaddrs["ipv4addr"])
+		else:
+			# End the event
+			helper.end_event(description="Allocated the IP addresses " + ipaddrs["ipv4addr"] + " and " + ipaddrs["ipv6addr"])
+			ipv6addr = ipaddrs["ipv6addr"]
 	else:
 		ipv4addr = None
-
-
+		ipv6addr = None
 
 	## Create the virtual machine post-clone specification #################
 
@@ -177,16 +196,16 @@ def run(helper, options):
 		# Build a customisation spec depending on the environment to use the correct domain details
 		if workflow == 'standard':
 			if options['env'] == 'dev':
-				vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='devdomain.soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
+				vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='devdomain.soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name, ipv6addr=ipv6addr, gateway6=gateway6, netmask6=int(netmask6))
 			else:
-				vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_PROD_JOIN_USER'], domain_join_pass=helper.config['AD_PROD_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
+				vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_PROD_JOIN_USER'], domain_join_pass=helper.config['AD_PROD_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name, ipv6addr=ipv6addr, gateway6=gateway6, netmask6=int(netmask6))
 		elif workflow == 'sandbox':
 			if options['env'] == 'dev':
-				vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain=win_dev_os_domain, timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
+				vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain=win_dev_os_domain, timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name, ipv6addr=ipv6addr, gateway6=gateway6, netmask6=int(netmask6))
 			else:
-				vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain=win_os_domain, timezone=85, domain_join_user=helper.config['AD_PROD_JOIN_USER'], domain_join_pass=helper.config['AD_PROD_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
+				vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain=win_os_domain, timezone=85, domain_join_user=helper.config['AD_PROD_JOIN_USER'], domain_join_pass=helper.config['AD_PROD_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name, ipv6addr=ipv6addr, gateway6=gateway6, netmask6=int(netmask6))
 		elif workflow == 'student':
-			vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, timezone=85, fullname=win_full_name, orgname=win_org_name)
+			vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, timezone=85, fullname=win_full_name, orgname=win_org_name, ipv6addr=ipv6addr, gateway6=gateway6, netmask6=int(netmask6))
 
 	# Anything else
 	else:
@@ -364,6 +383,8 @@ def run(helper, options):
 	helper.lib.redis_set_vm_data(vm, "hostname", system_name)
 	if ipv4addr is not None:
 		helper.lib.redis_set_vm_data(vm, "ipaddress", ipv4addr)
+		if ipv6addr is not None:
+			helper.lib.redis_set_vm_data(vm, "ipv6address", ipv6addr)
 	else:
 		helper.lib.redis_set_vm_data(vm, "ipaddress", 'dhcp')
 
@@ -390,7 +411,14 @@ def run(helper, options):
 	# Failure does not kill the task
 	try:
 		# Create the entry in ServiceNow
-		(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, sockets=int(options['sockets']), cores_per_socket=int(options['cores']), ram_mb=int(options['ram']) * 1024, disk_gb=int(options['disk']) + os_disk_size, environment=options['env'], short_description=options['purpose'], comments=options['comments'], location=sn_location, ipaddr=ipv4addr)
+		if ipv4addr is not None:
+			ipaddressstring = ipv4addr
+		else:
+			ipaddressstring = "dhcp"
+		if ipv6addr is not None:
+			ipaddressstring = ipaddressstring + ", " + ipv6addr
+
+		(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=os_type, os_name=os_name, sockets=int(options['sockets']), cores_per_socket=int(options['cores']), ram_mb=int(options['ram']) * 1024, disk_gb=int(options['disk']) + os_disk_size, environment=options['env'], short_description=options['purpose'], comments=options['comments'], location=sn_location, ipaddr=ipaddressstring)
 
 		# Update Cortex systems table row with the sys_id
 		helper.lib.set_link_ids(system_dbid, cmdb_id=sys_id, vmware_uuid=vm.config.uuid)
@@ -578,6 +606,8 @@ def run(helper, options):
 		message += 'Hostname: ' + str(system_name) + '.' + str(dns_domain) + '\n'
 		if ipv4addr is not None:
 			message += 'IP Address: ' + str(ipv4addr) + '\n'
+		if ipv6addr is not None:
+			message += 'IPv6 Address: ' + str(ipv6addr) + '\n'
 		message += 'VMware Cluster: ' + str(options['cluster']) + '\n'
 		message += 'Purpose: ' + str(options['purpose']) + '\n'
 		message += 'Operating System: ' + str(os_name) + '\n'
