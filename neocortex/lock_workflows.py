@@ -37,14 +37,15 @@ def run(helper, options):
 			current_status = 'Locked'
 
 	# get the new value to set the table to
-	helper.end_event(description="Status is " + current_status)
+	helper.end_event(description="Current status is " + current_status)
+	
 	key = 'workflow_lock_status'
 
 	newValue = 'Locked' if current_status == 'Unlocked' else 'Unlocked'
 	value = json.dumps({'username': helper.username, 'time': str(time), 'status': newValue})
-
+	
 	# setting new status 
-	helper.event('set_new_status', 'Setting new status')
+	helper.event('set_new_status', 'Setting new status to ' + newValue)
 	query = 'INSERT INTO `kv_settings` (`key`, `value`) VALUES (%s, %s)'
 	params = (key, value,)
 	query = query + 'ON DUPLICATE KEY UPDATE `value` = %s'
