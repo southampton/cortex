@@ -97,6 +97,7 @@ from cortex.api.endpoints.tasks import tasks_namespace
 from cortex.api.endpoints.dns import dns_namespace
 from cortex.api.endpoints.puppet import puppet_modules_info_namespace
 from cortex.api.endpoints.certificates import certificates_namespace
+from cortex.api.endpoints.system_groups import system_groups_namespace
 
 api_manager.namespaces.pop(0)
 api_manager.add_namespace(systems_info_view_namespace)
@@ -104,6 +105,7 @@ api_manager.add_namespace(tasks_namespace)
 api_manager.add_namespace(dns_namespace)
 api_manager.add_namespace(puppet_modules_info_namespace)
 api_manager.add_namespace(certificates_namespace)
+api_manager.add_namespace(system_groups_namespace)
 
 # Create an API Blueprint.
 api_blueprint = Blueprint('api', __name__, url_prefix='/api')

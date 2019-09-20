@@ -69,7 +69,7 @@ class SystemsInfoViewCollection(Resource):
 			'total': total,
 			'items': results,
 		}
-
+		
 @systems_info_view_namespace.route('/<int:system_id>')
 @api_manager.response(404, 'System not found.')
 @api_manager.doc(params={'system_id': 'System ID.'})

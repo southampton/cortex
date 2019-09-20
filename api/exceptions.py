@@ -19,3 +19,10 @@ class NoResultsFoundException(Exception):
 
 	def __str__(self):
 		return self.message
+
+class BadRequestException(Exception):
+	message = "Bad Request: The request format is not correct."
+	status_code = 400
+	
+	def __str__(self):
+		return self.message

@@ -426,3 +426,26 @@ def generate_group_contents():
 			group_contents[group['id']].append({'id': box['id'], 'name': box['name'], 'alloc_comment': box['allocation_comment'], 'r_info': box['restart_info']})
 	return group_contents
 
+################################################################################
+
+def execute_system_group_action(action, group_id):
+
+	# If values are null or invalid, raise ValueError	
+	if action not in ['power_on', 'restart', 'power_off']:
+		raise ValueError('action')
+	
+	if group_id is None:
+		raise ValueError('group_id')
+	
+	# There is no functionality for these action at the moment, so just leave this blank
+	if action == 'power_on':
+
+		print("powered on")
+
+	elif action == 'restart':
+
+		print("restart")
+
+	elif action == 'power_off':
+
+		print("power off")
