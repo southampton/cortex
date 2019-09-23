@@ -18,9 +18,18 @@ def run(helper, options):
 		network = options['wfconfig']['NETWORKS'][options['network']]
 		gateway = options['wfconfig']['GATEWAYS'][options['network']]
 		netmask = options['wfconfig']['NETMASKS'][options['network']]
-		network6 = options['wfconfig']['NETWORKS6'][options['network']]
-		gateway6 = options['wfconfig']['GATEWAYS6'][options['network']]
-		netmask6 = options['wfconfig']['NETMASKS6'][options['network']]
+		if 'NETWORKS6' in options['wfconfig'] and options['network'] in options['wfconfig']['NETWORKS6']:
+			network6 = options['wfconfig']['NETWORKS6'][options['network']]
+		else:
+			network6 = None
+		if 'GATEWAYS6' in options['wfconfig'] and options['network'] in options['wfconfig']['GATEWAYS6']:
+			gateway6 = options['wfconfig']['GATEWAYS6'][options['network']]
+		else:
+			gateway6 = None
+		if 'NETMASKS6' in options['wfconfig'] and options['network'] in options['wfconfig']['NETMASKS6']:
+			netmask6 = options['wfconfig']['NETMASKS6'][options['network']]
+		else:
+			netmask6 = None
 		dns_servers = options['wfconfig']['DNS_SERVERS']
 		dns_domain = options['wfconfig']['DNS_DOMAIN']
 		puppet_cert_domain = options['wfconfig']['PUPPET_CERT_DOMAIN']
@@ -93,9 +102,18 @@ def run(helper, options):
 		network = options['wfconfig']['STU_NETWORKS'][options['network']]
 		gateway = options['wfconfig']['STU_GATEWAYS'][options['network']]
 		netmask = options['wfconfig']['STU_NETMASKS'][options['network']]
-		network6 = options['wfconfig']['NETWORKS6'][options['network']]
-		gateway6 = options['wfconfig']['GATEWAYS6'][options['network']]
-		netmask6 = options['wfconfig']['NETMASKS6'][options['network']]
+		if 'STU_NETWORKS6' in options['wfconfig'] and options['network'] in options['wfconfig']['STU_NETWORKS6']:
+			network6 = options['wfconfig']['STU_NETWORKS6'][options['network']]
+		else:
+			network6 = None
+		if 'STU_GATEWAYS6' in options['wfconfig'] and options['network'] in options['wfconfig']['STU_GATEWAYS6']:
+			gateway6 = options['wfconfig']['STU_GATEWAYS6'][options['network']]
+		else:
+			gateway6 = None
+		if 'STU_NETMASKS6' in options['wfconfig'] and options['network'] in options['wfconfig']['STU_NETMASKS6']:
+			netmask6 = options['wfconfig']['STU_NETMASKS6'][options['network']]
+		else:
+			netmask6 = None
 		network_name = options['wfconfig']['STU_NETWORK_NAMES'][options['network']]
 		cluster_storage_pools = options['wfconfig']['STU_CLUSTER_STORAGE_POOLS']
 		cluster_rpool = options['wfconfig']['STU_CLUSTER_RPOOL']
@@ -127,7 +145,6 @@ def run(helper, options):
 	# system_info is a dictionary containg a single { 'name': name, 'id':dbid }. Extract both of these:
 	system_name = system_info['name']
 	system_dbid = system_info['id']
-
 
 	# Update the system with some options.
 	helper.lib.update_system(
@@ -591,6 +608,7 @@ def run(helper, options):
 		# Restart the guest
 		helper.lib.vmware_vm_restart_guest(vm)
 		helper.end_event(success=True, description='Initiated guest restart')
+
 
 
 	## Send success email ##################################################
