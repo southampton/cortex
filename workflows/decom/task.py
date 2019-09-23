@@ -229,7 +229,8 @@ def action_check_system(action, helper, wfconfig):
 			l = ldap3.Connection(
 				ldap3.Server(wfconfig['SUDO_LDAP_URL']),
 				wfconfig['SUDO_LDAP_USER'],
-				wfconfig['SUDO_LDAP_PASS']
+				wfconfig['SUDO_LDAP_PASS'],
+				auto_bind=False
 			)
 
 			if not l.bind():
@@ -549,7 +550,8 @@ def action_sudoldap_update(action, helper, wfconfig):
 		l = ldap3.Connection(
 			ldap3.Server(wfconfig['SUDO_LDAP_URL']),
 			wfconfig['SUDO_LDAP_USER'],
-			wfconfig['SUDO_LDAP_PASS']
+			wfconfig['SUDO_LDAP_PASS'],
+			auto_bind=False
 		)
 		if not l.bind():
 			raise helper.lib.TaskFatalError(message="Failed to bind to the sudoldap server.")
@@ -572,7 +574,8 @@ def action_sudoldap_delete(action, helper, wfconfig):
 		l = ldap3.Connection(
 			ldap3.Server(wfconfig['SUDO_LDAP_URL']),
 			wfconfig['SUDO_LDAP_USER'],
-			wfconfig['SUDO_LDAP_PASS']
+			wfconfig['SUDO_LDAP_PASS'],
+			auto_bind=False
 		)
 		if not l.bind():
 			raise helper.lib.TaskFatalError(message="Failed to bind to the sudoldap server.")
