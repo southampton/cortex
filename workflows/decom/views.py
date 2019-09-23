@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 from cortex import app
 from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
@@ -13,7 +12,6 @@ from itsdangerous import JSONWebSignatureSerializer
 import requests
 import requests.exceptions
 from urllib.parse import urljoin
-import ldap
 import json
 
 workflow = CortexWorkflow(__name__)

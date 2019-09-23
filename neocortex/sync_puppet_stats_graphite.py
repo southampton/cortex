@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 from corpus import PuppetDBConnector
 from urllib.parse import urljoin

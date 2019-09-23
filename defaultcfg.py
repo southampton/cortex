@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from datetime import timedelta
 
 ## Debug mode. This engages the web-based debug mode
@@ -58,7 +57,6 @@ LDAP_URI               = 'ldaps://localhost.localdomain'
 LDAP_GROUP_SEARCH_BASE = ''
 LDAP_USER_SEARCH_BASE  = ''
 LDAP_USER_ATTRIBUTE    = 'sAMAccountName'
-LDAP_ANON_BIND         = True
 LDAP_BIND_USER         = ''
 LDAP_BIND_PW           = ''
 

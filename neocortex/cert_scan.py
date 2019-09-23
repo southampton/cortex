@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 import MySQLdb as mysql
 import sys, copy, os, re

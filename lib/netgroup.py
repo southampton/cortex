@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 from ctypes import CDLL,c_char_p
 from ctypes import byref as _byref

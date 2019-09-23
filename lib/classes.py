@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 from flask import g
 import MySQLdb as mysql
