@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from cortex import app
 from cortex.lib.user import does_user_have_permission
 import cortex.lib.vmware

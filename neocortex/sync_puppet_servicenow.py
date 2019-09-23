@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 import MySQLdb as mysql
 from corpus import SNPuppetConnector, PuppetDBConnector

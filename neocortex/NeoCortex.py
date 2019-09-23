@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 import Pyro4
 import logging, logging.handlers

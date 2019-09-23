@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import cortex.lib.core
 from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
 from cortex.lib.systems import get_systems

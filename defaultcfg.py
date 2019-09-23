@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from datetime import timedelta
 
 ## Debug mode. This engages the web-based debug mode

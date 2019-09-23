@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 from flask import Flask, request, session, abort, g, render_template, url_for
 import jinja2

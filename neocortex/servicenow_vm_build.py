@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 import MySQLdb as mysql
 import sys, requests, json, datetime, re, imp, os, Pyro4

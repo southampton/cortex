@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from cortex import app
 import MySQLdb as mysql
 from flask import Flask, request, redirect, session, url_for, abort, render_template, flash, g
