@@ -24,7 +24,7 @@ def connect():
 
 ################################################################################
 
-def ldap_search(ldap_connection, username):
+def ldap_search(ldap_connection, username, attributes=[]):
 	return ldap_connection.search(
 		search_base=app.config['LDAP_USER_SEARCH_BASE'],
 		search_scope=ldap3.SUBTREE,
@@ -32,9 +32,8 @@ def ldap_search(ldap_connection, username):
 			user_attr=app.config['LDAP_USER_ATTRIBUTE'],
 			username=ldap3.utils.conv.escape_filter_chars(username)
 		),
-		attributes=ldap3.ALL_ATTRIBUTES,
+		attributes=attributes,
 	)
-
 
 ################################################################################
 
@@ -55,10 +54,8 @@ def auth(username,password):
 
 	# Handle the search results
 	for result in l.response:
-		dn    = result['dn']
-		attrs = result['attributes']
-
-		if dn == None:
+		dn = result.get('dn')
+		if not dn:
 			# No dn returned. Return false.
 			return False
 		else:
@@ -87,7 +84,7 @@ def get_users_groups_from_ldap(username):
 
 	# Now search for the user object
 	try:
-		search = ldap_search(l, username)
+		search = ldap_search(l, username, attributes=['memberOf'])
 	except ldap3.core.exceptions.LDAPException:
 		return None
 
@@ -97,10 +94,10 @@ def get_users_groups_from_ldap(username):
 
 	# Handle the search results
 	for result in l.response:
-		dn    = result['dn']
+		dn    = result.get('dn')
 		attrs = result['attributes']
 
-		if dn == None:
+		if not dn:
 			return None
 		else:
 			# Found the DN. Yay! Now bind with that DN and the password the user supplied
@@ -158,7 +155,7 @@ def get_user_realname_from_ldap(username):
 	
 	# Now search for the user object
 	try:
-		search = ldap_search(l, username)
+		search = ldap_search(l, username, attributes=['givenName', 'sn'])
 	except ldap3.core.exceptions.LDAPException as ex:
 		app.logger.warning('Failed to execute real name LDAP search: ' + str(ex))
 		return username
@@ -226,7 +223,7 @@ def does_group_exist(groupname):
 			search_filter="(&(objectClass=group)(cn={groupname}))".format(
 				groupname=ldap3.utils.conv.escape_filter_chars(groupname)
 			),
-			attributes=ldap3.ALL_ATTRIBUTES,
+			attributes=['member'],
 		)
 	except ldap3.core.exceptions.LDAPException as e:
 		return False
