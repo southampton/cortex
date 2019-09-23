@@ -2,25 +2,39 @@
 from cortex import app
 from flask import g, abort
 import MySQLdb as mysql
-import ldap, ldap.filter
+import ldap3
 import re
 
 ################################################################################
 
 def connect():
 	# Connect to LDAP and turn off referrals
-	conn = ldap.initialize(app.config['LDAP_URI'])
-	conn.set_option(ldap.OPT_REFERRALS, 0)
+	server =  ldap3.Server(app.config['LDAP_URI'])
+	conn = ldap3.Connection(server, app.config['LDAP_BIND_USER'], app.config['LDAP_BIND_PW'], auto_bind=False, auto_referrals=False)
 
-	 # Bind to the server either with anon or with a defined user/pass in the config
+	# Bind to the server either with a defined user/pass in the config
 	try:
-		conn.simple_bind_s( (app.config['LDAP_BIND_USER']), (app.config['LDAP_BIND_PW']) )
-	except ldap.LDAPError as e:
-		flash('Internal Error - Could not connect to LDAP directory: ' + str(e), 'alert-danger')
-		app.logger.error("Could not bind to LDAP: " + str(e))
+		assert conn.bind() # Ensure the bind is successful
+	except (AssertionError, ldap3.core.exceptions.LDAPException) as ex:
+		flash('Internal Error - Could not connect to LDAP directory: ' + str(ex), 'alert-danger')
+		app.logger.error("Could not bind to LDAP: " + str(ex))
 		abort(500)
 
 	return conn
+
+################################################################################
+
+def ldap_search(ldap_connection, username):
+	return ldap_connection.search(
+		search_base=app.config['LDAP_USER_SEARCH_BASE'],
+		search_scope=ldap3.SUBTREE,
+		search_filter="(&(objectClass=user)({user_attr}={username}))".format(
+			user_attr=app.config['LDAP_USER_ATTRIBUTE'],
+			username=ldap3.utils.conv.escape_filter_chars(username)
+		),
+		attributes=ldap3.ALL_ATTRIBUTES,
+	)
+
 
 ################################################################################
 
@@ -31,14 +45,18 @@ def auth(username,password):
 
 	# Now search for the user object to bind as
 	try:
-		results = l.search_s(app.config['LDAP_USER_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + ldap.filter.escape_filter_chars(username))
-	except ldap.LDAPError as e:
+		search = ldap_search(l, username)
+	except ldap3.core.exceptions.LDAPException:
+		return False
+
+	# Ensure we got a result
+	if not search or not l.response:
 		return False
 
 	# Handle the search results
-	for result in results:
-		dn    = result[0]
-		attrs = result[1]
+	for result in l.response:
+		dn    = result['dn']
+		attrs = result['attributes']
 
 		if dn == None:
 			# No dn returned. Return false.
@@ -46,15 +64,13 @@ def auth(username,password):
 		else:
 			# Found the DN. Yay! Now bind with that DN and the password the user supplied
 			try:
-				lauth = ldap.initialize(app.config['LDAP_URI'])
-				lauth.set_option(ldap.OPT_REFERRALS, 0)
-				lauth.simple_bind_s((dn), (password))
-			except ldap.LDAPError as e:
+				assert l.rebind(user=dn, password=password)
+			except (AssertionError, ldap3.core.exceptions.LDAPException):
 				# Password was wrong
 				return False
-
-			# Return that LDAP auth succeeded
-			return True
+			else:
+				# Return that LDAP auth succeeded
+				return True
 
 	return False
 
@@ -71,14 +87,18 @@ def get_users_groups_from_ldap(username):
 
 	# Now search for the user object
 	try:
-		results = l.search_s(app.config['LDAP_USER_SEARCH_BASE'], ldap.SCOPE_SUBTREE, (app.config['LDAP_USER_ATTRIBUTE']) + "=" + username)
-	except ldap.LDAPError as e:
+		search = ldap_search(l, username)
+	except ldap3.core.exceptions.LDAPException:
 		return None
 
+	# Ensure we got a result
+	if not search or not l.response:
+		return False
+
 	# Handle the search results
-	for result in results:
-		dn    = result[0]
-		attrs = result[1]
+	for result in l.response:
+		dn    = result['dn']
+		attrs = result['attributes']
 
 		if dn == None:
 			return None
@@ -100,7 +120,6 @@ def get_users_groups_from_ldap(username):
 						cn_regex = re.compile("^(cn|CN)=([^,;]+),")
 						
 						## Preprocssing into string
-						group = group.decode('utf-8')
 						matched = cn_regex.match(group)
 						if matched:
 							group_cn = matched.group(2)
@@ -134,24 +153,27 @@ def get_user_realname_from_ldap(username):
 	if username is None or username == "":
 		return ""
 
-	# The name we've picked
 	# Connect to LDAP
 	l = connect()
 	
 	# Now search for the user object
 	try:
-		results = l.search_s(app.config['LDAP_USER_SEARCH_BASE'], ldap.SCOPE_SUBTREE, app.config['LDAP_USER_ATTRIBUTE'] + "=" + username)
-	except ldap.LDAPError as e:
-		app.logger.warning('Failed to execute real name LDAP search: ' + str(e))
+		search = ldap_search(l, username)
+	except ldap3.core.exceptions.LDAPException as ex:
+		app.logger.warning('Failed to execute real name LDAP search: ' + str(ex))
 		return username
+
+	# Ensure we got a result
+	if not search or not l.response:
+		return False
 
 	firstname = None
 	lastname = None
 
 	# Handle the search results
-	for result in results:
-		dn    = result[0]
-		attrs = result[1]
+	for result in l.response:
+		dn    = result['dn']
+		attrs = result['attributes']
 
 		if dn == None:
 			return None
@@ -164,6 +186,7 @@ def get_user_realname_from_ldap(username):
 					lastname = attrs['sn'][0]
 
 	# In Python 3, the ldap client returns bytes, so decode UTF-8
+	# ldap3 now handles this - but left here to be safe...
 	if type(firstname) is bytes:
 		firstname = firstname.decode('utf-8')
 	if type(lastname) is bytes:
@@ -197,20 +220,27 @@ def does_group_exist(groupname):
 
 	# Now search for the user object to bind as
 	try:
-		results = l.search_s(app.config['LDAP_GROUP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, "cn" + "=" + ldap.filter.escape_filter_chars(groupname))
-	except ldap.LDAPError as e:
+		search = l.search(
+			search_base=app.config['LDAP_GROUP_SEARCH_BASE'],
+			search_scope=ldap3.SUBTREE,
+			search_filter="(&(objectClass=group)(cn={groupname}))".format(
+				groupname=ldap3.utils.conv.escape_filter_chars(groupname)
+			),
+			attributes=ldap3.ALL_ATTRIBUTES,
+		)
+	except ldap3.core.exceptions.LDAPException as e:
+		return False
+
+	# Ensure we got a result
+	if not search or not l.response:
 		return False
 
 	# Handle the search results
-	for result in results:
-		dn    = result[0]
-		attrs = result[1]
-
-		if dn == None:
-			# No dn returned. Return false.
+	for result in l.response:
+		if not all(k in result for k in ['dn', 'attributes']):
 			return False
-		else:
-			if "member" in attrs:
-				return True
 
+		if result.get('dn') and result.get('attributes'):
+			if result['attributes'].get('member'):
+				return True
 	return False
