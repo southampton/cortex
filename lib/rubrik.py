@@ -6,3 +6,6 @@ import cortex.corpus.rubrik
 class Rubrik(cortex.corpus.rubrik.Rubrik):
 	def __init__(self, helper=None):
 		super().__init__(app)
+
+RubrikVMNotFound = cortex.corpus.rubrik.RubrikVMNotFound
+RubrikVCenterNotFound = cortex.corpus.rubrik.RubrikVCenterNotFound

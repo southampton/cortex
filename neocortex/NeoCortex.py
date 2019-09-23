@@ -1,6 +1,6 @@
 
 import Pyro4
-import syslog
+import logging, logging.handlers
 import signal
 import os
 import imp
@@ -22,16 +22,22 @@ Pyro4.config.SOCK_REUSE = True
 
 class NeoCortex(object):
 
-	debug = False
-	db    = None
-	pyro  = None
+	debug  = False
+	db     = None
+	pyro   = None
+	logger = None
 
 	## PRIVATE METHODS #########################################################
 
 	def __init__(self, pyro):
-		syslog.openlog("neocortex", syslog.LOG_PID)
+		## Set up logging
+		self.logger = logging.getLogger('neocortex')
+		self.logger.setLevel(logging.INFO)
+		syslog_handler = logging.handlers.SysLogHandler(address='/dev/log')
+		syslog_handler.setFormatter(logging.Formatter("neocortex: %(message)s"))
+		self.logger.addHandler(syslog_handler)
 
-		## rename the process title
+		## Rename the process title
 		setproctitle("neocortex")
 
 		## Load the config and drop privs
@@ -55,7 +61,7 @@ class NeoCortex(object):
 		self._signal_handler('SIGINT')
 	
 	def _signal_handler(self, signal):
-		syslog.syslog('caught signal ' + str(signal) + "; exiting")
+		self.logger.info('caught signal ' + str(signal) + "; exiting")
 		Pyro4.core.Daemon.shutdown(self.pyro)
 		sys.exit(0)
 
@@ -75,17 +81,17 @@ class NeoCortex(object):
 						return self.db
 
 				except (AttributeError, mysql.OperationalError):
-					syslog.syslog("MySQL connection is closed, will attempt reconnect")
+					self.logger.warning("MySQL connection is closed, will attempt reconnect")
 
 		## If we didn't return up above then we need to connect first
 		return self._db_connect()
 		
 	def _db_connect(self):
-		syslog.syslog("Attempting connection to MySQL")
+		self.logger.info("Attempting connection to MySQL")
 		self.db = mysql.connect(self.config['MYSQL_HOST'], self.config['MYSQL_USER'], self.config['MYSQL_PASS'], self.config['MYSQL_NAME'], charset='utf8')
 		curd = self.db.cursor(mysql.cursors.DictCursor)
 		curd.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED")
-		syslog.syslog("Connection to MySQL established")
+		self.logger.info("Connection to MySQL established")
 		return self.db
 
 	def _load_config(self, filename): 
@@ -95,7 +101,7 @@ class NeoCortex(object):
 			with open(filename) as config_file:
 				exec(compile(config_file.read(), filename, 'exec'), d.__dict__)
 		except IOError as e:
-			syslog.syslog('Unable to load configuration file (%s)' % e.strerror)
+			self.logger.critical('Unable to load configuration file (%s)' % e.strerror)
 			sys.exit(1)
 		self.config = {}
 		for key in dir(d):
@@ -105,7 +111,7 @@ class NeoCortex(object):
 		## ensure we have required config options
 		for wkey in ['NEOCORTEX_SET_GID', 'NEOCORTEX_SET_UID', 'NEOCORTEX_KEY', 'WORKFLOWS_DIR', 'NEOCORTEX_TASKS_DIR']:
 			if not wkey in list(self.config.keys()):
-				print(("Missing configuation option: " + wkey))
+				self.logger.critical("Missing configuation option: " + wkey)
 				sys.exit(1)
 
 		if 'DEBUG' in list(self.config.keys()):
@@ -176,7 +182,7 @@ class NeoCortex(object):
 		task         = Process(target=task_helper.run, args=(task_module, options), name=json.dumps({'id': task_id, 'name': workflow_name, 'type': 'workflow'}))
 		task.start()
 
-		syslog.syslog('started task workflow/' + workflow_name + ' with task id ' + str(task_id) + ' and worker pid ' + str(task.pid))
+		self.logger.info('started task workflow/' + workflow_name + ' with task id ' + str(task_id) + ' and worker pid ' + str(task.pid))
 
 		return task_id
 
@@ -189,6 +195,7 @@ class NeoCortex(object):
 		for proc in active_processes:
 			proc_data = json.loads(proc.name)
 			if proc_data['name'] == task_name:
+				self.logger.error('Refusing to start a second instance of task: ' + str(task_name))
 				raise Exception("That task is already running, refusing to start another instance")
 
 		if not os.path.isdir(self.config['NEOCORTEX_TASKS_DIR']):
@@ -197,11 +204,13 @@ class NeoCortex(object):
 		task_file = os.path.join(self.config['NEOCORTEX_TASKS_DIR'], task_file)
 
 		if not os.path.exists(task_file):
+			self.logger.error('File not found: ' + str(task_file))
 			raise IOError("The neocortex task file specified was not found")
 
 		try:
 			task_module = imp.load_source(task_name, task_file)
 		except Exception as ex:
+			self.logger.error('Failed to load task: ' + str(task_file) + ': ' + str(ex))
 			raise ImportError("Could not load internal task from file " + task_file + ": " + str(ex))
 
 		task_id      = self._record_task(task_name, username, description)
@@ -209,7 +218,7 @@ class NeoCortex(object):
 		task         = Process(target=task_helper.run, args=(task_module, options), name=json.dumps({'id': task_id, 'name': task_name, 'type': 'internal'}))
 		task.start()
 
-		syslog.syslog('started task internal/' + task_name + ' with task id ' + str(task_id) + ' and worker pid ' + str(task.pid))
+		self.logger.info('started task internal/' + task_name + ' with task id ' + str(task_id) + ' and worker pid ' + str(task.pid))
 
 		return task_id
 

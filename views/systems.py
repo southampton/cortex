@@ -410,7 +410,9 @@ def system_backup(id):
 
 	try:
 		vm = rubrik.get_vm(system)
-	except:
+	except cortex.lib.rubrik.RubrikVMNotFound as e1:
+		vm = None
+	except Exception as e2:
 		abort(500)
 
 	# If the VM was not found, return early
