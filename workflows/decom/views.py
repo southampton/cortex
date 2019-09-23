@@ -12,7 +12,6 @@ from itsdangerous import JSONWebSignatureSerializer
 import requests
 import requests.exceptions
 from urllib.parse import urljoin
-import ldap
 import json
 
 workflow = CortexWorkflow(__name__)

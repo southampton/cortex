@@ -2,7 +2,7 @@ from pyVmomi import vim
 import requests
 import requests.exceptions
 from urllib.parse import urljoin
-import ldap
+import ldap3
 
 def run(helper, options):
 	# check if workflows are locked
@@ -226,8 +226,14 @@ def action_check_system(action, helper, wfconfig):
 	if 'SUDO_LDAP_ENABLE' in wfconfig and wfconfig['SUDO_LDAP_ENABLE']:
 		try:
 			# Connect to LDAP
-			l = ldap.initialize(wfconfig['SUDO_LDAP_URL'])
-			l.bind_s(wfconfig['SUDO_LDAP_USER'], wfconfig['SUDO_LDAP_PASS'])
+			l = ldap3.Connection(
+				ldap3.Server(wfconfig['SUDO_LDAP_URL']),
+				wfconfig['SUDO_LDAP_USER'],
+				wfconfig['SUDO_LDAP_PASS']
+			)
+
+			if not l.bind():
+				raise helper.lib.TaskFatalError(message="Failed to bind to the sudoldap server.")
 
 			# This contains our list of changes and keeps track of sudoHost entries
 			ldap_dn_data = {}
@@ -242,23 +248,29 @@ def action_check_system(action, helper, wfconfig):
 				host = system['name'] + domain_suffix
 
 				formatted_filter = wfconfig['SUDO_LDAP_FILTER'].format(host)
-				results = l.search_s(wfconfig['SUDO_LDAP_SEARCH_BASE'], ldap.SCOPE_SUBTREE, formatted_filter)
+				search = l.search(
+					search_base=wfconfig['SUDO_LDAP_SEARCH_BASE'],
+					search_filter=formatted_filter,
+					search_scope=ldap3.SUBTREE,
+					attributes=ldap3.ALL_ATTRIBUTES,
+				)
 
-				for result in results:
-					dn = result[0]
+				if search and l.response:
+					for result in l.response:
+						dn = result['dn']
 
-					# Store the sudoHosts for each DN we find
-					if dn not in ldap_dn_data:
-						ldap_dn_data[dn] = {'cn': result[1]['cn'][0], 'sudoHost': result[1]['sudoHost'], 'action': 'none', 'count': 0, 'remove': []}
+						# Store the sudoHosts for each DN we find
+						if dn not in ldap_dn_data:
+							ldap_dn_data[dn] = {'cn': result['attributes']['cn'][0], 'sudoHost': result['attributes']['sudoHost'], 'action': 'none', 'count': 0, 'remove': []}
 
-					# Keep track of what things will look like after a deletion (so
-					# we can track when a sudoHosts entry becomes empty and as such
-					# the entry should be deleted)
-					for idx, entry in enumerate(ldap_dn_data[dn]['sudoHost']):
-						if entry.lower() == host.lower():
-							ldap_dn_data[dn]['sudoHost'].pop(idx)
-							ldap_dn_data[dn]['action'] = 'modify'
-							ldap_dn_data[dn]['remove'].append(entry)
+						# Keep track of what things will look like after a deletion (so
+						# we can track when a sudoHosts entry becomes empty and as such
+						# the entry should be deleted)
+						for idx, entry in enumerate(ldap_dn_data[dn]['sudoHost']):
+							if entry.lower() == host.lower():
+								ldap_dn_data[dn]['sudoHost'].pop(idx)
+								ldap_dn_data[dn]['action'] = 'modify'
+								ldap_dn_data[dn]['remove'].append(entry)
 
 			# Determine if any of the DNs are now empty
 			for dn in ldap_dn_data:
@@ -274,6 +286,7 @@ def action_check_system(action, helper, wfconfig):
 					system_actions.append({'id': 'sudoldap.delete', 'desc': 'Delete ' + ldap_dn_data[dn]['cn'] + ' because we\'ve removed its last sudoHost attribute', 'detail': 'Delete ' + dn + ' on ' + wfconfig['SUDO_LDAP_URL'], 'data': {'dn': dn, 'value': ldap_dn_data[dn]['sudoHost']}})
 				
 		except Exception as ex:
+			raise ex
 			helper.flash('Warning - An error occurred when communicating with ' + str(wfconfig['SUDO_LDAP_URL']) + ': ' + str(ex), 'warning')
 
 	## Check graphite for monitoring entries
@@ -533,11 +546,18 @@ def action_satellite6_delete(action, helper):
 def action_sudoldap_update(action, helper, wfconfig):
 	try:
 		# Connect to LDAP
-		l = ldap.initialize(wfconfig['SUDO_LDAP_URL'])
-		l.bind_s(wfconfig['SUDO_LDAP_USER'], wfconfig['SUDO_LDAP_PASS'])
+		l = ldap3.Connection(
+			ldap3.Server(wfconfig['SUDO_LDAP_URL']),
+			wfconfig['SUDO_LDAP_USER'],
+			wfconfig['SUDO_LDAP_PASS']
+		)
+		if not l.bind():
+			raise helper.lib.TaskFatalError(message="Failed to bind to the sudoldap server.")
 
 		# Replace the value of sudoHost with the calculated list
-		l.modify_s(action['data']['dn'], [(ldap.MOD_DELETE, 'sudoHost', str(action['data']['value']))])
+		l.modify(action['data']['dn'], {
+			'sudoHost': [(ldap3.MODIFY_DELETE, action['data']['value'])]
+		})
 		
 		return True
 	except Exception as e:
@@ -549,11 +569,17 @@ def action_sudoldap_update(action, helper, wfconfig):
 def action_sudoldap_delete(action, helper, wfconfig):
 	try:
 		# Connect to LDAP
-		l = ldap.initialize(wfconfig['SUDO_LDAP_URL'])
-		l.bind_s(wfconfig['SUDO_LDAP_USER'], wfconfig['SUDO_LDAP_PASS'])
-		
+		l = ldap3.Connection(
+			ldap3.Server(wfconfig['SUDO_LDAP_URL']),
+			wfconfig['SUDO_LDAP_USER'],
+			wfconfig['SUDO_LDAP_PASS']
+		)
+		if not l.bind():
+			raise helper.lib.TaskFatalError(message="Failed to bind to the sudoldap server.")
+
 		# Delete the entry
-		l.delete_s(action['data']['dn'])
+		l.delete(action['data']['dn'])
+
 		return True
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to delete the object in sudoldap")
