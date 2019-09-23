@@ -39,10 +39,13 @@ def run(helper, options):
 		vm_link = '{{system_link id="' + str(cortex_vm_data['id']) + '"}}' + cortex_vm_data['name'] + '{{/system_link}}'
 
 		# retrieving the info that Rubrik has on the device
-		rubrik_vm_data = rubrik_connection.get_vm(cortex_vm_data)
+		try:
+			rubrik_vm_data = rubrik_connection.get_vm(cortex_vm_data)
+		except Exception as e:
+			rubrik_vm_data = None
 		
 		# If Rubrik doesn't have any data on it, there's nothing we can do. This should NOT happen though - it's possibly pointing to user error
-		if rubrik_vm_data == None:
+		if rubrik_vm_data is None:
 			helper.event("_rubrik_unknown", vm_link + ' does not exist in Rubrik', oneshot=True, success=False, warning=True)
 
 		# If Cortex is set to backup but Rubrik isn't, update the Rubrik to the default for the box's environment
