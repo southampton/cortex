@@ -122,7 +122,7 @@ def puppet_enc_edit(node):
 			system['puppet_classes'] = classes
 			system['puppet_variables'] = variables
 			system['puppet_include_default'] = include_default
-			return render_template('puppet/enc.html', system=system, active='puppet', environments=environments, title=system['name'])
+			return render_template('puppet/enc.html', variable_names=modules ,system=system, active='puppet', environments=environments, title=system['name'])
 
 		# Get a cursor to the database
 		curd = g.db.cursor(mysql.cursors.DictCursor)
