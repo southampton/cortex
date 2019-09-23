@@ -1,4 +1,3 @@
-#!/usr/bin/python
 from pyparsing import Word, Literal, Suppress, CharsNotIn, nums, alphas, alphanums, ZeroOrMore, Forward, QuotedString, removeQuotes, CaselessKeyword, Optional
 
 ## Helper classes for parsed tokens ############################################

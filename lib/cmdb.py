@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 from cortex import app
 from flask import Flask, request, g
