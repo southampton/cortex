@@ -1044,7 +1044,7 @@ class Corpus(object):
 		if thin:
 			newdev.device.backing.thinProvisioned = True
 
-
+		newdev.device.capacityInKB = int(size_in_bytes / 1024)  # This is deprecated, is ignored, but apparently still required, despite what the docs say
 		newdev.device.capacityInBytes = size_in_bytes
 		newdev.device.controllerKey = controller.key
 		newdev.device.unitNumber = unit_number
