@@ -1046,7 +1046,6 @@ class Corpus(object):
 
 
 		newdev.device.capacityInBytes = size_in_bytes
-		newdev.device.capacityInKB = size_in_bytes * 1024
 		newdev.device.controllerKey = controller.key
 		newdev.device.unitNumber = unit_number
 
