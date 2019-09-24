@@ -29,12 +29,12 @@ def get_system_actions_from_redis(task):
 	prefix = 'decom/' +  str(task['id']) + '/'
 
 	if g.redis.exists(prefix + 'actions') and g.redis.exists(prefix + 'system'):
-		signed_actions = str(g.redis.get(prefix + 'actions'),'utf-8')
-		system_id = str(g.redis.get(prefix + 'system'), 'utf-8')
+		signed_actions = g.redis.get(prefix + 'actions')
+		system_id = g.redis.get(prefix + 'system')
 	else:
 		raise RuntimeError("Required keys don't exist in Redis. You must complete a decommission within an hour of starting it.")
 
-	if signed_actions is not None:
+	if signed_actions:
 		# Decode the Signed Actions / System Data. 
 		signer = JSONWebSignatureSerializer(app.config['SECRET_KEY'])
 		try:

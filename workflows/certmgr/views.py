@@ -50,10 +50,10 @@ def get_certificate_from_redis(task):
 	prefix = 'certmgr/' + str(task['id']) + '/'
 
 	if g.redis.exists(prefix + 'certificate') and g.redis.exists(prefix + 'private'):
-		pem_cert = g.redis.get(prefix + 'certificate').decode('utf-8')
-		pem_key = g.redis.get(prefix + 'private').decode('utf-8')
+		pem_cert = g.redis.get(prefix + 'certificate')
+		pem_key = g.redis.get(prefix + 'private')
 		if g.redis.exists(prefix + 'chain'):
-			pem_chain = g.redis.get(prefix + 'chain').decode('utf-8')
+			pem_chain = g.redis.get(prefix + 'chain')
 
 	return (pem_cert, pem_key, pem_chain)
 

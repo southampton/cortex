@@ -22,7 +22,7 @@ def before_request():
 
 	# Connect to redis
 	try:
-		g.redis = redis.StrictRedis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'], db=0)
+		g.redis = redis.StrictRedis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'], db=0, decode_responses=True)
 		g.redis.get('foo') # it doesnt matter that this key doesnt exist, its just to force a test call to redis.
 	except Exception as ex:
 		logerr()
@@ -149,21 +149,21 @@ def context_processor():
 
 		# Determine the layout mode for the user
 		try:
-			if str(g.redis.get('user:' + session['username'] + ":preferences:interface:layout"), 'utf-8') == "classic":
+			if g.redis.get('user:' + session['username'] + ":preferences:interface:layout") == "classic":
 				injectdata['classic_layout'] = True
 		except Exception as ex:
 			pass
 
 		# Determine theme for the user
 		try:
-			if str(g.redis.get('user:' + session['username'] + ":preferences:interface:theme"), 'utf-8') == "dark":
+			if g.redis.get('user:' + session['username'] + ":preferences:interface:theme") == "dark":
 				injectdata['theme'] = "dark"
 		except Exception as ex:
 			pass
 
 		# Determine whether to expand sidebar.
 		try:
-			if str(g.redis.get('user:' + session['username'] + ':preferences:interface:sidebar'), 'utf-8') == 'expand':
+			if g.redis.get('user:' + session['username'] + ':preferences:interface:sidebar')== 'expand':
 				injectdata['sidebar_expand'] = True
 		except Exception as ex:
 			pass
