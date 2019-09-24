@@ -1546,7 +1546,7 @@ class Corpus(object):
 		"""Connects to the Redis instance specified in the configuration and 
 		returns a StrictRedis object"""
 
-		return redis.StrictRedis(host=self.config['REDIS_HOST'], port=self.config['REDIS_PORT'], db=0)
+		return redis.StrictRedis(host=self.config['REDIS_HOST'], port=self.config['REDIS_PORT'], db=0, decode_responses=True)
 
 	################################################################################
 
