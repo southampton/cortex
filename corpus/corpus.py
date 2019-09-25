@@ -234,28 +234,39 @@ class Corpus(object):
 
 	################################################################################
 
-	def infoblox_create_host(self, name, subnet = None, subnet6 = None, aliases = None, ip = None, ip6 = None):
+	def infoblox_create_host(self, name, ipv4 = True, ipv4_addr = None, ipv4_subnet = None, ipv6 = False, ipv6_addr = None, ipv6_subnet = None, aliases = None):
+		"""Create an Infoblox host object"""
+
 		payload = {'name': name}
 
-		if subnet is None and ip is None:
-			raise ValueError('The subnet and ip parameters cannot both be None')
+		if not ipv4 and not ipv6:
+			raise ValueError('At least one of ipv4 and ipv6 must be True.')
 
-		# If an IP is not given, make Infoblox allocate it
-		if ip is None:
-			payload['ipv4addrs'] = [{'ipv4addr': 'func:nextavailableip:' + subnet}]
-			if subnet6 is not None:
-				payload['ipv6addrs'] = [{'ipv6addr': 'func:nextavailableip:' + subnet6}]
-		else:
-			payload['ipv4addrs'] = [{'ipv4addr': ip}]
-			if ip6 is not None:
-				payload['ipv6addrs'] = [{'ipv6addr': ip6}]
+		if ipv4:
+			if not ipv4_addr and not ipv4_subnet:
+				raise ValueError('IPv4: At least one of ipv4_addr and ipv4_subnet must be provided.')
+
+			if ipv4_addr:
+				payload['ipv4addrs'] = [{'ipv4addr': ip}]
+			else:
+				payload['ipv4addrs'] = [{'ipv4addr': 'func:nextavailableip:' + ipv4_subnet}]
+				
+		if ipv6:
+			if not ipv6_addr and not ipv6_subnet:
+				raise ValueError('IPv6: At least one of ipv6_addr and ipv6_subnet must be provided.')
+
+			if ipv6_addr:
+				payload['ipv6addrs'] = [{'ipv6addr': ip}]
+			else:
+				payload['ipv6addrs'] = [{'ipv6addr': 'func:nextavailableip:' + ipv6_subnet}]
+				
 
 		# Add on host aliases (CNAMEs) if given
-		if aliases is not None and len(aliases) > 0:
+		if aliases:
 			payload['aliases'] = aliases
 
 		# Make the request to create the object
-		r = requests.post("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/record:host", data=json.dumps(payload), auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
+		r = requests.post("https://" + self.config['INFOBLOX_HOST'] + "/wapi/v2.0/record:host", json=payload, auth=(self.config['INFOBLOX_USER'], self.config['INFOBLOX_PASS']))
 
 		if r.status_code == 201:
 			objectid = str(r.json())
@@ -263,14 +274,16 @@ class Corpus(object):
 
 			if r.status_code == 200:
 				response = r.json()
-
+				ipaddrs = {}
 				try:
-					ipaddrs = {}
-					ipaddrs["ipv4addr"] = response['ipv4addrs'][0]['ipv4addr']
-					ipaddrs["ipv6addr"] = response['ipv6addrs'][0]['ipv6addr']
-					return ipaddrs
+					if ipv4:
+						ipaddrs["ipv4addr"] = response['ipv4addrs'][0]['ipv4addr']
+					if ipv6:
+						ipaddrs["ipv6addr"] = response['ipv6addrs'][0]['ipv6addr']
 				except Exception as ex:
 					raise RuntimeError("Malformed JSON response from Infoblox API")
+				else:
+					return ipaddrs
 			else:
 				raise RuntimeError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
 		else:

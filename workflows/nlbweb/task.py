@@ -129,7 +129,7 @@ def action_retrieve_letsencrypt(action, helper, config, task_globals):
 
 def action_allocate_ip(action, helper, config, task_globals):
 	# Allocate an IP address
-	ipv4addr = helper.lib.infoblox_create_host(action['fqdn'], action['network'], action['aliases'])
+	ipv4addr = helper.lib.infoblox_create_host(action['fqdn'], ipv4 = True, ipv4_subnet = action['network'], aliases = action['aliases'])
 
 	# End the event, logging what we allocated
 	helper.end_event(description="Allocated the IP address " + ipv4addr)
@@ -143,7 +143,7 @@ def action_allocate_ip(action, helper, config, task_globals):
 
 def action_create_host(action, helper, config, task_globals):
 	# Allocate an IP address
-	ipv4addr = helper.lib.infoblox_create_host(action['fqdn'], None, action['aliases'], action['ip'])
+	ipv4addr = helper.lib.infoblox_create_host(action['fqdn'], ipv4 = True, ipv4_addr = action['ip'], aliases = action['aliases'])
 
 	return True, task_globals
 

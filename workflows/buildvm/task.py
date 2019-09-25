@@ -171,7 +171,7 @@ def run(helper, options):
 		helper.event("allocate_ipaddress", "Allocating an IP addresses from " + networkdisplay)
 
 		# Allocate an IP address
-		ipaddrs = helper.lib.infoblox_create_host(system_name + "." + domain, network, network6, aliases=dns_aliases)
+		ipaddrs = helper.lib.infoblox_create_host(system_name + "." + domain, ipv4 = True, ipv4_subnet = network, ipv6 = bool(network6), ipv6_subnet = network6, aliases = dns_aliases)
 
 		# Handle errors - this will stop the task
 		if ipaddrs is None:
