@@ -160,6 +160,8 @@ def run(helper, options):
 
 	## Allocate IP Addresses and create a host object (standard or student only) ###
 
+	ipv4addr = None
+	ipv6addr = None
 	if workflow in ['standard', 'student']:
 		# Generate a network name string
 		if network6 is None:
@@ -179,18 +181,17 @@ def run(helper, options):
 
 		if not ipaddrs.get("ipv4addr"):
 			raise Exception('Failed to allocate an IPv4 address')
-		ipv4addr = ipaddrs["ipv4addr"]
+		
+		ipv4addr = ipaddrs["ipv4addr"] # ipv4addr should always be present (as we currently don't allow IPv6 only boxes)
 
 		if not ipaddrs.get("ipv6addr"):
 			# End the event
-			helper.end_event(description="Allocated the IPv4 address " + ipaddrs["ipv4addr"])
+
+			helper.end_event(description="Allocated the IPv4 address " + ipv4addr)
 		else:
 			# End the event
-			helper.end_event(description="Allocated the IP addresses " + ipaddrs["ipv4addr"] + " and " + ipaddrs["ipv6addr"])
 			ipv6addr = ipaddrs["ipv6addr"]
-	else:
-		ipv4addr = None
-		ipv6addr = None
+			helper.end_event(description="Allocated the IP addresses " + ipv4addr + " and " + ipv6addr)
 
 	## Create the virtual machine post-clone specification #################
 
@@ -399,12 +400,14 @@ def run(helper, options):
 
 	# Set up the necessary values in redis
 	helper.lib.redis_set_vm_data(vm, "hostname", system_name)
+	
 	if ipv4addr is not None:
 		helper.lib.redis_set_vm_data(vm, "ipaddress", ipv4addr)
-		if ipv6addr is not None:
-			helper.lib.redis_set_vm_data(vm, "ipv6address", ipv6addr)
 	else:
 		helper.lib.redis_set_vm_data(vm, "ipaddress", 'dhcp')
+
+	if ipv6addr is not None:
+		helper.lib.redis_set_vm_data(vm, "ipv6address", ipv6addr)
 
 	# Power on the VM
 	task = helper.lib.vmware_vm_poweron(vm)
