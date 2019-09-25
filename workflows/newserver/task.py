@@ -36,7 +36,7 @@ def run(helper, options):
 			raise Exception('Failed to allocate an IP address')
 
 		# End the event
-		helper.end_event(description="Allocated the IP address " + ipv4addr)
+		helper.end_event(description="Allocated the IP address {}".format(ipv4addr.get("ipv4addr", "?")))
 	else:
 		ipv4addr = ''
 
