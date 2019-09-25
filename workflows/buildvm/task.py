@@ -176,11 +176,12 @@ def run(helper, options):
 		# Handle errors - this will stop the task
 		if ipaddrs is None:
 			raise Exception('Failed to allocate any IP addresses')
-		if ipaddrs["ipv4addr"] is None:
+
+		if not ipaddrs.get("ipv4addr"):
 			raise Exception('Failed to allocate an IPv4 address')
 		ipv4addr = ipaddrs["ipv4addr"]
 
-		if ipaddrs["ipv6addr"] is None:
+		if not ipaddrs.get("ipv6addr"):
 			# End the event
 			helper.end_event(description="Allocated the IPv4 address " + ipaddrs["ipv4addr"])
 		else:
