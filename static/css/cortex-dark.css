@@ -59,3 +59,5 @@ div.advanced-search
 	padding-bottom: .5em;
 	padding-top: .15em;
 }
+
+table.dataTable.fixedHeader-floating, table.dataTable.fixedHeader-locked { background: #222 }
