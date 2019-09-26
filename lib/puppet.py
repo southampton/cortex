@@ -311,6 +311,7 @@ def puppetdb_get_node_stats(db = None):
 
 	# Initialise stats
 	count = 0
+	unknown = 0
 	stats = {
 		'count': {},
 		'changed': {},
@@ -321,33 +322,33 @@ def puppetdb_get_node_stats(db = None):
 		'unknown':{}
 	}
 
-	unknown = 0
-	
-	environs = ['count', 'preproduction', 'production', 'development', 'moduledev']
+	environments = ['count',] + [d['name'] for d in db.environments()]
 
-	for k in list(stats.keys()):
-		for e in environs:
+	for k in stats.keys():
+		for e in environments:
 			stats[k][e] = 0
 
 	# Iterate over nodes, counting statii
 	for node in nodes:		
-		#noop stats	
-		if node.noop:
-			# count all the values for noop
-			stats['noop'][node.report_environment] += 1
-			stats['noop']['count'] += 1
-			stats['count'][node.report_environment] += 1
-		else:
-			# if we know the reported status, count the values
-			if node.status in stats:
-				stats[node.status][node.report_environment] += 1
-				stats[node.status]['count'] += 1
+		try:
+			if node.noop:
+				# count all the values for noop
+				stats['noop'][node.report_environment] += 1
+				stats['noop']['count'] += 1
 				stats['count'][node.report_environment] += 1
-			# otherwise mark it as unknown but still count the values
 			else:
-				stats['unknown'][node.report_environment] += 1
-				stats['unknown']['count'] += 1
-				stats['count'][node.report_environment] += 1
+				# if we know the reported status, count the values
+				if node.status in stats:
+					stats[node.status][node.report_environment] += 1
+					stats[node.status]['count'] += 1
+					stats['count'][node.report_environment] += 1
+				# otherwise mark it as unknown but still count the values
+				else:
+					stats['unknown'][node.report_environment] += 1
+					stats['unknown']['count'] += 1
+					stats['count'][node.report_environment] += 1
+		except (AttributeError, KeyError) as ex:
+			app.logger.warning('Failed to generate Puppet node stat: %s' %(ex))
 	
 	# get the total count number here
 	stats['count']['count'] = sum(stats['count'].values())
