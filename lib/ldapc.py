@@ -162,51 +162,51 @@ def get_user_realname_from_ldap(username):
 
 	# Ensure we got a result
 	if not search or not l.response:
-		return False
-
-	firstname = None
-	lastname = None
-
-	# Handle the search results
-	for result in l.response:
-		dn    = result['dn']
-		attrs = result['attributes']
-
-		if dn == None:
-			return None
-		else:
-			if 'givenName' in attrs:
-				if len(attrs['givenName']) > 0:
-					firstname = attrs['givenName'][0]
-			if 'sn' in attrs:
-				if len(attrs['sn']) > 0:
-					lastname = attrs['sn'][0]
-
-	# In Python 3, the ldap client returns bytes, so decode UTF-8
-	# ldap3 now handles this - but left here to be safe...
-	if type(firstname) is bytes:
-		firstname = firstname.decode('utf-8')
-	if type(lastname) is bytes:
-		lastname = lastname.decode('utf-8')
-
-	try:
-		if len(firstname) > 0 and len(lastname) > 0:
-			name = firstname + ' ' + lastname
-		elif len(firstname) > 0:
-			name = firstname
-		elif len(lastname) > 0:
-			name = lastname
-		else:
-			name = username
-	except Exception as ex:
-		app.logger.warning('Failed to generate real name: ' + str(ex))
 		name = username
+	else:
+		firstname = ""
+		lastname = ""
+
+		# Handle the search results
+		for result in l.response:
+			dn    = result.get('dn')
+			attrs = result.get('attributes')
+
+			if dn is None or attrs is None:
+				return None
+
+			if 'givenName' in attrs:
+				if type(attrs['givenName']) is list and len(attrs['givenName']) > 0:
+					firstname = attrs['givenName'][0]
+				else:
+					firstname = attrs['givenName']
+			if 'sn' in attrs:
+				if type(attrs['sn']) is list and len(attrs['sn']) > 0:
+					lastname = attrs['sn'][0]
+				else:
+					lastname = attrs['sn']
+
+		try:
+			if len(firstname) > 0 and len(lastname) > 0:
+				name = firstname + ' ' + lastname
+			elif len(firstname) > 0:
+				name = firstname
+			elif len(lastname) > 0:
+				name = lastname
+			else:
+				name = username
+		except Exception as ex:
+			app.logger.warning('Failed to generate real name: ' + str(ex))
+			name = username
+
+	# Log the value to the database
 	try:
 		curd = g.db.cursor(mysql.cursors.DictCursor)
-		curd.execute('REPLACE INTO `realname_cache` (`username`, `realname`) VALUES (%s,%s)', (username, name))
+		curd.execute('REPLACE INTO `realname_cache` (`username`, `realname`) VALUES (%s, %s)', (username, name))
 		g.db.commit()
 	except Exception as ex:
 		app.logger.warning('Failed to cache user name: ' + str(ex))
+
 	return name
 
 ################################################################################
