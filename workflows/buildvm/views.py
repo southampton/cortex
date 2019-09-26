@@ -27,7 +27,7 @@ def sandbox():
 	# Get the list of clusters
 	all_clusters = cortex.lib.core.vmware_list_clusters(workflow.config['SB_VCENTER_TAG'])
 
-	# Exclude any clusters that the config asks to:
+	# Limit to the configured clusters
 	clusters = []
 	for cluster in all_clusters:
 		if cluster['name'] in workflow.config['SB_CLUSTERS']:
@@ -113,10 +113,10 @@ def standard():
 	# Get the list of clusters
 	all_clusters = cortex.lib.core.vmware_list_clusters(workflow.config['VCENTER_TAG'])
 
-	# Exclude any clusters that the config asks to:
+	# Limit to the configured clusters
 	clusters = []
 	for cluster in all_clusters:
-		if cluster['name'] not in workflow.config['HIDE_CLUSTERS']:
+		if cluster['name'] in workflow.config['CLUSTERS']:
 			clusters.append(cluster)
 
 	folders = []
