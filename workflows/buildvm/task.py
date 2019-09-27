@@ -27,7 +27,7 @@ def run(helper, options):
 		else:
 			gateway6 = None
 		if 'NETMASKS6' in options['wfconfig'] and options['network'] in options['wfconfig']['NETMASKS6']:
-			netmask6 = options['wfconfig']['NETMASKS6'][options['network']]
+			netmask6 = int(options['wfconfig']['NETMASKS6'][options['network']])
 		else:
 			netmask6 = None
 		dns_servers = options['wfconfig']['DNS_SERVERS']
@@ -111,7 +111,7 @@ def run(helper, options):
 		else:
 			gateway6 = None
 		if 'STU_NETMASKS6' in options['wfconfig'] and options['network'] in options['wfconfig']['STU_NETMASKS6']:
-			netmask6 = options['wfconfig']['STU_NETMASKS6'][options['network']]
+			netmask6 = int(options['wfconfig']['STU_NETMASKS6'][options['network']])
 		else:
 			netmask6 = None
 		network_name = options['wfconfig']['STU_NETWORK_NAMES'][options['network']]
@@ -215,16 +215,16 @@ def run(helper, options):
 		# Build a customisation spec depending on the environment to use the correct domain details
 		if workflow == 'standard':
 			if options['env'] == 'dev':
-				vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='devdomain.soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name, ipv6addr=ipv6addr, gateway6=gateway6, netmask6=int(netmask6))
+				vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='devdomain.soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name, ipv6addr=ipv6addr, gateway6=gateway6, netmask6=netmask6)
 			else:
-				vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_PROD_JOIN_USER'], domain_join_pass=helper.config['AD_PROD_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name, ipv6addr=ipv6addr, gateway6=gateway6, netmask6=int(netmask6))
+				vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, os_domain='soton.ac.uk', timezone=85, domain_join_user=helper.config['AD_PROD_JOIN_USER'], domain_join_pass=helper.config['AD_PROD_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name, ipv6addr=ipv6addr, gateway6=gateway6, netmask6=netmask6)
 		elif workflow == 'sandbox':
 			if options['env'] == 'dev':
-				vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain=win_dev_os_domain, timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name, ipv6addr=ipv6addr, gateway6=gateway6, netmask6=int(netmask6))
+				vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain=win_dev_os_domain, timezone=85, domain_join_user=helper.config['AD_DEV_JOIN_USER'], domain_join_pass=helper.config['AD_DEV_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
 			else:
-				vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain=win_os_domain, timezone=85, domain_join_user=helper.config['AD_PROD_JOIN_USER'], domain_join_pass=helper.config['AD_PROD_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name, ipv6addr=ipv6addr, gateway6=gateway6, netmask6=int(netmask6))
+				vm_spec = helper.lib.vmware_vm_custspec(dhcp=True, os_type=os_type, os_domain=win_os_domain, timezone=85, domain_join_user=helper.config['AD_PROD_JOIN_USER'], domain_join_pass=helper.config['AD_PROD_JOIN_PASS'], fullname=win_full_name, orgname=win_org_name)
 		elif workflow == 'student':
-			vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, timezone=85, fullname=win_full_name, orgname=win_org_name, ipv6addr=ipv6addr, gateway6=gateway6, netmask6=int(netmask6))
+			vm_spec = helper.lib.vmware_vm_custspec(dhcp=False, gateway=gateway, netmask=netmask, ipaddr=ipv4addr, dns_servers=dns_servers, dns_domain=dns_domain, os_type=os_type, timezone=85, fullname=win_full_name, orgname=win_org_name, ipv6addr=ipv6addr, gateway6=gateway6, netmask6=netmask6)
 
 	# Anything else
 	else:
