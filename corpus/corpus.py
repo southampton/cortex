@@ -2037,7 +2037,7 @@ class Corpus(object):
 
 	def system_get_repeatable_password(self, id):
 		system = self.get_system_by_id(id)
-		return base64.standard_b64encode(hashlib.sha256(system['name'] + '|' + str(system['build_count']) + '|' + str(system['allocation_date']) + '|' + system['allocation_who'] + '|' + self.config['SECRET_KEY']).digest())[0:16]
+		return base64.standard_b64encode(hashlib.sha256(bytes(system['name'] + '|' + str(system['build_count']) + '|' + str(system['allocation_date']) + '|' + system['allocation_who'] + '|' + self.config['SECRET_KEY'], 'utf8')).digest()).decode('ascii')[0:16]
 
 	############################################################################
 

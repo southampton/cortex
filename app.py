@@ -424,7 +424,7 @@ Username:             %s
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `events` (
-		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `id` int(11) NOT NULL AUTO_INCREMENT,
 		  `source` varchar(255) NOT NULL,
 		  `related_id` mediumint(11) DEFAULT NULL,
 		  `name` varchar(255) NOT NULL,
