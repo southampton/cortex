@@ -39,7 +39,7 @@ def sandbox():
 	if request.method == 'GET':
 		autocomplete_users = get_user_list_from_cache()
 		## Show form
-		return workflow.render_template("sandbox.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_cluster=workflow.config['SB_DEFAULT_CLUSTER'], default_env=workflow.config['SB_DEFAULT_ENV'], os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'], autocomplete_users=autocomplete_users)
+		return workflow.render_template("sandbox.html", clusters=clusters, environments=environments, title="Create Sandbox Virtual Machine", default_cluster=workflow.config['SB_DEFAULT_CLUSTER'], default_env=workflow.config['SB_DEFAULT_ENV'], os_names=workflow.config['SB_OS_DISP_NAMES'], os_order=workflow.config['SB_OS_ORDER'], os_types=workflow.config['SB_OS_TYPES'], autocomplete_users=autocomplete_users)
 
 	elif request.method == 'POST':
 		# Ensure we have all parameters that we require
