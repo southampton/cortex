@@ -379,5 +379,17 @@ sliders.on('input', function() {
 
 });
 
+{%- if os_types -%}
+var os_types = {{ os_types | tojson }}
+$('#template').change(function() {
+	if (os_types["Linux"] && os_types["Linux"].includes(this.value)) {
+		console.log("Linux");
+	} else if (os_types["Windows"] && os_types["Windows"].includes(this.value)) {
+		console.log("Windows");
+	} else {
+		console.log("Unknown OS")
+	}
+});
+{%- endif -%}
 </script>
 {% endblock %}
