@@ -557,12 +557,16 @@ def system_status(id):
 	if system is None:
 		abort(404)
 
-	data = {}
-	data['hostname'] = ''
-	data['dns_resolvers'] = []
-	data['search_domain'] = ''
-	routes = []
-	ipaddr = []
+	data = {
+		'hostname': '',
+		'dns_resolvers': [],
+		'search_domain': '',
+		'net': {
+			'routes': [],
+			'networks': [],
+		},
+	}
+
 
 	# get the VM
 	try:
@@ -588,6 +592,7 @@ def system_status(id):
 					data['dns_resolvers'] = vm.guest.ipStack[0].dnsConfig.ipAddress
 				if vm.guest.ipStack[0].dnsConfig.domainName is not None:
 					data['search_domain'] = vm.guest.ipStack[0].dnsConfig.domainName
+
 			if vm.guest.ipStack[0].ipRouteConfig is not None and vm.guest.ipStack[0].ipRouteConfig.ipRoute is not None and len(vm.guest.ipStack[0].ipRouteConfig.ipRoute) > 0:
 				for route in vm.guest.ipStack[0].ipRouteConfig.ipRoute:
 					addroute = {}
@@ -597,16 +602,18 @@ def system_status(id):
 						addroute['network'] = route.network
 					if route.prefixLength is not None:
 						addroute['prefix'] = route.prefixLength
+					
 					if addroute:
-						routes = routes + [addroute]
+						data['net']['routes'].append(addroute)
 
 		if vm.guest.net is not None and len(vm.guest.net) > 0:
 			for net_adapter in vm.guest.net:
-				if net_adapter.ipAddress is not None and len(net_adapter.ipAddress) > 0:
-					for addr in net_adapter.ipAddress:
-						ipaddr = ipaddr + [addr]
+				if net_adapter.network is not None and net_adapter.ipAddress is not None and len(net_adapter.ipAddress) > 0:
+					data['net']['networks'].append({
+						'name': net_adapter.network,
+						'ipaddr': [addr for addr in net_adapter.ipAddress] 
+					})
 
-		data['net'] = {'ipaddr': ipaddr, 'routes': routes}
 		if vm.guest.guestState is not None:
 			data['guest_state'] = vm.guest.guestState
 		if vm.runtime.powerState is not None:
