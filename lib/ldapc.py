@@ -1,6 +1,6 @@
 
 from cortex import app
-from flask import g, abort
+from flask import g, abort, flash
 import MySQLdb as mysql
 import ldap3
 import re
