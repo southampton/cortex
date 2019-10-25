@@ -102,7 +102,7 @@ PUPPETDB_SSL_VERIFY=False
 PUPPETDB_SSL_CERT=''
 PUPPETDB_SSL_KEY=''
 
-# Puppet Autosign server
+# Cortex Puppet Bridge (Puppet autosign server)
 PUPPET_MASTER='puppet.yourdomain.tld'
 PUPPET_AUTOSIGN_URL='https://yourserver.tld/getcert'
 PUPPET_AUTOSIGN_KEY='changeme'
