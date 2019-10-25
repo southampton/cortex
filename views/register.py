@@ -125,24 +125,24 @@ def api_register_system():
 		try:
 			r = requests.get(autosign_url, headers={'X-Auth-Token': app.config['PUPPET_AUTOSIGN_KEY']}, verify=app.config['PUPPET_AUTOSIGN_VERIFY'])
 		except Exception as ex:
-			app.logger.error("Error occured contacting cortex-puppet-autosign server:" + str(ex))
+			app.logger.error("Error occured contacting cortex-puppet-bridge server:" + str(ex))
 			abort(500)
 
 		if r.status_code == 200:
 			try:
 				pdata = r.json()
 			except Exception as ex:
-				app.logger.error("Error occured parsing response from cortex-puppet-autosign server:" + str(ex))
+				app.logger.error("Error occured parsing response from cortex-puppet-bridge server:" + str(ex))
 				abort(500)
 
 			for key in ['private_key', 'public_key', 'cert']:
 				if not key in pdata:
-					app.logger.error("Error occured parsing response from cortex-puppet-autosign server. Parameter '" + key + "' was not sent.")
+					app.logger.error("Error occured parsing response from cortex-puppet-bridge server. Parameter '" + key + "' was not sent.")
 					abort(500)
 
 				cdata[key] = pdata[key]
 		else:
-			app.logger.error("Error occured contacting cortex-puppet-autosign server. HTTP status code: '" + str(r.status_code) + "'")
+			app.logger.error("Error occured contacting cortex-puppet-bridge server. HTTP status code: '" + str(r.status_code) + "'")
 			abort(500)
 			
 	# Systems authenticating by UUID also want to know their hostname and 
