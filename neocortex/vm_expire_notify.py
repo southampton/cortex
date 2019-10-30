@@ -135,7 +135,8 @@ def run(helper, options):
 
 			# For each system that needs to be reported
 			# (Sorting uniquely by ID)
-			for system in uniqify(email_system_map[email], 'id'):
+			unique_systems = uniqify(email_system_map[email], 'id')
+			for system in unique_systems:
 				# Get the live power status (rather than cached, so that we're 100% accurate)
 				vm = helper.lib.vmware_get_vm_by_uuid(system['vmware_uuid'], system['vmware_vcenter'])
 				system_status = "off"
@@ -155,7 +156,7 @@ def run(helper, options):
 				message = message + report_config['message_end']
 
 			# Send the e-mail
-			helper.lib.send_email(email, 'Systems expiration warning: ' + str(len(email_system_map[email])) + ' system(s) expiring soon', message)
+			helper.lib.send_email(email, 'Systems expiration warning: ' + str(len(unique_systems)) + ' system(s) expiring soon', message)
 				
 		# End this report task
 		helper.end_event(description='Report ' + report_config['description'] + ' found ' + str(system_count) + ' expiring system(s), generating ' + str(email_count) + ' e-mail(s)')
