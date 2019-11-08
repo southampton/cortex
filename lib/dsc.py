@@ -13,7 +13,7 @@ import json
 env = 'devdomain'
 
 def dsc_test_connect():
-	with Pyro4.Proxy('PYRO:CortexWindowsRPC@' + str(app.config['WINRPC'][env]['host']) + ':' + str(app.config['WINRPC'][env]['port'])) as proxy:
+	with Pyro4.Proxy('PYRO:CortexWindowsRPC@' + str(app.config['DSC'][env]['host']) + ':' + str(app.config['DSC'][env]['port'])) as proxy:
 		try:
 			proxy._pyroBind()
 			print("YES IS ON")
@@ -24,8 +24,8 @@ def dsc_test_connect():
 #######################################################
 
 def dsc_connect():
-	proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + str(app.config['WINRPC'][env]['host']) + ':' + str(app.config['WINRPC'][env]['port']))
-	proxy._pyroHmacKey = str(app.config['WINRPC'][env]['key'])
+	proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + str(app.config['DSC'][env]['host']) + ':' + str(app.config['DSC'][env]['port']))
+	proxy._pyroHmacKey = str(app.config['DSC'][env]['key'])
 	try:
 		proxy.ping()
 	except Pyro4.errors.PyroError as e:
