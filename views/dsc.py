@@ -124,8 +124,10 @@ def generate_reset_yaml(id, proxy, roles):
 		for x in range(roles[role]['length']):
 			name = roles[role][str(x)]
 			for settings in roles_info[role]:
-				print(settings)
-				if settings['Name'] == name:
+				task_name = settings.get('TaskName')
+				group_name = settings.get('GroupName')
+				displayed_tag = settings.get('Name') if settings.get('Name') != None else (task_name if task_name != None else group_name)
+				if displayed_tag == name:
 					config[role].append(settings)
 
 	return json.dumps(config)
@@ -171,7 +173,6 @@ def dsc_classify_machine(id):
 	exist_config = ""
 	# get existing info
 	if existing_data is not None:
-		# return jsonify(existing_data)
 		if existing_data['roles'] != '':
 			exist_role = json.loads(existing_data['roles'])
 		else:
@@ -219,9 +220,11 @@ def dsc_classify_machine(id):
 					reset_config['AllNodes'][x]['Role'] = generic_roles
 
 			reset_roles = {a : {'length':0} for a in generic_roles}
-			curd.execute('UPDATE `dsc_config` SET config = %s, roles = %s WHERE system_id = %s;', (json.dumps(reset_config), json.dumps(reset_roles), id))
+			# curd.execute('UPDATE `dsc_config` SET config = %s, roles = %s WHERE system_id = %s;', (json.dumps(reset_config), json.dumps(reset_roles), id))
+			# return jsonify(reset_roles)
+			new_roles = list({((r.replace('UOS', '')).split('_'))[0] for r in default_roles if not any(special_role in r for special_role in ['AllNodes', 'Generic'])})
+			curd.execute('UPDATE `dsc_config` SET config = %s, roles = %s WHERE system_id = %s;', (json.dumps(reset_config), json.dumps(new_roles), id))
 			g.db.commit()
-
 		else:
 			checked_boxes = json.loads(request.form['checked_values'])
 			expanded_selected_values = []
@@ -291,9 +294,10 @@ def dsc_classify_machine(id):
 		except json.decoder.JSONDecodeError as e:
 			exist_config = yaml.dump("")
 
-	for generic in role_selections['Generic']:
-		if generic not in exist_role.keys():
-			exist_role[generic] = {'length':0}
+	# return jsonify(request.form)
+	# for generic in role_selections['Generic']:
+	# 	if generic not in exist_role.keys():
+	# 		exist_role[generic] = {'length':0}
 
 	values_to_tick = { ((l.replace("UOS","")).split("_"))[0] for l in exist_role if 'UOSGeneric' not in l}
 
