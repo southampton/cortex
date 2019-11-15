@@ -143,7 +143,7 @@ class CortexWorkflow(object):
 		kwargs['active'] = 'workflows'
 		return render_template(self.name + "::" + template_name,**kwargs)
 
-	def route(self, rule, title="Untitled", order=999, permission=None, menu=True, require_login=True, **options):
+	def route(self, rule, title="Untitled", order=999, permission="cortex.admin", menu=True, require_login=True, **options):
 		if permission is not None and not permission.startswith("workflows."):
 			permission = "workflows." + permission
 
@@ -188,7 +188,7 @@ class CortexWorkflow(object):
 
 		return decorator
 
-	def action(self, rule, title="Untitled", desc="N/A", order=999, system_permission=None, permission=None, menu=True, require_vm=False, **options):
+	def action(self, rule, title="Untitled", desc="N/A", order=999, system_permission=None, permission="cortex.admin", menu=True, require_vm=False, **options):
 		def decorator(fn):
 
 			## Require a permission, if set
