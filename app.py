@@ -117,12 +117,12 @@ Further Details:
 			self.logger.addHandler(mail_handler)
 			self.logger = logging.LoggerAdapter(self.logger, log_extra)
 
-		# check the database is up and is working
-		self.init_database()
-
 		# set up permissions
 		self.init_permissions()
 
+		# check the database is up and is working
+		self.init_database()
+		
 	################################################################################
 
 	def pwgen(self, length=32):
@@ -904,63 +904,14 @@ Username:             %s
 
 		cursor.execute("""DROP TABLE IF EXISTS `workflow_perms`""")
 
-		# Ensure we have a default administrator role with appropriate permissions
+		# Ensure we have a default administrator role
 		cursor.execute("""INSERT IGNORE INTO `roles` (`id`, `name`, `description`) VALUES (1, "Administrator", "Has full access to everything")""")
-		cursor.execute("""INSERT IGNORE INTO `role_perms` (`role_id`, `perm`) VALUES 
-		  (1, "admin.permissions"), 
-		  (1, "systems.all.view"), 
-		  (1, "systems.all.view.puppet"), 
-		  (1, "systems.all.view.puppet.catalog"), 
-		  (1, "systems.all.view.puppet.classify"), 
-		  (1, "systems.all.view.rubrik"),
-		  (1, "systems.all.edit.expiry"), 
-		  (1, "systems.all.edit.review"), 
-		  (1, "systems.all.edit.vmware"), 
-		  (1, "systems.all.edit.cmdb"), 
-		  (1, "systems.all.edit.comment"), 
-		  (1, "systems.all.edit.puppet"),
-		  (1, "systems.all.edit.rubrik"), 
-		  (1, "systems.all.edit.owners"), 
-		  (1, "systems.own.view"),
-		  (1, "systems.allocate_name"), 
-		  (1, "systems.add_existing"),
-		  (1, "vmware.view"), 
-		  (1, "puppet.dashboard.view"),
-		  (1, "puppet.modules_info.view"),
-		  (1, "puppet.modules_info.add"),
-		  (1, "puppet.modules_info.edit"),   
-		  (1, "puppet.nodes.view"), 
-		  (1, "puppet.default_classes.view"), 
-		  (1, "puppet.default_classes.edit"), 
-		  (1, "classes.view"), 
-		  (1, "classes.edit"), 
-		  (1, "tasks.view"),
-		  (1, "events.view"),
-		  (1, "specs.view"),
-		  (1, "specs.edit"),
-		  (1, "maintenance.vmware"), 
-		  (1, "maintenance.cmdb"), 
-		  (1, "maintenance.expire_vm"),
-		  (1, "maintenance.sync_puppet_servicenow"),
-		  (1, "maintenance.cert_scan"),
-		  (1, "maintenance.student_vm"),
-		  (1, "maintenance.lock_workflows"),
-		  (1, "maintenance.rubrik_policy_check"),
-		  (1, "api.register"),
-		  (1, "workflows.all"),
-		  (1, "sysrequests.all.view"),
-		  (1, "sysrequests.all.approve"),
-		  (1, "sysrequests.all.reject"),
-		  (1, "sysrequests.own.view"),
-		  (1, "api.get"),
-		  (1, "api.post"),
-		  (1, "api.put"),
-		  (1, "api.delete"),
-		  (1, "control.all.vmware.power"),
-		  (1, "certificates.view"),
-		  (1, "certificates.stats"),
-		  (1, "certificates.add")
-		""")
+		# Add ALL permissions to this administrator role
+		insert_permissions_query = """INSERT IGNORE INTO `role_perms` (`role_id`, `perm`) VALUES """
+		for permission in [p['name'] for p in self.permissions]:
+			insert_permissions_query += """(1, "{permission}"), """.format(permission=permission)
+		insert_permissions_query = insert_permissions_query[:-2]
+		cursor.execute(insert_permissions_query)
 
 		## Close database connection
 		temp_db.close()
@@ -975,6 +926,8 @@ Username:             %s
 
 		## The ORDER MATTERS! It determines the order used on the Roles page
 		self.permissions = [
+			{'name': 'cortex.admin',                       'desc': 'Cortex Administrator'}, 
+
 			{'name': 'systems.all.view',                   'desc': 'View any system'},
 			{'name': 'systems.own.view',                   'desc': 'View systems allocated by the user'},
 			{'name': 'systems.all.view.puppet',            'desc': 'View Puppet reports and facts on any system'},
