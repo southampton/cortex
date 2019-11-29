@@ -144,13 +144,17 @@ class CortexWorkflow(object):
 		return render_template(self.name + "::" + template_name,**kwargs)
 
 	def route(self, rule, title="Untitled", order=999, permission="cortex.admin", menu=True, require_login=True, **options):
-		if permission is not None and not permission.startswith("workflows."):
+
+		if isinstance(permission, str) and not permission.startswith("workflows."):
 			permission = "workflows." + permission
 
 		def decorator(fn):
 
 			## Require permissions
-			if permission is not None:
+			if permission and callable(permission):
+				permfn = self._require_permission_callable(permission)
+				fn = permfn(fn)
+			elif permission:
 				permfn = self._require_permission(permission)
 				fn = permfn(fn)
 
@@ -240,6 +244,19 @@ class CortexWorkflow(object):
 			return decorated_function
 		return decorator
 
+	def _require_permission_callable(self,permission_callable):
+		def decorator(fn):
+			@wraps(fn)
+			def decorated_function(*args, **kwargs):
+				if not callable(permission_callable):
+					abort(403)
+				result = permission_callable()
+				if not isinstance(result, bool) or not result:
+					abort(403)
+
+				return fn(*args, **kwargs)
+			return decorated_function
+		return decorator
 
 	def _require_system_permission(self,system_permission,permission=None):
 		def decorator(fn):

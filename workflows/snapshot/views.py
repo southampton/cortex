@@ -8,15 +8,17 @@ import json
 
 workflow = CortexWorkflow(__name__, check_config={})
 workflow.add_permission('systems.all.snapshot', 'Create VMware Snapshots on any system')
-workflow.add_permission('systems.snapshot', 'Access the VMware Snapshot form; requires permission on individual systems to snapshot them.')
 workflow.add_system_permission('snapshot', 'Create a VMware snapshot for this system')
+
+def snapshot_create_permission_callback():
+	return does_user_have_workflow_permission('systems.all.snapshot') or does_user_have_any_system_permission('snapshot')
 
 @workflow.action('system', title='Snapshot', desc='Take a VMware snapshot of this system', system_permission='snapshot', permission='systems.all.snapshot', require_vm=True, methods=['GET', 'POST'])
 def snapshot_system(id):
 	
 	return redirect(url_for('snapshot_create', systems=id))
 
-@workflow.route('create', title='Create VMware Snapshot', order=40, permission='systems.snapshot', methods=['GET', 'POST'])
+@workflow.route('create', title='Create VMware Snapshot', order=40, permission=snapshot_create_permission_callback, methods=['GET', 'POST'])
 def snapshot_create():
 
 	# Get systems depending on permissions.
@@ -24,8 +26,12 @@ def snapshot_create():
 		# User can snapshot all systems.
 		systems = get_systems(order='id', order_asc=False, virtual_only=True)
 	elif does_user_have_any_system_permission('snapshot'):
-		# User can only snapshot certain systems.
-		systems = get_systems(order='id', order_asc=False, virtual_only=True, show_allocated_and_perms=True, only_allocated_by=session['username'])
+		# Select all VMs where the user has permission to snapshot
+		query_where = (
+			"""WHERE (`cmdb_id` IS NOT NULL AND `cmdb_operational_status` = "In Service") AND `vmware_uuid` IS NOT NULL AND (`id` IN (SELECT `system_id` FROM `system_perms_view` WHERE (`type` = '0' AND `perm` = 'snapshot' AND `who` = %s) OR (`type` = '1' AND `perm` = 'snapshot' AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s)))) ORDER BY `id` DESC""",
+			(session["username"],session["username"]),
+		)
+		systems = get_systems(where_clause = query_where)
 	else:
 		abort(403)
 	
