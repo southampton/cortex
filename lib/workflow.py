@@ -148,6 +148,7 @@ class CortexWorkflow(object):
 			permission = "workflows." + permission
 
 		def decorator(fn):
+
 			## Require permissions
 			if permission is not None:
 				permfn = self._require_permission(permission)
@@ -158,6 +159,9 @@ class CortexWorkflow(object):
 			## as the decorators are essentially processed backwards
 			if require_login:
 				fn = login_required(fn)
+
+			## Raise an exception if the workflows are locked.
+			fn = self._raise_if_workflows_locked(fn)
 
 			## Mark the view function as a workflow view function
 			fn = self._mark_as_workflow(fn)
@@ -186,13 +190,17 @@ class CortexWorkflow(object):
 
 	def action(self, rule, title="Untitled", desc="N/A", order=999, system_permission=None, permission=None, menu=True, require_vm=False, **options):
 		def decorator(fn):
-			## Require login, and the right permissions
-			fn = login_required(fn)
 
 			## Require a permission, if set
 			if system_permission is not None:
 				permfn = self._require_system_permission(system_permission,permission)
 				fn = permfn(fn)
+
+			## Require login, and the right permissions
+			fn = login_required(fn)
+
+			## Raise an exception if the workflows are locked.
+			fn = self._raise_if_workflows_locked(fn)
 
 			## Mark the view function as a workflow view function
 			fn = self._mark_as_workflow(fn)
@@ -255,6 +263,15 @@ class CortexWorkflow(object):
 				return fn(*args, **kwargs)
 			return decorated_function
 		return decorator
+
+	def _raise_if_workflows_locked(self, f):
+		@wraps(f)
+		def decorated_function(*args, **kwargs):
+			# If the workflows are locked raise an exception.
+			raise_if_workflows_locked()
+			return f(*args, **kwargs)
+		return decorated_function
+
 
 	def _mark_as_workflow(self,f):
 		@wraps(f)
