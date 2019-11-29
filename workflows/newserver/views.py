@@ -1,6 +1,6 @@
 
 from cortex import app
-from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
+from cortex.lib.workflow import CortexWorkflow
 import cortex.lib.core
 import cortex.lib.classes
 import cortex.views
@@ -13,8 +13,6 @@ workflow.add_permission('newserver', 'Create System Record')
 
 @workflow.route("create",title='Create System Record', order=30, permission="newserver", methods=['GET', 'POST'])
 def allocateserver():
-	# Don't go any further if workflows are currently locked
-	raise_if_workflows_locked()
 
 	# Get the list of enabled classes
 	classes = cortex.lib.classes.list(hide_disabled=True)

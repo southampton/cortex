@@ -1,6 +1,6 @@
 import MySQLdb as mysql
 from cortex import app
-from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
+from cortex.lib.workflow import CortexWorkflow
 import cortex.lib.core
 import cortex.lib.systems
 import cortex.views
@@ -129,8 +129,6 @@ def certmgr_ajax_get_raw():
 
 @workflow.route('create', title='Create SSL Certificate', order=40, permission="certmgr.create", methods=['GET', 'POST'])
 def certmgr_create():
-	# Don't go any further if workflows are currently locked
-	raise_if_workflows_locked()
 
 	# Get the workflow settings
 	wfconfig = workflow.config

@@ -1,6 +1,6 @@
 
 from cortex import app
-from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
+from cortex.lib.workflow import CortexWorkflow
 import cortex.lib.core
 import cortex.lib.systems
 import cortex.views
@@ -34,8 +34,6 @@ fqdn_re = re.compile(r"^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]
 
 @workflow.route('create', title='Create NLB Web Service', order=40, permission="nlbweb.create", methods=['GET', 'POST'])
 def nlbweb_create():
-	# Don't go any further if workflows are currently locked
-	raise_if_workflows_locked()
 
 	# Get the workflow settings
 	wfconfig = workflow.config
