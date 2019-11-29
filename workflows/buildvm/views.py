@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from cortex import app
-from cortex.lib.workflow import CortexWorkflow, raise_if_workflows_locked
+from cortex.lib.workflow import CortexWorkflow
 from cortex.lib.user import get_user_list_from_cache
 import cortex.lib.core
 import cortex.lib.admin
@@ -21,8 +21,6 @@ workflow.add_permission('buildvm.standard', 'Create Standard VM')
 
 @workflow.route("sandbox",title='Create Sandbox VM', order=20, permission="buildvm.sandbox", methods=['GET', 'POST'])
 def sandbox():
-	# Don't go any further if workflows are currently locked
-	raise_if_workflows_locked()
 
 	# Get the list of clusters
 	all_clusters = cortex.lib.core.vmware_list_clusters(workflow.config['SB_VCENTER_TAG'])
@@ -107,8 +105,6 @@ def sandbox():
 
 @workflow.route("standard",title='Create Standard VM', order=10, permission="buildvm.standard", methods=['GET', 'POST'])
 def standard():
-	# Don't go any further if workflows are currently locked
-	raise_if_workflows_locked()
 
 	# Get the list of clusters
 	all_clusters = cortex.lib.core.vmware_list_clusters(workflow.config['VCENTER_TAG'])
