@@ -275,7 +275,8 @@ def puppetdb_get_node_statuses(db=None):
 	for node in nodes:
 		statuses[node.name] = {
 			'status': node.status,
-			'clientnoop': node.noop
+			'clientnoop': node.noop,
+			'latest_report_hash': node.latest_report_hash,
 		}
 
 	return statuses
