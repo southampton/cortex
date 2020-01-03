@@ -24,7 +24,10 @@
 			<td>{{ node.env }}</td>
 			<td>{{ node.clientnoop }}</td>
 			<td class="status-{{ node.status }}"><a href="{{ url_for('puppet_nodes', status=node.status) }}">{{ node.status }}</a></td>
-			<td><a href="{{url_for('puppet_enc_edit',node=node.certname) }}" class="btn btn-secondary btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a></td>
+			<td>
+				<a href="{{ url_for('puppet_report', report_hash=node.latest_report_hash) }}" class="btn btn-secondary btn-xs {{ 'disabled' if node.latest_report_hash == 'unknown' }}"><i class="fa fa-fw fa-file-text-o"></i> Latest Report</a>
+				<a href="{{url_for('puppet_enc_edit', node=node.certname) }}" class="btn btn-secondary btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a>
+			</td>
 		</tr>
 {%- endfor %}
 	</tbody>

@@ -224,12 +224,9 @@ def puppet_nodes(status = None):
 	
 	data = []
 	for row in results:
-		if row['certname'] in statuses:
-			row['status'] = statuses[row['certname']]['status']
-			row['clientnoop'] = statuses[row['certname']]['clientnoop']
-		else:
-			row['status'] = 'unknown'
-			row['clientnoop'] = 'unknown'
+		row['status'] = statuses[row['certname']]['status'] if row['certname'] in statuses else 'unknown'
+		row['clientnoop'] = statuses[row['certname']]['clientnoop'] if row['certname'] in statuses else 'unknown'
+		row['latest_report_hash'] = statuses[row['certname']]['latest_report_hash'] if row['certname'] in statuses else 'unknown'
 
 		if status == None or status == 'all':
 			data.append(row)
