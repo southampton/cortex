@@ -8,6 +8,15 @@ import MySQLdb as mysql
 import json
 import yaml
 
+"""
+TODO:
+-So the save&reset button now correctly generates the role info
+	this needs to be added to the save and generate button too
+-loading the page needs to convert the new format back into the format the page needs so it can display the preselected options
+- seems to be an issue when using safari on cortex
+
+"""
+
 def generate_new_yaml(id, proxy, oldRole, oldConfig, newRole, newConfig):
 	#configs should be passed in as dictionary
 	roles_info = cortex.lib.dsc.get_roles(proxy)
@@ -61,7 +70,7 @@ def generate_new_yaml(id, proxy, oldRole, oldConfig, newRole, newConfig):
 		added_props = list(set(prop_in_new) - set(prop_in_old))
 		removed_props = list(set(prop_in_old) - set(prop_in_new))
 		#these are the properties which haven't changed
-		props_unchanged = [prop for prop in prop_in_new if prop not in (added_props + removed_props) ]
+		props_unchanged = [prop for prop in prop_in_new if prop not in (added_props + removed_props)]
 
 		#add the new properties
 		for prop in added_props:
@@ -105,13 +114,15 @@ def generate_reset_yaml(id, proxy, roles):
 	system = cortex.lib.systems.get_system_by_id(id)
 	
 	#the only part that can be kept is the allNodes section
-	
+	print([id, proxy, roles])
+	config_roles = (list(set([(k.split('_')[0]).replace('UOS','') for k in roles.keys()])))
 
 	config['AllNodes'] = roles_info['AllNodes']
+	config['AllNodes'][1]['Role'] = config_roles
 
 	for x, l in enumerate(config['AllNodes']):
-		if 'Role' in l.keys():
-			config['AllNodes'][x]['Role'] = list(roles.keys())
+		# if 'Role' in l.keys():
+		# 	config['AllNodes'][x]['Role'] = list(roles.keys())
 		if 'NodeName' in l.keys():
 			config['AllNodes'][x]['NodeName'] = system['name']
 	
@@ -182,7 +193,10 @@ def dsc_classify_machine(id):
 		except json.decoder.JSONDecodeError as e:
 			exist_config = yaml.dump("")
 	
-	if type(exist_role) == 'dict':
+	# return jsonify(yaml.load(exist_config))
+	# return jsonify(str(type(exist_role) == 'dict'))
+	
+	if type(exist_role) == type({}):
 		for generic in role_selections['Generic']:
 			if generic not in exist_role.keys():
 				exist_role[generic] = {'length':0}
@@ -191,21 +205,26 @@ def dsc_classify_machine(id):
 		for generic in role_selections['Generic']:
 			exist_role[generic] = {'length':0}
 
-	values_to_tick = { ((l.replace("UOS","")).split("_"))[0] for l in exist_role }
-	
+	values_to_tick = { ((l.replace("UOS","")).split("_"))[0] for l in exist_role if 'UOSGeneric' not in l }
+
 	if request.method == 'GET':
-		
+		print(exist_role)		
 		if does_user_have_permission('dsc.view'):
+			values_to_tick = { ((l.replace("UOS","")).split("_"))[0] for l in exist_role if 'UOSGeneric' not in l}
+			print('values_to_tick: ',list(values_to_tick))
 			return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=jobs, yaml=exist_config, set_roles=exist_role, role_info=roles_info, selectpicker_tick=list(values_to_tick))
 		else:
 			abort(403)
 
 	elif request.method == 'POST':
+		
 		if request.form['button'] == 'push_to_dsc':
+
 			curd.execute('SELECT system_id, roles, config FROM dsc_config WHERE system_id = "%s";', (id, ))
 			box_details = curd.fetchone()
 			system_name = system['name']
 			cortex.lib.dsc.send_config(dsc_proxy, system_name,json.loads(existing_data['config']))
+
 		elif request.form['button'] == "return_to_default":
 
 			reset_config = {}
@@ -220,11 +239,11 @@ def dsc_classify_machine(id):
 					reset_config['AllNodes'][x]['Role'] = generic_roles
 
 			reset_roles = {a : {'length':0} for a in generic_roles}
-			# curd.execute('UPDATE `dsc_config` SET config = %s, roles = %s WHERE system_id = %s;', (json.dumps(reset_config), json.dumps(reset_roles), id))
-			# return jsonify(reset_roles)
+			
 			new_roles = list({((r.replace('UOS', '')).split('_'))[0] for r in default_roles if not any(special_role in r for special_role in ['AllNodes', 'Generic'])})
 			curd.execute('UPDATE `dsc_config` SET config = %s, roles = %s WHERE system_id = %s;', (json.dumps(reset_config), json.dumps(new_roles), id))
 			g.db.commit()
+
 		else:
 			checked_boxes = json.loads(request.form['checked_values'])
 			expanded_selected_values = []
@@ -254,6 +273,7 @@ def dsc_classify_machine(id):
 
 			for key in keys_to_remove:
 				del checked_boxes[key]
+
 			if request.form['button'] == 'save_changes':
 				#check for permissions
 				if not does_user_have_permission('dsc.edit'):
