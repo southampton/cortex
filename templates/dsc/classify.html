@@ -29,6 +29,8 @@
 .btn dropdown-toggle {
 	min-width: 100em !important;
 }
+
+
 </style>
 
 <script>
@@ -59,7 +61,7 @@ $(document).ready(function()
 	<div class="panel panel-default">
 		<div class="panel-heading">DSC Roles
 			<div class="pull-right">
-				<button class="btn btn-danger btn-xs" type="submit" id="return_to_default" value="return_to_default" name="button">Reset</button>
+				<button class="btn btn-danger btn-xs" type="submit" id="return_to_default" title="Remove all roles, and return to default state." value="return_to_default" name="button">Reset</button>
 			</div>
 		</div>
 		<div class="panel-body" style="padding-bottom:0em">
@@ -113,7 +115,10 @@ $(document).ready(function()
 	<div class="panel panel-default">
 		<div class="panel-heading" >DSC Configurations 
 			<div class="pull-right">
-				<button class="btn btn-success btn-xs" type="submit" id="reset" value="reset" name="button">Save and Reset</button>
+				<div class="tooltip">
+					<span class="tooltiptext">Tooltip text</span>
+				</div>
+				<button class="btn btn-success btn-xs" type="submit" id="reset" value="reset" title="Save the selected roles but remove all selected options."  name="button">Save and Reset</button>
 				<button class="btn btn-light btn-xs" type="button" id="show_yaml" value="show_yaml" name="button">Show</button>
 				<button class="btn btn-light btn-xs" type="button" id="hide_yaml" value="hide_yaml" name="button">Hide</button>
 			</div>
@@ -123,8 +128,8 @@ $(document).ready(function()
 		</div>
 	</div>
 	<div class="text-center">
-		<button class="btn btn-primary btn-lg" type="submit" id="save_changes" value="save_changes" name="button" style="padding-right: 15px">Save and Generate</button>
-		<button class="btn btn-success btn-lg" type="submit" id="push_to_dsc" value="push_to_dsc" name="button">Push to Box</button>
+		<button class="btn btn-primary btn-lg" type="submit" id="save_changes" value="save_changes" name="button" title="Save the selected roles and edited config." style="padding-right: 15px">Save and Generate</button>
+		<button class="btn btn-success btn-lg" type="submit" id="push_to_dsc" value="push_to_dsc" title="Send machine details to DSC." name="button">Push to Box</button>
 	</div>	
 </div>
 <input type="hidden" name="checked_values" id="checked_values" value="">
