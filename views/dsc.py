@@ -193,9 +193,6 @@ def dsc_classify_machine(id):
 		except json.decoder.JSONDecodeError as e:
 			exist_config = yaml.dump("")
 	
-	# return jsonify(yaml.load(exist_config))
-	# return jsonify(str(type(exist_role) == 'dict'))
-	
 	if type(exist_role) == type({}):
 		for generic in role_selections['Generic']:
 			if generic not in exist_role.keys():
@@ -226,21 +223,23 @@ def dsc_classify_machine(id):
 			cortex.lib.dsc.send_config(dsc_proxy, system_name,json.loads(existing_data['config']))
 
 		elif request.form['button'] == "return_to_default":
-
+			print('resetting')
 			reset_config = {}
 			reset_config['AllNodes'] = roles_info['AllNodes']
 
 			generic_roles = [role for role in roles_info if 'UOSGeneric' in role]
-
+			print(generic_roles)
 			for x, nested_dictionary in enumerate(reset_config['AllNodes']):
 				if 'NodeName' in nested_dictionary.keys():
 					reset_config['AllNodes'][x]['NodeName'] = system['name']
 				if 'Role' in nested_dictionary.keys():
 					reset_config['AllNodes'][x]['Role'] = generic_roles
 
-			reset_roles = {a : {'length':0} for a in generic_roles}
+			# reset_roles = {a : {'length':0} for a in generic_roles}
+			# new_roles = list({((r.replace('UOS', '')).split('_'))[0] for r in default_roles if any(special_role in r for special_role in ['AllNodes', 'Generic'])})
+			new_roles = {l : {"length" : 0} for l in generic_roles}
+			# return jsonify(new_roles)
 			
-			new_roles = list({((r.replace('UOS', '')).split('_'))[0] for r in default_roles if not any(special_role in r for special_role in ['AllNodes', 'Generic'])})
 			curd.execute('UPDATE `dsc_config` SET config = %s, roles = %s WHERE system_id = %s;', (json.dumps(reset_config), json.dumps(new_roles), id))
 			g.db.commit()
 
