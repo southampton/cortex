@@ -142,7 +142,7 @@ $('.remove_system').click(function() {
 	$(this).closest('tr').remove();
 });
 $('#submit').click(function(e) {
-	if (($('#snapshot_task').val().trim().length > 0) && ($('#snapshot_task').val().match(/^[ \t]*((((PRJ)|(INC)|(C)|(REQ))TASK)|((PRJ)|(REQ)|(INC)|(CHG)))[0-9]+[ \t]*/) == null)) {
+	if (($('#snapshot_task').val().trim().length > 0) && ($('#snapshot_task').val().match(/^[ \t]*((((PRJ)|(INC)|(C)|(P)|(REQ))TASK)|((PRJ)|(REQ)|(INC)|(CHG)))[0-9]+[ \t]*/) == null)) {
 		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345, CTASK0012345 or REQTASK0012345.');
 		$('#snapshot_task').focus();
 	} else if ($('input[name="systems[]"]').length == 0) {
