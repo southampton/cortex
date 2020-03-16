@@ -4,18 +4,17 @@
 {% import 'puppet/header.html' as puppeth %}
 {{ node.header(system,active="puppet" ) }}
 {{ puppeth.header(system,active="puppet_reports",title="Reports" ) }}
-<p class="text-muted pull-right">Received: <span class="date">{{ report.received.strftime('%Y/%m/%d %H:%M:%S') }}</span>. Run time: {{ report.run_time }}</p>
 <div class="row">
 </div>
 <div class="row">
-	<div class="col-md-2" style="padding-top:1.3em">
+	<div class="offset-md-2 col-md-1" style="padding-top:1.3em">
 		<div class="admin-block admin-block-sm admin-block-header">
 			<h2>Events:</h2>
 		</div>
 	</div>
 	<div class="col-md-1 text-center">
 		Total
-		<div class="admin-block admin-block-sm bg-primary" title="Total">
+		<div class="admin-block admin-block-sm bg-purple" title="Total">
 			<h2><span>{% if metrics.events and metrics.events.total %} {{ metrics.events.total }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
@@ -31,15 +30,14 @@
 			<h2><span>{% if metrics.events and metrics.events.failure %} {{ metrics.events.failure }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
-	<div class="col-md-1 text-center"></div>
-	<div class="col-md-2" style="padding-top:1.3em">
+	<div class="col-md-1" style="padding-top:1.3em">
 		<div class="admin-block admin-block-sm admin-block-header">
 			<h2>Resources:</h2>
 		</div>
 	</div>
 	<div class="col-md-1 text-center">
 		Total
-		<div class="admin-block admin-block-sm bg-primary" title="Total">
+		<div class="admin-block admin-block-sm bg-purple" title="Total">
 			<h2><span>{% if metrics.resources and metrics.resources.total %} {{ metrics.resources.total }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
@@ -51,12 +49,13 @@
 	</div>
 	<div class="col-md-1 text-center">
 		Changed
-		<div class="admin-block admin-block-sm bg-warning" title="Changed">
+		<div class="admin-block admin-block-sm bg-primary" title="Changed">
 			<h2><span>{% if metrics.resources and metrics.resources.changed %} {{ metrics.resources.changed }} {% else %} N/A {% endif %}</span></h2>
 		</div>
 	</div>
 </div>
 <div class="page-header"></div>
+<p class="text-muted">Received: <span class="date">{{ report.received.strftime('%Y/%m/%d %H:%M:%S') }}</span>. Run time: {{ report.run_time }}</p>
 <table class="table table-sm table-striped puppet-report">
 	<thead>
 		<tr>
