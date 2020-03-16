@@ -6,7 +6,7 @@
 <div class="row">
 	<div class="col-md-12">
 		<a href="{{ url_for('puppet_nodes', status='all') }}">
-			<div class="admin-block bg-purple">
+			<div class="admin-block admin-block-hover bg-purple">
 				<div class="row">
 					<div class="col-md-2">
 						<h1><i class="fa fa-fw fa-server"></i></h1><h2>Registered nodes</h2>
@@ -27,7 +27,7 @@
 <div class="row">	
 	<div class="col-md-12">
 		<a href="{{ url_for('puppet_nodes', status='unchanged') }}">
-		<div class="admin-block bg-success">
+		<div class="admin-block admin-block-hover bg-success">
 			<div class="row">
 				<div class="col-md-2">
 					<h1><i class="fa fa-fw fa-check"></i></h1><h2>Normal</h2>
@@ -48,7 +48,7 @@
 <div class="row">
 	<div class="col-md-12">
 		<a href="{{ url_for('puppet_nodes', status='changed') }}">
-		<div class="admin-block bg-primary">
+		<div class="admin-block admin-block-hover bg-primary">
 			<div class="row">
 				<div class="col-md-2">
 					<h1><i class="fa fa-fw fa-cog"></i></h1><h2>Changed</h2>
@@ -69,7 +69,7 @@
 <div class="row">
 	<div class="col-md-12">
 		<a href="{{ url_for('puppet_nodes', status='noop') }}">
-		<div class="admin-block bg-warning">
+		<div class="admin-block admin-block-hover bg-warning">
 			<div class="row">
 				<div class="col-md-2">
 					<h1><i class="fa fa-fw fa-wrench"></i></h1><h2>Disabled</h2>
@@ -90,7 +90,7 @@
 <div class="row">
 	<div class="col-md-12">
 		<a href="{{ url_for('puppet_nodes', status='failed') }}">
-		<div class="admin-block bg-danger">
+		<div class="admin-block admin-block-hover bg-danger">
 			<div class="row">
 				<div class="col-md-2">
 					<h1><i class="fa fa-fw fa-exclamation-triangle"></i></h1><h2>Failed</h2>
@@ -111,7 +111,7 @@
 <div class="row">
 	<div class="col-md-12">
 		<a href="{{ url_for('puppet_nodes', status='unknown') }}">
-		<div class="admin-block bg-default">
+		<div class="admin-block admin-block-hover bg-default">
 			<div class="row">
 				<div class="col-md-2">
 					<h1><i class="fa fa-fw fa-question-circle"></i></h1><h2>Unknown</h2>

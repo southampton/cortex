@@ -753,6 +753,9 @@ Username:             %s
 		  `puppet_nodes`.`include_default` AS `puppet_include_default`,
 		  `puppet_nodes`.`classes` AS `puppet_classes`,
 		  `puppet_nodes`.`variables` AS `puppet_variables`,
+		  `puppet_nodes`.`last_failed` AS `puppet_last_failed`,
+		  `puppet_nodes`.`last_changed` AS `puppet_last_changed`,
+		  `puppet_nodes`.`noop_since` AS `puppet_noop_since`,
 		  `systems`.`enable_backup` AS `enable_backup`
 		FROM `systems` 
 		LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`

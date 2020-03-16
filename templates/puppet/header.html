@@ -28,16 +28,43 @@
 		{%- endif -%}
 	</h4>
 	<div class="text-muted">
-	{%- if active == 'puppet_classify' %}
-	Puppet classification for node {{system.puppet_certname}}.
-	{%- elif active == 'puppet_reports' %}
-	Puppet reports for node {{system.puppet_certname}}.
-	{%- elif active == 'puppet_facts' %}
-	Puppet facts for node {{system.puppet_certname}}.
-	{%- elif active == 'puppet_catalog' %}
-	Puppet catalog for node {{system.puppet_certname}}.
-	{%- endif -%}
+	Puppet
+	{% if active == 'puppet_classify' %}classification
+	{%- elif active == 'puppet_reports' %}reports
+	{%- elif active == 'puppet_facts' %}facts
+	{%- elif active == 'puppet_catalog' %}catalog
+	{%- endif %}
+	for node {{system.puppet_certname}}.
+
 	</div>
+	<div class="row">
+		<div class="offset-md-1 col-md-4 text-center">
+			Certificate Name
+			<div class="admin-block admin-block-sm bg-purple" title="The Common Name (CN) of the certificate registered with the Puppet Master">
+				<h2><span>{{ system.puppet_certname if system.puppet_certname else 'Unknown' }}</span></h2>
+			</div>
+		</div>
+
+		<div class="col-md-2 text-center">
+			Last Failed
+			<div class="admin-block admin-block-sm bg-danger" title="Last Failed Report">
+				<h2><span>{{ system.puppet_last_failed.strftime('%Y/%m/%d %H:%M:%S') if system.puppet_last_failed else 'Never' }}</span></h2>
+			</div>
+		</div>
+		<div class="col-md-2 text-center">
+			Last Changed
+			<div class="admin-block admin-block-sm bg-primary" title="Last Changed Report">
+				<h2><span>{{ system.puppet_last_changed.strftime('%Y/%m/%d %H:%M:%S') if system.puppet_last_changed else 'Never' }}</span></h2>
+			</div>
+		</div>
+		<div class="col-md-2 text-center">
+			Noop Since
+			<div class="admin-block admin-block-sm bg-warning" title="Node has been in Noop since">
+				<h2><span>{{ system.puppet_noop_since.strftime('%Y/%m/%d %H:%M:%S') if system.puppet_noop_since else 'Noop Disabled' }}</span></h2>
+			</div>
+		</div>
+	</div>
+	<div class="page-header"></div>
 	{% else -%}
 	<h4>
 		<span><i class="fa fa-fw fa-magic"></i> Puppet</span>
