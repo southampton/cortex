@@ -509,9 +509,20 @@ Username:             %s
 		  `include_default` tinyint(1) NOT NULL DEFAULT '1',
 		  `classes` text NOT NULL,
 		  `variables` text NOT NULL,
+		  `last_failed` datetime DEFAULT NULL,
+		  `last_changed` datetime DEFAULT NULL,
+		  `noop_since` datetime DEFAULT NULL,
 		  PRIMARY KEY (`id`),
 		  CONSTRAINT `puppet_nodes_ibfk_1` FOREIGN KEY (`id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		# Attempt to alter the puppet_nodes table and add new columns.
+		try:
+			cursor.execute("""ALTER TABLE `puppet_nodes` ADD `last_failed` datetime DEFAULT NULL""")
+			cursor.execute("""ALTER TABLE `puppet_nodes` ADD `last_changed` datetime DEFAULT NULL""")
+			cursor.execute("""ALTER TABLE `puppet_nodes` ADD `noop_since` datetime DEFAULT NULL""")
+		except Exception as e:
+			pass
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `sncache_cmdb_ci` (
 		  `sys_id` varchar(32) NOT NULL,
