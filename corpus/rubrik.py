@@ -80,7 +80,7 @@ class Rubrik(object):
 				break
 
 		if vcManagedId is None:
-			raise RubrikVCenterNotFound(vcenter)
+			raise RubrikVCenterNotFound(vcenter_hostname)
 
 		return vcManagedId
 
@@ -110,24 +110,27 @@ class Rubrik(object):
 		"""
 		try:
 			vm_id = self.get_vm_managed_id(system)
-		except Exception as e:
+		# bubble up the RubrikVMNotFound and RubrikVCenterNotFound exceptions
+		except (RubrikVMNotFound, RubrikVCenterNotFound) as ex:
+			raise ex
+		except Exception as ex:
 			import traceback
 			self.helper.logger.error('Error getting Rubrik VM ID:\n' + traceback.format_exc())
-			raise Exception('Error getting Rubrik VM ID: ' + str(e))
+			raise Exception('Error getting Rubrik VM ID: ' + str(ex))
 
 		try:
 			return self.get_request('vmware/vm/' + quote(vm_id))
-		except requests.exceptions.HTTPError as e1:
-			if e1.response is not None and e1.response.status_code == 404:
+		except requests.exceptions.HTTPError as ex:
+			if ex.response is not None and ex.response.status_code == 404:
 				raise RubrikVMNotFound()
 			else:
 				import traceback
 				self.helper.logger.error('Error getting Rubrik VM ID:\n' + traceback.format_exc())
-				raise Exception('Error getting VM from Rubrik: ' + str(e1))
-		except Exception as e2:
+				raise Exception('Error getting VM from Rubrik: ' + str(ex))
+		except Exception as ex:
 			import traceback
 			self.helper.logger.error('Error getting Rubrik VM ID:\n' + traceback.format_exc())
-			raise Exception('Error getting VM from Rubrik: ' + str(e2))
+			raise Exception('Error getting VM from Rubrik: ' + str(ex))
 
 	def get_vm_snapshots(self, id):
 		"""Get a list of snapshots for the vm"""
