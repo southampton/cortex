@@ -741,7 +741,7 @@ Username:             %s
 		except Exception as e:
 			pass
 
-		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT 
+		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT
 		  `systems`.`id` AS `id`,
 		  `systems`.`type` AS `type`,
 		  `systems`.`class` AS `class`,
@@ -790,9 +790,12 @@ Username:             %s
 		  `puppet_nodes`.`include_default` AS `puppet_include_default`,
 		  `puppet_nodes`.`classes` AS `puppet_classes`,
 		  `puppet_nodes`.`variables` AS `puppet_variables`,
+		  `puppet_nodes`.`last_failed` AS `puppet_last_failed`,
+		  `puppet_nodes`.`last_changed` AS `puppet_last_changed`,
+		  `puppet_nodes`.`noop_since` AS `puppet_noop_since`,
 		  `systems`.`enable_backup` AS `enable_backup`,
 		  `systems`.`enable_backup_scripts` AS `enable_backup_scripts`
-		FROM `systems` 
+		FROM `systems`
 		LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`
 		LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid`
 		LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id`
