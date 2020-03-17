@@ -404,19 +404,21 @@ def system_backup(id):
 			abort(403)
 
 		mode = request.form.get('mode')
-		# If the mode is INHERIT we can use PATCH /api/v1/vmware/vm/{id}
-		if mode == "INHERIT":
-			rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
-		# If the mode is UNPROTECTED we need to use a POST request to the internal
-		# sla_domain API: POST /api/internal/sla_domain/{id}/assign
-		elif mode == "UNPROTECTED":
-			# TODO
-			rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
-		# Otherwise PATCH /api/v1/vmware/vm/{id} with the given SLA domain
-		elif request.form.get("sla_domain"):
-			rubrik.update_vm(vm['id'], {'configuredSlaDomainId': request.form.get('sla_domain')})
-		else:
-			abort(400)
+		## If the mode is INHERIT we can use PATCH /api/v1/vmware/vm/{id}
+		#if mode == "INHERIT":
+		#	rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
+		## If the mode is UNPROTECTED we need to use a POST request to the internal
+		## sla_domain API: POST /api/internal/sla_domain/{id}/assign
+		#elif mode == "UNPROTECTED":
+		#	# TODO
+		#	rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
+		## Otherwise PATCH /api/v1/vmware/vm/{id} with the given SLA domain
+		#elif request.form.get("sla_domain"):
+		#	rubrik.update_vm(vm['id'], {'configuredSlaDomainId': request.form.get('sla_domain')})
+		#else:
+		#	abort(400)
+
+		vm['effectiveSlaDomainId'] = mode
 
 		# Success message
 		flash('SLA Domain updated', 'alert-success')
@@ -434,6 +436,12 @@ def system_backup(id):
 		vm['snapshots']['data'] = vm['snapshots']['data'][:10]
 	except (KeyError,):
 		pass
+
+	print("DEBUG"*10)
+	print(sla_domains)
+	print("DEBUG"*10)
+	print(vm)
+	print("DEBUG"*10)
 
 	return render_template('systems/backup.html', system=system, sla_domains=sla_domains, vm=vm, title=system['name'])
 
