@@ -69,7 +69,6 @@ class Rubrik(object):
 				**kwargs
 			)
 			r.raise_for_status()
-			print(r.url)
 			return r.json()
 		# Non 2XX status code
 		except requests.exceptions.HTTPError:
