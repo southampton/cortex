@@ -1,4 +1,3 @@
-#
 
 from cortex import app
 import cortex.lib.core
@@ -372,34 +371,7 @@ def systems_new():
 @app.route('/systems/backup/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_backup(id):
-
-	rubrik = cortex.lib.rubrik.Rubrik()
-
-	if request.method == 'POST':
-
-		if not does_user_have_system_permission(id,"edit.rubrik","systems.all.edit.rubrik"):
-			abort(403)
-
-		# Get the name of the vm
-		system = cortex.lib.systems.get_system_by_id(id)
-		if not system:
-			abort(404)
-
-		try:
-			vm = rubrik.get_vm(system)
-		except:
-			abort(500)
-
-		mode = request.form.get('mode')
-		if mode in ('INHERIT', 'UNPROTECTED'):
-			rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
-			flash('SLA Domain updated', 'alert-success')
-		elif 'sla_domain' in request.form:
-			rubrik.update_vm(vm['id'], {'configuredSlaDomainId': request.form.get('sla_domain')})
-			flash('SLA Domain updated', 'alert-success')
-		else:
-			abort(400)
-
+	
 	# Check user permissions. User must have either systems.all.view.rubrik or edit.rubrik (there's no separate view at present)
 	if not does_user_have_system_permission(id,"edit.rubrik","systems.all.view.rubrik"):
 		abort(403)
@@ -409,16 +381,45 @@ def system_backup(id):
 	if not system:
 		abort(404)
 
+	# Create an instance of the Rubrik object
+	rubrik = cortex.lib.rubrik.Rubrik()
+
+	# Attempt to get the VM from Rubrik
 	try:
 		vm = rubrik.get_vm(system)
 	except (cortex.lib.rubrik.RubrikVMNotFound, cortex.lib.rubrik.RubrikVCenterNotFound):
 		vm = None
 	except Exception as ex:
+		app.logger.error("Failed to retrieve VM from Rubrik: {}".format(str(ex)))
 		abort(500)
 
-	# If the VM was not found, return early
+	# If the no VM was found, return early
 	if vm is None:
 		return render_template('systems/backup.html', system=system, vm=None, title=system['name'])
+
+	if request.method == 'POST':
+		# An extra permission check, required in case they have systems.all.view.rubrik, but not
+		# systems.all.edit.rubrik (or edit.rubrik).
+		if not does_user_have_system_permission(id,"edit.rubrik","systems.all.edit.rubrik"):
+			abort(403)
+
+		mode = request.form.get('mode')
+		# If the mode is INHERIT we can use PATCH /api/v1/vmware/vm/{id}
+		if mode == "INHERIT":
+			rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
+		# If the mode is UNPROTECTED we need to use a POST request to the internal
+		# sla_domain API: POST /api/internal/sla_domain/{id}/assign
+		elif mode == "UNPROTECTED":
+			# TODO
+			rubrik.update_vm(vm['id'], {'configuredSlaDomainId': mode})
+		# Otherwise PATCH /api/v1/vmware/vm/{id} with the given SLA domain
+		elif request.form.get("sla_domain"):
+			rubrik.update_vm(vm['id'], {'configuredSlaDomainId': request.form.get('sla_domain')})
+		else:
+			abort(400)
+
+		# Success message
+		flash('SLA Domain updated', 'alert-success')
 
 	# Get the list of all SLA Domains
 	sla_domains = rubrik.get_sla_domains()
@@ -428,6 +429,7 @@ def system_backup(id):
 	vm['snapshots'] = rubrik.get_vm_snapshots(vm['id'])
 
 	# Try to limit to the most recent 10, ignoring the error if there are less
+	# This is hacky because the snapshot endpoint doesn't support ?limit=10 yet...
 	try:
 		vm['snapshots']['data'] = vm['snapshots']['data'][:10]
 	except (KeyError,):
