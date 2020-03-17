@@ -69,7 +69,12 @@ class Rubrik(object):
 				**kwargs
 			)
 			r.raise_for_status()
-			return r.json()
+
+			if r.text:
+				return r.json()
+			else:
+				return {}
+
 		# Non 2XX status code
 		except requests.exceptions.HTTPError:
 			raise
@@ -85,9 +90,24 @@ class Rubrik(object):
 		"""Make a PATCH request to an API endpoint"""
 		return self._request("PATCH", endpoint, version, json=payload)
 
+	def post_request(self, endpoint, version=None, payload=None):
+		"""Make a POST request to an API endpoint"""
+		return self._request("POST", endpoint, version, json=payload)
+
 	def get_sla_domains(self):
 		"""Gets the backup SLA categories from Rubrik"""
 		return self.get_request("sla_domain")
+
+	def assign_sla_domain(self, sla_domain_id, id):
+		"""Use the internal API to assign an SLA domain"""
+		return self.post_request(
+			"sla_domain/{sla_domain_id}/assign".format(sla_domain_id=quote(sla_domain_id)),
+			version = "internal",
+			payload = {
+				"managedIds": [ id, ],
+				"existingSnapshotRetention": "RetainSnapshots"
+			}
+		)
 
 	def get_vcenter_managed_id(self, vcenter_hostname):
 		"""Gets the Managed ID of the vCenter object in Rubrik for a given vCenter hostname."""
