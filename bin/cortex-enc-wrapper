@@ -71,7 +71,8 @@ if limit_to_nodes is None or certname.lower() in limit_to_nodes:
 	try:
 		with warnings.catch_warnings():
 			if not ssl_verify:
-				warnings.simplefilter("ignore", requests.packages.urllib3.exceptions.InsecureRequestWarning)
+				import urllib3
+				urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 			r = requests.get(cortex_url + '/' + certname, headers={'Accept': 'application/yml', 'X-Auth-Token': auth_token}, verify=ssl_verify)
 	except Exception as e:
 		# On exception, attempt to print cache
