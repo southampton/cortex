@@ -1,0 +1,77 @@
+{% extends "layout.html" %}
+{% block head -%}
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}?version={{ config.VERSION }}">
+		<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}?version={{ config.VERSION }}"></script>
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/tempusdominus-bootstrap-4.min.css') }}?version={{ config.VERSION }}">
+		<script src="{{ url_for('static', filename='js/vendor/moment.min.js') }}?version={{ config.VERSION }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/tether.min.js') }}?version={{ config.VERSION }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/en-gb.js') }}?version={{ config.VERSION }}"></script>
+		<script src="{{ url_for('static', filename='js/vendor/tempusdominus-bootstrap-4.min.js') }}?version={{ config.VERSION }}"></script>
+{% endblock %}
+{% block body %}
+
+<div class="page-header">
+<h4><i class="fa fa-plus-circle fa-fw"></i> Add virtual VMware disk</h4>
+<div class="text-muted">This workflow will add a virtual disk to a pre-existing virtual machine in VMware</div>
+</div>
+<form id="adddisk_add_form" method="POST" role="form">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+	<div class="row">
+		<div class="col-md-12"><h4>1. Enter request details</h4></div>
+		<div class="col-md-12 form-group">
+			<label for="adddisk_task">ServiceNow Task:</label>
+			<input class="form-control" id="adddisk_task" name="adddisk_task" placeholder="e.g. INCTASK0123456, PRJTASK0987654 or CTASK012345" />
+		</div>
+		<div class="col-md-12"><h4>2. Choose Disk Size</h4></div>
+		<div class="col-md-12 form-group" style="margin-top:0.5em">
+			<label for="disk-slider">Disk (GB):</label>
+			<span class="badge badge-primary output ml-2" style="font-size: 14px;">2000</span>
+			<input class="slider form-control-range slider-input" name="disk" id="disk-slider" type="range" min="10" max="2000" step="10" value="100"/>
+			<p class="text-muted mb-0">Additional disk size (not the OS disk)</p>
+		</div>
+		<div class="col-md-12"><h4>3. Choose a System</h4></div>
+		<div class="col-md-12">
+			<select class="selectpicker mb-3" id="system_name" name="system_name" data-live-search="true" data-width="100%" title="Add additional systems to snapshot by selecting them here" required>
+				<option value="a">a</option>
+				{%- for system in systems %}
+				<option value="{{ system['name'] }}">{{ system['name'] }} - {{ system['cmdb_environment'] }} - {{ system['allocation_comment'] }}</option>
+				{% endfor -%}
+			</select>
+		</div>
+		<div class="col-md-12"><h4 style="margin-top:0px">4. Add New Virtual Disk</h4></div>
+		<div class="row w-100">
+			<div class="col-md-12">
+				<p style="text-align:center"><input type="submit" class="btn btn-lg btn-success" value="Add Disk" name="submit" id="submit" /></p>
+			</div>
+		</div>
+	</div>
+</form>
+<script type="text/javascript">
+var sliders = $(".slider-input");
+
+sliders.each(function(){
+        $(this).parent().find(".output").eq(0).html($(this).val());
+});
+
+sliders.on('input', function() {
+        $(this).parent().find(".output").eq(0).html($(this).val());
+});
+
+
+$('#submit').click(function(e) {
+	if (($('#adddisk_task').val().trim().length > 0) && ($('#adddisk_task').val().match(/^[ \t]*((((PRJ)|(INC)|(C)|(P)|(REQ))TASK)|((PRJ)|(REQ)|(INC)|(CHG)))[0-9]+[ \t]*/) == null)) {
+		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345, CTASK0012345 or REQTASK0012345.');
+		$('#adddisk_task').focus();
+	} else if ($('#system_name').val().trim().length <= 0) {
+		alert('You must select at least one system to snapshot!');
+	} else {
+		// Submit the form normally.
+		return true;
+	}
+
+	// Prevent the form from submitting.
+	e.preventDefault();
+	return false;
+});
+</script>
+{% endblock %}
