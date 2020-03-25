@@ -1,5 +1,5 @@
 from flask import request, session, jsonify, g
-from flask_restplus import Resource
+from flask_restx import Resource
 import math
 import json
 from cortex import app

@@ -1,5 +1,5 @@
 from flask import request, session
-from flask_restplus import Resource, reqparse
+from flask_restx import Resource, reqparse
 import math
 
 from cortex.api import api_manager, api_login_required
