@@ -58,7 +58,10 @@
 			<table class="table table-condensed tabled-striped">
 				<thead>
 					<tr>
-						<th>System Name</th>
+						<th>
+							System Name
+							<div class="text-muted font-weight-normal">A snapshot will be performed on the following systems:</div>
+						</th>
 						<th></th>
 					</tr>
 				</thead>
@@ -66,14 +69,14 @@
 					<tr id="system_row_template" style="display:none;">
 						<input type="hidden" class="system_server_name" value="">
 						<td class="system_row_name"></td>
-						<td><button type="button" class="btn btn-md btn-danger remove_system">Remove</button></td>
+						<td><button type="button" class="btn btn-md btn-block btn-danger remove_system">Remove</button></td>
 					</tr>
 					{%- if 'snapshot_systems' in values %}
 					{%- for system in values['snapshot_systems'] %}
 					<tr>
 						<input type="hidden" class="system_server_name" name="systems[]" value="{{ system['name'] }}">
-						<td class="system_row_name">{{ system['name'] }} - {{ system['allocation_comment'] }}</td>
-						<td><button type="button" class="btn btn-md btn-danger remove_system">Remove</button></td>
+						<td class="system_row_name">{{ system['name'] }} - {{ system['cmdb_environment'] }} - {{ system['allocation_comment'] }}</td>
+						<td><button type="button" class="btn btn-md btn-block btn-danger remove_system">Remove</button></td>
 					</tr>
 					{% endfor -%}
 					{% endif -%}
@@ -81,13 +84,19 @@
 				<tfoot>
 					<tr>
 						<td>
-							<select class="selectpicker" id="new_system_name" data-live-search="true" data-width="100%">
+							<hr/>
+							<div class="text-muted pb-1">Select systems to snapshot:</div>
+							<select class="selectpicker" id="new_system_name" data-live-search="true" data-width="100%" title="Add additional systems to snapshot by selecting them here" required>
 								{%- for system in systems %}
-								<option value="{{ system['name'] }}">{{ system['name'] }} - {{ system['allocation_comment'] }}</option>
+								<option value="{{ system['name'] }}">{{ system['name'] }} - {{ system['cmdb_environment'] }} - {{ system['allocation_comment'] }}</option>
 								{% endfor -%}
 							</select>
 						</td>
-						<td style="width:1px"><button type="button" class="btn btn-md btn-success" id="add_system">Add</button></td>
+						<td style="width: 150px;">
+							<hr/>
+							<div class="text-muted pb-1">Add system:</div>
+							<button type="button" class="btn btn-md btn-block btn-success" id="add_system">Add</button>
+						</td>
 					</tr>
 				</tfoot>
 			</table>
@@ -121,21 +130,24 @@ $('#add_system').click(function() {
 	var name = $('#new_system_name').val().trim();
 	var text = $('#new_system_name option:selected').text().trim();
 
-	// Check the system hasn't already been added
-	if ($(`input.system_server_name[value="${name}"]`).length > 0) {
-		alert(`You've already added ${text} to the list of systems to snapshot!`);
+	if (name === "") {
+		alert("You must select a system from the select dialog!");
 	} else {
-		var row = $('#system_row_template').clone(true);
-		$('#system_table_body').append(row);
-		
-		// Update row properties.
-		row.css('display', '');
-		row.removeAttr('id');
-		// Update row text.
-		row.find('td.system_row_name').html(text);
-		row.find('input.system_server_name').val(name);
-		// Add name attribute to the row.
-		row.find('input.system_server_name').attr('name', 'systems[]')
+		// Check the system hasn't already been added
+		if ($(`input.system_server_name[value="${name}"]`).length > 0) {
+			alert(`You've already added ${text} to the list of systems to snapshot!`);
+		} else {
+			var row = $('#system_row_template').clone(true);
+			$('#system_table_body').append(row);
+			// Update row properties.
+			row.css('display', '');
+			row.removeAttr('id');
+			// Update row text.
+			row.find('td.system_row_name').html(text);
+			row.find('input.system_server_name').val(name);
+			// Add name attribute to the row.
+			row.find('input.system_server_name').attr('name', 'systems[]')
+		}
 	}
 });
 $('.remove_system').click(function() {
