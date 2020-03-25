@@ -1,5 +1,5 @@
 from flask import request, session, g
-from flask_restplus import Resource, reqparse, inputs
+from flask_restx import Resource, reqparse, inputs
 import math
 import MySQLdb as mysql
 
