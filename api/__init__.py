@@ -1,19 +1,28 @@
 from flask import Blueprint, Response, request, session, redirect
-from flask_restplus import Api
+from flask_restx import Api
 from functools import wraps
 import json
 
 import cortex
-from cortex import app
 import cortex.lib.user
 import cortex.lib.core
 from cortex.api.exceptions import InvalidPermissionException, UnauthorizedException, NoResultsFoundException
 
-api_version = cortex.app.config.get('API_VERSION', '1.0')
+# Create an API Blueprint.
+api_blueprint = Blueprint('api', __name__, url_prefix='/api')
 
+# Hacky way to fix a weird redirect issue.
+@api_blueprint.route('/')
+@api_blueprint.route('')
+def handle_redirect():
+	return redirect('/api/docs')
+
+# Create an API manager
+api_version = cortex.app.config.get('API_VERSION', '1.0')
 api_manager = Api(
-	version = api_version,
+	api_blueprint,
 	title = 'Cortex API',
+	version = api_version,
 	description = 'Cortex API, Version {0}'.format(api_version),
 	doc='/docs'
 )
@@ -49,7 +58,7 @@ def api_login_required(require_permission=None, allow_api_token=False):
 						if 'X-Auth-Token' not in request.headers:
 							return send_auth_required_response(allow_api_token)
 						else:
-							if app.config['CORTEX_API_AUTH_TOKEN'] != request.headers['X-Auth-Token']:
+							if cortex.app.config['CORTEX_API_AUTH_TOKEN'] != request.headers['X-Auth-Token']:
 								raise UnauthorizedException
 							else:
 								token_auth = True
@@ -104,16 +113,4 @@ api_manager.add_namespace(tasks_namespace)
 api_manager.add_namespace(dns_namespace)
 api_manager.add_namespace(puppet_modules_info_namespace)
 api_manager.add_namespace(certificates_namespace)
-
-# Create an API Blueprint.
-api_blueprint = Blueprint('api', __name__, url_prefix='/api')
-
-# Hacky way to fix a weird redirect issue.
-@api_blueprint.route('/')
-@api_blueprint.route('')
-def handle_redirect():
-	return redirect('/api/docs')
-
-# Init the restplus api manager.
-api_manager.init_app(api_blueprint)
 
