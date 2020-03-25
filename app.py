@@ -80,26 +80,24 @@ class CortexFlask(Flask):
 
 		# set up e-mail alert logging
 		if self.config['EMAIL_ALERTS'] == True:
-			# Get Hostname / FQDN
-			try:
-				log_extra = {'hostname': socket.gethostname(), 'fqdn': socket.getfqdn()}
-			except Exception:
-				log_extra = {'hostname': 'unknown', 'fqdn': 'unknown'}
-
-
 			# Log to file where e-mail alerts are going to
 			self.logger.info('cortex e-mail alerts are enabled and being sent to: ' + str(self.config['ADMINS']))
 
 			# Create the mail handler
 			mail_handler = SMTPHandler(self.config['SMTP_SERVER'], self.config['EMAIL_FROM'], self.config['ADMINS'], self.config['EMAIL_SUBJECT'])
 
-			# Set the minimum log level (errors) and set a formatter
-			mail_handler.setLevel(logging.ERROR)
-			mail_handler.setFormatter(Formatter("""
+			# Get Hostname / FQDN
+			try:
+				log_extra = {'hostname': socket.gethostname(), 'fqdn': socket.getfqdn()}
+			except Exception:
+				log_extra = {'hostname': 'unknown', 'fqdn': 'unknown'}
+
+			# Set Formatter message text (email body)
+			formatter_text = """
 A fatal error occured in Cortex.
 
-Hostname:           %(hostname)s
-FQDN:               %(fqdn)s
+Hostname:           {hostname}
+FQDN:               {fqdn}
 
 Message type:       %(levelname)s
 Location:           %(pathname)s:%(lineno)d
@@ -112,10 +110,15 @@ Process ID:         %(process)d
 Further Details:
 
 %(message)s
-"""))
+"""
+			# Add log_extra data into the formatter text
+			formatter_text = formatter_text.format(**log_extra)
+
+			# Set the minimum log level (errors) and set a formatter
+			mail_handler.setLevel(logging.ERROR)
+			mail_handler.setFormatter(Formatter(formatter_text))
 
 			self.logger.addHandler(mail_handler)
-			self.logger = logging.LoggerAdapter(self.logger, log_extra)
 
 		# set up permissions
 		self.init_permissions()
