@@ -107,6 +107,12 @@ body
 	padding-left: 10px;
 }
 
+/* Fade */
+.fade-fast {
+	-webkit-transition: opacity 0.08s linear !important;
+	transition: opacity 0.08s linear !important;
+}
+
 /* General */
 span.arrow {
   float: right;

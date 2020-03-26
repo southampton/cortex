@@ -84,8 +84,8 @@ $(document).ready(function ()
 	/* Searching for systems */
 	Mousetrap.bind('alt+s', function(e)
 	{
-		$("#search").modal('show');
 		$("#searchinput").focus();
+		$("#search").modal('show');
 		e.preventDefault();
 	});
 

@@ -43,7 +43,7 @@
 	<body class="{{ "cortex-classic" if classic_layout else "cortex-normal" }}">
 		{%- if banner_message %}<div class="banner">{{ banner_message }}</div>{% endif %}
 		{%- if menu.systems and menu.systems|length > 0 %}
-		<div id="search" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="search-systems-modal" aria-hidden="true">
+		<div id="search" class="modal fade fade-fast" tabindex="-1" role="dialog" aria-labelledby="search-systems-modal" aria-hidden="true">
 			<div class="modal-dialog" role="document">
 				<div class="modal-content">
 					<form role="search" method="GET" action="{{url_for('systems_search')}}">
@@ -72,7 +72,7 @@
 		</div>
 		{%- endif %}
 		{%- if menu.puppet and menu.puppet|length > 0 %}
-		<div id="puppet-search" class="modal fade" tabindex="-1" role="dialog">
+		<div id="puppet-search" class="modal fade fade-fast" tabindex="-1" role="dialog">
 			<div class="modal-dialog">
 				<div class="modal-content">
 					<form role="search" method="GET" action="{{url_for('puppet_search')}}">
@@ -95,7 +95,7 @@
 			</div>
 		</div>
 		{%- endif %}
-		<div id="prefs" class="modal fade" tabindex="-1" role="dialog">
+		<div id="prefs" class="modal fade fade-fast" tabindex="-1" role="dialog">
 			<div class="modal-dialog modal-md">
 				<div class="modal-content">
 					<form role="search" method="POST" action="{{url_for('preferences')}}">
