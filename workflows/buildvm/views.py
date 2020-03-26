@@ -96,6 +96,8 @@ def sandbox():
 		neocortex = cortex.lib.core.neocortex_connect()
 		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and sets up a virtual machine (sandbox VMware environment)")
 
+		# Log the Task ID
+		cortex.lib.core.log(__name__, "workflow.buildvm.sandbox", "Build sandbox VM task {} started by {}.".format(task_id, session["username"]))
 
 		# Redirect to the status page for the task
 		return redirect(url_for('task_status', id=task_id))
@@ -225,6 +227,9 @@ def standard():
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.lib.core.neocortex_connect()
 		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and sets up a virtual machine (standard VMware environment)")
+
+		# Log the Task ID
+		cortex.lib.core.log(__name__, "workflow.buildvm.standard", "Build standard VM task {} started by {} with ServiceNow task {}".format(task_id, session["username"], values["task"]))
 
 		# Redirect to the status page for the task
 		return redirect(url_for('task_status', id=task_id))
