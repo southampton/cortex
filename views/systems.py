@@ -539,6 +539,13 @@ def system_overview(id):
 	else:
 		system['allocation_who'] = cortex.lib.user.get_user_realname(system['allocation_who']) + ' (' + system['allocation_who'] + ')'
 
+	# If this is a VM select some additonal VMware information
+	if system["vmware_uuid"]:
+		curd = g.db.cursor(mysql.cursors.DictCursor)
+		curd.execute("SELECT `guestId`, `annotation`, `cluster`, `toolsRunningStatus`, `toolsVersionStatus`, `template` FROM `vmware_cache_vm` WHERE `uuid` = %s", (system["vmware_uuid"],))
+		system["vmware_additional"] = curd.fetchone()
+
+
 	return render_template('systems/overview.html', system=system, active='systems', title=system['name'], power_ctl_perm=does_user_have_system_permission(id, "control.vmware.power", "control.all.vmware.power"))
 
 ################################################################################
