@@ -91,6 +91,7 @@
 						<tr><td>OS:</td><td>{{ system.vmware_os or 'unknown' }}</td></tr>
 						<tr><td>CPU Usage:</td><td id="cpu_usage"></td></tr>
 						<tr><td>Active RAM Usage:</td><td id="mem_usage"></td></tr>
+						<tr><td></td><td><a href="#vmwareInfoModal" data-toggle="modal" data-target="#vmwareInfoModal">More Information</a></td></tr>
 					</table>
 				</div>
 				<div class="col-md-8">
@@ -102,12 +103,6 @@
 						<div id="chart_mem"></div>
 						<h4>Active Memory Usage</h4>
 					</div>
-{#
-					<div class="col-md-4">
-						<div id="chart_disk"></div>
-						<h4>Disk</h4>
-					</div>
-#}
 				</div>
 				{%else%}
 				<p class="col-md-12"><span class="fa fa-info"></span> System information unavailable.</p>
@@ -116,8 +111,42 @@
 		</div>
 	</div>
 </div>
-
-{% if power_ctl_perm and system.vmware_uuid %}
+{%- if system.vmware_uuid -%}
+<div class="modal fade" tabindex="-1" role="dialog" id="vmwareInfoModal">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">System VMware Information</h4>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			</div>
+			<div class="modal-body">
+				<table class="table system-overview-table">
+				<tr><td>Name:</td><td>{{ system.get("vmware_name", "unknown") }}</td></tr>
+				<tr><td>Hostname:</td><td>{{ system.get("vmware_hostname", "unknown") }}</td></tr>
+				<tr><td>vCenter:</td><td>{{ system.get("vmware_vcenter", "unknown") }}</td></tr>
+				<tr><td>UUID:</td><td>{{ system.get("vmware_uuid", "unknown") }}</td></tr>
+				<tr><td>MOID:</td><td>{{ system.get("vmware_moid", "unknown") }}</td></tr>
+				<tr><td>vCPUs:</td><td>{{ system.get("vmware_cpus", "unknown") }}</td></tr>
+				<tr><td>RAM:</td><td>{{ system.get("vmware_ram", "unknown") }}</td></tr>
+				<tr><td>IP Address:</td><td>{{ system.get("vmware_ipaddr", "unknown") }}</td></tr>
+				<tr><td>Guest State:</td><td>{{ system.get("vmware_guest_state", "unknown") }}</td></tr>
+				<tr><td>Guest OS:</td><td>{{ system.get("vmware_os", "unknown") }}</td></tr>
+				<tr><td>Guest ID:</td><td>{{ system.get("vmware_additional", {}).get("guestId", "unknown")}}</td></tr>
+				<tr><td>Hardware Version:</td><td>{{ system.get("vmware_hwversion", "unknown") }}</td></tr>
+				<tr><td>VMware Tools Version Status:</td><td>{{ system.get("vmware_tools_version_status", "unknown") }}</td></tr>
+				<tr><td>VMware Tools Running Status:</td><td>{{ system.get("vmware_additional", {}).get("toolsRunningStatus", "unknown")}}</td></tr>
+				<tr><td>Annotation:</td><td>{{ system.get("vmware_additional", {}).get("annotation", "unknown")}}</td></tr>
+				<tr><td>Cluster:</td><td>{{ system.get("vmware_additional", {}).get("cluster", "unknown")}}</td></tr>
+				<tr><td>Template:</td><td>{{ system.get("vmware_additional", {}).get("template", "unknown")}}</td></tr>
+				</table>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+{% if- power_ctl_perm -%}
 <div class="modal fade" tabindex="-1" role="dialog" id="powerOnModal">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
@@ -194,7 +223,6 @@
 	</div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
 {% endif %}
-{% if system.vmware_uuid %}
 <script>
 function secondsToString(seconds) {
 	if (seconds <= 0) return 'N/A';
