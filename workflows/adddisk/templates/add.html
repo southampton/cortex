@@ -24,18 +24,21 @@
 		</div>
 		<div class="col-md-12"><h4>2. Choose Disk Size</h4></div>
 		<div class="col-md-12 form-group" style="margin-top:0.5em">
-			<label for="disk-slider">Disk (GB):</label>
+			<label for="adddisk_size">Disk (GB):</label>
 			<span class="badge badge-primary output ml-2" style="font-size: 14px;">2000</span>
-			<input class="slider form-control-range slider-input" name="disk" id="disk-slider" type="range" min="10" max="2000" step="10" value="100"/>
+			<input class="slider form-control-range slider-input" name="adddisk_size" id="adddisk_size" type="range" min="10" max="2000" step="10" value="100"/>
 			<p class="text-muted mb-0">Additional disk size (not the OS disk)</p>
 		</div>
 		<div class="col-md-12"><h4>3. Choose a System</h4></div>
 		<div class="col-md-12">
-			<select class="selectpicker mb-3" id="system_name" name="system_name" data-live-search="true" data-width="100%" title="Add additional systems to snapshot by selecting them here" required>
-				<option value="a">a</option>
-				{%- for system in systems %}
-				<option value="{{ system['name'] }}">{{ system['name'] }} - {{ system['cmdb_environment'] }} - {{ system['allocation_comment'] }}</option>
-				{% endfor -%}
+			<select class="selectpicker mb-3" id="adddisk_system_id" name="adddisk_system_id" data-live-search="true" data-width="100%" title="Add additional systems to snapshot by selecting them here" required>
+				{%- if selected_system -%}
+					<option selected="selected" value="{{ selected_system['id'] }}">{{ selected_system['name'] }} - {{ selected_system['cmdb_environment'] }} - {{ selected_system['allocation_comment'] }}</option>
+				{%- else -%}
+					{%- for system in systems %}
+					<option value="{{ system['id'] }}">{{ system['name'] }} - {{ system['cmdb_environment'] }} - {{ system['allocation_comment'] }}</option>
+					{% endfor -%}
+				{%- endif -%}
 			</select>
 		</div>
 		<div class="col-md-12"><h4 style="margin-top:0px">4. Add New Virtual Disk</h4></div>
@@ -62,7 +65,7 @@ $('#submit').click(function(e) {
 	if (($('#adddisk_task').val().trim().length > 0) && ($('#adddisk_task').val().match(/^[ \t]*((((PRJ)|(INC)|(C)|(P)|(REQ))TASK)|((PRJ)|(REQ)|(INC)|(CHG)))[0-9]+[ \t]*/) == null)) {
 		alert('You must enter a valid ServiceNow task number, e.g. INCTASK0123456, PRJTASK0012345, CTASK0012345 or REQTASK0012345.');
 		$('#adddisk_task').focus();
-	} else if ($('#system_name').val().trim().length <= 0) {
+	} else if ($('#adddisk_system_id').val().trim().length <= 0) {
 		alert('You must select at least one system to snapshot!');
 	} else {
 		// Submit the form normally.
