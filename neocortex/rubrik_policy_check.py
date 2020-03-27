@@ -30,6 +30,8 @@ def run(helper, options):
 	# Map environment names to SLA domains
 	env_to_sla_map = { e['name']: e['rubrik_sla'] for e in helper.config['ENVIRONMENTS'] }
 
+	## CREATE AN EMAIL MESSAGE
+	email_report = ""
 
 	## UPDATE SLA DOMAINS AS NECESSARY
 
@@ -49,7 +51,7 @@ def run(helper, options):
 
 		# If Rubrik doesn't have any data on it, there's nothing we can do. This should NOT happen though - it's possibly pointing to user error
 		if rubrik_vm_data is None:
-			helper.event("_rubrik_unknown", "{vm_link} does not exist in Rubrik", oneshot=True, success=False, warning=True)
+			helper.event("_rubrik_unknown", "{vm_link} does not exist in Rubrik", oneshot=True, warning=True)
 		else:
 			# Create an empty dictionary for updating the VM
 			updated_vm = {}
@@ -62,13 +64,15 @@ def run(helper, options):
 						helper.event("_rubrik_changed", "{vm_link} has no Rubrik SLA domain - setting default for environment".format(vm_link=vm_link), oneshot=True, changed=True)
 						# Map the SLA domain to the default for the environment, and then map it to
 						# it's ID (we can't set it in Rubrik by name)
-						#updated_vm['configuredSlaDomainId'] = sla_name_id_map[env_to_sla_map[cortex_vm_data['cmdb_environment']]]
+						updated_vm['configuredSlaDomainId'] = sla_name_id_map[env_to_sla_map[cortex_vm_data['cmdb_environment']]]
 					else:
-						helper.event("_rubrik_warn", "{vm_link} has no CMDB environment set - unable to set a default SLA domain".format(vm_link=vm_link), oneshot=True, warning=True)
+						helper.event("_rubrik_warn", "{vm_link} has no CMDB environment set - unable to set a default SLA domain".format(vm_link=vm_link), oneshot=True, success=False, warning=True)
+						email_report += "{name} has no CMDB environment set - unable to set a default SLA domain\n".format(name=cortex_vm_data["name"])
 
 				# If Cortex is not backing up but Rubrik is, DO NOT change but instead report this.
 				elif cortex_vm_data['enable_backup'] == 0 and rubrik_vm_data['effectiveSlaDomainId'] != 'UNPROTECTED':
-					helper.event("_rubrik_warn", "{vm_link} is set to not backup but has a Rubrik SLA domain set - please check and confirm that this is correct".format(vm_link=vm_link), oneshot=True, warning=True)
+					helper.event("_rubrik_warn", "{vm_link} is set to not backup but has a Rubrik SLA domain set - please check and confirm that this is correct".format(vm_link=vm_link), oneshot=True, success=False, warning=True)
+					email_report += "{name} is set to not backup but has a Rubrik SLA domain set - please check and confirm that this is correct\n".format(name=cortex_vm_data["name"])
 
 				# If Cortex is set to not backup, and Rubrik isn't backing up, don't change anything
 				elif cortex_vm_data['enable_backup'] == 0 and rubrik_vm_data['effectiveSlaDomainId'] == 'UNPROTECTED':
@@ -78,9 +82,10 @@ def run(helper, options):
 				elif cortex_vm_data['enable_backup'] == 1 and rubrik_vm_data['configuredSlaDomainName'] in local_domains:
 					helper.event("_rubrik_correct", "{vm_link} is configured to backup and has a Rubrik SLA domain set".format(vm_link=vm_link), oneshot=True)
 
+				# Logically, we shouldn't get here
 				else:
-					# Logically, we shouldn't get here
 					helper.event("_rubrik_error", "Something went wrong with {vm_link}".format(vm_link=vm_link), oneshot=True, success=False)
+					email_report += "{name}: Something when wrong when attempting to process {name}\n".format(name=cortex_vm_data["name"])
 
 
 			# Backup Scripts: If cortex is not in the 'unknown - do not change' mode:
@@ -92,7 +97,8 @@ def run(helper, options):
 					updated_vm.update(helper.config["RUBRIK_BACKUP_SCRIPT_CONFIG"].get(os_type, {}))
 				# If Cortex is set to disable backup scripts but one or more are configured in Rubrik
 				elif cortex_vm_data["enable_backup_scripts"] == 0 and any(k in rubrik_vm_data for k in ["preBackupScript", "postSnapScript", "postBackupScript"]):
-					helper.event("_rubrik_warn", "{vm_link} has backup scripts disabled in Cortex but one or more configured in Rubrik".format(vm_link=vm_link), oneshot=True, warning=True)
+					helper.event("_rubrik_warn", "{vm_link} has backup scripts disabled in Cortex but one or more configured in Rubrik".format(vm_link=vm_link), oneshot=True, success=False, warning=True)
+					email_report += "{name} has backup scripts disabled in Cortex but one or more configured in Rubrik\n".format(name=cortex_vm_data["name"])
 				# If Cortex is set to disable backup scripts and none are configured in Rubrik
 				elif cortex_vm_data["enable_backup_scripts"] == 0 and all(k not in rubrik_vm_data for k in ["preBackupScript", "postSnapScript", "postBackupScript"]):
 					helper.event("_rubrik_correct", "{vm_link} has backup scripts disabled in Cortex and none configured in Rubrik".format(vm_link=vm_link), oneshot=True)
@@ -101,7 +107,8 @@ def run(helper, options):
 					helper.event("_rubrik_correct", "{vm_link} has backup scripts enabled in both Cortex and Rubrik".format(vm_link=vm_link), oneshot=True)
 				# Logically, we shouldn't get here
 				else:
-					helper.event("_rubrik_error", "Something went wrong when attempting to set backup scripts for {vm_link}".format(vm_link=vm_link), oneshot=True, warning=True)
+					helper.event("_rubrik_error", "Something went wrong when attempting to set backup scripts for {vm_link}".format(vm_link=vm_link), oneshot=True, success=False, warning=True)
+					email_report += "{name}: Something when wrong when attempting to set backup scripts for {name}\n".format(name=cortex_vm_data["name"])
 
 			# If changes are required to the VM make them
 			if updated_vm:
@@ -109,6 +116,23 @@ def run(helper, options):
 				rubrik_connection.update_vm(rubrik_vm_data['id'], updated_vm)
 				changes = changes + 1
 				helper.end_event(description="Changes applied successfully for {vm_link}".format(vm_link=vm_link), changed=True)
+
+	# If required send an email report
+	if email_report and helper.config["RUBRIK_NOTIFY_EMAILS"]:
+		subject = "Rubrik Policy Check Report from Cortex"
+		message = "There were one or more warnings generated when running the Rubrik policy check task. "
+		message += "These were generated from https://{cortex_domain}\n".format(cortex_domain=helper.config['CORTEX_DOMAIN'])
+		message += "These warnings are listed below:\n"
+		message += email_report
+		message += "\n"
+		message += "These warnings likely require manual review and remediation in either Cortex or Rubrik.\n"
+		message += "These warnings can be viewed in Cortex here: "
+		message += "https://{cortex_domain}/task/status/{task_id}?hide_success=1\n".format(cortex_domain=helper.config['CORTEX_DOMAIN'], task_id=helper.task_id)
+		message += "The full Rubrik policy check task can be viewed here: "
+		message += "https://{cortex_domain}/task/status/{task_id}\n\n".format(cortex_domain=helper.config['CORTEX_DOMAIN'], task_id=helper.task_id)
+
+		for email in helper.config["RUBRIK_NOTIFY_EMAILS"]:
+			 helper.lib.send_email(email, subject, message)
 
 	# Oneshot this as the original _vm_task event above may have already ended
 	helper.event("_rubrik_end", "VM SLA assignments updated: {} changes made".format(changes), oneshot=True)
