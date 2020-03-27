@@ -802,15 +802,24 @@ def system_edit(id):
 				review_status = system['review_status']
 				review_task = system['review_task']
 
+			rubrik_update_vm_data = {}
 			if int(system['enable_backup']) in [1, 2] and int(enable_backup) == 0:
+				rubrik_update_vm_data.update({'configuredSlaDomainId': 'UNPROTECTED'})
+				flash("Re-configured system to NOT backup in Rubrik!", "alert-warning")
+
+			if int(system['enable_backup']) in [0, 2] and int(enable_backup_scripts) == 1:
+				corpus = Corpus(g.db, app.config)
+				os_type = corpus.get_system_cmdb_os_type(system)
+				rubrik_update_vm_data.update(app.config["RUBRIK_BACKUP_SCRIPT_CONFIG"].get(os_type, {}))
+
+			if rubrik_update_vm_data:
 				rubrik = cortex.lib.rubrik.Rubrik()
 				try:
 					vm = rubrik.get_vm(system)
 				except Exception as e:
 					flash("Failed to get VM from Rubrik", "alert-danger")
 				else:
-					rubrik.update_vm(vm['id'], {'configuredSlaDomainId': 'UNPROTECTED'})
-					flash("Re-configured system to NOT backup in Rubrik!", "alert-warning")
+					rubrik.update_vm(vm['id'], rubrik_update_vm_data)
 
 			# Update the system
 			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `enable_backup` = %s, `enable_backup_scripts` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, enable_backup, enable_backup_scripts, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, id))
