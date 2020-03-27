@@ -43,7 +43,7 @@ def run(helper, options):
 			rubrik_vm_data = rubrik_connection.get_vm(cortex_vm_data)
 		except Exception as e:
 			rubrik_vm_data = None
-		
+
 		# If Rubrik doesn't have any data on it, there's nothing we can do. This should NOT happen though - it's possibly pointing to user error
 		if rubrik_vm_data is None:
 			helper.event("_rubrik_unknown", vm_link + ' does not exist in Rubrik', oneshot=True, success=False, warning=True)
@@ -56,7 +56,7 @@ def run(helper, options):
 			if cmdb_environment is not None:
 				helper.event("_rubrik_setdefault", vm_link + " has no Rubrik SLA domain - setting default for environment", oneshot=True, success=True, warning=False)
 
-				# Map the SLA domain to the default for the environment, and then map it to 
+				# Map the SLA domain to the default for the environment, and then map it to
 				# it's ID (we can't set it in Rubrik by name)
 				updated_vm = {}
 				updated_vm['configuredSlaDomainId'] = sla_name_id_map[env_to_sla_map[cmdb_environment]]
@@ -82,6 +82,6 @@ def run(helper, options):
 		else:
 			# Logically, we shouldn't get here
 			helper.event("_rubrik_error", "Something went wrong with " + vm_link, oneshot=True, success=False)
-	
+
 	# Oneshot this as the original _vm_task event above may have already ended
 	helper.event("_rubrik_end", "VM SLA assignments updated: " + str(changes) + " changes made", oneshot=True)
