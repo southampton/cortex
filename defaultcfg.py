@@ -200,6 +200,7 @@ RUBRIK_BACKUP_SCRIPT_CONFIG = {
 		},
 	}
 }
+RUBRIK_NOTIFY_EMAILS=[]
 
 # Nessus / Tenable
 NESSUS_URL="https://cloud.tenable.com/"
