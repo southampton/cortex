@@ -2038,6 +2038,18 @@ class Corpus(object):
 
 	############################################################################
 
+	def get_system_cmdb_os_type(self, system):
+		"""Returns either 'windows', 'linux' or 'unknown'"""
+		# Get the system's OS type using the cmdb_os field:
+		if system["cmdb_os"] and "linux" in system["cmdb_os"].lower():
+			return "linux"
+		elif system["cmdb_os"] and "windows" in system["cmdb_os"].lower():
+			return "windows"
+		else:
+			return "unknown"
+
+	############################################################################
+
 	def system_get_repeatable_password(self, id):
 		system = self.get_system_by_id(id)
 		return base64.standard_b64encode(hashlib.sha256(bytes(system['name'] + '|' + str(system['build_count']) + '|' + str(system['allocation_date']) + '|' + system['allocation_who'] + '|' + self.config['SECRET_KEY'], 'utf8')).digest()).decode('ascii')[0:16]

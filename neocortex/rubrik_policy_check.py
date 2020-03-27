@@ -45,12 +45,7 @@ def run(helper, options):
 			rubrik_vm_data = None
 
 		# Get the system's OS type using the cmdb_os field:
-		if cortex_vm_data["cmdb_os"] and "linux" in cortex_vm_data["cmdb_os"].lower():
-			os_type = "linux"
-		elif cortex_vm_data["cmdb_os"] and "windows" in cortex_vm_data["cmdb_os"].lower():
-			os_type = "windows"
-		else:
-			os_type = "unknown"
+		os_type = helper.lib.get_system_cmdb_os_type(cortex_vm_data)
 
 		# If Rubrik doesn't have any data on it, there's nothing we can do. This should NOT happen though - it's possibly pointing to user error
 		if rubrik_vm_data is None:
@@ -94,8 +89,7 @@ def run(helper, options):
 				if cortex_vm_data["enable_backup_scripts"] == 1 and not all(k in rubrik_vm_data for k in ["preBackupScript", "postSnapScript", "postBackupScript"]):
 					helper.event("_rubrik_changed", "{vm_link} has no backup scripts configured - setting the default for OS type {os_type}".format(vm_link=vm_link, os_type=os_type.title()), oneshot=True, changed=True)
 					# Update the VM based on the backup script config.
-					for key, value in helper.config["RUBRIK_BACKUP_SCRIPT_CONFIG"].get(os_type, {}).items():
-						updated_vm[key] = value
+					updated_vm.update(helper.config["RUBRIK_BACKUP_SCRIPT_CONFIG"].get(os_type, {}))
 				# If Cortex is set to disable backup scripts but one or more are configured in Rubrik
 				elif cortex_vm_data["enable_backup_scripts"] == 0 and any(k in rubrik_vm_data for k in ["preBackupScript", "postSnapScript", "postBackupScript"]):
 					helper.event("_rubrik_warn", "{vm_link} has backup scripts disabled in Cortex but one or more configured in Rubrik".format(vm_link=vm_link), oneshot=True, warning=True)
