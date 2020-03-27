@@ -815,6 +815,7 @@ a.server-link:hover { text-decoration: underline !important }
 #status-log i.fa-check{color:#2c2}
 #status-log i.fa-times{color:#c22}
 #status-log i.fa-exclamation{color:#c82}
+#status-log i.fa-pencil{color:#158cba}
 #status-log i.fa{margin-right: 1em}
 #taskStatus { font-weight: bold; }
 .class-select-box

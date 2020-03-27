@@ -260,7 +260,15 @@ def admin_events_json(event_source):
 		'_sync_puppet_stats_graphite.post_graphite',
 		'_sync_puppet_stats_graphite.puppet_nodes',
 		'_sync_puppet_stats_graphite.puppetdb_connect',
-		'_sync_puppet_stats_graphite.sync_puppet_stats_graphite_config_check'
+		'_sync_puppet_stats_graphite.sync_puppet_stats_graphite_config_check',
+		'_rubrik_policy_check._get_current_status',
+		'_rubrik_policy_check._retrieve_sla_doms',
+		'_rubrik_policy_check._vm_task',
+		'_rubrik_policy_check._rubrik_unknown',
+		'_rubrik_policy_check._rubrik_warn',
+		'_rubrik_policy_check._rubrik_correct',
+		'_rubrik_policy_check._rubrik_error',
+		'_rubrik_policy_check._rubrik_end'
 	]
 	frequent_events_str = '"' + ('","'.join(frequent_events)) + '"'
 	if frequent_events and hide_frequent:
