@@ -129,6 +129,18 @@
 		</div>
 	</div>
 
+	<div class="form-group row">
+		<label class="col-sm-2 control-label" for="enable_backup_scripts">Enable Backup Scripts:</label>
+		<div class="col-sm-9">
+			<select class="form-control selectpicker" name="enable_backup_scripts" id="enable_backup_scripts"{% if not does_user_have_system_permission(system['id'],"edit.rubrik","systems.all.edit.rubrik") %} disabled="disabled" {% endif %}>
+				<option value="0"{% if system.enable_backup_scripts == 0 %} selected="selected"{% endif %}>Disable Backup Scripts</option>
+				<option value="1"{% if system.enable_backup_scripts == 1 %} selected="selected"{% endif %}>Enable Backup Scripts</option>
+				<option value="2"{% if system.enable_backup_scripts == 2 %} selected="selected"{% endif %}>Unknown - Do not change backup scripts</option>
+			</select>
+			<div class="form-text">This field determines whether Cortex will set a default backup script policy for the VM if one or more backup script is not configured in Rubrik. Policy checks occur once an hour.</div>
+		</div>
+	</div>
+
 {%- if not system_class or system_class.link_vmware %}
 	<div class="form-group row">
 		<label class="col-sm-2 control-label" for="vmware_uuid">VMware UUID:</label>

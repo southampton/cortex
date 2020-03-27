@@ -11,7 +11,7 @@
 <p class="event"><i class="fa fa-fw fa-arrow-right"></i> Task started by {{ task.username }} at {{ task.start }}</p>
 {% endif -%}
 {% for event in events -%}
-<p class="event"><i class="fa fa-fw {% if event.status == 0 %}fa-spin fa-refresh{% elif event.status == 1 %}fa-check{% elif event.status == 2 %}fa-times{% elif event.status == 3 %}fa-exclamation{% endif %}"></i>  {{ event.desc | parse_cortex_links | safe }}</p>
+<p class="event"><i class="fa fa-fw {% if event.status == 0 %}fa-spin fa-refresh{% elif event.status == 1 %}fa-check{% elif event.status == 2 %}fa-times{% elif event.status == 3 %}fa-exclamation{% elif event.status == 4%}fa-pencil{% endif %}"></i>  {{ event.desc | parse_cortex_links | safe }}</p>
 {% endfor -%}
 {% if task.end -%}
 <p class="event"><i class="fa fa-fw fa-arrow-right"></i> Task ended at {{ task.end }}. Elapsed Time: {{ task.end - task.start }}</p>

@@ -19,6 +19,7 @@ class TaskHelper(object):
 	STATUS_SUCCESS  = 1
 	STATUS_FAILED   = 2
 	STATUS_WARNED   = 3
+	STATUS_CHANGED  = 4
 
 	# Flash Message Category Map
 	CATEGORY_MAP = {
@@ -105,7 +106,7 @@ class TaskHelper(object):
 			('neocortex.task',self.task_id, self.workflow_name + "." + 'exception', self.username, message, self.STATUS_FAILED))
 		self.db.commit()
 
-	def event(self, name, description, success=True, oneshot=False, warning=False):
+	def event(self, name, description, success=True, oneshot=False, warning=False, changed=False):
 		"""Starts a new event within the tasks, closing an existing one if there was one"""
 
 		# Cast the description to a string
@@ -113,7 +114,7 @@ class TaskHelper(object):
 
 		# Handle closing an existing event if there is still one
 		if self.event_id != -1:
-			self.end_event(success=success, warning=warning)
+			self.end_event(success=success, warning=warning, changed=changed)
 
 		name = self.workflow_name + "." + name
 		self.curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `start`) VALUES (%s, %s, %s, %s, %s, NOW())", ('neocortex.task', self.task_id, name, self.username, description))
@@ -121,7 +122,7 @@ class TaskHelper(object):
 		self.event_id = self.curd.lastrowid
 
 		if oneshot:
-			self.end_event(success=success, warning=warning)
+			self.end_event(success=success, warning=warning, changed=changed)
 
 		return True
 
@@ -136,7 +137,7 @@ class TaskHelper(object):
 
 		return True
 
-	def end_event(self, success=True, description=None, warning=False):
+	def end_event(self, success=True, description=None, warning=False, changed=False):
 		"""Ends the currently running event, updating it's description and status as necessary"""
 
 		# Cast the description to a string
@@ -154,6 +155,8 @@ class TaskHelper(object):
 				# Keep count of events with warnings/failures
 				self.event_problems += 1
 				status = self.STATUS_WARNED
+			elif changed:
+				status = self.STATUS_CHANGED
 			else:
 				status = self.STATUS_SUCCESS
 		else:
@@ -200,7 +203,7 @@ class TaskHelper(object):
 	def flash(self, message, category='message'):
 		"""Wrapper for oneshot events to create a Flask flashing-like method."""
 
-		name = 'decom.flash.{}'.format(category.lower())
+		name = 'flash.{}'.format(category.lower())
 		self.event(
 			name,
 			message,
