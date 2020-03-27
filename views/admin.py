@@ -546,7 +546,7 @@ def admin_maint():
 	cert_scan_id = None
 	student_vm_build_id = None
 	lock_workflows = None
-	rubrik_crcheck = None
+	rubrik_policy_check = None
 
 	# get the lock status of the page
 	workflows_lock_status = get_workflows_locked_details()
@@ -569,7 +569,7 @@ def admin_maint():
 			elif task['name'] == '_lock_workflows':
 				lock_workflows = task['id']
 			elif task['name'] == '_rubrik_policy_check':
-				rubrik_crcheck = task['id']
+				rubrik_policy_check = task['id']
 
 
 		# Render the page
@@ -623,10 +623,10 @@ def admin_maint():
 			curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;', ('workflow_lock_status',))
 			res = curd.fetchone()
 			task_id = neocortex.start_internal_task(session['username'], 'lock_workflows.py', '_lock_workflows', description="Locks the workflows from being started", options={'page_load_lock_status' : res})
-		elif module == 'rubrik_crcheck':
+		elif module == 'rubrik_policy_check':
 			if not does_user_have_permission("maintenance.rubrik_policy_check"):
 				abort(403)
-			task_id = neocortex.start_internal_task(session['username'], 'rubrik_crcheck.py', '_rubrik_policy_check', description="Checks the backup systems of policies against the ones in Rubrik")
+			task_id = neocortex.start_internal_task(session['username'], 'rubrik_policy_check.py', '_rubrik_policy_check', description="Checks the backup systems of policies against the ones in Rubrik")
 		else:
 			app.logger.warn('Unknown module name specified when starting task')
 			abort(400)
