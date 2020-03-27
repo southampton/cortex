@@ -12,7 +12,11 @@
 <script type="text/javascript">
 var interval = window.setInterval(function() {
 	$.ajax({
+		{%- if hide_success -%}
+		url: '{{ url_for('task_status_log', id=id, hide_success=1) }}',
+		{%- else -%}
 		url: '{{ url_for('task_status_log', id=id) }}',
+		{%- endif -%}
 		success: function(data, textStatus, xhr) {
 			$('#status-log').html(data);
 			var taskStatus = $('#taskStatus').attr('data-taskstatus');

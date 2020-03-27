@@ -138,7 +138,12 @@ def task_status(id):
 		if not does_user_have_permission("tasks.view"):
 			abort(403)
 
-	return cortex.lib.core.task_render_status(task, "tasks/status.html")
+	# Check if the hide success flag is set
+	hide_success = False
+	if "hide_success" in request.args and request.args.get("hide_success", None):
+		hide_success = True
+
+	return cortex.lib.core.task_render_status(task, "tasks/status.html", hide_success=hide_success)
 
 ################################################################################
 
@@ -160,4 +165,9 @@ def task_status_log(id):
 		if not does_user_have_permission("tasks.view"):
 			abort(403)
 
-	return cortex.lib.core.task_render_status(task, "tasks/status-log.html")
+	# Check if the hide success flag is set
+	hide_success = False
+	if "hide_success" in request.args and request.args.get("hide_success", None):
+		hide_success = True
+
+	return cortex.lib.core.task_render_status(task, "tasks/status-log.html", hide_success=hide_success)
