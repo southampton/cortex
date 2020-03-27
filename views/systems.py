@@ -808,10 +808,13 @@ def system_edit(id):
 				rubrik_update_vm_data.update({'configuredSlaDomainId': 'UNPROTECTED'})
 				flash("Re-configured system to NOT backup in Rubrik!", "alert-warning")
 
-			if int(system['enable_backup']) in [0, 2] and int(enable_backup_scripts) == 1:
+			if int(system['enable_backup_scripts']) in [0, 2] and int(enable_backup_scripts) == 1:
 				corpus = Corpus(g.db, app.config)
 				os_type = corpus.get_system_cmdb_os_type(system)
 				rubrik_update_vm_data.update(app.config["RUBRIK_BACKUP_SCRIPT_CONFIG"].get(os_type, {}))
+
+			if int(system['enable_backup_scripts']) == 1 and int(enable_backup_scripts) in [0, 2]:
+				flash("Re-configured system to disable backup scripts, you will need to clear pre-existing scripts in Rubrik manually.", "alert-warning")
 
 			if rubrik_update_vm_data:
 				rubrik = cortex.lib.rubrik.Rubrik()
