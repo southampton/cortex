@@ -176,10 +176,30 @@ SATELLITE6_CLUSTER_COMPUTE_RESOURCE = {
 }
 
 # Rubrik
-RUBRIK_API_URL_BASE = ''
-RUBRIK_API_USER = ''
-RUBRIK_API_PASS = ''
-RUBRIK_VIEW_URL = ''
+RUBRIK_API_URL_BASE = 'https://rubrik.domain.tld/api/'
+RUBRIK_API_DEFAULT_VERSION = 'v1'
+RUBRIK_API_VERIFY_SERVER = True
+RUBRIK_API_USER = 'admin'
+RUBRIK_API_PASS = 'admin'
+RUBRIK_BACKUP_SCRIPT_CONFIG = {
+	"linux": {
+		"preBackupScript": {
+			"scriptPath": "/path/to/pre-backup.sh",
+			"timeoutMs": 60000,
+			"failureHandling": "continue"
+		},
+		"postSnapScript": {
+			"scriptPath": "/path/to/post-snapshot.sh",
+			"timeoutMs": 60000,
+			"failureHandling": "continue"
+		},
+		"postBackupScript": {
+			"scriptPath": "/path/to/post-backup.sh",
+			"timeoutMs": 60000,
+			"failureHandling": "continue"
+		},
+	}
+}
 
 # Nessus / Tenable
 NESSUS_URL="https://cloud.tenable.com/"
