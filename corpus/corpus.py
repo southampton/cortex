@@ -224,16 +224,6 @@ class Corpus(object):
 
 	################################################################################
 
-	def pad_system_name(self, prefix, number, digits):
-		"""Takes a class name ('prefix') a system number, and the number of
-		digits that class should have in its name and formats a string to that
-		specification. For example, if prefix is 'test', number is '12' and
-		'digits' is 5, then this returns 'test00012'"""
-
-		return ("%s%0" + str(int(digits)) + "d") % (prefix, number)
-
-	################################################################################
-
 	def infoblox_create_host(self, name, ipv4 = True, ipv4_addr = None, ipv4_subnet = None, ipv6 = False, ipv6_addr = None, ipv6_subnet = None, aliases = None):
 		"""Create an Infoblox host object"""
 
