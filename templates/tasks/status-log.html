@@ -4,14 +4,20 @@
 {%- if task.status == 1 %} <strong id="taskStatus" data-taskstatus="1" style="color:#2c2">succeeded</strong>{% endif -%}
 {%- if task.status == 2 %} <strong id="taskStatus" data-taskstatus="2" style="color:#c22">failed</strong>{% endif -%}
 {%- if task.status == 3 %} <strong id="taskStatus" data-taskstatus="3" style="color:#ca2">finished with warnings</strong>{% endif -%}
-. The event log for the task is shown below:</p>
+. The event log for the task is shown below:
+{% if hide_success -%}
+(<a href={{ url_for("task_status", id=id) }}>View full event log</a>)
+{%- endif -%}
+</p>
 
 {#- Print task started event #}
 {% if task.start -%}
 <p class="event"><i class="fa fa-fw fa-arrow-right"></i> Task started by {{ task.username }} at {{ task.start }}</p>
 {% endif -%}
 {% for event in events -%}
+{%- if not (hide_success and event.status == 1) -%}
 <p class="event"><i class="fa fa-fw {% if event.status == 0 %}fa-spin fa-refresh{% elif event.status == 1 %}fa-check{% elif event.status == 2 %}fa-times{% elif event.status == 3 %}fa-exclamation{% elif event.status == 4%}fa-pencil{% endif %}"></i>  {{ event.desc | parse_cortex_links | safe }}</p>
+{%- endif -%}
 {% endfor -%}
 {% if task.end -%}
 <p class="event"><i class="fa fa-fw fa-arrow-right"></i> Task ended at {{ task.end }}. Elapsed Time: {{ task.end - task.start }}</p>
