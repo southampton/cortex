@@ -484,6 +484,7 @@ Username:             %s
 		  `secondary_owner_who` varchar(64) DEFAULT NULL,
 		  `secondary_owner_role` varchar(64) DEFAULT NULL,
 		  `enable_backup` tinyint(1) DEFAULT 2,
+		  `enable_backup_scripts` tinyint(1) DEFAULT 2,
 		  PRIMARY KEY (`id`),
 		  KEY `class` (`class`),
 		  KEY `name` (`name`(255)),
@@ -693,6 +694,12 @@ Username:             %s
 		except Exception as e:
 			pass
 
+		try:
+			cursor.execute("""ALTER TABLE `systems` ADD `enable_backup_scripts` tinyint(1) DEFAULT 2""")
+		except Exception as e:
+			pass
+
+
 		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT 
 		  `systems`.`id` AS `id`,
 		  `systems`.`type` AS `type`,
@@ -742,7 +749,8 @@ Username:             %s
 		  `puppet_nodes`.`include_default` AS `puppet_include_default`,
 		  `puppet_nodes`.`classes` AS `puppet_classes`,
 		  `puppet_nodes`.`variables` AS `puppet_variables`,
-		  `systems`.`enable_backup` AS `enable_backup`
+		  `systems`.`enable_backup` AS `enable_backup`,
+		  `systems`.`enable_backup_scripts` AS `enable_backup_scripts`
 		FROM `systems` 
 		LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`
 		LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid`
