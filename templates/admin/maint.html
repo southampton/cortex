@@ -133,7 +133,7 @@
 			<p>Verifies the backup policies of all the VMs against the values stored by Rubrik</p>
 			<form method="POST">
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-				<input type="hidden" name="task_name" value="rubrik_crcheck"/>
+				<input type="hidden" name="task_name" value="rubrik_policy_check"/>
 			<button class="form-control btn btn-success" type="submit"><i class="fa fa-fw fa-play"></i> Start</button>
 			</form>
 		</div>
