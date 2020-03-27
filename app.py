@@ -699,7 +699,6 @@ Username:             %s
 		except Exception as e:
 			pass
 
-
 		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT 
 		  `systems`.`id` AS `id`,
 		  `systems`.`type` AS `type`,

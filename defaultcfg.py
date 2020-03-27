@@ -200,6 +200,7 @@ RUBRIK_BACKUP_SCRIPT_CONFIG = {
 		},
 	}
 }
+RUBRIK_NOTIFY_EMAILS=[]
 
 # Puppet Module Documentation Location
 PUPPET_MODULE_DOCS_URL = None
