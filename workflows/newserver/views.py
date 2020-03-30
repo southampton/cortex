@@ -51,6 +51,7 @@ def allocateserver():
 		domain     = request.form['domain']
 		alloc_ip   = 'alloc_ip' in request.form
 		is_virtual = 'is_virtual' in request.form
+		set_backup = 1 if 'set_backup' in request.form else 0
 		task       = None
 
 		# Extract task if we've got it
@@ -84,6 +85,7 @@ def allocateserver():
 		options['comments'] = comments
 		options['alloc_ip'] = alloc_ip
 		options['is_virtual'] = is_virtual
+		options['set_backup'] = set_backup
 		options['task'] = task
 		options['wfconfig'] = workflow.config
 
