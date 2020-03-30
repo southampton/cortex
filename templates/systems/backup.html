@@ -20,6 +20,39 @@
 	<div class="col-md-6">
 		<div class="card">
 			<div class="card-header">
+				<h4 class="card-title">Rubrik Details</h4>
+			</div>
+			<div class="card-body system-record-body">
+				<div class="row">
+					<label class="col-sm-3 control-label" for="rubrik_agent_status">Agent Status:</label>
+					<div class="col-sm-9"><p class="form-control-plaintext">
+						{{ vm.get('agentStatus', {}).get('agentStatus', 'Unknown') }}
+					</p></div>
+				</div>
+				<div class="row">
+					<label class="col-sm-3 control-label" for="rubrik_snapshot_count">Snapshot Count:</label>
+					<div class="col-sm-9"><p class="form-control-plaintext">
+						{{ vm.get('snapshotCount', 'Unknown') }}
+					</p></div>
+				</div>
+				<div class="row">
+					<label class="col-sm-3 control-label" for="rubrik_backup_scripts">Rubrik Backup Scripts:</label>
+					<div class="col-sm-9"><p class="form-control-plaintext">
+						{%- if (vm.get('preBackupScript'), vm.get('postSnapScript'), vm.get('postBackupScript')) | all -%}
+							Configured
+						{%- elif (vm.get('preBackupScript'), vm.get('postSnapScript'), vm.get('postBackupScript')) | any -%}
+							Misconfigured
+						{%- else -%}
+							Disabled
+						{%- endif -%}
+					</p></div>
+				</div>
+
+			</div>
+		</div>
+
+		<div class="card">
+			<div class="card-header">
 				<h4 class="card-title">SLA Domain</h4>
 			</div>
 			<div class="card-body">
