@@ -78,8 +78,6 @@ def context_processor():
 	if does_user_have_permission("systems.all.view"):
 		systems.append({'link': url_for('systems_nocmdb'), 'title': 'Systems without a CMBD record', 'icon': 'fa-list'})
 		systems.append({'link': url_for('systems_expired'), 'title': 'Expired systems', 'icon': 'fa-list'})
-	if does_user_have_permission("sysrequests.own.view") or does_user_have_permission("sysrequests.all.view"):
-		systems.append({'link': url_for('sysrequests'), 'title': 'System requests', 'icon': 'fa-list'})
 
 	# Set up the VMware menu, based on a single permission
 	vmware = []

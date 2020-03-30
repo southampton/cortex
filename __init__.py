@@ -16,7 +16,6 @@ import cortex.views.admin
 import cortex.views.views
 import cortex.views.vmware
 import cortex.views.systems
-import cortex.views.sysrequests
 import cortex.views.puppet
 import cortex.views.api
 import cortex.views.register
