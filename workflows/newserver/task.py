@@ -15,7 +15,7 @@ def run(helper, options):
 	helper.event("allocate_name", "Allocating a '" + options['classname'] + "' system name")
 
 	# Allocate the name
-	system_info = helper.lib.allocate_name(options['classname'], options['purpose'], helper.username)
+	system_info = helper.lib.allocate_name(options['classname'], options['purpose'], helper.username, set_backup=options['set_backup'])
 
 	# system_info is a dictionary containg a single { 'hostname': database_id }. Extract both of these:
 	system_name = system_info['name']

@@ -138,8 +138,8 @@ class Corpus(object):
 			new_number = int(class_data['lastid']) + 1
 			new_name   = self.pad_system_name(class_name, new_number, class_data['digits'])
 
-			cur.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `expiry_date`, `enable_backup`) VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s)",
-				(self.SYSTEM_TYPE_BY_NAME['System'], class_name, new_number, new_name, username, comment, expiry, set_backup))
+			cur.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `expiry_date`, `enable_backup`, `enable_backup_scripts`) VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s)",
+				(self.SYSTEM_TYPE_BY_NAME['System'], class_name, new_number, new_name, username, comment, expiry, set_backup, set_backup))
 
 			# this is the return
 			new_systems['name'] = new_name
