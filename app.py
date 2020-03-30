@@ -45,10 +45,12 @@ class CortexFlask(Flask):
 		self._exempt_views = set()
 		self.before_request(self._csrf_protect)
 
-		# CSRF token function in templates
+		# Jinja Template Functions and Filters
 		self.jinja_env.globals['csrf_token'] = self._generate_csrf_token
 		self.jinja_env.globals['utcnow'] = datetime.datetime.utcnow
 		self.jinja_env.filters['parse_cortex_links'] = self.parse_cortex_links
+		self.jinja_env.filters['all'] = all
+		self.jinja_env.filters['any'] = any
 
 		# Load the __init__.py config defaults
 		self.config.from_object("cortex.defaultcfg")
