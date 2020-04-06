@@ -323,7 +323,7 @@ def puppetdb_get_node_stats(db = None):
 		'unknown':{}
 	}
 
-	environments = ['count',] + [d['name'] for d in db.environments()]
+	environments = ['count',] + puppetdb_get_environments(db = db) 
 
 	for k in stats.keys():
 		for e in environments:
@@ -356,3 +356,17 @@ def puppetdb_get_node_stats(db = None):
 	
 	return stats
 
+################################################################################
+
+def puppetdb_get_environments(db = None, whitelist_only = False):
+	"""Get Puppet environments from the PuppetDB, if `whitelist_only` is True then
+	this will only return the environments defined in app.config["ENVIRONMENTS"]"""
+
+	if db is None:
+		db = puppetdb_connect()
+
+	whitelist = []
+	if whitelist_only:
+		whitelist = [e["puppet"] for e in app.config["ENVIRONMENTS"] if e["puppet"]]
+
+	return [e["name"] for e in db.environments() if not whitelist_only or e["name"] in whitelist]
