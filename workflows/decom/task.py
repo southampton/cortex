@@ -5,49 +5,48 @@ from urllib.parse import urljoin
 import ldap3
 
 def run(helper, options):
-	# check if workflows are locked
-	if not helper.lib.checkWorkflowLock():
-		raise Exception("Workflows are currently locked")
 
 	# Iterate over the actions that we have to perform
-	for action in options['actions']:
+	for action in options["actions"]:
 		# Start the event
-		helper.event(action['id'], action['desc'])
-		if action['id'] == "system.check":
-			r = action_check_system(action, helper, options['wfconfig'])
-		elif action['id'] == "vm.poweroff":
+		helper.event(action["id"], action["desc"])
+		if action["id"] == "task.log":
+			r = True
+		elif action["id"] == "system.check":
+			r = action_check_system(action, helper, options["wfconfig"])
+		elif action["id"] == "vm.poweroff":
 			r = action_vm_poweroff(action, helper)
-		elif action['id'] == "vm.delete":
+		elif action["id"] == "vm.delete":
 			r = action_vm_delete(action, helper)
-		elif action['id'] == "cmdb.update":
+		elif action["id"] == "cmdb.update":
 			r = action_cmdb_update(action, helper)
-		elif action['id'] == "cmdb.relationships.delete":
+		elif action["id"] == "cmdb.relationships.delete":
 			r = action_cmdb_relationships_delete(action, helper)
-		elif action['id'] == "dns.delete":
+		elif action["id"] == "dns.delete":
 			r = action_dns_delete(action, helper)
-		elif action['id'] == "puppet.cortex.delete":
+		elif action["id"] == "puppet.cortex.delete":
 			r = action_puppet_cortex_delete(action, helper)
-		elif action['id'] == "puppet.master.delete":
+		elif action["id"] == "puppet.master.delete":
 			r = action_puppet_master_delete(action, helper)
-		elif action['id'] == "ad.delete":
+		elif action["id"] == "ad.delete":
 			r = action_ad_delete(action, helper)
-		elif action['id'] == "entca.delete":
+		elif action["id"] == "entca.delete":
 			r = action_entca_delete(action, helper)
-		elif action['id'] == "ticket.ops":
-			r = action_ticket_ops(action, helper, options['wfconfig'])
-		elif action['id'] == "tsm.decom":
+		elif action["id"] == "ticket.ops":
+			r = action_ticket_ops(action, helper, options["wfconfig"])
+		elif action["id"] == "tsm.decom":
 			r = action_tsm_decom(action, helper)
-		elif action['id'] == "rhn5.delete":
+		elif action["id"] == "rhn5.delete":
 			r = action_rhn5_delete(action, helper)
-		elif action['id'] == "satellite6.delete":
+		elif action["id"] == "satellite6.delete":
 			r = action_satellite6_delete(action, helper) 
-		elif action['id'] == "sudoldap.update":
-			r = action_sudoldap_update(action, helper, options['wfconfig'])
-		elif action['id'] == "sudoldap.delete":
-			r = action_sudoldap_delete(action, helper, options['wfconfig'])
-		elif action['id'] == "graphite.delete":
-			r = action_graphite_delete(action, helper, options['wfconfig'])
-		elif action['id'] == "system.update_decom_date":
+		elif action["id"] == "sudoldap.update":
+			r = action_sudoldap_update(action, helper, options["wfconfig"])
+		elif action["id"] == "sudoldap.delete":
+			r = action_sudoldap_delete(action, helper, options["wfconfig"])
+		elif action["id"] == "graphite.delete":
+			r = action_graphite_delete(action, helper, options["wfconfig"])
+		elif action["id"] == "system.update_decom_date":
 			r = action_update_decom_date(action, helper) 
 			
 		# End the event (don't change the description) if the action
@@ -56,26 +55,27 @@ def run(helper, options):
 		if r:
 			helper.end_event()
 		else:
-			raise RuntimeError("Action {} ({}) failed to complete successfully".format(action['desc'], action['id']))
+			raise RuntimeError("Action {} ({}) failed to complete successfully".format(action["desc"], action["id"]))
 
 ################################################################################
 
 def action_check_system(action, helper, wfconfig):
 
-	# Get System ID from action data.
-	system_id = action['data']['system_id']
-
 	# Actions to perform during decom stage.
 	system_actions = []
 
-	system = helper.lib.get_system_by_id(system_id)
+	# Locate the system
+	system = helper.lib.get_system_by_id(action['data']['system_id'])
+	system_link = "{{{{system_link id=\"{id}\"}}}}{name}{{{{/system_link}}}}".format(id=system["id"], name=system["name"])
+	helper.logger.warning(system_link)
 	if system is None:
-		helper.end_event(success=False, description='System ID: {} Not Found'.format(system_id))
+		helper.end_event(success=False, description="No such system exists with ID {id}.".format(id=system["id"]))
 		return False
 	else:
-		helper.end_event(success=True, description='System ID: {} ({}) Found'.format(system_id, system['name']))
+		helper.end_event(success=True, description="Found {system_link}.".format(system_link=system_link))
 
-	system_link = '{{system_link id="' + str(system['id']) + '"}}' + system['name'] + '{{/system_link}}'
+	# Add an action to log later when the actual task begins.
+	system_actions.append({"id": "task.log", "desc": "Starting decommission task for {system_link}".format(system_link=system_link)})
 
 	## Is the system linked to vmware?
 	if 'vmware_uuid' in system:
@@ -320,10 +320,10 @@ def action_check_system(action, helper, wfconfig):
 	system_actions.append({'id': 'system.update_decom_date', 'desc': 'Update the decommission date in Cortex', 'detail': 'Update the decommission date in Cortex and set it to the current date and time.', 'data': {'system_id': system['id']}})	
 
 	# A success message
-	helper.flash('Successfully completed a pre-decommission check of System ID: {} ({}). Found {} actions for decommissioning'.format(system_id, system['name'], len(system_actions)), 'success')
+	helper.flash('Successfully completed a pre-decommission check of {system_link}. Found {n_actions} actions for decommissioning'.format(system_link=system_link, n_actions=len(system_actions)), 'success')
 
 	helper.event('system.check.redis', 'Caching system actions in the Redis database')
-	if helper.lib.redis_cache_system_actions(helper.task_id, system_id, system_actions):
+	if helper.lib.redis_cache_system_actions(helper.task_id, system["id"], system_actions):
 		return True
 	else:
 		helper.end_event(success=False, description='Failed to cache system actions in the Redis database')
