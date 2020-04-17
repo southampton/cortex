@@ -7,6 +7,7 @@ from flask import Flask, request, session, redirect, url_for, flash, g, abort, m
 import MySQLdb as mysql
 import json
 import yaml
+import os
 
 """
 TODO:
@@ -153,6 +154,8 @@ def dsc_classify_machine(id):
 
 	#ADD in test to see if the dsc machine is responding
 
+
+
 	system = cortex.lib.systems.get_system_by_id(id)
 
 	if system == None:
@@ -161,8 +164,24 @@ def dsc_classify_machine(id):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# get a proxy to connect to dsc
-	dsc_proxy = cortex.lib.dsc.dsc_connect()
-	roles_info = cortex.lib.dsc.get_roles(dsc_proxy)
+
+	
+	# Setting up cache
+	# If loading for remote work, set this to true once and then false
+	roles_info = {}
+	if False:
+		dsc_proxy = cortex.lib.dsc.dsc_connect()
+		roles_info = cortex.lib.dsc.get_roles(dsc_proxy)
+		with open('/srv/cortex/dsc_cache.txt', 'w+') as f:
+			f.write(json.dumps(roles_info))
+	else:
+		with open('/srv/cortex/dsc_cache.txt') as f:
+			fdata = f.read()
+			print(fdata)
+			roles_info = json.loads(fdata)
+				
+
+
 	# get a list of the roles
 	default_roles = [role for role in roles_info.keys()]
 	
