@@ -177,7 +177,7 @@ def dsc_classify_machine(id):
 	else:
 		with open('/srv/cortex/dsc_cache.txt') as f:
 			fdata = f.read()
-			print(fdata)
+			# print(fdata)
 			roles_info = json.loads(fdata)
 				
 
@@ -224,7 +224,7 @@ def dsc_classify_machine(id):
 	values_to_tick = { ((l.replace("UOS","")).split("_"))[0] for l in exist_role if 'UOSGeneric' not in l }
 
 	if request.method == 'GET':
-		print(exist_role)		
+		print(exist_role)	
 		if does_user_have_permission('dsc.view'):
 			values_to_tick = { ((l.replace("UOS","")).split("_"))[0] for l in exist_role if 'UOSGeneric' not in l}
 			print('values_to_tick: ',list(values_to_tick))
