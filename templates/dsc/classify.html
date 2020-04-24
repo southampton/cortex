@@ -4,7 +4,7 @@
 	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
 
 
-	{% include 'puppet/codemirror.html' %}
+	{% include 'dsc/codemirror.html' %}
 {% endblock %}
 
 {% block body %}
@@ -30,7 +30,28 @@
 	min-width: 100em !important;
 }
 
+.flex-container {
+    display: flex;
+}
 
+.flex-child {
+    flex: 1;
+    /*border: 2px solid yellow;*/
+}  
+
+.flex-child:first-child {
+    margin-right: 20px;
+} 
+
+/*.textarea{
+  width:50%;
+  background-color:#eee;
+  overflow:hidden;
+  height:250px;
+  max-height:250px;
+  border:1px solid #ccc;
+  overflow-y: auto;
+}*/
 </style>
 
 <script>
@@ -82,35 +103,6 @@ $(document).ready(function()
 			<input type="hidden" id="selected_values" name="selected_values">
 		</div>
 	</div>
-
-<div class="panel-group" id="accordion">
-	{% for role in set_roles %}
-		{% if role != 'AllNodes'%}
-			<div class="panel panel-default">
-				<div class="panel-heading">
-					<h4 class="panel-title">
-						<a class="role-parent" data-toggle="collapse" data-parent="#accordion" data-role="{{ role }}" href="#{{ role }}"> {{ role }} </a>
-						<div class="pull-right">
-							<button class="btn btn-default btn-xs" type="button" id="select_all" value="select_all" name="button" onclick="checkAll( {{role}} )">Select All</button>
-							<button class="btn btn-default btn-xs" type="button" id="deselect_all" value="deselect_all" name="button" onclick="uncheckAll( {{role}} )">Deselect All</button>
-						</div>
-					</h4>
-				</div>
-
-				<div id="{{ role }}" class="panel-collapse collapse">
-					<div class="panel-body">	
-						{% for config in role_info[role] %}
-							<div class="checkbox">
-								<label><input class="chkboxes" type="checkbox" value="{{ config['Name'] }}{{ config['GroupName'] }}{{ config['TaskName'] }}" {% if config['Name'] in set_roles[role].values() or config['GroupName'] in set_roles[role].values() or config['TaskName'] in set_roles[role].values() %} checked {% endif %} role="{{ role }}">{{ config['Name'] }}{{ config['GroupName'] }}{{ config['TaskName'] }}</label>
-							</div>
-						{% endfor %}
-					  </div>
-				</div>
-			</div>
-		{% endif %}
-	{% endfor %}
-</div> 
-
 <div class="row" id="element">
 	<div class="panel panel-default">
 		<div class="panel-heading" >DSC Configurations 
@@ -119,12 +111,25 @@ $(document).ready(function()
 					<span class="tooltiptext">Tooltip text</span>
 				</div>
 				<button class="btn btn-success btn-xs" type="submit" id="reset" value="reset" title="Save the selected roles but remove all selected options."  name="button">Save and Reset</button>
-				<button class="btn btn-light btn-xs" type="button" id="show_yaml" value="show_yaml" name="button">Show</button>
-				<button class="btn btn-light btn-xs" type="button" id="hide_yaml" value="hide_yaml" name="button">Hide</button>
 			</div>
 		</div>
-		<div class="panel-body" style="padding:0px" id='yaml_display'>
-			<textarea id="configurations" name="configurations" placholder="Configurations to include can be entered here">{{ yaml }}</textarea>
+		<div class="panel-body" style="padding:5px" id='yaml_display'>
+			<div class="flex-container">
+
+			  <div class="flex-child" style="width: 60%;">
+			    <textarea style="height: 30px;  resize: none;" class="textarea" cols="1" id="configurations" name="configurations" placeholder="Configurations to include can be entered here">{{ yaml }}</textarea>
+			  </div>
+			  
+			  <div class="flex-child" style="width: 40%;">
+			    	{% for role in set_roles %}
+						<button class="btn btn-primary btn-sm">
+							{{ role }}
+						</button>
+					{% endfor %}
+			  </div>
+			  
+			</div>
+			
 		</div>
 	</div>
 	<div class="text-center">
@@ -143,14 +148,6 @@ window.onload = function() {
 	$('.selectpicker').selectpicker('val', {{ selectpicker_tick|tojson }});
 
 };
-
-function checkAll(r){
-	$("input[role=\""+r['id']+"\"]").prop("checked", true);
-}
-
-function uncheckAll(r){
-	$("input[role=\""+r['id']+"\"]").prop('checked', false);
-}
 
 
 $("#save_changes").click(function(e){
@@ -186,7 +183,7 @@ $("#reset").click(function(){
 	$("#dsc_form").submit();
 });
 $(document).ready(function() {
-	$("#yaml_display").hide();
+	// $("#yaml_display").hide();
 	
 	$("#hide_yaml").click(function(){
 		$("#yaml_display").hide();
