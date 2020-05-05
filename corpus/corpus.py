@@ -1561,20 +1561,35 @@ class Corpus(object):
 
 	################################################################################
 
-	def redis_set_vm_data(self, vm, key, value, expire=28800):
+	def redis_set_vm_data(self, key, value, vm=None, uuid=None, expire=28800):
 		"""Sets a value in Redis relating to a VM."""
 
+		# Set UUID based on the VMware object (override uuid)
+		if vm:
+			uuid = vm.config.uuid
+		# Check a UUID is present
+		if not uuid:
+			raise Exception("Failed to set_vm_data no UUID or VM provided")
+
 		if expire is not None:
-			self.rdb.setex("vm/" + vm.config.uuid + "/" + key, expire, value)
+			self.rdb.setex("vm/" + uuid + "/" + key, expire, value)
 		else:
-			self.rdb.set("vm/" + vm.config.uuid + "/" + key, value)
+			self.rdb.set("vm/" + uuid.lower() + "/" + key, value)
 
 	################################################################################
 
-	def redis_get_vm_data(self, vm, key):
+	def redis_get_vm_data(self, key, vm=None, uuid=None):
 		"""Gets a value in Redis relating to a VM."""
 
-		return self.rdb.get("vm/" + vm.config.uuid + "/" + key)
+		# Set UUID based on the VMware object (override uuid)
+		if vm:
+			uuid = vm.config.uuid
+		# Check a UUID is present
+		if not uuid:
+			raise Exception("Failed to set_vm_data no UUID or VM provided")
+
+
+		return self.rdb.get("vm/" + uuid.lower() + "/" + key)
 
 	################################################################################
 

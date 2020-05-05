@@ -297,11 +297,29 @@ def run(helper, options):
 
 
 	## Configure Disk ######################################################
+	if int(options["disk_swap"]) > 0:
+		# Start the event
+		helper.event("vm_add_swap_disk", "Adding swap disk to the VM")
+
+		# Setup the redis value for swap disk
+		helper.lib.redis_set_vm_data("disk_swap", "/dev/sdb", vm=vm)
+
+		# Reconfigure the VM to add the disk
+		task = helper.lib.vmware_vm_add_disk(vm, int(options['disk_swap']) * 1024 * 1024 * 1024)
+		helper.lib.vmware_task_complete(task, "Could not add swap disk to VM")
+
+		# End the event
+		helper.end_event(description="Swap disk added to VM: " + str(options['disk_swap']) + " GiB")
+
 
 	# Add disk to the VM
 	if int(options['disk']) > 0:
 		# Start the event
 		helper.event("vm_add_disk", "Adding data disk to the VM")
+
+		# Setup the redis value for data disk
+		data_disk_path = "/dev/sdc" if int(options["disk_swap"]) > 0 else "/dev/sdb"
+		helper.lib.redis_set_vm_data("disk_data", data_disk_path, vm=vm)
 
 		# Reconfigure the VM to add the disk
 		task = helper.lib.vmware_vm_add_disk(vm, int(options['disk']) * 1024 * 1024 * 1024)
@@ -400,15 +418,15 @@ def run(helper, options):
 	helper.event("vm_poweron", "Powering the VM on for the first time")
 
 	# Set up the necessary values in redis
-	helper.lib.redis_set_vm_data(vm, "hostname", system_name)
-
+	helper.lib.redis_set_vm_data("hostname", system_name, vm=vm)
+	
 	if ipv4addr is not None:
-		helper.lib.redis_set_vm_data(vm, "ipaddress", ipv4addr)
+		helper.lib.redis_set_vm_data("ipaddress", ipv4addr, vm=vm)
 	else:
-		helper.lib.redis_set_vm_data(vm, "ipaddress", 'dhcp')
+		helper.lib.redis_set_vm_data("ipaddress", "dhcp", vm=vm)
 
 	if ipv6addr is not None:
-		helper.lib.redis_set_vm_data(vm, "ipv6address", ipv6addr)
+		helper.lib.redis_set_vm_data("ipv6address", ipv6addr, vm=vm)
 
 	# Power on the VM
 	task = helper.lib.vmware_vm_poweron(vm)
