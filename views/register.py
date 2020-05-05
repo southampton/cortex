@@ -2,6 +2,7 @@ from cortex import app
 import cortex.lib.core
 import cortex.lib.systems
 import cortex.lib.core
+from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, jsonify, Response
 import os
 import re
@@ -18,6 +19,9 @@ def api_register_system():
 	   key, etc. Clients can authenticate either via username/password, which
 	   is checked against LDAP, or via the VMware virtual machine UUID, which
 	   is checked against the VMware systems cache."""
+
+	# Create a corpus (task helper) object
+	corpus = Corpus(g.db, app.config)
 
 	# Clients can send hostname, username and password (interactive installation)
 	if 'hostname' in request.form and 'username' in request.form and 'password' in request.form:
@@ -148,9 +152,9 @@ def api_register_system():
 	if not interactive:
 		cdata['hostname']  = system['name']
 		cdata['fqdn']      = fqdn
-		netaddr = g.redis.get('vm/' + system['vmware_uuid'].lower() + '/ipaddress')
-		netaddrv6 = g.redis.get('vm/' + system['vmware_uuid'].lower() + '/ipv6address')
-
+		netaddr = corpus.redis_get_vm_data("ipaddress", uuid=system['vmware_uuid'])
+		netaddrv6 = corpus.redis_get_vm_data("ipv6address", uuid=system['vmware_uuid'])
+		
 		if netaddr:
 			cdata['ipaddress'] = netaddr
 		else:
@@ -159,8 +163,13 @@ def api_register_system():
 		if netaddrv6:
 			cdata['ipv6address'] = netaddrv6
 
+		# Add data for the data and swap disk
+		# (names are reversed here because of Bonemeal)
+		cdata['swap_disk'] = corpus.redis_get_vm_data("disk_swap", uuid=system['vmware_uuid'])
+		cdata['data_disk'] = corpus.redis_get_vm_data("disk_data", uuid=system['vmware_uuid'])
+
 		# Mark as done
-		g.redis.setex("vm/" + system['vmware_uuid'] + "/" + "notify", 28800, "inprogress")
+		corpus.redis_set_vm_data("notify", "inprogress", uuid=system['vmware_uuid'])
 
 	# Add on some other details which could be useful to post-install
 	cdata['user'] = system['allocation_who']
@@ -211,6 +220,9 @@ def api_installer_notify():
 	the installation is now complete and is about to reboot."""
 
 	if 'uuid' in request.form:
+		# Create a corpus (task helper) object
+		corpus = Corpus(g.db, app.config)
+
 		# VMware UUID based authentication
 		system = cortex.lib.systems.get_system_by_vmware_uuid(request.form['uuid'].lower())
 
@@ -220,9 +232,9 @@ def api_installer_notify():
 
 		# Mark as done
 		if 'warnings' in request.form and int(request.form['warnings']) > 0:
-			g.redis.setex("vm/" + system['vmware_uuid'].lower() + "/" + "notify", 28800, "done-with-warnings")
+			corpus.redis_set_vm_data("notify", "done-with-warnings", uuid=system['vmware_uuid'])
 		else:
-			g.redis.setex("vm/" + system['vmware_uuid'].lower() + "/" + "notify", 28800, "done")
+			corpus.redis_set_vm_data("notify", "done", uuid=system['vmware_uuid'])
 
 		return "OK"
 	else:

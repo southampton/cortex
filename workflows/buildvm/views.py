@@ -77,6 +77,7 @@ def sandbox():
 		options['sockets'] = sockets
 		options['cores'] = cores
 		options['ram'] = ram
+		options['disk_swap'] = 8 # THIS SHOULD COME FROM THE FORM
 		options['disk'] = disk
 		options['template'] = template
 		options['cluster'] = cluster
