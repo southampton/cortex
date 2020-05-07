@@ -1597,7 +1597,7 @@ class Corpus(object):
 		"""Waits for the in-guest customisations to become one of the listed states."""
 
 		# Get the current state of the notify variable
-		notify = self.redis_get_vm_data(vm, 'notify')
+		notify = self.redis_get_vm_data('notify', vm=vm)
 
 		# StrictRedis.get() returns bytes(), so decode it
 		if notify is not None:
@@ -1621,7 +1621,7 @@ class Corpus(object):
 			timer = timer + 1
 
 			# Get the lastest value of the notify
-			notify = self.redis_get_vm_data(vm, 'notify')
+			notify = self.redis_get_vm_data('notify', vm=vm)
 
 			# StrictRedis.get() returns bytes(), so decode it
 			if notify is not None:
