@@ -18,7 +18,7 @@
 		<div class="col-md-12"><h4>1. Enter Request Details</h4></div>
 		<div class="col-md-12 form-group">
 			<label for="snapshot_name">Snapshot Name:<span class="required">*</span></label>
-			<input class="form-control" name="snapshot_name" id="snapshot_name" placeholder="Text to be used in the snapshot name field in VMware" required="required" autofocus {% if 'snapshot_name' in values %}value="{{ values['snapshot_name'] }}"{% endif %} />
+			<input class="form-control" name="snapshot_name" id="snapshot_name" placeholder="Text to be used in the snapshot name field in VMware" required="required" autofocus {% if 'snapshot_name' in values %}value="{{ values['snapshot_name'] }}"{% endif %} maxlength="79"/>
 		</div>
 		<div class="col-md-6 form-group">
 			<label for="snapshot_task">ServiceNow Task:</label>
@@ -87,7 +87,7 @@
 						<td>
 							<hr/>
 							<label for="new_system_name">Select systems to snapshot:</label>
-							<select class="selectpicker" id="new_system_name" data-live-search="true" data-width="100%" title="Add additional systems to snapshot by selecting them here" required>
+							<select class="selectpicker" id="new_system_name" data-live-search="true" data-width="100%" title="Add additional systems to snapshot by selecting them here">
 								{%- for system in systems %}
 								<option value="{{ system['name'] }}">{{ system['name'] }} - {{ system['cmdb_environment'] }} - {{ system['allocation_comment'] }}</option>
 								{% endfor -%}
