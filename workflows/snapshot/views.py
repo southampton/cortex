@@ -53,7 +53,7 @@ def snapshot_create():
 
 	elif request.method == 'POST':
 
-		values['snapshot_name'] = request.form.get('snapshot_name', '')
+		values['snapshot_name'] = request.form.get('snapshot_name', 'Snapshot - {}'.format(session['username']))[:80]
 		values['snapshot_task'] = request.form.get('snapshot_task', '')
 		values['snapshot_expiry'] = request.form.get('snapshot_expiry', None)
 		values['snapshot_comments'] = request.form.get('snapshot_comments', '')
