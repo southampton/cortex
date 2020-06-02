@@ -154,13 +154,13 @@ Further Details:
 		if request.method not in ('GET', 'HEAD', 'POST', 'DELETE'):
 			abort(405)
 
+		# Get the function that is rendering the current view
+		view = self.view_functions.get(request.endpoint)
+
 		# For methods that require CSRF checking
-		if request.method == 'POST':
-			# Get the function that is rendering the current view
-			view = self.view_functions.get(request.endpoint)
-			view_location = view.__module__ + '.' + view.__name__
-			
+		if request.method == 'POST' and view is not None:
 			# If the view is not part of the API and it's not exempt
+			view_location = view.__module__ + '.' + view.__name__
 			if re.search("[\w]*cortex\.api\.endpoints[\w]*", view.__module__) is None and not view_location in self._exempt_views:
 				token = session.get('_csrf_token')
 				if not token or token != request.form.get('_csrf_token'):
