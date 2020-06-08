@@ -46,6 +46,8 @@ def run(helper, options):
 			r = action_sudoldap_delete(action, helper, options["wfconfig"])
 		elif action["id"] == "graphite.delete":
 			r = action_graphite_delete(action, helper, options["wfconfig"])
+		elif action["id"] == "nessus.delete":
+			r = action_nessus_delete(action, helper, options["wfconfig"])
 		elif action["id"] == "system.update_decom_date":
 			r = action_update_decom_date(action, helper) 
 			
@@ -308,6 +310,27 @@ def action_check_system(action, helper, wfconfig):
 				helper.flash('No Graphite URL Supplied, Skipping Step', 'success')
 		except Exception as ex:
 			helper.flash('Warning - An error occurred when communicating with ' + str(helper.lib.config['GRAPHITE_URL']) + ': ' + str(ex), 'warning')
+
+	## Check Nessus / Tenable for registered agents
+	if "NESSUS_ENABLE_DECOM" in wfconfig and wfconfig["NESSUS_ENABLE_DECOM"]:
+		try:
+			if all(k in helper.lib.config and helper.lib.config[k] for k in ["NESSUS_URL", "NESSUS_ACCESS_KEY", "NESSUS_SECRET_KEY", "NESSUS_SCANNER_ID"]):
+				r = requests.get(
+					urljoin(helper.lib.config["NESSUS_URL"], "/scanners/{scanner_id}/agents".format(scanner_id=helper.lib.config["NESSUS_SCANNER_ID"])),
+					headers={"Accept": "application/json", "X-ApiKeys": "accessKey={a}; secretKey={s};".format(a=helper.lib.config["NESSUS_ACCESS_KEY"], s=helper.lib.config["NESSUS_SECRET_KEY"])},
+					params={"f": "name:match:{name}".format(name=system["name"])},
+				)
+				if r.status_code == 200:
+					js = r.json()
+					for agent in js.get("agents", []):
+						system_actions.append({"id": "nessus.delete", "desc": "Remove agent from Nessus / Tenable", "detail": "Delete Nessus agent '{name}' (id: {id})".format(name=agent["name"], id=agent["id"]), "data": {"id": agent["id"]}})
+
+				else:
+					helper.flash("Warning - Nessus API returned error code {status_code}.".format(status_code=r.status_code), "warning")
+			else:
+				helper.flash("Warning - Missing configuration key for Nessus", "warning")
+		except Exception as ex:
+			helper.flash("Warning - An error occured when communicating with {nessus_url}: {ex}".format(nessus_url=helper.lib.config["NESSUS_URL"], ex=ex), "warning")
 
 	# If the config says nothing about creating a ticket, or the config 
 	# says to create a ticket:
@@ -590,16 +613,6 @@ def action_sudoldap_delete(action, helper, wfconfig):
 
 ################################################################################
 
-def action_update_decom_date(action, helper):
-	try:
-		helper.lib.update_decom_date(action["data"]["system_id"])
-		return True
-	except Exception as e:
-		helper.end_event(success=False, description="Failed to update the decommission date in Cortex")
-		return False
-
-################################################################################
-
 def action_graphite_delete(action, helper, wfconfig):
 	try:
 		# Make the REST call to delete the metrics
@@ -615,3 +628,33 @@ def action_graphite_delete(action, helper, wfconfig):
 		helper.end_event(success=False, description="Failed to remove the metrics from Graphite: " + str(e))
 		return False
 
+################################################################################
+
+def action_nessus_delete(action, helper, wfconfig):
+	try:
+		if not all(k in helper.lib.config and helper.lib.config[k] for k in ["NESSUS_URL", "NESSUS_ACCESS_KEY", "NESSUS_SECRET_KEY", "NESSUS_SCANNER_ID"]):
+			raise Exception("Missing configuration key for Nessus")
+
+		r = requests.delete(
+			urljoin(helper.lib.config["NESSUS_URL"], "/scanners/{scanner_id}/agents/{agent_id}".format(scanner_id=helper.lib.config["NESSUS_SCANNER_ID"], agent_id=action["data"]["id"])),
+			headers={"Accept": "application/json", "X-ApiKeys": "accessKey={a}; secretKey={s};".format(a=helper.lib.config["NESSUS_ACCESS_KEY"], s=helper.lib.config["NESSUS_SECRET_KEY"])},
+		)
+		if r.status_code != 200:
+			helper.end_event(success=False, description="Failed to delete Nessus agent, Nessus API returned error code: {status_code}.".format(status_code=r.status_code))
+			return False
+
+	except Exception as ex:
+		helper.end_event(success=False, description="Failed to remove the Nessus agent: {ex}".format(ex))
+		return False
+
+	return True
+
+################################################################################
+
+def action_update_decom_date(action, helper):
+	try:
+		helper.lib.update_decom_date(action["data"]["system_id"])
+		return True
+	except Exception as e:
+		helper.end_event(success=False, description="Failed to update the decommission date in Cortex")
+		return False
