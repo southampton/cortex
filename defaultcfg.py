@@ -181,6 +181,12 @@ RUBRIK_API_USER = ''
 RUBRIK_API_PASS = ''
 RUBRIK_VIEW_URL = ''
 
+# Nessus / Tenable
+NESSUS_URL="https://cloud.tenable.com/"
+NESSUS_ACCESS_KEY=""
+NESSUS_SECRET_KEY=""
+NESSUS_SCANNER_ID=""
+
 # Puppet Module Documentation Location
 PUPPET_MODULE_DOCS_URL = None
 

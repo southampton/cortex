@@ -50,3 +50,5 @@ SUDO_LDAP_SEARCH_BASE='OU=sudoers,dc=sudo,dc=mydomain,dc=tld'
 # The domains to add to the hostname for objects to search (no leading dots required)
 SUDO_LDAP_SEARCH_DOMAINS=['', 'mydomain.tld']
 
+# Whether to enable decom from Nessus / Tenable
+NESSUS_ENABLE_DECOM=True
