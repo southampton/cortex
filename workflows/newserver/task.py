@@ -1,4 +1,5 @@
 #### Allocate server task
+import requests
 
 def run(helper, options):
 	# check if workflows are locked
@@ -39,8 +40,6 @@ def run(helper, options):
 		helper.end_event(description="Allocated the IP address {}".format(ipv4addr.get("ipv4addr", "?")))
 	else:
 		ipv4addr = ''
-
-
 
 	## Create the ServiceNow CMDB CI #######################################
 
@@ -86,7 +85,29 @@ def run(helper, options):
 		# End the event
 		helper.end_event("Registered with Puppet ENC")
 
+	## Create Enterprise CA Certificates ###################################
 
+	# Only for Linux VMs...
+	if options['os_type'] == helper.lib.OS_TYPE_BY_NAME['Linux'] and options['wfconfig'].get("ENTCA_SERVERS"):
+		# Start the event
+		helper.event("entca_create_cert", "Creating certificate on Enterprise CA")
+
+		entca_servers = options['wfconfig'].get("ENTCA_SERVERS") if type(options['wfconfig'].get("ENTCA_SERVERS")) is list else [options['wfconfig'].get("ENTCA_SERVERS"),]
+		for entca in entca_servers:
+			try:
+				r = requests.post(
+					"https://{hostname}/create_entca_certificate".format(hostname=entca["hostname"]),
+					json={"fqdn": "{system_name}.{domain}".format(system_name=system_name, domain=entca["entdomain"])},
+					headers={"Content-Type": "application/json", "X-Client-Secret": entca["api_token"]},
+					verify=entca["verify_ssl"]
+				)
+			except Exception as ex:
+				helper.end_event(success=False, description="Error communicating with {hostname}: {ex}".format(hostname=entca["hostname"], ex=ex))
+			else:
+				if r.status_code == 200:
+					helper.end_event(success=True, description="Created certificate on Enterprise CA")
+				else:
+					helper.end_event(success=False, description="Error creating certificate on Enterprise CA. Error code: {status_code}".format(status_code=r.status_code))
 
 	## Link ticket to CI ###################################################
 
