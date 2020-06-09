@@ -372,26 +372,27 @@ def run(helper, options):
 		# Start the event
 		helper.event("entca_create_cert", "Creating certificate on Enterprise CA")
 
-		if type(entca_servers) is str:
-			entca_servers = [entca_servers]
-
+		entca_servers = options['wfconfig'].get("ENTCA_SERVERS") if type(options['wfconfig'].get("ENTCA_SERVERS")) is list else [options['wfconfig'].get("ENTCA_SERVERS"),]
 		for entca in entca_servers:
-			# Build our data for the request
-			json_data = {'fqdn': system_name + '.' + entca['entdomain']}
-			if entca_default_san_domain is not None:
-				json_data = {'sans': [system_name + '.' + entca_default_san_domain]}
+			# Build the request data
+			json_data = {"fqdn": "{system_name}.{domain}".format(system_name=system_name, domain=entca["entdomain"])}
+			if entca_default_san_domain:
+				json_data["sans"] = ["{system_name}.{default_san_domain}".format(system_name=system_name, default_san_domain=entca_default_san_domain),]
 
 			try:
-				r = requests.post('https://' + entca['hostname'] + '/create_entca_certificate', json={'fqdn': system_name + '.' + entca['entdomain']}, headers={'Content-Type': 'application/json', 'X-Client-Secret': entca['api_token']}, verify=entca['verify_ssl'])
-			except:
-				helper.end_event(success=False, description='Error communicating with ' + entca['hostname'])
+				r = requests.post(
+					"https://{hostname}/create_entca_certificate".format(hostname=entca["hostname"]),
+					json=json_data,
+					headers={"Content-Type": "application/json", "X-Client-Secret": entca["api_token"]},
+					verify=entca["verify_ssl"]
+				)
+			except Exception as ex:
+				helper.end_event(success=False, description="Error communicating with {hostname}: {ex}".format(hostname=entca["hostname"], ex=ex))
 			else:
 				if r.status_code == 200:
 					helper.end_event(success=True, description="Created certificate on Enterprise CA")
 				else:
-					helper.end_event(success=False, description='Error creating certificate on Enterprise CA. Error code: ' + str(r.status_code))
-
-
+					helper.end_event(success=False, description="Error creating certificate on Enterprise CA. Error code: {status_code}".format(status_code=r.status_code))
 
 	## Power on the VM #####################################################
 
