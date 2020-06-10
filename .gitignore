@@ -1,3 +1,5 @@
 *.py[cod]
 *.conf
+*.json
 *.swp
+.vscode
