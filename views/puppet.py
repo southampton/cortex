@@ -46,7 +46,7 @@ def puppet_enc_edit(node):
 
 	outcome = {}
 	result = curd.fetchall()
-	
+
 	modules = {}
 
 	for row in result:
@@ -56,7 +56,7 @@ def puppet_enc_edit(node):
 			modules[row['module_name']][row['class_name']] = {row['class_parameter']:{'description':row['description'], 'tag_name':row['tag_name']}}
 		elif row['class_parameter'] not in modules[row['module_name']][row['class_name']]:
 			modules[row['module_name']][row['class_name']][row['class_parameter']] = {'description':row['description'], 'tag_name':row['tag_name']}
-	
+
 	# On any GET request, just display the information
 	if request.method == 'GET':
 		# If the user has view or edit permission send them the template - otherwise abort with 403.
@@ -221,7 +221,7 @@ def puppet_nodes(status = None):
 	except Exception as e:
 		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
-	
+
 	data = []
 	for row in results:
 		row['status'] = statuses[row['certname']]['status'] if row['certname'] in statuses else 'unknown'
@@ -246,7 +246,7 @@ def puppet_nodes(status = None):
 	page_title_map = {'unchanged': 'Normal', 'changed': 'Changed', 'noop': 'Disabled', 'failed': 'Failed', 'unknown': 'Unknown/Unreported', 'all': 'Registered'}
 
 	if status != None and status in page_title_map:
-		title = title + ' - {}'.format(page_title_map.get(status)) 
+		title = title + ' - {}'.format(page_title_map.get(status))
 
 	# Render
 	return render_template('puppet/nodes.html', active='puppet', data=data, title=title, hide_unknown=True)
@@ -321,7 +321,7 @@ def puppet_radiator():
 	## No permissions check: this is accessible without logging in
 	try:
 		stats=cortex.lib.puppet.puppetdb_get_node_stats()
-		
+
 	except Exception as e:
 		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
@@ -371,7 +371,7 @@ def puppet_reports(node):
 		# Connect to PuppetDB and get the reports
 		db = cortex.lib.puppet.puppetdb_connect()
 		reports = db.node(node).reports()
-		
+
 	except HTTPError as he:
 		# If we get a 404 response from PuppetDB
 		if he.response.status_code == 404:
@@ -465,7 +465,7 @@ def puppet_catalog(node):
 
 	# Get the system
 	system = cortex.lib.systems.get_system_by_puppet_certname(node)
-	
+
 	if system == None:
 		abort(404)
 
@@ -490,10 +490,53 @@ def puppet_catalog(node):
 		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
 	catalog_dict = {}
-	
+
 	if catalog != None:
 		for res in catalog.get_resources():
 			catalog_dict[str(res)] = res.parameters
-			
+
 	# Render
-	return render_template('puppet/catalog.html', catalog=catalog_dict, node=dbnode, active='puppet', title=node + " - Puppet Catalog", nodename=node, pactive="catalog", system=system)	
+	return render_template('puppet/catalog.html', catalog=catalog_dict, node=dbnode, active='puppet', title=node + " - Puppet Catalog", nodename=node, pactive="catalog", system=system)
+
+@app.route("/puppet/docs")
+@app.route("/puppet/docs/<module_name>")
+@app.route("/puppet/docs/<environment>/<module_name>")
+@cortex.lib.user.login_required
+def puppet_documentation(environment="production", module_name=None):
+	"""Show the Puppet documentation"""
+
+	## TODO: Permissions
+
+	# Get the database cursor
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	module = None
+	data = {}
+	if module_name:
+		curd.execute("SELECT `id`, `module_name`, `environment`, `last_updated` FROM `puppet_modules` WHERE `module_name`=%s AND `environment`=%s LIMIT 1;", (module_name, environment))
+		module = curd.fetchone()
+
+		if not module:
+			abort(404)
+
+		curd.execute("SELECT * FROM `puppet_classes` LEFT JOIN `puppet_docs_tags` ON `puppet_classes`.`id`=`puppet_docs_tags`.`class_id` WHERE `puppet_classes`.	`module_id`=%s;", (module["id"],))
+		for row in curd.fetchall():
+			if row["class_name"] not in data:
+				data[row["class_name"]] = { "desc": row["desc"] }
+
+			if row["tag"] not in data[row["class_name"]]:
+				data[row["class_name"]][row["tag"]] = []
+
+			if any(row[k] for k in ["name", "text"]):
+				data[row["class_name"]][row["tag"]].append({
+					"name": row.get("name", "") if row.get("name") else "",
+					"text": row.get("text", "") if row.get("text") else "",
+					"types": json.loads(row["types"]) if row["types"] else [],
+				})
+	else:
+		curd.execute("SELECT `module_name`, `environment` FROM `puppet_modules`;")
+		for row in curd.fetchall():
+			if row["environment"] not in data:
+				data[row["environment"]] = []
+			data[row["environment"]].append(row["module_name"])
+
+	return render_template('puppet/docs.html', active='puppet', title="Puppet Documentation", module=module, data=data)

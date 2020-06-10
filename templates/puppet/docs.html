@@ -1,0 +1,118 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="page-header">
+<h4><i class="fa fa-fw fa-file"></i> {{ title }}{%- if module -%}&nbsp;-&nbsp;<code>{{ module.module_name }}</code>{%- endif -%}</h4>
+<div class="text-muted">
+{%- if module -%}
+The documentation below has been auto-generated from Puppet code (environment: {{ module.environment }}, last updated: {{ module.last_updated }})
+{%- else -%}
+There is documentation in Cortex available for the modules listed below
+{%- endif -%}
+</div>
+</div>
+{%- if module -%}
+{# IF we are viewing a single module, show the documentation #}
+<h4>Table of Contents</h4>
+<h5>Classes</h5>
+<ul>
+{%- for class in data -%}
+	<li><a href="#{{ class }}"><code>{{ class }}</code></a></li>
+{%- endfor -%}
+</ul>
+<hr/>
+{%- for class in data -%}
+<h4 id="{{ class }}">Class - <code>{{ class }}</code></h4>
+{%- if "summary" in data[class] and data[class].summary -%}
+	<div class="text-muted"><strong>
+	{%- for s in data[class].summary -%}
+		{{ s["text"].strip() }}&nbsp;
+	{%- endfor -%}
+	</strong></div>
+{%- endif-%}
+<p><pre>{{ data[class].desc or 'No description provided for ' + class }}</pre></p>
+{%- if "example" in data[class] and data[class].example -%}
+	<h5>Examples</h5>
+	The following examples are provided with the <code>{{ class }}</code> class.
+	{%- for e in data[class].example -%}
+		<pre style="background-color: #eee;padding:5px;margin-bottom:10px;">{{ e.text }}</pre>
+	{%- endfor -%}
+{%- endif-%}
+{%- if "param" in data[class] and data[class].param -%}
+	<h5>Parameters</h5>
+	<p>The following parameters are available in the <code>{{ class }}</code> class.</p>
+	<p>
+	{%- for p in data[class].param -%}
+		<strong><code>{{ p.name }}</code></strong><br/>
+		Data Type:&nbsp;{%- for t in p.types -%}<code>{{ t }}</code>,{%- endfor -%}</br>
+	{%- endfor -%}
+	</p>
+{%- endif-%}
+{%- if "see" in data[class] and data[class].see -%}
+	<h5>Additional Resources</h5>
+	<ul>
+	{%- for s in data[class].see -%}
+		<li>{{s.name|urlize(40, target="_blank")}}{%- if s.text -%} - {{s.text}}{%- endif -%}</li>
+	{%- endfor -%}
+	</ul>
+{%- endif-%}
+<p><i>Note: Default parameter values and full source code are hidden for security reasons</i></p>
+<hr/>
+{%- else -%}
+<div class="alert alert-danger" role="alert">No classes found for the module <strong><code style="color:#fff;">{{module.module_name}}</code></strong></div>
+{%- endfor -%}
+{%- else %}
+{# Show all the documentation #}
+<div class="input-group mb-2">
+	<div class="input-group-prepend">
+		<span class="input-group-text">Environment:</span>
+	</div>
+	<select class="form-control" id="environment-select">
+		<option>All</option>
+		{%- for environment in data -%}
+		<option>{{ environment }}</option>
+		{%- endfor -%}
+	</select>
+</div>
+<div class="input-group">
+	<div class="input-group-prepend">
+		<span class="input-group-text" for="module-search">Search:</span>
+	</div>
+	<input type="text" class="form-control" id="module-search" placeholder="Search for Puppet module names">
+</div>
+<p>
+<h4>Puppet Modules</h4>
+<ul class="environment-list">
+	{%- for environment in data -%}
+		<li data-environment="{{ environment }}">
+			<code>{{ environment }}</code>
+			<ul class="module-list">
+				{%- for module in data[environment] -%}
+				<li><a href="{{url_for('puppet_documentation', environment=environment, module_name=module)}}"><code>{{ module }}</code></a></li>
+				{%- endfor -%}
+			</ul>
+		</li>
+	{%- else -%}
+		<li>No Puppet documentaion found!</li>
+	{%- endfor -%}
+</ul>
+</p>
+<script type="text/javascript">
+	$("#environment-select").change(function () {
+		$("ul.environment-list > li[data-environment]").show();
+		if ($(this).val() != "All") {
+			$("ul.environment-list > li[data-environment!='"+$(this).val()+"']").hide();
+		}
+	});
+	$("#module-search").keyup(function () {
+		var q = $(this).val();
+		$('ul.module-list li').each(function () {
+			if ($(this).text().search(new RegExp(q, "i")) < 0) {
+				$(this).hide();
+			} else {
+				$(this).show();
+			}
+		})
+	});
+</script>
+{%- endif -%}
+{% endblock %}
