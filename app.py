@@ -122,7 +122,7 @@ Further Details:
 
 		# check the database is up and is working
 		self.init_database()
-		
+
 	################################################################################
 
 	def pwgen(self, length=32):
@@ -145,7 +145,7 @@ Further Details:
 	################################################################################
 
 	def _csrf_protect(self):
-		"""Performs the checking of CSRF tokens. This check is skipped for the 
+		"""Performs the checking of CSRF tokens. This check is skipped for the
 		GET, HEAD, OPTIONS and TRACE methods within HTTP, and is also skipped
 		for any function that has been added to _exempt_views by use of the
 		disable_csrf_check decorator."""
@@ -267,7 +267,7 @@ Further Details:
 			template_dir = os.path.join(self.config['WORKFLOWS_DIR'], workflow['workflow'], 'templates')
 			loader_data[workflow['workflow']] = jinja2.FileSystemLoader(template_dir)
 
-		# Create a ChoiceLoader, which by default will use the default 
+		# Create a ChoiceLoader, which by default will use the default
 		# template loader, and if that fails, uses a PrefixLoader which
 		# can check the workflow template directories
 		choice_loader = jinja2.ChoiceLoader(
@@ -294,7 +294,7 @@ Further Details:
 		else:
 			usr = 'Not logged in'
 
-		self.logger.error("""Path:                 %s 
+		self.logger.error("""Path:                 %s
 HTTP Method:          %s
 Client IP Address:    %s
 User Agent:           %s
@@ -357,14 +357,14 @@ Username:             %s
 			if lowest_regex is SYSTEM_LINK_RE:
 				if make_safe:
 					link_text = str(markupsafe.escape(lowest_re_result.group('link_text')))
-				else:   
+				else:
 					link_text = lowest_re_result.group('link_text')
 				url = url_for('system', id=int(lowest_re_result.group('link_id')))
 				inserted_text = "<a href='" + url + "'>" + link_text + "</a>"
 			elif lowest_regex is TASK_LINK_RE:
 				if make_safe:
 					link_text = str(markupsafe.escape(lowest_re_result.group('link_text')))
-				else:   
+				else:
 					link_text = lowest_re_result.group('link_text')
 				url = url_for('task_status', id=int(lowest_re_result.group('link_id')))
 				inserted_text = "<a href='" + url + "'>" + link_text + "</a>"
@@ -376,7 +376,7 @@ Username:             %s
 				# Make safe the text that we haven't already made safe before
 				before_text = result[0:search_index] + str(markupsafe.escape(result[search_index:search_index + lowest_re_result.span()[0]]))
 				additional_length = len(before_text) - old_length
-			else:   
+			else:
 				additional_length = 0
 			result = before_text + inserted_text + result[search_index + lowest_re_result.span()[1]:]
 			search_index = additional_length + search_index + lowest_re_result.span()[0] + len(inserted_text)
@@ -453,14 +453,39 @@ Username:             %s
 		  PRIMARY KEY (`key`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
-		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_modules_info` (
+		try:
+			cursor.execute("""DROP TABLE IF EXISTS `puppet_modules_info`;""")
+		except Exception as ex:
+			pass
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_modules` (
 		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
-		  `module_name` varchar(256) NOT NULL,
-		  `class_name` varchar(256) NOT NULL,
-		  `class_parameter` varchar(256) NOT NULL,
-		  `description` text DEFAULT NULL,
-		  `tag_name` varchar(255) DEFAULT NULL,
-		  PRIMARY KEY (`id`)
+		  `module_name` varchar(255) NOT NULL,
+		  `environment` varchar(255) NOT NULL,
+		  `last_updated` datetime NOT NULL,
+		  PRIMARY KEY (`id`),
+		  UNIQUE(`module_name`, `environment`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_classes` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `module_id` mediumint(11) NOT NULL,
+		  `class_name` varchar(255) NOT NULL,
+		  `desc` text,
+		  PRIMARY KEY (`id`),
+		  UNIQUE(`module_id`, `class_name`),
+		  CONSTRAINT `puppet_classes_ibfk_1` FOREIGN KEY (`module_id`) REFERENCES `puppet_modules` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_docs_tags` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `class_id` mediumint(11) NOT NULL,
+		  `tag` varchar(255) NOT NULL,
+		  `name` varchar(255),
+		  `text` text,
+		  `types` text,
+		  PRIMARY KEY (`id`),
+		  CONSTRAINT `puppet_docs_tags_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `puppet_classes` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `systems` (
@@ -693,7 +718,7 @@ Username:             %s
 		except Exception as e:
 			pass
 
-		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT 
+		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT
 		  `systems`.`id` AS `id`,
 		  `systems`.`type` AS `type`,
 		  `systems`.`class` AS `class`,
@@ -743,14 +768,14 @@ Username:             %s
 		  `puppet_nodes`.`classes` AS `puppet_classes`,
 		  `puppet_nodes`.`variables` AS `puppet_variables`,
 		  `systems`.`enable_backup` AS `enable_backup`
-		FROM `systems` 
+		FROM `systems`
 		LEFT JOIN `sncache_cmdb_ci` ON `systems`.`cmdb_id` = `sncache_cmdb_ci`.`sys_id`
 		LEFT JOIN `vmware_cache_vm` ON `systems`.`vmware_uuid` = `vmware_cache_vm`.`uuid`
-		LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id` 
+		LEFT JOIN `puppet_nodes` ON `systems`.`id` = `puppet_nodes`.`id`
 		LEFT JOIN `realname_cache` AS `allocation_who_realname_cache` ON `systems`.`allocation_who` = `allocation_who_realname_cache`.`username`
 		LEFT JOIN `realname_cache` AS `primary_owner_who_realname_cache` ON `systems`.`primary_owner_who` = `primary_owner_who_realname_cache`.`username`
 		LEFT JOIN `realname_cache` AS `secondary_owner_who_realname_cache` ON `systems`.`secondary_owner_who` = `secondary_owner_who_realname_cache`.`username`""")
-       	
+
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `roles` (
 		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
 		  `name` varchar(64) NOT NULL,
@@ -825,7 +850,7 @@ Username:             %s
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
 		cursor.execute("""CREATE OR REPLACE VIEW `system_role_perms_view` AS
-		SELECT DISTINCT 
+		SELECT DISTINCT
 		  `system_roles`.`id` as `system_role_id`,
 		  `system_roles`.`name` as `system_role_name`,
 		  `system_role_what`.`system_id`,
@@ -836,7 +861,7 @@ Username:             %s
 		LEFT JOIN `system_role_perms` ON `system_roles`.`id`=`system_role_perms`.`system_role_id`
 		LEFT JOIN `system_role_who` ON `system_roles`.`id`=`system_role_who`.`system_role_id`
 		LEFT JOIN `system_role_what` ON `system_roles`.`id`=`system_role_what`.`system_role_id`
-		WHERE 
+		WHERE
 		  `system_role_what`.`system_id` IS NOT NULL AND
 		  `system_role_who`.`who` IS NOT NULL AND
 		  `system_role_who`.`type` IS NOT NULL AND
@@ -926,7 +951,7 @@ Username:             %s
 
 		## The ORDER MATTERS! It determines the order used on the Roles page
 		self.permissions = [
-			{'name': 'cortex.admin',                       'desc': 'Cortex Administrator'}, 
+			{'name': 'cortex.admin',                       'desc': 'Cortex Administrator'},
 
 			{'name': 'systems.all.view',                   'desc': 'View any system'},
 			{'name': 'systems.own.view',                   'desc': 'View systems allocated by the user'},
