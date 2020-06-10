@@ -40,22 +40,18 @@ def puppet_enc_edit(node):
 	if system == None:
 		abort(404)
 
-
+	# Get the database cursor
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute("SELECT module_name, class_name, class_parameter, description, tag_name FROM puppet_modules_info;")
-
-	outcome = {}
-	result = curd.fetchall()
-
-	modules = {}
-
-	for row in result:
-		if row['module_name'] not in modules.keys():
-			modules[row['module_name']] = {row['class_name']:{row['class_parameter']:{'description':row['description'], 'tag_name':row['tag_name']}}}
-		elif row['class_name'] not in modules[row['module_name']]:
-			modules[row['module_name']][row['class_name']] = {row['class_parameter']:{'description':row['description'], 'tag_name':row['tag_name']}}
-		elif row['class_parameter'] not in modules[row['module_name']][row['class_name']]:
-			modules[row['module_name']][row['class_name']][row['class_parameter']] = {'description':row['description'], 'tag_name':row['tag_name']}
+	# TODO: Query with an order so 'production' take precedence
+	curd.execute("SELECT `puppet_modules`.`module_name` AS `module_name`, `puppet_classes`.`class_name` AS `class_name`, `puppet_docs_tags`.`name` AS `param`, `puppet_docs_tags`.`text` AS `param_desc` FROM `puppet_modules` LEFT JOIN `puppet_classes` ON `puppet_modules`.`id`=`puppet_classes`.`module_id` LEFT JOIN `puppet_docs_tags` ON `puppet_classes`.`id`=`puppet_docs_tags`.`class_id` WHERE `puppet_docs_tags`.`tag`=%s;", ("param", ))
+	hints = {}
+	for row in curd.fetchall():
+		if row["module_name"] not in hints:
+			hints[row["module_name"]] = {}
+		if row["class_name"] not in hints[row["module_name"]]:
+			hints[row["module_name"]][row["class_name"]] = {}
+		if row["param"] not in hints[row["module_name"]][row["class_name"]]:
+			hints[row["module_name"]][row["class_name"]][row["param"]] = { "description": row["param_desc"] }
 
 	# On any GET request, just display the information
 	if request.method == 'GET':
@@ -63,7 +59,7 @@ def puppet_enc_edit(node):
 		if does_user_have_system_permission(system['id'], "view.puppet.classify", "systems.all.view.puppet.classify") or \
 			does_user_have_system_permission(system['id'], "edit.puppet"," systems.all.edit.puppet"):
 
-			return render_template('puppet/enc.html', variable_names=modules,system=system, active='puppet', environments=environments, title=system['name'], nodename=node, pactive="edit", yaml=cortex.lib.puppet.generate_node_config(system['puppet_certname']))
+			return render_template('puppet/enc.html',system=system, active='puppet', environments=environments, title=system['name'], nodename=node, pactive="edit", yaml=cortex.lib.puppet.generate_node_config(system['puppet_certname']), hints=hints)
 		else:
 			abort(403)
 
@@ -121,7 +117,7 @@ def puppet_enc_edit(node):
 			system['puppet_classes'] = classes
 			system['puppet_variables'] = variables
 			system['puppet_include_default'] = include_default
-			return render_template('puppet/enc.html', variable_names=modules ,system=system, active='puppet', environments=environments, title=system['name'])
+			return render_template('puppet/enc.html', system=system, active='puppet', environments=environments, title=system['name'], hints=hints)
 
 		# Get a cursor to the database
 		curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -520,7 +516,7 @@ def puppet_documentation(environment="production", module_name=None):
 		if not module:
 			abort(404)
 
-		curd.execute("SELECT * FROM `puppet_classes` LEFT JOIN `puppet_docs_tags` ON `puppet_classes`.`id`=`puppet_docs_tags`.`class_id` WHERE `puppet_classes`.	`module_id`=%s;", (module["id"],))
+		curd.execute("SELECT * FROM `puppet_classes` LEFT JOIN `puppet_docs_tags` ON `puppet_classes`.`id`=`puppet_docs_tags`.`class_id` WHERE `puppet_classes`.`module_id`=%s;", (module["id"],))
 		for row in curd.fetchall():
 			if row["class_name"] not in data:
 				data[row["class_name"]] = { "desc": row["desc"] }
