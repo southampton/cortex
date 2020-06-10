@@ -35,7 +35,7 @@ def before_request():
 		logerr()
 		return fatalerr(message='Cortex could not connect to the MariaDB server')
 
-	# This would ideally go in app.py, but it can't as it depends on 
+	# This would ideally go in app.py, but it can't as it depends on
 	# cortex.lib.user which it can't import due to a cyclic dependency
 	app.jinja_env.globals['does_user_have_permission'] = does_user_have_permission
 	app.jinja_env.globals['does_user_have_system_permission'] = does_user_have_system_permission
@@ -61,7 +61,7 @@ def context_processor():
 			if does_user_have_workflow_permission(fn['permission']):
 				injectdata['workflows'].append(fn)
 
-	# Inject the menu items 
+	# Inject the menu items
 
 	# Favourites menu
 	favourites = []
@@ -102,6 +102,8 @@ def context_processor():
 		puppet.append({'link': url_for('puppet_enc_default'), 'title': 'Default classes', 'icon': 'fa-globe'})
 	if does_user_have_permission("puppet.dashboard.view"):
 		puppet.append({'link': url_for('puppet_radiator'), 'title': 'Radiator view', 'icon': 'fa-desktop'})
+	if does_user_have_permission("puppet.documentation.view"):
+		puppet.append({'link': url_for('puppet_documentation'), 'title': 'Puppet documentation', 'icon': 'fa-file-code-o'})
 	if does_user_have_permission("puppet.nodes.view"):
 		puppet.append({'link': '*puppet_search', 'title': 'Configuration search', 'icon': 'fa-search'})
 

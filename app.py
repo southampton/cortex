@@ -975,6 +975,7 @@ Username:             %s
 			{'name': 'puppet.nodes.view',                  'desc': 'View the list of Puppet nodes'},
 			{'name': 'puppet.default_classes.view',        'desc': 'View the list of Puppet default classes'},
 			{'name': 'puppet.default_classes.edit',        'desc': 'Modify the list of Puppet default classes'},
+			{'name': 'puppet.documentation.view',          'desc': 'View the Puppet documentation'},
 			{'name': 'classes.view',                       'desc': 'View the list of system class definitions'},
 			{'name': 'classes.edit',                       'desc': 'Edit system class definitions'},
 			{'name': 'tasks.view',                         'desc': 'View the details of all tasks (not just your own)'},
