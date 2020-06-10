@@ -505,7 +505,9 @@ def puppet_catalog(node):
 def puppet_documentation(environment="production", module_name=None):
 	"""Show the Puppet documentation"""
 
-	## TODO: Permissions
+	# Check user permissions
+	if not does_user_have_permission("puppet.documentation.view"):
+		abort(403)
 
 	# Get the database cursor
 	curd = g.db.cursor(mysql.cursors.DictCursor)

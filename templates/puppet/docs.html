@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block body %}
 <div class="page-header">
-<h4><i class="fa fa-fw fa-file"></i> {{ title }}{%- if module -%}&nbsp;-&nbsp;<code>{{ module.module_name }}</code>{%- endif -%}</h4>
+<h4><i class="fa fa-fw fa-file-code-o"></i> {{ title }}{%- if module -%}&nbsp;-&nbsp;<code>{{ module.module_name }}</code>{%- endif -%}</h4>
 <div class="text-muted">
 {%- if module -%}
 The documentation below has been auto-generated from Puppet code (environment: {{ module.environment }}, last updated: {{ module.last_updated }})
