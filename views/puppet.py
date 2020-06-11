@@ -496,9 +496,9 @@ def puppet_catalog(node):
 
 @app.route("/puppet/docs")
 @app.route("/puppet/docs/<module_name>")
-@app.route("/puppet/docs/<environment>/<module_name>")
+@app.route("/puppet/docs/<environment_name>/<module_name>")
 @cortex.lib.user.login_required
-def puppet_documentation(environment="production", module_name=None):
+def puppet_documentation(environment_name="production", module_name=None):
 	"""Show the Puppet documentation"""
 
 	# Check user permissions
@@ -510,7 +510,7 @@ def puppet_documentation(environment="production", module_name=None):
 	module = None
 	data = {}
 	if module_name:
-		curd.execute("SELECT `id`, `module_name`, `environment`, `last_updated` FROM `puppet_modules` WHERE `module_name`=%s AND `environment`=%s LIMIT 1;", (module_name, environment))
+		curd.execute("SELECT `puppet_modules`.`id` AS `id`, `puppet_modules`.`module_name` AS `module_name`, `puppet_environments`.`environment_name` AS `environment_name`, `puppet_modules`.`last_updated` AS `last_updated` FROM `puppet_modules` LEFT JOIN `puppet_environments` ON `puppet_modules`.`environment_id`=`puppet_environments`.`id` WHERE `puppet_modules`.`module_name`=%s AND `puppet_environments`.`environment_name`=%s LIMIT 1;", (module_name, environment_name))
 		module = curd.fetchone()
 
 		if not module:
@@ -531,10 +531,10 @@ def puppet_documentation(environment="production", module_name=None):
 					"types": json.loads(row["types"]) if row["types"] else [],
 				})
 	else:
-		curd.execute("SELECT `module_name`, `environment` FROM `puppet_modules`;")
+		curd.execute("SELECT `puppet_modules`.`module_name` AS `module_name`, `puppet_environments`.`environment_name` AS `environment_name` FROM `puppet_modules` LEFT JOIN `puppet_environments` ON `puppet_modules`.`environment_id`=`puppet_environments`.`id`")
 		for row in curd.fetchall():
-			if row["environment"] not in data:
-				data[row["environment"]] = []
-			data[row["environment"]].append(row["module_name"])
+			if row["environment_name"] not in data:
+				data[row["environment_name"]] = []
+			data[row["environment_name"]].append(row["module_name"])
 
 	return render_template('puppet/docs.html', active='puppet', title="Puppet Documentation", module=module, data=data)

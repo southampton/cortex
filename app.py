@@ -475,13 +475,23 @@ Username:             %s
 		except Exception as ex:
 			pass
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_environments` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `short_name` varchar(255) NOT NULL,
+		  `environment_name` varchar(255) NOT NULL,
+		  `type` tinyint(4) NOT NULL,
+		  PRIMARY KEY (`id`),
+		  UNIQUE(`environment_name`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_modules` (
 		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `environment_id` mediumint(11) NOT NULL,
 		  `module_name` varchar(255) NOT NULL,
-		  `environment` varchar(255) NOT NULL,
 		  `last_updated` datetime NOT NULL,
 		  PRIMARY KEY (`id`),
-		  UNIQUE(`module_name`, `environment`)
+		  UNIQUE(`environment_id`, `module_name`),
+		  CONSTRAINT `puppet_modules_ibfk_1` FOREIGN KEY (`environment_id`) REFERENCES `puppet_environments` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_classes` (

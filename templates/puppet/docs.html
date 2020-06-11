@@ -68,8 +68,8 @@ There is documentation in Cortex available for the modules listed below
 	</div>
 	<select class="form-control" id="environment-select">
 		<option>All</option>
-		{%- for environment in data -%}
-		<option>{{ environment }}</option>
+		{%- for environment_name in data -%}
+		<option>{{ environment_name }}</option>
 		{%- endfor -%}
 	</select>
 </div>
@@ -82,12 +82,12 @@ There is documentation in Cortex available for the modules listed below
 <p>
 <h4>Puppet Modules</h4>
 <ul class="environment-list">
-	{%- for environment in data -%}
-		<li data-environment="{{ environment }}">
-			<code>{{ environment }}</code>
+	{%- for environment_name in data -%}
+		<li data-environment="{{ environment_name }}">
+			<code>{{ environment_name }}</code>
 			<ul class="module-list">
-				{%- for module in data[environment] -%}
-				<li><a href="{{url_for('puppet_documentation', environment=environment, module_name=module)}}"><code>{{ module }}</code></a></li>
+				{%- for module in data[environment_name] -%}
+				<li><a href="{{url_for('puppet_documentation', environment_name=environment_name, module_name=module)}}"><code>{{ module }}</code></a></li>
 				{%- endfor -%}
 			</ul>
 		</li>
