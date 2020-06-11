@@ -51,7 +51,7 @@ There is documentation in Cortex available for the modules listed below
 	<h5>Additional Resources</h5>
 	<ul>
 	{%- for s in data[class].see -%}
-		<li>{{s.name|urlize(40, target="_blank")}}{%- if s.text -%} - {{s.text}}{%- endif -%}</li>
+		<li>{{s.name|urlize(40, target="_blank")}}{%- if s.text -%}&nbsp;-&nbsp;{{s.text}}{%- endif -%}</li>
 	{%- endfor -%}
 	</ul>
 {%- endif-%}
