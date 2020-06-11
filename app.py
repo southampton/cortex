@@ -1,23 +1,21 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, request, session, abort, g, render_template, url_for
-import jinja2
-import os.path
-from os import walk
-import imp
-import random
-import string
-import logging
-import os.path
 import datetime
-from logging.handlers import SMTPHandler
-from logging.handlers import RotatingFileHandler
-from logging import Formatter
-import redis
-import MySQLdb as mysql
-import traceback
+import imp
+import logging
+import os
+import random
 import re
-import markupsafe
 import socket
+import string
+import traceback
+from logging import Formatter
+from logging.handlers import RotatingFileHandler, SMTPHandler
+
+import jinja2
+import markupsafe
+import MySQLdb as mysql
+import redis
+from flask import Flask, abort, g, render_template, request, session, url_for
 
 # Regular expressions for Jinja links filter
 SYSTEM_LINK_RE = re.compile(r"""\{\{ *system_link +id *= *(?P<quote>["']?) *(?P<link_id>[0-9]+) *(?P=quote) *\}\}(?P<link_text>[^{]*)\{\{ */system_link *\}\}""", re.IGNORECASE)
@@ -50,11 +48,8 @@ class CortexFlask(Flask):
 		self.jinja_env.globals['utcnow'] = datetime.datetime.utcnow
 		self.jinja_env.filters['parse_cortex_links'] = self.parse_cortex_links
 
-		# Load the __init__.py config defaults
-		self.config.from_object("cortex.defaultcfg")
-
-		# Load system config file
-		self.config.from_pyfile('/data/cortex/cortex.conf')
+		# Load Cortex configuration
+		self._load_config("/data/cortex")
 
 		# Make TEMPLATES_AUTO_RELOAD work (we've touch the Jinja environment). See resolved Flask issue #1907
 		if 'TEMPLATES_AUTO_RELOAD' in self.config and self.config['TEMPLATES_AUTO_RELOAD']:
@@ -122,6 +117,28 @@ Further Details:
 
 		# check the database is up and is working
 		self.init_database()
+
+	################################################################################
+
+	def _load_config(self, base_dir):
+		"""
+		Loads Cortex application config in the following order:
+		1. From the default config object
+		2. From the primary config file cortex.conf
+		3. From config files in the cortex.conf.d directory
+		"""
+		# Load the __init__.py config defaults
+		self.config.from_object("cortex.defaultcfg")
+
+		# Load primary system config file
+		self.config.from_pyfile(os.path.join(base_dir, "cortex.conf"))
+
+		# Load config files from cortex.conf.d
+		config_directory = os.path.join(base_dir, "cortex.conf.d")
+		if os.path.isdir(config_directory):
+			for config_file in sorted(os.listdir(config_directory)):
+				if config_file.endswith(".conf"):
+					self.config.from_pyfile(os.path.join(config_directory, config_file))
 
 	################################################################################
 
