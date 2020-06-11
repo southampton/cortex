@@ -51,7 +51,7 @@ def puppet_enc_edit(node):
 		if row["class_name"] not in hints[row["module_name"]]:
 			hints[row["module_name"]][row["class_name"]] = {}
 		if row["param"] not in hints[row["module_name"]][row["class_name"]]:
-			hints[row["module_name"]][row["class_name"]][row["param"]] = { "description": row["param_desc"] }
+			hints[row["module_name"]][row["class_name"]][row["param"]] = row["param_desc"]
 
 	# On any GET request, just display the information
 	if request.method == 'GET':

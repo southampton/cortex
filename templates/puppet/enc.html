@@ -28,24 +28,20 @@
 <script>
 $(document).ready(function()
 {
-	// This function will get the name of the last puppet class which appeared in the textarea	
-	function getLastMatch(class_editor, puppetModulesArray) {
-		var cursorLine = class_editor.getCursor().line - 1;
-		
-		for (var i = cursorLine; i >= 0; i--)
-		{
-			for (var j = 0; j < puppetModulesArray.length; j++)
-			{
-				var regex = new RegExp('(' + puppetModulesArray[j] + ')((::)?\\w+)?(?=:)');
-				if (regex.test(class_editor.getLine(i)))
-				{
-					return class_editor.getLine(i);
+	// This function will get the name of the last puppet class which appeared in the textarea
+	function getLastClassName(editor, modules) {
+		for (var i = editor.getCursor().line - 1; i >= 0; i--) {
+			for (var j = 0; j < modules.length; j++) {
+				var regex = new RegExp('(' + modules[j] + ')((::)?\\w+)?(?=:)');
+				if (regex.test(editor.getLine(i))) {
+					// eliminates the ":" at the end of the name
+					return editor.getLine(i).substring(0, editor.getLine(i).length-1);
 				}
 			}
 		}
 		return "";
 	}
-	
+
 	var classes_editor = CodeMirror.fromTextArea(document.getElementById('classes'), {
 		mode: 'yaml',
 		gutters: ["CodeMirror-lint-markers"],
@@ -54,23 +50,19 @@ $(document).ready(function()
 		viewportMargin: Infinity,
 		completeSingle: false,
 	});
-	
-	var dictionary = {{ variable_names | tojson | safe }} // will hold all the keywords
-	var puppetModulesArray = []; // will hold all the names of the modules
-	
-	for (var key in dictionary)
-	{
-		puppetModulesArray.push(key);
-	}
-	
+
+	var hints = {{ hints | tojson | safe }}; // will hold all the keywords
+	var modules = Object.keys(hints); // will hold all the names of the modules
+
+
 	// Codemirror hint helper which returns the list of elements which match the current string on the line
 	CodeMirror.registerHelper('hint', 'dictionaryHint', function(editor) {
 		var cur = editor.getCursor();
 		var curLine = editor.getLine(cur.line);
 		var start = cur.ch;
 		var end = start;
-		while (end < curLine.length && /[\w$]/.test(curLine.charAt(end))) ++end;
-		while (start && /[\w$]/.test(curLine.charAt(start - 1))) --start;
+		while (end < curLine.length && /[\w$:]/.test(curLine.charAt(end))) ++end;
+		while (start && /[\w$:]/.test(curLine.charAt(start - 1))) --start;
 		var curWord = curLine.replace(/\s*/, "");
 		try
 		{
@@ -83,65 +75,37 @@ $(document).ready(function()
 			// It's completely ok though
 			var regex = /(?!)/
 		}
-		var using_init = true;
-		if (curLine.match(/\w*:{2}?\w*/)) // match the whole line because you only want this to happen in the case of a module name (which would have no whitespaces before it)
-		{
-			var module_and_class = curLine.split("::"); // extract the module name and whatever is after it(the part that is after will be used to list all the classes that are within that module)
-			using_init = false; // since you have the :: it means that you're not using the default init class anymore
-		}
-		if (!using_init && dictionary.hasOwnProperty(module_and_class[0])) // if init is not being used, then return the list of classes that match the current keyword
-		{
-			regex = new RegExp('^' + module_and_class[1], 'i'); // replace the current word in the regex with the partial class name currently on the line
+		// The modules object contains the module on the current line, show the modules's classes
+		var module_name = curLine.split("::", 1)[0];
+		if (hints[module_name] !== undefined) {
 			return { // will return a list of all the classes which belong to that module
-				list: (!curWord ? Object.keys(dictionary[module_and_class[0]]) : Object.keys(dictionary[module_and_class[0]]).filter(function(item) {
-					return (item.match(regex)&&(item!="init"));
+				list: (!curWord ? Object.keys(hints[module_name]) : Object.keys(hints[module_name]).filter(function(item) {
+					return (item.match(regex));
 				})).sort(),
-				from: CodeMirror.Pos(cur.line, start), // the start will only match to word characters a-z A-Z 0-9 and _, so it will stop when it reaches the first : anyway
+				from: CodeMirror.Pos(cur.line, start), // the start will only match to word characters a-z A-Z 0-9, and _, $, :.
 				to: CodeMirror.Pos(cur.line, end) // the to position should be the same as normally
 			}
 		}
-		var lastMatch = getLastMatch(editor, puppetModulesArray);
-		lastMatch = lastMatch.substring(0, lastMatch.length-1); // eliminates the ":" at the end of the name
-		var last_match_module_name = lastMatch;
-		var last_match_class_name = "";
-		if (lastMatch.includes("::")) // if the last match is of format module::class
+		// Test if typing a classes parameters and return a list of the parameters for the class if found
+		var last_class_name = getLastClassName(editor, modules);
+		var last_module_name = last_class_name.split("::", 1)[0];
+		if (curLine && curLine.match(/^\s+\w*/) && last_class_name !== "" && hints[last_module_name] !== undefined)
 		{
-			var last_match_split = lastMatch.split("::");
-			last_match_module_name = last_match_split[0]; // store the module in a var
-			last_match_class_name = last_match_split[1]; // store the class in another var
-		}
-		if (curLine && curLine.match(/^\s+\w*/) && lastMatch != "" && dictionary.hasOwnProperty(last_match_module_name)) // if the dictionary contains this module name
-		{
-			if (lastMatch.includes("::")) // if the last match includes ::, then show the variable names that belong to that class
-			{
-				return {
-					list: (!curWord ? Object.keys(dictionary[last_match_module_name][last_match_class_name]) : Object.keys(dictionary[last_match_module_name][last_match_class_name]).filter(function(item) {
-						return item.match(regex);
-					})).sort(),
-					from: CodeMirror.Pos(cur.line, start),
-					to: CodeMirror.Pos(cur.line, end)
-				}
-			}
-			else
-			{
-				return { // else just display the variables for the init class
-					list: (!curWord ? Object.keys(dictionary[lastMatch]["init"]) : (Object.keys(dictionary[lastMatch]["init"])).filter(function(item) {
-						return item.match(regex);
-					})).sort(),
-					from: CodeMirror.Pos(cur.line, start),
-					to: CodeMirror.Pos(cur.line, end)
-				}
-			}
-		}
-		else
-		{
-			return { // the dictionary does not contain whatever is on the line as a module name, so just return the list of module names that match the regex
-				list: (!curWord ? puppetModulesArray : puppetModulesArray.filter(function(item) {
+			return {
+				list: (!curWord ? Object.keys(hints[last_module_name][last_class_name]) : (Object.keys(hints[last_module_name][last_class_name])).filter(function(item) {
 					return item.match(regex);
 				})).sort(),
 				from: CodeMirror.Pos(cur.line, start),
 				to: CodeMirror.Pos(cur.line, end)
 			}
+		}
+		// The modules object does not contain the module on the current line, return a list of module hints.
+		return {
+			list: (!curWord ? modules : modules.filter(function(item) {
+				return item.match(regex);
+			})).sort(),
+			from: CodeMirror.Pos(cur.line, start),
+			to: CodeMirror.Pos(cur.line, end)
 		}
 	});
 	CodeMirror.commands.autocomplete = function(cm) {
@@ -206,7 +170,7 @@ $(document).ready(function()
 	<div class="card card-default">
 		<div class="card-header">Puppet Classification
 			<div class="pull-right">
-				<a href="#" class="btn btn-info btn-xs" data-toggle="modal" data-target="#modalyaml">View raw YAML</a>		
+				<a href="#" class="btn btn-info btn-xs" data-toggle="modal" data-target="#modalyaml">View raw YAML</a>
 			</div>
 		</div>
 		<div class="card-body" style="padding-bottom:0em">
@@ -250,7 +214,7 @@ $(document).ready(function()
 				<textarea id="variables" name="variables" placholder="Global variables to include can be entered here">{{ system.puppet_variables or '' }}</textarea>
 			</div>
 		</div>
-		
+
 		{%- if does_user_have_system_permission(system['id'],"edit.puppet","systems.all.edit.puppet") %}
 		<div class="text-center">
 			<button class="btn btn-primary btn-lg" type="submit">Save Changes</button>
