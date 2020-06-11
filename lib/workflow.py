@@ -1,16 +1,24 @@
-import os, imp, types, json
-from cortex import app
-from flask import render_template, abort, g
-from cortex.lib.user import login_required, does_user_have_workflow_permission, does_user_have_permission, does_user_have_system_permission
+import imp
+import json
+import os
+import types
 from functools import wraps
+
 import MySQLdb as mysql
+from flask import abort, g, render_template
+
+from cortex import app
+from cortex.lib.user import (does_user_have_permission,
+                             does_user_have_system_permission,
+                             does_user_have_workflow_permission,
+                             login_required)
 
 ################################################################################
 
 def get_workflows_locked_details():
 	"""Gets the details about workflow locking."""
 
-	# Check if workflows are currently locked 
+	# Check if workflows are currently locked
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key` = "workflow_lock_status";')
 	current_value = curd.fetchone()
@@ -56,37 +64,50 @@ class CortexWorkflow(object):
 		if 'DISABLED_WORKFLOWS' in app.config and name in app.config['DISABLED_WORKFLOWS']:
 			raise Exception('Workflow is disabled in configuration')
 
+		# Load workflow config
 		if load_config:
-			# Load settings for this workflow
-			cfgfile = os.path.join(app.config['WORKFLOWS_DIR'], self.name, "workflow.conf") 
-			if os.path.isfile(cfgfile):
-				try:
-					self.config = self._load_config(cfgfile)
-					app.logger.info("Workflows: Loaded config file for '" + self.name + "'")
-
-					# Validate the config
-					if check_config is not None:
-						# If a dict is given for check_config, then use our _default_validate_config
-						# function to validate the configuration items
-						if type(check_config) is dict:
-							if not self._default_validate_config(check_config):
-								raise Exception("Workflows: Invalid configuration in workflow '" + self.name + "'")
-						# If a function is given for check_config, call it:
-						elif type(check_config) is types.FunctionType:
-							if not check_config(self):
-								raise Exception("Workflows: Invalid configuration in workflow '" + self.name + "'")
-
-				except Exception as ex:
-					app.logger.error("Workflows: Could not load config file " + cfgfile + ": " + str(ex))
-
-					# Re-raise to stop the workflow from loading
-					raise(ex)
-
-			else:
-				app.logger.debug("Workflows: No config file found for '" + self.name + "'")
+			self._load_workflow_config(app.config['WORKFLOWS_DIR'], check_config=check_config)
 
 		#register the workflow against the app so it can be accessed from cortex
 		app.workflows.update({name: self})
+
+	def _load_workflow_config(self, base_dir, check_config):
+		"""Load Cortex Workflow config"""
+
+		# Load config from file workflow.conf
+		config_file = os.path.join(base_dir, self.name, "workflow.conf")
+		if os.path.isfile(config_file):
+			self.config.update(self._load_config(config_file))
+			app.logger.info("Workflows: Loaded config file workflow.conf for {name}".format(name=self.name))
+		else:
+			app.logger.debug("Workflows: No config file found for {name}".format(name=self.name))
+
+		# Load config from directory workflow.conf.d
+		config_directory = os.path.join(base_dir, self.name, "workflow.conf.d")
+		if os.path.isdir(config_directory):
+			for config_file in sorted(os.listdir(config_directory)):
+				if config_file.endswith(".conf"):
+					self.config.update(self._load_config(os.path.join(config_directory, config_file)))
+					app.logger.info("Workflows: Loaded config file workflow.conf.d/{f} for {name}".format(f=config_file, name=self.name))
+
+		# Validate the config
+		if check_config:
+			try:
+					# If a dict is given for check_config, then use our _default_validate_config
+					# function to validate the configuration items
+					if type(check_config) is dict:
+						if not self._default_validate_config(check_config):
+							raise Exception("Workflows: Invalid configuration in workflow {name}".format(name=self.name))
+					# If a function is given for check_config, call it:
+					elif type(check_config) is types.FunctionType:
+						if not check_config(self):
+							raise Exception("Workflows: Invalid configuration in workflow {name}".format(name=self.name))
+
+			except Exception as ex:
+				app.logger.error("Workflows: Invalid workflow configuration in {name}: {ex}".format(name=self.name, ex=ex))
+
+				# Re-raise to stop the workflow from loading
+				raise(ex)
 
 	def _default_validate_config(self, required_config):
 		valid_config = True
@@ -105,7 +126,7 @@ class CortexWorkflow(object):
 
 		return valid_config
 
-	def _load_config(self, filename): 
+	def _load_config(self, filename):
 		"""Extracts the settings from the given config file."""
 
 		# Start a new module, which will be the context for parsing the config
@@ -178,11 +199,11 @@ class CortexWorkflow(object):
 
 			# Store the workflow route details in a hash for the
 			app.wf_functions.append({
-				'title':      title, 
+				'title':      title,
 				'name':       fn.__name__,
-				'workflow':   self.name, 
+				'workflow':   self.name,
 				'order':      order,
-				'permission': permission, 
+				'permission': permission,
 				'menu':       menu,
 			})
 
@@ -217,9 +238,9 @@ class CortexWorkflow(object):
 
 			# Store the workflow route details in a hash
 			app.wf_system_functions.append({
-				'title':             title, 
+				'title':             title,
 				'name':              fn.__name__,
-				'workflow':          self.name, 
+				'workflow':          self.name,
 				'order':             order,
 				'system_permission': system_permission,
 				'permission':        permission,
