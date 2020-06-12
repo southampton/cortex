@@ -142,12 +142,11 @@ Further Details:
 
 	################################################################################
 
-	def pwgen(self, length=32):
-		"""This is very crude password generator. It is currently only used to generate
-		a CSRF token."""
+	def pwgen(self, alphabet=string.ascii_letters + string.digits, length=32):
+		"""This is very crude password generator. Used to generate a CSRF token, and
+		simple random tokens."""
 
-		alphabet = string.ascii_letters + string.digits
-		return ''.join(random.choice(alphabet) for _ in range(length))
+		return ''.join(random.choices(alphabet, k=length))
 
 	################################################################################
 
@@ -1003,6 +1002,8 @@ Username:             %s
 			{'name': 'puppet.default_classes.view',        'desc': 'View the list of Puppet default classes'},
 			{'name': 'puppet.default_classes.edit',        'desc': 'Modify the list of Puppet default classes'},
 			{'name': 'puppet.documentation.view',          'desc': 'View the Puppet documentation'},
+			{'name': 'puppet.environment.edit',            'desc': 'Modify an exisiting Puppet environment'},
+			{'name': 'puppet.environment.view',            'desc': 'View an exisiting Puppet environment'},
 			{'name': 'classes.view',                       'desc': 'View the list of system class definitions'},
 			{'name': 'classes.edit',                       'desc': 'Edit system class definitions'},
 			{'name': 'tasks.view',                         'desc': 'View the details of all tasks (not just your own)'},
