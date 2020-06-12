@@ -154,7 +154,7 @@ Further Details:
 		"""This function is used to generate a CSRF token for use in templates."""
 
 		if '_csrf_token' not in session:
-			session['_csrf_token'] = self.pwgen(32)
+			session['_csrf_token'] = self.pwgen(length=32)
 
 		return session['_csrf_token']
 
@@ -481,6 +481,17 @@ Username:             %s
 		  `type` tinyint(4) NOT NULL,
 		  PRIMARY KEY (`id`),
 		  UNIQUE(`environment_name`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_users` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `environment_id` mediumint(11) NOT NULL,
+		  `who` varchar(128) NOT NULL,
+		  `type` tinyint(1) NOT NULL,
+		  `level` tinyint(4) NOT NULL DEFAULT 0,
+		  PRIMARY KEY (`id`),
+		  UNIQUE(`environment_id`, `who`, `type`),
+		  CONSTRAINT `puppet_users_ibfk_1` FOREIGN KEY (`environment_id`) REFERENCES `puppet_environments` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_modules` (
@@ -1002,8 +1013,7 @@ Username:             %s
 			{'name': 'puppet.default_classes.view',        'desc': 'View the list of Puppet default classes'},
 			{'name': 'puppet.default_classes.edit',        'desc': 'Modify the list of Puppet default classes'},
 			{'name': 'puppet.documentation.view',          'desc': 'View the Puppet documentation'},
-			{'name': 'puppet.environment.edit',            'desc': 'Modify an exisiting Puppet environment'},
-			{'name': 'puppet.environment.view',            'desc': 'View an exisiting Puppet environment'},
+			{'name': 'puppet.environment.admin',           'desc': 'Administer all Puppet environments'},
 			{'name': 'classes.view',                       'desc': 'View the list of system class definitions'},
 			{'name': 'classes.edit',                       'desc': 'Edit system class definitions'},
 			{'name': 'tasks.view',                         'desc': 'View the details of all tasks (not just your own)'},
