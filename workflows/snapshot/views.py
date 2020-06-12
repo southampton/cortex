@@ -15,7 +15,7 @@ def snapshot_create_permission_callback():
 
 @workflow.action('system', title='Snapshot', desc='Take a VMware snapshot of this system', system_permission='snapshot', permission='systems.all.snapshot', require_vm=True, methods=['GET', 'POST'])
 def snapshot_system(id):
-	
+
 	return redirect(url_for('snapshot_create', systems=id))
 
 @workflow.route('create', title='Create VMware Snapshot', order=40, permission=snapshot_create_permission_callback, methods=['GET', 'POST'])
@@ -34,7 +34,7 @@ def snapshot_create():
 		systems = get_systems(where_clause = query_where)
 	else:
 		abort(403)
-	
+
 	# Create the values dict.
 	values = {}
 
@@ -48,7 +48,7 @@ def snapshot_create():
 				except ValueError:pass    # System was not an int.
 				else:
 					values['snapshot_systems'].append(vm)
-		
+
 		return workflow.render_template('create.html', title='Create VMware Snapshot', systems=systems, values=values)
 
 	elif request.method == 'POST':
@@ -81,16 +81,16 @@ def snapshot_create():
 
 		if error:
 			return workflow.render_template('create.html', title='Create VMware Snapshot', systems=systems, values=values)
-		
+
 		# Task Options
 		options = {}
 		options['wfconfig'] = workflow.config
 		options['values'] = values
-				
+
 		# Everything should be good - start a task.
 		neocortex = cortex.lib.core.neocortex_connect()
 		task_id = neocortex.create_task(__name__, session['username'], options, description='Create a VMware Snapshot')
-		
+
 		# Redirect to the status page for the task
 		return redirect(url_for('task_status', id=task_id))
 
