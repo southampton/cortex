@@ -22,13 +22,77 @@
 		</div>
 		<div class="col-md-12 form-group">
 			<label for="environment_short_name">Environment Short Name:<span class="required">*</span></label>
-			<input class="form-control" name="environment_short_name" id="environment_short_name" placeholder="The environment's short or friendly name" required="required" autofocus {% if 'environment_short_name' in values %}value="{{ values['environment_short_name'] }}"{% endif %} maxlength="79"/>
+			<input class="form-control" name="environment_short_name" id="environment_short_name" placeholder="The environment's short or friendly name" required="required" {% if 'environment_short_name' in values %}value="{{ values['environment_short_name'] }}"{% endif %} maxlength="79"/>
 		</div>
 		<div class="col-md-12 form-group">
 			<label for="environment_name">Environment Name:<span class="required">*</span></label>
-			<input class="form-control" name="environment_name" id="environment_name" placeholder="The environment's name will be auto generated" required="required" autofocus {% if 'environment_name' in values %}value="{{ values['environment_name'] }}"{% endif %} maxlength="79" {{ 'disabled="disabled"' if "environment_type" in values and values["environment_type"] == 2 }}/>
+			<input class="form-control" name="environment_name" id="environment_name" placeholder="The environment's name will be auto generated" required="required" {% if 'environment_name' in values %}value="{{ values['environment_name'] }}"{% endif %} maxlength="79" {{ 'disabled="disabled"' if "environment_type" in values and values["environment_type"] == 2 }}/>
 		</div>
-		<div class="col-md-12"><h4 style="margin-top:0px">2. Create Environment</h4></div>
+		<div class="col-md-12"><h4>2. Select Users</h4></div>
+		<div class="col-md-12">
+			<table class="table table-condensed tabled-striped">
+				<thead>
+					<tr>
+						<th>User</th>
+						<th>Type</th>
+						<th>Level</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody id="user_table_body">
+					<tr id="user_row_template" style="display:none;">
+						<input type="hidden" class="puppet_users" value="">
+						<td class="user_who"></td>
+						<td class="user_type"></td>
+						<td class="user_level"></td>
+						<td><button type="button" class="btn btn-md btn-block btn-danger remove_user">Remove</button></td>
+					</tr>
+					{%- if 'puppet_users' in values %}
+					{%- for user in values['puppet_users'] %}
+					<tr>
+						<input type="hidden" class="puppet_users" name="puppet_users[]" value="{{ user['who'] }},{{ user['type'] }},{{ user['level'] }}">
+						<td class="user_who">{{ user['who'] }}</td>
+						<td class="user_type">{{ user['type'] }}</td>
+						<td class="user_level">{{ user['level'] }}</td>
+						<td><button type="button" class="btn btn-md btn-block btn-danger remove_user">Remove</button></td>
+					</tr>
+					{% endfor -%}
+					{% endif -%}
+				</tbody>
+				<tfoot>
+					<tr>
+						<td>
+							<hr/>
+							<label for="new_user_who">Enter users or groups who have permission in this environment:</label>
+							<input class="form-control" id="new_user_who" placeholder="User or group name" maxlength="127"/>
+						</td>
+						<td>
+							<hr/>
+							<label for="new_user_type">Select the type:</label>
+							<select class="selectpicker form-control" id="new_user_type">
+								<option value="0">User</option>
+								<option value="1">Active Directory Group</option>
+							</select>
+						</td>
+						<td>
+							<hr/>
+							<label for="new_user_level">Select the access level:</label>
+							<select class="selectpicker form-control" id="new_user_level">
+								<option value="1">View Environment</option>
+								<option value="2">Modify Environment</option>
+								<option value="3">Environment Administrator</option>
+							</select>
+						</td>
+						<td style="width: 150px;">
+							<hr/>
+							<label for="add_user">Add user:</label>
+							<button type="button" class="btn btn-md btn-block btn-success" id="add_user">Add</button>
+						</td>
+					</tr>
+				</tfoot>
+			</table>
+		</div>
+		<div class="col-md-12"><h4 style="margin-top:0px">3. Create Environment</h4></div>
 		<div class="row w-100">
 			<div class="col-md-12">
 				<p style="text-align:center"><input type="submit" class="btn btn-lg btn-success" value="Create Environment" name="submit" id="submit" /></p>
@@ -37,7 +101,7 @@
 	</div>
 </form>
 <script type="text/javascript">
-$('#environment_type').change(function() {
+$("#environment_type").change(function() {
 	if ($(this).val() == 2) {
 		$("#environment_name").prop("disabled", true);
 		$("#environment_name").prop("placeholder", "The environment's name will be auto generated");
@@ -45,6 +109,38 @@ $('#environment_type').change(function() {
 		$("#environment_name").prop("disabled", false);
 		$("#environment_name").prop("placeholder", "The environment's name in Puppet (must match \\A[a-z0-9_]+\\Z)");
 	}
+});
+$("#add_user").click(function () {
+	var who = $("#new_user_who").val().trim();
+	var type = $("#new_user_type").val().trim();
+	var type_text = $("#new_user_type option:selected").text().trim();
+	var level = $("#new_user_level").val().trim();
+	var level_text = $("#new_user_level option:selected").text().trim();
+
+	if (who === "") {
+		alert("You must enter a user or group name!");
+	} else {
+		// Check the user hasn't already been added
+		if ($(`input.puppet_users[value^="${who},${type}"]`).length > 0) {
+			alert(`You've already added ${who} to the permissions list!`);
+		} else {
+			var row = $("#user_row_template").clone(true);
+			$("#user_table_body").append(row);
+			// Update row properties
+			row.css("display", "");
+			row.removeAttr("id");
+			// Update row text
+			row.find("td.user_who").html(who);
+			row.find("td.user_type").html(type_text);
+			row.find("td.user_level").html(level_text);
+			row.find("input.puppet_users").val(`${who},${type},${level}`)
+			// Add the name attribute to the row
+			row.find("input.puppet_users").attr("name", "puppet_users[]")
+		}
+	}
+});
+$(".remove_user").click(function() {
+	$(this).closest("tr").remove();
 });
 </script>
 {% endblock %}

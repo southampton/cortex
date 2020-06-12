@@ -26,6 +26,11 @@ def environment_create(values, helper, wfconfig):
 
 	# Insert the details into the database
 	helper.curd.execute("INSERT INTO `puppet_environments` (`short_name`, `environment_name`, `type`) VALUES (%s, %s, %s)", (values["environment_short_name"], values["environment_name"], values["environment_type"]))
+	environment_id = helper.curd.lastrowid
+
+	# Insert the puppet_users into the database
+	for user in values["puppet_users"]:
+		helper.curd.execute("INSERT INTO `puppet_users` (`environment_id`, `who`, `type`, `level`) VALUES (%s, %s, %s, %s)", (environment_id, user["who"], user["type"], user["level"]))
 
 	# TODO: Send an API call to the cortex-puppet-bridge to create the environment
 

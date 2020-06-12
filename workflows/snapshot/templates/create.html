@@ -41,7 +41,7 @@
 						useCurrent: false,
 					});
 				});
-			</script>		
+			</script>
 		</div>
 		<div class="col-md-12 form-group">
 			<label for="snapshot_comments">Comments:</label>
@@ -95,7 +95,7 @@
 						</td>
 						<td style="width: 150px;">
 							<hr/>
-							<div class="text-muted pb-1">Add system:</div>
+							<label for="add_system">Add system:</label>
 							<button type="button" class="btn btn-md btn-block btn-success" id="add_system">Add</button>
 						</td>
 					</tr>
@@ -105,7 +105,7 @@
 		<div class="col-md-12"><h4 style="margin-top:0px">4. Create Snapshot</h4></div>
 		<div class="row w-100">
 			<div class="col-md-12">
-				<p style="text-align:center"><input type="submit" class="btn btn-lg btn-success" value="Create Snapshot" name="submit" id="submit" /></p>				
+				<p style="text-align:center"><input type="submit" class="btn btn-lg btn-success" value="Create Snapshot" name="submit" id="submit" /></p>
 			</div>
 		</div>
 	</div>
@@ -168,8 +168,6 @@ $('#submit').click(function(e) {
 	// Prevent the form from submitting.
 	e.preventDefault();
 	return false;
-
-
 });
 </script>
 {% endblock %}
