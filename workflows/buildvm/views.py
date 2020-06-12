@@ -7,7 +7,6 @@ import cortex.lib.core
 import cortex.lib.admin
 import datetime
 from flask import Flask, request, session, redirect, url_for, flash, g, abort
-import MySQLdb as mysql
 import re
 import json
 from cortex.corpus import Corpus
@@ -133,7 +132,7 @@ def standard():
 		except ValueError:
 			flash("Could not parse JSON from the database.", "alert-danger")
 			vm_spec_json = {}
-			
+
 		# Get the VM Specs Config from the DB.
 		try:
 			vm_spec_config_json = cortex.lib.admin.get_kv_setting('vm.specs.config', load_as_json=True)
@@ -267,7 +266,7 @@ def validate_data(r, templates, envs):
 	ram = int(ram)
 	if vm_spec_config_json is not None and 'slider-ram' in vm_spec_config_json and vm_spec_config_json['slider-ram'].get('min', None) is not None and vm_spec_config_json['slider-ram'].get('max', None) is not None:
 		if not int(vm_spec_config_json['slider-ram']['min']) <= ram <= int(vm_spec_config_json['slider-ram']['max']):
-			raise ValueError('Invalid amount of RAM selected')		
+			raise ValueError('Invalid amount of RAM selected')
 	elif not 2 <= ram <= 32:
 		raise ValueError('Invalid amount of RAM selected')
 
