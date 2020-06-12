@@ -494,11 +494,10 @@ def puppet_catalog(node):
 	# Render
 	return render_template('puppet/catalog.html', catalog=catalog_dict, node=dbnode, active='puppet', title=node + " - Puppet Catalog", nodename=node, pactive="catalog", system=system)
 
-@app.route("/puppet/docs")
-@app.route("/puppet/docs/<module_name>")
-@app.route("/puppet/docs/<environment_name>/<module_name>")
+@app.route("/puppet/documentation")
+@app.route("/puppet/documentation/<int:environment_id>/<string:module_id>")
 @cortex.lib.user.login_required
-def puppet_documentation(environment_name="production", module_name=None):
+def puppet_documentation(environment_id=None, module_id=None):
 	"""Show the Puppet documentation"""
 
 	# Check user permissions
@@ -509,8 +508,8 @@ def puppet_documentation(environment_name="production", module_name=None):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	module = None
 	data = {}
-	if module_name:
-		curd.execute("SELECT `puppet_modules`.`id` AS `id`, `puppet_modules`.`module_name` AS `module_name`, `puppet_environments`.`environment_name` AS `environment_name`, `puppet_modules`.`last_updated` AS `last_updated` FROM `puppet_modules` LEFT JOIN `puppet_environments` ON `puppet_modules`.`environment_id`=`puppet_environments`.`id` WHERE `puppet_modules`.`module_name`=%s AND `puppet_environments`.`environment_name`=%s LIMIT 1;", (module_name, environment_name))
+	if module_id:
+		curd.execute("SELECT `puppet_modules`.`id` AS `id`, `puppet_modules`.`module_name` AS `module_name`, `puppet_environments`.`environment_name` AS `environment_name`, `puppet_modules`.`last_updated` AS `last_updated` FROM `puppet_modules` LEFT JOIN `puppet_environments` ON `puppet_modules`.`environment_id`=`puppet_environments`.`id` WHERE `puppet_modules`.`id`=%s AND `puppet_environments`.`id`=%s", (module_id, environment_id))
 		module = curd.fetchone()
 
 		if not module:
@@ -531,10 +530,32 @@ def puppet_documentation(environment_name="production", module_name=None):
 					"types": json.loads(row["types"]) if row["types"] else [],
 				})
 	else:
-		curd.execute("SELECT `puppet_modules`.`module_name` AS `module_name`, `puppet_environments`.`environment_name` AS `environment_name` FROM `puppet_modules` LEFT JOIN `puppet_environments` ON `puppet_modules`.`environment_id`=`puppet_environments`.`id`")
+		curd.execute("SELECT `puppet_modules`.`id` AS `module_id`, `puppet_modules`.`module_name` AS `module_name`, `puppet_environments`.`id` AS `environment_id`, `puppet_environments`.`environment_name` AS `environment_name` FROM `puppet_modules` LEFT JOIN `puppet_environments` ON `puppet_modules`.`environment_id`=`puppet_environments`.`id`")
 		for row in curd.fetchall():
-			if row["environment_name"] not in data:
-				data[row["environment_name"]] = []
-			data[row["environment_name"]].append(row["module_name"])
+			if row["environment_id"] not in data:
+				data[row["environment_id"]] = {"name": row["environment_name"], "modules": {} }
+			data[row["environment_id"]]["modules"][row["module_id"]] = row["module_name"]
 
-	return render_template('puppet/docs.html', active='puppet', title="Puppet Documentation", module=module, data=data)
+	return render_template('puppet/docs.html', active='puppet', title="Puppet Documentation", module=module, data=data, q=request.args.get("q", None))
+
+@app.route("/puppet/environments")
+@app.route("/puppet/environments/<int:environment_id>", methods=["GET", "POST"])
+def puppet_environments(environment_id=None):
+	"""Show the Puppet documentation"""
+
+	# Check user permissions
+	if not does_user_have_permission("puppet.environments.view"):
+		abort(403)
+
+	# Get the database cursor
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	environment = None
+	data = []
+	if environment_id:
+		curd.execute("SELECT * FROM `puppet_environments` WHERE `id`=%s", (environment_id,))
+		environment = curd.fetchone()
+	else:
+		curd.execute("SELECT * FROM `puppet_environments` ORDER BY `id` ASC")
+		data = curd.fetchall()
+
+	return render_template("puppet/environments.html", active="puppet", title="Puppet Environments", environment=environment, data=data)
