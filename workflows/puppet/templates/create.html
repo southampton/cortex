@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+{% block head %}
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}?version={{ config.VERSION }}">
+	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}?version={{ config.VERSION }}"></script>
+{% endblock %}
+{% block body %}
+<div class="page-header">
+<h4><i class="fa fa-plus-circle fa-fw"></i> Create Puppet Environment</h4>
+<div class="text-muted">This workflow automates the creation of Puppet environments.</div>
+</div>
+<form id="environment_create_form" method="POST" role="form">
+	<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+	<div class="row">
+		<div class="col-md-12"><h4>1. Enter Request Details</h4></div>
+		<div class="col-md-12 form-group">
+			<label for="environment_type">Environment Type:<span class="required">*</span></label>
+			<select class="selectpicker form-control" id="environment_type" name="environment_type">
+{%- for type in environment_types -%}
+				<option value="{{ type }}" {{ 'selected="selected"' if "environment_type" in values and values["environment_type"] == type }}>{{ environment_types[type] }}</option>
+{%- endfor %}
+			</select>
+		</div>
+		<div class="col-md-12 form-group">
+			<label for="environment_short_name">Environment Short Name:<span class="required">*</span></label>
+			<input class="form-control" name="environment_short_name" id="environment_short_name" placeholder="The environment's short or friendly name" required="required" autofocus {% if 'environment_short_name' in values %}value="{{ values['environment_short_name'] }}"{% endif %} maxlength="79"/>
+		</div>
+		<div class="col-md-12 form-group">
+			<label for="environment_name">Environment Name:<span class="required">*</span></label>
+			<input class="form-control" name="environment_name" id="environment_name" placeholder="The environment's name will be auto generated" required="required" autofocus {% if 'environment_name' in values %}value="{{ values['environment_name'] }}"{% endif %} maxlength="79" {{ 'disabled="disabled"' if "environment_type" in values and values["environment_type"] == 2 }}/>
+		</div>
+		<div class="col-md-12"><h4 style="margin-top:0px">2. Create Environment</h4></div>
+		<div class="row w-100">
+			<div class="col-md-12">
+				<p style="text-align:center"><input type="submit" class="btn btn-lg btn-success" value="Create Environment" name="submit" id="submit" /></p>
+			</div>
+		</div>
+	</div>
+</form>
+<script type="text/javascript">
+$('#environment_type').change(function() {
+	if ($(this).val() == 2) {
+		$("#environment_name").prop("disabled", true);
+		$("#environment_name").prop("placeholder", "The environment's name will be auto generated");
+	} else {
+		$("#environment_name").prop("disabled", false);
+		$("#environment_name").prop("placeholder", "The environment's name in Puppet (must match \\A[a-z0-9_]+\\Z)");
+	}
+});
+</script>
+{% endblock %}
