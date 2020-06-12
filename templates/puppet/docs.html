@@ -77,17 +77,17 @@ There is documentation in Cortex available for the modules listed below
 	<div class="input-group-prepend">
 		<span class="input-group-text" for="module-search">Search:</span>
 	</div>
-	<input type="text" class="form-control" id="module-search" placeholder="Search for Puppet module names">
+	<input type="text" class="form-control" id="module-search" placeholder="Search for Puppet module names" {%- if q -%}value="{{ q }}"{%- endif -%}>
 </div>
 <p>
 <h4>Puppet Modules</h4>
 <ul class="environment-list">
-	{%- for environment_name in data -%}
-		<li data-environment="{{ environment_name }}">
-			<code>{{ environment_name }}</code>
+	{%- for environment_id in data -%}
+		<li data-environment="{{ environment_id }}">
+			<code>{{ data[environment_id].name }}</code>
 			<ul class="module-list">
-				{%- for module in data[environment_name] -%}
-				<li><a href="{{url_for('puppet_documentation', environment_name=environment_name, module_name=module)}}"><code>{{ module }}</code></a></li>
+				{%- for module_id in data[environment_id].modules -%}
+				<li><a href="{{url_for('puppet_documentation', environment_id=environment_id, module_id=module_id)}}"><code>{{ data[environment_id]["modules"][module_id] }}</code></a></li>
 				{%- endfor -%}
 			</ul>
 		</li>
@@ -103,16 +103,22 @@ There is documentation in Cortex available for the modules listed below
 			$("ul.environment-list > li[data-environment!='"+$(this).val()+"']").hide();
 		}
 	});
-	$("#module-search").keyup(function () {
-		var q = $(this).val();
+	function search(query) {
 		$('ul.module-list li').each(function () {
-			if ($(this).text().search(new RegExp(q, "i")) < 0) {
+			if ($(this).text().search(new RegExp(query, "i")) < 0) {
 				$(this).hide();
 			} else {
 				$(this).show();
 			}
-		})
+		});
+	}
+	$("#module-search").keyup(function () {
+		var q = $(this).val();
+		search(q);
 	});
+	{%- if q -%}
+	$(function() { search("{{ q }}") });
+	{%- endif -%}
 </script>
 {%- endif -%}
 {% endblock %}

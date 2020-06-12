@@ -96,6 +96,8 @@ def context_processor():
 	puppet = []
 	if does_user_have_permission("puppet.dashboard.view"):
 		puppet.append({'link': url_for('puppet_dashboard'), 'title': 'Dashboard', 'icon': 'fa-dashboard'})
+	if does_user_have_permission("puppet.environment.view"):
+		puppet.append({'link': url_for('puppet_environments'), 'title': 'Environments', 'icon': 'fa-envira'})
 	if does_user_have_permission("puppet.nodes.view"):
 		puppet.append({'link': url_for('puppet_nodes'), 'title': 'Nodes', 'icon': 'fa-server'})
 	if does_user_have_permission("puppet.default_classes.view"):
@@ -103,7 +105,7 @@ def context_processor():
 	if does_user_have_permission("puppet.dashboard.view"):
 		puppet.append({'link': url_for('puppet_radiator'), 'title': 'Radiator view', 'icon': 'fa-desktop'})
 	if does_user_have_permission("puppet.documentation.view"):
-		puppet.append({'link': url_for('puppet_documentation'), 'title': 'Puppet documentation', 'icon': 'fa-file-code-o'})
+		puppet.append({'link': url_for('puppet_documentation'), 'title': 'Documentation', 'icon': 'fa-file-code-o'})
 	if does_user_have_permission("puppet.nodes.view"):
 		puppet.append({'link': '*puppet_search', 'title': 'Configuration search', 'icon': 'fa-search'})
 

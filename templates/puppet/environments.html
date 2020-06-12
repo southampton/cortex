@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="page-header">
+<h4><i class="fa fa-fw fa-envira"></i> {{ title }}{%- if environment -%}&nbsp;-&nbsp;<code>{{ environment.environment_name }}</code>{%- endif -%}</h4>
+<div class="text-muted">
+{%- if environment -%}
+The environment below exists on the Puppet master and can be used from the Cortex ENC
+{%- else -%}
+The environments listed below exist on the Puppet master and can be used from the Cortex ENC
+{%- endif -%}
+</div>
+</div>
+{%- if environment -%}
+{%- else -%}
+<table class="table table-sm table-striped" id="data">
+	<thead>
+		<tr>
+			<th>Environment Name</th>
+			<th>Environment Short Name</th>
+			<th>Type</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+{%- for env in data %}
+		<tr>
+			<td data-sort="{{ env.id }}"><a href="{{url_for('puppet_environments', environment_id=env.id) }}">{{ env.environment_name }}</a></td>
+			<td>{{ env.short_name }}</td>
+			<td>{%- if env.type == 0 -%}Infrastructure{%- elif env.type == 1 -%}Service{%- elif env.type == 2 -%}Dynamic{%- else -%}Unknown{%- endif -%}</td>
+			<td>
+				<a href="{{url_for('puppet_environments', environment_id=env.id) }}" class="btn btn-secondary btn-xs float-right mr-2"><i class="fa fa-fw fa-wrench"></i> Manage</a>
+			</td>
+		</tr>
+{%- endfor %}
+	</tbody>
+</table>
+<script type="text/javascript">
+	// Define variable for nodes table.
+	var nodes;
+	$(function() {
+
+		nodes = $('#data').DataTable({
+			"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
+			"pageLength": 15,
+			"order": [[0, 'asc']],
+	{%- if classic_layout %}
+			"fixedHeader": {
+				"headerOffset": 52
+			},
+	{%- else %}
+			"fixedHeader": true,
+	{%- endif %}
+			"columns": [null, null, null, { "orderable": false, "targets": 0, "className": "dt-body-right" }]
+		});
+	});
+</script>
+{%- endif -%}
+{% endblock %}
