@@ -11,9 +11,7 @@
 {
 	"PUPPET_BINARY": "/opt/puppetlabs/bin/puppet",
 	"FIND_BINARY": "/bin/find",
-	"PUPPET_ENVIRONMENT_PATHS": [
-		{"name": "production", "path": "/etc/puppetlabs/code/environments/production"},
-	],
+	"PUPPET_ENVIRONMENTS_BASE": "/etc/puppetlabs/code/environments",
 	"API_URL": "https://cortex.domain.tld/api/puppet/modules_info",
 	"API_TOKEN": "api_token_goes_here",
 	"API_SSL_VERIFY": true
