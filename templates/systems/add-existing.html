@@ -56,7 +56,7 @@
 			<select name="env" class="selectpicker" data-width="auto">
 				<option value="" selected="selected">Don't create a Puppet node</option>
 {%- for env in puppet_envs %}
-				<option value="{{ env.puppet }}">{{ env.name }} ({{ env.puppet }})</option>
+				<option value="{{ env.environment_name }}">{{ env.short_name }} ({{ env.environment_name }})</option>
 {%- endfor %}
 			</select>
 			<p class="form-text" style="color: #959595;">Use the dropdown above to have Cortex create an entry in Cortex's Puppet ENC so that this box can be configured from Cortex. Note that this does not register the system with the Puppet master as this requires access to the system, so that step should still be performed manually.</p>

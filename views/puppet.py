@@ -34,8 +34,7 @@ def puppet_enc_edit(node):
 
 	# Get the system out of the database
 	system       = cortex.lib.systems.get_system_by_puppet_certname(node)
-	environments = cortex.lib.core.get_puppet_environments()
-	env_dict     = cortex.lib.core.get_environments_as_dict()
+	environments = cortex.lib.puppet.get_puppet_environments()
 
 	if system == None:
 		abort(404)
@@ -77,7 +76,7 @@ def puppet_enc_edit(node):
 		error = False
 
 		# Validate environement:
-		if environment not in [e['id'] for e in environments]:
+		if environment not in [e['environment_name'] for e in environments]:
 			flash('Invalid environment', 'alert-danger')
 			error = True
 
@@ -123,7 +122,7 @@ def puppet_enc_edit(node):
 		curd = g.db.cursor(mysql.cursors.DictCursor)
 
 		# Update the system
-		curd.execute('UPDATE `puppet_nodes` SET `env` = %s, `classes` = %s, `variables` = %s, `include_default` = %s WHERE `certname` = %s', (env_dict[environment]['puppet'], classes, variables, include_default, system['puppet_certname']))
+		curd.execute('UPDATE `puppet_nodes` SET `env` = %s, `classes` = %s, `variables` = %s, `include_default` = %s WHERE `certname` = %s', (environment, classes, variables, include_default, system['puppet_certname']))
 		g.db.commit()
 		cortex.lib.core.log(__name__, "puppet.config.changed", "Puppet node configuration updated for '" + system['puppet_certname'] + "'")
 
@@ -301,12 +300,18 @@ def puppet_dashboard():
 	if not does_user_have_permission("puppet.dashboard.view"):
 		abort(403)
 
+	# Select Infrastructure environments only
+	environments = cortex.lib.puppet.get_puppet_environments()
+
 	try:
-		stats=cortex.lib.puppet.puppetdb_get_node_stats()
+		# Get stats for all the Infrastructure environments.
+		stats=cortex.lib.puppet.puppetdb_get_node_stats(
+			whitelist = [e["environment_name"] for e in environments]
+		)
 	except Exception as e:
 		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
-	return render_template('puppet/dashboard.html', stats=stats,active='puppet', title="Puppet Dashboard", environments=cortex.lib.core.get_puppet_environments())
+	return render_template('puppet/dashboard.html', title="Puppet Dashboard", active="puppet", environments=environments, stats=stats)
 
 ################################################################################
 

@@ -97,7 +97,7 @@ class Corpus(object):
 		#  * The classes table contains the number of the next system in each
 		#    class to allocate.
 		#  * To prevent race conditions when allocating (and thus so two
-		#    systems don't get allocated with the same number) we lock the 
+		#    systems don't get allocated with the same number) we lock the
 		#    tables we want to view/modify during this function.
 		#  * This prevents other simultanteously running calls to this function
 		#    from allocating a name temporarily (the call to LOCK TABLE will
@@ -176,10 +176,10 @@ class Corpus(object):
 		query = "UPDATE `systems` SET "
 		query = query + ", ".join("`{0}`=%s".format(f) for f in update_fields)
 		query = query + " WHERE `id`=%s"
-		params = params + (system_id,)	
+		params = params + (system_id,)
 
 		# Get a cursor to the database
-		cur = self.db.cursor(mysql.cursors.DictCursor)	
+		cur = self.db.cursor(mysql.cursors.DictCursor)
 		cur.execute(query, params)
 		self.db.commit()
 
@@ -207,10 +207,10 @@ class Corpus(object):
 		# Get a cursor to the database
 		cur = self.db.cursor(mysql.cursors.DictCursor)
 
-		cur.execute("UPDATE `systems` SET `decom_date` = NOW() WHERE `id` = %s", (system_id,)) 
+		cur.execute("UPDATE `systems` SET `decom_date` = NOW() WHERE `id` = %s", (system_id,))
 
 		self.db.commit()
-		
+
 
 	################################################################################
 
@@ -250,7 +250,7 @@ class Corpus(object):
 				payload['ipv4addrs'] = [{'ipv4addr': ip}]
 			else:
 				payload['ipv4addrs'] = [{'ipv4addr': 'func:nextavailableip:' + ipv4_subnet}]
-				
+
 		if ipv6:
 			if not ipv6_addr and not ipv6_subnet:
 				raise ValueError('IPv6: At least one of ipv6_addr and ipv6_subnet must be provided.')
@@ -259,7 +259,7 @@ class Corpus(object):
 				payload['ipv6addrs'] = [{'ipv6addr': ip}]
 			else:
 				payload['ipv6addrs'] = [{'ipv6addr': 'func:nextavailableip:' + ipv6_subnet}]
-				
+
 
 		# Add on host aliases (CNAMEs) if given
 		if aliases:
@@ -547,7 +547,7 @@ class Corpus(object):
 
 	def vmware_task_complete(self, task, on_error="VMware API Task Failed"):
 		"""
-		Block until the given task is complete. An exception is 
+		Block until the given task is complete. An exception is
 		thrown if the task results in an error state. This function
 		does not return a variable.
 		"""
@@ -701,7 +701,7 @@ class Corpus(object):
 		   vm_name are required parameters although this is unlikely what you'd want - please
 		   read the parameters and check if you want to use them.
 
-		   If you want to customise the VM after cloning attach a customisation spec via the 
+		   If you want to customise the VM after cloning attach a customisation spec via the
 		   custspec optional parameter.
 		"""
 
@@ -740,7 +740,7 @@ class Corpus(object):
 			raise RuntimeError("Failed to locate destination cluster, '" + vm_cluster + "'")
 
 		## You can't specify a cluster for a VM to be created on, instead you specify either a host or a resource pool.
-		## We will thus create within a resource pool. 
+		## We will thus create within a resource pool.
 
 		# If this function isn't passed a resource pool then choose the default:
 		if vm_rpool == None:
@@ -799,7 +799,7 @@ class Corpus(object):
 			# Update the config spec
 			config_spec.deviceChange.append(nicspec)
 
-		## Start the clone and relocation specification creation (searching for a 
+		## Start the clone and relocation specification creation (searching for a
 		## datastore cluster needs this information)
 		relospec = vim.vm.RelocateSpec()
 		relospec.pool = rpool
@@ -825,7 +825,7 @@ class Corpus(object):
 			# Don't need to check if vm_datastore is set here...
 
 			# If we have a list of datastore clusters, re-order the list so that we don't
-			# always choose the same one. We decide on where in the list to look based on 
+			# always choose the same one. We decide on where in the list to look based on
 			# the name of the VM
 			if type(vm_datastore_cluster) is list:
 				# Sum up the codepoints of the string to give us a number
@@ -834,7 +834,7 @@ class Corpus(object):
 					name_value += ord(c)
 				name_value = name_value % len(vm_datastore_cluster)
 
-				# Pick a number between 0 and the number of provided 
+				# Pick a number between 0 and the number of provided
 				# datastores clusters, and choose that datstore cluster
 				ds_cluster_order = vm_datastore_cluster[name_value:] + vm_datastore_cluster[:name_value]
 			else:
@@ -900,13 +900,13 @@ class Corpus(object):
 
 		return template.Clone(folder=destfolder, name=vm_name, spec=clonespec)
 
-	############################################################################ 
+	############################################################################
 
 	def update_vm_cache(self, vm, tag):
 		"""Updates the VMware cache data with the information about the VM."""
 
 		## Get a lock so that we're sure that the update vmware cache task (which updates
-		## data for ALL vms) is not running. If it had been running our changes would be 
+		## data for ALL vms) is not running. If it had been running our changes would be
 		## overwritten, so this way we wait for that to end before we try to update the cache.
 		## The timeout is there in case this process dies or the server restarts or similar
 		## and then the lock is never ever unlocked - the timeout ensures that eventually it is
@@ -948,20 +948,18 @@ class Corpus(object):
 
 	############################################################################
 
-	def puppet_enc_register(self, system_id, certname, environment):
+	def puppet_enc_register(self, system_id, certname, environment_name = None):
 		"""
 		"""
 
 		# Get a cursor to the database
 		curd = self.db.cursor(mysql.cursors.DictCursor)
 
-		# Add environment if we've got it
-		environments = dict((e['id'], e) for e in self.config['ENVIRONMENTS'] if e['puppet'])
-		if environment is not None and environment in environments:
-			puppet_environment = environments[environment]['puppet']
+		if not environment_name:
+			environment_name = self.config["PUPPET_DEFAULT_ENVIRONMENT"]
 
-		# Insert the row
-		curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`, `include_default`, `classes`, `variables`) VALUES (%s, %s, %s, %s, %s, %s)", (system_id, certname, puppet_environment, 1, "", ""))
+		# Insert the into the `puppet_nodes` table
+		curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`, `include_default`, `classes`, `variables`) VALUES (%s, %s, %s, %s, %s, %s)", (system_id, certname, environment_name, 1, "", ""))
 
 		# Commit
 		self.db.commit()
@@ -992,7 +990,7 @@ class Corpus(object):
 	############################################################################
 
 	def vmware_vmreconfig_cpu(self, vm, cpus, cpus_per_socket, hotadd=True):
-		"""Reconfigures the CPU count of a VM and enables/disabled CPU hot-add. 'vm' 
+		"""Reconfigures the CPU count of a VM and enables/disabled CPU hot-add. 'vm'
 		is a PyVmomi managed object, 'cpus' is the TOTAL number of vCPUs to have, and
 		'cpus_per_socket' is the number of cores per socket. The VM will end up having
 		(cpus / cpus_per_socket) CPU sockets, each having cpus_per_socket. 'hotadd'
@@ -1010,7 +1008,7 @@ class Corpus(object):
 
 	def vmware_vmreconfig_ram(self, vm, megabytes=1024, hotadd=True):
 		"""Reconfigures the amount of RAM a VM has, and whether memory can be hot-
-		added to the system. 'vm' is a PyVmomi managed object, 'megabytes' is the 
+		added to the system. 'vm' is a PyVmomi managed object, 'megabytes' is the
 		required amount of RAM in megabytes. 'hotadd' is a boolean indicating whether
 		or not to enable hot add or not.
 
@@ -1091,7 +1089,7 @@ class Corpus(object):
 		return self.vmware_wait_for_powerstate(vm, vim.VirtualMachinePowerState.poweredOn, timeout)
 
 	############################################################################
-	
+
 	def vmware_wait_for_poweroff(self, vm, timeout=30):
 		"""Waits for a virtual machine to be marked as powered up by VMware."""
 
@@ -1274,14 +1272,14 @@ class Corpus(object):
 	############################################################################
 
 	def vmware_vm_create_snapshot(self, vm, name, description, memory=False, quiesce=False):
-		
+
 		return vm.CreateSnapshot_Task(name=name, description=description, memory=memory, quiesce=quiesce)
 
 	############################################################################
 
 	def set_link_ids(self, cortex_system_id, cmdb_id = None, vmware_uuid = None):
 		"""
-		Sets the identifiers that link a system from the Cortex `systems` 
+		Sets the identifiers that link a system from the Cortex `systems`
 		table to their relevant item in the CMDB.
 		 - cortex_system_id: The id of the system in the table (not the name)
 		 - cmdb_id: The value to store for the CMDB ID field.
@@ -1303,7 +1301,7 @@ class Corpus(object):
 	################################################################################
 
 	def servicenow_link_task_to_ci(self, ci_sys_id, task_number):
-		"""Links a ServiceNow 'task' (Incident Task, Project Task, etc.) to a CI so that it appears in the related records. 
+		"""Links a ServiceNow 'task' (Incident Task, Project Task, etc.) to a CI so that it appears in the related records.
 		   Note that you should NOT use this function to link an incident to a CI (even though ServiceNow will kind of let
 		   you do this...)
 		    - ci_sys_id: The sys_id of the created configuration item, as returned by servicenow_create_ci
@@ -1438,8 +1436,8 @@ class Corpus(object):
 	################################################################################
 
 	def servicenow_mark_ci_deleted(self, sys_id):
-		# Get the CI details. This checks that it exists and whether it's 
-		# virtual or not	
+		# Get the CI details. This checks that it exists and whether it's
+		# virtual or not
 		r = requests.get('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_ci_server/' + sys_id, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json'})
 
 		# Check we got a valid response
@@ -1459,7 +1457,7 @@ class Corpus(object):
 		else:
 			raise Exception("Could not locate CI in ServiceNow. Request failed.")
 
-		# Determine the new status it needs to be, which depends on 
+		# Determine the new status it needs to be, which depends on
 		# whether it is virtual or not
 		if (type(virtual) is bool and virtual is True) or (type(virtual) is str and virtual.lower() == "true"):
 			new_status = "Deleted"
@@ -1504,13 +1502,13 @@ class Corpus(object):
 	################################################################################
 
 	def servicenow_get_ci_relationships(self, sys_id):
-		# Get the CI details. This checks that it exists and whether it's 
-		# virtual or not	
+		# Get the CI details. This checks that it exists and whether it's
+		# virtual or not
 		r = requests.get('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_rel_ci?sysparm_query=child=' + sys_id + '^ORparent=' + sys_id, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json'})
 
 		# Check we got a valid response code
 		if r is not None:
-			# Special case: ServiceNow returns a 404 to indicate no results. No, 
+			# Special case: ServiceNow returns a 404 to indicate no results. No,
 			# this isn't a good idea, but we have to work with it
 			if r.status_code == 404:
 				return []
@@ -1556,7 +1554,7 @@ class Corpus(object):
 	################################################################################
 
 	def _connect_redis(self):
-		"""Connects to the Redis instance specified in the configuration and 
+		"""Connects to the Redis instance specified in the configuration and
 		returns a StrictRedis object"""
 
 		return redis.StrictRedis(host=self.config['REDIS_HOST'], port=self.config['REDIS_PORT'], db=0, decode_responses=True)
@@ -1721,7 +1719,7 @@ class Corpus(object):
 
 	################################################################################
 
-	## Deletes a computer object exists in AD in the specified environment with the 
+	## Deletes a computer object exists in AD in the specified environment with the
 	## given hostname
 	def windows_delete_computer_object(self, env, hostname):
 		return self._get_winrpc_proxy(env).delete_computer_object(hostname)
@@ -1920,7 +1918,7 @@ class Corpus(object):
 			e.g (client, key) = corpus.rhn5_connect()
 		Throws:
 			IOError if the connection failed"""
-		
+
 		# Determine the API URL
 		rhnurl = urljoin(self.config['RHN5_URL'], 'rpc/api')
 
@@ -1940,8 +1938,8 @@ class Corpus(object):
 			if sys.version_info >= (2, 7, 9):
 				client = xmlrpc.client.ServerProxy(rhnurl, verbose=0, context=context)
 
-			# For less than 2.7.9, we need to provide a context to httplib.HTTPSConnection 
-			# (which according to the docs got added in 2.7.9, but it's there in RHEL 7, 
+			# For less than 2.7.9, we need to provide a context to httplib.HTTPSConnection
+			# (which according to the docs got added in 2.7.9, but it's there in RHEL 7,
 			# which has 2.7.5... no idea)
 			else:
 				# Define a XML-RPC SafeTransport that accepts a certificate
@@ -1949,7 +1947,7 @@ class Corpus(object):
 					def __init__(self, use_datetime=0, context=None):
 						self._context = context
 
-						# The base 'Transport' class (and thus SafeTransport as our superclass) is 
+						# The base 'Transport' class (and thus SafeTransport as our superclass) is
 						# an "old-style" object, so we can't use super(), but we need to call the
 						# constructor
 						xmlrpc.client.SafeTransport.__init__(self, use_datetime)
@@ -1996,7 +1994,7 @@ class Corpus(object):
 			# Get the task status
 			status = self.neocortex_task_get_status(task)
 
-			# Status of zero is in-progress, so only break out and 
+			# Status of zero is in-progress, so only break out and
 			# return the status when we're not that
 			if status is not None and int(status) != 0:
 				return status
@@ -2025,7 +2023,7 @@ class Corpus(object):
 			query_parts.append("`vmware_uuid` IS NOT NULL")
 		if must_have_snow_sys_id:
 			query_parts.append("`cmdb_id` IS NOT NULL")
-		
+
 		# Query the database
 		curd = self.db.cursor(mysql.cursors.DictCursor)
 		curd.execute("SELECT * FROM `systems_info_view` WHERE " + (" AND ".join(query_parts)) + " ORDER BY `allocation_date` DESC", (name,))
@@ -2043,7 +2041,7 @@ class Corpus(object):
 
 	def satellite6_get_host(self, name):
 
-		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(name)) 
+		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(name))
 		r = requests.get(
 			url,
 			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
@@ -2057,14 +2055,14 @@ class Corpus(object):
 	############################################################################
 
 	def satellite6_disassociate_host(self, hostid):
-		
-		
+
+
 		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}/disassociate'.format(hostid))
 		r = requests.put(
 			url,
 			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
 			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
-		) 
+		)
 
 		r.raise_for_status()
 
@@ -2075,12 +2073,12 @@ class Corpus(object):
 	def satellite6_delete_host(self, hostid):
 
 		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(hostid))
-		
+
 		r = requests.delete(
 			url,
 			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
 			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
-		) 
+		)
 
 		r.raise_for_status()
 
@@ -2103,7 +2101,7 @@ class Corpus(object):
 			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
 			auth = (self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
 			json = { 'host': { 'compute_resource_id': self.config['SATELLITE6_CLUSTER_COMPUTE_RESOURCE'][cluster_name] } }
-		) 
+		)
 
 		r.raise_for_status()
 
@@ -2113,7 +2111,7 @@ class Corpus(object):
 			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
 			auth = (self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
 			json = { 'host': { 'uuid': vm.config.instanceUuid } }
-		) 
+		)
 
 		r.raise_for_status()
 
@@ -2133,7 +2131,7 @@ class Corpus(object):
 		# Add the system_id to redis.
 		self.rdb.setex(prefix + 'system', 3600, str(system_id))
 
-		return True	
+		return True
 
 	############################################################################
 

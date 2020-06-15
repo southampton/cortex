@@ -16,7 +16,7 @@
 					</div>
 {%- for env in environments %}
 					<div class="col-md-2">
-						<h1>{{ stats['count'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
+						<h1>{{ stats['count'][env['environment_name']] or 0 }}</h1><h2 style="font-weight:bold">{{ env['short_name'] }}<br/></h2>
 					</div>
 {%- endfor %}
 				</div>
@@ -24,7 +24,7 @@
 		</a>
 	</div>
 </div>
-<div class="row">	
+<div class="row">
 	<div class="col-md-12">
 		<a href="{{ url_for('puppet_nodes', status='unchanged') }}">
 		<div class="admin-block bg-success">
@@ -37,7 +37,7 @@
 				</div>
 {%- for env in environments %}
 				<div class="col-md-2">
-					<h1>{{ stats['unchanged'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
+					<h1>{{ stats['unchanged'][env['environment_name']] or 0 }}</h1><h2 style="font-weight:bold">{{ env['short_name'] }}<br/></h2>
 				</div>
 {%- endfor %}
 			</div>
@@ -58,7 +58,7 @@
 				</div>
 {%- for env in environments %}
 				<div class="col-md-2">
-					<h1>{{ stats['changed'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
+					<h1>{{ stats['changed'][env['environment_name']] or 0 }}</h1><h2 style="font-weight:bold">{{ env['short_name'] }}<br/></h2>
 				</div>
 {%- endfor %}
 			</div>
@@ -79,7 +79,7 @@
 				</div>
 {%- for env in environments %}
 				<div class="col-md-2">
-					<h1>{{ stats['noop'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
+					<h1>{{ stats['noop'][env['environment_name']] or 0 }}</h1><h2 style="font-weight:bold">{{ env['short_name'] }}<br/></h2>
 				</div>
 {%- endfor %}
 			</div>
@@ -100,7 +100,7 @@
 				</div>
 {%- for env in environments %}
 				<div class="col-md-2">
-					<h1>{{ stats['failed'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
+					<h1>{{ stats['failed'][env['environment_name']] or 0 }}</h1><h2 style="font-weight:bold">{{ env['short_name'] }}<br/></h2>
 				</div>
 {%- endfor %}
 			</div>
@@ -121,11 +121,11 @@
 				</div>
 {%- for env in environments %}
 				<div class="col-md-2">
-					<h1>{{ stats['unknown'][env['puppet']] }}</h1><h2 style="font-weight:bold">{{ env['name'] }}<br/></h2>
+					<h1>{{ stats['unknown'][env['environment_name']] or 0 }}</h1><h2 style="font-weight:bold">{{ env['short_name'] }}<br/></h2>
 				</div>
 {%- endfor %}
 			</div>
-			
+
 		</div>
 		</a>
 	</div>
