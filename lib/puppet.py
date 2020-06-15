@@ -19,7 +19,7 @@ class CortexPuppetBaseAPI(pypuppetdb.BaseAPI):
 	def reports(self, **kwargs):
 		reports = self._query('reports', **kwargs)
 		for report in reports:
-			yield CortexPuppetReport( 
+			yield CortexPuppetReport(
 				api=self,
 				node=report['certname'],
 				hash_=report['hash'],
@@ -120,7 +120,7 @@ class CortexPuppetBaseAPI(pypuppetdb.BaseAPI):
 				facts_environment=node['facts_environment'],
 				latest_report_hash=node.get('latest_report_hash'),
 				cached_catalog_status=node.get('cached_catalog_status')
-			)	
+			)
 
 class CortexPuppetReport(pypuppetdb.types.Report):
 	"""
@@ -143,7 +143,7 @@ class CortexPuppetNode(pypuppetdb.types.Node):
 		super(CortexPuppetNode, self).__init__(api, name, deactivated, expired, report_timestamp, catalog_timestamp, facts_timestamp, status_report, noop, noop_pending, events, unreported, unreported_time, report_environment, catalog_environment, facts_environment, latest_report_hash, cached_catalog_status)
 		# Set noop.
 		self.noop=noop
-		
+
 def cortex_puppet_connect(host='localhost', port=8080, ssl_verify=False, ssl_key=None, ssl_cert=None, timeout=10, protocol=None, url_path='/', username=None, password=None, token=None):
 	"""
 	Cortex custom connect method for connecting to the PuppetDB API.
@@ -154,6 +154,34 @@ def cortex_puppet_connect(host='localhost', port=8080, ssl_verify=False, ssl_key
 		ssl_cert=ssl_cert, protocol=protocol, url_path=url_path,
 		username=username, password=password, token=token
 	)
+
+################################################################################
+
+def get_puppet_environments(enviroment_type = None):
+	"""Return a list of the Puppet environments defined in `puppet_environments`"""
+	query = "SELECT * FROM `puppet_environments`"
+	params = ()
+	if enviroment_type:
+		query += " WHERE `type`=%s"
+		params += (enviroment_type,)
+
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute(query, params)
+	return curd.fetchall()
+
+################################################################################
+
+def get_puppetdb_environments(db = None, whitelist = None):
+	"""Get Puppet environments from the PuppetDB, if `whitelist` is set then
+	this will whitelist against these environment names"""
+
+	if db is None:
+		db = puppetdb_connect()
+
+	if whitelist is not None and not isinstance(whitelist, list):
+		whitelist = [whitelist]
+
+	return [e["name"] for e in db.environments() if whitelist is None or e["name"] in whitelist]
 
 ################################################################################
 
@@ -180,7 +208,7 @@ def generate_node_config(certname):
 	default_classes = curd.fetchone()
 	if default_classes is not None:
 		default_classes = yaml.safe_load(default_classes['value'])
-	
+
 		# YAML load can come back with no actual objects, e.g. comments, blank etc.
 		if default_classes == None:
 			default_classes = {}
@@ -243,7 +271,7 @@ def generate_node_config(certname):
 ################################################################################
 
 def puppetdb_connect():
-	"""Connects to PuppetDB using the parameters specified in the 
+	"""Connects to PuppetDB using the parameters specified in the
 	application configuration."""
 
 	# Connect to PuppetDB
@@ -253,12 +281,12 @@ def puppetdb_connect():
 
 def puppetdb_query(endpoint, db=None, **kwargs):
 	"""Peform direct queries against the PuppetDB"""
-	
+
 	if db is None:
 		db = puppetdb_connect()
 
 	return db._query(endpoint, **kwargs)
-	
+
 ################################################################################
 
 def puppetdb_get_node_statuses(db=None):
@@ -301,7 +329,7 @@ def puppetdb_get_node_status(node_name, db=None):
 
 ################################################################################
 
-def puppetdb_get_node_stats(db = None):
+def puppetdb_get_node_stats(db = None, whitelist = None):
 	"""Calculate statistics on node statuses by talking to PuppetDB"""
 
 	if db is None:
@@ -323,14 +351,14 @@ def puppetdb_get_node_stats(db = None):
 		'unknown':{}
 	}
 
-	environments = ['count',] + puppetdb_get_environments(db = db) 
+	environments = ['count',] + get_puppetdb_environments(db = db, whitelist = whitelist)
 
 	for k in stats.keys():
 		for e in environments:
 			stats[k][e] = 0
 
 	# Iterate over nodes, counting statii
-	for node in nodes:		
+	for node in nodes:
 		try:
 			if node.noop:
 				# count all the values for noop
@@ -350,23 +378,8 @@ def puppetdb_get_node_stats(db = None):
 					stats['count'][node.report_environment] += 1
 		except (AttributeError, KeyError) as ex:
 			app.logger.warning('Failed to generate Puppet node stat: %s' %(ex))
-	
+
 	# get the total count number here
 	stats['count']['count'] = sum(stats['count'].values())
-	
+
 	return stats
-
-################################################################################
-
-def puppetdb_get_environments(db = None, whitelist_only = False):
-	"""Get Puppet environments from the PuppetDB, if `whitelist_only` is True then
-	this will only return the environments defined in app.config["ENVIRONMENTS"]"""
-
-	if db is None:
-		db = puppetdb_connect()
-
-	whitelist = []
-	if whitelist_only:
-		whitelist = [e["puppet"] for e in app.config["ENVIRONMENTS"] if e["puppet"]]
-
-	return [e["name"] for e in db.environments() if not whitelist_only or e["name"] in whitelist]

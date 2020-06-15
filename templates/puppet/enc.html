@@ -184,9 +184,7 @@ $(document).ready(function()
 				<label title="The Puppet environment that this node sits in (the actual name within Puppet is given in brackets)" class="col-sm-2 control-label" for="environment">Environment:</label>
 				<div class="col-sm-8 col-md-6 col-lg-4"> <select class="selectpicker form-control" id="environment" name="environment">
 {%- for environment in environments -%}
-{%- if environment.puppet %}
-					<option value="{{ environment.id }}"{% if system.puppet_env == environment.puppet %} selected="selected"{% endif %}>{{ environment.name }} ({{ environment.puppet }})</option>
-{%- endif %}
+					<option value="{{ environment.environment_name }}"{% if system.puppet_env == environment.environment_name %} selected="selected"{% endif %}>{{ environment.short_name }} ({{ environment.environment_name }})</option>
 {%- endfor %}
 				</select></div>
 			</div>

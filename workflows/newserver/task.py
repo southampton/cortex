@@ -5,7 +5,7 @@ def run(helper, options):
 	# check if workflows are locked
 	if not helper.lib.checkWorkflowLock():
 		raise Exception("Workflows are currently locked")
-	
+
 	# Configuration of task
 	puppet_cert_domain = options['wfconfig']['PUPPET_CERT_DOMAIN']
 
@@ -28,10 +28,10 @@ def run(helper, options):
 	if options['alloc_ip']:
 		# Start the event
 		helper.event("allocate_ipaddress", "Allocating an IP address from " + options['network'])
-	
+
 		# Allocate an IP address
 		ipv4addr = helper.lib.infoblox_create_host(system_name + "." + options['domain'], ipv4 = True, ipv4_subnet = options['network'])
-	
+
 		# Handle errors - this will stop the task
 		if ipv4addr is None:
 			raise Exception('Failed to allocate an IP address')
@@ -80,7 +80,7 @@ def run(helper, options):
 		helper.event("puppet_enc_register", "Registering with Puppet ENC")
 
 		# Register with the Puppet ENC
-		helper.lib.puppet_enc_register(system_dbid, system_name + "." + puppet_cert_domain, options['env'])
+		helper.lib.puppet_enc_register(system_dbid, system_name + "." + puppet_cert_domain)
 
 		# End the event
 		helper.end_event("Registered with Puppet ENC")

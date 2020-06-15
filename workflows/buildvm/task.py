@@ -54,8 +54,8 @@ def run(helper, options):
 		entca_default_san_domain = None
 		if 'ENTCA_SERVERS' in options['wfconfig']:
 			entca_servers = options['wfconfig']['ENTCA_SERVERS']
-		else:   
-			entca_servers = None		
+		else:
+			entca_servers = None
 	elif workflow == 'sandbox':
 		prefix = options['wfconfig']['SB_PREFIX']
 		vcenter_tag = options['wfconfig']['SB_VCENTER_TAG']
@@ -152,7 +152,7 @@ def run(helper, options):
 		primary_owner_who = options.get('primary_owner_who', None),
 		primary_owner_role = options.get('primary_owner_role', None),
 		secondary_owner_who = options.get('secondary_owner_who', None),
-		secondary_owner_role = options.get('secondary_owner_role', None),	
+		secondary_owner_role = options.get('secondary_owner_role', None),
 	)
 
 	# End the event
@@ -181,7 +181,7 @@ def run(helper, options):
 
 		if not ipaddrs.get("ipv4addr"):
 			raise Exception('Failed to allocate an IPv4 address')
-		
+
 		ipv4addr = ipaddrs["ipv4addr"] # ipv4addr should always be present (as we currently don't allow IPv6 only boxes)
 
 		if not ipaddrs.get("ipv6addr"):
@@ -272,7 +272,7 @@ def run(helper, options):
 
 	# Get number of cores per socket
 	cpus_per_core = int(options['cores'])
-	
+
 	# Reconfigure the VM
 	task = helper.lib.vmware_vmreconfig_cpu(vm, total_cpu, cpus_per_core)
 	helper.lib.vmware_task_complete(task, "Failed to set vCPU configuration")
@@ -331,7 +331,7 @@ def run(helper, options):
 
 	## Update Cortex Cache #################################################
 
-	# We do this so that we don't have to wait for the next run of the 
+	# We do this so that we don't have to wait for the next run of the
 	# scheduled VMware import). We do this before powering the VM on 'cos
 	# the cache must be up to date before the installers run inside the VM.
 
@@ -358,7 +358,7 @@ def run(helper, options):
 		helper.event("puppet_enc_register", "Registering with Puppet ENC")
 
 		# Register with the Puppet ENC
-		helper.lib.puppet_enc_register(system_dbid, system_name + "." + puppet_cert_domain, options['env'])
+		helper.lib.puppet_enc_register(system_dbid, system_name + "." + puppet_cert_domain)
 
 		# End the event
 		helper.end_event("Registered with Puppet ENC")
@@ -401,7 +401,7 @@ def run(helper, options):
 
 	# Set up the necessary values in redis
 	helper.lib.redis_set_vm_data(vm, "hostname", system_name)
-	
+
 	if ipv4addr is not None:
 		helper.lib.redis_set_vm_data(vm, "ipaddress", ipv4addr)
 	else:
@@ -419,7 +419,7 @@ def run(helper, options):
 		helper.end_event(success=False, description="VM not powered on after 30 seconds. Check vCenter for more information")
 
 	# End the event
-	helper.end_event(description="VM powered up")	
+	helper.end_event(description="VM powered up")
 
 
 
@@ -490,7 +490,7 @@ def run(helper, options):
 				helper.end_event(success=False, warning=True, description="Failed to create " + str(fails) + "/" + str(len(options['wfconfig']['CREATE_CI_RELS'])) + " CI relationships")
 		else:
 			helper.end_event(success=False, description="Cannot create CMDB CI relationships - server CI creation failed")
-	
+
 
 
 	## Link ticket to CI (standard VM only) ################################
@@ -703,5 +703,5 @@ def run(helper, options):
 
 	# For standard VMs only, always notify people in the notify_emails list
 	if workflow == 'standard':
-		for email in notify_emails: 
+		for email in notify_emails:
 			helper.lib.send_email(email, 'Cortex has finished building a VM, ' + str(system_name), message)

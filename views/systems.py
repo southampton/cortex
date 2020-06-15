@@ -5,6 +5,7 @@ import cortex.lib.core
 import cortex.lib.systems
 import cortex.lib.cmdb
 import cortex.lib.classes
+import cortex.lib.puppet
 from cortex.lib.user import does_user_have_permission, does_user_have_system_permission, does_user_have_any_system_permission
 from cortex.corpus import Corpus
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
@@ -105,7 +106,7 @@ def systems_withperms():
 @app.route('/systems/search')
 @cortex.lib.user.login_required
 def systems_search():
-	"""Allows the user to search for a system by entering its name in the 
+	"""Allows the user to search for a system by entering its name in the
 	search box"""
 
 	# Check user permissions
@@ -131,7 +132,7 @@ def systems_search():
 		curd.execute("SELECT * FROM `systems_info_view` WHERE `name`=%s", (query,))
 
 	system = curd.fetchone()
-	
+
 	# Check if there was only 1 result.
 	if curd.rowcount == 1 and system is not None:
 		# If we found the system, redirect to the system page
@@ -174,7 +175,7 @@ def systems_add_existing():
 	classes = cortex.lib.classes.list(hide_disabled=True)
 
 	# Get the list of Puppet environments
-	puppet_envs = cortex.lib.core.get_puppet_environments()
+	puppet_envs = cortex.lib.puppet.get_puppet_environments()
 
 	# On GET requests, just show the form
 	if request.method == 'GET':
@@ -267,7 +268,7 @@ def systems_add_existing():
 
 		# If we're linking to VMware
 		if 'link_vmware' in request.form:
-			# Search for a VM with the correct name		
+			# Search for a VM with the correct name
 			curd.execute("SELECT `uuid` FROM `vmware_cache_vm` WHERE `name` = %s", (hostname,))
 			vm_results = curd.fetchall()
 
@@ -371,7 +372,7 @@ def systems_new():
 @app.route('/systems/backup/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_backup(id):
-	
+
 	rubrik = cortex.lib.rubrik.Rubrik()
 
 	if request.method == 'POST':
@@ -439,7 +440,7 @@ def system_backup(id):
 @app.route('/systems/bulk/save', methods=['POST'])
 @cortex.lib.user.login_required
 def systems_bulk_save():
-	"""This is a POST handler used to set comments for a series of existing 
+	"""This is a POST handler used to set comments for a series of existing
 	systems which have been allocated already"""
 
 	# Check user permissions
@@ -489,7 +490,7 @@ def systems_bulk_view(start, finish):
 @app.route('/systems/view/<int:id>')
 @cortex.lib.user.login_required
 def system(id):
-	# Check user permissions. User must have either systems.all or specific 
+	# Check user permissions. User must have either systems.all or specific
 	# access to the system
 	if not does_user_have_system_permission(id,"view.detail","systems.all.view"):
 		abort(403)
@@ -522,7 +523,7 @@ def system(id):
 @app.route('/systems/overview/<int:id>')
 @cortex.lib.user.login_required
 def system_overview(id):
-	# Check user permissions. User must have either systems.all or specific 
+	# Check user permissions. User must have either systems.all or specific
 	# access to the system
 	if not does_user_have_system_permission(id,"view.overview","systems.all.view"):
 		abort(403)
@@ -576,11 +577,11 @@ def system_status(id):
 	except Exception as e:
 		# If we want to handle vCenter being unavailable gracefully.
 		if not app.config.get('HANDLE_UNAVAILABLE_VCENTER_GRACEFULLY', False):
-			raise e	
+			raise e
 		else:
 			vm = None
-			# Add an error field to the data we return, 
-			# so we can display a message on the template. 
+			# Add an error field to the data we return,
+			# so we can display a message on the template.
 			data['error'] = 'Unable to retrieve system information, please check vCenter availability.'
 
 	if vm is not None and vm.guest is not None:
@@ -602,7 +603,7 @@ def system_status(id):
 						addroute['network'] = route.network
 					if route.prefixLength is not None:
 						addroute['prefix'] = route.prefixLength
-					
+
 					if addroute:
 						data['net']['routes'].append(addroute)
 
@@ -611,7 +612,7 @@ def system_status(id):
 				if net_adapter.network is not None and net_adapter.ipAddress is not None and len(net_adapter.ipAddress) > 0:
 					data['net']['networks'].append({
 						'name': net_adapter.network,
-						'ipaddr': [addr for addr in net_adapter.ipAddress] 
+						'ipaddr': [addr for addr in net_adapter.ipAddress]
 					})
 
 		if vm.guest.guestState is not None:
@@ -807,7 +808,7 @@ def system_edit(id):
 			# Update the system
 			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `enable_backup` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, enable_backup, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, id))
 			g.db.commit();
-			
+
 			cortex.lib.core.log(__name__, "systems.edit", "System '" + system['name'] + "' edited, id " + str(id), related_id=id)
 
 			flash('System updated', "alert-success")
@@ -874,11 +875,11 @@ def systems_vmware_json():
 	"""Used by DataTables to extract infromation from the VMware cache. The
 	parameters and return format are dictated by DataTables"""
 
-	# Check user permissions	
+	# Check user permissions
 	# either they have systems.all.view (view all systems)
-	# OR they have at least one instance of the per-system permission 'edit.vmware' 
+	# OR they have at least one instance of the per-system permission 'edit.vmware'
 	# (cos if they have that they need to be able to list the VMWare UUIDs)
-	# or if they have systems.all.edit.vmware 
+	# or if they have systems.all.edit.vmware
 
 	if not does_user_have_permission("systems.all.view") and not does_user_have_permission("systems.all.edit.vmware"):
 		if not does_user_have_any_system_permission("edit.vmware"):
@@ -921,7 +922,7 @@ def systems_vmware_json():
 		# If unfiltered, return the total count
 		filtered_count = total_count
 
-	# Build query	
+	# Build query
 	query = 'SELECT `name`, `uuid` FROM `vmware_cache_vm` '
 	query_params = ()
 	if search is not None:
@@ -963,11 +964,11 @@ def systems_cmdb_json():
 	"""Used by DataTables to extract information from the ServiceNow CMDB CI
 	cache. The parameters and return format are as dictated by DataTables"""
 
-	# Check user permissions	
+	# Check user permissions
 	# either they have systems.all.view (view all systems)
-	# OR they have at least one instance of the per-system permission 'edit.cmdb' 
+	# OR they have at least one instance of the per-system permission 'edit.cmdb'
 	# (cos if they have that they need to be able to list the CMDB entries)
-	# or if they have systems.all.edit.cmdb 
+	# or if they have systems.all.edit.cmdb
 
 	if not does_user_have_permission("systems.all.view") and not does_user_have_permission("systems.all.edit.cmdb"):
 		if not does_user_have_any_system_permission("edit.cmdb"):
@@ -1005,7 +1006,7 @@ def systems_cmdb_json():
 @app.disable_csrf_check
 def systems_json():
 	"""Used by DataTables to extract information from the systems table in
-	the database. The parameters and return format are as dictated by 
+	the database. The parameters and return format are as dictated by
 	DataTables"""
 	# Check user permissions
 	if not (does_user_have_permission("systems.all.view") or does_user_have_permission("systems.own.view")):
@@ -1038,7 +1039,7 @@ def systems_json():
 		# The filtering on starting with * ignores some special filter groups
 		if request.form['filter_group'] != '' and request.form['filter_group'][0] != '*':
 			filter_group = str(request.form['filter_group'])
-	# Filter group being *OTHER should hide our group names and filter on 
+	# Filter group being *OTHER should hide our group names and filter on
 	only_other = False
 	if request.form['filter_group'] == '*OTHER':
 		only_other = True
@@ -1097,7 +1098,7 @@ def systems_json():
 	# DataTables wants an array in JSON, so we build this here, returning
 	# only the columns we want. We format the date as a string as
 	# datetime.datetime are not JSON-serialisable. We also add on columns for
-	# CMDB ID and database ID, and operational status which are not displayed 
+	# CMDB ID and database ID, and operational status which are not displayed
 	# verbatim, but can be processed by a DataTables rowCallback
 	system_data = []
 	if results:
