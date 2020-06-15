@@ -469,11 +469,6 @@ Username:             %s
 		  PRIMARY KEY (`key`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
-		try:
-			cursor.execute("""DROP TABLE IF EXISTS `puppet_modules_info`;""")
-		except Exception as ex:
-			pass
-
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_environments` (
 		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
 		  `short_name` varchar(255) NOT NULL,
@@ -481,17 +476,6 @@ Username:             %s
 		  `type` tinyint(4) NOT NULL,
 		  PRIMARY KEY (`id`),
 		  UNIQUE(`environment_name`)
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
-
-		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_users` (
-		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
-		  `environment_id` mediumint(11) NOT NULL,
-		  `who` varchar(128) NOT NULL,
-		  `type` tinyint(1) NOT NULL,
-		  `level` tinyint(4) NOT NULL DEFAULT 0,
-		  PRIMARY KEY (`id`),
-		  UNIQUE(`environment_id`, `who`, `type`),
-		  CONSTRAINT `puppet_users_ibfk_1` FOREIGN KEY (`environment_id`) REFERENCES `puppet_environments` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_modules` (
@@ -514,7 +498,7 @@ Username:             %s
 		  CONSTRAINT `puppet_classes_ibfk_1` FOREIGN KEY (`module_id`) REFERENCES `puppet_modules` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
-		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_docs_tags` (
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_documentation` (
 		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
 		  `class_id` mediumint(11) NOT NULL,
 		  `tag` varchar(255) NOT NULL,
@@ -522,7 +506,7 @@ Username:             %s
 		  `text` text,
 		  `types` text,
 		  PRIMARY KEY (`id`),
-		  CONSTRAINT `puppet_docs_tags_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `puppet_classes` (`id`) ON DELETE CASCADE
+		  CONSTRAINT `puppet_documentation_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `puppet_classes` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `systems` (
@@ -964,7 +948,10 @@ Username:             %s
 		  INDEX `idx_host` (`host`)
 		) ENGINE=InnoDB DEFAULT CHARSET utf8;""")
 
+		## Clean up old tables
 		cursor.execute("""DROP TABLE IF EXISTS `workflow_perms`""")
+		cursor.execute("""DROP TABLE IF EXISTS `puppet_groups`""")
+		cursor.execute("""DROP TABLE IF EXISTS `puppet_modules_info`""")
 
 		# Ensure we have a default administrator role
 		cursor.execute("""INSERT IGNORE INTO `roles` (`id`, `name`, `description`) VALUES (1, "Administrator", "Has full access to everything")""")
