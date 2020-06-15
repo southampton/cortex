@@ -42,7 +42,7 @@ def puppet_enc_edit(node):
 	# Get the database cursor
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	# TODO: Query with an order so 'production' take precedence
-	curd.execute("SELECT `puppet_modules`.`module_name` AS `module_name`, `puppet_classes`.`class_name` AS `class_name`, `puppet_docs_tags`.`name` AS `param`, `puppet_docs_tags`.`text` AS `param_desc` FROM `puppet_modules` LEFT JOIN `puppet_classes` ON `puppet_modules`.`id`=`puppet_classes`.`module_id` LEFT JOIN `puppet_docs_tags` ON `puppet_classes`.`id`=`puppet_docs_tags`.`class_id` WHERE `puppet_docs_tags`.`tag`=%s;", ("param", ))
+	curd.execute("SELECT `puppet_modules`.`module_name` AS `module_name`, `puppet_classes`.`class_name` AS `class_name`, `puppet_documentation`.`name` AS `param`, `puppet_documentation`.`text` AS `param_desc` FROM `puppet_modules` LEFT JOIN `puppet_classes` ON `puppet_modules`.`id`=`puppet_classes`.`module_id` LEFT JOIN `puppet_documentation` ON `puppet_classes`.`id`=`puppet_documentation`.`class_id` WHERE `puppet_documentation`.`tag`=%s;", ("param", ))
 	hints = {}
 	for row in curd.fetchall():
 		if row["module_name"] not in hints:
@@ -520,7 +520,7 @@ def puppet_documentation(environment_id=None, module_id=None):
 		if not module:
 			abort(404)
 
-		curd.execute("SELECT * FROM `puppet_classes` LEFT JOIN `puppet_docs_tags` ON `puppet_classes`.`id`=`puppet_docs_tags`.`class_id` WHERE `puppet_classes`.`module_id`=%s;", (module["id"],))
+		curd.execute("SELECT * FROM `puppet_classes` LEFT JOIN `puppet_documentation` ON `puppet_classes`.`id`=`puppet_documentation`.`class_id` WHERE `puppet_classes`.`module_id`=%s;", (module["id"],))
 		for row in curd.fetchall():
 			if row["class_name"] not in data:
 				data[row["class_name"]] = { "desc": row["desc"] }
