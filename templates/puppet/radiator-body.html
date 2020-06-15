@@ -1,23 +1,23 @@
 		<div class="chart-wrapper">
 			<div class="chart-row row-normal">
 				<div class="count">{{ stats['unchanged'] }}</div>
-				<div class="bar"><span class="bar-text">Normal</span><div class="bar-internal{% if stats['unchanged'] == stats['count'] %} bar-full{% endif %}" style="width:{{ stats['unchanged'] / stats['count'] * 100 }}%"><div class="bar-border"><span class="bar-text">Normal</span></div></div></div>
+				<div class="bar"><span class="bar-text">Normal</span><div class="bar-internal{% if stats['unchanged'] == stats['count'] %} bar-full{% endif %}" style="width:{%- if stats['count'] > 0 -%}{{ stats['unchanged'] / stats['count'] * 100 }}{%- else -%}0{%- endif %}%"><div class="bar-border"><span class="bar-text">Normal</span></div></div></div>
 			</div>
 			<div class="chart-row row-changed">
 				<div class="count">{{ stats['changed'] }}</div>
-				<div class="bar"><span class="bar-text">Changed</span><div class="bar-internal{% if stats['changed'] == stats['count'] %} bar-full{% endif %}" style="width:{{ stats['changed'] / stats['count'] * 100 }}%"><span class="bar-text">Changed</span></div></div>
+				<div class="bar"><span class="bar-text">Changed</span><div class="bar-internal{% if stats['changed'] == stats['count'] %} bar-full{% endif %}" style="width:{%- if stats['count'] > 0 -%}{{ stats['changed'] / stats['count'] * 100 }}{%- else -%}0{%- endif %}%"><span class="bar-text">Changed</span></div></div>
 			</div>
 			<div class="chart-row row-disabled">
 				<div class="count">{{ stats['noop'] }}</div>
-				<div class="bar"><span class="bar-text">Disabled</span><div class="bar-internal{% if stats['noop'] == stats['count'] %} bar-full{% endif %}" style="width:{{ stats['noop'] / stats['count'] * 100 }}%"><span class="bar-text">Disabled</span></div></div>
+				<div class="bar"><span class="bar-text">Disabled</span><div class="bar-internal{% if stats['noop'] == stats['count'] %} bar-full{% endif %}" style="width:{%- if stats['count'] > 0 -%}{{ stats['noop'] / stats['count'] * 100 }}{%- else -%}0{%- endif %}%"><span class="bar-text">Disabled</span></div></div>
 			</div>
 			<div class="chart-row row-failed">
 				<div class="count">{{ stats['failed'] }}</div>
-				<div class="bar"><span class="bar-text">Failed</span><div class="bar-internal{% if stats['failed'] == stats['count'] %} bar-full{% endif %}" style="width:{{ stats['failed'] / stats['count'] * 100 }}%"><span class="bar-text">Failed</span></div></div>
+				<div class="bar"><span class="bar-text">Failed</span><div class="bar-internal{% if stats['failed'] == stats['count'] %} bar-full{% endif %}" style="width:{%- if stats['count'] > 0 -%}{{ stats['failed'] / stats['count'] * 100 }}{%- else -%}0{%- endif %}%"><span class="bar-text">Failed</span></div></div>
 			</div>
 			<div class="chart-row row-unknown">
 				<div class="count">{{ stats['unknown'] + stats['unreported'] }}</div>
-				<div class="bar"><span class="bar-text">Unknown</span><div class="bar-internal{% if (stats['unknown'] + stats['unreported']) == stats['count'] %} bar-full{% endif %}" style="width:{{ (stats['unknown'] + stats['unreported']) / stats['count'] * 100 }}%"><span class="bar-text">Unknown</span></div></div>
+				<div class="bar"><span class="bar-text">Unknown</span><div class="bar-internal{% if (stats['unknown'] + stats['unreported']) == stats['count'] %} bar-full{% endif %}" style="width:{%- if stats['count'] > 0 -%}{{ (stats['unknown'] + stats['unreported']) / stats['count'] * 100 }}{%- else -%}0{%- endif %}%"><span class="bar-text">Unknown</span></div></div>
 			</div>
 			<div class="chart-row row-total">
 				<div class="count">{{ stats['count'] }}</div>

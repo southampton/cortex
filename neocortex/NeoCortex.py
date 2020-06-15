@@ -16,7 +16,7 @@ from setproctitle import setproctitle #pip install setproctitle
 from corpus import Corpus
 from neocortex.TaskHelper import TaskHelper
 
-CONFIG_FILE = '/data/cortex/cortex.conf'
+CONFIG_BASE_DIR = '/data/cortex'
 Pyro4.config.SERVERTYPE = "multiplex"
 Pyro4.config.SOCK_REUSE = True
 
@@ -41,7 +41,7 @@ class NeoCortex(object):
 		setproctitle("neocortex")
 
 		## Load the config and drop privs
-		self._load_config(CONFIG_FILE)
+		self._load_neocortex_config(CONFIG_BASE_DIR)
 		self._drop_privs()
 
 		## Store the copy of the pyro daemon object
@@ -56,10 +56,10 @@ class NeoCortex(object):
 
 	def _signal_handler_term(self, signal, frame):
 		self._signal_handler('SIGTERM')
-	
+
 	def _signal_handler_int(self, signal, frame):
 		self._signal_handler('SIGINT')
-	
+
 	def _signal_handler(self, signal):
 		self.logger.info('caught signal ' + str(signal) + "; exiting")
 		Pyro4.core.Daemon.shutdown(self.pyro)
@@ -85,7 +85,7 @@ class NeoCortex(object):
 
 		## If we didn't return up above then we need to connect first
 		return self._db_connect()
-		
+
 	def _db_connect(self):
 		self.logger.info("Attempting connection to MySQL")
 		self.db = mysql.connect(self.config['MYSQL_HOST'], self.config['MYSQL_USER'], self.config['MYSQL_PASS'], self.config['MYSQL_NAME'], charset='utf8')
@@ -94,21 +94,29 @@ class NeoCortex(object):
 		self.logger.info("Connection to MySQL established")
 		return self.db
 
-	def _load_config(self, filename): 
-		d = imp.new_module('config')
-		d.__file__ = filename
-		try:
-			with open(filename) as config_file:
-				exec(compile(config_file.read(), filename, 'exec'), d.__dict__)
-		except IOError as e:
-			self.logger.critical('Unable to load configuration file (%s)' % e.strerror)
-			sys.exit(1)
-		self.config = {}
-		for key in dir(d):
-			if key.isupper():
-				self.config[key] = getattr(d, key)
+	def _load_neocortex_config(self, base_dir):
+		"""Load NeoCortex config"""
 
-		## ensure we have required config options
+		# Start a new config
+		self.config = {}
+
+		# Load config from file cortex.conf
+		config_file = os.path.join(base_dir, "cortex.conf")
+		if os.path.isfile(config_file):
+			self.config.update(self._load_config(config_file))
+			self.logger.info("NeoCortex: Loaded config from cortex.conf")
+		else:
+			self.logger.debug("NeoCortex: No config file cortex.conf found.")
+
+		# Load config from directory cortex.conf.d
+		config_directory = os.path.join(base_dir, "cortex.conf.d")
+		if os.path.isdir(config_directory):
+			for config_file in sorted(os.listdir(config_directory)):
+				if config_file.endswith(".conf"):
+					self.config.update(self._load_config(os.path.join(config_directory, config_file)))
+					self.logger.info("NeoCortex: Loaded config from cortex.conf.d/{f}.".format(f=config_file))
+
+		## Ensure we have required config options
 		for wkey in ['NEOCORTEX_SET_GID', 'NEOCORTEX_SET_UID', 'NEOCORTEX_KEY', 'WORKFLOWS_DIR', 'NEOCORTEX_TASKS_DIR']:
 			if not wkey in list(self.config.keys()):
 				self.logger.critical("Missing configuation option: " + wkey)
@@ -117,8 +125,27 @@ class NeoCortex(object):
 		if 'DEBUG' in list(self.config.keys()):
 			if self.config['DEBUG'] == True:
 				self.debug = True
-				
-		return True
+
+	def _load_config(self, filename):
+		"""Extracts the settings from the given config file."""
+
+		# Start a new module, which will be the context for parsing the config
+		d = imp.new_module('config')
+		d.__file__ = filename
+
+		# Read the contents of the configuration file and execute it as a
+		# Python script within the context of a new module
+		with open(filename, "r") as config_file:
+			exec(compile(config_file.read(), filename, 'exec'), d.__dict__)
+
+		# Extract the config options, which are those variables whose names are
+		# entirely in uppercase
+		new_config = {}
+		for key in dir(d):
+			if key.isupper():
+				new_config[key] = getattr(d, key)
+
+		return new_config
 
 	def _drop_privs(self):
 		## Drop privileges, looking up the UID/GID if not given numerically
@@ -238,4 +265,4 @@ class NeoCortex(object):
 			active_tasks.append(proc_data)
 
 		return active_tasks
-		
+

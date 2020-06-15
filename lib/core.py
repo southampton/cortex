@@ -1,35 +1,20 @@
 
-from cortex import app
-from cortex.lib.errors import fatalerr
-from flask import g, abort, make_response, render_template, request, session
+import re
+
 import MySQLdb as mysql
 import Pyro4
-import re
+from flask import abort, g, make_response, render_template, request, session
+
+from cortex import app
+from cortex.lib.errors import fatalerr
 
 ################################################################################
 
-def get_environments():
-	"""Get all the information about all the environments."""
-
-	return app.config['ENVIRONMENTS']
-
-def get_puppet_environments():
-	"""Get all the information about all the environments that have a 
-	Puppet environment."""
-
-	return [e for e in app.config['ENVIRONMENTS'] if e['puppet']]
-
 def get_cmdb_environments():
-	"""Get all the information about all the environments that have a 
+	"""Get all the information about all the environments that have a
 	ServiceNow environment."""
 
 	return [e for e in app.config['ENVIRONMENTS'] if e['cmdb']]
-
-def get_environments_as_dict():
-	"""Get all the information about all the environments but as a 
-	dictionary keyed on the environment rather than an ordered list"""
-
-	return dict((e['id'], e) for e in app.config['ENVIRONMENTS'])
 
 ################################################################################
 
@@ -69,7 +54,7 @@ def vmware_list_folders(tag):
 	"""Return a list of folders from witihin a given vCenter. The tag
 	parameter defines an entry in the vCenter configuration dictionary that
 	is within the application configuration."""
-	
+
 	if tag in app.config['VMWARE']:
 		curd = g.db.cursor(mysql.cursors.DictCursor)
 
