@@ -27,7 +27,7 @@
 		{% endif -%}{# edit.puppet Perm Check #}
 		{% endif -%}{# system.puppet_certname Check #}
 		{% if does_user_have_permission("admin.permissions") -%}
-		<li class="nav-item"><a class="{% if active == "perms" %}active {% endif %}nav-link" href="{{url_for('perms_system', id=system.id)}}" >Permissions</a></li>
+		<li class="nav-item"><a class="{% if active == "perms" %}active {% endif %}nav-link" href="{{url_for('perms_system', system_id=system.id)}}" >Permissions</a></li>
 		{% endif -%}
 		<li class="nav-item dropdown">
 			<a class="nav-link dropdown-toggle" href="#" id="navbar-dropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">External links</a>

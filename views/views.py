@@ -6,7 +6,7 @@ import cortex.lib.vmware
 import cortex.lib.puppet
 from cortex.lib.user import does_user_have_permission
 from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
-import os 
+import os
 import datetime
 import MySQLdb as mysql
 
@@ -35,12 +35,12 @@ def dashboard():
 
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	
+
 	# Get number of VMs
 	curd.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `template` = 0');
 	row = curd.fetchone()
 	vm_count = row['count']
-	
+
 	# Get number of CIs
 	curd.execute('SELECT COUNT(*) AS `count` FROM `sncache_cmdb_ci`');
 	row = curd.fetchone()
@@ -64,13 +64,13 @@ def dashboard():
 	# Get tasks for user
 	curd.execute('SELECT `id`, `module`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `username` = %s ORDER BY `start` DESC LIMIT 5', (session['username'],))
 	tasks = curd.fetchall()
-	
+
 	# We don't need the data, but we need to make sure the LDAP cache is up
 	# to date for the systems query to work
 	cortex.lib.user.get_users_groups()
 
 	# Get the list of systems the user is specifically allowed to view
-	curd.execute("SELECT * FROM `systems_info_view` WHERE (`id` IN (SELECT `system_id` FROM `system_perms_view` WHERE (`type` = '0' AND `who` = %s AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail')) OR (`type` = '1' AND (`perm` = 'view' OR `perm` = 'view.overview' OR `perm` = 'view.detail') AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s))) OR `allocation_who`=%s) AND ((`cmdb_id` IS NOT NULL AND `cmdb_operational_status` = 'In Service') OR `vmware_uuid` IS NOT NULL) ORDER BY `allocation_date` DESC LIMIT 100;",(session['username'],session['username'], session['username']))
+	curd.execute("SELECT * FROM `systems_info_view` WHERE (`id` IN (SELECT `p_system_perms_who`.`system_id` FROM `p_system_perms_who` JOIN `p_system_perms` ON `p_system_perms_who`.`perm_id`=`p_system_perms`.`id` WHERE (`p_system_perms_who`.`type` = '0' AND `p_system_perms_who`.`who` = %s AND (`p_system_perms`.`perm` = 'view' OR `p_system_perms`.`perm` = 'view.overview' OR `p_system_perms`.`perm` = 'view.detail')) OR (`p_system_perms_who`.`type` = '1' AND (`p_system_perms`.`perm` = 'view' OR `p_system_perms`.`perm` = 'view.overview' OR `p_system_perms`.`perm` = 'view.detail') AND `p_system_perms_who`.`who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s))) OR `allocation_who`=%s) AND ((`cmdb_id` IS NOT NULL AND `cmdb_operational_status` = 'In Service') OR `vmware_uuid` IS NOT NULL) ORDER BY `allocation_date` DESC LIMIT 100",(session['username'],session['username'], session['username']))
 	systems = curd.fetchall()
 
 	# Recent systems
@@ -101,15 +101,15 @@ def dashboard():
 		import traceback
 		app.logger.error("Failed to talk to PuppetDB on dashboard:\n" + traceback.format_exc())
 		stats = { 'failed': '???', 'changed': '???' }
-	
-	return render_template('dashboard.html', active="dashboard", 
-		vm_count=vm_count, 
-		ci_count=ci_count, 
-		task_progress_count=task_progress_count, 
-		task_failed_count=task_failed_count, 
+
+	return render_template('dashboard.html', active="dashboard",
+		vm_count=vm_count,
+		ci_count=ci_count,
+		task_progress_count=task_progress_count,
+		task_failed_count=task_failed_count,
 		task_warning_count=task_warning_count,
-		tasks=tasks, 
-		types=types, 
+		tasks=tasks,
+		types=types,
 		title="Dashboard",
 		systems=systems,
 		syscount=len(systems),
@@ -145,7 +145,7 @@ def task_status(id):
 @app.route('/task/status/<int:id>/log', methods=['GET'])
 @cortex.lib.user.login_required
 def task_status_log(id):
-	"""Much like task_status, but only returns the event log. This is used by 
+	"""Much like task_status, but only returns the event log. This is used by
 	an AJAX routine on the page to refresh the log every 10 seconds."""
 
 	## Get the task details

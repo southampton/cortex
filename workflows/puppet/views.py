@@ -5,12 +5,11 @@ from flask import flash, g, redirect, request, session, url_for
 
 import cortex.lib.core
 from cortex import app
-from cortex.lib.user import does_user_have_workflow_permission
+from cortex.lib.user import does_user_have_permission
 from cortex.lib.workflow import CortexWorkflow
 
 workflow = CortexWorkflow(__name__)
-workflow.add_permission("puppet.environment.admin", "Administer Puppet environments (create/delete all environments)")
-workflow.add_permission("puppet.environment.user", "Use Puppet environments (create/delete service and dynamic environments)")
+workflow.add_permission("puppet.environments.create", "Create Puppet Environments")
 
 ENVIRONMENT_NAME_REGEX = re.compile(r"\A[a-z0-9_]+\Z")
 ENVIRONMENT_TYPES = {
@@ -19,22 +18,14 @@ ENVIRONMENT_TYPES = {
 	2: "Dynamic"         # Dynamic environment for testing
 }
 
-
-def puppet_environment_permission_callback():
-	"""Check if the User has either puppet.environment.admin
-	or puppet.environment.admin"""
-	return does_user_have_workflow_permission("puppet.environment.admin") or does_user_have_workflow_permission("puppet.environment.admin")
-
-@workflow.route("environment/create", title="Create Puppet Environment", order=50, permission=puppet_environment_permission_callback, methods=["GET", "POST"])
+@workflow.route("environment/create", title="Create Puppet Environment", order=50, permission="puppet.environment.create", methods=["GET", "POST"])
 def puppet_environment_create():
 	"""Create a new Puppet environment"""
 
-	environment_admin = True
+	can_create_all = does_user_have_permission("puppet.environments.all.create")
 	environment_types = dict(ENVIRONMENT_TYPES)
-	if not does_user_have_workflow_permission("puppet.environment.admin"):
-		environment_admin = False
+	if not can_create_all:
 		environment_types.pop(0, None)
-
 
 	# Create the values dict, and set default environment type to Dynamic
 	values = { "environment_type": 2}
@@ -58,7 +49,7 @@ def puppet_environment_create():
 		elif values["environment_type"] == 2:
 			values["environment_name"] = "dyn_" + app.pwgen(alphabet=string.ascii_lowercase + string.digits, length=16)
 
-		if (values["environment_type"] not in ENVIRONMENT_TYPES) or (not environment_admin and values["environment_type"] == 0):
+		if (values["environment_type"] not in ENVIRONMENT_TYPES) or (not can_create_all and values["environment_type"] == 0):
 			error = True
 			flash("Invalid environment type", "alert-danger")
 		if values["environment_type"] != 2 and not ENVIRONMENT_NAME_REGEX.match(values["environment_name"]):

@@ -151,11 +151,11 @@ class CortexWorkflow(object):
 		if not name.startswith("workflows."):
 			name = "workflows." + name
 
-		app.workflow_permissions.append({'name': name, 'desc': desc})
+		app.permissions.add_workflow_permission(name, desc)
 		app.logger.info("Workflows: Added permission '" + name + "'")
 
 	def add_system_permission(self, name, desc):
-		app.system_permissions.append({'name': name, 'desc': desc})
+		app.permissions.add_system_permission(name, desc)
 		app.logger.info("Workflows: Added per-system permission '" + name + "'")
 
 	def render_template(self, template_name, **kwargs):
