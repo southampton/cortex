@@ -20,7 +20,7 @@ class CortexAdmin(object):
 
 		# Set Global Options
 		self.verbose = verbose
-		
+
 		self.config = self.load_config()
 		self.db = self.db_connect()
 
@@ -51,7 +51,7 @@ class CortexAdmin(object):
 				click.echo('Missing configuation option: {}'.format(wkey))
 				sys.exit(1)
 
-		return config	
+		return config
 
 	def db_connect(self):
 		"""Return MySQL Connection Object"""
@@ -75,7 +75,7 @@ def cli(ctx, verbose):
 	Cortex Admin Tool
 	"""
 	ctx.obj = CortexAdmin(verbose)
-	
+
 ################################################################################
 
 @cli.command('make-admin')
@@ -88,13 +88,13 @@ def make_admin(obj, user, role_id):
 	"""
 
 	cur = obj.db_cursor()
-	cur.execute("""SELECT * FROM `roles` WHERE `id`=%s""", (role_id,))
+	cur.execute("""SELECT * FROM `p_roles` WHERE `id`=%s""", (role_id,))
 	result = cur.fetchone()
 
 	if result:
 		click.echo('Adding User {} to Role \'{}\' (ID: {})'.format(user, result['name'], result['id']))
 		try:
-			cur.execute("""INSERT INTO role_who (role_id, who, type) VALUES (%s, %s, 0)""", (role_id, user,))
+			cur.execute("""INSERT INTO p_role_who (role_id, who, type) VALUES (%s, %s, 0)""", (role_id, user,))
 		except mysql.IntegrityError as e:
 			if obj.verbose:
 				click.echo('mysql.IntegrityError: {}\nThe user is likely already a member of this role!'.format(str(e)))
@@ -102,7 +102,7 @@ def make_admin(obj, user, role_id):
 				click.echo('The user is already a member of this role!')
 		else:
 			obj.db_commit()
-			click.echo('Success!')		
+			click.echo('Success!')
 	else:
 		click.echo('Role ID: {} Does not exist!'.format(group_id))
 		sys.exit(1)
@@ -117,7 +117,7 @@ def clean(obj):
 	"""
 
 	if click.confirm('This command will clean the Cortex database. Are you sure you wish to continue?'):
-		
+
 		cur = obj.db_cursor()
 		if click.confirm('Truncate the \'events\' and \'tasks\' tables?'):
 			cur.execute("""TRUNCATE `events`;""")
@@ -142,7 +142,7 @@ def update_class(obj, name, lastid):
 	Update the 'lastid' for a given class
 	"""
 
-	cur = obj.db_cursor() 
+	cur = obj.db_cursor()
 
 	cur.execute("""SELECT 1 FROM `classes` WHERE `name`=%s;""", (name,))
 	if cur.fetchone():

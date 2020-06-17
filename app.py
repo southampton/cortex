@@ -17,6 +17,8 @@ import MySQLdb as mysql
 import redis
 from flask import Flask, abort, g, render_template, request, session, url_for
 
+from cortex.lib.perms import CortexPermissions
+
 # Regular expressions for Jinja links filter
 SYSTEM_LINK_RE = re.compile(r"""\{\{ *system_link +id *= *(?P<quote>["']?) *(?P<link_id>[0-9]+) *(?P=quote) *\}\}(?P<link_text>[^{]*)\{\{ */system_link *\}\}""", re.IGNORECASE)
 TASK_LINK_RE = re.compile(r"""\{\{ *task_link +id *= *(?P<quote>["']?) *(?P<link_id>[0-9]+) *(?P=quote) *\}\}(?P<link_text>[^{]*)\{\{ */task_link *\}\}""", re.IGNORECASE)
@@ -112,11 +114,11 @@ Further Details:
 			self.logger.addHandler(mail_handler)
 			self.logger = logging.LoggerAdapter(self.logger, log_extra)
 
-		# set up permissions
-		self.init_permissions()
-
 		# check the database is up and is working
 		self.init_database()
+
+		# initialise the permissions
+		self.permissions = CortexPermissions(self.config)
 
 	################################################################################
 
@@ -205,29 +207,6 @@ Further Details:
 		self._exempt_views.add(view_location)
 		self.logger.debug('Added CSRF check exemption for ' + view_location)
 		return view
-
-	################################################################################
-
-	def _load_workflow_settings(self, filename):
-		"""Extracts the settings from the given config file."""
-
-		# Start a new module, which will be the context for parsing the config
-		d = imp.new_module('config')
-		d.__file__ = filename
-
-		# Read the contents of the configuration file and execute it as a
-		# Python script within the context of a new module
-		with open(filename) as config_file:
-			exec(compile(config_file.read(), filename, 'exec'), d.__dict__)
-
-		# Extract the config options, which are those variables whose names are
-		# entirely in uppercase
-		new_config = {}
-		for key in dir(d):
-			if key.isupper():
-				new_config[key] = getattr(d, key)
-
-		return new_config
 
 	################################################################################
 
@@ -797,113 +776,114 @@ Username:             %s
 		LEFT JOIN `realname_cache` AS `primary_owner_who_realname_cache` ON `systems`.`primary_owner_who` = `primary_owner_who_realname_cache`.`username`
 		LEFT JOIN `realname_cache` AS `secondary_owner_who_realname_cache` ON `systems`.`secondary_owner_who` = `secondary_owner_who_realname_cache`.`username`""")
 
-		cursor.execute("""CREATE TABLE IF NOT EXISTS `roles` (
-		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
-		  `name` varchar(64) NOT NULL,
-		  `description` text NOT NULL,
-		  PRIMARY KEY (`id`),
-		  KEY (`name`)
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=2""")
+		## These tables are no longer needed, however the permissions need to be migrated to the p_* tables below.
+		# cursor.execute("""CREATE TABLE IF NOT EXISTS `roles` (
+		#   `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		#   `name` varchar(64) NOT NULL,
+		#   `description` text NOT NULL,
+		#   PRIMARY KEY (`id`),
+		#   KEY (`name`)
+		# ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=2""")
 
-		cursor.execute("""CREATE TABLE IF NOT EXISTS `role_perms` (
-		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
-		  `role_id` mediumint(11) NOT NULL,
-		  `perm` varchar(64) NOT NULL,
-		  PRIMARY KEY (`id`),
-		  UNIQUE (`role_id`, `perm`),
-		  CONSTRAINT `role_perms_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+		# cursor.execute("""CREATE TABLE IF NOT EXISTS `role_perms` (
+		#   `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		#   `role_id` mediumint(11) NOT NULL,
+		#   `perm` varchar(64) NOT NULL,
+		#   PRIMARY KEY (`id`),
+		#   UNIQUE (`role_id`, `perm`),
+		#   CONSTRAINT `role_perms_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
+		# ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
-		cursor.execute("""CREATE TABLE IF NOT EXISTS `role_who` (
-		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
-		  `role_id` mediumint(11) NOT NULL,
-		  `who` varchar(128) NOT NULL,
-		  `type` tinyint(1) NOT NULL,
-		  PRIMARY KEY (`id`),
-		  UNIQUE (`role_id`, `who`, `type`),
-		  CONSTRAINT `role_who_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+		# cursor.execute("""CREATE TABLE IF NOT EXISTS `role_who` (
+		#   `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		#   `role_id` mediumint(11) NOT NULL,
+		#   `who` varchar(128) NOT NULL,
+		#   `type` tinyint(1) NOT NULL,
+		#   PRIMARY KEY (`id`),
+		#   UNIQUE (`role_id`, `who`, `type`),
+		#   CONSTRAINT `role_who_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
+		# ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
-		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_perms` (
-		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
-		  `system_id` mediumint(11) NOT NULL,
-		  `who` varchar(128) NOT NULL,
-		  `type` tinyint(1) NOT NULL,
-		  `perm` varchar(64) NOT NULL,
-		  PRIMARY KEY (`id`),
-		  UNIQUE (`system_id`, `who`, `type`, `perm`),
-		  CONSTRAINT `system_perms_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+		# cursor.execute("""CREATE TABLE IF NOT EXISTS `system_perms` (
+		#   `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		#   `system_id` mediumint(11) NOT NULL,
+		#   `who` varchar(128) NOT NULL,
+		#   `type` tinyint(1) NOT NULL,
+		#   `perm` varchar(64) NOT NULL,
+		#   PRIMARY KEY (`id`),
+		#   UNIQUE (`system_id`, `who`, `type`, `perm`),
+		#   CONSTRAINT `system_perms_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
+		# ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
-		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_roles` (
-		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
-		  `name` varchar(64) NOT NULL,
-		  `description` text NOT NULL,
-		  PRIMARY KEY (`id`),
-		  KEY (`name`)
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+		# cursor.execute("""CREATE TABLE IF NOT EXISTS `system_roles` (
+		#   `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		#   `name` varchar(64) NOT NULL,
+		#   `description` text NOT NULL,
+		#   PRIMARY KEY (`id`),
+		#   KEY (`name`)
+		# ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
-		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_role_perms` (
-		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
-		  `system_role_id` mediumint(11) NOT NULL,
-		  `perm` varchar(64) NOT NULL,
-		  PRIMARY KEY (`id`),
-		  UNIQUE (`system_role_id`, `perm`),
-		  CONSTRAINT `system_role_perms_ibfk_1` FOREIGN KEY (`system_role_id`) REFERENCES `system_roles` (`id`) ON DELETE CASCADE
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+		# cursor.execute("""CREATE TABLE IF NOT EXISTS `system_role_perms` (
+		#   `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		#   `system_role_id` mediumint(11) NOT NULL,
+		#   `perm` varchar(64) NOT NULL,
+		#   PRIMARY KEY (`id`),
+		#   UNIQUE (`system_role_id`, `perm`),
+		#   CONSTRAINT `system_role_perms_ibfk_1` FOREIGN KEY (`system_role_id`) REFERENCES `system_roles` (`id`) ON DELETE CASCADE
+		# ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
-		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_role_who` (
-		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
-		  `system_role_id` mediumint(11) NOT NULL,
-		  `who` varchar(128) NOT NULL,
-		  `type` tinyint(1) NOT NULL,
-		  PRIMARY KEY (`id`),
-		  UNIQUE (`system_role_id`, `who`, `type`),
-		  CONSTRAINT `system_role_who_ibfk_1` FOREIGN KEY (`system_role_id`) REFERENCES `system_roles` (`id`) ON DELETE CASCADE
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+		# cursor.execute("""CREATE TABLE IF NOT EXISTS `system_role_who` (
+		#   `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		#   `system_role_id` mediumint(11) NOT NULL,
+		#   `who` varchar(128) NOT NULL,
+		#   `type` tinyint(1) NOT NULL,
+		#   PRIMARY KEY (`id`),
+		#   UNIQUE (`system_role_id`, `who`, `type`),
+		#   CONSTRAINT `system_role_who_ibfk_1` FOREIGN KEY (`system_role_id`) REFERENCES `system_roles` (`id`) ON DELETE CASCADE
+		# ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
-		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_role_what` (
-		  `system_role_id` mediumint(11) NOT NULL,
-		  `system_id` mediumint(11) NOT NULL,
-		  PRIMARY KEY (`system_role_id`, `system_id`),
-		  CONSTRAINT `system_role_what_ibfk_1` FOREIGN KEY (`system_role_id`) REFERENCES `system_roles` (`id`) ON DELETE CASCADE,
-		  CONSTRAINT `system_role_what_ibfk_2` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+		# cursor.execute("""CREATE TABLE IF NOT EXISTS `system_role_what` (
+		#   `system_role_id` mediumint(11) NOT NULL,
+		#   `system_id` mediumint(11) NOT NULL,
+		#   PRIMARY KEY (`system_role_id`, `system_id`),
+		#   CONSTRAINT `system_role_what_ibfk_1` FOREIGN KEY (`system_role_id`) REFERENCES `system_roles` (`id`) ON DELETE CASCADE,
+		#   CONSTRAINT `system_role_what_ibfk_2` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
+		# ) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
 
-		cursor.execute("""CREATE OR REPLACE VIEW `system_role_perms_view` AS
-		SELECT DISTINCT
-		  `system_roles`.`id` as `system_role_id`,
-		  `system_roles`.`name` as `system_role_name`,
-		  `system_role_what`.`system_id`,
-		  `system_role_who`.`who`,
-		  `system_role_who`.`type`,
-		  `system_role_perms`.`perm`
-		FROM `system_roles`
-		LEFT JOIN `system_role_perms` ON `system_roles`.`id`=`system_role_perms`.`system_role_id`
-		LEFT JOIN `system_role_who` ON `system_roles`.`id`=`system_role_who`.`system_role_id`
-		LEFT JOIN `system_role_what` ON `system_roles`.`id`=`system_role_what`.`system_role_id`
-		WHERE
-		  `system_role_what`.`system_id` IS NOT NULL AND
-		  `system_role_who`.`who` IS NOT NULL AND
-		  `system_role_who`.`type` IS NOT NULL AND
-		  `system_role_perms`.`perm` IS NOT NULL
-		""")
+		# cursor.execute("""CREATE OR REPLACE VIEW `system_role_perms_view` AS
+		# SELECT DISTINCT
+		#   `system_roles`.`id` as `system_role_id`,
+		#   `system_roles`.`name` as `system_role_name`,
+		#   `system_role_what`.`system_id`,
+		#   `system_role_who`.`who`,
+		#   `system_role_who`.`type`,
+		#   `system_role_perms`.`perm`
+		# FROM `system_roles`
+		# LEFT JOIN `system_role_perms` ON `system_roles`.`id`=`system_role_perms`.`system_role_id`
+		# LEFT JOIN `system_role_who` ON `system_roles`.`id`=`system_role_who`.`system_role_id`
+		# LEFT JOIN `system_role_what` ON `system_roles`.`id`=`system_role_what`.`system_role_id`
+		# WHERE
+		#   `system_role_what`.`system_id` IS NOT NULL AND
+		#   `system_role_who`.`who` IS NOT NULL AND
+		#   `system_role_who`.`type` IS NOT NULL AND
+		#   `system_role_perms`.`perm` IS NOT NULL
+		# """)
 
-		cursor.execute("""CREATE OR REPLACE VIEW `system_perms_view` AS
-		SELECT DISTINCT
-		  `system_role_perms_view`.`system_id`,
-		  `system_role_perms_view`.`who`,
-		  `system_role_perms_view`.`type`,
-		  `system_role_perms_view`.`perm`
-		FROM `system_role_perms_view`
-		UNION
-		SELECT DISTINCT
-		  `system_perms`.`system_id`,
-		  `system_perms`.`who`,
-		  `system_perms`.`type`,
-		  `system_perms`.`perm`
-		FROM `system_perms`;
-		""")
+		# cursor.execute("""CREATE OR REPLACE VIEW `system_perms_view` AS
+		# SELECT DISTINCT
+		#   `system_role_perms_view`.`system_id`,
+		#   `system_role_perms_view`.`who`,
+		#   `system_role_perms_view`.`type`,
+		#   `system_role_perms_view`.`perm`
+		# FROM `system_role_perms_view`
+		# UNION
+		# SELECT DISTINCT
+		#   `system_perms`.`system_id`,
+		#   `system_perms`.`who`,
+		#   `system_perms`.`type`,
+		#   `system_perms`.`perm`
+		# FROM `system_perms`;
+		# """)
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `system_user_favourites` (
 		  `username` varchar(255),
@@ -948,19 +928,134 @@ Username:             %s
 		  INDEX `idx_host` (`host`)
 		) ENGINE=InnoDB DEFAULT CHARSET utf8;""")
 
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `p_roles` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `name` varchar(64) NOT NULL,
+		  `description` text NOT NULL,
+		  PRIMARY KEY (`id`),
+		  KEY (`name`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=2""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `p_role_who` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `role_id` mediumint(11) NOT NULL,
+		  `who` varchar(128) NOT NULL,
+		  `type` tinyint(1) NOT NULL,
+		  PRIMARY KEY (`id`),
+		  UNIQUE (`role_id`, `who`, `type`),
+		  CONSTRAINT `p_role_who_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `p_roles` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `p_perms` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `perm` varchar(64) NOT NULL,
+		  `description` text NOT NULL,
+		  `active` tinyint(1) NOT NULL DEFAULT 0,
+		  PRIMARY KEY (`id`),
+		  UNIQUE (`perm`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `p_role_perms` (
+		  `role_id` mediumint(11) NOT NULL,
+		  `perm_id` mediumint(11) NOT NULL,
+		  PRIMARY KEY (`role_id`, `perm_id`),
+		  CONSTRAINT `p_role_perms_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `p_roles` (`id`) ON DELETE CASCADE,
+		  CONSTRAINT `p_role_perms_ibfk_2` FOREIGN KEY (`perm_id`) REFERENCES `p_perms` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE OR REPLACE VIEW `p_perms_view` AS
+		SELECT DISTINCT
+		  `p_role_who`.`who` AS `who`,
+		  `p_role_who`.`type` AS `who_type`,
+		  LOWER(`p_perms`.`perm`) AS `perm`
+		FROM `p_role_who`
+		JOIN `p_role_perms` ON `p_role_who`.`role_id`=`p_role_perms`.`role_id`
+		JOIN `p_perms` ON `p_role_perms`.`perm_id`=`p_perms`.`id`
+		WHERE `p_perms`.`active`=1""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `p_system_perms` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `perm` varchar(64) NOT NULL,
+		  `description` text NOT NULL,
+		  `active` tinyint(1) NOT NULL DEFAULT 0,
+		  PRIMARY KEY (`id`),
+		  UNIQUE (`perm`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `p_role_system_perms` (
+		  `role_id` mediumint(11) NOT NULL,
+		  `perm_id` mediumint(11) NOT NULL,
+		  `system_id` mediumint(11) NOT NULL,
+		  PRIMARY KEY (`role_id`, `perm_id`, `system_id`),
+		  CONSTRAINT `p_role_system_perms_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `p_roles` (`id`) ON DELETE CASCADE,
+		  CONSTRAINT `p_role_system_perms_ibfk_2` FOREIGN KEY (`perm_id`) REFERENCES `p_system_perms` (`id`) ON DELETE CASCADE,
+		  CONSTRAINT `p_role_system_perms_ibfk_3` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `p_system_perms_who` (
+		  `id` mediumint(11) NOT NULL,
+		  `perm_id` mediumint(11) NOT NULL,
+		  `who` varchar(128) NOT NULL,
+		  `type` tinyint(1) NOT NULL,
+		  `system_id` mediumint(11) NOT NULL,
+		  CONSTRAINT `p_system_perms_who_ibfk_1` FOREIGN KEY (`perm_id`) REFERENCES `p_system_perms` (`id`) ON DELETE CASCADE,
+		  CONSTRAINT `p_system_perms_who_ibfk_2` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE OR REPLACE VIEW `p_system_perms_view` AS
+		SELECT DISTINCT
+		  `p_role_who`.`who` AS `who`,
+		  `p_role_who`.`type` AS `who_type`,
+		  `p_role_system_perms`.`system_id` AS `system_id`,
+		  LOWER(`p_system_perms`.`perm`) AS `perm`
+		FROM `p_role_who`
+		JOIN `p_role_system_perms` ON `p_role_who`.`role_id`=`p_role_system_perms`.`role_id`
+		JOIN `p_system_perms` ON `p_role_system_perms`.`perm_id`=`p_system_perms`.`id`
+		WHERE `p_system_perms`.`active`=1
+		UNION
+		SELECT DISTINCT
+		  `p_system_perms_who`.`who` AS `who`,
+		  `p_system_perms_who`.`type` AS `who_type`,
+		  `p_system_perms_who`.`system_id` AS `system_id`,
+		  LOWER(`p_system_perms`.`perm`) AS `perm`
+		FROM `p_system_perms_who`
+		JOIN `p_system_perms` ON `p_system_perms_who`.`perm_id`=`p_system_perms`.`id`
+		WHERE `p_system_perms`.`active`=1""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `p_puppet_perms` (
+		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
+		  `perm` varchar(64) NOT NULL,
+		  `description` text NOT NULL,
+		  `active` tinyint(1) NOT NULL DEFAULT 0,
+		  PRIMARY KEY (`id`),
+		  UNIQUE (`perm`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE TABLE IF NOT EXISTS `p_role_puppet_perms` (
+		  `role_id` mediumint(11) NOT NULL,
+		  `perm_id` mediumint(11) NOT NULL,
+		  `environment_id` mediumint(11) NOT NULL,
+		  PRIMARY KEY (`role_id`, `perm_id`, `environment_id`),
+		  CONSTRAINT `p_role_puppet_perms_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `p_roles` (`id`) ON DELETE CASCADE,
+		  CONSTRAINT `p_role_puppet_perms_ibfk_2` FOREIGN KEY (`perm_id`) REFERENCES `p_puppet_perms` (`id`) ON DELETE CASCADE,
+		  CONSTRAINT `p_role_puppet_perms_ibfk_3` FOREIGN KEY (`environment_id`) REFERENCES `puppet_environments` (`id`) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
+
+		cursor.execute("""CREATE OR REPLACE VIEW `p_puppet_perms_view` AS
+		SELECT DISTINCT
+		  `p_role_who`.`who` AS `who`,
+		  `p_role_who`.`type` AS `who_type`,
+		  `p_role_puppet_perms`.`environment_id` AS `environment_id`,
+		  LOWER(`p_puppet_perms`.`perm`) AS `perm`
+		FROM `p_role_who`
+		JOIN `p_role_puppet_perms` ON `p_role_who`.`role_id`=`p_role_puppet_perms`.`role_id`
+		JOIN `p_puppet_perms` ON `p_role_puppet_perms`.`perm_id`=`p_puppet_perms`.`id`
+		WHERE `p_puppet_perms`.`active`=1""")
+
 		## Clean up old tables
 		cursor.execute("""DROP TABLE IF EXISTS `workflow_perms`""")
 		cursor.execute("""DROP TABLE IF EXISTS `puppet_groups`""")
 		cursor.execute("""DROP TABLE IF EXISTS `puppet_modules_info`""")
-
-		# Ensure we have a default administrator role
-		cursor.execute("""INSERT IGNORE INTO `roles` (`id`, `name`, `description`) VALUES (1, "Administrator", "Has full access to everything")""")
-		# Add ALL permissions to this administrator role
-		insert_permissions_query = """INSERT IGNORE INTO `role_perms` (`role_id`, `perm`) VALUES """
-		for permission in [p['name'] for p in self.permissions]:
-			insert_permissions_query += """(1, "{permission}"), """.format(permission=permission)
-		insert_permissions_query = insert_permissions_query[:-2]
-		cursor.execute(insert_permissions_query)
 
 		## Close database connection
 		temp_db.close()
@@ -969,84 +1064,3 @@ Username:             %s
 
 ################################################################################
 
-	def init_permissions(self):
-		"""Sets up the list of permissions that can be assigned, must be run
-		before workflows are run"""
-
-		## The ORDER MATTERS! It determines the order used on the Roles page
-		self.permissions = [
-			{'name': 'cortex.admin',                       'desc': 'Cortex Administrator'},
-
-			{'name': 'systems.all.view',                   'desc': 'View any system'},
-			{'name': 'systems.own.view',                   'desc': 'View systems allocated by the user'},
-			{'name': 'systems.all.view.puppet',            'desc': 'View Puppet reports and facts on any system'},
-			{'name': 'systems.all.view.puppet.classify',   'desc': 'View Puppet classify on any system'},
-			{'name': 'systems.all.view.puppet.catalog',    'desc': 'View Puppet catalog on any system'},
-			{'name': 'systems.all.view.rubrik',            'desc': 'View Rubrik backups for any system'},
-			{'name': 'systems.all.edit.expiry',            'desc': 'Modify the expiry date of any system'},
-			{'name': 'systems.all.edit.review',            'desc': 'Modify the review status of any system'},
-			{'name': 'systems.all.edit.vmware',            'desc': 'Modify the VMware link on any system'},
-			{'name': 'systems.all.edit.cmdb',              'desc': 'Modify the CMDB link on any system'},
-			{'name': 'systems.all.edit.comment',           'desc': 'Modify the comment on any system'},
-			{'name': 'systems.all.edit.puppet',            'desc': 'Modify Puppet settings on any system'},
-			{'name': 'systems.all.edit.rubrik',            'desc': 'Modify Rubrik settings on any system'},
-			{'name': 'systems.all.edit.owners',            'desc': 'Modify the system owners on any system'},
-			{'name': 'vmware.view',                        'desc': 'View VMware data and statistics'},
-			{'name': 'puppet.dashboard.view',              'desc': 'View the Puppet dashboard'},
-			{'name': 'puppet.modules_info.view',           'desc': 'View the Puppet modules info'},
-			{'name': 'puppet.modules_info.add',            'desc': 'Add  to the Puppet modules info'},
-			{'name': 'puppet.modules_info.edit',           'desc': 'Modify the Puppet modules info'},
-			{'name': 'puppet.nodes.view',                  'desc': 'View the list of Puppet nodes'},
-			{'name': 'puppet.default_classes.view',        'desc': 'View the list of Puppet default classes'},
-			{'name': 'puppet.default_classes.edit',        'desc': 'Modify the list of Puppet default classes'},
-			{'name': 'puppet.documentation.view',          'desc': 'View the Puppet documentation'},
-			{'name': 'puppet.environments.edit',            'desc': 'Modify all Puppet environments'},
-			{'name': 'puppet.environments.view',            'desc': 'View all Puppet environments'},
-			{'name': 'classes.view',                       'desc': 'View the list of system class definitions'},
-			{'name': 'classes.edit',                       'desc': 'Edit system class definitions'},
-			{'name': 'tasks.view',                         'desc': 'View the details of all tasks (not just your own)'},
-			{'name': 'events.view',                        'desc': 'View the details of all events (not just your own)'},
-			{'name': 'specs.view',                         'desc': 'View the VM Specification Settings'},
-			{'name': 'specs.edit',                         'desc': 'Edit the VM Specification Settings'},
-			{'name': 'maintenance.vmware',                 'desc': 'Run VMware maintenance tasks'},
-			{'name': 'maintenance.cmdb',                   'desc': 'Run CMDB maintenance tasks'},
-			{'name': 'maintenance.expire_vm',              'desc': 'Run the Expire VM maintenance task'},
-			{'name': 'maintenance.sync_puppet_servicenow', 'desc': 'Run the Sync Puppet with ServiceNow task'},
-			{'name': 'maintenance.cert_scan',              'desc': 'Run the Certificate Scan task'},
-			{'name': 'maintenance.student_vm',             'desc': 'Run the Student VM Build task'},
-			{'name': 'maintenance.lock_workflows',         'desc': 'Run the Lock/Unlock Workflows task'},
-			{'name': 'maintenance.rubrik_policy_check',    'desc': 'Run the Rubrik Policy check task'},
-			{'name': 'api.register',                       'desc': 'Manually register Linux machines (rebuilds / physical machines)'},
-			{'name': 'admin.permissions',                  'desc': 'Modify permissions'},
-			{'name': 'workflows.all',                      'desc': 'Use any workflow or workflow function'},
-
-			{'name': 'control.all.vmware.power',           'desc': 'Contol the power settings of any VM'},
-
-			{'name': 'api.get',                            'desc': 'Send GET requests to the Cortex API'},
-			{'name': 'api.post',                           'desc': 'Send POST requests to the Cortex API'},
-			{'name': 'api.put',                            'desc': 'Send PUT requests to the Cortex API'},
-			{'name': 'api.delete',                         'desc': 'Send DELETE requests to the Cortex API'},
-
-			{'name': 'certificates.view',                  'desc': 'View the list of discovered certificates and their details'},
-			{'name': 'certificates.stats',                 'desc': 'View the statistics about certificates'},
-			{'name': 'certificates.add',                   'desc': 'Adds a certificate to the list of tracked certificates'},
-		]
-
-		self.workflow_permissions = []
-
-		self.system_permissions = [
-			{'name': 'view.overview',               'desc': 'View the system overview'},
-			{'name': 'view.detail',                 'desc': 'View the system details'},
-			{'name': 'view.puppet',                 'desc': 'View the system\'s Puppet reports and facts'},
-			{'name': 'view.puppet.classify',        'desc': 'View the system\'s Puppet classification'},
-			{'name': 'view.puppet.catalog',         'desc': 'View the system\'s Puppet catalog'},
-			{'name': 'edit.expiry',                 'desc': 'Change the expiry date of the system'},
-			{'name': 'edit.review',                 'desc': 'Change the review status of the system'},
-			{'name': 'edit.vmware',                 'desc': 'Change the VMware VM link'},
-			{'name': 'edit.cmdb',                   'desc': 'Change the CMDB link'},
-			{'name': 'edit.comment',                'desc': 'Change the comment'},
-			{'name': 'edit.owners',                 'desc': 'Change the system owners'},
-			{'name': 'edit.puppet',                 'desc': 'Change Puppet settings'},
-			{'name': 'edit.rubrik',                 'desc': 'Change Rubrik backup settings'},
-			{'name': 'control.vmware.power',        'desc': 'Control the VMware power state'},
-		]
