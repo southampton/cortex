@@ -12,7 +12,6 @@ from werkzeug.urls import url_encode
 
 ROLE_WHO_USER = 0
 ROLE_WHO_LDAP_GROUP = 1
-ROLE_WHO_NIS_GROUP = 2
 
 ################################################################################
 
@@ -39,7 +38,7 @@ def is_logged_in():
 ################################################################################
 
 def clear_session():
-	"""Ends the logged in user's login session. The session remains but it 
+	"""Ends the logged in user's login session. The session remains but it
 	is marked as being not logged in."""
 
 	if 'username' in session:
@@ -61,7 +60,7 @@ def logon_ok(username):
 	# Mark as logged on
 	session['username'] = username.lower()
 	session['logged_in'] = True
-	
+
 	# Update the user's realname in the cache table
 	try:
 		get_user_realname(session['username'], from_cache=False)
@@ -95,9 +94,9 @@ def authenticate(username, password):
 ################################################################################
 
 def get_users_groups(username=None, from_cache=True):
-	"""Returns a set (not a list) of groups that a user belongs to. The result is 
-	cached to improve performance and to lessen the impact on the LDAP server. The 
-	results are returned from the cache unless you set "from_cache" to be 
+	"""Returns a set (not a list) of groups that a user belongs to. The result is
+	cached to improve performance and to lessen the impact on the LDAP server. The
+	results are returned from the cache unless you set "from_cache" to be
 	False.
 
 	This function will return None in all cases where the user was not found
@@ -144,17 +143,17 @@ def get_users_groups(username=None, from_cache=True):
 #############################################################################
 
 def get_user_realname(username, from_cache=True):
-	"""Returns the real name of the passed username . The result is 
-	cached to improve performance and to lessen the impact on the LDAP server. The 
-	results are returned from the cache unless you set "from_cache" to be 
-	False. 
+	"""Returns the real name of the passed username . The result is
+	cached to improve performance and to lessen the impact on the LDAP server. The
+	results are returned from the cache unless you set "from_cache" to be
+	False.
 
 	This function will return the username  in all cases where the user was not found
 	or where there is no associated real name.
 	"""
 
-	# We cache the real names in MySQL because Active Directory is 
-	# dog slow and takes forever to respond with a list of groups, 
+	# We cache the real names in MySQL because Active Directory is
+	# dog slow and takes forever to respond with a list of groups,
 	# making pages load really slowly. We don't use REDIS because we have a
 	# MySQL view which needs to include the real name data.
 
@@ -205,7 +204,7 @@ def does_user_have_permission(perm, user=None):
 			# User not logged in - they definitely don't have permission!
 			return False
 
-	# Turn the permission(s) in to a lowercase list of permissions so we 
+	# Turn the permission(s) in to a lowercase list of permissions so we
 	# can check a number of permissions at once
 	if type(perm) is list:
 		for idx, val in enumerate(perm):
@@ -227,7 +226,7 @@ def does_user_have_permission(perm, user=None):
 		app.logger.debug("User " + str(user) + " did not have permission(s) " + str(perm))
 		return False
 
-	# There are situations (such as when pages are displayed during an error 
+	# There are situations (such as when pages are displayed during an error
 	# handler) that before_request isn't called, so in those cases assume no
 	# permissions
 	if 'db' not in g:
@@ -239,7 +238,7 @@ def does_user_have_permission(perm, user=None):
 	# Query role_who joined to role_perms to see which permissions a user
 	# has explicitly assigned to their username attached to a role
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT LOWER(`role_perms`.`perm`) AS `perm` FROM `role_who` JOIN `role_perms` ON `role_who`.`role_id` = `role_perms`.`role_id` JOIN `roles` ON `roles`.`id` = `role_perms`.`role_id` WHERE `role_who`.`who` = %s AND `role_who`.`type` = %s', (user, ROLE_WHO_USER))
+	curd.execute("SELECT `perm` FROM `p_perms_view` WHERE `who`=%s AND `who_type`=%s", (user, ROLE_WHO_USER))
 
 	# Start a set to build the users permissions
 	user_perms = set()
@@ -253,7 +252,7 @@ def does_user_have_permission(perm, user=None):
 	# Iterate over the groups, getting the roles (and thus permissions) for
 	# that group
 	for group in ldap_groups:
-		curd.execute('SELECT LOWER(`role_perms`.`perm`) AS `perm` FROM `role_who` JOIN `role_perms` ON `role_who`.`role_id` = `role_perms`.`role_id` JOIN `roles` ON `roles`.`id` = `role_perms`.`role_id` WHERE `role_who`.`who` = %s AND `role_who`.`type` = %s', (group.lower(), ROLE_WHO_LDAP_GROUP))
+		curd.execute("SELECT `perm` FROM `p_perms_view` WHERE `who`=%s AND `who_type`=%s", (group.lower(), ROLE_WHO_LDAP_GROUP))
 
 		# Add all the user permissions to the set
 		user_perms.update([row['perm'] for row in curd])
@@ -300,7 +299,7 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 		sysperm: A string containing the system permission to check for
 		perm: The global permission, which is the user has, overrides system
 			permissions and causes the function to return True irrespective
-			of whether the user has the system permission or not. Defaults to 
+			of whether the user has the system permission or not. Defaults to
 			None (no global permission is checked for)
 		user: The user whose permissions should be checked. Defaults to
 			None, which checks the currently logged in user.
@@ -319,7 +318,7 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 		if does_user_have_permission(perm,user):
 			return True
 
-	# There are situations (such as when pages are displayed during an error 
+	# There are situations (such as when pages are displayed during an error
 	# handler) that before_request isn't called, so in those cases assume no
 	# permissions
 	if 'db' not in g:
@@ -328,10 +327,10 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 
 	app.logger.debug("Checking system permissions for user " + str(user) + " on system " + str(system_id))
 
-	# Query the system_perms_view table to see if the user has the system
+	# Query the p_system_perms_view table to see if the user has the system
 	# explicitly given access to them
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT 1 FROM `system_perms_view` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (system_id, user, ROLE_WHO_USER, sysperm))
+	curd.execute('SELECT 1 FROM `p_system_perms_view` WHERE `system_id` = %s AND `who` = %s AND `who_type` = %s AND `perm` = %s', (system_id, user, ROLE_WHO_USER, sysperm))
 
 	# If a row is returned then they have the permission
 	if len(curd.fetchall()) > 0:
@@ -342,9 +341,9 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 
 	# Iterate over the groups, checking each group for the permission
 	for group in ldap_groups:
-		# Query the system_perms_view table to see if the permission is granted
+		# Query the p_system_perms_view table to see if the permission is granted
 		# to the group the user is in
-		curd.execute('SELECT 1 FROM `system_perms_view` WHERE `system_id` = %s AND `who` = %s AND `type` = %s AND `perm` = %s', (system_id, group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
+		curd.execute('SELECT 1 FROM `p_system_perms_view` WHERE `system_id` = %s AND `who` = %s AND `who_type` = %s AND `perm` = %s', (system_id, group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
 
 		# If a row is returned then they have access to the workflow
 		if len(curd.fetchall()) > 0:
@@ -372,10 +371,10 @@ def does_user_have_any_system_permission(sysperm,user=None):
 
 	app.logger.debug("Checking to see if " + str(user) + " has system permission " + sysperm + " on any system")
 
-	# Query the system_perms_view table to see if the user has the system
+	# Query the p_system_perms_view table to see if the user has the system
 	# explicitly given access to them
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT 1 FROM `system_perms_view` WHERE `who` = %s AND `type` = %s AND `perm` = %s', (user, ROLE_WHO_USER, sysperm))
+	curd.execute('SELECT 1 FROM `p_system_perms_view` WHERE `who` = %s AND `who_type` = %s AND `perm` = %s', (user, ROLE_WHO_USER, sysperm))
 
 	# If a row is returned then they have the permission
 	if len(curd.fetchall()) > 0:
@@ -387,9 +386,9 @@ def does_user_have_any_system_permission(sysperm,user=None):
 
 	# Iterate over the groups, checking each group for the permission
 	for group in ldap_groups:
-		# Query the system_perms_view table to see if the permission is granted
+		# Query the p_system_perms_view table to see if the permission is granted
 		# to the group the user is in
-		curd.execute('SELECT 1 FROM `system_perms_view` WHERE `who` = %s AND `type` = %s AND `perm` = %s', (group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
+		curd.execute('SELECT 1 FROM `p_system_perms_view` WHERE `who` = %s AND `who_type` = %s AND `perm` = %s', (group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
 
 		# If a row is returned then they have access to the workflow
 		if len(curd.fetchall()) > 0:
@@ -401,10 +400,73 @@ def does_user_have_any_system_permission(sysperm,user=None):
 
 ################################################################################
 
-def does_user_exist(username):
+def does_user_have_puppet_permission(environment_id,sysperm,perm=None,user=None):
+	"""Returns a boolean indicating if a user has the specified permission
+	on the Puppet environment specified in environment_id. If 'perm' is supplied
+	then the function returns true if the user has the global 'perm' instead
+	(e.g. a global override permission).
+		environment_id: The Cortex environment_id id of the Puppet environment
+			(as found in the puppet_environments table)
+		sysperm: A string containing the Puppet permission to check for
+		perm: The global permission, which is the user has, overrides puppet
+			permissions and causes the function to return True irrespective
+			of whether the user has the puppet permission or not. Defaults to
+			None (no global permission is checked for)
+		user: The user whose permissions should be checked. Defaults to
+			None, which checks the currently logged in user.
+	"""
 
+	# Default to using the current user
+	if user is None:
+		if 'username' in session:
+			user = session['username']
+		else:
+			# User not logged in - they definitely don't have permission!
+			return False
+
+	## Global permission override
+	if perm is not None:
+		if does_user_have_permission(perm,user):
+			return True
+
+	# There are situations (such as when pages are displayed during an error
+	# handler) that before_request isn't called, so in those cases assume no
+	# permissions
+	if 'db' not in g:
+		app.logger.warn('Database not present in puppet permission check!')
+		return False
+
+	app.logger.debug("Checking puppet permissions for user " + str(user) + " on environment " + str(environment_id))
+
+	# Query the p_puppet_perms_view table to see if the user has the Puppet environment
+	# explicitly given access to them
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT 1 FROM `p_puppet_perms_view` WHERE `environment_id` = %s AND `who` = %s AND `who_type` = %s AND `perm` = %s', (environment_id, user, ROLE_WHO_USER, sysperm))
+
+	# If a row is returned then they have the permission
+	if len(curd.fetchall()) > 0:
+		return True
+
+	# Get the (possibly cached) list of groups for the user
+	ldap_groups = get_users_groups(user)
+
+	# Iterate over the groups, checking each group for the permission
+	for group in ldap_groups:
+		# Query the p_puppet_perms_view table to see if the permission is granted
+		# to the group the user is in
+		curd.execute('SELECT 1 FROM `p_puppet_perms_view` WHERE `environment_id` = %s AND `who` = %s AND `who_type` = %s AND `perm` = %s', (environment_id, group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
+
+		# If a row is returned then they have access to the workflow
+		if len(curd.fetchall()) > 0:
+			return True
+
+	return False
+
+################################################################################
+
+def does_user_exist(username):
 	try:
-		passwd = pwd.getpwnam(username)
+		pwd.getpwnam(username)
 		return True
 	except KeyError as e:
 		return False

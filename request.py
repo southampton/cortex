@@ -139,7 +139,6 @@ def context_processor():
 	perms = []
 	if does_user_have_permission("admin.permissions"):
 		perms.append({'link': url_for('perms_roles'), 'title': 'Permission Roles', 'icon': 'fa-user-secret'})
-		perms.append({'link': url_for('system_perms_roles'), 'title': 'System Permission Roles', 'icon': 'fa-user-secret'})
 		perms.append({'link': url_for('systems_withperms'), 'title': 'Systems with permissions', 'icon': 'fa-list'})
 
 	# Set injectdata default options.

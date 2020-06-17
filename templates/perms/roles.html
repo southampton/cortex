@@ -38,11 +38,7 @@
 		<a data-toggle="modal" data-target="#create" class="btn btn-primary btn-md"><i class="fa fa-fw fa-plus" style="color: white;"></i> <span class="d-sm-none d-none">Create Role</span></a>
 	</div>
 	<h4><i class="fa fa-fw fa-user-secret"></i> {{ title }}</h4>
-{%- if manage_role_route == 'system_perms_role' %}
-	<div class="text-muted">A system role is a group of systems and permissions. Users are given one or more system roles which grant them the permissions over the systems assigned to those roles</div>
-{%- else %}
 	<div class="text-muted">A role is a group of permissions. Users are given one or more roles which grant them the permissions assigned to those roles</div>
-{%- endif %}
 </div>
 
 <table class="table table-sm table-striped" id="classes">
@@ -59,7 +55,7 @@
 		<tr>
 			<td>{{ role.name }}</td>
 			<td>{{ role.description }}</td>
-			<td><a href="{{ url_for(manage_role_route,id=role.id) }}" class="btn btn-xs btn-secondary"><i class="fa fa-fw fa-edit"></i>Manage</a></td>
+			<td><a href="{{ url_for(manage_role_route, role_id=role.id) }}" class="btn btn-xs btn-secondary"><i class="fa fa-fw fa-edit"></i>Manage</a></td>
 		</tr>
 {%-     endfor %}
 {%- else %}

@@ -5,12 +5,12 @@
 {% endblock %}
 {% block body %}
 
-<div class="modal fade" id="edit" role="dialog">
+<div class="modal fade" id="edit_role" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form role="form" method="POST" class="form-horizontal">
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-				<input name="action" type="hidden" value="edit"/>
+				<input name="action" type="hidden" value="edit_role"/>
 				<div class="modal-header">
 					<h4 class="modal-title">Edit role</h4>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -39,12 +39,12 @@
 	</div>
 </div>
 
-<div class="modal fade" id="delete" role="dialog">
+<div class="modal fade" id="delete_role" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form role="form" method="POST" class="form-horizontal">
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-				<input name="action" type="hidden" value="delete"/>
+				<input name="action" type="hidden" value="delete_role"/>
 				<div class="modal-header">
 					<h4 class="modal-title">Delete role</h4>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -61,12 +61,12 @@
 	</div>
 </div>
 
-<div class="modal fade" id="add" role="dialog">
+<div class="modal fade" id="add_user" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form role="form" method="POST" class="form-horizontal">
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-				<input name="action" type="hidden" value="add"/>
+				<input name="action" type="hidden" value="add_user"/>
 				<div class="modal-header">
 					<h4 class="modal-title">Add user or group</h4>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -97,7 +97,30 @@
 	</div>
 </div>
 
-<div class="modal fade" id="addSystem" role="dialog">
+<div class="modal fade" id="remove_user" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form role="form" method="POST" class="form-horizontal">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input name="action" type="hidden" value="remove_user"/>
+				<input id="remove_user-who-id" name="wid" type="hidden" value=""/>
+				<div class="modal-header">
+					<h4 class="modal-title">Remove user/group</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				</div>
+				<div class="modal-body">
+					<p>Are you sure you want to remove '<span id="remove_user-who-text">unknown</span>' from this role?</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+					<button type="submit" class="btn btn-warning">Remove</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="add_system" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form role="form" method="POST" class="form-horizontal">
@@ -111,11 +134,26 @@
 					<div class="form-group row">
 						<label class="col-sm-2 control-label">Name</label>
 						<div class="col-sm-10">
-							<select class="selectpicker" name="name" data-live-search="true" data-width="100%">
+							<select class="selectpicker" name="system_id" data-live-search="true" data-width="100%">
 								{%- for system in systems %}
-								<option value="{{ system['name'] }}">{{ system['name'] }} - {{ system['allocation_comment'] }}</option>
+								<option value="{{ system['id'] }}">{{ system['name'] }} - {{ system['allocation_comment'] }}</option>
 								{% endfor -%}
-							</select>	
+							</select>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="col-sm-2 control-label">Permissions</label>
+						<div class="col-sm-10">
+
+						{% for perm in permissions.system %}
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" id="{{perm['name']}}" name="{{perm['name']}}" value="yes">
+										{{ perm['desc'] }}
+									</label>
+								</div>
+						{% endfor %}
+
 						</div>
 					</div>
 				</div>
@@ -128,43 +166,19 @@
 	</div>
 </div>
 
-
-<div class="modal fade" id="remove" role="dialog">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<form role="form" method="POST" class="form-horizontal">
-				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-				<input name="action" type="hidden" value="remove"/>
-				<input id="remove-who-id" name="wid" type="hidden" value=""/>
-				<div class="modal-header">
-					<h4 class="modal-title">Remove user/group</h4>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-				</div>
-				<div class="modal-body">
-					<p>Are you sure you want to remove '<span id="remove-who-text">unknown</span>' from this role?</p>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
-					<button type="submit" class="btn btn-warning">Remove</button>
-				</div>
-			</form>
-		</div>
-	</div>
-</div>
-
-<div class="modal fade" id="removeSystem" role="dialog">
+<div class="modal fade" id="remove_system" role="dialog">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<form role="form" method="POST" class="form-horizontal">
 				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 				<input name="action" type="hidden" value="remove_system"/>
-				<input id="remove-what-id" name="sid" type="hidden" value=""/>
+				<input id="remove_system-id" name="system_id" type="hidden" value=""/>
 				<div class="modal-header">
 					<h4 class="modal-title">Remove system</h4>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
 				</div>
 				<div class="modal-body">
-					<p>Are you sure you want to remove '<span id="remove-what-text">unknown</span>' from this role?</p>
+					<p>Are you sure you want to remove '<span id="remove_system-name">unknown</span>' from this role?</p>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
@@ -175,137 +189,337 @@
 	</div>
 </div>
 
+<div class="modal fade" id="add_environment" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form role="form" method="POST" class="form-horizontal">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input name="action" type="hidden" value="add_environment"/>
+				<div class="modal-header">
+					<h4 class="modal-title">Add environment</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				</div>
+				<div class="modal-body">
+					<div class="form-group row">
+						<label class="col-sm-2 control-label">Name</label>
+						<div class="col-sm-10">
+							<select class="selectpicker" name="environment_id" data-live-search="true" data-width="100%">
+								{%- for environment in environments %}
+								<option value="{{ environment['id'] }}">{{ environment['environment_name'] }} - {{ environment['short_name'] }}</option>
+								{% endfor -%}
+							</select>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="col-sm-2 control-label">Permissions</label>
+						<div class="col-sm-10">
+
+						{% for perm in permissions.puppet %}
+								<div class="checkbox">
+									<label>
+										<input type="checkbox" id="{{perm['name']}}" name="{{perm['name']}}" value="yes">
+										{{ perm['desc'] }}
+									</label>
+								</div>
+						{% endfor %}
+
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+					<button type="submit" class="btn btn-primary">Add</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="remove_environment" role="dialog">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form role="form" method="POST" class="form-horizontal">
+				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+				<input name="action" type="hidden" value="remove_environment"/>
+				<input id="remove_environment-id" name="environment_id" type="hidden" value=""/>
+				<div class="modal-header">
+					<h4 class="modal-title">Remove environment</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				</div>
+				<div class="modal-body">
+					<p>Are you sure you want to remove '<span id="remove_environment-name">unknown</span>' from this role?</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+					<button type="submit" class="btn btn-warning">Remove</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
 
 <div class="page-header">
 	<div class="pull-right">
-		<a data-toggle="modal" data-target="#edit" class="btn btn-warning" style="color: white;"><i class="fa fa-fw fa-edit"></i> <span class="d-sm-none d-none d-md-inline">Edit role</span></a>
-		<a data-toggle="modal" data-target="#delete" class="btn btn-danger" style="color: white;"><i class="fa fa-fw fa-trash"></i> <span class="d-sm-none d-none d-md-inline">Delete role</span></a>
+		<a data-toggle="modal" data-target="#edit_role" class="btn btn-warning" style="color: white;"><i class="fa fa-fw fa-edit"></i> <span class="d-sm-none d-none d-md-inline">Edit role</span></a>
+		<a data-toggle="modal" data-target="#delete_role" class="btn btn-danger" style="color: white;"><i class="fa fa-fw fa-trash"></i> <span class="d-sm-none d-none d-md-inline">Delete role</span></a>
 	</div>
 	<h4><i class="fa fa-fw fa-user-secret"></i> {{role.name}}</h4>
 	<div class="text-muted">{{role.description}}</div>
 </div>
 
 <div class="row">
-	<div class="col-md-6">
-		<form role="form" method="POST" class="form-horizontal">
-		<div class="card card-default">
-			<div class="card-header">
-				<div class="pull-right">
-					<button type="submit" class="btn btn-sm btn-primary" style="font-size: 12px;">Save</button>
-				</div>
-				<h4 class="card-title">Permissions</h4>
+	{#- Permissions - Separated into tabs for 'Global', 'Systems' and 'Puppet' -#}
+	<div class="col-lg-8 col-md-6">
+		<nav>
+			<div class="nav nav-tabs mb-3" id="permissions-tab" role="tablist">
+				<a class="nav-item nav-link{%- if active_tab == 'global' %} active{%- endif -%}" id="permissions-global-tab" data-toggle="tab" href="#permissions-global" role="tab" aria-controls="permissions-global" aria-selected="true">Global and Workflow Permissions</a>
+				<a class="nav-item nav-link{%- if active_tab == 'systems' %} active{%- endif -%}" id="permissions-systems-tab" data-toggle="tab" href="#permissions-systems" role="tab" aria-controls="permissions-systems" aria-selected="false">System Permissions</a>
+				<a class="nav-item nav-link{%- if active_tab == 'puppet' %} active{%- endif -%}" id="permissions-puppet-tab" data-toggle="tab" href="#permissions-puppet" role="tab" aria-controls="permissions-puppet" aria-selected="false">Puppet Permissions</a>
 			</div>
-		
-			<div class="card-body">
-				<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
-				<input name="action" type="hidden" value="update"/>
+		</nav>
+		{#- Global and Workflow Permissions -#}
+		<div class="tab-content" id="permissions-tab-content">
+			<div class="tab-pane fade{%- if active_tab == 'global' %} show active{%- endif -%}" id="permissions-global" role="tabpanel" aria-labelledby="permissions-global-tab">
+				<form role="form" method="POST" class="form-horizontal">
+					<div class="card card-default">
+						<div class="card-header">
+							<div class="pull-right">
+								<button type="submit" class="btn btn-sm btn-primary" style="font-size: 12px;">Save</button>
+							</div>
+							<h4 class="card-title">Permissions</h4>
+						</div>
+						<div class="card-body">
+							<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+							<input name="action" type="hidden" value="update_perms"/>
 
-				<fieldset>
-				{% if perms %}
-				<legend>Global permissions</legend>
+							<fieldset>
+							{% if permissions.permissions %}
+							<legend>Global permissions</legend>
 
-				{% for perm in perms %}
-				<div class="checkbox">
-					<label>
-						<input type="checkbox" id="{{perm['name']}}" name="{{perm['name']}}" value="yes"{% if perm['name'] in rperms %} checked="checked"{%endif%}>
-						{{ perm['desc'] }}
-					</label>
+							{% for perm in permissions.permissions %}
+							<div class="checkbox">
+								<label>
+									<input type="checkbox" id="{{perm['name']}}" name="{{perm['name']}}" value="yes"{% if perm['name'] in role.perms %} checked="checked"{%endif%}>
+									{{ perm['desc'] }}
+								</label>
+							</div>
+							{% endfor %}
+							</fieldset>
+							{% endif %}
+
+							<fieldset>
+
+							{% if permissions.workflow %}
+							<legend>Workflow permissions</legend>
+
+							{% for perm in permissions.workflow %}
+							<div class="checkbox">
+								<label>
+									<input type="checkbox" id="{{perm['name']}}" name="{{perm['name']}}" value="yes"{% if perm['name'] in role.perms %} checked="checked"{%endif%}>
+									{{ perm['desc'] }}
+								</label>
+							</div>
+							{% endfor %}
+							{% endif %}
+
+							</fieldset>
+
+							<div class="text-center">
+								<button type="submit" class="btn btn-primary">Save</button>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+			{#- System Permissions -#}
+			<div class="tab-pane fade{%- if active_tab == 'systems' %} show active{%- endif -%}" id="permissions-systems" role="tabpanel" aria-labelledby="permissions-systems-tab">
+				<div class="row">
+					<div class="col-md-4">
+						<div class="card card-default" style="min-height: 300px">
+							<div class="card-header">
+								<h4 class="card-title">Systems</h4>
+							</div>
+							<ul class="nav nav-pills flex-column">
+							{% for system_id in role.system_perms %}
+								<li{% if loop.first %} class="nav-item"{% endif%}>
+									<a class="nav-link {% if loop.first %} active {% endif%}" href="#p-system-{{system_id}}" data-toggle="pill">
+										<i class="fa fa-fw fa-server"></i>&nbsp;{{role.system_perms[system_id]["name"]}}
+									</a>
+								</li>
+							{% endfor %}
+								<li class="nav-item">
+									<a href="#" class="nav-link" data-toggle="modal" data-target="#add_system"><i class="fa fa-fw fa-plus"></i> Add system</a>
+								</li>
+							</ul>
+						</div>
+					</div>
+					<div class="col-md-8">
+						<div class="tab-content">
+							{% for system_id in role.system_perms %}
+							<div class="tab-pane{% if loop.first %} active{% endif%}" id="p-system-{{system_id}}">
+								<div class="card card-default" style="min-height: 300px">
+									<div class="card-header">
+										<h4 class="card-title">Permissions for system '{{role.system_perms[system_id]["name"]}}'</h4>
+									</div>
+									<div class="card-body">
+										<form role="form" method="POST" class="form-horizontal">
+											<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+											<input name="action" type="hidden" value="edit_system"/>
+											<input name="system_id" type="hidden" value="{{system_id}}"/>
+
+											<fieldset>
+											{% for perm in permissions.system %}
+											<div class="checkbox">
+												<label>
+													<input type="checkbox" id="{{perm['name']}}" name="{{perm['name']}}" value="yes"{% if perm['name'] in role.system_perms[system_id]["perms"] %} checked="checked"{%endif%}>
+													{{ perm['desc'] }}
+												</label>
+											</div>
+											{% endfor %}
+
+											</fieldset>
+
+											<button type="submit" class="btn btn-success">Save changes to system</button>
+											<a href="#" data-toggle="modal" data-target="#remove_system" data-id="{{system_id}}" data-name="{{role.system_perms[system_id]['name']}}" class="btn btn-danger">Remove system</a>
+										</form>
+									</div>
+								</div>
+							</div>
+							{% else %}
+							<div class="card card-default" style="min-height: 600px">
+								<div class="card-header">
+									<h4 class="card-title">Permissions</h4>
+								</div>
+								<div class="card-body">
+									<span class="text-muted">Select "Add system" on the left to get started</span>
+								</div>
+							</div>
+							{% endfor %}
+						</div>
+					</div>
 				</div>
-				{% endfor %}
-				</fieldset>
-				{% endif %}
+			</div>
+			{#- Puppet Permissions -#}
+			<div class="tab-pane fade{%- if active_tab == 'puppet' %} show active{%- endif -%}" id="permissions-puppet" role="tabpanel" aria-labelledby="permissions-puppet-tab">
+				<div class="row">
+					<div class="col-md-4">
+						<div class="card card-default" style="min-height: 300px">
+							<div class="card-header">
+								<h4 class="card-title">Environments</h4>
+							</div>
+							<ul class="nav nav-pills flex-column">
+							{% for environment_id in role.puppet_perms %}
+								<li{% if loop.first %} class="nav-item"{% endif%}>
+									<a class="nav-link {% if loop.first %} active {% endif%}" href="#p-puppet-{{environment_id}}" data-toggle="pill">
+										<i class="fa fa-fw fa-envira"></i>&nbsp;{{role.puppet_perms[environment_id]["name"]}}
+									</a>
+								</li>
+							{% endfor %}
+								<li class="nav-item">
+									<a href="#" class="nav-link" data-toggle="modal" data-target="#add_environment"><i class="fa fa-fw fa-plus"></i> Add environment</a>
+								</li>
+							</ul>
+						</div>
+					</div>
+					<div class="col-md-8">
+						<div class="tab-content">
+							{% for environment_id in role.puppet_perms %}
+							<div class="tab-pane{% if loop.first %} active{% endif%}" id="p-puppet-{{environment_id}}">
+								<div class="card card-default" style="min-height: 300px">
+									<div class="card-header">
+										<h4 class="card-title">Permissions for environment '{{role.puppet_perms[environment_id]["name"]}}'</h4>
+									</div>
+									<div class="card-body">
+										<form role="form" method="POST" class="form-horizontal">
+											<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+											<input name="action" type="hidden" value="edit_environment"/>
+											<input name="environment_id" type="hidden" value="{{environment_id}}"/>
 
-				<fieldset>
+											<fieldset>
+											{% for perm in permissions.puppet %}
+											<div class="checkbox">
+												<label>
+													<input type="checkbox" id="{{perm['name']}}" name="{{perm['name']}}" value="yes"{% if perm['name'] in role.puppet_perms[environment_id]["perms"] %} checked="checked"{%endif%}>
+													{{ perm['desc'] }}
+												</label>
+											</div>
+											{% endfor %}
 
-				{% if wfperms %}
-				<legend>Workflow permissions</legend>
+											</fieldset>
 
-				{% for perm in wfperms %}
-				<div class="checkbox">
-					<label>
-						<input type="checkbox" id="{{perm['name']}}" name="{{perm['name']}}" value="yes"{% if perm['name'] in rperms %} checked="checked"{%endif%}>
-						{{ perm['desc'] }}
-					</label>
-				</div>
-				{% endfor %}
-				{% endif %}
-
-				{% if system_perms %}
-				<legend>System permissions</legend>
-
-				{% for perm in system_perms %}
-				<div class="checkbox">
-					<label>
-						<input type="checkbox" id="{{perm['name']}}" name="{{perm['name']}}" value="yes"{% if perm['name'] in rperms %} checked="checked"{%endif%}>
-						{{ perm['desc'] }}
-					</label>
-				</div>
-				{% endfor %}
-				{% endif %}
-				</fieldset>
-
-				<div class="text-center">
-					<button type="submit" class="btn btn-primary">Save</button>
+											<button type="submit" class="btn btn-success">Save changes to environment</button>
+											<a href="#" data-toggle="modal" data-target="#remove_environment" data-id="{{environment_id}}" data-name="{{role.puppet_perms[environment_id]['name']}}" class="btn btn-danger">Remove environment</a>
+										</form>
+									</div>
+								</div>
+							</div>
+							{% else %}
+							<div class="card card-default" style="min-height: 600px">
+								<div class="card-header">
+									<h4 class="card-title">Permissions</h4>
+								</div>
+								<div class="card-body">
+									<span class="text-muted">Select "Add environment on the left to get started</span>
+								</div>
+							</div>
+							{% endfor %}
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
-		</form>
 	</div>
-	<div class="col-md-6">
-		<div class="card card-default">
-			<div class="card-header">
-				<div class="pull-right"><a data-toggle="modal" data-target="#add" class="btn btn-sm btn-success"><i class="fa fa-fw fa-plus" style="color: white;"></i></a></a></div>
-				<h4 class="card-title">Users and groups</h4>
+	{#- User / Groups -#}
+	<div class="col-lg-4 col-md-6">
+		<nav>
+			<div class="nav nav-tabs mb-3" id="users-tab" role="tablist">
+				<a class="nav-item nav-link active" id="users-tab" data-toggle="tab" href="#users" role="tab" aria-controls="users" aria-selected="true">Users and Groups</a>
 			</div>
-			<table class="table table-striped table-hover table-sm role-table">
-				<tbody>
-					{% for who in role['who'] %}
-					<tr>
-						<td><span class="text-muted">{% if who['type'] == 0 %}<i class="fa fa-user"></i> User</span> {{who['who']}} {% if who['realname'] %} ({{who['realname']}}) {%endif%} {%elif who['type'] == 1 %}<i class="fa fa-windows"></i> AD Group</span> {{who['who']}}{%else%}Unknown entry{%endif%}</span></td>
-						<td class="text-right"><a data-toggle="modal" data-target="#remove" data-name="{{who['who']}}" data-wid="{{who['id']}}" class="btn btn-sm btn-danger" style="color: white; font-size: 12px;">Remove</a></td>
-					</tr>
-					{%else%}
-					<tr><td colspan="2"><span class="text-muted">No users or groups have been assigned to this role</span></td></tr>
-					{% endfor %}
-				</tbody>
-			</table>
-		</div>
-		{% if 'what' in role %}
-		<div class="card card-default">
-			<div class="card-header">
-				<div class="pull-right"><a data-toggle="modal" data-target="#addSystem" class="btn btn-sm btn-success" style="color: white;"><i class="fa fa-fw fa-plus"></i></a></a></div>
-				<h4 class="card-title">Systems</h4>
+		</nav>
+		<div class="tab-content" id="users-tab-content">
+			<div class="tab-pane fade show active" id="users" role="tabpanel" aria-labelledby="users-tab">
+				<div class="card card-default">
+					<div class="card-header">
+						<div class="pull-right"><a data-toggle="modal" data-target="#add_user" class="btn btn-sm btn-success"><i class="fa fa-fw fa-plus" style="color: white;"></i></a></a></div>
+						<h4 class="card-title">Users and groups</h4>
+					</div>
+					<table class="table table-striped table-hover table-sm role-table">
+						<tbody>
+							{% for who in role['who'] %}
+							<tr>
+								<td><span class="text-muted">{% if who['type'] == 0 %}<i class="fa fa-user"></i> User</span> {{who['who']}} {% if who['realname'] %} ({{who['realname']}}) {%endif%} {%elif who['type'] == 1 %}<i class="fa fa-windows"></i> AD Group</span> {{who['who']}}{%else%}Unknown entry{%endif%}</span></td>
+								<td class="text-right"><a data-toggle="modal" data-target="#remove_user" data-name="{{who['who']}}" data-wid="{{who['id']}}" class="btn btn-sm btn-danger" style="color: white; font-size: 12px;">Remove</a></td>
+							</tr>
+							{%else%}
+							<tr><td colspan="2"><span class="text-muted">No users or groups have been assigned to this role</span></td></tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
 			</div>
-			<table class="table table-striped table-hover table-sm role-table">
-				<tbody>
-					{% for what in role['what'] %}
-					<tr>
-						<td><span class="text-muted"><i class="fa fa-server"> </i> System</span> {{what['name']}}</td>
-						<td class="text-right"><a data-toggle="modal" data-target="#removeSystem" data-name="{{what['name']}}" data-sid="{{what['system_id']}}" class="btn btn-sm btn-danger" style="color: white; font-size: 12px;">Remove</a></td>
-					</tr>
-					{%else%}
-					<tr><td colspan="2"><span class="text-muted">No systems have been assigned to this role</span></td></tr>
-					{% endfor %}
-				</tbody>
-			</table>
 		</div>
-		{% endif %}
 	</div>
 </div>
 <script type="text/javascript">
 $(document).ready(function()
 {
-	$('#remove').on('show.bs.modal', function (event)
+	$('#remove_user').on('show.bs.modal', function (event)
 	{
 		var link = $(event.relatedTarget)
-		$('#remove-who-text').text(link.data('name'));
-		$('#remove-who-id').val(link.data('wid'));
+		$('#remove_user-who-text').text(link.data('name'));
+		$('#remove_user-who-id').val(link.data('wid'));
+	});
+	$('#remove_system').on('show.bs.modal', function (event)
+	{
+		var link = $(event.relatedTarget)
+		$('#remove_system-name').text(link.data('name'));
+		$('#remove_system-id').val(link.data('id'));
 	})
-	$('#removeSystem').on('show.bs.modal', function (event)
+	$('#remove_environment').on('show.bs.modal', function (event)
 	{
 		var link = $(event.relatedTarget)
-		$('#remove-what-text').text(link.data('name'));
-		$('#remove-what-id').val(link.data('sid'));
+		$('#remove_environment-name').text(link.data('name'));
+		$('#remove_environment-id').val(link.data('id'));
 	})
 });
 </script>
