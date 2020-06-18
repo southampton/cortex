@@ -1,20 +1,26 @@
 
-from cortex import app
-import cortex.lib.puppet
-import cortex.lib.core
-import cortex.lib.systems
-from cortex.lib.user import does_user_have_permission, does_user_have_system_permission
-from cortex.lib.errors import stderr
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
-import os
-import time
 import json
+import os
 import re
-import werkzeug
+import time
+
 import MySQLdb as mysql
-import yaml
 import pypuppetdb
+import werkzeug
+import yaml
+from flask import (Flask, abort, flash, g, jsonify, make_response, redirect,
+                   render_template, request, session, url_for)
 from requests.exceptions import HTTPError
+
+import cortex.lib.core
+import cortex.lib.puppet
+import cortex.lib.systems
+from cortex import app
+from cortex.lib.errors import stderr
+from cortex.lib.user import (does_user_have_any_puppet_permission,
+                             does_user_have_permission,
+                             does_user_have_puppet_permission,
+                             does_user_have_system_permission)
 
 ################################################################################
 
@@ -543,24 +549,61 @@ def puppet_documentation(environment_id=None, module_id=None):
 
 	return render_template('puppet/docs.html', active='puppet', title="Puppet Documentation", module=module, data=data, q=request.args.get("q", None))
 
-@app.route("/puppet/environments")
-@app.route("/puppet/environments/<int:environment_id>", methods=["GET", "POST"])
+
+@app.route("/puppet/environments", methods=["GET", "POST"])
+@app.route("/puppet/environments/<int:environment_id>")
 def puppet_environments(environment_id=None):
 	"""Show the Puppet documentation"""
 
-	# Check user permissions
-	if not does_user_have_permission("puppet.environments.view"):
-		abort(403)
+	# Handle POST request
+	if request.method == "POST" and all(k in request.form for k in ["action", "environment_id"]):
+		environment_id = request.form["environment_id"]
+		if request.form["action"] == "delete_environment":
+			if not does_user_have_puppet_permission(environment_id, "delete", "puppet.environments.all.delete"):
+				abort(403)
+			elif "puppet" not in app.workflows:
+				return stderr("Unable to delete Puppet environment", "Error deleting Puppet environment, the workflow 'puppet' is required in order to delete Puppet environments, but was not found in app.workflows.")
+			else:
+				# Task Options
+				options = {
+					"actions": [{"id":"environment.delete", "desc": "Deleting Puppet Environment"}],
+					"values": {"environment_id": environment_id},
+				}
+				# Everything should be good - start a task.
+				neocortex = cortex.lib.core.neocortex_connect()
+				task_id = neocortex.create_task("puppet", session["username"], options, description="Delete Puppet Environment")
+				# Redirect to the status page for the task
+				return redirect(url_for("task_status", id=task_id))
+		else:
+			abort(400)
 
-	# Get the database cursor
-	curd = g.db.cursor(mysql.cursors.DictCursor)
-	environment = None
-	data = []
-	if environment_id:
-		curd.execute("SELECT * FROM `puppet_environments` WHERE `id`=%s", (environment_id,))
-		environment = curd.fetchone()
+	# Handle GET request
 	else:
-		curd.execute("SELECT * FROM `puppet_environments` ORDER BY `id` ASC")
-		data = curd.fetchall()
+		# Get the database cursor
+		curd = g.db.cursor(mysql.cursors.DictCursor)
 
-	return render_template("puppet/environments.html", active="puppet", title="Puppet Environments", environment=environment, data=data)
+		environments = []
+		if environment_id and does_user_have_puppet_permission(environment_id, "view", "puppet.environments.all.view"):
+			curd.execute("SELECT * FROM `puppet_environments` WHERE `id`=%s LIMIT 1", (environment_id,))
+			environments = curd.fetchall()
+		elif environment_id is None:
+			query = "SELECT * FROM `puppet_environments`"
+			params = ()
+			if does_user_have_permission("puppet.environments.all.view"):
+				query += " ORDER BY `id` ASC"
+			elif does_user_have_any_puppet_permission("view"):
+				query += " WHERE `id` IN (SELECT `environment_id` FROM `p_puppet_perms_view` WHERE `perm`='view' AND ((`who_type`=0 AND `who`=%s) OR (`who_type`=1 AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username`=%s)))) ORDER BY `id` ASC"
+				params += (session["username"], session["username"])
+			else:
+				abort(403)
+
+			curd.execute(query, params)
+			environments = curd.fetchall()
+		else:
+			abort(403)
+
+		# If no results could be found
+		if not environments:
+			abort(404)
+
+		return render_template("puppet/environments.html", active="puppet", title="Puppet Environments", environments=environments)

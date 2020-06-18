@@ -11,9 +11,9 @@ def run(helper, options):
 
 		# Select an action
 		if action["id"] == "environment.create":
-			r = environment_create(options["values"], helper, options["wfconfig"])
+			r = environment_create(options["values"], helper)
 		elif action["id"] == "environment.delete":
-			r = environment_create(options["values"], helper, options["wfconfig"])
+			r = environment_delete(options["values"], helper)
 
 		# End the event (don't change the description) if the action
 		# succeeded. The action_* functions either raise Exceptions or
@@ -23,7 +23,7 @@ def run(helper, options):
 		else:
 			raise RuntimeError("Action {} ({}) failed to complete successfully".format(action["desc"], action["id"]))
 
-def environment_create(values, helper, wfconfig):
+def environment_create(values, helper):
 	"""Create a new Puppet environment"""
 
 	# Build the URL
@@ -49,21 +49,61 @@ def environment_create(values, helper, wfconfig):
 		return False
 
 	# Insert the details into the database
-	helper.curd.execute("INSERT INTO `puppet_environments` (`short_name`, `environment_name`, `type`) VALUES (%s, %s, %s)", (values["environment_short_name"], values["environment_name"], values["environment_type"]))
-	environment_id = helper.curd.lastrowid
+	helper.curd.execute("INSERT INTO `puppet_environments` (`short_name`, `environment_name`, `type`, `owner`) VALUES (%s, %s, %s, %s)", (values["environment_short_name"], values["environment_name"], values["environment_type"], values["environment_owner"]))
+	helper.curd.connection.commit()
 
-	# Insert the puppet_users into the database
-	for user in values["puppet_users"]:
-		helper.curd.execute("INSERT INTO `puppet_users` (`environment_id`, `who`, `type`, `level`) VALUES (%s, %s, %s, %s)", (environment_id, user["who"], user["type"], user["level"]))
-
+	# Output a success message
+	helper.end_event(success=True, description="Sucessfully created Puppet environment: '{short_name}' ({name}, ID: {id}).".format(
+		id=helper.curd.lastrowid,
+		name=values["environment_name"],
+		short_name=values["environment_short_name"]
+	))
 	return True
 
-def environment_delete(values, helper, wfconfig):
+def environment_delete(values, helper):
 	"""Delete an exisitng Puppet environment"""
 
-	# Insert the details into the database
-	helper.curd.execute("DELETE FROM `puppet_environments` WHERE `id`=%s", (values["environment_id"],))
+	# Select the environment to get its name
+	helper.curd.execute("SELECT * FROM `puppet_environments` WHERE `id`=%s", (values["environment_id"],))
+	environment = helper.curd.fetchone()
 
-	# TODO: Send an API call to the cortex-puppet-bridge to delete the environment
+	if environment is None:
+		helper.end_event(success=False, description="Failed to delete Puppet environment, an environment with ID={id} does not exist.".format(
+			id=values["environment_id"],
+		))
+		return False
+
+	# Build the URL
+	base_url = helper.config["PUPPET_AUTOSIGN_URL"]
+	if not base_url.endswith("/"):
+		base_url += "/"
+
+	# Send the request to the Cortex Puppet Bridge to delete the environment
+	try:
+		r = requests.post(
+			base_url + "environment/delete",
+			headers={"X-Auth-Token": helper.config["PUPPET_AUTOSIGN_KEY"], "Accept": "application/json", "Content-Type": "application/json",},
+			json={"environment_name": environment["environment_name"], "username": helper.username},
+			verify=helper.config["PUPPET_AUTOSIGN_VERIFY"],
+		)
+	except Exception as ex:
+		helper.end_event(success=False, description="Failed to delete environment on Puppet Master: {ex}".format(ex=ex))
+		return False
+
+	# Check return code
+	if r.status_code != 200:
+		helper.end_event(success=False, description="Failed to delete environment on Puppet Master, Cortex Puppet Bridge returned error code: {status_code}".format(status_code=r.status_code))
+		return False
+
+	# Delete the environment from the database
+	helper.curd.execute("DELETE FROM `puppet_environments` WHERE `id`=%s", (values["environment_id"],))
+	helper.curd.connection.commit()
+
+	# Output a success messsage
+	helper.end_event(success=True, description="Sucessfully delete Puppet environment: '{short_name}' ({name}, ID: {id})".format(
+		id=values["environment_id"],
+		name=environment["environment_name"],
+		short_name=environment["short_name"]
+	))
 
 	return True

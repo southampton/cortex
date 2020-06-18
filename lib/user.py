@@ -400,14 +400,14 @@ def does_user_have_any_system_permission(sysperm,user=None):
 
 ################################################################################
 
-def does_user_have_puppet_permission(environment_id,sysperm,perm=None,user=None):
+def does_user_have_puppet_permission(environment_id, puppet_perm, perm=None, user=None):
 	"""Returns a boolean indicating if a user has the specified permission
 	on the Puppet environment specified in environment_id. If 'perm' is supplied
 	then the function returns true if the user has the global 'perm' instead
 	(e.g. a global override permission).
 		environment_id: The Cortex environment_id id of the Puppet environment
 			(as found in the puppet_environments table)
-		sysperm: A string containing the Puppet permission to check for
+		puppet_perm: A string containing the Puppet permission to check for
 		perm: The global permission, which is the user has, overrides puppet
 			permissions and causes the function to return True irrespective
 			of whether the user has the puppet permission or not. Defaults to
@@ -441,7 +441,7 @@ def does_user_have_puppet_permission(environment_id,sysperm,perm=None,user=None)
 	# Query the p_puppet_perms_view table to see if the user has the Puppet environment
 	# explicitly given access to them
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT 1 FROM `p_puppet_perms_view` WHERE `environment_id` = %s AND `who` = %s AND `who_type` = %s AND `perm` = %s', (environment_id, user, ROLE_WHO_USER, sysperm))
+	curd.execute('SELECT 1 FROM `p_puppet_perms_view` WHERE `environment_id` = %s AND `who` = %s AND `who_type` = %s AND `perm` = %s', (environment_id, user, ROLE_WHO_USER, puppet_perm))
 
 	# If a row is returned then they have the permission
 	if len(curd.fetchall()) > 0:
@@ -454,12 +454,61 @@ def does_user_have_puppet_permission(environment_id,sysperm,perm=None,user=None)
 	for group in ldap_groups:
 		# Query the p_puppet_perms_view table to see if the permission is granted
 		# to the group the user is in
-		curd.execute('SELECT 1 FROM `p_puppet_perms_view` WHERE `environment_id` = %s AND `who` = %s AND `who_type` = %s AND `perm` = %s', (environment_id, group.lower(), ROLE_WHO_LDAP_GROUP, sysperm))
+		curd.execute('SELECT 1 FROM `p_puppet_perms_view` WHERE `environment_id` = %s AND `who` = %s AND `who_type` = %s AND `perm` = %s', (environment_id, group.lower(), ROLE_WHO_LDAP_GROUP, puppet_perm))
 
 		# If a row is returned then they have access to the workflow
 		if len(curd.fetchall()) > 0:
 			return True
 
+	return False
+
+################################################################################
+
+def does_user_have_any_puppet_permission(puppet_perm, user=None):
+	"""Returns a boolean indicating if a user has a puppet permission on
+	any environment. This exists because some functions return data that can only
+	be accessed if a user has a permission on at least one environment, but it does
+	not matter which environment
+		puppet_perm: A string containing the environment permission to check for
+		user: The user whose permissions should be checked. Defaults to
+			None, which checks the currently logged in user.
+	"""
+
+	# Default to using the current user
+	if user is None:
+		if 'username' in session:
+			user = session['username']
+		else:
+			# User not logged in - they definitely don't have permission!
+			return False
+
+	app.logger.debug("Checking to see if " + str(user) + " has puppet permission " + puppet_perm + " on any environment")
+
+	# Query the p_puppet_perms_view table to see if the user has the Puppet environment
+	# explicitly given access to them
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT 1 FROM `p_puppet_perms_view` WHERE `who` = %s AND `who_type` = %s AND `perm` = %s', (user, ROLE_WHO_USER, puppet_perm))
+
+	# If a row is returned then they have the permission
+	if len(curd.fetchall()) > 0:
+		app.logger.debug("The user " + str(user) + " has puppet permission " + puppet_perm + " on at least one environment")
+		return True
+
+	# Get the (possibly cached) list of groups for the user
+	ldap_groups = get_users_groups(user)
+
+	# Iterate over the groups, checking each group for the permission
+	for group in ldap_groups:
+		# Query the p_puppet_perms_view table to see if the permission is granted
+		# to the group the user is in
+		curd.execute('SELECT 1 FROM `p_puppet_perms_view` WHERE `who` = %s AND `who_type` = %s AND `perm` = %s', (group.lower(), ROLE_WHO_LDAP_GROUP, puppet_perm))
+
+		# If a row is returned then they have access to the workflow
+		if len(curd.fetchall()) > 0:
+			app.logger.debug("The user " + str(user) + " has puppet permission " + puppet_perm + " on at least one environment")
+			return True
+
+	app.logger.debug("The user " + str(user) + " does NOT have puppet permission " + puppet_perm + " on any environment")
 	return False
 
 ################################################################################

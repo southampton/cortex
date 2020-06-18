@@ -453,6 +453,7 @@ Username:             %s
 		  `short_name` varchar(255) NOT NULL,
 		  `environment_name` varchar(255) NOT NULL,
 		  `type` tinyint(4) NOT NULL,
+		  `owner` varchar(64) DEFAULT NULL,
 		  PRIMARY KEY (`id`),
 		  UNIQUE(`environment_name`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
@@ -1043,14 +1044,23 @@ Username:             %s
 
 		cursor.execute("""CREATE OR REPLACE VIEW `p_puppet_perms_view` AS
 		SELECT DISTINCT
-		  `p_role_who`.`who` AS `who`,
-		  `p_role_who`.`type` AS `who_type`,
-		  `p_role_puppet_perms`.`environment_id` AS `environment_id`,
-		  LOWER(`p_puppet_perms`.`perm`) AS `perm`
+			`p_role_who`.`who` AS `who`,
+			`p_role_who`.`type` AS `who_type`,
+			`p_role_puppet_perms`.`environment_id` AS `environment_id`,
+			LOWER(`p_puppet_perms`.`perm`) AS `perm`
 		FROM `p_role_who`
 		JOIN `p_role_puppet_perms` ON `p_role_who`.`role_id`=`p_role_puppet_perms`.`role_id`
 		JOIN `p_puppet_perms` ON `p_role_puppet_perms`.`perm_id`=`p_puppet_perms`.`id`
-		WHERE `p_puppet_perms`.`active`=1""")
+		WHERE `p_puppet_perms`.`active`=1
+		UNION
+		SELECT DISTINCT
+			`puppet_environments`.`owner` AS `who`,
+			0 AS `who_type`,
+			`puppet_environments`.`id` AS `environment_id`,
+			LOWER(`p_puppet_perms`.`perm`) AS `perm`
+		FROM `puppet_environments`
+		CROSS JOIN `p_puppet_perms`
+		WHERE `p_puppet_perms`.`active`=1 AND `owner` IS NOT NULL""")
 
 		## Clean up old tables
 		cursor.execute("""DROP TABLE IF EXISTS `workflow_perms`""")

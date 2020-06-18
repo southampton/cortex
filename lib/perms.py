@@ -144,7 +144,7 @@ class CortexPermissions:
 			{'name': 'puppet.environments.all.create',     'desc': 'Create all types of Puppet environments'},
 			{'name': 'puppet.environments.all.view',       'desc': 'View all Puppet environments'},
 			{'name': 'puppet.environments.all.classify',   'desc': 'Classify systems with any Puppet environment'},
-			{'name': 'puppet.environments.all.edit',       'desc': 'Modify all Puppet environments'},
+			{'name': 'puppet.environments.all.delete',     'desc': 'Delete all Puppet environments'},
 
 			{'name': 'classes.view',                       'desc': 'View the list of system class definitions'},
 			{'name': 'classes.edit',                       'desc': 'Edit system class definitions'},
@@ -201,7 +201,7 @@ class CortexPermissions:
 		self.puppet_permissions = [
 			{'name': 'view',     'desc': 'View the Puppet environment\'s settings'},
 			{'name': 'classify', 'desc': 'Classify systems with the Puppet environment'},
-			{'name': 'edit',     'desc': 'Modify the Puppet environment\'s settings'},
+			{'name': 'delete',   'desc': 'Delete the Puppet environment'},
 		]
 
 

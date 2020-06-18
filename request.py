@@ -1,6 +1,6 @@
 from cortex import app
 from cortex.lib.errors import logerr, fatalerr
-from cortex.lib.user import does_user_have_permission, does_user_have_workflow_permission, does_user_have_system_permission
+from cortex.lib.user import does_user_have_permission, does_user_have_workflow_permission, does_user_have_system_permission, does_user_have_puppet_permission, does_user_have_any_puppet_permission
 from flask import Flask, request, session, g, abort, render_template, url_for
 import redis
 import time
@@ -96,7 +96,7 @@ def context_processor():
 	puppet = []
 	if does_user_have_permission("puppet.dashboard.view"):
 		puppet.append({'link': url_for('puppet_dashboard'), 'title': 'Dashboard', 'icon': 'fa-dashboard'})
-	if does_user_have_permission("puppet.environment.view"):
+	if does_user_have_permission("puppet.environments.all.view") or does_user_have_any_puppet_permission("view"):
 		puppet.append({'link': url_for('puppet_environments'), 'title': 'Environments', 'icon': 'fa-envira'})
 	if does_user_have_permission("puppet.nodes.view"):
 		puppet.append({'link': url_for('puppet_nodes'), 'title': 'Nodes', 'icon': 'fa-server'})

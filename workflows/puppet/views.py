@@ -28,12 +28,13 @@ def puppet_environment_create():
 		environment_types.pop(0, None)
 
 	# Create the values dict, and set default environment type to Dynamic
-	values = { "environment_type": 2}
+	values = { "environment_type": 2, "environment_owner": session["username"]}
 	if request.method == "POST":
 		values["environment_type"] = request.form.get("environment_type", 2)
 		values["environment_short_name"] = request.form.get("environment_short_name", "")
 		values["environment_name"] = request.form.get("environment_name", "")
-		users = list(set(request.form.getlist('puppet_users[]')))
+		# If the user cannot create all environment types, they can only assign themselves as owner.
+		values["environment_owner"] = request.form.get("environment_owner", None) if can_create_all else session["username"]
 
 		# Validate
 		error = False
@@ -58,6 +59,9 @@ def puppet_environment_create():
 		if not values["environment_short_name"]:
 			values["environment_short_name"] = values["environment_name"]
 
+		# Ensure the owner is None if empty string provided (NULL in DB)
+		values["environment_owner"] = values["environment_owner"] if values["environment_owner"] else None
+
 		# Get the database cursor
 		curd = g.db.cursor()
 		curd.execute("SELECT `id` FROM `puppet_environments` WHERE `environment_name`=%s", (values["environment_name"],))
@@ -65,35 +69,11 @@ def puppet_environment_create():
 			error = True
 			flash("The environment name '{}' already exists".format(values["environment_name"]), "alert-danger")
 
-		seen = set()
-		values["puppet_users"] = []
-		for user in users:
-			if user.count(",") != 2:
-				error = True
-				flash("Invalid user permission.", "alert-danger")
-				break
-			user_who, user_type, user_level = user.split(",", 2)
-			if "{w},{t}".format(w=user_who, t=user_type) not in seen:
-				seen.add("{w},{t}".format(w=user_who, t=user_type))
-				try:
-					user_type = int(user_type)
-					user_level = int(user_level)
-				except ValueError:
-					error = True
-					flash("Invalid user type or level.", "alert-danger")
-					break
-				else:
-					values["puppet_users"].append({
-						"who": user_who,
-						"type": user_type,
-						"level": user_level
-					})
-
 		if not error:
 			# Task Options
 			options = {
 				"wfconfig": workflow.config,
-				"actions": [{"id":"environment.create", "desc": "Create a Puppet Environment"}],
+				"actions": [{"id":"environment.create", "desc": "Creating Puppet Environment"}],
 				"values": values,
 			}
 
@@ -104,4 +84,4 @@ def puppet_environment_create():
 			# Redirect to the status page for the task
 			return redirect(url_for("task_status", id=task_id))
 
-	return workflow.render_template("create.html", environment_types=environment_types, values=values)
+	return workflow.render_template("create.html", environment_types=environment_types, values=values, can_create_all=can_create_all)
