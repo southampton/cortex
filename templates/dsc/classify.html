@@ -4,7 +4,7 @@
 	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
 
 
-	{% include 'dsc/codemirror.html' %}
+{% include 'dsc/codemirror.html' %}
 {% endblock %}
 
 {% block body %}
@@ -55,9 +55,10 @@
 </style>
 
 <script>
+var classes_editor;
 $(document).ready(function() 
 {
-	var classes_editor = CodeMirror.fromTextArea(document.getElementById('configurations'), 
+	classes_editor = CodeMirror.fromTextArea(document.getElementById('configurations'), 
 	{
 		mode: 'yaml',
 		gutters: ["CodeMirror-lint-markers"],
@@ -75,6 +76,28 @@ $(document).ready(function()
 	});
 
 });
+
+function removeElement(elementId) {
+    // Removes an element from the document
+    var element = document.getElementById(elementId);
+    element.parentNode.removeChild(element);
+}
+
+{% for role in set_roles %}
+
+function function_{{role}}(){
+	
+	var exist_text = document.getElementById("configurations").value;
+	console.log(('{{ role_info[role] }}') );
+	exist_text = exist_text.concat('{{role_info[role]}}','\n');
+	console.log(exist_text);
+	$('#configurations').val(exist_text);
+	classes_editor.setValue(exist_text);
+
+}
+
+{% endfor %}
+
 </script>
 
 <form class="form-horizontal" method="POST" role="form" id="dsc_form">
@@ -90,7 +113,7 @@ $(document).ready(function()
 				<label title="The roles that this box fulfils" class="col-xs-1 control-label">Roles:</label>
 				<div class="col-lg-15">
 					<select multiple data-style="bg-white rounded-pill px-40 py-3 shadow-sm" class="selectpicker w-100" id="roles" name="roles" data-width="85%"> 
-						{% for role in roles %}
+						{% for role in page_cont['roles'] %}
 							{% if role != 'AllNodes' %}
 								<option value="{{ role }}" {% if role == "Generic" %} selected="selected" {% endif %}>{{ role }}</option>
 							{% endif %}
@@ -117,14 +140,12 @@ $(document).ready(function()
 			<div class="flex-container">
 
 			  <div class="flex-child" style="width: 60%;">
-			    <textarea style="height: 30px;  resize: none;" class="textarea" cols="1" id="configurations" name="configurations" placeholder="Configurations to include can be entered here">{{ yaml }}</textarea>
+			    <textarea style="height: 30px;  resize: none;" class="textarea" cols="1" id="configurations" name="configurations" placeholder="Configurations to include can be entered here">{{ page_cont['yaml_config'] }}</textarea>
 			  </div>
 			  
 			  <div class="flex-child" style="width: 40%;">
 			    	{% for role in set_roles %}
-						<button class="btn btn-primary btn-sm">
-							{{ role }}
-						</button>
+						<!-- <button onclick="function_{{role}}(); return false;" class="btn btn-primary btn-sm">{{ role }}</button> -->
 					{% endfor %}
 			  </div>
 			  
@@ -143,9 +164,9 @@ $(document).ready(function()
 <script type="text/javascript">
 
 window.onload = function() {
-	var exist_roles = Object.keys({{ selectpicker_tick|tojson }});
+	var exist_roles = Object.keys({{ page_cont['tickvalues']|tojson }});
 	
-	$('.selectpicker').selectpicker('val', {{ selectpicker_tick|tojson }});
+	$('.selectpicker').selectpicker('val', {{ page_cont['tickvalues']|tojson }} );
 
 };
 
