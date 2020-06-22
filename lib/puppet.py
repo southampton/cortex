@@ -1,6 +1,6 @@
 
 from cortex import app
-from flask import g, url_for
+from flask import g, url_for, session
 import cortex.lib.netgroup
 import MySQLdb as mysql
 import yaml
@@ -157,13 +157,37 @@ def cortex_puppet_connect(host='localhost', port=8080, ssl_verify=False, ssl_key
 
 ################################################################################
 
-def get_puppet_environments(enviroment_type = None):
+def get_puppet_environments(enviroment_type = None, environment_permission=None, user=None, include_default=False, order_by="id"):
 	"""Return a list of the Puppet environments defined in `puppet_environments`"""
 	query = "SELECT * FROM `puppet_environments`"
 	params = ()
+
 	if enviroment_type:
 		query += " WHERE `type`=%s"
 		params += (enviroment_type,)
+	if environment_permission:
+		if enviroment_type is not None:
+			query += " AND "
+		else:
+			query += " WHERE "
+
+		# Get the username or use the one present in the session.
+		username = user or session.get("username")
+		if username is None:
+			return []
+
+		if include_default:
+			query += "( `environment_name`=%s OR ("
+			params += (app.config["PUPPET_DEFAULT_ENVIRONMENT"],)
+
+		query += "`id` IN (SELECT `environment_id` FROM `p_puppet_perms_view` WHERE `perm`=%s AND ((`who_type`=0 AND `who`=%s) OR (`who_type`=1 AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username`=%s))))"
+		params += (environment_permission, username, username)
+
+		if include_default:
+			query += "))"
+
+	if order_by:
+		query += " ORDER BY `{field}` ASC".format(field=order_by)
 
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute(query, params)
