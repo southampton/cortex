@@ -39,8 +39,16 @@ def puppet_enc_edit(node):
 	"""Handles the manage Puppet node page"""
 
 	# Get the system out of the database
-	system       = cortex.lib.systems.get_system_by_puppet_certname(node)
-	environments = cortex.lib.puppet.get_puppet_environments()
+	system = cortex.lib.systems.get_system_by_puppet_certname(node)
+	# Get the environments from the DB where the user has classify permission
+	if does_user_have_permission("puppet.environments.all.classify"):
+		environments = cortex.lib.puppet.get_puppet_environments()
+	elif does_user_have_any_puppet_permission("classify"):
+		environments = cortex.lib.puppet.get_puppet_environments(environment_permission="classify", include_default=True)
+	else:
+		abort(403)
+	# Get the environment names as a list
+	environment_names = [e['environment_name'] for e in environments]
 
 	if system == None:
 		abort(404)
@@ -64,7 +72,7 @@ def puppet_enc_edit(node):
 		if does_user_have_system_permission(system['id'], "view.puppet.classify", "systems.all.view.puppet.classify") or \
 			does_user_have_system_permission(system['id'], "edit.puppet"," systems.all.edit.puppet"):
 
-			return render_template('puppet/enc.html',system=system, active='puppet', environments=environments, title=system['name'], nodename=node, pactive="edit", yaml=cortex.lib.puppet.generate_node_config(system['puppet_certname']), hints=hints)
+			return render_template('puppet/enc.html', system=system, active='puppet', environments=environments, title=system['name'], nodename=node, pactive="edit", yaml=cortex.lib.puppet.generate_node_config(system['puppet_certname']), hints=hints, environment_names=environment_names)
 		else:
 			abort(403)
 
@@ -82,8 +90,8 @@ def puppet_enc_edit(node):
 		error = False
 
 		# Validate environement:
-		if environment not in [e['environment_name'] for e in environments]:
-			flash('Invalid environment', 'alert-danger')
+		if environment not in environment_names:
+			flash('Invalid Puppet environment, you can only classify systems with Environments you have \'classify\' permission over!', 'alert-danger')
 			error = True
 
 		# Validate classes YAML
@@ -587,18 +595,12 @@ def puppet_environments(environment_id=None):
 			curd.execute("SELECT * FROM `puppet_environments` WHERE `id`=%s LIMIT 1", (environment_id,))
 			environments = curd.fetchall()
 		elif environment_id is None:
-			query = "SELECT * FROM `puppet_environments`"
-			params = ()
 			if does_user_have_permission("puppet.environments.all.view"):
-				query += " ORDER BY `id` ASC"
+				environments = cortex.lib.puppet.get_puppet_environments()
 			elif does_user_have_any_puppet_permission("view"):
-				query += " WHERE `id` IN (SELECT `environment_id` FROM `p_puppet_perms_view` WHERE `perm`='view' AND ((`who_type`=0 AND `who`=%s) OR (`who_type`=1 AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username`=%s)))) ORDER BY `id` ASC"
-				params += (session["username"], session["username"])
+				environments = cortex.lib.puppet.get_puppet_environments(environment_permission="view")
 			else:
 				abort(403)
-
-			curd.execute(query, params)
-			environments = curd.fetchall()
 		else:
 			abort(403)
 
