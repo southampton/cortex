@@ -14,7 +14,7 @@ import requests
 @app.disable_csrf_check
 def api_register_system():
 	"""API endpoint for when systems register with Cortex to obtain their
-	   Puppet certificates, their Puppet environment, a satellite registration 
+	   Puppet certificates, their Puppet environment, a satellite registration
 	   key, etc. Clients can authenticate either via username/password, which
 	   is checked against LDAP, or via the VMware virtual machine UUID, which
 	   is checked against the VMware systems cache."""
@@ -73,17 +73,14 @@ def api_register_system():
 	# Start building the response dictionary
 	cdata = {}
 
-	# Default to production environment (for Puppet / Satellite)
-	cdata['environment'] = 'production'
+	# Default to production environment (for CMDB / Satellite)
+	cdata['environment'] = 'Production'
 
-	# See if the system is linked to ServiceNow and we'll use that 
+	# See if the system is linked to ServiceNow and we'll use that
 	# environment. If it isn't linked then we can't do much, so just assume
 	# production (as above)
-	if 'cmdb_environment' in system:
-		envs = cortex.lib.core.get_cmdb_environments()
-		for env in envs:
-			if env['name'] == system['cmdb_environment']:
-				cdata['environment'] = env['puppet']
+	if 'cmdb_environment' in system and system['cmdb_environment']:
+		cdata['environment'] = system['cmdb_environment']
 
 	# Get the build identity from the request
 	if 'ident' in request.form:
@@ -144,8 +141,8 @@ def api_register_system():
 		else:
 			app.logger.error("Error occured contacting cortex-puppet-bridge server. HTTP status code: '" + str(r.status_code) + "'")
 			abort(500)
-			
-	# Systems authenticating by UUID also want to know their hostname and 
+
+	# Systems authenticating by UUID also want to know their hostname and
 	# IP address in order to configure themselves!
 
 	if not interactive:
@@ -153,7 +150,7 @@ def api_register_system():
 		cdata['fqdn']      = fqdn
 		netaddr = g.redis.get('vm/' + system['vmware_uuid'].lower() + '/ipaddress')
 		netaddrv6 = g.redis.get('vm/' + system['vmware_uuid'].lower() + '/ipv6address')
-		
+
 		if netaddr:
 			cdata['ipaddress'] = netaddr
 		else:
@@ -177,31 +174,20 @@ def api_register_system():
 	# Create puppet ENC entry if it does not already exist
 	if puppet_required:
 		cdata['certname'] = fqdn
-
-		create_entry = False
-		if 'puppet_certname' in system:
-			if system['puppet_certname'] == None:
-				create_entry = True
-		else:
-			create_entry = True
-
-		if create_entry:
+		if 'puppet_certname' in system and system['puppet_certname'] is None:
 			# A system record exists but no puppet_nodes entry. We'll create one!
 			# We set the environment to what we determined above, which defaults
 			# to production, but updates from the CMDB
 			curd = g.db.cursor(mysql.cursors.DictCursor)
-			curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`) VALUES (%s, %s, %s)", (system['id'], fqdn, cdata['environment']))
+			curd.execute("INSERT INTO `puppet_nodes` (`id`, `certname`, `env`) VALUES (%s, %s, %s)", (system['id'], fqdn, app.config['PUPPET_DEFAULT_ENVIRONMENT']))
 			g.db.commit()
 			app.logger.info('Created Puppet ENC entry for certname "' + fqdn + '"')
-		else:
-			if 'puppet_env' in system:
-				if system['puppet_env'] != None:
-					cdata['environment'] = system['puppet_env']
 
 	# Get the satellite registration key (if any)
 	if satellite_required:
 		if ident in app.config['SATELLITE_KEYS']:
 			data = app.config['SATELLITE_KEYS'][ident]
+			app.logger.warn("TESTING: USING ENV {} with data {}".format(cdata['environment'], data))
 			if cdata['environment'] in data:
 				cdata['satellite_activation_key'] = data[cdata['environment']]
 			else:
@@ -221,7 +207,7 @@ def api_register_system():
 @app.route('/api/installer/notify', methods=['POST'])
 @app.disable_csrf_check
 def api_installer_notify():
-	"""API endpoint to allow the bonemeal installer to notify cortex that the 
+	"""API endpoint to allow the bonemeal installer to notify cortex that the
 	the installation is now complete and is about to reboot."""
 
 	if 'uuid' in request.form:
