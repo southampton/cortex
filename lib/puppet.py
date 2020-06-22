@@ -259,12 +259,16 @@ def generate_node_config(certname):
 		# Not linked to a ServiceNow entry, put in some defaults
 		response['parameters']['uos_motd_sn_environment'] = 'ERROR: Not linked to ServiceNow. Visit: ' + url_for('system_edit', _external=True, id=system['id'])
 		response['parameters']['uos_motd_sn_description'] = 'ERROR: Not linked to ServiceNow. Visit: ' + url_for('system_edit', _external=True, id=system['id'])
+		# The 'uos_environment' will default to Production
+		response['parameters']['uos_environment'] = 'Production'
 	else:
 		response['parameters']['uos_motd_sn_environment'] = system['cmdb_environment']
 		if system['cmdb_description'] is None or len(system['cmdb_description'].strip()) == 0:
 			response['parameters']['uos_motd_sn_description'] = 'ERROR: Description not set in ServiceNow. Visit: ' + (app.config['CMDB_URL_FORMAT'] % system['cmdb_id'])
 		else:
 			response['parameters']['uos_motd_sn_description'] = system['cmdb_description']
+		# The 'uos_environment' will become 'cmdb_environment'
+		response['parameters']['uos_environment'] = system['cmdb_environment']
 
 	return yaml.safe_dump(response, sort_keys=True)
 
