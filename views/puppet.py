@@ -549,10 +549,10 @@ def puppet_documentation(environment_id=None, module_id=None):
 					"types": json.loads(row["types"]) if row["types"] else [],
 				})
 	else:
-		curd.execute("SELECT `puppet_modules`.`id` AS `module_id`, `puppet_modules`.`module_name` AS `module_name`, `puppet_environments`.`id` AS `environment_id`, `puppet_environments`.`environment_name` AS `environment_name` FROM `puppet_modules` LEFT JOIN `puppet_environments` ON `puppet_modules`.`environment_id`=`puppet_environments`.`id`")
+		curd.execute("SELECT `puppet_modules`.`id` AS `module_id`, `puppet_modules`.`module_name` AS `module_name`, `puppet_environments`.`id` AS `environment_id`, `puppet_environments`.`environment_name` AS `environment_name`, `puppet_environments`.`short_name` AS `short_name` FROM `puppet_modules` LEFT JOIN `puppet_environments` ON `puppet_modules`.`environment_id`=`puppet_environments`.`id`")
 		for row in curd.fetchall():
 			if row["environment_id"] not in data:
-				data[row["environment_id"]] = {"name": row["environment_name"], "modules": {} }
+				data[row["environment_id"]] = {"name": row["environment_name"], "short_name": row["short_name"], "modules": {} }
 			data[row["environment_id"]]["modules"][row["module_id"]] = row["module_name"]
 
 	return render_template('puppet/docs.html', active='puppet', title="Puppet Documentation", module=module, data=data, q=request.args.get("q", None))
