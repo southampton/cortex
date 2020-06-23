@@ -64,12 +64,12 @@ There is documentation in Cortex available for the modules listed below
 {# Show all the documentation #}
 <div class="input-group mb-2">
 	<div class="input-group-prepend">
-		<span class="input-group-text">Environment:</span>
+		<span class="input-group-text">Puppet Environment:</span>
 	</div>
 	<select class="form-control" id="environment-select">
 		<option>All</option>
-		{%- for environment_name in data -%}
-		<option>{{ environment_name }}</option>
+		{%- for environment_id in data -%}
+		<option value="{{ environment_id }}">{{ data[environment_id].short_name }} ({{ data[environment_id].name }})</option>
 		{%- endfor -%}
 	</select>
 </div>
