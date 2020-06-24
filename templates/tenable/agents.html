@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="page-header">
+	<h4><i class="fa fa-fw fa-rss"></i> Tenable Agents</h4>
+	<div class="text-muted">This lists all of the known tenable agents</div>
+</div>
+
+<table class="table table-sm table-striped" id="agents">
+	<thead>
+		<tr>
+			<th><div class="tablesorter-inner">Name</div></th>
+			<th><div class="tablesorter-inner">Status</div></th>
+			<th><div class="tablesorter-inner">IP Address</div></th>
+			<th><div class="tablesorter-inner">Platform</div></th>
+			<th><div class="tablesorter-inner">Distro</div></th>
+			<th><div class="tablesorter-inner">Version</div></th>
+			<th><div class="tablesorter-inner">Last Scanned</div></th>
+		</tr>
+	</thead>
+	<tbody>
+	</tbody>
+</table>
+
+
+<script type="text/javascript">
+$(function() {
+	var agentsTable = $('#agents').DataTable({
+		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
+		"pageLength": 15,
+		"order": [[0, 'desc']],
+{%- if classic_layout %}
+		"fixedHeader": {
+			"headerOffset": 52
+		},
+{%- else %}
+		"fixedHeader": true,
+{%- endif %}
+		"columns": [
+			{"data": "name"},
+			{"data": "status"},
+			{"data": "ip"},
+			{"data": "platform"},
+			{"data": "distro"},
+			{"data": "core_version"},
+			{"data": "last_scanned"},
+		],
+		"serverSide": true,
+		"searchDelay": 500,
+		"stateSave": true,
+		"ajax": {
+			"url": "{{ url_for('tenable.tenable_agents_json') }}",
+			"type": "POST",
+			"data": function (d) {
+				d._csrf_token = "{{ csrf_token() }}"
+			},
+		},
+		{% if q %}
+		"search": { "search": {{q|tojson|safe}} },
+		{% endif %}
+		"searching": true
+	});
+});
+</script>
+{% endblock %}
