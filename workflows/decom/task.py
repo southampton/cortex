@@ -312,12 +312,12 @@ def action_check_system(action, helper, wfconfig):
 			helper.flash('Warning - An error occurred when communicating with ' + str(helper.lib.config['GRAPHITE_URL']) + ': ' + str(ex), 'warning')
 
 	## Check Nessus / Tenable for registered agents
-	if "NESSUS_ENABLE_DECOM" in wfconfig and wfconfig["NESSUS_ENABLE_DECOM"]:
+	if "TENABLE_IO_ENABLE_DECOM" in wfconfig and wfconfig["TENABLE_IO_ENABLE_DECOM"]:
 		try:
-			if all(k in helper.lib.config and helper.lib.config[k] for k in ["NESSUS_URL", "NESSUS_ACCESS_KEY", "NESSUS_SECRET_KEY", "NESSUS_SCANNER_ID"]):
+			if all(k in helper.lib.config and helper.lib.config[k] for k in ["TENABLE_IO_URL", "TENABLE_IO_ACCESS_KEY", "TENABLE_IO_SECRET_KEY"]):
 				r = requests.get(
-					urljoin(helper.lib.config["NESSUS_URL"], "/scanners/{scanner_id}/agents".format(scanner_id=helper.lib.config["NESSUS_SCANNER_ID"])),
-					headers={"Accept": "application/json", "X-ApiKeys": "accessKey={a}; secretKey={s};".format(a=helper.lib.config["NESSUS_ACCESS_KEY"], s=helper.lib.config["NESSUS_SECRET_KEY"])},
+					urljoin(helper.lib.config["TENABLE_IO_URL"], "/scanners/{scanner_id}/agents".format(scanner_id=1)),
+					headers={"Accept": "application/json", "X-ApiKeys": "accessKey={a}; secretKey={s};".format(a=helper.lib.config["TENABLE_IO_ACCESS_KEY"], s=helper.lib.config["TENABLE_IO_SECRET_KEY"])},
 					params={"f": "name:match:{name}".format(name=system["name"])},
 				)
 				if r.status_code == 200:
@@ -330,7 +330,7 @@ def action_check_system(action, helper, wfconfig):
 			else:
 				helper.flash("Warning - Missing configuration key for Nessus", "warning")
 		except Exception as ex:
-			helper.flash("Warning - An error occured when communicating with {nessus_url}: {ex}".format(nessus_url=helper.lib.config["NESSUS_URL"], ex=ex), "warning")
+			helper.flash("Warning - An error occured when communicating with {nessus_url}: {ex}".format(nessus_url=helper.lib.config["TENABLE_IO_URL"], ex=ex), "warning")
 
 	# If the config says nothing about creating a ticket, or the config 
 	# says to create a ticket:
@@ -632,12 +632,12 @@ def action_graphite_delete(action, helper, wfconfig):
 
 def action_nessus_delete(action, helper, wfconfig):
 	try:
-		if not all(k in helper.lib.config and helper.lib.config[k] for k in ["NESSUS_URL", "NESSUS_ACCESS_KEY", "NESSUS_SECRET_KEY", "NESSUS_SCANNER_ID"]):
+		if not all(k in helper.lib.config and helper.lib.config[k] for k in ["TENABLE_IO_URL", "TENABLE_IO_ACCESS_KEY", "TENABLE_IO_SECRET_KEY"]):
 			raise Exception("Missing configuration key for Nessus")
 
 		r = requests.delete(
-			urljoin(helper.lib.config["NESSUS_URL"], "/scanners/{scanner_id}/agents/{agent_id}".format(scanner_id=helper.lib.config["NESSUS_SCANNER_ID"], agent_id=action["data"]["id"])),
-			headers={"Accept": "application/json", "X-ApiKeys": "accessKey={a}; secretKey={s};".format(a=helper.lib.config["NESSUS_ACCESS_KEY"], s=helper.lib.config["NESSUS_SECRET_KEY"])},
+			urljoin(helper.lib.config["TENABLE_IO_URL"], "/scanners/{scanner_id}/agents/{agent_id}".format(scanner_id=1, agent_id=action["data"]["id"])),
+			headers={"Accept": "application/json", "X-ApiKeys": "accessKey={a}; secretKey={s};".format(a=helper.lib.config["TENABLE_IO_ACCESS_KEY"], s=helper.lib.config["TENABLE_IO_SECRET_KEY"])},
 		)
 		if r.status_code != 200:
 			helper.end_event(success=False, description="Failed to delete Nessus agent, Nessus API returned error code: {status_code}.".format(status_code=r.status_code))
