@@ -2,9 +2,8 @@
 {% block body %}
 <div class="page-header">
 	<h4><i class="fa fa-fw fa-rss"></i> Tenable Agents</h4>
-	<div class="text-muted">This lists all of the known tenable agents</div>
+	<div class="text-muted">This lists all of the Agents registred with Tenable.io/div>
 </div>
-
 <table class="table table-sm table-striped" id="agents">
 	<thead>
 		<tr>
@@ -20,8 +19,6 @@
 	<tbody>
 	</tbody>
 </table>
-
-
 <script type="text/javascript">
 $(function() {
 	var agentsTable = $('#agents').DataTable({
@@ -57,7 +54,11 @@ $(function() {
 		{% if q %}
 		"search": { "search": {{q|tojson|safe}} },
 		{% endif %}
-		"searching": true
+		"searching": true,
+		"rowCallback": function(row, data, index) {
+			var last_scanned_date = new Date(data["last_scanned"] * 1000);
+			$("td:eq(6)", row).html(last_scanned_date.toISOString());
+		}
 	});
 });
 </script>

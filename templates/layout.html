@@ -7,7 +7,7 @@
 		<title>{% if title %}{{ title }} - {% endif %}Cortex</title>
 		<link rel="icon" type="image/png" href="{{ url_for('static', filename='images/cortex-v3.png') }}">
 		<link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/cortex-v3.png') }}">
-		
+
 		{#- CSS #}
 		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/font-awesome.min.css') }}?version={{ config.VERSION }}">
 		{%- if theme == "dark" %}
@@ -145,9 +145,9 @@
 					</button>
 					<a href="{{ url_for('dashboard') }}" class="navbar-brand">cortex</a>
 				</div>
-			
+
 				{%- if session.logged_in %}
-				<div class="navbar-collapse collapse" id="navbar-collapse-1">	
+				<div class="navbar-collapse collapse" id="navbar-collapse-1">
 					<ul class="nav navbar-nav mr-auto">
 						{%- if menu.favourites and menu.favourites|length > 0 %}
 						<li class="nav-item {%if not classic_layout %} d-sm-none {%endif%}dropdown">
@@ -213,6 +213,16 @@
 							</div>
 						</li>
 						{%- endif %}
+						{%- if menu.tenable and menu.tenable|length > 0 %}
+						<li class="nav-item {%if not classic_layout %} d-sm-none {%endif%}dropdown">
+							<a href="#" id="navbar-tenable-dropdown" class="nav-link dropdown-toggle {%if active == 'tenable'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Tenable.io <b class="caret"></b></a>
+							<div class="dropdown-menu" aria-labelledby="navbar-tenable-dropdown">
+								{% for item in menu.tenable -%}
+								<a class="dropdown-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
+								{%- endfor %}
+							</div>
+						</li>
+						{%- endif %}
 						{%- if menu.perms and menu.perms|length > 0 %}
 						<li class="nav-item {%if not classic_layout %} d-sm-none {%endif%}dropdown">
 							<a href="#" id="navbar-permissions-dropdown" class="dropdown-toggle nav-link {%if active == 'perms'%} active{%endif%}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Permissions <b class="caret"></b></a>
@@ -266,7 +276,7 @@
 						</a>
 						<a tabindex="0" role="button" data-toggle="modal" data-target="#search" class="list-group-item" data-placement="right">
 							<i class="fa fa-fw fa-search fa-2x"></i><span class="sidebar-hidden">Search</span>
-						</a>	
+						</a>
 						{%- if menu.favourites and menu.favourites|length > 0 %}
 						<a href="{{ menu.favourites[0].link }}" tabindex="0" role="button" data-mpop="favourites-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'favourites'%} menu-active{%endif%}">
 						<i class="fa fa-fw fa-star fa-2x"></i><span class="sidebar-hidden">Favourites</span>
@@ -288,6 +298,9 @@
 						{%- endif %}
 						{%- if menu.certificates and menu.certificates|length > 0 %}
 						<a href="{{ menu.certificates[0].link }}" tabindex="0" role="button" data-mpop="certificates-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'certificates'%} menu-active{%endif%}"><i class="fa fa-fw fa-certificate fa-2x"></i><span class="sidebar-hidden">Certificates</span></a>
+						{%- endif %}
+						{%- if menu.tenable and menu.tenable|length > 0 %}
+						<a href="{{ menu.tenable[0].link }}" tabindex="0" role="button" data-mpop="tenable-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'tenable'%} menu-active{%endif%}"><i class="fa fa-fw fa-rss fa-2x"></i><span class="sidebar-hidden">Tenable.io</span></a>
 						{%- endif %}
 						{%- if menu.perms and menu.perms|length > 0 %}
 						<a tabindex="0" role="button" data-mpop="perms-menu" data-container="body" class="list-group-item enable-menu-popover{%if active == 'perms'%} menu-active{%endif%}"><i class="fa fa-fw fa-lock fa-2x"></i><span class="sidebar-hidden">Permissions</span></a>
@@ -326,7 +339,7 @@
 			</ul>
 			</div>
 		{%- endif %}
-		
+
 		{%- if menu.systems and menu.systems|length > 0 %}
 			<div id="systems-menu" class="d-none">
 			<ul class="list-group list-group-popover">
@@ -381,6 +394,16 @@
 			</div>
 		{%- endif %}
 
+		{%- if menu.tenable and menu.tenable|length > 0 %}
+			<div id="tenable-menu" class="d-none">
+			<ul class="list-group list-group-popover">
+				{% for item in menu.tenable -%}
+				<a class="list-group-item" href="{{item.link}}"><i class="fa {{item.icon}} fa-fw"></i> {{item.title}}</a>
+				{%- endfor %}
+			</ul>
+			</div>
+		{%- endif %}
+
 		{%- if menu.perms and menu.perms|length > 0 %}
 			<div id="perms-menu" class="d-none">
 			<ul class="list-group list-group-popover">
@@ -400,7 +423,7 @@
 			</ul>
 			</div>
 		{%- endif %}
-		
+
 		<div id="user-menu" class="d-none">
 		<ul class="list-group list-group-popover">
 			<a class="list-group-item" data-toggle="modal" data-target="#prefs" href="#"><i class="fa fa-fw fa-cog"></i> Preferences</a>

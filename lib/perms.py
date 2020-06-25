@@ -177,6 +177,8 @@ class CortexPermissions:
 			{'name': 'certificates.view',                  'desc': 'View the list of discovered certificates and their details'},
 			{'name': 'certificates.stats',                 'desc': 'View the statistics about certificates'},
 			{'name': 'certificates.add',                   'desc': 'Adds a certificate to the list of tracked certificates'},
+
+			{'name': 'tenable.view',                       'desc': 'View information from Tenable.io'},
 		]
 
 		self.workflow_permissions = []

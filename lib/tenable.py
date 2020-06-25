@@ -1,6 +1,7 @@
 """
 Helper functions for the Cortex Tenable.io / Nessus Integration
 """
+import re
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -22,11 +23,16 @@ class TenableIOInvalidConfiguration(Exception):
 	pass
 
 class TenableIOApi:
+	"""Tenable API Helper"""
 
 	_REQUIRED_CONFIG = ["TENABLE_IO_URL", "TENABLE_IO_ACCESS_KEY", "TENABLE_IO_SECRET_KEY"]
 	_API_ENDPOINT_WHITELIST = [
-		"scanners/1/agents",
+		"scanners\/1\/agents",
+		"assets",
+		"workbenches\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/info",
+		"workbenches\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/vulnerabilities"
 	]
+	_API_ENDPOINT_REGEX = re.compile("^({})$".format("|".join(_API_ENDPOINT_WHITELIST)))
 
 	def __init__(self, url, access_key, secret_key):
 
@@ -62,8 +68,9 @@ class TenableIOApi:
 		return True
 
 	def api(self, path, method="GET", params=None, data=None):
+		"""Send an API request to the tenable API"""
 
-		if path not in self._API_ENDPOINT_WHITELIST:
+		if not self._API_ENDPOINT_REGEX.match(path):
 			raise TenableIOEndpointWhitelistError("The path '{path}' is not in the API Endpoints whitelist")
 
 		r = requests.request(
@@ -82,6 +89,7 @@ class TenableIOApi:
 		return r.json()
 
 def tio_connect():
+	"""Return an instance of the TenableIOApi object"""
 
 	tio = getattr(g, "tio", None)
 	if tio is None and TenableIOApi.validate_config(current_app.config):
