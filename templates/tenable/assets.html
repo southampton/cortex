@@ -1,0 +1,66 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="page-header">
+	<h4><i class="fa fa-fw fa-rss"></i> Tenable Assets</h4>
+	<div class="text-muted">This lists all of the known assets from Tenable.io</div>
+</div>
+<table class="table table-sm table-striped" id="agents">
+	<thead>
+		<tr>
+			<th><div class="tablesorter-inner">Name</div></th>
+			<th><div class="tablesorter-inner">FQDN</div></th>
+			<th><div class="tablesorter-inner">IP (Scan Target)</div></th>
+			<th><div class="tablesorter-inner">Operating System</div></th>
+			<th><div class="tablesorter-inner">Last Seen</div></th>
+			<th><div class="tablesorter-inner">Agent Status</div></th>
+		</tr>
+	</thead>
+	<tbody>
+	</tbody>
+</table>
+<script type="text/javascript">
+$(function() {
+	var agentsTable = $('#agents').DataTable({
+		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
+		"pageLength": 15,
+		"order": [[0, 'desc']],
+{%- if classic_layout %}
+		"fixedHeader": {
+			"headerOffset": 52
+		},
+{%- else %}
+		"fixedHeader": true,
+{%- endif %}
+		"columns": [
+			{"data": "netbios_name.0", "defaultContent": ""},
+			{"data": "fqdn.0", "defaultContent": ""},
+			{"data": "last_scan_target"},
+			{"data": "operating_system.0", "defaultContent": ""},
+			{"data": "last_seen", "type":"time"},
+			{"data": "has_agent"},
+		],
+		"searchDelay": 500,
+		"stateSave": true,
+		"ajax": {
+			"url": "{{ url_for('tenable.tenable_api', api_path='assets') }}",
+			"type": "GET",
+			"dataSrc": function(response) {
+				return response.assets;
+			},
+		},
+		{% if q %}
+		"search": { "search": {{q|tojson|safe}} },
+		{% endif %}
+		"searching": true,
+		"rowCallback": function(row, data, index) {
+			$("td:eq(0)", row).html(`<a class="server-link" href="{{ url_for('tenable.tenable_assets') }}/${data["id"]}">${data["netbios_name"][0] || data["last_scan_target"]}</a>`);
+			if (data["has_agent"] === true) {
+				$("td:eq(5)", row).html('<span class="badge badge-success">Installed</span>');
+			} else {
+				$("td:eq(5)", row).html('<span class="badge badge-danger">Not Installed</span>');
+			}
+		}
+	});
+});
+</script>
+{% endblock %}

@@ -13,6 +13,11 @@ tenable = Blueprint("tenable", __name__, url_prefix="/tenable")
 @tenable.route("/api/<path:api_path>", methods=["GET", "POST"])
 @cortex.lib.user.login_required
 def tenable_api(api_path):
+	"""Route for proxying API requests to Tenable.io"""
+
+	# Check user permissions
+	if not cortex.lib.user.does_user_have_permission("tenable.view"):
+		abort(403)
 
 	# Extract the request data and remove the CSRF token before proxying
 	request_data = request.form.to_dict()
@@ -27,14 +32,38 @@ def tenable_api(api_path):
 		data = request_data,
 	))
 
-@tenable.route("/agents")
+@tenable.route("/assets")
 @cortex.lib.user.login_required
 def tenable_assets():
+	"""Tenable.io Assets"""
+
+	# Check user permissions
+	if not cortex.lib.user.does_user_have_permission("tenable.view"):
+		abort(403)
+
+	return render_template("tenable/assets.html")
+
+@tenable.route("/agents")
+@cortex.lib.user.login_required
+def tenable_agents():
+	"""Registered Nessus agents on Tenable.io"""
+
+	# Check user permissions
+	if not cortex.lib.user.does_user_have_permission("tenable.view"):
+		abort(403)
+
 	return render_template("tenable/agents.html")
 
 @tenable.route("/agents/json", methods=["POST"])
 @cortex.lib.user.login_required
 def tenable_agents_json():
+	"""Datatables API for Nessus agents on Tenable.io"""
+
+	# Check user permissions
+	if not cortex.lib.user.does_user_have_permission("tenable.view"):
+		abort(403)
+
+
 	tio = cortex.lib.tenable.tio_connect()
 
 	# Extract information from DataTables

@@ -118,6 +118,13 @@ def context_processor():
 	if does_user_have_permission("certificates.add"):
 		certificates.append({'link': url_for('certificates_add'), 'title': 'Add Certificate', 'icon': 'fa-plus'})
 
+	# Set up the Tenable.io/Security Scanning, based on permissions
+	tenable = []
+	if does_user_have_permission("tenable.view"):
+		tenable.append({'link': url_for('tenable.tenable_assets'), 'title': 'Tenable.io Assets', 'icon': 'fa-cubes'})
+	if does_user_have_permission("tenable.view"):
+		tenable.append({'link': url_for('tenable.tenable_agents'), 'title': 'Tenable.io Agents', 'icon': 'fa-user-secret'})
+
 	# Set up the Admin menu, based on permissions
 	admin = []
 	if does_user_have_permission("classes.view"):
@@ -142,7 +149,7 @@ def context_processor():
 		perms.append({'link': url_for('systems_withperms'), 'title': 'Systems with permissions', 'icon': 'fa-list'})
 
 	# Set injectdata default options.
-	injectdata['menu'] = { 'systems': systems, 'favourites': favourites, 'vmware': vmware, 'puppet': puppet, 'certificates': certificates, 'admin': admin, 'perms': perms }
+	injectdata['menu'] = { 'systems': systems, 'favourites': favourites, 'vmware': vmware, 'puppet': puppet, 'certificates': certificates, 'tenable': tenable, 'admin': admin, 'perms': perms }
 	injectdata['classic_layout'] = False
 	injectdata['sidebar_expand'] = False
 
