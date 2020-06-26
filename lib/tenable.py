@@ -2,6 +2,7 @@
 Helper functions for the Cortex Tenable.io / Nessus Integration
 """
 import re
+from typing import Optional, Union
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -28,25 +29,26 @@ class TenableIOApi:
 	_REQUIRED_CONFIG = ["TENABLE_IO_URL", "TENABLE_IO_ACCESS_KEY", "TENABLE_IO_SECRET_KEY"]
 	_API_ENDPOINT_WHITELIST = [
 		"scanners\/1\/agents",
-		"assets",
+		"workbenches\/assets",
 		"workbenches\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/info",
-		"workbenches\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/vulnerabilities"
+		"workbenches\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/vulnerabilities",
+		"workbenches\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/vulnerabilities\/[0-9]+\/info"
 	]
 	_API_ENDPOINT_REGEX = re.compile("^({})$".format("|".join(_API_ENDPOINT_WHITELIST)))
 
-	def __init__(self, url, access_key, secret_key):
+	def __init__(self, url: str, access_key: str, secret_key: str):
 
-		self._base_url = "https://{base_url}/".format(base_url=self._extract_base_url(url))
-		self._access_key = access_key
-		self._secret_key = secret_key
+		self._base_url: str = "https://{base_url}/".format(base_url=self._extract_base_url(url))
+		self._access_key: str = access_key
+		self._secret_key: str = secret_key
 
-	def _extract_base_url(self, url):
+	def _extract_base_url(self, url: str) -> str:
 		"""Extract the base url from a url string e.g. for 'https://domain.tld'
 		or 'domain.tld/path' this will always return 'domain.tld'"""
 		return urlparse(url).netloc or urlparse(url).path.split("/", 1)[0]
 
 	@property
-	def _headers(self):
+	def _headers(self) -> dict:
 		"""Return a dictionary of HTTP headers to use for the API request"""
 		return {
 			"Accept": "application/json",
@@ -57,7 +59,7 @@ class TenableIOApi:
 		}
 
 	@staticmethod
-	def validate_config(app_config):
+	def validate_config(app_config: dict) -> bool:
 		"""Ensure the Tenable.io config is present"""
 		if not app_config:
 			raise TenableIOInvalidConfiguration("Invalid Configuration: Application configuration is empty or None")
@@ -67,11 +69,17 @@ class TenableIOApi:
 
 		return True
 
-	def api(self, path, method="GET", params=None, data=None):
-		"""Send an API request to the tenable API"""
+	def _is_api_path_whitelisted(self, path: str) -> bool:
+		"""Validate the provided api path is whitelisted"""
+		return bool(self._API_ENDPOINT_REGEX.match(path))
 
-		if not self._API_ENDPOINT_REGEX.match(path):
+	def validate_api_path(self, path: str) -> bool:
+		"""Validate the API path is whitelisted or raise a 403 exception"""
+		if not self._is_api_path_whitelisted(path):
 			raise TenableIOEndpointWhitelistError("The path '{path}' is not in the API Endpoints whitelist")
+
+	def api(self, path: str, method: str = "GET", params: Optional[dict] = None, data: Optional[dict] = None) -> Union[dict, list]:
+		"""Send an API request to the tenable API"""
 
 		r = requests.request(
 			method = method,
@@ -88,7 +96,7 @@ class TenableIOApi:
 
 		return r.json()
 
-def tio_connect():
+def tio_connect() -> TenableIOApi:
 	"""Return an instance of the TenableIOApi object"""
 
 	tio = getattr(g, "tio", None)

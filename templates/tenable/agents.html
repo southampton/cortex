@@ -36,10 +36,10 @@ $(function() {
 			{"data": "name"},
 			{"data": "status"},
 			{"data": "ip"},
-			{"data": "platform"},
-			{"data": "distro"},
-			{"data": "core_version"},
-			{"data": "last_scanned"},
+			{"data": "platform", "defaultContent": ""},
+			{"data": "distro", "defaultContent": ""},
+			{"data": "core_version", "defaultContent": ""},
+			{"data": "last_scanned", "defaultContent": ""},
 		],
 		"serverSide": true,
 		"searchDelay": 500,
@@ -56,8 +56,10 @@ $(function() {
 		{% endif %}
 		"searching": true,
 		"rowCallback": function(row, data, index) {
-			var last_scanned_date = new Date(data["last_scanned"] * 1000);
-			$("td:eq(6)", row).html(last_scanned_date.toISOString());
+			if (data["last_scanned"] !== undefined) {
+				var last_scanned_date = new Date(data["last_scanned"] * 1000);
+				$("td:eq(6)", row).html(last_scanned_date.toISOString());
+			}
 		}
 	});
 });

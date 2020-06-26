@@ -4,7 +4,7 @@
 	<h4><i class="fa fa-fw fa-rss"></i> Tenable Assets</h4>
 	<div class="text-muted">This lists all of the known assets from Tenable.io</div>
 </div>
-<table class="table table-sm table-striped" id="agents">
+<table class="table table-sm table-striped" id="assets">
 	<thead>
 		<tr>
 			<th><div class="tablesorter-inner">Name</div></th>
@@ -20,7 +20,7 @@
 </table>
 <script type="text/javascript">
 $(function() {
-	var agentsTable = $('#agents').DataTable({
+	var assetsTable = $('#assets').DataTable({
 		"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
 		"pageLength": 15,
 		"order": [[0, 'desc']],
@@ -42,8 +42,11 @@ $(function() {
 		"searchDelay": 500,
 		"stateSave": true,
 		"ajax": {
-			"url": "{{ url_for('tenable.tenable_api', api_path='assets') }}",
+			"url": "{{ url_for('tenable.tenable_api', api_path='workbenches/assets') }}",
 			"type": "GET",
+			"data": function (d) {
+				d.date_range = 30;
+			},
 			"dataSrc": function(response) {
 				return response.assets;
 			},
@@ -53,7 +56,7 @@ $(function() {
 		{% endif %}
 		"searching": true,
 		"rowCallback": function(row, data, index) {
-			$("td:eq(0)", row).html(`<a class="server-link" href="{{ url_for('tenable.tenable_assets') }}/${data["id"]}">${data["netbios_name"][0] || data["last_scan_target"]}</a>`);
+			$("td:eq(0)", row).html(`<a class="server-link" href="${"{{ url_for('tenable.tenable_asset', asset_id='ASSET_ID') }}".replace("ASSET_ID", data["id"])}">${data["netbios_name"][0] || data["fqdn"][0] || data["last_scan_target"]}</a>`);
 			if (data["has_agent"] === true) {
 				$("td:eq(5)", row).html('<span class="badge badge-success">Installed</span>');
 			} else {
