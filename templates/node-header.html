@@ -30,7 +30,7 @@
 		<li class="nav-item"><a class="{% if active == "perms" %}active {% endif %}nav-link" href="{{url_for('perms_system', system_id=system.id)}}" >Permissions</a></li>
 		{% endif -%}
 		{% if does_user_have_permission("tenable.view") -%}
-		<li class="nav-item"><a class="{% if active == "tenable" %}active {% endif %}nav-link" href="{{url_for('tenable.system_view', system_id=system.id)}}" >Tenable.io</a></li>
+		<li class="nav-item"><a class="{% if active == "tenable" %}active {% endif %}nav-link" href="{{url_for('tenable.system_view', system_id=system.id)}}" >Vulnerabilities</a></li>
 		{% endif -%}
 		<li class="nav-item dropdown">
 			<a class="nav-link dropdown-toggle" href="#" id="navbar-dropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">External links</a>

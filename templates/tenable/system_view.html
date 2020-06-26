@@ -13,10 +13,10 @@
 {{ node.header(system, active="tenable" ) }}
 <div class="row equal">
 	<div class="col-md-12">
-		<p class="text-muted">This page displays asset information directly from Tenable.io, in the case that multiple assets with the same target name are found you can select them using 'Select Asset' below:</p>
+		<p class="text-muted">This page displays asset information directly from Tenable.io, in the case that multiple assets with the same target name are found you can select them using 'Select Tenable.io Asset' below:</p>
 	</div>
 	<div class="col-md-8">
-		<label title="Select the asset from Tenable.io to view" class="col-sm-2 control-label" style="text-align: left;" for="select-asset">Select Asset:</label>
+		<label title="Select the asset from Tenable.io to view" class="col-sm-2 control-label" style="text-align: left;" for="select-asset">Select Tenable.io Asset:</label>
 		<select class="selectpicker form-control" id="select-asset"></select>
 	</div>
 	<div class="col-md-4">
@@ -53,7 +53,7 @@
 			<div class="col-md-6">
 				<div class="card">
 					<div class="card-header">
-						<h4 class="card-title">Asset Information</h4>
+						<h4 class="card-title">Tenable.io Asset Information</h4>
 					</div>
 					<div class="card-body">
 						<div class="row"><label class="col-sm-3 control-label" for="asset-info-name">Asset Name:</label><div class="col-sm-9"><p class="form-control-plaintext" id="asset-info-name"></p></div></div>
@@ -66,7 +66,7 @@
 			<div class="col-md-6">
 				<div class="card">
 					<div class="card-header">
-						<h4 class="card-title">Scan Information</h4>
+						<h4 class="card-title">Tenable.io Scan Information</h4>
 					</div>
 					<div class="card-body">
 						<div class="row"><label class="col-sm-3 control-label" for="scan-first-seen">First Seen:</label><div class="col-sm-9"><p class="form-control-plaintext" id="scan-first-seen"></p></div></div>
@@ -140,11 +140,10 @@
 	</div>
 </div>
 <script type="text/javascript">
-var assets = {};
-var selectedAsset = undefined;
-var vulnsTable = undefined;
 $(function() {
-
+	var assets = {};
+	var selectedAsset = undefined;
+	var vulnsTable = undefined;
 	var severityLookup = {
 		0: { "text": "Information", "class": "badge-info" },
 		1: { "text": "Low", "class": "badge-success" },
@@ -260,7 +259,7 @@ $(function() {
 			"responsive": true,
 			"rowCallback": function(row, data, index) {
 				$("td:eq(0)", row).html(`<span class="badge ${severityLookup[data["severity"]].class}">${severityLookup[data["severity"]].text}</span>`);
-				$("td:eq(1)", row).html(`<a href="#" data-toggle="modal" data-target="#vulnModal" data-plugin-id="${data["plugin_id"]}">${data["plugin_name"]}</a>`);
+				$("td:eq(1)", row).html(`<a class="server-link" href="#" data-toggle="modal" data-target="#vulnModal" data-plugin-id="${data["plugin_id"]}">${data["plugin_name"]}</a>`);
 			}
 		});
 	}
