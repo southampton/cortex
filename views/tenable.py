@@ -5,6 +5,7 @@ Views for the Cortex Tenable.io / Nessus Integration
 from flask import Blueprint, current_app, jsonify, render_template, request
 
 import cortex.lib.tenable
+import cortex.lib.systems
 import cortex.lib.user
 from cortex.views.systems import _systems_extract_datatables
 
@@ -23,8 +24,11 @@ def tenable_api(api_path):
 	request_data = request.form.to_dict()
 	request_data.pop("_csrf_token", None)
 
-	# Make a request to the Tenable.io API
+	# Ensure the request is valid
 	tio = cortex.lib.tenable.tio_connect()
+	tio.validate_api_path(api_path)
+
+	# Make a request to the Tenable.io API
 	return jsonify(tio.api(
 		api_path,
 		method = request.method,
@@ -42,6 +46,29 @@ def tenable_assets():
 		abort(403)
 
 	return render_template("tenable/assets.html")
+
+@tenable.route("/assets/<string:asset_id>")
+@cortex.lib.user.login_required
+def tenable_asset(asset_id):
+	# TODO: Either link to systems view or display asset information
+	return "view "+ asset_id
+
+@tenable.route("/systems/<int:system_id>/view")
+@cortex.lib.user.login_required
+def system_view(system_id):
+
+	# Check user permissions
+	if not (cortex.lib.user.does_user_have_system_permission(system_id, "view.detail", "systems.all.view") and cortex.lib.user.does_user_have_permission("tenable.view")):
+		abort(403)
+
+	# Get the system
+	system = cortex.lib.systems.get_system_by_id(system_id)
+
+	# Ensure that the system actually exists, and return a 404 if it doesn't
+	if system is None:
+		abort(404)
+
+	return render_template("tenable/system_view.html", title=system["name"], system=system)
 
 @tenable.route("/agents")
 @cortex.lib.user.login_required
