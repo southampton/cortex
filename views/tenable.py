@@ -4,12 +4,24 @@ Views for the Cortex Tenable.io / Nessus Integration
 
 from flask import Blueprint, current_app, jsonify, render_template, request
 
-import cortex.lib.tenable
+import cortex.lib.errors
 import cortex.lib.systems
+import cortex.lib.tenable
 import cortex.lib.user
 from cortex.views.systems import _systems_extract_datatables
 
 tenable = Blueprint("tenable", __name__, url_prefix="/tenable")
+
+## Error Handlers
+
+@tenable.app_errorhandler(cortex.lib.tenable.TenableIOHttpError)
+def error_TenableIOHttpError(error=None):
+
+	status_code = error.response.status_code if error and error.response and error.response.status_code else 400
+	message = str(error) if error else "Your request was invalid"
+	return cortex.lib.errors.stderr("Tenable.io HTTP Request Error", message, status_code)
+
+## Views
 
 @tenable.route("/api/<path:api_path>", methods=["GET", "POST"])
 @cortex.lib.user.login_required
@@ -24,7 +36,7 @@ def tenable_api(api_path):
 	request_data = request.form.to_dict()
 	request_data.pop("_csrf_token", None)
 
-	# Ensure the request is valid
+	# Ensure the request is valid and whitelisted!
 	tio = cortex.lib.tenable.tio_connect()
 	tio.validate_api_path(api_path)
 
@@ -50,12 +62,18 @@ def tenable_assets():
 @tenable.route("/assets/<string:asset_id>")
 @cortex.lib.user.login_required
 def tenable_asset(asset_id):
-	# TODO: Either link to systems view or display asset information
-	return "view "+ asset_id
+	"""Tenable.io Asset Information"""
+
+	# Check user permissions
+	if not cortex.lib.user.does_user_have_permission("tenable.view"):
+		abort(403)
+
+	return render_template("tenable/asset.html", title="Asset Information", asset_id=asset_id)
 
 @tenable.route("/systems/<int:system_id>/view")
 @cortex.lib.user.login_required
 def system_view(system_id):
+	"""Tenable.io Asset Information - from node/system tab"""
 
 	# Check user permissions
 	if not (cortex.lib.user.does_user_have_system_permission(system_id, "view.detail", "systems.all.view") and cortex.lib.user.does_user_have_permission("tenable.view")):
@@ -89,9 +107,6 @@ def tenable_agents_json():
 	# Check user permissions
 	if not cortex.lib.user.does_user_have_permission("tenable.view"):
 		abort(403)
-
-
-	tio = cortex.lib.tenable.tio_connect()
 
 	# Extract information from DataTables
 	# TODO: Move this extract function to a general lib

@@ -1,0 +1,391 @@
+{#- Shared template for showing asset information -#}
+<div id="asset-error-alert" class="alert alert-danger d-none" role="alert"></div>
+<div id="asset-info-wrapper" class="d-none">
+	<div class="row equal">
+		<div class="col-md-12">
+			<p class="text-muted">This page displays asset information directly from Tenable.io, in the case that multiple assets with the same target name are found you can select them using 'Select Tenable.io Asset' below:</p>
+		</div>
+		<div class="col-md-8">
+			<label title="Select the asset from Tenable.io to view" class="col-sm-2 control-label" style="text-align: left;" for="select-asset">Select Tenable.io Asset:</label>
+			<select class="selectpicker form-control" id="select-asset"></select>
+		</div>
+		<div class="col-md-4">
+			<ul class="nav nav-pills nav-fill mb-3 w-100 justify-content-end font-weight-bold" id="asset-page-tab" role="tablist">
+				<li class="nav-item">
+					<a class="nav-link tenable-nav-link active" id="tab-overview" data-toggle="pill" href="#content-overview" role="tab" aria-controls="content-overview" aria-selected="true">Overview</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link  tenable-nav-link" id="tab-vulns" data-toggle="pill" href="#content-vulns" role="tab" aria-controls="content-vulns" aria-selected="false">Vulnerabilities</a>
+				</li>
+			</ul>
+		</div>
+	</div>
+	<div class="tab-content" id="asset-page-tab-content">
+		<div class="tab-pane fade show active" id="content-overview" role="tabpanel" aria-labelledby="tab-overview">
+			<div class="row equal">
+				<div class="col-md-12">
+					<div class="card">
+						<div class="card-header">
+							<h4 class="card-title">Vulnerabilities Overview</h4>
+						</div>
+						<div class="card-body">
+							<h2 class="text-center">
+								<span>Total:</span><span id="overview-count-total" class="badge badge-secondary mx-3">0</span>
+								<span>Critical:</span><span id="overview-count-4" class="badge badge-danger mx-3">0</span>
+								<span>High:</span><span id="overview-count-3" class="badge badge-warning mx-3">0</span>
+								<span>Medium:</span><span id="overview-count-2" class="badge badge-warning badge-warning-yellow mx-3">0</span>
+								<span>Low:</span><span id="overview-count-1" class="badge badge-success mx-3">0</span>
+								<span>Information:</span><span id="overview-count-0" class="badge badge-info mx-3">0</span>
+							</h2>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-6">
+					<div class="card">
+						<div class="card-header">
+							<h4 class="card-title">Tenable.io Asset Information</h4>
+						</div>
+						<div class="card-body">
+							<div class="row"><label class="col-sm-3 control-label" for="asset-info-name">Asset Name:</label><div class="col-sm-9"><p class="form-control-plaintext" id="asset-info-name"></p></div></div>
+							<div class="row"><label class="col-sm-3 control-label" for="asset-info-os">Operating System:</label><div class="col-sm-9"><p class="form-control-plaintext" id="asset-info-os"></p></div></div>
+							<div class="row"><label class="col-sm-3 control-label" for="asset-info-ipv4">IPv4 Addresses:</label><div class="col-sm-9"><p class="form-control-plaintext" id="asset-info-ipv4"></p></div></div>
+							<div class="row"><label class="col-sm-3 control-label" for="asset-info-ipv6">IPv6 Addresses:</label><div class="col-sm-9"><p class="form-control-plaintext" id="asset-info-ipv6"></p></div></div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-6">
+					<div class="card">
+						<div class="card-header">
+							<h4 class="card-title">Tenable.io Scan Information</h4>
+						</div>
+						<div class="card-body">
+							<div class="row"><label class="col-sm-3 control-label" for="scan-first-seen">First Seen:</label><div class="col-sm-9"><p class="form-control-plaintext" id="scan-first-seen"></p></div></div>
+							<div class="row"><label class="col-sm-3 control-label" for="scan-last-seen">Last Seen:</label><div class="col-sm-9"><p class="form-control-plaintext" id="scan-last-seen"></p></div></div>
+							<div class="row"><label class="col-sm-3 control-label" for="scan-last-auth">Last Auth Scan:</label><div class="col-sm-9"><p class="form-control-plaintext" id="scan-last-auth"></p></div></div>
+							<div class="row"><label class="col-sm-3 control-label" for="scan-last-target">Last Scan Target:</label><div class="col-sm-9"><p class="form-control-plaintext" id="scan-last-target"></p></div></div>
+							<div class="row"><label class="col-sm-3 control-label" for="scan-last-id">Last Scan ID:</label><div class="col-sm-9"><p class="form-control-plaintext" id="scan-last-id"></p></div></div>
+							<div class="row"><label class="col-sm-3 control-label" for="scan-sources">Scan Sources:</label><div class="col-sm-9"><p class="form-control-plaintext" id="scan-sources"></p></div></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="tab-pane fade" id="content-vulns" role="tabpanel" aria-labelledby="tab-vulns">
+			<div class="row equal">
+				<div class="col-md-12">
+					<div class="card">
+						<div class="card-header">
+							<h4 class="card-title">Vulnerabilities</h4>
+						</div>
+						<div class="card-body">
+							<table class="table table-sm table-striped" id="vulnsTable" width="100%">
+								<thead>
+									<tr>
+										<th><div class="tablesorter-inner">Severity</div></th>
+										<th><div class="tablesorter-inner">Name</div></th>
+										<th><div class="tablesorter-inner">Family</div></th>
+										<th><div class="tablesorter-inner">State</div></th>
+										<th><div class="tablesorter-inner">Count</div></th>
+										<th><div class="tablesorter-inner">VPR</div></th>
+									</tr>
+								</thead>
+								<tbody>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="vulnModal" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			...
+		</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="vulnModal" tabindex="-1" role="dialog" aria-labelledby="vulnModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="vulnModalLabel">Vulnerability Information&nbsp;-&nbsp;<span id="vulnModal-severity"></span></h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<h5>Description</h5>
+				<p id="vulnModal-description"></p>
+				<h5>Solution</h5>
+				<p id="vulnModal-solution"></p>
+				<h5>See Also</h5>
+				<ul id="vulnModal-see-also"></ul>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+			</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+$(function() {
+	var assets = {};
+	var selectedAsset = undefined;
+	var vulnsTable = undefined;
+	var severityLookup = {
+		0: { "text": "Information", "class": "badge-info" },
+		1: { "text": "Low", "class": "badge-success" },
+		2: { "text": "Medium", "class": "badge-warning badge-warning-yellow" },
+		3: { "text": "High", "class": "badge-warning" },
+		4: { "text": "Critical", "class": "badge-danger" }
+	};
+
+	function getAssetName(asset) {
+		if ("agent_name" in asset && asset["agent_name"][0] != undefined) {
+			return asset["agent_name"][0];
+		}
+		if ("hostname" in asset && asset["hostname"][0] != undefined) {
+			return asset["hostname"][0];
+		}
+		if ("netbios_name" in asset && asset["netbios_name"][0] != undefined) {
+			return asset["netbios_name"][0];
+		}
+		if ("fqdn" in asset && asset["fqdn"][0] != undefined) {
+			return asset["fqdn"][0];
+		}
+		if ("last_scan_target" in asset && asset["last_scan_target"]!= undefined) {
+			return asset["last_scan_target"];
+		}
+		return "Unknown"; // Should never get here!
+	}
+
+	function processAssets(data) {
+		if (!("assets" in data) || data["assets"] === undefined || data["assets"].length == 0) {
+			return {};
+		}
+		var _assets = {}
+		data["assets"].forEach(asset => {
+			_assets[asset["id"]] = asset;
+			_assets[asset["id"]].asset_name = getAssetName(asset);
+		});
+		return _assets;
+	}
+
+	function updateAssetSelect(assets, selectedAsset) {
+		$.each(assets, function(id, asset) {
+			var o = new Option(asset["asset_name"], id);
+			if (selectedAsset == id) {
+				o.selected = true;
+				o.defaultSelected = true;
+			}
+			$("#select-asset").append(o);
+		});
+		$("#select-asset").selectpicker("refresh");
+	}
+
+	function updateAssetOverviewTab(assets, selectedAsset) {
+		var asset = assets[selectedAsset];
+		$("#asset-info-name").html(asset.asset_name);
+		$("#asset-info-os").html(asset.asset_info.operating_system[0] || "Unknown");
+		$("#asset-info-ipv4").html(asset.asset_info.ipv4.join(",") || "None");
+		$("#asset-info-ipv6").html(asset.asset_info.ipv6.join(",") || "None");
+		$("#scan-first-seen").html(asset.asset_info.first_seen || "Never");
+		$("#scan-last-seen").html(asset.asset_info.last_seen || "Never");
+		$("#scan-last-auth").html(asset.asset_info.last_authenticated_scan_date || "Never");
+		$("#scan-last-target").html(asset.asset_info.last_scan_target || "");
+		$("#scan-last-id").html(asset.asset_info.last_scan_id || "");
+		$("#scan-sources").html(asset.asset_info.sources.map(s => { return s.name }).join(",") || "");
+		$("#overview-count-total").html(asset.asset_info.counts.vulnerabilities.total || "?");
+		asset.asset_info.counts.vulnerabilities.severities.forEach(s => {
+			$(`#overview-count-${s.level}`).html(s.count);
+		});
+	}
+
+	function assetOverviewTab(assets, selectedAsset) {
+		var asset = assets[selectedAsset];
+		if (!("asset_info" in asset) || asset["asset_info"] === undefined) {
+			var asset_info_url = "{{ url_for('tenable.tenable_api', api_path='workbenches/assets/ASSET_ID/info') }}".replace("ASSET_ID", selectedAsset);
+			$.ajax({
+				method: "GET",
+				url: asset_info_url,
+				dataType: "json",
+				success: function(data) {
+					assets[selectedAsset].asset_info = data["info"];
+					updateAssetOverviewTab(assets, selectedAsset);
+				},
+				error: function() {
+					$("#asset-error-alert").html("An error occured when communicating with the Tenable.io API, this is likely caused by entering an invalid asset ID or searching for an asset that does not exist.");
+					$("#asset-error-alert").removeClass("d-none");
+				}
+			});
+		} else {
+			updateAssetOverviewTab(assets, selectedAsset);
+		}
+	}
+
+	function updateAssetVulnsTab(assets, selectedAsset) {
+		vulnsTable = $('#vulnsTable').DataTable({
+			"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
+			"pageLength": 15,
+			"order": [[0, 'desc']],
+	{%- if classic_layout %}
+			"fixedHeader": {
+				"headerOffset": 52
+			},
+	{%- else %}
+			"fixedHeader": true,
+	{%- endif %}
+			"columns": [
+				{"data": "severity" },
+				{"data": "plugin_name" },
+				{"data": "plugin_family" },
+				{"data": "vulnerability_state"},
+				{"data": "count" },
+				{"data": "vpr_score", "defaultContent": ""},
+			],
+			"searchDelay": 500,
+			"stateSave": true,
+			"data": assets[selectedAsset].asset_vulns,
+			"searching": true,
+			"destroy": true,
+			"responsive": true,
+			"rowCallback": function(row, data, index) {
+				$("td:eq(0)", row).html(`<span class="badge ${severityLookup[data["severity"]].class}">${severityLookup[data["severity"]].text}</span>`);
+				$("td:eq(1)", row).html(`<a class="server-link" href="#" data-toggle="modal" data-target="#vulnModal" data-plugin-id="${data["plugin_id"]}">${data["plugin_name"]}</a>`);
+			}
+		});
+	}
+
+	function assetVulnsTab(assets, selectedAsset) {
+		var asset = assets[selectedAsset];
+		if (!("asset_vulns" in asset) || asset["asset_vulns"] === undefined) {
+			var asset_vulns_url = "{{ url_for('tenable.tenable_api', api_path='workbenches/assets/ASSET_ID/vulnerabilities') }}".replace("ASSET_ID", selectedAsset);
+			$.ajax({
+				method: "GET",
+				url: asset_vulns_url,
+				dataType: "json",
+				data: {
+					"date_range": "30"
+				},
+				success: function(data) {
+					assets[selectedAsset].asset_vulns = data["vulnerabilities"];
+					updateAssetVulnsTab(assets, selectedAsset);
+				},
+				error: function() {
+					$("#asset-error-alert").html("An error occured when communicating with the Tenable.io API, this is likely caused by entering an invalid asset ID or searching for an asset that does not exist.");
+					$("#asset-error-alert").removeClass("d-none");
+				}
+			});
+		} else {
+			updateAssetVulnsTab(assets, selectedAsset);
+		}
+	}
+
+	function updateTabs(tab) {
+		if (tab == "#content-overview") {
+			assetOverviewTab(assets, selectedAsset);
+		}else if (tab == "#content-vulns"){
+			assetVulnsTab(assets, selectedAsset);
+		}
+	}
+
+	function updateAssetVulnModal(assets, selectedAsset, pluginId) {
+		var plugin_info = assets[selectedAsset].asset_vulns_info[pluginId];
+		$("#vulnModal-severity").html(severityLookup[plugin_info.severity].text);
+		$("#vulnModal-severity").attr("class", `badge ${severityLookup[plugin_info.severity].class}`);
+		$("#vulnModal-description").html(plugin_info.description || "");
+		$("#vulnModal-solution").html(plugin_info.solution || "");
+		plugin_info.see_also.forEach(link => {
+			$("#vulnModal-see-also").append(`<li><a href="${link}">${link}</a></li>`);
+		});
+	}
+
+	function assetVulnModal(assets, selectedAsset, pluginId) {
+		var asset = assets[selectedAsset];
+		if (!("asset_vulns_info" in asset) || asset["asset_vulns_info"] === undefined) {
+			assets[selectedAsset].asset_vulns_info = {}
+		}
+		if (assets[selectedAsset].asset_vulns_info[pluginId] === undefined) {
+			var asset_vulns_info_url = "{{ url_for('tenable.tenable_api', api_path='workbenches/assets/ASSET_ID/vulnerabilities/PLUGIN_ID/info') }}".replace("ASSET_ID", selectedAsset).replace("PLUGIN_ID", pluginId);
+			$.ajax({
+				method: "GET",
+				url: asset_vulns_info_url,
+				dataType: "json",
+				data: {
+					"date_range": "30"
+				},
+				success: function(data) {
+					assets[selectedAsset].asset_vulns_info[pluginId] = data["info"];
+					updateAssetVulnModal(assets, selectedAsset, pluginId);
+				},
+				error: function() {
+					$("#asset-error-alert").html("An error occured when communicating with the Tenable.io API, this is likely caused by entering an invalid asset ID or searching for an asset that does not exist.");
+					$("#asset-error-alert").removeClass("d-none");
+				}
+			});
+		} else {
+			updateAssetVulnModal(assets, selectedAsset, pluginId);
+		}
+	}
+
+	$("#vulnModal").on("shown.bs.modal", function (e) {
+		assetVulnModal(assets, selectedAsset, $(e.relatedTarget).attr("data-plugin-id"));
+	});
+
+	$("a.tenable-nav-link[data-toggle='pill']").on("shown.bs.tab", function (e) {
+		updateTabs($(e.target).attr("href"));
+	});
+
+	$("#select-asset").on("change", function() {
+		selectedAsset = this.value;
+		updateTabs($("a.tenable-nav-link.active").attr("href"));
+	});
+
+	$.ajax({
+		method: "GET",
+		url: "{{ url_for('tenable.tenable_api', api_path='workbenches/assets') }}",
+		dataType: "json",
+		{%- if system and system.get("name") -%}
+		data: {
+			"all_fields": "default",
+			"filter.0.filter": "host.target",
+			"filter.0.quality": "match",
+			"filter.0.value": "{{ system.name }}",
+		},
+		{%- elif asset_id -%}
+		data: {
+			"all_fields": "default",
+			"filter.0.filter": "host.id",
+			"filter.0.quality": "eq",
+			"filter.0.value": "{{ asset_id }}",
+		},
+		{%- else -%}
+		data: {
+			"all_fields": "default",
+		},
+		{%- endif -%}
+		success: function(data) {
+			assets = processAssets(data);
+			if (Object.keys(assets).length === 0) {
+				$("#asset-error-alert").html("No Tenable.io assets exist for this system name or asset ID. If this is unexpected please check the Tenable.io dashboard or try searching in the asset list by selecting Tenable.io > Tenable.io Assets from the left menu.");
+				$("#asset-error-alert").removeClass("alert-danger");
+				$("#asset-error-alert").addClass("alert-info");
+				$("#asset-error-alert").removeClass("d-none");
+			} else {
+				selectedAsset = Object.keys(assets)[0];
+				updateAssetSelect(assets, selectedAsset);
+				assetOverviewTab(assets, selectedAsset);
+				$("#asset-info-wrapper").removeClass("d-none");
+			}
+		},
+		error: function() {
+			$("#asset-error-alert").html("An error occured when communicating with the Tenable.io API, this is likely caused by entering an invalid asset ID or searching for an asset that does not exist.");
+			$("#asset-error-alert").removeClass("d-none");
+		}
+	});
+
+});
+</script>
