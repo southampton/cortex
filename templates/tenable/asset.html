@@ -9,7 +9,9 @@
 	</style>
 {% endblock %}
 {% block body %}
-{% import 'node-header.html' as node %}
-{{ node.header(system, active="tenable" ) }}
+<div class="page-header">
+	<h4><i class="fa fa-fw fa-rss"></i> Tenable Asset</h4>
+	<div class="text-muted">This lists all of the known assets from Tenable.io</div>
+</div>
 {% include "tenable/asset_info.html" %}
 {% endblock %}

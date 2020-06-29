@@ -51,9 +51,6 @@ $(function() {
 				return response.assets;
 			},
 		},
-		{% if q %}
-		"search": { "search": {{q|tojson|safe}} },
-		{% endif %}
 		"searching": true,
 		"rowCallback": function(row, data, index) {
 			$("td:eq(0)", row).html(`<a class="server-link" href="${"{{ url_for('tenable.tenable_asset', asset_id='ASSET_ID') }}".replace("ASSET_ID", data["id"])}">${data["netbios_name"][0] || data["fqdn"][0] || data["last_scan_target"]}</a>`);
