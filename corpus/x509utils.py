@@ -16,14 +16,14 @@ def read_asn1_string(byte_string, offset):
 	(length, offset) = read_asn1_length(byte_string, offset)
 
 	if length != -1:
-		return (byte_string[offset:offset + length], offset + length)
+		return byte_string[offset:offset + length].decode('ascii'), offset + length
 	else:
 		# Search for the end of the string
 		end_byte_idx = offset
 		while byte_string[end_byte_offset] != 0b10000000:
 			end_byte_idx = end_byte_idx + 1
 
-		return (byte_string[offset:end_byte_index], end_byte_index + 1)
+		return byte_string[offset:end_byte_index].decode('ascii'), end_byte_index + 1
 
 ################################################################################
 
@@ -31,7 +31,7 @@ def read_asn1_length(byte_string, offset):
 	"""Reads an ASN1 length."""
 
 	# ASN1 lengths can be determined by single byte, multibyte, or be unknown
-	length_data = ord(byte_string[offset])
+	length_data = byte_string[offset]
 	length_lead = (length_data & 0b10000000) >> 7
 	length_tail = length_data & 0b01111111
 	if length_lead == 0:
@@ -52,7 +52,7 @@ def read_asn1_length(byte_string, offset):
 		length = 0
 		while length_byte_idx < length_end_byte:
 			length = length << 8
-			length = length | ord(byte_string[length_byte_idx])
+			length = length | byte_string[length_byte_idx]
 			length_byte_idx = length_byte_idx + 1
 			offset = offset + 1
 
@@ -70,7 +70,7 @@ def decode_subject_alt_name(byte_string):
 	#    AA = Tag Class (00 = Universal, 01 = Application, 02 = Context-specific, 03 = Private)
 	#     B = Primitive (0) or Constructed (1)
 	# CCCCC = Tag number (see the ASN1 docs)
-	context_type = ord(byte_string[0])
+	context_type = byte_string[0]
 	if context_type == 0b00110000:	# Universal, Constructed, Sequence
 		# Length follows the ASN1 tag
 		(length, first_data_byte_idx) = read_asn1_length(byte_string, 1)
@@ -79,7 +79,7 @@ def decode_subject_alt_name(byte_string):
 		# Now it gets complicated
 		byte_idx = first_data_byte_idx
 		while byte_idx < length + 2:
-			seq_el_type = ord(byte_string[byte_idx])
+			seq_el_type = byte_string[byte_idx]
 			byte_idx = byte_idx + 1
 			
 			if   seq_el_type == 0b10000000:  # otherName [0]
@@ -126,7 +126,7 @@ def get_subject_alt_names(cert):
 	sans = []
 	for i in range(0, cert.get_extension_count()):
 		ext = cert.get_extension(i)
-		if ext.get_short_name() == 'subjectAltName':
+		if ext.get_short_name() == b'subjectAltName':
 			alt_names = decode_subject_alt_name(ext.get_data())
 			for name in alt_names:
 				if   name[0] == 1:  # 
