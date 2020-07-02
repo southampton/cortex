@@ -1,12 +1,12 @@
+import datetime
 import json
-import math
 
 import MySQLdb as mysql
 from flask import g, request
+from flask_restx import Resource
 
 from cortex import app
 from cortex.api import api_login_required, api_manager
-from flask_restx import Resource
 
 puppet_modules_info_namespace = api_manager.namespace('puppet', description='Puppet API')
 @puppet_modules_info_namespace.route('/modules_info')
