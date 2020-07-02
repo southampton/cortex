@@ -35,8 +35,8 @@ def validate_data(r, templates, envs):
 	disk	 = r.form["disk"]
 	template = r.form["template"]
 	env	 = r.form["environment"]
-	swap_enabled = bool(r.form["swap-enabled"].lower() == "enable")
-	swap = r.form["swap"]
+	swap_enabled = bool(r.form["swap-enabled"].lower() == "enable") if "swap-enabled" in r.form else False
+	swap = r.form["swap"] if "swap" in r.form else 0
 
 	sockets = int(sockets)
 	if vm_spec_config_json is not None and "slider-sockets" in vm_spec_config_json and vm_spec_config_json["slider-sockets"].get("min", None) is not None and vm_spec_config_json["slider-sockets"].get("max", None) is not None:
@@ -94,17 +94,19 @@ def validate_data(r, templates, envs):
 	return (sockets, cores, ram, disk, swap, template, env, expiry)
 
 
-def get_build_config(build_type, config_key, default=None):
+def get_build_config(build_type, config_key, *args):
 	"""Helper function to return per-build_type config values"""
 	prefix = {
 		"standard": "",
 		"sandbox": "SB_",
 	}.get(build_type, "")
 
-	return workflow.config.get(prefix + config_key, default)
+	if args:
+		return workflow.config.get(prefix + config_key, *args)
+	return workflow.config[prefix + config_key]
 
 ################################################################################
-## Build VM View Handler
+## Generic Build VM View Handler
 
 def build(build_type):
 
@@ -143,21 +145,18 @@ def build(build_type):
 		# Get a list of Users
 		autocomplete_users = get_user_list_from_cache()
 
-		# VM Specs are defined only for the standard build currently
-		vm_spec_json = {}
-		vm_spec_config_json = {}
-		if build_type == "standard":
-			# Get the VM Specs from the DB
-			try:
-				vm_spec_json = cortex.lib.admin.get_kv_setting("vm.specs", load_as_json=True)
-			except ValueError:
-				flash("Could not parse JSON from the database.", "alert-danger")
+		# Get the VM Specs from the DB
+		try:
+			vm_spec_json = cortex.lib.admin.get_kv_setting("vm.specs", load_as_json=True)
+		except ValueError:
+			flash("Could not parse JSON from the database.", "alert-danger")
 
-			# Get the VM Specs Config from the DB.
-			try:
-				vm_spec_config_json = cortex.lib.admin.get_kv_setting("vm.specs.config", load_as_json=True)
-			except ValueError:
-				flash("Could not parse JSON from the database.", "alert-danger")
+		# Get the VM Specs Config from the DB.
+		try:
+			vm_spec_config_json = cortex.lib.admin.get_kv_setting("vm.specs.config", load_as_json=True)
+		except ValueError:
+			flash("Could not parse JSON from the database.", "alert-danger")
+			vm_spec_config_json = {}
 
 		# Get the VM Specs from the DB
 		try:
@@ -178,9 +177,9 @@ def build(build_type):
 			build_type = build_type,
 			title = title,
 			clusters = clusters,
-			default_cluster = get_build_config(build_type, "DEFAULT_CLUSTER"),
+			default_cluster = get_build_config(build_type, "DEFAULT_CLUSTER", None),
 			environments = environments,
-			default_env = get_build_config(build_type, "DEFAULT_ENV"),
+			default_env = get_build_config(build_type, "DEFAULT_ENV", None),
 			folders = folders,
 			os_names = get_build_config(build_type, "OS_DISP_NAMES"),
 			os_order = get_build_config(build_type, "OS_ORDER"),
@@ -248,7 +247,7 @@ def build(build_type):
 
 		# Build options to pass to the task
 		options = {}
-		options["workflow"] = build_type
+		options["build_type"] = build_type
 		options["sockets"] = sockets
 		options["cores"] = cores
 		options["ram"] = ram
