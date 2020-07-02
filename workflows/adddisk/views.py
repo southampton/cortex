@@ -1,4 +1,4 @@
-from flask import abort, redirect, request, session, url_for
+from flask import abort, redirect, request, session, url_for, flash
 import cortex.lib.core
 from cortex.lib.workflow import CortexWorkflow
 from cortex.lib.user import does_user_have_workflow_permission, does_user_have_system_permission, does_user_have_any_system_permission
@@ -64,7 +64,7 @@ def adddisk_add():
 		except ValueError: abort(400)
 
 		if not (MIN_DISK_SIZE <= values["adddisk_size"] <= MAX_DISK_SIZE):
-			flask("Invalid disk size! Please choose a size between {} and {} GiB".format(MIN_DISK_SIZE, MAX_DISK_SIZE))
+			flash("Invalid disk size! Please choose a size between {} and {} GiB".format(MIN_DISK_SIZE, MAX_DISK_SIZE))
 		else:
 
 			# Check permissions before starting task

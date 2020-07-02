@@ -281,7 +281,7 @@ def build(build_type):
 		task_id = neocortex.create_task(__name__, session["username"], options, description="Creates and sets up a virtual machine (Build Type = {})".format(build_type))
 
 		# Log the Task ID
-		cortex.lib.core.log(__name__, "workflow.buildvm.{}".format(build_type), "Build standard VM task {} started by {} with ServiceNow task {}".format(task_id, session["username"], values["task"]))
+		cortex.lib.core.log(__name__, "workflow.buildvm.{}".format(build_type), "Build standard VM task {} started by {} with ServiceNow task {}".format(task_id, session["username"], task or "None"))
 
 		# Redirect to the status page for the task
 		return redirect(url_for("task_status", id=task_id))
