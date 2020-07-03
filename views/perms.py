@@ -1,14 +1,16 @@
 
-from cortex import app
-import cortex.lib.perms
-import cortex.lib.user
-import cortex.lib.systems
-import cortex.lib.puppet
-import cortex.lib.core
-from cortex.lib.user import does_user_have_permission
-from flask import request, session, redirect, url_for, flash, g, abort, render_template, jsonify
 import re
+
 import MySQLdb as mysql
+from flask import abort, flash, g, redirect, render_template, request, url_for
+
+import cortex.lib.core
+import cortex.lib.perms
+import cortex.lib.puppet
+import cortex.lib.systems
+import cortex.lib.user
+from cortex import app
+from cortex.lib.user import does_user_have_permission
 
 ################################################################################
 

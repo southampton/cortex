@@ -1,18 +1,13 @@
 
-from cortex import app
-from cortex.lib.workflow import CortexWorkflow
-from cortex.lib.errors import stderr
+import itsdangerous
+from flask import abort, g, redirect, request, session, url_for
+from itsdangerous import JSONWebSignatureSerializer
+
 import cortex.lib.core
 import cortex.lib.systems
-from cortex.corpus import Corpus
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
-from pyVmomi import vim
-import itsdangerous
-from itsdangerous import JSONWebSignatureSerializer
-import requests
-import requests.exceptions
-from urllib.parse import urljoin
-import json
+from cortex import app
+from cortex.lib.errors import stderr
+from cortex.lib.workflow import CortexWorkflow
 
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('systems.all.decom', 'Decommission any system')

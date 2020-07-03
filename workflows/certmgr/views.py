@@ -1,26 +1,22 @@
-import MySQLdb as mysql
-from cortex import app
-from cortex.lib.workflow import CortexWorkflow
-import cortex.lib.core
-import cortex.lib.systems
-import cortex.views
-from cortex.corpus import Corpus
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify, Response
-import re, datetime, requests
-from urllib.parse import urljoin
-import json
+import re
 # For downloading ZIP file
 import zipfile
 from io import BytesIO
 
-# For NLB API
-from f5.bigip import ManagementRoot
-
 # For certificate validation
 import OpenSSL as openssl
+from flask import (Response, abort, flash, g, jsonify, redirect,
+                   render_template, request, session, url_for)
+
+import cortex.lib.core
+import cortex.lib.systems
+import cortex.views
+from cortex.lib.workflow import CortexWorkflow
+
+# For NLB API
+
 
 # For securely passing the actions list via the browser
-from itsdangerous import JSONWebSignatureSerializer
 
 workflow = CortexWorkflow(__name__, check_config={'PROVIDERS': list, 'DEFAULT_PROVIDER': str, 'ENVS': list, 'DEFAULT_ENV': str, 'KEY_SIZES': list, 'DEFAULT_KEY_SIZE': int, 'LENGTHS': list, 'DEFAULT_LENGTH': int, 'NLBS': list, 'ACME_SERVERS': list, 'ENTCA_SERVERS': list, 'NLB_INTERMEDIATE_CN_FILES': dict, 'NLB_INTERMEDIATE_CN_OCSP_STAPLING_PARAMS': dict, 'CLIENT_SSL_PROFILE_PREFIX': str, 'CLIENT_SSL_PROFILE_SUFFIX': str, 'CERT_SELF_SIGNED_C': str, 'CERT_SELF_SIGNED_ST': str, 'CERT_SELF_SIGNED_L': str, 'CERT_SELF_SIGNED_O': str, 'CERT_SELF_SIGNED_OU': str, 'ACME_DNS_VIEW': str, 'DNS_WAIT_TIME': int, 'CERT_CACHE_TIME': int, 'EXTERNAL_DNS_SERVER_IP': str})
 workflow.add_permission('certmgr.create', 'Create SSL Certificate')

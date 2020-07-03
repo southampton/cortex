@@ -1,10 +1,13 @@
-from cortex import app
+import csv
+import io
+
 import MySQLdb as mysql
-from flask import Flask, request, redirect, session, url_for, abort, render_template, flash, g
-import io, csv
-from cortex.corpus import Corpus
-import cortex.lib.user
+from flask import g
+
 import cortex.lib.parser
+import cortex.lib.user
+from cortex import app
+from cortex.corpus import Corpus
 
 REVIEW_STATUS_BY_NAME = {'NONE': 0, 'REQUIRED': 1, 'REVIEW': 2, 'NOT_REQUIRED': 3}
 REVIEW_STATUS_BY_ID   = {0: 'Not reviewed', 1: 'Required', 2: 'Under review', 3: 'Not required' }
@@ -37,11 +40,6 @@ def csv_stream(cursor):
 		# a new one each time
 		output = io.StringIO()
 		writer = csv.writer(output)
-
-		# Generate link to CMDB
-		cmdb_url = ""
-		if row['cmdb_id'] is not None and row['cmdb_id'] != "":
-			cmdb_url = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
 
 		# Write a row to the CSV output
 		outrow = [row['id'], row['type'], row['class'], row['number'], row['name'], row['allocation_date'], row['expiry_date'], row['decom_date'], row['allocation_who'], row['allocation_who_realname'], row['allocation_comment'], row['review_status'], row['review_task'], row['cmdb_id'], row['build_count'], row['primary_owner_who'], row['primary_owner_role'], row['primary_owner_who_realname'], row['secondary_owner_who'], row['secondary_owner_role'], row['secondary_owner_who_realname'], row['cmdb_sys_class_name'], row['cmdb_name'], row['cmdb_operational_status'], row['cmdb_u_number'], row['cmdb_environment'], row['cmdb_description'], row['cmdb_comments'], row['cmdb_os'], row['cmdb_short_description'], row['cmdb_is_virtual'], row['vmware_name'], row['vmware_vcenter'], row['vmware_uuid'], row['vmware_cpus'], row['vmware_ram'], row['vmware_guest_state'], row['vmware_os'], row['vmware_hwversion'], row['vmware_ipaddr'], row['vmware_tools_version_status'], row['vmware_hostname'], row['puppet_certname'], row['puppet_env'], row['puppet_include_default'], row['puppet_classes'], row['puppet_variables']]
@@ -101,7 +99,7 @@ def get_system_by_name(name, must_have_vmware_uuid=False, must_have_snow_sys_id=
 ################################################################################
 
 def get_system_by_puppet_certname(name):
-	"""Gets all the information about a system by its Puppet certificate 
+	"""Gets all the information about a system by its Puppet certificate
 	name."""
 
 	# Query the database
@@ -128,7 +126,7 @@ def get_system_by_vmware_uuid(name):
 def _build_systems_query(class_name = None, search = None, order = None, order_asc = True, limit_start = None, limit_length = None, hide_inactive = True, only_other = False, show_expired = False, show_nocmdb = False, show_perms_only = False, show_allocated_and_perms = False, only_allocated_by = None, show_favourites_for = None, virtual_only = False, toggle_queries = False):
 	params = ()
 	query = ""
-	
+
 	# If a class_name is specfied, add on a WHERE clause
 	if class_name is not None:
 		query = query + "WHERE `class` = %s"
@@ -139,7 +137,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 		sql_query_params = ()
 		if class_name is not None:
 	       		query = query + " AND "
-		else:   
+		else:
 	       		query = query + "WHERE "
 		try:
 			variable_to_column_map = {'id': 'id', 'class': 'class', 'number': 'number', 'name': 'name', 'allocation_date': 'allocation_date', 'expiry_date': 'expiry_date', 'decom_date': 'decom_date', 'allocation_username': 'allocation_who', 'allocation_name': 'allocation_who_realname', 'purpose': 'allocation_comment', 'review_status': 'review_status', 'cmdb_id': 'cmdb_id', 'primary_owner_username': 'primary_owner_who', 'primary_owner_role': 'primary_owner_role', 'primary_owner_name': 'primary_owner_who_realname', 'secondary_owner_username': 'secondary_owner_who', 'secondary_owner_role': 'secondary_owner_role', 'secondary_owner_name': 'secondary_owner_who_realname', 'cmdb_sys_class_name': 'cmdb_sys_class_name', 'cmdb_name': 'cmdb_name', 'cmdb_operational_status': 'cmdb_operational_status', 'cmdb_number': 'cmdb_u_number', 'cmdb_environment': 'cmdb_environment', 'cmdb_description': 'cmdb_description', 'cmdb_comments': 'cmdb_comments', 'cmdb_os': 'cmdb_os', 'cmdb_short_description': 'cmdb_short_description', 'cmdb_is_virtual': 'cmdb_is_virtual', 'vmware_name': 'vmware_name', 'vmware_vcenter': 'vmware_vcenter', 'vmware_uuid': 'vmware_uuid', 'vmware_cpus': 'vmware_cpus', 'vmware_ram': 'vmware_ram', 'vmware_guest_state': 'vmware_guest_state', 'vmware_os': 'vmware_os', 'vmware_hwversion': 'vmware_hwversion', 'vmware_ipaddr': 'vmware_ipaddr', 'vmware_tools_version_status': 'vmware_tools_version_status', 'vmware_hostname': 'vmware_hostname', 'puppet_certname': 'puppet_certname', 'puppet_env': 'puppet_env', 'puppet_include_default': 'puppet_include_default'}
@@ -164,11 +162,11 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 			else:
 				query = query + "WHERE "
 
-			# Allow the search to match on name, allocation_comment or 
+			# Allow the search to match on name, allocation_comment or
 			# allocation_who
 			query = query + "(`name` LIKE %s OR `allocation_comment` LIKE %s OR `allocation_who` LIKE %s OR `cmdb_environment` LIKE %s OR `allocation_who_realname` LIKE %s OR `vmware_ipaddr` LIKE %s)"
 
-			# Add the filter string to the parameters of the query. Add it 
+			# Add the filter string to the parameters of the query. Add it
 			# three times as there are three columns to match on.
 			params = params + (like_string, like_string, like_string, like_string, like_string, like_string)
 
@@ -209,7 +207,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 		else:
 			query = query + "WHERE "
 		query = query + ' `id` IN (SELECT DISTINCT `system_id` FROM `system_perms_view`)'
-	
+
 	if show_allocated_and_perms:
 		if class_name is not None or search is not None or hide_inactive == True or only_other or show_expired or show_nocmdb or show_perms_only:
 			query = query + " AND "
@@ -269,7 +267,7 @@ def _build_systems_query(class_name = None, search = None, order = None, order_a
 	if limit_start is not None or limit_length is not None:
 		query = query + " LIMIT "
 		if limit_start is not None:
-			# Start is specified (which syntactically means length 
+			# Start is specified (which syntactically means length
 			# must also be specified)
 			query = query + str(int(limit_start)) + ","
 		if limit_length is not None:
@@ -314,7 +312,7 @@ def get_systems(class_name = None, search = None, order = None, order_asc = True
 			return curd
 		else:
 			return curd.fetchall()
-	except Exception as e:
+	except Exception:
 		# If an error occurs, it's because of the incorrect syntax of the WHERE clause
 		# Therefore, return nothing
 		if return_cursor:

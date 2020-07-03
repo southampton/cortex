@@ -1,5 +1,6 @@
 import pypuppetdb
 
+
 class PuppetDBConnector:
 
 	def __init__(self, host, port, ssl_cert, ssl_key, ssl_verify):

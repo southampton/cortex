@@ -14,8 +14,7 @@ from logging.handlers import RotatingFileHandler, SMTPHandler
 import jinja2
 import markupsafe
 import MySQLdb as mysql
-import redis
-from flask import Flask, abort, g, render_template, request, session, url_for
+from flask import Flask, abort, request, session, url_for
 
 from cortex.lib.perms import CortexPermissions
 
@@ -248,7 +247,7 @@ Further Details:
 				views_file = os.path.join(fqp, "views.py")
 				self.logger.info("Loading " + entry + " from " + views_file)
 				try:
-					view_module = imp.load_source(entry, views_file)
+					imp.load_source(entry, views_file)
 					self.logger.info("Workflows: Finished loading workflow '" + entry + "'")
 				except Exception as ex:
 					self.logger.warn("Workflows: Could not load from file " + views_file + ": " + str(type(ex)) + " - " + str(ex))
@@ -439,12 +438,12 @@ Username:             %s
 
 		try:
 			cursor.execute("""CREATE INDEX `related_events_key` ON `events` (`related_id`)""")
-		except Exception as ex:
+		except Exception:
 			pass
 
 		try:
 			cursor.execute("""CREATE INDEX `events_name_index` ON `events` (`name`)""")
-		except Exception as ex:
+		except Exception:
 			pass
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `kv_settings` (
@@ -553,7 +552,7 @@ Username:             %s
 			cursor.execute("""ALTER TABLE `puppet_nodes` ADD `last_failed` datetime DEFAULT NULL""")
 			cursor.execute("""ALTER TABLE `puppet_nodes` ADD `last_changed` datetime DEFAULT NULL""")
 			cursor.execute("""ALTER TABLE `puppet_nodes` ADD `noop_since` datetime DEFAULT NULL""")
-		except Exception as e:
+		except Exception:
 			pass
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `sncache_cmdb_ci` (
@@ -705,40 +704,40 @@ Username:             %s
 		# Attempt to alter the systems table and add new columns.
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `expiry_date` datetime DEFAULT NULL""")
-		except Exception as e:
+		except Exception:
 			pass
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `build_count` mediumint(11) DEFAULT 0""")
-		except Exception as e:
+		except Exception:
 			pass
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `decom_date` datetime DEFAULT NULL""")
-		except Exception as e:
+		except Exception:
 			pass
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `primary_owner_who` varchar(64) DEFAULT NULL""")
-		except Exception as e:
+		except Exception:
 			pass
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `primary_owner_role` varchar(64) DEFAULT NULL""")
-		except Exception as e:
+		except Exception:
 			pass
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `secondary_owner_who` varchar(64) DEFAULT NULL""")
-		except Exception as e:
+		except Exception:
 			pass
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `secondary_owner_role` varchar(64) DEFAULT NULL""")
-		except Exception as e:
+		except Exception:
 			pass
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `enable_backup` tinyint(1) DEFAULT 2""")
-		except Exception as e:
+		except Exception:
 			pass
 
 		try:
 			cursor.execute("""ALTER TABLE `systems` ADD `enable_backup_scripts` tinyint(1) DEFAULT 2""")
-		except Exception as e:
+		except Exception:
 			pass
 
 		cursor.execute("""CREATE OR REPLACE VIEW `systems_info_view` AS SELECT
@@ -1099,4 +1098,3 @@ Username:             %s
 		self.logger.info("Database initialisation complete")
 
 ################################################################################
-

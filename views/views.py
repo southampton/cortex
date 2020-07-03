@@ -1,14 +1,15 @@
 
-from cortex import app
+import datetime
+
+import MySQLdb as mysql
+from flask import abort, g, render_template, request, session
+
 import cortex.lib.core
+import cortex.lib.puppet
 import cortex.lib.user
 import cortex.lib.vmware
-import cortex.lib.puppet
+from cortex import app
 from cortex.lib.user import does_user_have_permission
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
-import os
-import datetime
-import MySQLdb as mysql
 
 ################################################################################
 
@@ -97,7 +98,7 @@ def dashboard():
 			'failed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract","certname",["and",["=", "latest_report_status", "failed"], ["=", "latest_report_noop", false], [">", "report_timestamp", "{0}"]]]'.format(now_minus_2.isoformat()))),
 			'changed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname",["and",["=", "latest_report_status", "changed"],["=", "latest_report_noop", false], [">", "report_timestamp", "{0}"]]]'.format(now_minus_2.isoformat()))),
 		}
-	except Exception as e:
+	except Exception:
 		import traceback
 		app.logger.error("Failed to talk to PuppetDB on dashboard:\n" + traceback.format_exc())
 		stats = { 'failed': '???', 'changed': '???' }

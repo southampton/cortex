@@ -1,14 +1,17 @@
-from flask import request, session
-from flask_restx import Resource
 import math
 
-from cortex.api import api_manager, api_login_required
-from cortex.api.exceptions import InvalidPermissionException, NoResultsFoundException
-from cortex.api.parsers import pagination_arguments
-from cortex.api.serializers.systems_info_view import page_systems_info_view_serializer, systems_info_view_serializer
+from flask import request, session
+from flask_restx import Resource
 
-from cortex.lib.user import does_user_have_permission, does_user_have_system_permission, does_user_have_any_system_permission
 import cortex.lib.systems
+from cortex.api import api_login_required, api_manager
+from cortex.api.exceptions import (InvalidPermissionException,
+                                   NoResultsFoundException)
+from cortex.api.parsers import pagination_arguments
+from cortex.api.serializers.systems_info_view import (
+    page_systems_info_view_serializer, systems_info_view_serializer)
+from cortex.lib.user import (does_user_have_permission,
+                             does_user_have_system_permission)
 
 systems_info_view_namespace = api_manager.namespace('systems_info_view', description='System\'s Info View API')
 

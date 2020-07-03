@@ -1,26 +1,24 @@
 
-import os
-import MySQLdb as mysql
-import sys
-from pyVmomi import vim
-from pyVmomi import vmodl
-import time
 import signal
+
+import MySQLdb as mysql
+from pyVmomi import vim
+
 
 def sigalrm_handler(signum, frame):
 	"""
-	Handles the SIGALRM signal, which we use to interrupt a read should it 
-	take a long time. This prevents this task from never completing and 
+	Handles the SIGALRM signal, which we use to interrupt a read should it
+	take a long time. This prevents this task from never completing and
 	never getting killed.
 	"""
-	
+
 	# Raise an exception, which should interrupt and terminate
 	raise Exception("Timed out when communicating with vCenter")
 
 def run(helper, options):
 	"""
-	Clears the necessary database tables and re-imports the data 
-	from VMware. Performed as a single transaction, so if any part 
+	Clears the necessary database tables and re-imports the data
+	from VMware. Performed as a single transaction, so if any part
 	of the import fails, the old data is retained.
 	"""
 
@@ -74,7 +72,7 @@ def run(helper, options):
 			try:
 				si = helper.lib.vmware_smartconnect(key)
 				content = si.RetrieveContent()
-			except Exception as e:
+			except Exception:
 				helper.end_event(description="Failed to connect to instance " + instance['hostname'], success=False)
 				continue
 			else:
@@ -96,7 +94,6 @@ def run(helper, options):
 					helper.event("vmware_cache_vm", "Downloading virtual machine information from " + instance['hostname'])
 
 					# Get the root of the VMware containers, and search for virtual machines
-					root_folder = si.content.rootFolder
 					view = helper.lib.vmware_get_container_view(si, obj_type=[vim.VirtualMachine])
 
 					# Collect a subset of data on all VMs
@@ -183,7 +180,7 @@ def run(helper, options):
 							else:
 								# Recurse to parent
 								parent = parent.parent
-						except Exception as ex:
+						except Exception:
 							clusterdc = "Unknown"
 							break
 
@@ -223,7 +220,7 @@ def run(helper, options):
 				signal.alarm(0)
 				helper.end_event(description="Downloaded cluster machine information for " + instance['hostname'])
 
-		# Note: We delete the cache from the database after downloading all the data, so 
+		# Note: We delete the cache from the database after downloading all the data, so
 		# as to not lock the table and have it empty whilst the job is running
 
 		## Delete existing data from database
@@ -321,5 +318,3 @@ def recurse_folder(folder, folders):
 
 			if len(child.childEntity) > 0:
 				recurse_folder(child, folders)
-
-

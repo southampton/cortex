@@ -1,9 +1,10 @@
 
-from cortex import app
-import cortex.lib.user
-from cortex.lib.user import does_user_have_permission
-from flask import g, render_template, session, request, jsonify, flash, abort
 import MySQLdb as mysql
+from flask import abort, flash, g, jsonify, render_template, request, session
+
+import cortex.lib.user
+from cortex import app
+from cortex.lib.user import does_user_have_permission
 
 ################################################################################
 
@@ -80,4 +81,3 @@ def favourites_json():
 			return jsonify({"success":True})
 	else:
 		abort(400)
-

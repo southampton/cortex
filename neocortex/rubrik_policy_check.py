@@ -1,5 +1,7 @@
-from corpus import rubrik
 import MySQLdb as mysql
+
+from corpus import rubrik
+
 
 def run(helper, options):
 	## GET ALL THE VMS
@@ -43,7 +45,7 @@ def run(helper, options):
 		# Retrieving the info that Rubrik has on the device
 		try:
 			rubrik_vm_data = rubrik_connection.get_vm(cortex_vm_data)
-		except Exception as e:
+		except Exception:
 			rubrik_vm_data = None
 
 		# Get the system's OS type using the cmdb_os field:
@@ -136,4 +138,3 @@ def run(helper, options):
 
 	# Oneshot this as the original _vm_task event above may have already ended
 	helper.event("_rubrik_end", "VM SLA assignments updated: {} changes made".format(changes), oneshot=True)
-

@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 
-from cortex import app
-from cortex.lib.workflow import CortexWorkflow
-from cortex.lib.user import get_user_list_from_cache
-import cortex.lib.core
-import cortex.lib.admin
 import datetime
-from flask import Flask, request, session, redirect, url_for, flash, g, abort
-import re
-import json
-from cortex.corpus import Corpus
+
+from flask import abort, flash, redirect, request, session, url_for
+
+import cortex.lib.admin
+import cortex.lib.core
+from cortex import app
+from cortex.lib.user import get_user_list_from_cache
+from cortex.lib.workflow import CortexWorkflow
 
 workflow = CortexWorkflow(__name__)
 workflow.add_permission("buildvm.sandbox", "Create Sandbox VM")
@@ -86,7 +85,7 @@ def validate_data(r, templates, envs):
 		expiry = r.form["expiry"]
 		try:
 			expiry = datetime.datetime.strptime(expiry, "%Y-%m-%d")
-		except Exception as e:
+		except Exception:
 			raise ValueError("Expiry date must be specified in YYYY-MM-DD format")
 	else:
 		expiry = None
@@ -296,4 +295,3 @@ def standard():
 @workflow.route("sandbox", title="Create Sandbox VM", order=20, permission="buildvm.sandbox", methods=["GET", "POST"])
 def sandbox():
 	return build("sandbox")
-

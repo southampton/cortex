@@ -1,11 +1,8 @@
-from cortex import app
+from flask import Response, abort, make_response, request
+
 import cortex.lib.core
 import cortex.lib.systems
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, jsonify, Response
-import os
-import re
-import MySQLdb as mysql
-import yaml
+from cortex import app
 
 ################################################################################
 

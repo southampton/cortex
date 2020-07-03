@@ -1,8 +1,9 @@
 #!/bin/env python
 
-import os
 import imp
+import os
 import sys
+
 import MySQLdb as mysql
 
 CONFIG_FILE = '/data/cortex/cortex.conf'

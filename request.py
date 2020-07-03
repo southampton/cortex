@@ -1,11 +1,13 @@
-from cortex import app
-from cortex.lib.errors import logerr, fatalerr
-from cortex.lib.user import does_user_have_permission, does_user_have_workflow_permission, does_user_have_system_permission, does_user_have_puppet_permission, does_user_have_any_puppet_permission
-from flask import Flask, request, session, g, abort, render_template, url_for
-import redis
-import time
-import traceback
 import MySQLdb as mysql
+import redis
+from flask import g, render_template, request, session, url_for
+
+from cortex import app
+from cortex.lib.errors import fatalerr, logerr
+from cortex.lib.user import (does_user_have_any_puppet_permission,
+                             does_user_have_permission,
+                             does_user_have_system_permission,
+                             does_user_have_workflow_permission)
 
 ################################################################################
 
@@ -24,14 +26,14 @@ def before_request():
 	try:
 		g.redis = redis.StrictRedis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'], db=0, decode_responses=True)
 		g.redis.get('foo') # it doesnt matter that this key doesnt exist, its just to force a test call to redis.
-	except Exception as ex:
+	except Exception:
 		logerr()
 		return fatalerr(message='Cortex could not connect to the REDIS server')
 
 	# Connect to database
 	try:
 		g.db = mysql.connect(host=app.config['MYSQL_HOST'], port=app.config['MYSQL_PORT'], user=app.config['MYSQL_USER'], passwd=app.config['MYSQL_PASS'], db=app.config['MYSQL_NAME'], charset="utf8")
-	except Exception as ex:
+	except Exception:
 		logerr()
 		return fatalerr(message='Cortex could not connect to the MariaDB server')
 
@@ -159,21 +161,21 @@ def context_processor():
 		try:
 			if g.redis.get('user:' + session['username'] + ":preferences:interface:layout") == "classic":
 				injectdata['classic_layout'] = True
-		except Exception as ex:
+		except Exception:
 			pass
 
 		# Determine theme for the user
 		try:
 			if g.redis.get('user:' + session['username'] + ":preferences:interface:theme") == "dark":
 				injectdata['theme'] = "dark"
-		except Exception as ex:
+		except Exception:
 			pass
 
 		# Determine whether to expand sidebar.
 		try:
 			if g.redis.get('user:' + session['username'] + ':preferences:interface:sidebar')== 'expand':
 				injectdata['sidebar_expand'] = True
-		except Exception as ex:
+		except Exception:
 			pass
 
 	# Add the banner message.

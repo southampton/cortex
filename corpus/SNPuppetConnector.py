@@ -1,8 +1,9 @@
 import json
-import pypuppetdb
+import syslog
+
 import requests
 from requests.exceptions import HTTPError
-import syslog
+
 
 class SNPuppetConnector:
 

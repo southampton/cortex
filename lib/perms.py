@@ -1,5 +1,5 @@
-from flask import g
 import MySQLdb as mysql
+from flask import g
 
 ################################################################################
 

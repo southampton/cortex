@@ -1,14 +1,12 @@
 
-from urllib.parse import urljoin
-import requests
-import time
-import MySQLdb as mysql
 import datetime
 import json
 
+import MySQLdb as mysql
+
+
 def run(helper, options):
 
-	user = helper.username
 	time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
 	# Set up cursor to access the DB
@@ -22,7 +20,7 @@ def run(helper, options):
 
 	# unlock the table once run
 	curd.execute('UNLOCK TABLES;')
-	
+
 	if current_value is None:
 		current_status = 'Unlocked'
 	else:
@@ -32,18 +30,18 @@ def run(helper, options):
 				current_status = 'Unlocked'
 			else:
 				current_status = jsonobj['status']
-		except Exception as e:
+		except Exception:
 			current_status = 'Locked'
 
 	# get the new value to set the table to
 	helper.end_event(description="Current status is " + current_status)
-	
+
 	key = 'workflow_lock_status'
 
 	newValue = 'Locked' if current_status == 'Unlocked' else 'Unlocked'
 	value = json.dumps({'username': helper.username, 'time': str(time), 'status': newValue})
-	
-	# setting new status 
+
+	# setting new status
 	helper.event('set_new_status', 'Setting new status to ' + newValue)
 	query = 'INSERT INTO `kv_settings` (`key`, `value`) VALUES (%s, %s)'
 	params = (key, value,)
@@ -57,5 +55,5 @@ def run(helper, options):
 
 	# commit changes
 	helper.event('commit_changes', 'Committing changes')
-	helper.db.commit()	
+	helper.db.commit()
 	helper.end_event(description="Commiting Changes")

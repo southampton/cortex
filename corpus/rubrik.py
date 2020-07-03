@@ -1,7 +1,7 @@
+from urllib.parse import quote, urljoin
+
 import requests
 
-from urllib.parse import urljoin
-from urllib.parse import quote
 
 class RubrikVMNotFound(Exception):
 	pass

@@ -1,9 +1,9 @@
 #!/bin/env python
 
-import Pyro4
-import os
 import imp
 import sys
+
+import Pyro4
 
 CONFIG_FILE = '/data/cortex/cortex.conf'
 

@@ -1,5 +1,5 @@
 from pyVmomi import vim
-import json
+
 
 def run(helper, options):
 	
@@ -90,4 +90,3 @@ def run(helper, options):
 		else:
 			helper.end_event(success=False, warning=True, description='Failed to find {}'.format(name))
 			continue
-

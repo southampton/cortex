@@ -1,6 +1,6 @@
 
-from flask import g
 import MySQLdb as mysql
+from flask import g
 
 ################################################################################
 
@@ -101,4 +101,3 @@ def get_os_stats():
 			types['other'] += 1
 
 	return types
-

@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from cortex import app
-from flask import g, render_template, make_response, session, request
 import traceback
+
+from flask import make_response, render_template, request, session
+
+from cortex import app
 
 ################################################################################
 

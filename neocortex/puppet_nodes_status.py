@@ -1,6 +1,8 @@
 
-from corpus import PuppetDBConnector
 import MySQLdb as mysql
+
+from corpus import PuppetDBConnector
+
 
 def run(helper, options):
 	"""
@@ -55,4 +57,3 @@ def run(helper, options):
 				curd.execute("UPDATE `puppet_nodes` SET `last_changed` = %s WHERE `certname` = %s", (node.report_timestamp, node.name))
 
 	helper.end_event(description="Database updated successfully.")
-

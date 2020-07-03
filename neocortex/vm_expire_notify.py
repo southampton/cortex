@@ -1,8 +1,9 @@
 
-import MySQLdb as mysql
-import sys, copy, os, re
-from pyVmomi import vim
+import re
 from datetime import datetime
+
+import MySQLdb as mysql
+from pyVmomi import vim
 
 # The days of the week as they can appear in the config
 DAYS_OF_WEEK = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
@@ -36,7 +37,7 @@ def run(helper, options):
 		# Compile the regex
 		try:
 			vm_re = re.compile(report_config['regex'])
-		except Exception as e:
+		except Exception:
 			helper.end_event(success=False, description='Invalid regex for report ' + str(report_id))
 			continue
 
@@ -160,4 +161,3 @@ def run(helper, options):
 				
 		# End this report task
 		helper.end_event(description='Report ' + report_config['description'] + ' found ' + str(system_count) + ' expiring system(s), generating ' + str(email_count) + ' e-mail(s)')
-

@@ -1,4 +1,5 @@
-from pyparsing import Word, Literal, Suppress, CharsNotIn, nums, alphas, alphanums, ZeroOrMore, Forward, QuotedString, removeQuotes, CaselessKeyword, Optional
+from pyparsing import (CaselessKeyword, Forward, Literal, Optional,
+                       QuotedString, Word, ZeroOrMore, alphanums, alphas, nums)
 
 ## Helper classes for parsed tokens ############################################
 

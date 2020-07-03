@@ -1,27 +1,24 @@
 
-from cortex import app
-import cortex.lib.core
-import cortex.lib.systems
-import cortex.lib.cmdb
-import cortex.lib.classes
-import cortex.lib.puppet
-from cortex.lib.user import does_user_have_permission, does_user_have_system_permission, does_user_have_any_system_permission
-from cortex.corpus import Corpus
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify, Response
-import os
-import time
 import datetime
-import json
 import re
-import werkzeug
+
 import MySQLdb as mysql
-import yaml
-import csv
-import io
 import requests
-import cortex.lib.rubrik
-from flask.views import MethodView
+from flask import (Response, abort, flash, g, jsonify, redirect,
+                   render_template, request, session, url_for)
 from pyVmomi import vim
+
+import cortex.lib.classes
+import cortex.lib.cmdb
+import cortex.lib.core
+import cortex.lib.puppet
+import cortex.lib.rubrik
+import cortex.lib.systems
+from cortex import app
+from cortex.corpus import Corpus
+from cortex.lib.user import (does_user_have_any_system_permission,
+                             does_user_have_permission,
+                             does_user_have_system_permission)
 
 ################################################################################
 
@@ -514,7 +511,7 @@ def system(id):
 	if system['puppet_certname']:
 		try:
 			system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
-		except Exception as e:
+		except Exception:
 			system['puppet_node_status'] = 'unknown'
 
 	# Generate a 'pretty' display name. This is the format '<realname> (<username>)'
@@ -585,7 +582,7 @@ def system_status(id):
 	# get the VM
 	try:
 		vm = cortex.lib.systems.get_vm_by_system_id(id)
-	except ValueError as e:
+	except ValueError:
 		abort(404)
 	except Exception as e:
 		# If we want to handle vCenter being unavailable gracefully.
@@ -757,7 +754,7 @@ def system_edit(id):
 					expiry_date = request.form['expiry_date']
 					try:
 						expiry_date = datetime.datetime.strptime(expiry_date, '%Y-%m-%d')
-					except Exception as e:
+					except Exception:
 						abort(400)
 				else:
 					expiry_date = None
@@ -830,7 +827,7 @@ def system_edit(id):
 				rubrik = cortex.lib.rubrik.Rubrik()
 				try:
 					vm = rubrik.get_vm(system)
-				except Exception as e:
+				except Exception:
 					flash("Failed to get VM from Rubrik", "alert-danger")
 				else:
 					rubrik.update_vm(vm['id'], rubrik_update_vm_data)
@@ -842,7 +839,7 @@ def system_edit(id):
 			cortex.lib.core.log(__name__, "systems.edit", "System '" + system['name'] + "' edited, id " + str(id), related_id=id)
 
 			flash('System updated', "alert-success")
-		except ValueError as ex:
+		except ValueError:
 			flash('Failed to update system: 400 Bad request', 'alert-danger')
 			return redirect(url_for('system_edit', id=id))
 		except Exception as ex:

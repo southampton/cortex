@@ -1,6 +1,7 @@
 
-from ctypes import CDLL,c_char_p
+from ctypes import CDLL
 from ctypes import byref as _byref
+from ctypes import c_char_p
 
 ################################################################################
 
@@ -10,7 +11,7 @@ def exists(name):
 	try:
 		# Try to switch to 'str' object rather than unicode
 		name = name.encode('utf8')
-	except Exception as ex:
+	except Exception:
 		# Ignore
 		pass
 
@@ -26,7 +27,7 @@ def exists(name):
 		libc.endnetgrent()
 		return False
 
-	except Exception as ex:
+	except Exception:
 		libc.endnetgrent()
 		return False
 
@@ -39,7 +40,7 @@ def contains_host(host, netgroup):
 		# Try to switch to 'str' objects rather than unicode
 		host     = host.encode('utf8')
 		netgroup = netgroup.encode('utf8')
-	except Exception as ex:
+	except Exception:
 		# Ignore, might already have been a str
 		pass
 
@@ -51,6 +52,5 @@ def contains_host(host, netgroup):
 			return True
 		else:
 			return False
-	except Exception as ex:
+	except Exception:
 		return False
-

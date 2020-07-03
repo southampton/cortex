@@ -1,13 +1,13 @@
 #!/bin/env python
 
-import click
-import os
-import imp
-import sys
-import MySQLdb as mysql
-
 CORTEX_PATH = '/data/cortex/cortex'
 CORTEX_CONFIG_FILE = '/data/cortex/cortex.conf'
+
+import imp
+import sys
+
+import click
+import MySQLdb as mysql
 
 # Add Cortex to the path (required for Corpus).
 sys.path.append(CORTEX_PATH)
@@ -173,4 +173,3 @@ def get_last_password(obj, system_name):
 
 if __name__ == "__main__":
 	cli()
-

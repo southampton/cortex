@@ -81,7 +81,7 @@ def vmware_list_folders(tag):
 					if recurse_folder is not None:
 						# Add on the parent folder name to the front
 						fully_qualified = recurse_folder['name'] + "\\" + fully_qualified
-				except KeyError as e:
+				except KeyError:
 					# We hit KeyErrors when we reach the "folder" that is the datecenter object
 					break
 
@@ -235,5 +235,5 @@ def log(source, name, desc, username=None, related_id=None, success=True):
 		params = (source, related_id, name, username, desc, status, request.remote_addr)
 		cur.execute(stmt, params)
 		g.db.commit()
-	except Exception as e:
+	except Exception:
 		pass

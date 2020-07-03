@@ -1,27 +1,29 @@
 
-from cortex import app
-from cortex.lib.workflow import CortexWorkflow
-import cortex.lib.core
-import cortex.lib.systems
-import cortex.views
-from cortex.corpus import Corpus
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
-import re, datetime, requests
+import datetime
+import re
 from urllib.parse import urljoin
-import MySQLdb as mysql
-import json
-
-# For DNS queries
-import socket
-
-# For NLB API
-from f5.bigip import ManagementRoot
 
 # For certificate validation
 import OpenSSL as openssl
-
+import requests
+# For NLB API
+from f5.bigip import ManagementRoot
+from flask import (abort, flash, g, jsonify, redirect, render_template,
+                   request, session, url_for)
 # For securely passing the actions list via the browser
 from itsdangerous import JSONWebSignatureSerializer
+
+import cortex.lib.core
+import cortex.lib.systems
+import cortex.views
+from cortex import app
+from cortex.corpus import Corpus
+from cortex.lib.workflow import CortexWorkflow
+
+# For DNS queries
+
+
+
 
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('nlbweb.create', 'Create NLB Web Service')
@@ -130,7 +132,7 @@ def nlbweb_create():
 				port = int(form_fields['http_port'])
 				if port <= 0 or port > 65535:
 					raise ValueError()
-			except Exception as e:
+			except Exception:
 				flash('You must specify a valid HTTP port number for the service', 'alert-danger')
 				valid_form = False
 		if form_fields['enable_ssl'] and len(form_fields['https_port']) == 0:
@@ -141,7 +143,7 @@ def nlbweb_create():
 				port = int(form_fields['https_port'])
 				if port <= 0 or port > 65535:
 					raise ValueError()
-			except Exception as e:
+			except Exception:
 				flash('You must specify a valid HTTPS port number for the service', 'alert-danger')
 				valid_form = False
 		if len(form_fields['monitor_url']) == 0:
@@ -189,59 +191,50 @@ def nlbweb_create():
 			valid_form = False
 
 		# Validate the hosts
-		valid_nodes = True
 		if len(form_fields['node_hosts']) == 0 or len(form_fields['node_http_ports']) == 0 or len(form_fields['node_https_ports']) == 0 or len(form_fields['node_ips']) == 0:
 			flash('Missing back-end nodes. You must specify at least one back-end node.', 'alert-danger')
 			valid_form = False
-			valid_nodes = False
 		if len(form_fields['node_hosts']) != len(form_fields['node_http_ports']) or len(form_fields['node_hosts']) != len(form_fields['node_https_ports']) or len(form_fields['node_hosts']) != len(form_fields['node_ips']):
 			flash('Invalid back-end node configuration', 'alert-danger')
 			valid_form = False
-			valid_nodes = False
 		for i in range(0, len(form_fields['node_hosts'])):
 			if len(form_fields['node_hosts'][i]) == 0:
 				flash('You must specify a hostname for every back-end node', 'alert-danger')
 				valid_form = False
-				valid_nodes = False
 				break
 		if form_fields['enable_ssl'] and not form_fields['redirect_http']:
 			for i in range(0, len(form_fields['node_http_ports'])):
 				if len(form_fields['node_http_ports'][i]) == 0:
 					flash('You must specify an HTTP port for every back-end node', 'alert-danger')
 					valid_form = False
-					valid_nodes = False
 					break
 				try:
 					port = int(form_fields['node_http_ports'][i])
 					if port <= 0 or port > 65535:
 						raise ValueError()
-				except Exception as e:
+				except Exception:
 					flash('You must specify a valid HTTP port for every back-end node', 'alert-danger')
 					valid_form = False
-					valid_nodes = False
 					break
 		if form_fields['enable_ssl']:
 			for i in range(0, len(form_fields['node_https_ports'])):
 				if len(form_fields['node_https_ports'][i]) == 0:
 					flash('You must specify an HTTPS port for every back-end node', 'alert-danger')
 					valid_form = False
-					valid_nodes = False
 					break
 				try:
 					port = int(form_fields['node_https_ports'][i])
 					if port <= 0 or port > 65535:
 						raise ValueError()
-				except Exception as e:
+				except Exception:
 					flash('You must specify a valid HTTPS port for every back-end node', 'alert-danger')
 					valid_form = False
-					valid_nodes = False
 					break
 					
 		for i in range(0, len(form_fields['node_ips'])):
 			if len(form_fields['node_ips'][i]) == 0:
 				flash('You must specify an IP address for every back-end node', 'alert-danger')
 				valid_form = False
-				valid_nodes = False
 				break
 			else:
 				if ipv4_re.match(form_fields['node_ips'][i]) is None:

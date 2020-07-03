@@ -1,12 +1,10 @@
-from flask import request, session, g
+from flask import g
 from flask_restx import Resource
-import math
 
 from cortex import app
-from cortex.corpus import Corpus
-from cortex.api import api_manager, api_login_required
-from cortex.api.exceptions import InvalidPermissionException, NoResultsFoundException
+from cortex.api import api_login_required, api_manager
 from cortex.api.serializers.dns import dns_serializer
+from cortex.corpus import Corpus
 
 dns_namespace = api_manager.namespace('dns', description='DNS API')
 
@@ -24,4 +22,3 @@ class DNSLookupItem(Resource):
 
 		corpus = Corpus(g.db, app.config)
 		return corpus.dns_lookup(host)
-

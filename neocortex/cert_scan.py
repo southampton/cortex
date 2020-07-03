@@ -1,16 +1,20 @@
 
-import MySQLdb as mysql
-import sys, copy, os, re
-import OpenSSL as openssl
-import socket, datetime, sys, select, signal, ipaddress
+import datetime
+import ipaddress
+import select
+import signal
+import socket
 from multiprocessing import Pool
+
+import MySQLdb as mysql
+import OpenSSL as openssl
+
 from corpus import x509utils
 
 ################################################################################
 
 class InterruptException(Exception):
 	"""Raised when a worker is interrupted."""
-	pass
 
 ################################################################################
 
@@ -24,7 +28,7 @@ def do_starttls_smtp(sock):
 	sock.recv(2048)
 
 	# SMTP: Write EHLO
-	res2 = select.select([], [sock], [], 3.0)
+	select.select([], [sock], [], 3.0)
 	sock.send(b"EHLO sslscan.client.net\r\n")
 
 	# SMTP: Read EHLO response
@@ -34,7 +38,7 @@ def do_starttls_smtp(sock):
 	sock.recv(2048)
 
 	# SMTP: Write STARTTLS
-	res2 = select.select([], [sock], [], 3.0)
+	select.select([], [sock], [], 3.0)
 	sock.send(b"STARTTLS\r\n")
 
 	# SMTP: Read "Ready for STARTTLS"
@@ -55,7 +59,7 @@ def do_starttls_imap(sock):
 	sock.recv(2048)
 
 	# IMAP: Write CAPABILITY
-	res2 = select.select([], [sock], [], 3.0)
+	select.select([], [sock], [], 3.0)
 	sock.send(b"a001 CAPABILITY\r\n")
 
 	# SMTP: Read CAPABILITY response
@@ -65,7 +69,7 @@ def do_starttls_imap(sock):
 	sock.recv(2048)
 
 	# IMAP: Write STARTTLS
-	res2 = select.select([], [sock], [], 3.0)
+	select.select([], [sock], [], 3.0)
 	sock.send(b"a002 STARTTLS\r\n")
 
 	# IMAP: Read "Ready for STARTTLS"
@@ -89,7 +93,7 @@ def do_starttls_ldap(sock):
 	message = b"\x30\x1d\x02\x01\x01\x77\x18\x80\x16\x31\x2e\x33\x2e\x36\x2e\x31\x2e\x34\x2e\x31\x2e\x31\x34\x36\x36\x2e\x32\x30\x30\x33\x37"
 
 	# LDAP: Send STARTTLS LDAPMessage
-	res2 = select.select([], [sock], [], 3.0)
+	select.select([], [sock], [], 3.0)
 	sock.send(message)
 
 	# SMTP: Read STARTTLS Response
@@ -259,7 +263,7 @@ def callback_func(arg):
 			if new_percentage != last_percentage:
 				last_percentage = new_percentage
 				g_helper.update_event("Scanning network for certificates: scanned {0}/{1} ({2})".format(total_results, total_searches, new_percentage))
-		except Exception as e:
+		except Exception:
 			# Catch all exceptions so we don't break the pool
 			pass
 
@@ -317,7 +321,7 @@ def run(helper, options):
 	for result in results:
 		try:
 			entry = result.get()
-		except Exception as e:
+		except Exception:
 			# Skip past things where an exception has somehow fallen through
 			exception_count = exception_count + 1
 			continue
