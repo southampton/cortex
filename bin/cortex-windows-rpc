@@ -19,7 +19,7 @@ class CortexWindowsRPC(object):
 			with open('cortex-windows-rpc.conf') as config_file:
 				exec(compile(config_file.read(), 'cortex-windows-rpc.conf', 'exec'), d.__dict__)
 		except IOError as e:
-			print >> sys.stderr, "Failed to read configuration file: " + str(e)
+			print("Failed to read configuration file: " + str(e), file=sys.stderr)
 			sys.exit(1)
 
 		# Extract config from loaded environment
@@ -31,14 +31,14 @@ class CortexWindowsRPC(object):
 		# Ensure we have required configuration options
 		for wkey in ['POWERSHELL_PATH', 'TARGET_OU', 'GROUPS', 'MANAGED_BY', 'WINRPC_KEY', 'WINRPC_PORT', 'LOG_PATH']:
 			if not wkey in self.config:
-				print >> sys.stderr, "Missing configuration option: " + wkey
+				print("Missing configuration option: " + wkey, file=sys.stderr)
 				sys.exit(1)
 
 		# Open the log file
 		try:
 			self.logfd = open(self.config['LOG_PATH'], 'ab', 0)
 		except Exception as e:
-			print >> sys.stderr, "Error opening log file: " + str(e)
+			print("Error opening log file: " + str(e), file=sys.stderr)
 			sys.exit(1)
 
 	################################################################################
@@ -47,7 +47,7 @@ class CortexWindowsRPC(object):
 		try:
 			self.logfd.write(datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S') + ': ' + str(state) + ': ' + str(message) + '\r\n')
 		except Exception as e:
-			print >> sys.stderr, "Error writing to log file: " + str(e)
+			print("Error writing to log file: " + str(e), file=sys.stderr)
 
 	################################################################################
 
@@ -58,7 +58,7 @@ class CortexWindowsRPC(object):
 		try:
 			subprocess.check_output([self.config['POWERSHELL_PATH'], '-Command', 'Get-ADComputer "' + psescape(hostname + '$') + '" | Move-ADObject -TargetPath "' + psescape(self.config['TARGET_OU']) + '"'], stderr=subprocess.STDOUT)
 			return 0
-		except subprocess.CalledProcessError, e:
+		except subprocess.CalledProcessError as e:
 			self._log('ERROR', 'PowerShell call to move ' + str(hostname) + ' to default OU returned ' + str(e.returncode))
 			self._log('DEBUG', 'PowerShell output: ' + str(e.output))
 			return e.returncode
@@ -79,7 +79,7 @@ class CortexWindowsRPC(object):
 			self._log('INFO', 'Joining hostname to ' + str(hostname) + ' to ' + str(group))
 			try:
 				subprocess.check_output([self.config['POWERSHELL_PATH'], '-Command', 'Add-ADGroupMember -Identity "' + psescape(group) + '" -Members "' + psescape(hostname + '$') + '"'], stderr=subprocess.STDOUT)
-			except subprocess.CalledProcessError, e:
+			except subprocess.CalledProcessError as e:
 				self._log('ERROR', 'Failed to join host ' + str(hostname) + ' to group ' + str(group))
 				self._log('DEBUG', 'PowerShell output: ' + str(e.output))
 				returncode = e.returncode
@@ -95,7 +95,7 @@ class CortexWindowsRPC(object):
 		try:
 			subprocess.check_output([self.config['POWERSHELL_PATH'], '-Command', 'Get-ADComputer "' + psescape(hostname + '$') + '"'], stderr=subprocess.STDOUT)
 			return True
-		except subprocess.CalledProcessError, e:
+		except subprocess.CalledProcessError as e:
 			self._log('ERROR', 'PowerShell call to find computer object ' + str(hostname) + ' returned ' + str(e.returncode))
 			self._log('DEBUG', 'PowerShell output: ' + str(e.output))
 			return False
@@ -109,7 +109,7 @@ class CortexWindowsRPC(object):
 		try:
 			subprocess.check_output([self.config['POWERSHELL_PATH'], '-Command', 'Get-ADComputer "' + psescape(hostname + '$') + '" | Remove-ADComputer -confirm:$false'], stderr=subprocess.STDOUT)
 			return 0
-		except subprocess.CalledProcessError, e:
+		except subprocess.CalledProcessError as e:
 			self._log('ERROR', 'PowerShell call to delete computer object on ' + str(hostname) + ' returned ' + str(e.returncode))
 			self._log('DEBUG', 'PowerShell output: ' + str(e.output))
 			return e.returncode
@@ -123,7 +123,7 @@ class CortexWindowsRPC(object):
 		try:
 			subprocess.check_output([self.config['POWERSHELL_PATH'], '-Command', 'Set-ADComputer -Identity "' + psescape(hostname + '$') + '" -Description "' + psescape(description) + '" -Location "' + psescape(location) + '" -ManagedBy "' + psescape(self.config['MANAGED_BY']) + '"'], stderr=subprocess.STDOUT)
 			return 0
-		except subprocess.CalledProcessError, e:
+		except subprocess.CalledProcessError as e:
 			self._log('ERROR', 'PowerShell call to set information on ' + str(hostname) + ' returned ' + str(e.returncode))
 			self._log('DEBUG', 'PowerShell output: ' + str(e.output))
 			return e.returncode

@@ -1,6 +1,6 @@
 #!/bin/env python
 
-import sys, requests, warnings, os, ConfigParser, syslog
+import sys, requests, warnings, os, configparser, syslog
 
 ################################################################################
 
@@ -20,7 +20,7 @@ def print_catalog(certname, cache_dir):
 	try:
 		# Open the catalog, read it and print it out
 		with open(os.path.join(cache_dir, certname), 'r') as f:
-			print f.read()
+			print(f.read())
 	except Exception as e:
 		return 1
 
@@ -30,18 +30,18 @@ def print_catalog(certname, cache_dir):
 
 # Validate arguments
 if len(sys.argv) <= 1:
-	print >> sys.stderr, "Usage: cortex-env-wrapper <nodename>"
+	print("Usage: cortex-env-wrapper <nodename>", file=sys.stderr)
 	sys.exit(1)
 
 # Open syslog
 syslog.openlog(logoption=syslog.LOG_PID, facility=syslog.LOG_USER)
 
 # Read config file
-config = ConfigParser.RawConfigParser()
+config = configparser.RawConfigParser()
 try:
 	config.read('/data/cortex/enc.conf')
 except Exception as e:
-	print >> sys.stderr, "Failed to read configuration: " + str(e)
+	print("Failed to read configuration: " + str(e), file=sys.stderr)
 	syslog.syslog(syslog.LOG_ERR, "Failed to read configuration: " + str(e))
 	sys.exit(1)
 
@@ -58,7 +58,7 @@ try:
 	else:
 		limit_to_nodes = None
 except Exception as e:
-	print >> sys.stderr, 'Failed to get configuration option: ' + str(e)
+	print('Failed to get configuration option: ' + str(e), file=sys.stderr)
 	syslog.syslog(syslog.LOG_ERR, "Failed to get configuration option: " + str(e))
 	sys.exit(1)
 
@@ -84,13 +84,13 @@ if limit_to_nodes is None or certname.lower() in limit_to_nodes:
 		cache_catalog(certname, r.text, cache_dir)
 
 		# Return the catalog to Puppet
-		print r.text
+		print(r.text)
 		sys.exit(0)
 
 	# On a 404 Not Found response, print out an empty catalog
 	elif r.status_code == 404:
 		# Return blank catalog to Puppet
-		print "classes:"
+		print("classes:")
 		syslog.syslog(syslog.LOG_WARNING, "Returning blank catalog - cortex returned 404 for node " + certname)
 		sys.exit(0)
 
@@ -102,7 +102,7 @@ if limit_to_nodes is None or certname.lower() in limit_to_nodes:
 # We're restricted to a node set, and the node is missing
 else:
 	# Return blank catalog to Puppet
-	print "classes:"
+	print("classes:")
 	syslog.syslog(syslog.LOG_WARNING, "Returning blank catalog - requested node " + certname + " is not in limit_to_nodes list")
 	sys.exit(0)
 
