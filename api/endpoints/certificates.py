@@ -1,12 +1,11 @@
-import math
-
 import MySQLdb as mysql
 from flask import g, request, session
 from flask_restx import Resource, inputs, reqparse
 
 from cortex.api import api_login_required, api_manager
 from cortex.api.exceptions import InvalidPermissionException
-from cortex.api.parsers import pagination_arguments
+from cortex.api.parsers import (
+	pagination_arguments, process_pagination_arguments, pagination_response)
 from cortex.api.serializers.certificates import (certificates_full_serializer,
                                                  page_certificates_serializer)
 from cortex.lib.user import does_user_have_permission
@@ -19,6 +18,7 @@ certificates_arguments.add_argument('expired', type=inputs.boolean, required=Fal
 certificates_arguments.add_argument('self_signed', type=inputs.boolean, required=False, default=None, help='Show only (true) or hide (false) self-signed certificates')
 certificates_arguments.add_argument('key_size', type=int, required=False, default=None, help='Show only certificates whose key size is a certain number of bits')
 
+# pylint: disable=no-self-use
 @certificates_namespace.route('/')
 class CertificatesCollection(Resource):
 	"""
@@ -39,11 +39,7 @@ class CertificatesCollection(Resource):
 				raise InvalidPermissionException
 
 		# Parse pagination arguments
-		args = pagination_arguments.parse_args(request)
-		page = int(args.get('page', 1))
-		per_page = int(args.get('per_page', 10))
-		limit_start = (page - 1) * per_page
-		limit_length = per_page
+		page, per_page, limit_start, limit_length = process_pagination_arguments(request)
 
 		# Parse our arguments
 		certificates_args = certificates_arguments.parse_args(request)
@@ -96,14 +92,8 @@ class CertificatesCollection(Resource):
 		curd.execute('SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`subjectDN` AS `subjectDN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, `certificate`.`issuerCN` AS `issuerCN`, `certificate`.`issuerDN` AS `issuerDN`, MAX(`scan_result`.`when`) AS `lastSeen`, COUNT(DISTINCT `scan_result`.`host`) AS `numHosts`, `certificate`.`keySize` AS `keySize` FROM `certificate` LEFT JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest` LEFT JOIN `certificate_sans` ON `certificate`.`digest` = `certificate_sans`.`cert_digest`' + where_clause + ' GROUP BY `certificate`.`digest` LIMIT ' + str(limit_start) + ',' + str(limit_length), tuple(query_parts))
 		results = curd.fetchall()
 
-		return {
-			'page': page,
-			'per_page': per_page,
-			'pages': math.ceil(float(total)/float(per_page)),
-			'total': total,
-			'items': results,
-		}
-	
+		return pagination_response(results, page, per_page, total)
+
 @certificates_namespace.route('/<string:digest>')
 @api_manager.response(404, 'Certificate not found')
 @api_manager.doc(params={'digest':'The SHA-1 digest of the certificate'})

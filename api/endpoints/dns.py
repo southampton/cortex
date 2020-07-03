@@ -8,6 +8,7 @@ from cortex.corpus import Corpus
 
 dns_namespace = api_manager.namespace('dns', description='DNS API')
 
+# pylint: disable=no-self-use
 @dns_namespace.route('/<string:host>')
 @api_manager.doc(params={'host':'Fully qualified domain name to lookup'})
 class DNSLookupItem(Resource):

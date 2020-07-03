@@ -42,8 +42,12 @@ def before_request():
 	app.jinja_env.globals['does_user_have_permission'] = does_user_have_permission
 	app.jinja_env.globals['does_user_have_system_permission'] = does_user_have_system_permission
 
+	# Continue processing the request
+	return None
+
 ################################################################################
 
+# pylint: disable=too-many-branches,too-many-statements
 @app.context_processor
 def context_processor():
 	"""This function is called on every page load. It injects a 'workflows'
@@ -58,10 +62,10 @@ def context_processor():
 	# Inject the workflows variable which is a list of loaded workflows. We
 	# filter this to just the ones the user is allowed to use.
 	injectdata['workflows'] = []
-	for fn in app.wf_functions:
-		if fn['menu']:
-			if does_user_have_workflow_permission(fn['permission']):
-				injectdata['workflows'].append(fn)
+	for func in app.wf_functions:
+		if func['menu']:
+			if does_user_have_workflow_permission(func['permission']):
+				injectdata['workflows'].append(func)
 
 	# Inject the menu items
 
@@ -151,7 +155,7 @@ def context_processor():
 		perms.append({'link': url_for('systems_withperms'), 'title': 'Systems with permissions', 'icon': 'fa-list'})
 
 	# Set injectdata default options.
-	injectdata['menu'] = { 'systems': systems, 'favourites': favourites, 'vmware': vmware, 'puppet': puppet, 'certificates': certificates, 'tenable': tenable, 'admin': admin, 'perms': perms }
+	injectdata['menu'] = {'systems': systems, 'favourites': favourites, 'vmware': vmware, 'puppet': puppet, 'certificates': certificates, 'tenable': tenable, 'admin': admin, 'perms': perms}
 	injectdata['classic_layout'] = False
 	injectdata['sidebar_expand'] = False
 
@@ -173,7 +177,7 @@ def context_processor():
 
 		# Determine whether to expand sidebar.
 		try:
-			if g.redis.get('user:' + session['username'] + ':preferences:interface:sidebar')== 'expand':
+			if g.redis.get('user:' + session['username'] + ':preferences:interface:sidebar') == 'expand':
 				injectdata['sidebar_expand'] = True
 		except Exception:
 			pass

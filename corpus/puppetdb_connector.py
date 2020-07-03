@@ -17,7 +17,7 @@ class PuppetDBConnector:
 	def connect(self):
 		self.db = pypuppetdb.connect(self.host, port=self.port, ssl_cert=self.ssl_cert, ssl_key=self.ssl_key, ssl_verify=self.ssl_verify)
 
-	def get_nodes(self, with_status = False):
+	def get_nodes(self, with_status=False):
 		return self.db.nodes(with_status=with_status)
 
 	def get_node(self, node_name):
@@ -30,16 +30,16 @@ class PuppetDBConnector:
 		"""Get facts about this node from puppet."""
 		if node_object.name in self.facts and cached:
 			return self.facts[node_object.name]
-		else:
-			facts = node_object.facts()
-			facts_dict = {}
-			if facts is not None:
-				for fact in facts:
-					facts_dict[fact.name] = fact.value
 
-				self.facts[node_object.name] = facts_dict
+		facts = node_object.facts()
+		facts_dict = {}
+		if facts is not None:
+			for fact in facts:
+				facts_dict[fact.name] = fact.value
 
-			return facts_dict
+			self.facts[node_object.name] = facts_dict
+
+		return facts_dict
 
 	def get_network_facts(self, node_object, cached=True):
 		"""Get network facts from puppet."""

@@ -2,13 +2,15 @@ import datetime
 import json
 
 import MySQLdb as mysql
-from flask import g, request
+from flask import g, request, abort
 from flask_restx import Resource
 
 from cortex import app
 from cortex.api import api_login_required, api_manager
 
 puppet_modules_info_namespace = api_manager.namespace('puppet', description='Puppet API')
+
+# pylint: disable=no-self-use
 @puppet_modules_info_namespace.route('/modules_info')
 class Puppet(Resource):
 	"""

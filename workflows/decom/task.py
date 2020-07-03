@@ -8,6 +8,10 @@ from pyVmomi import vim
 
 def run(helper, options):
 
+	# check if workflows are locked
+	if not helper.lib.check_workflow_lock():
+		raise Exception("Workflows are currently locked")
+
 	# Iterate over the actions that we have to perform
 	for action in options["actions"]:
 		# Start the event
@@ -41,7 +45,7 @@ def run(helper, options):
 		elif action["id"] == "rhn5.delete":
 			r = action_rhn5_delete(action, helper)
 		elif action["id"] == "satellite6.delete":
-			r = action_satellite6_delete(action, helper) 
+			r = action_satellite6_delete(action, helper)
 		elif action["id"] == "sudoldap.update":
 			r = action_sudoldap_update(action, helper, options["wfconfig"])
 		elif action["id"] == "sudoldap.delete":
@@ -51,8 +55,8 @@ def run(helper, options):
 		elif action["id"] == "nessus.delete":
 			r = action_nessus_delete(action, helper, options["wfconfig"])
 		elif action["id"] == "system.update_decom_date":
-			r = action_update_decom_date(action, helper) 
-			
+			r = action_update_decom_date(action, helper)
+
 		# End the event (don't change the description) if the action
 		# succeeded. The action_* functions either raise Exceptions or
 		# end the events with a failure message on errors.
@@ -194,7 +198,7 @@ def action_check_system(action, helper, wfconfig):
 					helper.flash('Warning - An error occured when communicating with Enterprise CA, code: ' + str(r.status_code), 'warning')
 
 	# RHN 5
-	if 'RHN5_ENABLE_DECOM' in wfconfig and wfconfig['RHN5_ENABLE_DECOM']: 
+	if 'RHN5_ENABLE_DECOM' in wfconfig and wfconfig['RHN5_ENABLE_DECOM']:
 		## Work out the URL for any RHN systems
 		rhnurl = helper.lib.config['RHN5_URL']
 		if not rhnurl.endswith("/"):
@@ -220,9 +224,9 @@ def action_check_system(action, helper, wfconfig):
 			if ex.response.status_code != 404:
 				helper.flash("Warning - An error occured when communicating with Satellite 6: " + str(ex), "warning")
 		else:
-			saturl = urljoin(helper.lib.config['SATELLITE6_URL'], 'hosts/{0}'.format(rsys['id'])) 
+			saturl = urljoin(helper.lib.config['SATELLITE6_URL'], 'hosts/{0}'.format(rsys['id']))
 			system_actions.append({'id': 'satellite6.delete', 'desc': 'Delete the host from Satellite 6', 'detail': '{0}, Satellite 6 ID <a target=""_blank" href="{1}">{2}</a>'.format(rsys['name'], saturl, rsys['id']), 'data': {'id':rsys['id']}})
-				
+
 	except Exception as ex:
 		helper.flash("Warning - An error occured when communicating with Satellite 6: " + str(ex), "warning")
 
@@ -289,7 +293,7 @@ def action_check_system(action, helper, wfconfig):
 						system_actions.append({'id': 'sudoldap.update', 'desc': 'Remove sudoHost attribute value ' + entry + ' from ' + ldap_dn_data[dn]['cn'], 'detail': 'Update object ' + dn + ' on ' + wfconfig['SUDO_LDAP_URL'], 'data': {'dn': dn, 'value': entry}})
 				elif ldap_dn_data[dn]['action'] == 'delete':
 					system_actions.append({'id': 'sudoldap.delete', 'desc': 'Delete ' + ldap_dn_data[dn]['cn'] + ' because we\'ve removed its last sudoHost attribute', 'detail': 'Delete ' + dn + ' on ' + wfconfig['SUDO_LDAP_URL'], 'data': {'dn': dn, 'value': ldap_dn_data[dn]['sudoHost']}})
-				
+
 		except Exception as ex:
 			raise ex
 			helper.flash('Warning - An error occurred when communicating with ' + str(wfconfig['SUDO_LDAP_URL']) + ': ' + str(ex), 'warning')
@@ -334,7 +338,7 @@ def action_check_system(action, helper, wfconfig):
 		except Exception as ex:
 			helper.flash("Warning - An error occured when communicating with {nessus_url}: {ex}".format(nessus_url=helper.lib.config["TENABLE_IO_URL"], ex=ex), "warning")
 
-	# If the config says nothing about creating a ticket, or the config 
+	# If the config says nothing about creating a ticket, or the config
 	# says to create a ticket:
 	if 'TICKET_CREATE' not in wfconfig or wfconfig['TICKET_CREATE'] is True:
 		# If there are actions to be performed, add on an action to raise a ticket to ESM (but not for Sandbox!)
@@ -342,7 +346,7 @@ def action_check_system(action, helper, wfconfig):
 			system_actions.append({'id': 'ticket.ops', 'desc': 'Raises a ticket with operations to perform manual steps, such as removal from monitoring', 'detail': 'Creates a ticket in ServiceNow and assigns it to ' + wfconfig['TICKET_TEAM'], 'data': {'hostname': system['name']}})
 
 	# Add action to input the decom date.
-	system_actions.append({'id': 'system.update_decom_date', 'desc': 'Update the decommission date in Cortex', 'detail': 'Update the decommission date in Cortex and set it to the current date and time.', 'data': {'system_id': system['id']}})	
+	system_actions.append({'id': 'system.update_decom_date', 'desc': 'Update the decommission date in Cortex', 'detail': 'Update the decommission date in Cortex and set it to the current date and time.', 'data': {'system_id': system['id']}})
 
 	# A success message
 	helper.flash('Successfully completed a pre-decommission check of {system_link}. Found {n_actions} actions for decommissioning'.format(system_link=system_link, n_actions=len(system_actions)), 'success')
@@ -585,7 +589,7 @@ def action_sudoldap_update(action, helper, wfconfig):
 		l.modify(action['data']['dn'], {
 			'sudoHost': [(ldap3.MODIFY_DELETE, action['data']['value'])]
 		})
-		
+
 		return True
 	except Exception as e:
 		helper.end_event(success=False, description="Failed to update the object in sudoldap: " + str(e))

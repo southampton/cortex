@@ -4,7 +4,6 @@ import syslog
 import requests
 from requests.exceptions import HTTPError
 
-
 class SNPuppetConnector:
 
 	# Table Definitions
@@ -15,14 +14,8 @@ class SNPuppetConnector:
 
 	def __init__(self, sn_host, sn_version, sn_user, sn_pass, puppet_connector):
 		# Create the ServiceNowAPI / PuppetDB Objects.
-		self.sn = ServiceNowAPI(sn_host, sn_version, sn_user, sn_pass)
+		self.service_now = ServiceNowAPI(sn_host, sn_version, sn_user, sn_pass)
 		self.puppet = puppet_connector
-
-	def message(self, message, category=None):
-		"""
-		Called when we want to display a message.
-		"""
-		syslog.syslog(message)
 
 	def push_facts(self, node, cmdb_id, **kwargs):
 		"""
@@ -65,22 +58,22 @@ class SNPuppetConnector:
 				sn_server_data["ram"] = ram
 
 			try:
-				response = self.sn.put(self.LINUX_SERVER_TABLE, node_sys_id, data=sn_server_data)
+				self.service_now.put(self.LINUX_SERVER_TABLE, node_sys_id, data=sn_server_data)
 			except HTTPError as e:
-				self.message("Could not update %s. Error: %s" %(node.name, str(e)), "error")
+				syslog.syslog("Could not update %s. Error: %s" %(node.name, str(e)))
 				raise
 
 		except KeyError as e:
-			self.message("Error adding server data. Error: %s" %(str(e)), "error")
+			syslog.syslog("Error adding server data. Error: %s" %(str(e)))
 			raise
 
-	def push_networking_facts(self, node, node_sys_id, **kwargs):
+	def push_networking_facts(self, node, node_sys_id, **_kwargs):
 		"""
 		Push networking facts from Puppet to ServiceNow
 		"""
 		# Get the network facts from Puppet.
-		network_facts = self.puppet.get_network_facts(node) 
-		
+		network_facts = self.puppet.get_network_facts(node)
+
 		try:
 			for interface_name, interface_data in network_facts["interfaces"].items():
 				# Build the data dictionary to send to SN.
@@ -94,9 +87,9 @@ class SNPuppetConnector:
 					sn_interface_data["ip_address"] = interface_data["ip"]
 				if "netmask" in interface_data:
 					sn_interface_data["netmask"] = interface_data["netmask"]
-				
+
 				try:
-					adapter_response = self.sn.get_table(
+					adapter_response = self.service_now.get_table(
 						self.NETWORK_ADAPTER_TABLE,
 						sysparm_query='cmdb_ci=%s^name=%s'%(node_sys_id, interface_name),
 					)
@@ -104,28 +97,28 @@ class SNPuppetConnector:
 					if e.response.status_code == 404:
 						# POST request needed as this nic doesn't exist yet.
 						try:
-							response = self.sn.post(self.NETWORK_ADAPTER_TABLE, data=sn_interface_data)
+							self.service_now.post(self.NETWORK_ADAPTER_TABLE, data=sn_interface_data)
 						except HTTPError as e:
-							self.message("Could not add interface %s. Error: %s" %(interface_name, str(e)), "error")
+							syslog.syslog("Could not add interface %s. Error: %s" %(interface_name, str(e)))
 							raise
 					else:
 						# HTTP Error.
-						self.message("Could not add interface %s. Error: %s" %(interface_name, str(e)), "error")
+						syslog.syslog("Could not add interface %s. Error: %s" %(interface_name, str(e)))
 						raise
 				else:
 					# PUT request needed.
 					try:
 						adapter_id = adapter_response["result"][0]["sys_id"]
-						response = self.sn.put(self.NETWORK_ADAPTER_TABLE, adapter_id, data=sn_interface_data)
+						self.service_now.put(self.NETWORK_ADAPTER_TABLE, adapter_id, data=sn_interface_data)
 					except HTTPError as e:
-						self.message("Could not update interface %s. Error: %s" %(interface_name, str(e)), "error")
+						syslog.syslog("Could not update interface %s. Error: %s" %(interface_name, str(e)))
 						raise
 
 		except KeyError as e:
-			self.message("Error adding network interfaces. Error: %s" %(str(e)), "error")
+			syslog.syslog("Error adding network interfaces. Error: %s" %(str(e)))
 			raise
 
-	def push_disk_facts(self, node, node_sys_id, **kwargs):
+	def push_disk_facts(self, node, node_sys_id, **_kwargs):
 		"""
 		Push disk facts from Puppet to ServiceNow
 		"""
@@ -143,33 +136,33 @@ class SNPuppetConnector:
 				sn_disk_data["install_status"] = "1"
 				sn_disk_data["disk_space"] = "%.2f"%(float(disk_data["size_bytes"])/1024**3)
 				try:
-					disk_response = self.sn.get_table(self.DISKS_TABLE, sysparm_query='computer=%s^name=%s'%(node_sys_id, disk_name))
+					disk_response = self.service_now.get_table(self.DISKS_TABLE, sysparm_query='computer=%s^name=%s'%(node_sys_id, disk_name))
 				except HTTPError as e:
 					if e.response.status_code == 404:
 						# POST request needed as this nic doesn't exist yet.
 						try:
-							response = self.sn.post(self.DISKS_TABLE, data=sn_disk_data)
+							self.service_now.post(self.DISKS_TABLE, data=sn_disk_data)
 						except HTTPError as e:
-							self.message("Could not add disk %s. Error: %s" %(disk_name, str(e)), "error")
+							syslog.syslog("Could not add disk %s. Error: %s" %(disk_name, str(e)))
 							raise
 					else:
 						# HTTP Error.
-						self.message("Could not add disk %s. Error: %s" %(disk_name, str(e)), "error")
+						syslog.syslog("Could not add disk %s. Error: %s" %(disk_name, str(e)))
 						raise
 
 				else:
 					# PUT request needed.
 					try:
 						disk_id = disk_response["result"][0]["sys_id"]
-						response = self.sn.put(self.DISKS_TABLE, disk_id, data=sn_disk_data)
+						self.service_now.put(self.DISKS_TABLE, disk_id, data=sn_disk_data)
 					except HTTPError as e:
-						self.message("Could not update disk %s. Error: %s" %(disk_name, str(e)), "error")
+						syslog.syslog("Could not update disk %s. Error: %s" %(disk_name, str(e)))
 						raise
 		except KeyError:
-			self.message("Error adding disks. Error: %s" %(str(e)), "error")
+			syslog.syslog("Error adding disks. Error: %s" %(str(e)))
 			raise
 
-	def push_mountpoint_facts(self, node, node_sys_id, **kwargs):
+	def push_mountpoint_facts(self, node, node_sys_id, **_kwargs):
 		"""
 		Push mountpoint facts from Puppet to ServiceNow
 		"""
@@ -189,32 +182,32 @@ class SNPuppetConnector:
 				sn_mountpoint_data["free_space"] = mountpoint_data["available"]
 				sn_mountpoint_data["free_space_bytes"] = mountpoint_data["available_bytes"]
 				sn_mountpoint_data["file_system"] = mountpoint_data["filesystem"]
-			
+
 				try:
-					mountpoint_response = self.sn.get_table(self.FILESYSTEMS_TABLE, sysparm_query='computer=%s^name=%s'%(node_sys_id, mountpoint_name))
+					mountpoint_response = self.service_now.get_table(self.FILESYSTEMS_TABLE, sysparm_query='computer=%s^name=%s'%(node_sys_id, mountpoint_name))
 				except HTTPError as e:
 					if e.response.status_code == 404:
 						# POST request needed as this nic doesn't exist yet.
 						try:
-							response = self.sn.post(self.FILESYSTEMS_TABLE, data=sn_mountpoint_data)
+							self.service_now.post(self.FILESYSTEMS_TABLE, data=sn_mountpoint_data)
 						except HTTPError as e:
-							self.message("Could not add mountpoint %s. Error: %s" %(mountpoint_name, str(e)), "error")
+							syslog.syslog("Could not add mountpoint %s. Error: %s" %(mountpoint_name, str(e)))
 							raise
 					else:
 						# HTTP Error.
-						self.message("Could not add mountpoint %s. Error: %s" %(mountpoint_name, str(e)), "error")
+						syslog.syslog("Could not add mountpoint %s. Error: %s" %(mountpoint_name, str(e)))
 						raise
 
 				else:
 					# PUT request needed.
 					try:
 						mountpoint_id = mountpoint_response["result"][0]["sys_id"]
-						response = self.sn.put(self.FILESYSTEMS_TABLE, mountpoint_id, data=sn_mountpoint_data)
+						self.service_now.put(self.FILESYSTEMS_TABLE, mountpoint_id, data=sn_mountpoint_data)
 					except HTTPError as e:
-						self.message("Could not update mountpoint %s. Error: %s" %(mountpoint_name, str(e)), "error")
+						syslog.syslog("Could not update mountpoint %s. Error: %s" %(mountpoint_name, str(e)))
 						raise
 		except KeyError:
-			self.message("Error adding mountpoints. Error: %s" %(str(e)), "error")
+			syslog.syslog("Error adding mountpoints. Error: %s" %(str(e)))
 			raise
 
 
@@ -223,7 +216,7 @@ class ServiceNowAPI():
 	def __init__(self, host, version, username, password):
 		self.host = host
 		self.version = version
-		self.username=username
+		self.username = username
 		self.password = password
 
 	def get_table(self, table, **kwargs):
@@ -244,7 +237,7 @@ class ServiceNowAPI():
 
 	def get(self, table, sys_id):
 		url = "https://" + self.host + "/api/now/" + self.version + "/table/" + table + "/" + sys_id
-		headers = {"Content-Type":"application/json","Accept":"application/json"}
+		headers = {"Content-Type":"application/json", "Accept":"application/json"}
 		response = requests.get(url, auth=(self.username, self.password), headers=headers)
 
 		response.raise_for_status()
@@ -254,7 +247,7 @@ class ServiceNowAPI():
 	def put(self, table, sys_id, data):
 
 		url = "https://" + self.host + "/api/now/" + self.version + "/table/" + table + "/" + sys_id
-		headers = {"Content-Type":"application/json","Accept":"application/json"}
+		headers = {"Content-Type":"application/json", "Accept":"application/json"}
 		response = requests.put(url, auth=(self.username, self.password), headers=headers, data=json.dumps(data))
 
 		response.raise_for_status()
@@ -264,7 +257,7 @@ class ServiceNowAPI():
 	def post(self, table, data):
 
 		url = "https://" + self.host + "/api/now/" + self.version + "/table/" + table
-		headers = {"Content-Type":"application/json","Accept":"application/json"}
+		headers = {"Content-Type":"application/json", "Accept":"application/json"}
 		response = requests.post(url, auth=(self.username, self.password), headers=headers, data=json.dumps(data))
 
 		response.raise_for_status()

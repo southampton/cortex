@@ -17,38 +17,35 @@ from urllib.parse import quote, urljoin
 import MySQLdb as mysql
 import Pyro4
 import redis
-# Disable insecure platform warnings
 import requests
+import urllib3
 # For signing
 from itsdangerous import JSONWebSignatureSerializer
 from pyVim.connect import SmartConnect
 # For VMware
+# pylint: disable=no-name-in-module
 from pyVmomi import vim, vmodl
 
+
 from . import x509utils
+# pylint: enable=no-name-in-module
 
-requests.packages.urllib3.disable_warnings()
+# Disable insecure platform warnings
+urllib3.disable_warnings()
 
-
-
-
-
-
-##
-## This needs major refactoring...
-##
-
-class Corpus(object):
+# pylint: disable=too-many-public-methods,no-self-use,too-many-lines
+class Corpus:
 	"""Library functions used in both cortex and neocortex and workflow tasks"""
 
-	OS_TYPE_BY_ID   = {0: "None", 1: "Linux", 2: "Windows", 3: "ESXi", 4: "Solaris" }
-	OS_TYPE_BY_NAME = {"None": 0, "Linux": 1, "Windows": 2, "ESXi": 3, "Solaris": 4 }
+	OS_TYPE_BY_ID = {0: "None", 1: "Linux", 2: "Windows", 3: "ESXi", 4: "Solaris"}
+	OS_TYPE_BY_NAME = {"None": 0, "Linux": 1, "Windows": 2, "ESXi": 3, "Solaris": 4}
 	SYSTEM_TYPE_BY_ID = {0: "System", 1: "Legacy", 2: "Other"}
 	SYSTEM_TYPE_BY_NAME = {"System": 0, "Legacy": 1, "Other": 2}
 
 
 	class TaskFatalError(Exception):
 		def __init__(self, message="The task failed for an unspecified reason"):
+			super().__init__(message)
 			self.message = str(message)
 
 		def __str__(self):
@@ -56,15 +53,16 @@ class Corpus(object):
 
 	class VMwareTaskError(Exception):
 		def __init__(self, message="An error was returned from vmware"):
+			super().__init__(message)
 			self.message = str(message)
 
 		def __str__(self):
 			return self.message
 
 	def __init__(self, db, config):
-		self.db        = db
-		self.config    = config
-		self.rdb       = self._connect_redis()
+		self.db = db
+		self.config = config
+		self.rdb = self._connect_redis()
 		self.x509utils = x509utils
 
 		# Regex for TSM matches. Matches nodenames of the format:
@@ -122,10 +120,10 @@ class Corpus(object):
 			raise Exception("Selected system class does not exist: cannot allocate system name")
 
 		# 2b. Ensure the class was found and that it is not disabled
-		if class_data == None:
+		if class_data is None:
 			cur.execute('UNLOCK TABLES;')
 			raise Exception("Selected system class does not exist: cannot allocate system name")
-		elif int(class_data['disabled']) == 1:
+		if int(class_data['disabled']) == 1:
 			cur.execute('UNLOCK TABLES;')
 			raise Exception("Selected system class has been disabled: cannot allocate: cannot allocate system name")
 
@@ -135,10 +133,12 @@ class Corpus(object):
 
 			## 4. Create the server
 			new_number = int(class_data['lastid']) + 1
-			new_name   = self.pad_system_name(class_name, new_number, class_data['digits'])
+			new_name = self.pad_system_name(class_name, new_number, class_data['digits'])
 
-			cur.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `expiry_date`, `enable_backup`, `enable_backup_scripts`) VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s)",
-				(self.SYSTEM_TYPE_BY_NAME['System'], class_name, new_number, new_name, username, comment, expiry, set_backup, set_backup))
+			cur.execute(
+				"INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `expiry_date`, `enable_backup`, `enable_backup_scripts`) VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s)",
+				(self.SYSTEM_TYPE_BY_NAME['System'], class_name, new_number, new_name, username, comment, expiry, set_backup, set_backup)
+			)
 
 			# this is the return
 			new_systems['name'] = new_name
@@ -162,7 +162,7 @@ class Corpus(object):
 		Update a system in the systems table with the relevant fields from kwargs.
 		"""
 
-		allowed_fields = ['type','class','number','allocation_date','allocation_who','allocation_comment','cmdb_id','vmware_uuid','review_status','review_task','expiry_date','decom_date','primary_owner_who','primary_owner_role','secondary_owner_who','secondary_owner_role']
+		allowed_fields = ['type', 'class', 'number', 'allocation_date', 'allocation_who', 'allocation_comment', 'cmdb_id', 'vmware_uuid', 'review_status', 'review_task', 'expiry_date', 'decom_date', 'primary_owner_who', 'primary_owner_role', 'secondary_owner_who', 'secondary_owner_role']
 
 		update_fields = []
 		params = ()
@@ -191,8 +191,10 @@ class Corpus(object):
 		# Get a cursor to the database
 		cur = self.db.cursor(mysql.cursors.DictCursor)
 
-		cur.execute("INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `expiry_date`) VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s)",
-			   (self.SYSTEM_TYPE_BY_NAME['System'], None, None, name, username, comment, expiry))
+		cur.execute(
+			"INSERT INTO `systems` (`type`, `class`, `number`, `name`, `allocation_date`, `allocation_who`, `allocation_comment`, `expiry_date`) VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s)",
+			(self.SYSTEM_TYPE_BY_NAME['System'], None, None, name, username, comment, expiry)
+		)
 
 		self.db.commit()
 		return cur.lastrowid
@@ -223,7 +225,8 @@ class Corpus(object):
 
 	################################################################################
 
-	def infoblox_create_host(self, name, ipv4 = True, ipv4_addr = None, ipv4_subnet = None, ipv6 = False, ipv6_addr = None, ipv6_subnet = None, aliases = None):
+	# pylint: disable=too-many-branches
+	def infoblox_create_host(self, name, ipv4=True, ipv4_addr=None, ipv4_subnet=None, ipv6=False, ipv6_addr=None, ipv6_subnet=None, aliases=None):
 		"""Create an Infoblox host object"""
 
 		payload = {'name': name}
@@ -236,7 +239,7 @@ class Corpus(object):
 				raise ValueError('IPv4: At least one of ipv4_addr and ipv4_subnet must be provided.')
 
 			if ipv4_addr:
-				payload['ipv4addrs'] = [{'ipv4addr': ip}]
+				payload['ipv4addrs'] = [{'ipv4addr': ipv4_addr}]
 			else:
 				payload['ipv4addrs'] = [{'ipv4addr': 'func:nextavailableip:' + ipv4_subnet}]
 
@@ -245,7 +248,7 @@ class Corpus(object):
 				raise ValueError('IPv6: At least one of ipv6_addr and ipv6_subnet must be provided.')
 
 			if ipv6_addr:
-				payload['ipv6addrs'] = [{'ipv6addr': ip}]
+				payload['ipv6addrs'] = [{'ipv6addr': ipv6_addr}]
 			else:
 				payload['ipv6addrs'] = [{'ipv6addr': 'func:nextavailableip:' + ipv6_subnet}]
 
@@ -280,6 +283,7 @@ class Corpus(object):
 
 	################################################################################
 
+	# pylint: disable=too-many-branches
 	def infoblox_add_host_record_alias(self, ref, new_aliases):
 		"""Adds an alias (or aliases) to a host record in Infoblox."""
 
@@ -304,10 +308,10 @@ class Corpus(object):
 			aliases = []
 
 		# Append the new alias(es) - only if they don't already exist
-		if type(new_aliases) is str:
+		if isinstance(new_aliases, str):
 			if new_aliases not in aliases:
 				aliases.append(new_aliases)
-		elif type(new_aliases) is list:
+		elif isinstance(new_aliases, list):
 			for new_alias in new_aliases:
 				if new_alias not in aliases:
 					aliases.append(new_alias)
@@ -349,9 +353,9 @@ class Corpus(object):
 			aliases = []
 
 		# Remove the alias(es)
-		if type(remove_aliases) is str:
+		if isinstance(remove_aliases, str):
 			aliases.remove(remove_aliases)
-		elif type(remove_aliases) is list:
+		elif isinstance(remove_aliases, list):
 			for alias in remove_aliases:
 				aliases.remove(alias)
 
@@ -415,16 +419,15 @@ class Corpus(object):
 			if isinstance(response, list):
 				if len(response) == 0:
 					return None
-				else:
-					for record in response:
-						if '_ref' in record:
-							results.append(record['_ref'])
+
+				for record in response:
+					if '_ref' in record:
+						results.append(record['_ref'])
 
 				return results
-			else:
-				raise LookupError("Invalid data returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
-		else:
-			raise LookupError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
+
+			raise LookupError("Invalid data returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
+		raise LookupError("Error returned from Infoblox API. Code " + str(r.status_code) + ": " + r.text)
 
 	################################################################################
 
@@ -450,7 +453,7 @@ class Corpus(object):
 			result['ip'] = socket.gethostbyname(host)
 			result['hostname'] = host
 			result['success'] = 1
-		except socket.gaierror as e:
+		except socket.gaierror:
 			result['error'] = 'name or service not known'
 		except Exception:
 			result['error'] = 'unknown'
@@ -479,37 +482,40 @@ class Corpus(object):
 		"""
 		obj = None
 		container = content.viewManager.CreateContainerView(parent, vimtype, True)
-		for c in container.view:
+		for cont in container.view:
 			if name:
-				if c.name == name:
-					obj = c
+				if cont.name == name:
+					obj = cont
 					break
 			else:
-				obj = c
+				obj = cont
 				break
 
 		return obj
 
 	################################################################################
 
-	def vmware_get_obj_by_id(self, content, vimtype, moId):
+	def vmware_get_obj_by_id(self, content, vimtype, moid):
 		"""
 		Return an object by moId. Set parent to be
 		a Folder, Datacenter, ComputeResource or ResourcePool under
 		which to search for the object.
 		"""
+
+		# pylint: disable=protected-access
+
 		obj = None
 		container = content.viewManager.CreateContainerView(content.rootFolder, vimtype, True)
-		for c in container.view:
-			if c._moId == moId:
-				obj = c
+		for cont in container.view:
+			if cont._moId == moid:
+				obj = cont
 				break
 
 		return obj
 
 	################################################################################
 
-	def vmware_task_wait(self, task, timeout = None):
+	def vmware_task_wait(self, task, timeout=None):
 		"""Waits for vCenter task to finish"""
 
 		# Initialise our timer
@@ -525,7 +531,7 @@ class Corpus(object):
 			## other states are 'queued' and 'running'
 			## which we should just wait on.
 
-			if timeout is not None and timeout > 0 and timer > timeout:
+			if timeout and timer > timeout:
 				return False
 
 			## lets not busy wait CPU 100%...
@@ -548,7 +554,7 @@ class Corpus(object):
 			if task.info.state == 'error':
 
 				## Try to get a meaningful error message
-				if hasattr(task.info.error,'msg'):
+				if hasattr(task.info.error, 'msg'):
 					error_message = task.info.error.msg
 				else:
 					error_message = str(task.info.error)
@@ -563,6 +569,7 @@ class Corpus(object):
 
 	################################################################################
 
+	# pylint: disable=too-many-statements
 	def vmware_vm_custspec(self, dhcp=True, gateway=None, netmask=None, ipaddr=None, dns_servers="8.8.8.8", dns_domain="localdomain", os_type=None, os_domain="localdomain", timezone=None, hwClockUTC=True, domain_join_user=None, domain_join_pass=None, fullname=None, orgname=None, productid="", ipv6addr=None, gateway6=None, netmask6=None):
 		"""This function generates a vmware VM customisation spec for use in cloning a VM.
 
@@ -583,52 +590,54 @@ class Corpus(object):
 
 		"""
 
+		# pylint: disable=invalid-name
+
 		## global IP settings
 		globalIPsettings = vim.vm.customization.GlobalIPSettings()
 
 		## these are optional for DHCP
 		if not dhcp:
 			globalIPsettings.dnsSuffixList = [dns_domain]
-			globalIPsettings.dnsServerList  = dns_servers
+			globalIPsettings.dnsServerList = dns_servers
 
 		## network settings master object
-		ipSettings                   = vim.vm.customization.IPSettings()
+		ipSettings = vim.vm.customization.IPSettings()
 
 		## the IP address
 		if dhcp:
-			ipSettings.ip            = vim.vm.customization.DhcpIpGenerator()
+			ipSettings.ip = vim.vm.customization.DhcpIpGenerator()
 		else:
-			fixedIP                  = vim.vm.customization.FixedIp()
-			fixedIP.ipAddress        = ipaddr
-			ipSettings.ip            = fixedIP
-			ipSettings.dnsDomain     = dns_domain
+			fixedIP = vim.vm.customization.FixedIp()
+			fixedIP.ipAddress = ipaddr
+			ipSettings.ip = fixedIP
+			ipSettings.dnsDomain = dns_domain
 			ipSettings.dnsServerList = dns_servers
-			ipSettings.gateway       = [gateway]
-			ipSettings.subnetMask    = netmask
+			ipSettings.gateway = [gateway]
+			ipSettings.subnetMask = netmask
 			if ipv6addr is not None:
-				fixedIP6                    = vim.vm.customization.FixedIpV6()
-				fixedIP6.ipAddress          = ipv6addr
-				ipSettings.ipV6Spec         = vim.vm.customization.IPSettings.IpV6AddressSpec()
-				ipSettings.ipV6Spec.ip      = [fixedIP6]
+				fixedIP6 = vim.vm.customization.FixedIpV6()
+				fixedIP6.ipAddress = ipv6addr
+				ipSettings.ipV6Spec = vim.vm.customization.IPSettings.IpV6AddressSpec()
+				ipSettings.ipV6Spec.ip = [fixedIP6]
 				ipSettings.ipV6Spec.gateway = [gateway6]
-				fixedIP6.subnetMask         = netmask6
+				fixedIP6.subnetMask = netmask6
 
 		## Create the 'adapter mapping'
-		adapterMapping            = vim.vm.customization.AdapterMapping()
-		adapterMapping.adapter    = ipSettings
+		adapterMapping = vim.vm.customization.AdapterMapping()
+		adapterMapping.adapter = ipSettings
 
 		# create the customisation specification
-		custspec                  = vim.vm.customization.Specification()
+		custspec = vim.vm.customization.Specification()
 		custspec.globalIPSettings = globalIPsettings
-		custspec.nicSettingMap    = [adapterMapping]
+		custspec.nicSettingMap = [adapterMapping]
 
 		if os_type == self.OS_TYPE_BY_NAME['Linux']:
 
-			linuxprep            = vim.vm.customization.LinuxPrep()
-			linuxprep.domain     = os_domain
-			linuxprep.hostName   = vim.vm.customization.VirtualMachineNameGenerator()
+			linuxprep = vim.vm.customization.LinuxPrep()
+			linuxprep.domain = os_domain
+			linuxprep.hostName = vim.vm.customization.VirtualMachineNameGenerator()
 			linuxprep.hwClockUTC = hwClockUTC
-			linuxprep.timeZone   = timezone
+			linuxprep.timeZone = timezone
 
 			## finally load in the sysprep into the customisation spec
 			custspec.identity = linuxprep
@@ -656,10 +665,10 @@ class Corpus(object):
 			sysprepUserData.orgName = orgname
 			sysprepUserData.productId = productid
 
-			sysprep                = vim.vm.customization.Sysprep()
-			sysprep.guiUnattended  = guiUnattended
+			sysprep = vim.vm.customization.Sysprep()
+			sysprep.guiUnattended = guiUnattended
 			sysprep.identification = sysprepIdentity
-			sysprep.userData       = sysprepUserData
+			sysprep.userData = sysprepUserData
 
 			## finally load in the sysprep into the customisation spec
 			custspec.identity = sysprep
@@ -672,12 +681,15 @@ class Corpus(object):
 	################################################################################
 
 	def vmware_smartconnect(self, tag):
+
+		# pylint: disable=invalid-name
+
 		instance = self.config['VMWARE'][tag]
 
 		sslContext = ssl.create_default_context()
 
 		if 'verify' in instance:
-			if instance['verify'] == False:
+			if not instance['verify']:
 				sslContext.check_hostname = False
 				sslContext.verify_mode = ssl.CERT_NONE
 
@@ -685,6 +697,7 @@ class Corpus(object):
 
 	################################################################################
 
+	# pylint: disable=too-many-branches,too-many-statements
 	def vmware_clone_vm(self, service_instance, vm_template, vm_name, vm_datacenter=None, vm_datastore=None, vm_folder=None, vm_cluster=None, vm_rpool=None, vm_network=None, vm_poweron=False, custspec=None, vm_datastore_cluster=None, folder_is_moid=False):
 		"""This function connects to vcenter and clones a virtual machine. Only vm_template and
 		   vm_name are required parameters although this is unlikely what you'd want - please
@@ -732,13 +745,13 @@ class Corpus(object):
 		## We will thus create within a resource pool.
 
 		# If this function isn't passed a resource pool then choose the default:
-		if vm_rpool == None:
+		if vm_rpool is None:
 			rpool = cluster.resourcePool
 
 		else:
 			## But if we are given a specific resource pool...
 			## ...but we werent given a specific cluster, then just search for the resource pool name anywhere on the vCenter:
-			if vm_cluster == None:
+			if vm_cluster is None:
 				rpool = self.vmware_get_obj(content, [vim.ResourcePool], vm_rpool)
 
 			else:
@@ -746,7 +759,7 @@ class Corpus(object):
 				rpool = self.vmware_get_obj_within_parent(content, [vim.ResourcePool], vm_rpool, cluster.resourcePool)
 
 			## If we didn't find a resource pool just use the default one for the cluster
-			if rpool == None:
+			if rpool is None:
 				rpool = cluster.resourcePool
 
 		# If we're passed a new network:
@@ -794,7 +807,7 @@ class Corpus(object):
 		relospec.pool = rpool
 		clonespec = vim.vm.CloneSpec()
 		clonespec.location = relospec
-		clonespec.powerOn  = vm_poweron
+		clonespec.powerOn = vm_poweron
 		clonespec.template = False
 
 		## VMware datastore
@@ -816,11 +829,11 @@ class Corpus(object):
 			# If we have a list of datastore clusters, re-order the list so that we don't
 			# always choose the same one. We decide on where in the list to look based on
 			# the name of the VM
-			if type(vm_datastore_cluster) is list:
+			if isinstance(vm_datastore_cluster, list):
 				# Sum up the codepoints of the string to give us a number
 				name_value = 0
-				for c in vm_name:
-					name_value += ord(c)
+				for char in vm_name:
+					name_value += ord(char)
 				name_value = name_value % len(vm_datastore_cluster)
 
 				# Pick a number between 0 and the number of provided
@@ -862,13 +875,10 @@ class Corpus(object):
 					continue
 
 				# If we have a recommendation...
-				if len(result.recommendations) > 0 and len(result.recommendations[0].action) and result.recommendations[0].action[0].destination is not None:
+				if result.recommendations and result.recommendations[0].action and result.recommendations[0].action[0].destination is not None:
 					# ...use the datastore and stop searching
 					datastore = result.recommendations[0].action[0].destination
 					break
-				else:
-					# Iterate to the next cluster
-					continue
 
 			# If VMware failed to return any recommendations on any cluster, then throw an error
 			if datastore is None:
@@ -880,11 +890,11 @@ class Corpus(object):
 
 		## Finish off the clone spec
 		clonespec.location = relospec
-		if need_config_spec == True:
+		if need_config_spec:
 			clonespec.config = config_spec
 
 		## If the user wants to customise the VM after creation...
-		if not custspec == False:
+		if custspec:
 			clonespec.customization = custspec
 
 		return template.Clone(folder=destfolder, name=vm_name, spec=clonespec)
@@ -894,13 +904,15 @@ class Corpus(object):
 	def update_vm_cache(self, vm, tag):
 		"""Updates the VMware cache data with the information about the VM."""
 
+		# pylint: disable=invalid-name,protected-access
+
 		## Get a lock so that we're sure that the update vmware cache task (which updates
 		## data for ALL vms) is not running. If it had been running our changes would be
 		## overwritten, so this way we wait for that to end before we try to update the cache.
 		## The timeout is there in case this process dies or the server restarts or similar
 		## and then the lock is never ever unlocked - the timeout ensures that eventually it is
 		## and cortex might recover itself. maybe. the sleep is set to 1, up from the insane default of 0.1
-		with self.rdb.lock('lock/update_vmware_cache',timeout=1800,sleep=1):
+		with self.rdb.lock('lock/update_vmware_cache', timeout=1800, sleep=1):
 
 			# Get a cursor to the database
 			cur = self.db.cursor(mysql.cursors.DictCursor)
@@ -937,8 +949,9 @@ class Corpus(object):
 
 	############################################################################
 
-	def puppet_enc_register(self, system_id, certname, environment_name = None):
+	def puppet_enc_register(self, system_id, certname, environment_name=None):
 		"""
+		Register a system with the Puppet ENC
 		"""
 
 		# Get a cursor to the database
@@ -972,8 +985,10 @@ class Corpus(object):
 	def vmware_vmreconfig_notes(self, vm, notes):
 		"""Sets the notes annotation for the VM."""
 
-		configSpec              = vim.VirtualMachineConfigSpec()
-		configSpec.annotation   = notes
+		# pylint: disable=invalid-name
+
+		configSpec = vim.VirtualMachineConfigSpec()
+		configSpec.annotation = notes
 		return vm.ReconfigVM_Task(configSpec)
 
 	############################################################################
@@ -987,9 +1002,11 @@ class Corpus(object):
 
 		Returns a PyVmomi task object relating to the VMware task."""
 
-		configSpec                   = vim.VirtualMachineConfigSpec()
-		configSpec.cpuHotAddEnabled  = hotadd
-		configSpec.numCPUs           = cpus
+		# pylint: disable=invalid-name
+
+		configSpec = vim.VirtualMachineConfigSpec()
+		configSpec.cpuHotAddEnabled = hotadd
+		configSpec.numCPUs = cpus
 		configSpec.numCoresPerSocket = cpus_per_socket
 		return vm.ReconfigVM_Task(configSpec)
 
@@ -1003,14 +1020,18 @@ class Corpus(object):
 
 		Returns a PyVmomi task object relating to the VMware task."""
 
-		configSpec                     = vim.VirtualMachineConfigSpec()
+		# pylint: disable=invalid-name
+
+		configSpec = vim.VirtualMachineConfigSpec()
 		configSpec.memoryHotAddEnabled = hotadd
-		configSpec.memoryMB            = megabytes
+		configSpec.memoryMB = megabytes
 		return vm.ReconfigVM_Task(configSpec)
 
 	############################################################################
 
 	def vmware_vm_add_disk(self, vm, size_in_bytes, thin=True):
+
+		# pylint: disable=invalid-name
 
 		# find the last SCSI controller on the VM
 		for device in vm.config.hardware.device:
@@ -1028,10 +1049,10 @@ class Corpus(object):
 				if unit_number >= 16:
 					raise Exception("Too many disks on the SCSI controller")
 
-		if controller == None:
+		if controller is None:
 			raise Exception("No scsi controller found!")
 
-		if unit_number == None:
+		if unit_number is None:
 			raise Exception("Unable to calculate logical unit number for SCSI device")
 
 		newdev = vim.vm.device.VirtualDeviceSpec()
@@ -1187,6 +1208,8 @@ class Corpus(object):
 		"""Sets a guestinfo variable that is accessible from VMware Tools
 		inside the VM. Returns the VMware task."""
 
+		# pylint: disable=invalid-name
+
 		configSpec = vim.VirtualMachineConfigSpec()
 		configSpec.extraConfig.append(vim.OptionValue())
 		configSpec.extraConfig[0].key = variable
@@ -1197,6 +1220,8 @@ class Corpus(object):
 
 	def vmware_wait_for_customisations(self, service_instance, vm, desired_status=2, timeout=300):
 		"""Waits for customisations"""
+
+		# pylint: disable=invalid-name
 
 		# Build an event filter for the VM
 		filterSpec = vim.EventFilterSpec()
@@ -1214,10 +1239,10 @@ class Corpus(object):
 			# Iterate over the events
 			for event in events:
 				# If the event is the one we're looking for the break out
-				if type(event) == vim.event.CustomizationStartedEvent and desired_status == 1:
+				if isinstance(event, vim.event.CustomizationStartedEvent) and desired_status == 1:
 					status = 1
 					break
-				elif type(event) == vim.event.CustomizationSucceeded and desired_status == 2:
+				if isinstance(event, vim.event.CustomizationSucceeded) and desired_status == 2:
 					status = 2
 					break
 
@@ -1265,7 +1290,7 @@ class Corpus(object):
 
 	############################################################################
 
-	def set_link_ids(self, cortex_system_id, cmdb_id = None, vmware_uuid = None):
+	def set_link_ids(self, cortex_system_id, cmdb_id=None, vmware_uuid=None):
 		"""
 		Sets the identifiers that link a system from the Cortex `systems`
 		table to their relevant item in the CMDB.
@@ -1319,24 +1344,25 @@ class Corpus(object):
 			# If we succeeded, return the sys_id of the link table entry
 			if r is not None and r.status_code >= 200 and r.status_code <= 299:
 				return response_json['result'][0]['sys_id']
-			else:
-				error = "Failed to link ServiceNow task and CI."
-				if r is not None:
-					error = error + " HTTP Response code: " + str(r.status_code)
-				raise Exception(error)
-		else:
-			# Return error with appropriate information
-			error = "Failed to query ServiceNow for task information."
+
+			error = "Failed to link ServiceNow task and CI."
 			if r is not None:
-				if r.status_code == 404:
-					error = error + " Task '" + str(task_number) + "' does not exist"
-				else:
-					error = error + " HTTP Response code: " + str(r.status_code)
+				error = error + " HTTP Response code: " + str(r.status_code)
 			raise Exception(error)
+
+		# Return error with appropriate information
+		error = "Failed to query ServiceNow for task information."
+		if r is not None:
+			if r.status_code == 404:
+				error = error + " Task '" + str(task_number) + "' does not exist"
+			else:
+				error = error + " HTTP Response code: " + str(r.status_code)
+		raise Exception(error)
 
 
 	################################################################################
 
+	# pylint: disable=too-many-branches
 	def servicenow_create_ci(self, ci_name, os_type, os_name, sockets='', cores_per_socket='', ram_mb='', disk_gb='', ipaddr='', virtual=True, environment=None, short_description='', comments='', location=None):
 		"""Creates a new CI within ServiceNow.
 		 - ci_name: The name of the CI, e.g. srv01234
@@ -1372,7 +1398,7 @@ class Corpus(object):
 			raise Exception('Unknown os_type passed to servicenow_create_ci')
 
 		# Build the data for the CI
-		vm_data = { 'name': str(ci_name), 'os': str(os_name), 'virtual': str(virtual).lower(), 'ip_address': ipaddr, 'operational_status': 'In Service', 'model_id': model_id, 'short_description': short_description, 'comments': comments }
+		vm_data = {'name': str(ci_name), 'os': str(os_name), 'virtual': str(virtual).lower(), 'ip_address': ipaddr, 'operational_status': 'In Service', 'model_id': model_id, 'short_description': short_description, 'comments': comments}
 
 		# Add CPU count if we've got it
 		if sockets is not None:
@@ -1447,7 +1473,7 @@ class Corpus(object):
 
 		# Determine the new status it needs to be, which depends on
 		# whether it is virtual or not
-		if (type(virtual) is bool and virtual is True) or (type(virtual) is str and virtual.lower() == "true"):
+		if (isinstance(virtual, bool) and virtual) or (isinstance(virtual, str) and virtual.lower() == "true"):
 			new_status = "Deleted"
 		else:
 			new_status = "Decommissioned"
@@ -1471,7 +1497,7 @@ class Corpus(object):
 
 	def servicenow_add_ci_relationship(self, parent_sys_id, child_sys_id, rel_type_sys_id):
 		# Build JSON data about the relationship to create
-		json_data = { 'parent': parent_sys_id, 'child': child_sys_id, 'type': rel_type_sys_id }
+		json_data = {'parent': parent_sys_id, 'child': child_sys_id, 'type': rel_type_sys_id}
 
 		# Post the request
 		r = requests.post('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_rel_ci', auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=json_data)
@@ -1495,15 +1521,15 @@ class Corpus(object):
 		r = requests.get('https://' + self.config['SN_HOST'] + '/api/now/v1/table/cmdb_rel_ci?sysparm_query=child=' + sys_id + '^ORparent=' + sys_id, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json'})
 
 		# Check we got a valid response code
-		if r is not None:
-			# Special case: ServiceNow returns a 404 to indicate no results. No,
-			# this isn't a good idea, but we have to work with it
-			if r.status_code == 404:
-				return []
-			elif r.status_code < 200 or r.status_code > 299:
-				raise Exception("Could not locate CI relationships in ServiceNow. ServiceNow returned error code " + str(r.status_code))
-		else:
+		if r is None:
 			raise Exception("Could not locate CI relationships in ServiceNow. Request failed")
+
+		# Special case: ServiceNow returns a 404 to indicate no results. No,
+		# this isn't a good idea, but we have to work with it
+		if r.status_code == 404:
+			return []
+		if r.status_code < 200 or r.status_code > 299:
+			raise Exception("Could not locate CI relationships in ServiceNow. ServiceNow returned error code " + str(r.status_code))
 
 		# Decode the JSON, raising on failure
 		try:
@@ -1589,7 +1615,7 @@ class Corpus(object):
 
 		# StrictRedis.get() returns bytes(), so decode it
 		if notify is not None:
-			if type(notify) is bytes:
+			if isinstance(notify, bytes):
 				notify = notify.decode('utf-8')
 
 		# Start a timer
@@ -1613,7 +1639,7 @@ class Corpus(object):
 
 			# StrictRedis.get() returns bytes(), so decode it
 			if notify is not None:
-				if type(notify) is bytes:
+				if isinstance(notify, bytes):
 					notify = notify.decode('utf-8')
 
 		# Return the latest value, which may be None if the in-guest installer
@@ -1629,7 +1655,7 @@ class Corpus(object):
 		from_addr = self.config['EMAIL_FROM']
 
 		# Add on a default domain for recipient if we don't have one
-		if to_addr.find('@') < 0 and 'EMAIL_DOMAIN' in self.config and len(self.config['EMAIL_DOMAIN']) > 0:
+		if self.config.get("EMAIL_DOMAIN", None) and to_addr.find('@') < 0:
 			to_addr = to_addr + '@' + self.config['EMAIL_DOMAIN']
 
 		# Build the message
@@ -1654,6 +1680,7 @@ class Corpus(object):
 
 		# Set up a proxy
 		proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + self.config['WINRPC'][environment]['host'] + ':' + str(self.config['WINRPC'][environment]['port']))
+		# pylint: disable=protected-access
 		proxy._pyroHmacKey = self.config['WINRPC'][environment]['key']
 
 		# Attempt to ping the proxy
@@ -1750,8 +1777,8 @@ class Corpus(object):
 			content = si.RetrieveContent()
 			# Search for the VM by UUID
 			return content.searchIndex.FindByUuid(None, uuid, True, False)
-		else:
-			raise Exception('VMware instance not found')
+
+		raise Exception('VMware instance not found')
 
 	############################################################################
 
@@ -1811,16 +1838,20 @@ class Corpus(object):
 		item_data['assignment_group'] = assignment_group
 
 		# Make a post request to ServiceNow to create the task
-		r = requests.put('https://' + self.config['SN_HOST'] + '/api/now/v1/table/sc_req_item/' + req_item_id, auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=item_data)
+		r = requests.put(
+			'https://' + self.config['SN_HOST'] + '/api/now/v1/table/sc_req_item/' + req_item_id,
+			auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'},
+			json=item_data
+		)
 
 		# If we succeeded
 		if r is not None and r.status_code >= 200 and r.status_code <= 201:
 			return True
-		else:
-			error = "Failed to update request item"
-			if r is not None:
-				error = error + ". HTTP Response code: " + str(r.status_code)
-			raise Exception(error)
+
+		error = "Failed to update request item"
+		if r is not None:
+			error = error + ". HTTP Response code: " + str(r.status_code)
+		raise Exception(error)
 
 	############################################################################
 
@@ -1835,16 +1866,21 @@ class Corpus(object):
 		task_data['assignment_group'] = assignment_group
 
 		# Make a post request to ServiceNow to create the task
-		r = requests.post('https://' + self.config['SN_HOST'] + '/api/now/v1/table/incident', auth=(self.config['SN_USER'], self.config['SN_PASS']), headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=task_data)
+		r = requests.post(
+			'https://' + self.config['SN_HOST'] + '/api/now/v1/table/incident',
+			auth=(self.config['SN_USER'], self.config['SN_PASS']),
+			headers={'Accept': 'application/json', 'Content-Type': 'application/json'},
+			json=task_data
+		)
 
 		# If we succeeded
 		if r is not None and r.status_code == 201:
 			return True
-		else:
-			error = "Failed to open a new CMDB ticket"
-			if r is not None:
-				error = error + ". HTTP Response code: " + str(r.status_code)
-			raise Exception(error)
+
+		error = "Failed to open a new CMDB ticket"
+		if r is not None:
+			error = error + ". HTTP Response code: " + str(r.status_code)
+		raise Exception(error)
 
 	############################################################################
 
@@ -1864,9 +1900,11 @@ class Corpus(object):
 			Rasises:
 				requests.exceptions.HTTPError if the API call fails
 				LookupError if client is not found """
-		r = requests.get(urljoin(self.config['TSM_API_URL_BASE'], 'clients'),
-					 auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
-					 verify=self.config['TSM_API_VERIFY_SERVER'])
+		r = requests.get(
+			urljoin(self.config['TSM_API_URL_BASE'], 'clients'),
+			auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
+			verify=self.config['TSM_API_VERIFY_SERVER']
+		)
 		#raise an exception if we get an error
 		r.raise_for_status()
 		#get the specific client details from the response
@@ -1878,16 +1916,17 @@ class Corpus(object):
 		if len(clients) == 0:
 			#client was not found
 			raise LookupError('Client not found')
-		else:
-			# We found the client(s) so we can now get the details we need
-			for idx, client in enumerate(clients):
-				r = requests.get(urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(client['SERVER'])
-							 + '/client/' + quote(client['NAME']) + '/detail'),
-							 auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
-							 verify=self.config['TSM_API_VERIFY_SERVER'])
-				r.raise_for_status()
-				clients[idx]['DECOMMISSIONED'] = r.json()['DECOMMISSIONED']
-			return clients
+
+		# We found the client(s) so we can now get the details we need
+		for idx, client in enumerate(clients):
+			r = requests.get(
+				urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(client['SERVER']) + '/client/' + quote(client['NAME']) + '/detail'),
+				auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
+				verify=self.config['TSM_API_VERIFY_SERVER']
+			)
+			r.raise_for_status()
+			clients[idx]['DECOMMISSIONED'] = r.json()['DECOMMISSIONED']
+		return clients
 
 	############################################################################
 
@@ -1901,10 +1940,11 @@ class Corpus(object):
 			Throws:
 				requests.exceptions.HTTPError if the API call fails"""
 
-		r = requests.put(urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(server)
-			 + '/client/' + quote(name) + '/decommissionclient'),
-			 auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
-			 verify=self.config['TSM_API_VERIFY_SERVER'])
+		r = requests.put(
+			urljoin(self.config['TSM_API_URL_BASE'], 'server/' + quote(server) + '/client/' + quote(name) + '/decommissionclient'),
+			auth=(self.config['TSM_API_USER'], self.config['TSM_API_PASS']),
+			verify=self.config['TSM_API_VERIFY_SERVER']
+		)
 		r.raise_for_status()
 		return True
 
@@ -1959,13 +1999,13 @@ class Corpus(object):
 						if self._connection and host == self._connection[0]:
 							return self._connection[1]
 
-						self._connection = host, http.client.HTTPSConnection(host, None, context = self._context)
+						self._connection = host, http.client.HTTPSConnection(host, None, context=self._context)
 						return self._connection[1]
 
 				client = xmlrpc.client.ServerProxy(rhnurl, transport=SafeTransportWithCert(use_datetime=0, context=context), verbose=0)
 
 			key = client.auth.login(self.config['RHN5_USER'], self.config['RHN5_PASS'])
-			return (client,key)
+			return (client, key)
 		except Exception as ex:
 			raise IOError(str(ex))
 
@@ -2007,10 +2047,10 @@ class Corpus(object):
 
 	############################################################################
 
-	def get_system_by_id(self, id):
+	def get_system_by_id(self, system_id):
 		# Query the database
 		curd = self.db.cursor(mysql.cursors.DictCursor)
-		curd.execute("SELECT * FROM `systems_info_view` WHERE `id` = %s", (id,))
+		curd.execute("SELECT * FROM `systems_info_view` WHERE `id` = %s", (system_id,))
 
 		# Return the result
 		return curd.fetchone()
@@ -2041,15 +2081,14 @@ class Corpus(object):
 		# Get the system's OS type using the cmdb_os field:
 		if system["cmdb_os"] and "linux" in system["cmdb_os"].lower():
 			return "linux"
-		elif system["cmdb_os"] and "windows" in system["cmdb_os"].lower():
+		if system["cmdb_os"] and "windows" in system["cmdb_os"].lower():
 			return "windows"
-		else:
-			return "unknown"
+		return "unknown"
 
 	############################################################################
 
-	def system_get_repeatable_password(self, id):
-		system = self.get_system_by_id(id)
+	def system_get_repeatable_password(self, system_id):
+		system = self.get_system_by_id(system_id)
 		return base64.standard_b64encode(hashlib.sha256(bytes(system['name'] + '|' + str(system['build_count']) + '|' + str(system['allocation_date']) + '|' + system['allocation_who'] + '|' + self.config['SECRET_KEY'], 'utf8')).digest()).decode('ascii')[0:16]
 
 	############################################################################
@@ -2059,7 +2098,7 @@ class Corpus(object):
 		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}'.format(name))
 		r = requests.get(
 			url,
-			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			headers={'Content-Type': 'application/json', 'Accept':'application/json'},
 			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS'])
 		)
 
@@ -2075,7 +2114,7 @@ class Corpus(object):
 		url = urljoin(self.config['SATELLITE6_URL'], 'api/hosts/{0}/disassociate'.format(hostid))
 		r = requests.put(
 			url,
-			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			headers={'Content-Type': 'application/json', 'Accept':'application/json'},
 			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
 		)
 
@@ -2091,7 +2130,7 @@ class Corpus(object):
 
 		r = requests.delete(
 			url,
-			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
+			headers={'Content-Type': 'application/json', 'Accept':'application/json'},
 			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
 		)
 
@@ -2113,9 +2152,9 @@ class Corpus(object):
 		# Associate the Host with a Compute Resource (i.e. Data Center)
 		r = requests.put(
 			url,
-			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
-			auth = (self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
-			json = { 'host': { 'compute_resource_id': self.config['SATELLITE6_CLUSTER_COMPUTE_RESOURCE'][cluster_name] } }
+			headers={'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+			json={'host': {'compute_resource_id': self.config['SATELLITE6_CLUSTER_COMPUTE_RESOURCE'][cluster_name]}}
 		)
 
 		r.raise_for_status()
@@ -2123,9 +2162,9 @@ class Corpus(object):
 		# Associate the Host with a VM
 		r = requests.put(
 			url,
-			headers = {'Content-Type':'application/json', 'Accept':'application/json'},
-			auth = (self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
-			json = { 'host': { 'uuid': vm.config.instanceUuid } }
+			headers={'Content-Type':'application/json', 'Accept':'application/json'},
+			auth=(self.config['SATELLITE6_USER'], self.config['SATELLITE6_PASS']),
+			json={'host': {'uuid': vm.config.instanceUuid}}
 		)
 
 		r.raise_for_status()
@@ -2150,11 +2189,8 @@ class Corpus(object):
 
 	############################################################################
 
-	def checkWorkflowLock(self):
+	def check_workflow_lock(self):
 		curd = self.db.cursor(mysql.cursors.DictCursor)
 		curd.execute('SELECT `value` FROM `kv_settings` WHERE `key` = %s;', ('workflow_lock_status',))
 		current_value = curd.fetchone()
-		if json.loads(current_value['value'])['status'] == 'Unlocked':
-			return True
-		else:
-			return False
+		return bool(json.loads(current_value['value'])['status'] == 'Unlocked')

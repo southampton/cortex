@@ -1,7 +1,7 @@
 
 import MySQLdb as mysql
 
-from corpus import PuppetDBConnector
+from corpus.puppetdb_connector import PuppetDBConnector
 
 
 def run(helper, options):
@@ -12,7 +12,7 @@ def run(helper, options):
 
 	# Create the PuppetDB object.
 	helper.event("puppetdb_connect", "Connecting to PuppetDB.")
-	puppet = PuppetDBConnector.PuppetDBConnector(
+	puppet = PuppetDBConnector(
 		host = helper.config["PUPPETDB_HOST"],
 		port = helper.config["PUPPETDB_PORT"],
 		ssl_cert = helper.config["PUPPETDB_SSL_CERT"],

@@ -1,15 +1,14 @@
-import math
-
 from flask import request
 from flask_restx import Resource, reqparse
 
 import cortex.lib.core
 from cortex.api import api_login_required, api_manager
-from cortex.api.exceptions import (InvalidPermissionException,
-                                   NoResultsFoundException)
-from cortex.api.parsers import pagination_arguments
-from cortex.api.serializers.tasks import (page_tasks_serializer,
-                                          tasks_serializer)
+from cortex.api.exceptions import (
+	InvalidPermissionException, NoResultsFoundException)
+from cortex.api.parsers import (
+	pagination_arguments, process_pagination_arguments, pagination_response)
+from cortex.api.serializers.tasks import (
+	page_tasks_serializer, tasks_serializer)
 from cortex.lib.user import does_user_have_permission
 
 tasks_arguments = reqparse.RequestParser()
@@ -19,6 +18,7 @@ tasks_arguments.add_argument('status', type=int, required=False, default=None, h
 
 tasks_namespace = api_manager.namespace('tasks', description='Tasks API')
 
+# pylint: disable=no-self-use
 @tasks_namespace.route('/')
 class TasksCollection(Resource):
 
@@ -33,12 +33,8 @@ class TasksCollection(Resource):
 		"""
 		Returns a paginated list of rows from the tasks lists.
 		"""
-		args = pagination_arguments.parse_args(request)
-		page = args.get('page', 1)
-		per_page = args.get('per_page', 10)
 
-		limit_start = (page-1)*per_page
-		limit_length = per_page
+		page, per_page, limit_start, limit_length = process_pagination_arguments(request)
 
 		if not does_user_have_permission("tasks.view"):
 			raise InvalidPermissionException
@@ -51,16 +47,7 @@ class TasksCollection(Resource):
 		total = cortex.lib.core.tasks_count(username=username, module=module, status=status)
 		results = cortex.lib.core.tasks_get(username=username, module=module, status=status, order='id', limit_start=limit_start, limit_length=limit_length)
 
-		if not results:
-			raise NoResultsFoundException
-		
-		return {
-			'page': page,
-			'per_page': per_page,
-			'pages': math.ceil(float(total)/float(per_page)),
-			'total': total,
-			'items': results,
-		}
+		return pagination_response(results, page, per_page, total)
 
 @tasks_namespace.route('/<int:task_id>')
 @api_manager.response(404, 'Task not found.')

@@ -140,9 +140,14 @@ disable=print-statement,
 		exception-escape,
 		comprehension-escape,
 		missing-module-docstring,
+		missing-class-docstring,
+		missing-function-docstring,
 		wrong-import-position,
 		too-few-public-methods,
-		line-too-long
+		line-too-long,
+		too-many-locals,
+		too-many-arguments,
+		broad-except
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -255,6 +260,10 @@ good-names=i,
 	e,
 	ex,
 	r,
+	fp,
+	db,
+	vm,
+	si,
 	Run,
 	_
 
@@ -375,7 +384,7 @@ ignore-comments=yes
 ignore-docstrings=yes
 
 # Ignore imports when computing similarities.
-ignore-imports=no
+ignore-imports=yes
 
 # Minimum lines number of a similarity.
 min-similarity-lines=4

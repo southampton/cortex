@@ -1,3 +1,4 @@
+import traceback
 from urllib.parse import quote, urljoin
 
 import requests
@@ -8,9 +9,10 @@ class RubrikVMNotFound(Exception):
 
 class RubrikVCenterNotFound(Exception):
 	def __init__(self, vcenter):
+		super().__init__("vCenter Not Found Exception")
 		self.vcenter = vcenter
 
-class Rubrik(object):
+class Rubrik:
 	"""A RESTful client for Rubrik"""
 
 	def __init__(self, helper):
@@ -40,18 +42,16 @@ class Rubrik(object):
 
 	def _get_api_token(self):
 		"""Obtain a bearer token and insert it into the client"s headers"""
-		try:
-			r = requests.post(
-				self._url("session"),
-				headers=self._headers,
-				auth=self._auth,
-				verify=self._verify,
-			)
-			r.raise_for_status()
-		except requests.exceptions.HTTPError:
-			raise
-		else:
-			self._headers["Authorization"] = "Bearer " + r.json().get("token")
+
+		r = requests.post(
+			self._url("session"),
+			headers=self._headers,
+			auth=self._auth,
+			verify=self._verify,
+		)
+		r.raise_for_status()
+
+		self._headers["Authorization"] = "Bearer " + r.json().get("token")
 
 	def _request(self, method, endpoint, version, **kwargs):
 		"""Make an API request to an endpoint"""
@@ -60,32 +60,24 @@ class Rubrik(object):
 		for k in ("headers", "verify"):
 			kwargs.pop(k, None)
 		# Attempt to make a request
-		try:
-			r = requests.request(
-				method,
-				self._url(endpoint, version=version),
-				headers=self._headers,
-				verify=self._verify,
-				**kwargs
-			)
-			r.raise_for_status()
+		r = requests.request(
+			method,
+			self._url(endpoint, version=version),
+			headers=self._headers,
+			verify=self._verify,
+			**kwargs
+		)
+		r.raise_for_status()
 
-			if r.text:
-				return r.json()
-			else:
-				return {}
-
-		# Non 2XX status code
-		except requests.exceptions.HTTPError:
-			raise
-		# JSON decode failed
-		except ValueError:
-			raise
+		if r.text:
+			return r.json()
+		return {}
 
 	def get_request(self, endpoint, version=None, payload=None):
 		"""Make a GET request to an API endpoint"""
 		return self._request("GET", endpoint, version, params=payload)
 
+	# pylint: disable=dangerous-default-value
 	def patch_request(self, endpoint, version=None, payload={}):
 		"""Make a PATCH request to an API endpoint"""
 		return self._request("PATCH", endpoint, version, json=payload)
@@ -98,19 +90,21 @@ class Rubrik(object):
 		"""Gets the backup SLA categories from Rubrik"""
 		return self.get_request("sla_domain")
 
-	def assign_sla_domain(self, sla_domain_id, id):
+	def assign_sla_domain(self, sla_domain_id, managed_id):
 		"""Use the internal API to assign an SLA domain"""
 		return self.post_request(
 			"sla_domain/{sla_domain_id}/assign".format(sla_domain_id=quote(sla_domain_id)),
-			version = "internal",
-			payload = {
-				"managedIds": [ id, ],
+			version="internal",
+			payload={
+				"managedIds": [managed_id,],
 				"existingSnapshotRetention": "RetainSnapshots"
 			}
 		)
 
 	def get_vcenter_managed_id(self, vcenter_hostname):
 		"""Gets the Managed ID of the vCenter object in Rubrik for a given vCenter hostname."""
+
+		# pylint: disable=invalid-name
 
 		# Get all the vCenter information from Rubrik
 		vcenters = self.get_request("vmware/vcenter")
@@ -133,6 +127,8 @@ class Rubrik(object):
 
 	def get_vm_managed_id(self, system):
 		"""Works out the Rubrik Managed ID of a VM"""
+
+		# pylint: disable=invalid-name
 
 		# Format of Rubrik Managed ID is:
 		# VirtualMachine:::<vcenter-rubrik-managed-id>-<vm-moId>
@@ -161,28 +157,25 @@ class Rubrik(object):
 		except (RubrikVMNotFound, RubrikVCenterNotFound) as ex:
 			raise ex
 		except Exception as ex:
-			import traceback
 			self._helper.logger.error("Error getting Rubrik VM ID:\n" + traceback.format_exc())
 			raise Exception("Error getting Rubrik VM ID: " + str(ex))
 
 		try:
-			return self.get_request("vmware/vm/{id}".format(id = quote(vm_id)))
+			return self.get_request("vmware/vm/{id}".format(id=quote(vm_id)))
 		except requests.exceptions.HTTPError as ex:
 			if ex.response is not None and ex.response.status_code == 404:
 				raise RubrikVMNotFound()
-			else:
-				import traceback
-				self._helper.logger.error("Error getting Rubrik VM ID:\n" + traceback.format_exc())
-				raise Exception("Error getting VM from Rubrik: " + str(ex))
+
+			self._helper.logger.error("Error getting Rubrik VM ID:\n" + traceback.format_exc())
+			raise Exception("Error getting VM from Rubrik: " + str(ex))
 		except Exception as ex:
-			import traceback
 			self._helper.logger.error("Error getting Rubrik VM ID:\n" + traceback.format_exc())
 			raise Exception("Error getting VM from Rubrik: " + str(ex))
 
-	def get_vm_snapshots(self, id, **kwargs):
+	def get_vm_snapshots(self, managed_id, **_kwargs):
 		"""Get a list of snapshots for the vm"""
-		return self.get_request("vmware/vm/{id}/snapshot".format(id = quote(id)))
+		return self.get_request("vmware/vm/{managed_id}/snapshot".format(managed_id=quote(managed_id)))
 
-	def update_vm(self, id, data):
+	def update_vm(self, managed_id, data):
 		"""update a vm with a new set of properties"""
-		return self.patch_request("vmware/vm/{id}".format(id = quote(id)), payload=data)
+		return self.patch_request("vmware/vm/{managed_id}".format(managed_id=quote(managed_id)), payload=data)

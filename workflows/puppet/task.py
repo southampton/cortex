@@ -4,6 +4,10 @@ import requests
 
 def run(helper, options):
 
+	# check if workflows are locked
+	if not helper.lib.check_workflow_lock():
+		raise Exception("Workflows are currently locked")
+
 	# Iterate over the actions that we have to perform
 	for action in options["actions"]:
 		# Start the event
