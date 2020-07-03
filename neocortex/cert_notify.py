@@ -1,7 +1,8 @@
 
+import re
+
 import MySQLdb as mysql
-import sys, copy, os, re
-import socket, datetime, sys, select, signal, ipaddress
+
 
 class Notifier(object):
 	"""Base class for notifiers. Just generates the default message content."""
@@ -121,7 +122,7 @@ def run(helper, options):
 				continue
 			try:
 				ignore_issuer_dn = re.compile(notifyee['ignore_issuer_dn'])
-			except Exception as e:
+			except Exception:
 				helper.end_event(description='Invalid ignore_issuer_dn regex for notifyee ' + str(notifyee_num), success=False)
 				continue
 		else:
@@ -131,7 +132,7 @@ def run(helper, options):
 		if 'require_issuer_dn' in notifyee:
 			try:
 				require_issuer_dn = re.compile(notifyee['require_issuer_dn'])
-			except Exception as e:
+			except Exception:
 				helper.end_event(description='Invalid require_issuer_dn regex for notifyee ' + str(notifyee_num), success=False)
 				continue
 		else:

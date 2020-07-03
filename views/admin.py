@@ -1,17 +1,17 @@
 
-from cortex import app
-import cortex.lib.core
-import cortex.lib.admin
-from cortex.lib.workflow import get_workflows_locked_details
-from cortex.lib.user import does_user_have_permission
-from cortex.lib.admin import set_kv_setting, get_kv_setting
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template, jsonify
-import re
-import MySQLdb as mysql
 import datetime
 import json
-from copy import deepcopy
-import json
+import re
+
+import MySQLdb as mysql
+from flask import (abort, flash, g, jsonify, redirect, render_template,
+                   request, session, url_for)
+
+import cortex.lib.admin
+import cortex.lib.core
+from cortex import app
+from cortex.lib.user import does_user_have_permission
+from cortex.lib.workflow import get_workflows_locked_details
 
 ################################################################################
 
@@ -88,11 +88,11 @@ def admin_tasks_json(tasktype):
 	# Apply filters
 	# Status: 1 = Succeeded 2 = Failed 3 = Warnings
 	if 'filter_succeeded' in filters and not filters['filter_succeeded']:
-		where_clause = where_clause + " AND (`status` != 1) " 
+		where_clause = where_clause + " AND (`status` != 1) "
 	if 'filter_failed' in filters and not filters['filter_failed']:
-		where_clause = where_clause + " AND (`status` != 2) " 
+		where_clause = where_clause + " AND (`status` != 2) "
 	if 'filter_warnings' in filters and not filters['filter_warnings']:
-		where_clause = where_clause + " AND (`status` != 3) " 
+		where_clause = where_clause + " AND (`status` != 3) "
 
 
 	# Define some tasks we will hide if hide_frequent is True
@@ -296,7 +296,7 @@ def admin_events_json(event_source):
 	data = cur.fetchall()
 
 	## jsonify uses a particular format for datetime conversion to string,
-	## which creates a long string with data we don't care about. we can't 
+	## which creates a long string with data we don't care about. we can't
 	## just pre-convert the datetimes, because the result from mysql is a tuple
 	## rather than a list. So! We convert everything to a list first, then
 	## convert.
@@ -346,15 +346,14 @@ def admin_specs():
 
 	# Defaults
 	vm_spec_json = {}
-	vm_specconfig_json = {}
-	
+
 	# Get the VM Specs from the DB
 	try:
 		vm_spec_json = cortex.lib.admin.get_kv_setting('vm.specs', load_as_json=True)
 	except ValueError:
 		flash("Could not parse JSON from the database.", "alert-danger")
 		vm_spec_json = {}
-		
+
 	# Get the VM Specs Config from the DB.
 	try:
 		vm_spec_config_json = cortex.lib.admin.get_kv_setting('vm.specs.config', load_as_json=True)
@@ -384,13 +383,13 @@ def admin_specs():
 				flash("The JSON you submitted was invalid, your changes have not been saved.", "alert-danger")
 				return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=json.dumps(vm_spec_json, sort_keys=True, indent=4), vm_spec_config_json=request.form['specsconfig'])
 			else:
-				
+
 				# Do some simple validation.
 				if 'spec-order' in vm_spec_config_json and not all(s in vm_spec_json for s in vm_spec_config_json['spec-order']):
 					flash("You have specified a 'spec-order' which contains specification names not in the 'VM Specification JSON'. Your changes have not been saved.", "alert-warning")
 				else:
 					cortex.lib.admin.set_kv_setting('vm.specs.config', json.dumps(vm_spec_config_json))
-		
+
 	# Render the page
 	return render_template('admin/specs.html', active='specs', title="VM Specs", vm_spec_json=json.dumps(vm_spec_json, sort_keys=True, indent=4), vm_spec_config_json=json.dumps(vm_spec_config_json, sort_keys=True, indent=4))
 
@@ -478,7 +477,7 @@ def admin_classes():
 				cortex.lib.core.log(__name__, "systemclass.create", "System class '" + class_name + "' created")
 				flash("System class created", "alert-success")
 				return redirect(url_for('admin_classes'))
-			
+
 
 			elif action == 'edit_class':
 				if not class_exists:
@@ -581,10 +580,18 @@ def admin_maint():
 
 
 		# Render the page
-		return render_template('admin/maint.html', active='admin',
-			sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id,
-			vmexpire_task_id=vmexpire_task_id, sync_puppet_servicenow_id=sync_puppet_servicenow_id,
-			cert_scan_id=cert_scan_id, student_vm_build_id=student_vm_build_id, pause_vm_builds=lock_workflows , title="Maintenance Tasks", lock_status=workflows_lock_status
+		return render_template('admin/maint.html',
+			active='admin',
+			title="Maintenance Tasks",
+			sncache_task_id=sncache_task_id,
+			vmcache_task_id=vmcache_task_id,
+			vmexpire_task_id=vmexpire_task_id,
+			sync_puppet_servicenow_id=sync_puppet_servicenow_id,
+			cert_scan_id=cert_scan_id,
+			student_vm_build_id=student_vm_build_id,
+			pause_vm_builds=lock_workflows,
+			lock_status=workflows_lock_status,
+			rubrik_policy_check=rubrik_policy_check,
 		)
 
 	else:
@@ -709,7 +716,7 @@ def _extract_datatables():
 		if request.form['hide_frequent'] == "1":
 			hide_frequent = True
 
-	
+
 	# Handle the filter parameters. These are custom fields added to
 	# filter tasks. This is not used on the events page currently.
 	filters = {}

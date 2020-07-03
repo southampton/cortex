@@ -1,12 +1,7 @@
 
 import json
-import os
-import re
-import time
 
 import MySQLdb as mysql
-import pypuppetdb
-import werkzeug
 import yaml
 from flask import (Flask, abort, flash, g, jsonify, make_response, redirect,
                    render_template, request, session, url_for)
@@ -417,7 +412,7 @@ def puppet_report(report_hash):
 	# 'reports' is a generator. Get the next (first and indeed, only item) from the generator
 	try:
 		report = next(reports)
-	except StopIteration as e:
+	except StopIteration:
 		# If we get a StopIteration error, then we've not got any data
 		# returned from the reports generator, so the report didn't
 		# exist, hence we should 404

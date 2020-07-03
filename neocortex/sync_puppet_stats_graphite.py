@@ -1,8 +1,11 @@
 
-from corpus import PuppetDBConnector
-from urllib.parse import urljoin
-import requests
 import time
+from urllib.parse import urljoin
+
+import requests
+
+from corpus import PuppetDBConnector
+
 
 def run(helper, options):
 	"""
@@ -90,4 +93,3 @@ def run(helper, options):
 			helper.end_event(description='Successfully posted stats to Graphite.')
 	else:
 		helper.end_event(description='Task failed because the required configuration keys were not found.', success=False)
-

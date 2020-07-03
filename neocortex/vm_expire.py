@@ -1,7 +1,7 @@
 
 import MySQLdb as mysql
-import sys, copy, os
 from pyVmomi import vim
+
 
 def run(helper, options):
 	# Connect to the database
@@ -29,16 +29,13 @@ def run(helper, options):
 
 					try:
 						helper.lib.vmware_vm_poweroff(vm)
-					except Exception as e:
+					except Exception:
 						failed = True
-						pass
 
-				except Exception as e:
+				except Exception:
 					failed = True				
-					pass
 
 				if not failed:
 					helper.event('check_expire_poweroff', 'The system ' + row['name'] + " (ID " + str(row['id']) + ") has been turned off",oneshot=True)
 				else:
 					helper.event('check_expire_poweroff', 'The system ' + row['name'] + " (ID " + str(row['id']) + ") failed to turn off",success=False,oneshot=True)
-

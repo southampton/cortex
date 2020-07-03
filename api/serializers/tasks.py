@@ -1,4 +1,5 @@
 from flask_restx import fields
+
 from cortex.api import api_manager
 from cortex.api.serializers import pagination
 
@@ -15,4 +16,3 @@ tasks_serializer = api_manager.model('task', {
 page_tasks_serializer = api_manager.inherit('Paginated tasks', pagination, {
 	'items': fields.List(fields.Nested(tasks_serializer))
 })
-

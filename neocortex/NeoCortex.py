@@ -1,17 +1,17 @@
 
-import Pyro4
-import logging, logging.handlers
-import signal
-import os
 import imp
-import multiprocessing
-from multiprocessing import Process, Value
-import MySQLdb as mysql
-import sys
-import requests
 import json
-import time
-from setproctitle import setproctitle #pip install setproctitle
+import logging
+import logging.handlers
+import multiprocessing
+import os
+import signal
+import sys
+from multiprocessing import Process
+
+import MySQLdb as mysql
+import Pyro4
+from setproctitle import setproctitle  # pip install setproctitle
 
 from corpus import Corpus
 from neocortex.TaskHelper import TaskHelper
@@ -265,4 +265,3 @@ class NeoCortex(object):
 			active_tasks.append(proc_data)
 
 		return active_tasks
-

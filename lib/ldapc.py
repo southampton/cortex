@@ -1,9 +1,11 @@
 
-from cortex import app
-from flask import g, abort, flash
-import MySQLdb as mysql
-import ldap3
 import re
+
+import ldap3
+import MySQLdb as mysql
+from flask import abort, flash, g
+
+from cortex import app
 
 ################################################################################
 

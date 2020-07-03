@@ -1,20 +1,12 @@
 #!/bin/env python
 
-import Pyro4
-import syslog
-import signal
-import os
-import imp
-import multiprocessing
-import MySQLdb as mysql
 import sys
-import requests
-import json
-import time
+import syslog
+
+import Pyro4
 
 sys.path.append('/data/cortex/cortex')
 from neocortex.NeoCortex import NeoCortex
-from neocortex.TaskHelper import TaskHelper
 
 Pyro4.config.SERVERTYPE = "multiplex"
 Pyro4.config.SOCK_REUSE = True

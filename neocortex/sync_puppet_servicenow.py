@@ -1,6 +1,8 @@
 
 import MySQLdb as mysql
-from corpus import SNPuppetConnector, PuppetDBConnector
+
+from corpus import PuppetDBConnector, SNPuppetConnector
+
 
 def run(helper, options):
 

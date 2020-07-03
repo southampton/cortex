@@ -1,17 +1,14 @@
-from cortex import app
-from cortex.lib.user import does_user_have_permission
-import cortex.lib.vmware
-import cortex.lib.core
-from flask import Flask, request, session, redirect, url_for, flash, g, render_template, jsonify, Response, abort
-import os
-import time
-import json
-import re
-import werkzeug
 import csv
 import io
-import MySQLdb as mysql
 from collections import OrderedDict
+
+import MySQLdb as mysql
+from flask import Response, abort, g, render_template, request
+
+import cortex.lib.core
+import cortex.lib.vmware
+from cortex import app
+from cortex.lib.user import does_user_have_permission
 
 ################################################################################
 
@@ -152,7 +149,7 @@ def vmware_specs():
 		# Add the VM to the CPU histogram
 		try:
 			data_cpu[int(vm['numCPU'])] += 1
-		except KeyError as ex:
+		except KeyError:
 			data_cpu['Other'] += 1
 
 	return render_template('vmware/specs.html', active='vmware', stats_ram=data_ram, stats_cpu=data_cpu, title="Statistics - VM Specs")

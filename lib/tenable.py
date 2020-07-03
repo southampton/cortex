@@ -13,15 +13,12 @@ from flask import current_app, g
 
 class TenableIOHttpError(requests.exceptions.HTTPError):
 	"""An HTTP error occured with Tenable.io"""
-	pass
 
 class TenableIOEndpointWhitelistError(werkzeug.exceptions.Forbidden):
 	"""The requested API endpoint is not whitelisted"""
-	pass
 
 class TenableIOInvalidConfiguration(Exception):
 	"""Invalid Configuration"""
-	pass
 
 class TenableIOApi:
 	"""Tenable API Helper"""

@@ -1,13 +1,15 @@
 
-from cortex import app
-from flask import g, url_for, session
-import cortex.lib.netgroup
+from datetime import datetime, timedelta
+
 import MySQLdb as mysql
-import yaml
 import pypuppetdb
+import yaml
+from flask import g, session, url_for
 from pypuppetdb.QueryBuilder import EqualsOperator
 from pypuppetdb.utils import json_to_datetime
-from datetime import datetime, timedelta
+
+import cortex.lib.netgroup
+from cortex import app
 
 ################################################################################
 
@@ -267,7 +269,6 @@ def generate_node_config(certname):
 				response['classes'][classname] = default_classes[classname]
 
 	# Decode YAML for environment (Puppet calls them parameters, but we call them [global] variables)
-	variables = None
 	if len(node['variables'].strip()) != 0:
 		params = yaml.safe_load(node['variables'])
 
@@ -367,8 +368,6 @@ def puppetdb_get_node_stats(db = None, whitelist = None):
 	nodes = db.nodes(with_status = True)
 
 	# Initialise stats
-	count = 0
-	unknown = 0
 	stats = {
 		'count': {},
 		'changed': {},

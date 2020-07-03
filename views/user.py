@@ -1,10 +1,11 @@
 
-from cortex import app
-import cortex.lib.user
-import cortex.lib.core
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
-import re
 from cas_client import CASClient
+from flask import (abort, flash, g, redirect, render_template, request,
+                   session, url_for)
+
+import cortex.lib.core
+import cortex.lib.user
+from cortex import app
 
 ################################################################################
 
@@ -154,7 +155,6 @@ def preferences():
 		# if they dont want a different theme then don't store a preference at all
 		g.redis.delete("user:" + session['username'] + ":preferences:interface:theme")
 
-	sidebar_expand = False
 	if 'sidebar_expand' in request.form and request.form['sidebar_expand'] == 'yes':
 		g.redis.set('user:' + session['username'] + ':preferences:interface:sidebar', 'expand')
 	else:

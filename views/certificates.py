@@ -1,12 +1,18 @@
 
-from cortex import app
-import cortex.lib.core
-from cortex.lib.user import does_user_have_permission
-from flask import Flask, request, redirect, url_for, flash, g, abort, render_template, Response, jsonify
-import datetime, csv, io, socket
+import csv
+import datetime
+import io
+import socket
+
 import MySQLdb as mysql
 import OpenSSL as openssl
+from flask import (Response, abort, flash, g, jsonify, redirect,
+                   render_template, request, url_for)
+
+import cortex.lib.core
+from cortex import app
 from cortex.corpus import x509utils
+from cortex.lib.user import does_user_have_permission
 
 ################################################################################
 
@@ -371,8 +377,7 @@ def certificate_ip_lookup():
 		result['ip'] = ip
 		result['hostname'] = socket.gethostbyaddr(ip)[0]
 		result['success'] = 1
-	except Exception as e:
+	except Exception:
 		pass
 
 	return jsonify(result)
-

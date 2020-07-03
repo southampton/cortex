@@ -1,10 +1,12 @@
 #### F5 BigIP NLB Create HTTP Site Workflow Task
 
+import time
 from urllib.parse import urljoin
-import requests, time
 
+import requests
 # For NLB API
 from f5.bigip import ManagementRoot
+
 
 def run(helper, options):
 
@@ -349,7 +351,6 @@ def action_create_virtual_server(action, helper, config, task_globals):
 				})
 
 		bigip.tm.ltm.virtuals.virtual.create(**kwargs)
-		pass
 	except Exception as e:
 		raise Exception('Failed to create virtual server: ' + str(e))
 

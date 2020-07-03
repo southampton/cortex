@@ -1,6 +1,14 @@
 
+import datetime
+import imp
+import json
+import os
+import re
+
 import MySQLdb as mysql
-import sys, requests, json, datetime, re, imp, os, Pyro4
+import Pyro4
+import requests
+
 
 # Helper exception
 class TooManyVMsException(Exception):
@@ -69,7 +77,6 @@ def run(helper, options):
 
 	# Setup for building VMs loop
 	index = 0
-	warnings = 0
 	num_builds = len(result_rows)
 	helper.end_event(description='Found ' + str(num_builds) + ' VMs waiting to be built')
 	
@@ -95,7 +102,7 @@ def run(helper, options):
 		user = str(details[helper.config['SNVM_TASK_USER_FIELD']]).strip()
 		try:
 			description = json.loads(details[helper.config['SNVM_TASK_DESCRIPTION_FIELD']])
-		except Exception as e:
+		except Exception:
 			# End the event with an error
 			helper.end_event(success=False, description='Failed to parse JSON description for ServiceNow task ' + friendly_id + ' for user ' + user)
 

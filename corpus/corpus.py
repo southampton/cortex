@@ -1,39 +1,38 @@
-import Pyro4
-import os
-import MySQLdb as mysql
-import sys
-import json
-import time
-import redis
-import ssl
-import xmlrpc.client, http.client # for RHN5 API support
-import re
-import hashlib
 import base64
-
+import hashlib
+import http.client
+import json
+import re
 # For email
 import smtplib
+# For DNS queries
+import socket
+import ssl
+import sys
+import time
+import xmlrpc.client  # for RHN5 API support
 from email.mime.text import MIMEText
+from urllib.parse import quote, urljoin
 
+import MySQLdb as mysql
+import Pyro4
+import redis
 # Disable insecure platform warnings
 import requests
-requests.packages.urllib3.disable_warnings()
-
+# For signing
+from itsdangerous import JSONWebSignatureSerializer
+from pyVim.connect import SmartConnect
 # For VMware
-from pyVmomi import vim
-from pyVmomi import vmodl
-from pyVim.connect import SmartConnect, Disconnect
-
-from urllib.parse import urljoin
-from urllib.parse import quote
+from pyVmomi import vim, vmodl
 
 from . import x509utils
 
-# For signing
-from itsdangerous import JSONWebSignatureSerializer
+requests.packages.urllib3.disable_warnings()
 
-# For DNS queries
-import socket
+
+
+
+
 
 ##
 ## This needs major refactoring...
@@ -118,7 +117,7 @@ class Corpus(object):
 		try:
 			cur.execute("SELECT * FROM `classes` WHERE `name` = %s", (class_name,))
 			class_data = cur.fetchone()
-		except Exception as ex:
+		except Exception:
 			cur.execute('UNLOCK TABLES;')
 			raise Exception("Selected system class does not exist: cannot allocate system name")
 
@@ -270,7 +269,7 @@ class Corpus(object):
 						ipaddrs["ipv4addr"] = response['ipv4addrs'][0]['ipv4addr']
 					if ipv6:
 						ipaddrs["ipv6addr"] = response['ipv6addrs'][0]['ipv6addr']
-				except Exception as ex:
+				except Exception:
 					raise RuntimeError("Malformed JSON response from Infoblox API")
 				else:
 					return ipaddrs
@@ -453,7 +452,7 @@ class Corpus(object):
 			result['success'] = 1
 		except socket.gaierror as e:
 			result['error'] = 'name or service not known'
-		except Exception as e:
+		except Exception:
 			result['error'] = 'unknown'
 
 		return result
@@ -1255,7 +1254,6 @@ class Corpus(object):
 		Return an object by name, if name is None the
 		first found object is returned
 		"""
-		obj = None
 		container = content.viewManager.CreateContainerView(content.rootFolder, vimtype, True)
 		return container.view
 
@@ -1311,7 +1309,7 @@ class Corpus(object):
 			# Get the sys_id of the task
 			try:
 				task_sys_id = response_json['result'][0]['sys_id']
-			except Exception as e:
+			except Exception:
 				# Handle JSON not containing 'result', a first element, or a 'sys_id' parameter (not that this should happen, really...)
 				raise Exception("Failed to query ServiceNow for task information. Invalid response from ServiceNow.")
 
@@ -1439,7 +1437,7 @@ class Corpus(object):
 				# Determine the value of the virtual flag
 				try:
 					virtual = response_json['result']['virtual']
-				except Exception as e:
+				except Exception:
 					# Handle JSON not containing 'result', a first element, or a 'virtual' parameter
 					raise Exception("Failed to query ServiceNow for task information. Invalid response from ServiceNow.")
 			else:
@@ -1510,7 +1508,7 @@ class Corpus(object):
 		# Decode the JSON, raising on failure
 		try:
 			results = r.json()
-		except Exception as e:
+		except Exception:
 			raise Exception("Could not remove CI relationships in ServiceNow. JSON parsing failed")
 
 		# Check we have what we need
@@ -1536,7 +1534,7 @@ class Corpus(object):
 					warnings += 1
 				else:
 					successes += 1
-			except Exception as e:
+			except Exception:
 				warnings += 1
 
 		return (successes, warnings)

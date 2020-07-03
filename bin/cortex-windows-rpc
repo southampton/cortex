@@ -1,4 +1,10 @@
-import subprocess, imp, sys, Pyro4, datetime
+import datetime
+import imp
+import subprocess
+import sys
+
+import Pyro4
+
 
 def psescape(s):
 	"""Escapes a string so that it can be safely passed to PowerShell."""

@@ -1,6 +1,7 @@
 #### Allocate server task
 import requests
 
+
 def run(helper, options):
 	# check if workflows are locked
 	if not helper.lib.checkWorkflowLock():
@@ -67,7 +68,7 @@ def run(helper, options):
 
 		# End the event
 		helper.end_event(success=True, description="Created ServiceNow CMDB CI")
-	except Exception as e:
+	except Exception:
 		helper.end_event(success=False, description="Failed to create ServiceNow CMDB CI")
 
 
@@ -119,7 +120,7 @@ def run(helper, options):
 		# Failure does not kill the task
 		try:
 			# Link the ServiceNow task to the CI
-			link_sys_id = helper.lib.servicenow_link_task_to_ci(sys_id, options['task'].strip())
+			helper.lib.servicenow_link_task_to_ci(sys_id, options['task'].strip())
 
 			# End the event
 			helper.end_event(success=True, description="Linked ServiceNow Task to CI")

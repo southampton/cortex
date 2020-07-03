@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from cortex import app
-from cortex.lib.errors import stderr, logerr, fatalerr
 import traceback
+
 from flask import g
+
+from cortex import app
+from cortex.lib.errors import fatalerr, logerr, stderr
 
 ################################################################################
 
@@ -64,4 +66,3 @@ def error_handler(error):
 	return fatalerr(debug=debug)
 
 ################################################################################
-

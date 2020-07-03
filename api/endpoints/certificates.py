@@ -1,15 +1,14 @@
-from flask import request, session, g
-from flask_restx import Resource, reqparse, inputs
 import math
+
 import MySQLdb as mysql
+from flask import g, request, session
+from flask_restx import Resource, inputs, reqparse
 
-from cortex import app
-from cortex.corpus import Corpus
-from cortex.api import api_manager, api_login_required
-from cortex.api.exceptions import InvalidPermissionException, NoResultsFoundException
+from cortex.api import api_login_required, api_manager
+from cortex.api.exceptions import InvalidPermissionException
 from cortex.api.parsers import pagination_arguments
-from cortex.api.serializers.certificates import certificates_serializer, page_certificates_serializer, certificates_full_serializer
-
+from cortex.api.serializers.certificates import (certificates_full_serializer,
+                                                 page_certificates_serializer)
 from cortex.lib.user import does_user_have_permission
 
 certificates_namespace = api_manager.namespace('certificates', description='Certificate API')
@@ -178,4 +177,3 @@ class CertificateItem(Resource):
 
 		# Return HTTP No Content
 		return "", 204
-

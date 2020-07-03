@@ -1,4 +1,5 @@
 from flask_restx import fields
+
 from cortex.api import api_manager
 from cortex.api.serializers import pagination
 
@@ -29,4 +30,3 @@ certificates_full_serializer = api_manager.inherit('Full certificate details', c
 	'sans': fields.List(fields.String(required=True, description='A subject alternate name')),
 	'seenAt': fields.List(fields.Nested(cert_last_seen_serializer))
 })
-

@@ -1,7 +1,7 @@
 
-import requests
 import MySQLdb as mysql
-import sys, copy, os
+import requests
+
 
 def run(helper, options):
 	# Connect to the database
@@ -63,9 +63,8 @@ def run(helper, options):
 			# Insert the information in to the database
 			try:
 				curd.execute('INSERT INTO `sncache_cmdb_ci` (`sys_id`, `sys_class_name`, `name`, `operational_status`, `u_number`, `short_description`, `u_environment`, `virtual`, `comments`, `os`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)', (row['sys_id']['display_value'], row['sys_class_name']['display_value'], row['name']['display_value'], row['operational_status']['display_value'], row['u_number']['display_value'], row['short_description']['display_value'], row['u_environment']['display_value'], virtual, row['comments']['display_value'], row['os']['display_value']))
-			except Exception as e:
+			except Exception:
 				failed_records = failed_records + 1
-				pass
 
 	if failed_records == 0:
 		helper.end_event(description='Cached ' + str(total_records) + ' records')
@@ -76,5 +75,3 @@ def run(helper, options):
 	helper.event('servicenow_cache_ci', 'Saving cache to disk')
 	db.commit()
 	helper.end_event(description='Saved cache to disk')
-
-

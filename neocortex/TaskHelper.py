@@ -1,16 +1,13 @@
 
-import Pyro4
 import logging
 import signal
-import os
-import imp
-import MySQLdb as mysql
 import sys
-import requests
-import json
-import time
-from setproctitle import setproctitle #pip install setproctitle
+
+import MySQLdb as mysql
+from setproctitle import setproctitle  # pip install setproctitle
+
 from corpus import Corpus
+
 
 class TaskHelper(object):
 
@@ -215,4 +212,3 @@ class TaskHelper(object):
 		# Fatal errors raise runtime errors.
 		if category.lower() == 'fatal':
 			raise RuntimeError(message)
-

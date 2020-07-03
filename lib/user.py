@@ -1,14 +1,13 @@
 
-from cortex import app
-import cortex.lib.ldapc
-import cortex.lib.core
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, make_response, render_template, jsonify
-import os
-import re
 import pwd
-import MySQLdb as mysql
 from functools import wraps
-from werkzeug.urls import url_encode
+
+import MySQLdb as mysql
+from flask import g, redirect, request, session, url_for
+
+import cortex.lib.core
+import cortex.lib.ldapc
+from cortex import app
 
 ROLE_WHO_USER = 0
 ROLE_WHO_LDAP_GROUP = 1
@@ -517,5 +516,5 @@ def does_user_exist(username):
 	try:
 		pwd.getpwnam(username)
 		return True
-	except KeyError as e:
+	except KeyError:
 		return False

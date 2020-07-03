@@ -1,12 +1,10 @@
 
-from cortex import app
-from cortex.lib.workflow import CortexWorkflow
-import cortex.lib.core
+from flask import abort, flash, redirect, request, session, url_for
+
 import cortex.lib.classes
+import cortex.lib.core
 import cortex.views
-from flask import Flask, request, session, redirect, url_for, flash, g, abort, render_template
-import MySQLdb as mysql
-import json
+from cortex.lib.workflow import CortexWorkflow
 
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('newserver', 'Create System Record')

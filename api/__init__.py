@@ -1,12 +1,15 @@
-from flask import Blueprint, Response, request, session, redirect
-from flask_restx import Api
-from functools import wraps
 import json
+from functools import wraps
+
+from flask import Blueprint, Response, redirect, request, session
+from flask_restx import Api
 
 import cortex
-import cortex.lib.user
 import cortex.lib.core
-from cortex.api.exceptions import InvalidPermissionException, UnauthorizedException, NoResultsFoundException
+import cortex.lib.user
+from cortex.api.exceptions import (InvalidPermissionException,
+                                   NoResultsFoundException,
+                                   UnauthorizedException)
 
 # Create an API Blueprint.
 api_blueprint = Blueprint('api', __name__, url_prefix='/api')
@@ -113,4 +116,3 @@ api_manager.add_namespace(tasks_namespace)
 api_manager.add_namespace(dns_namespace)
 api_manager.add_namespace(puppet_modules_info_namespace)
 api_manager.add_namespace(certificates_namespace)
-

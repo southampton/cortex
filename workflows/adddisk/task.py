@@ -1,5 +1,5 @@
 from pyVmomi import vim
-import json
+
 
 def run(helper, options):
 
@@ -32,4 +32,3 @@ def run(helper, options):
 	task = helper.lib.vmware_vm_add_disk(vm, int(options["values"]["adddisk_size"]) * 1024 * 1024 * 1024)
 	helper.lib.vmware_task_complete(task, "Could not add data disk to VM")
 	helper.end_event(description="Data disk added to VM: {} GiB".format(options["values"]["adddisk_size"]))
-

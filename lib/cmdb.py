@@ -1,7 +1,6 @@
 
-from cortex import app
-from flask import Flask, request, g
 import MySQLdb as mysql
+from flask import g
 
 ################################################################################
 

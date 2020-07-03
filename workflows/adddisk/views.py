@@ -1,8 +1,11 @@
-from flask import abort, redirect, request, session, url_for, flash
+from flask import abort, flash, redirect, request, session, url_for
+
 import cortex.lib.core
+from cortex.lib.systems import get_system_by_id, get_systems
+from cortex.lib.user import (does_user_have_any_system_permission,
+                             does_user_have_system_permission,
+                             does_user_have_workflow_permission)
 from cortex.lib.workflow import CortexWorkflow
-from cortex.lib.user import does_user_have_workflow_permission, does_user_have_system_permission, does_user_have_any_system_permission
-from cortex.lib.systems import get_systems, get_system_by_id
 
 workflow = CortexWorkflow(__name__, check_config={})
 workflow.add_permission("systems.all.adddisk", "Add a virtual disk in VMware on any system")

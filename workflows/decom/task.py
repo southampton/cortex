@@ -1,8 +1,10 @@
-from pyVmomi import vim
+from urllib.parse import urljoin
+
+import ldap3
 import requests
 import requests.exceptions
-from urllib.parse import urljoin
-import ldap3
+from pyVmomi import vim
+
 
 def run(helper, options):
 
@@ -529,7 +531,7 @@ def action_tsm_decom(action, helper):
 	try:
 		helper.lib.tsm_decom_system(action['data']['NAME'], action['data']['SERVER'])
 		return True
-	except Exception as e:
+	except Exception:
 		helper.end_event(success=False, description="Failed to decomission system in TSM")
 		return False
 
@@ -540,7 +542,7 @@ def action_rhn5_delete(action, helper):
 		(rhn,key) = helper.lib.rhn5_connect()
 		rhn.system.deleteSystem(key, int(action['data']['id']))
 		return True
-	except Exception as e:
+	except Exception:
 		helper.end_event(success=False, description="Failed to delete the system object in RHN5")
 		return False
 
@@ -548,20 +550,20 @@ def action_satellite6_delete(action, helper):
 	try:
 		try:
 			helper.lib.satellite6_disassociate_host(action['data']['id'])
-		except Exception as e:
+		except Exception:
 			helper.end_event(success=False, description="Failed to disassociate the host object with ID {0} from a VM in Satellite 6".format(action['data']['id']))
 			return False
 
 		try:
 			helper.lib.satellite6_delete_host(action['data']['id'])
-		except Exception as e:
+		except Exception:
 			helper.end_event(success=False, description="Failed to delete the host object with ID {0} in Satellite 6".format(action['data']['id']))
 			return False
 
 		# We disassociated and deleted successfully.
 		return True
 
-	except Exception as e:
+	except Exception:
 		helper.end_event(success=False, description="Failed to delete the host object in Satellite 6")
 		return False
 
@@ -607,7 +609,7 @@ def action_sudoldap_delete(action, helper, wfconfig):
 		l.delete(action['data']['dn'])
 
 		return True
-	except Exception as e:
+	except Exception:
 		helper.end_event(success=False, description="Failed to delete the object in sudoldap")
 		return False
 
@@ -655,6 +657,6 @@ def action_update_decom_date(action, helper):
 	try:
 		helper.lib.update_decom_date(action["data"]["system_id"])
 		return True
-	except Exception as e:
+	except Exception:
 		helper.end_event(success=False, description="Failed to update the decommission date in Cortex")
 		return False

@@ -1,14 +1,16 @@
-from flask import request, session
-from flask_restx import Resource, reqparse
 import math
 
-from cortex.api import api_manager, api_login_required
-from cortex.api.exceptions import InvalidPermissionException, NoResultsFoundException
-from cortex.api.parsers import pagination_arguments
-from cortex.api.serializers.tasks import page_tasks_serializer, tasks_serializer
+from flask import request
+from flask_restx import Resource, reqparse
 
-from cortex.lib.user import does_user_have_permission
 import cortex.lib.core
+from cortex.api import api_login_required, api_manager
+from cortex.api.exceptions import (InvalidPermissionException,
+                                   NoResultsFoundException)
+from cortex.api.parsers import pagination_arguments
+from cortex.api.serializers.tasks import (page_tasks_serializer,
+                                          tasks_serializer)
+from cortex.lib.user import does_user_have_permission
 
 tasks_arguments = reqparse.RequestParser()
 tasks_arguments.add_argument('username', type=str, required=False, default=None, help='User who started the task')

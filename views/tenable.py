@@ -2,7 +2,7 @@
 Views for the Cortex Tenable.io / Nessus Integration
 """
 
-from flask import Blueprint, current_app, jsonify, render_template, request
+from flask import Blueprint, jsonify, render_template, request
 
 import cortex.lib.errors
 import cortex.lib.systems

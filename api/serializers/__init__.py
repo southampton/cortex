@@ -1,4 +1,5 @@
 from flask_restx import fields
+
 from cortex.api import api_manager
 
 pagination = api_manager.model('A page of results', {

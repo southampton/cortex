@@ -1,7 +1,9 @@
 
-from flask import g
-import MySQLdb as mysql
 import json
+
+import MySQLdb as mysql
+from flask import g
+
 
 def get_kv_setting(key, load_as_json=False):
 	"""
@@ -42,4 +44,3 @@ def set_kv_setting(key, value, on_duplicate_update=True, with_commit=True):
 
 	if with_commit:
 		g.db.commit()
-

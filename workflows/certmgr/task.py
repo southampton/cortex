@@ -1,30 +1,27 @@
 #### Create SSL Certificate Workflow Task
 
-import requests, time
-
-# For NLB API
-from f5.bigip import ManagementRoot
-
-# For certificate generation
-import OpenSSL as openssl
+import time
 
 # For DNS resolution
 import DNS
+# For certificate generation
+import OpenSSL as openssl
+import requests
+# For NLB API
+from f5.bigip import ManagementRoot
+
 
 def run(helper, options):
 	# check if workflows are locked
 	if not helper.lib.checkWorkflowLock():
 		raise Exception("Workflows are currently locked")
 
-	# Configuration of task
-	config = options['wfconfig']
-
 	if options['provider']['type'] == 'self':
-		result = create_self_signed_cert(helper, options)
+		create_self_signed_cert(helper, options)
 	elif options['provider']['type'] == 'acme':
-		result = create_acme_cert(helper, options)
+		create_acme_cert(helper, options)
 	elif options['provider']['type'] == 'entca':
-		result = create_entca_cert(helper, options)
+		create_entca_cert(helper, options)
 
 # Uploads a certificate and key pair to the load balancers
 def upload_cert_key_to_nlb(helper, options, cert, key):
@@ -104,7 +101,7 @@ def create_acme_cert(helper, options):
 	ref = helper.lib.infoblox_get_host_refs(options['acme']['acme_target_hostname'], config['ACME_DNS_VIEW'])
 	if ref is None or (type(ref) is list and len(ref) == 0):
 		raise Exception('Failed to get host ref for ACME endpoint')
-	
+
 	# Add the alias to the host object temporarily for the FQDN
 	helper.lib.infoblox_add_host_record_alias(ref[0], options['fqdn'])
 
@@ -153,7 +150,7 @@ def create_acme_cert(helper, options):
 # For Enterprise certificates
 def create_entca_cert(helper, options):
 	# Get the configuration
-	config = options['wfconfig']
+	options['wfconfig']
 
 	# Call the Enterprise CA API to request the cert
 	helper.event('generate_entca_cert', 'Requesting certificate for ' + options['fqdn'] + ' from Enterprise CA API')
@@ -237,7 +234,7 @@ def create_self_signed_cert(helper, options):
 		# Upload to NLB if required
 		if options['provider']['nlb_upload']:
 			upload_cert_key_to_nlb(helper, options, pem_cert, pem_key)
-		
+
 		create_ssl_profile(helper, options)
 
 ################################################################################
@@ -317,7 +314,7 @@ def wait_for_dns(external_dns_server, fqdn, timeout=30, address=None, cname=None
 				for answer in res.answers:
 					if address is not None and answer['typename'] == qtype and answer['data'] == address:
 						completed_name_servers.append(nameserver)
-					elif cname is not None and answer['typename'] == qtype and answer['data'].lower() == cname: 
+					elif cname is not None and answer['typename'] == qtype and answer['data'].lower() == cname:
 						completed_name_servers.append(nameserver)
 
 		# If we've not got all nameservers, sleep a little
@@ -327,4 +324,3 @@ def wait_for_dns(external_dns_server, fqdn, timeout=30, address=None, cname=None
 	# If we didn't ever succeed, raise an exception
 	if len(completed_name_servers) != len(ns_list):
 		raise Exception("Timeout whilst waiting for DNS records to update. Completed: " + str(completed_name_servers))
-

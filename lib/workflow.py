@@ -30,7 +30,7 @@ def get_workflows_locked_details():
 	# Parse the JSON
 	try:
 		jsonobj = json.loads(current_value['value'])
-	except Exception as e:
+	except Exception:
 		# No JSON, assume False
 		return {'status': 'Unlocked', 'error': 'Invalid JSON'}
 
