@@ -13,6 +13,7 @@ from cortex import app
 
 ################################################################################
 
+# pylint: disable=too-many-branches
 class CortexPuppetBaseAPI(pypuppetdb.BaseAPI):
 	"""
 	Override pypuppetdb.BaseAPI to prvoide better reporting.
@@ -49,7 +50,7 @@ class CortexPuppetBaseAPI(pypuppetdb.BaseAPI):
 		# If we happen to only get one node back it
 		# won't be inside a list so iterating over it
 		# goes boom. Therefor we wrap a list around it.
-		if type(nodes) == dict:
+		if isinstance(nodes, dict):
 			nodes = [nodes, ]
 
 		if with_status:
@@ -63,8 +64,7 @@ class CortexPuppetBaseAPI(pypuppetdb.BaseAPI):
 			node['events'] = None
 
 			if with_status:
-				status = [s for s in latest_events
-						  if s['subject']['title'] == node['certname']]
+				status = [s for s in latest_events if s['subject']['title'] == node['certname']]
 
 				try:
 					node['status_report'] = node['latest_report_status']
@@ -104,7 +104,8 @@ class CortexPuppetBaseAPI(pypuppetdb.BaseAPI):
 				if not node['report_timestamp']:
 					node['unreported'] = True
 
-			yield CortexPuppetNode(self,
+			yield CortexPuppetNode(
+				self,
 				name=node['certname'],
 				deactivated=node['deactivated'],
 				expired=node['expired'],
@@ -129,11 +130,12 @@ class CortexPuppetReport(pypuppetdb.types.Report):
 	Override pypuppetdb.types.Report to make the noop status available.
 	"""
 
+	# pylint: disable=dangerous-default-value
 	def __init__(self, api, node, hash_, start, end, received, version, format_, agent_version, transaction, status=None, metrics={}, logs={}, environment=None, noop=False, noop_pending=False, code_id=None, catalog_uuid=None, cached_catalog_status=None, producer=None):
 		# Call super init.
 		super(CortexPuppetReport, self).__init__(api, node, hash_, start, end, received, version, format_, agent_version, transaction, status, metrics, logs, environment, noop, noop_pending, code_id, catalog_uuid, cached_catalog_status, producer)
 		# Set noop
-		self.noop=noop
+		self.noop = noop
 
 class CortexPuppetNode(pypuppetdb.types.Node):
 	"""
@@ -144,7 +146,7 @@ class CortexPuppetNode(pypuppetdb.types.Node):
 		# Call super init.
 		super(CortexPuppetNode, self).__init__(api, name, deactivated, expired, report_timestamp, catalog_timestamp, facts_timestamp, status_report, noop, noop_pending, events, unreported, unreported_time, report_environment, catalog_environment, facts_environment, latest_report_hash, cached_catalog_status)
 		# Set noop.
-		self.noop=noop
+		self.noop = noop
 
 def cortex_puppet_connect(host='localhost', port=8080, ssl_verify=False, ssl_key=None, ssl_cert=None, timeout=10, protocol=None, url_path='/', username=None, password=None, token=None):
 	"""
@@ -159,15 +161,15 @@ def cortex_puppet_connect(host='localhost', port=8080, ssl_verify=False, ssl_key
 
 ################################################################################
 
-def get_puppet_environments(enviroment_type = None, environment_permission=None, user=None, include_default=False, order_by="id"):
+def get_puppet_environments(enviroment_type=None, environment_permission=None, user=None, include_default=False, order_by="id"):
 	"""Return a list of the Puppet environments defined in `puppet_environments`"""
 	query = "SELECT * FROM `puppet_environments`"
 	params = ()
 
-	if enviroment_type:
+	if enviroment_type is not None:
 		query += " WHERE `type`=%s"
 		params += (enviroment_type,)
-	if environment_permission:
+	if environment_permission is not None:
 		if enviroment_type is not None:
 			query += " AND "
 		else:
@@ -197,7 +199,7 @@ def get_puppet_environments(enviroment_type = None, environment_permission=None,
 
 ################################################################################
 
-def get_puppetdb_environments(db = None, whitelist = None):
+def get_puppetdb_environments(db=None, whitelist=None):
 	"""Get Puppet environments from the PuppetDB, if `whitelist` is set then
 	this will whitelist against these environment names"""
 
@@ -211,6 +213,7 @@ def get_puppetdb_environments(db = None, whitelist = None):
 
 ################################################################################
 
+# pylint: disable=too-many-branches,too-many-statements
 def generate_node_config(certname):
 	"""Generates a YAML document describing the configuration of a particular
 	node given as 'certname'."""
@@ -236,7 +239,7 @@ def generate_node_config(certname):
 		default_classes = yaml.safe_load(default_classes['value'])
 
 		# YAML load can come back with no actual objects, e.g. comments, blank etc.
-		if default_classes == None:
+		if default_classes is None:
 			default_classes = {}
 		elif not isinstance(default_classes, dict):
 			default_classes = {}
@@ -252,7 +255,7 @@ def generate_node_config(certname):
 		node_classes = yaml.safe_load(node['classes'])
 
 		# YAML load can come back with no actual objects, e.g. comments, blank etc.
-		if node_classes == None:
+		if node_classes is None:
 			response['classes'] = {}
 		elif not isinstance(node_classes, dict):
 			response['classes'] = {}
@@ -272,7 +275,7 @@ def generate_node_config(certname):
 	if len(node['variables'].strip()) != 0:
 		params = yaml.safe_load(node['variables'])
 
-		if not params == None:
+		if not params is None:
 			response['parameters'] = params
 		else:
 			response['parameters'] = {}
@@ -314,6 +317,7 @@ def puppetdb_query(endpoint, db=None, **kwargs):
 	if db is None:
 		db = puppetdb_connect()
 
+	# pylint: disable=protected-access
 	return db._query(endpoint, **kwargs)
 
 ################################################################################
@@ -325,7 +329,7 @@ def puppetdb_get_node_statuses(db=None):
 		db = puppetdb_connect()
 
 	# Get information about all the nodes, including their status
-	nodes = db.nodes(with_status = True)
+	nodes = db.nodes(with_status=True)
 
 	# Iterate over nodes, counting statuses
 	statuses = {}
@@ -347,7 +351,7 @@ def puppetdb_get_node_status(node_name, db=None):
 		db = puppetdb_connect()
 
 	# Get information about all the nodes, including their status
-	nodes = db.nodes(with_status = True)
+	nodes = db.nodes(with_status=True)
 
 	# Iterate over nodes, looking for a specific node
 	for node in nodes:
@@ -358,14 +362,14 @@ def puppetdb_get_node_status(node_name, db=None):
 
 ################################################################################
 
-def puppetdb_get_node_stats(db = None, whitelist = None):
+def puppetdb_get_node_stats(db=None, whitelist=None):
 	"""Calculate statistics on node statuses by talking to PuppetDB"""
 
 	if db is None:
 		db = puppetdb_connect()
 
 	# Get information about all the nodes, including their status
-	nodes = db.nodes(with_status = True)
+	nodes = db.nodes(with_status=True)
 
 	# Initialise stats
 	stats = {
@@ -378,9 +382,9 @@ def puppetdb_get_node_stats(db = None, whitelist = None):
 		'unknown':{}
 	}
 
-	environments = ['count',] + get_puppetdb_environments(db = db, whitelist = whitelist)
+	environments = ['count',] + get_puppetdb_environments(db=db, whitelist=whitelist)
 
-	for k in stats.keys():
+	for k in stats:
 		for e in environments:
 			stats[k][e] = 0
 

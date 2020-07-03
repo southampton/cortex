@@ -310,7 +310,7 @@ def puppet_dashboard():
 		abort(403)
 
 	# Select Infrastructure environments only
-	environments = cortex.lib.puppet.get_puppet_environments()
+	environments = cortex.lib.puppet.get_puppet_environments(enviroment_type=0)
 
 	try:
 		# Get stats for all the Infrastructure environments.
