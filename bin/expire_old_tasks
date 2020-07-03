@@ -14,7 +14,7 @@ def load_config():
 		with open(CONFIG_FILE) as config_file:
 			exec(compile(config_file.read(), CONFIG_FILE, 'exec'), d.__dict__)
 	except IOError as e:
-		print 'Unable to load configuration file ' + e.strerror
+		print('Unable to load configuration file ' + e.strerror)
 		sys.exit(1)
 	config = {}
 
@@ -24,8 +24,8 @@ def load_config():
 
 	## ensure we have required config options
 	for wkey in ['MYSQL_USER', 'MYSQL_PASS', 'MYSQL_NAME', 'MYSQL_PORT']:
-		if not wkey in config.keys():
-			print "Missing configuation option: " + wkey
+		if not wkey in list(config.keys()):
+			print("Missing configuation option: " + wkey)
 			sys.exit(1)
 
 	return config

@@ -14,7 +14,7 @@ def load_config():
 		with open(CONFIG_FILE) as config_file:
 			exec(compile(config_file.read(), CONFIG_FILE, 'exec'), d.__dict__)
 	except IOError as e:
-		print 'Unable to load configuration file ' + e.strerror
+		print('Unable to load configuration file ' + e.strerror)
 		sys.exit(1)
 	config = {}
 
@@ -24,8 +24,8 @@ def load_config():
 
 	## ensure we have required config options
 	for wkey in ['NEOCORTEX_KEY']:
-		if not wkey in config.keys():
-			print "Missing configuation option: " + wkey
+		if not wkey in list(config.keys()):
+			print("Missing configuation option: " + wkey)
 			sys.exit(1)
 
 	return config
@@ -38,7 +38,7 @@ if __name__ == "__main__":
 		neocortex._pyroHmacKey = config['NEOCORTEX_KEY']
 		neocortex._pyroTimeout = 5
 		task_id = neocortex.start_internal_task('scheduler', 'servicenow_vm_build.py', '_servicenow_vm_build', description="Checks for outstanding VM build requests in ServiceNow and starts them")
-		print "job submitted with ID " + str(task_id)
+		print("job submitted with ID " + str(task_id))
 	except Exception as ex:
-		print "Error submitting job: " + str(ex)
+		print("Error submitting job: " + str(ex))
 		sys.exit(1)
