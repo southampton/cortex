@@ -25,11 +25,11 @@ class TenableIOApi:
 
 	_REQUIRED_CONFIG = ["TENABLE_IO_URL", "TENABLE_IO_ACCESS_KEY", "TENABLE_IO_SECRET_KEY"]
 	_API_ENDPOINT_WHITELIST = [
-		"scanners\/1\/agents",
-		"workbenches\/assets",
-		"workbenches\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/info",
-		"workbenches\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/vulnerabilities",
-		"workbenches\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/vulnerabilities\/[0-9]+\/info"
+		r"scanners\/1\/agents",
+		r"workbenches\/assets",
+		r"workbenches\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/info",
+		r"workbenches\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/vulnerabilities",
+		r"workbenches\/assets\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/vulnerabilities\/[0-9]+\/info"
 	]
 	_API_ENDPOINT_REGEX = re.compile("^({})$".format("|".join(_API_ENDPOINT_WHITELIST)))
 
@@ -39,6 +39,7 @@ class TenableIOApi:
 		self._access_key: str = access_key
 		self._secret_key: str = secret_key
 
+	# pylint: disable=no-self-use
 	def _extract_base_url(self, url: str) -> str:
 		"""Extract the base url from a url string e.g. for 'https://domain.tld'
 		or 'domain.tld/path' this will always return 'domain.tld'"""
@@ -50,8 +51,8 @@ class TenableIOApi:
 		return {
 			"Accept": "application/json",
 			"X-ApiKeys": "accessKey={access_key};secretKey={secret_key}".format(
-				access_key = current_app.config["TENABLE_IO_ACCESS_KEY"],
-				secret_key = current_app.config["TENABLE_IO_SECRET_KEY"]
+				access_key=current_app.config["TENABLE_IO_ACCESS_KEY"],
+				secret_key=current_app.config["TENABLE_IO_SECRET_KEY"]
 			),
 		}
 
@@ -79,11 +80,11 @@ class TenableIOApi:
 		"""Send an API request to the tenable API"""
 
 		r = requests.request(
-			method = method,
-			url = urljoin(self._base_url, path),
-			params = params or None,
-			data = data or None,
-			headers = self._headers
+			method=method,
+			url=urljoin(self._base_url, path),
+			params=params or None,
+			data=data or None,
+			headers=self._headers
 		)
 
 		try:
@@ -99,8 +100,8 @@ def tio_connect() -> TenableIOApi:
 	tio = getattr(g, "tio", None)
 	if tio is None and TenableIOApi.validate_config(current_app.config):
 		tio = TenableIOApi(
-			url = current_app.config["TENABLE_IO_URL"],
-			access_key = current_app.config["TENABLE_IO_ACCESS_KEY"],
-			secret_key = current_app.config["TENABLE_IO_ACCESS_KEY"],
+			url=current_app.config["TENABLE_IO_URL"],
+			access_key=current_app.config["TENABLE_IO_ACCESS_KEY"],
+			secret_key=current_app.config["TENABLE_IO_ACCESS_KEY"],
 		)
 	return tio

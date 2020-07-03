@@ -2,7 +2,7 @@
 Views for the Cortex Tenable.io / Nessus Integration
 """
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, render_template, request, abort
 
 import cortex.lib.errors
 import cortex.lib.systems
@@ -14,6 +14,7 @@ tenable = Blueprint("tenable", __name__, url_prefix="/tenable")
 
 ## Error Handlers
 
+# pylint: disable=invalid-name
 @tenable.app_errorhandler(cortex.lib.tenable.TenableIOHttpError)
 def error_TenableIOHttpError(error=None):
 
@@ -43,9 +44,9 @@ def tenable_api(api_path):
 	# Make a request to the Tenable.io API
 	return jsonify(tio.api(
 		api_path,
-		method = request.method,
-		params = request.args,
-		data = request_data,
+		method=request.method,
+		params=request.args,
+		data=request_data,
 	))
 
 @tenable.route("/assets")
@@ -126,21 +127,21 @@ def tenable_agents_json():
 
 	# Build Params
 	params = {
-			"limit":  length,
-			"offset": start,
-			"sort": "{sort_col}:{sort_dir}".format(sort_col=sort_col, sort_dir=sort_dir)
+		"limit":  length,
+		"offset": start,
+		"sort": "{sort_col}:{sort_dir}".format(sort_col=sort_col, sort_dir=sort_dir)
 	}
 
 	# Add Search
 	if search:
-		params["w"] = search,
-		params["wf"] = ",".join(["name", "ip", "platform", "distro"]),
+		params["w"] = search
+		params["wf"] = ",".join(["name", "ip", "platform", "distro"])
 
 	# Make a request to the Tenable.io API and GET agents
 	tio = cortex.lib.tenable.tio_connect()
 	data = tio.api(
 		"scanners/1/agents",
-		params = params,
+		params=params,
 	)
 
 	return jsonify(draw=draw, recordsTotal=data["pagination"]["total"], recordsFiltered=data["pagination"]["total"], data=data["agents"])

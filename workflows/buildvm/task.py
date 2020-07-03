@@ -14,7 +14,7 @@ BUILD_TYPE_WFCONFIG_PREFIX = {
 def run(helper, options):
 
 	# Check workflows are not locked
-	if not helper.lib.checkWorkflowLock():
+	if not helper.lib.check_workflow_lock():
 		raise Exception("Workflows are currently locked")
 
 	# Find out which workflow build type we're wanting to run

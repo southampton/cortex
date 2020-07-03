@@ -4,7 +4,7 @@ from pyVmomi import vim
 def run(helper, options):
 
 	# check if workflows are locked
-	if not helper.lib.checkWorkflowLock():
+	if not helper.lib.check_workflow_lock():
 		raise Exception("Workflows are currently locked")
 
 	# Locate the VM in vCenter

@@ -1,3 +1,5 @@
+#!/bin/env python
+
 import json
 import os
 import re
@@ -83,7 +85,7 @@ def generate_puppet_strings_json(config):
 if __name__ == "__main__":
 	config = load_config(CONFIG_FILE)
 	if not validate_config(config, CONFIG_KEYS):
-		print("Error: Missing configuration keys, require: {}".format(CONFIG_KEYS.join(",")))
+		print("Error: Missing configuration keys, require: {}".format(",".join(CONFIG_KEYS)))
 		sys.exit(1)
 
 	try:

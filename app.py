@@ -18,18 +18,22 @@ from flask import Flask, abort, request, session, url_for
 
 from cortex.lib.perms import CortexPermissions
 
+# pylint: disable=too-many-lines,no-member
+
 # Regular expressions for Jinja links filter
 SYSTEM_LINK_RE = re.compile(r"""\{\{ *system_link +id *= *(?P<quote>["']?) *(?P<link_id>[0-9]+) *(?P=quote) *\}\}(?P<link_text>[^{]*)\{\{ */system_link *\}\}""", re.IGNORECASE)
 TASK_LINK_RE = re.compile(r"""\{\{ *task_link +id *= *(?P<quote>["']?) *(?P<link_id>[0-9]+) *(?P=quote) *\}\}(?P<link_text>[^{]*)\{\{ */task_link *\}\}""", re.IGNORECASE)
 
 class CortexFlask(Flask):
+
+	## A list of Cortex workflows
+	workflows = {}
+
 	## A list of dict's, each representing a workflow 'create' function
-	wf_functions        = []
+	wf_functions = []
 
 	## A list of dict's, each representing a workflow 'system-action' function
 	wf_system_functions = []
-
-	workflows = {}
 
 	################################################################################
 
@@ -59,7 +63,7 @@ class CortexFlask(Flask):
 			self.jinja_env.auto_reload = True
 
 		# Set up logging to file
-		if self.config['FILE_LOG'] == True:
+		if self.config['FILE_LOG']:
 			file_handler = RotatingFileHandler(self.config['LOG_DIR'] + '/' + self.config['LOG_FILE'], 'a', self.config['LOG_FILE_MAX_SIZE'], self.config['LOG_FILE_MAX_FILES'])
 			file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
 			self.logger.addHandler(file_handler)
@@ -77,7 +81,7 @@ class CortexFlask(Flask):
 		self.logger.info('cortex debug status: ' + str(self.config['DEBUG']))
 
 		# set up e-mail alert logging
-		if self.config['EMAIL_ALERTS'] == True:
+		if self.config['EMAIL_ALERTS']:
 			# Log to file where e-mail alerts are going to
 			self.logger.info('cortex e-mail alerts are enabled and being sent to: ' + str(self.config['ADMINS']))
 
@@ -148,6 +152,7 @@ Further Details:
 
 	################################################################################
 
+	# pylint: disable=no-self-use
 	def pwgen(self, alphabet=string.ascii_letters + string.digits, length=32):
 		"""This is very crude password generator. Used to generate a CSRF token, and
 		simple random tokens."""
@@ -183,7 +188,7 @@ Further Details:
 		if request.method == 'POST' and view is not None:
 			# If the view is not part of the API and it's not exempt
 			view_location = view.__module__ + '.' + view.__name__
-			if re.search("[\w]*cortex\.api\.endpoints[\w]*", view.__module__) is None and not view_location in self._exempt_views:
+			if re.search(r"[\w]*cortex\.api\.endpoints[\w]*", view.__module__) is None and not view_location in self._exempt_views:
 				token = session.get('_csrf_token')
 				if not token or token != request.form.get('_csrf_token'):
 					if 'username' in session:
@@ -218,9 +223,6 @@ Further Details:
 		"""Attempts to load the workflow config files from the workflows directory
 		which is defined in app.config['WORKFLOWS_DIR']. Each config file is loaded
 		and the display name stored"""
-
-		# Where to store workflow settings
-		self.wfsettings = {}
 
 		# Ensure that we have a directory
 		if not os.path.isdir(self.config['WORKFLOWS_DIR']):
@@ -269,8 +271,7 @@ Further Details:
 		# Create a ChoiceLoader, which by default will use the default
 		# template loader, and if that fails, uses a PrefixLoader which
 		# can check the workflow template directories
-		choice_loader = jinja2.ChoiceLoader(
-		[
+		choice_loader = jinja2.ChoiceLoader([
 			self.jinja_loader,
 			jinja2.PrefixLoader(loader_data, '::')
 		])
@@ -302,19 +303,20 @@ User Browser:         %s
 User Browser Version: %s
 Username:             %s
 """ % (
-			request.path,
-			request.method,
-			request.remote_addr,
-			request.user_agent.string,
-			request.user_agent.platform,
-			request.user_agent.browser,
-			request.user_agent.version,
-			usr,
+		request.path,
+		request.method,
+		request.remote_addr,
+		request.user_agent.string,
+		request.user_agent.platform,
+		request.user_agent.browser,
+		request.user_agent.version,
+		usr,
 
 		), exc_info=exc_info)
 
 	################################################################################
 
+	# pylint: disable=invalid-name,no-self-use,too-many-branches
 	def parse_cortex_links(self, s, make_safe=True):
 		"""Primarily aimed at being a Jinja filter, this allows for the following
 		to be put in to text that will resolve it to a hyperlink in HTML:
@@ -388,6 +390,7 @@ Username:             %s
 
 	################################################################################
 
+	# pylint: disable=invalid-name,too-many-branches,too-many-statements
 	def init_database(self):
 		"""Ensures cortex can talk to the database (rather than waiting for a HTTP
 		connection to trigger before_request) and the tables are there. Only runs
@@ -408,7 +411,9 @@ Username:             %s
 		cursor.connection.autocommit(True)
 
 		## Turn off warnings (MySQLdb generates warnings even though we use IF NOT EXISTS- wtf?!)
+		# pylint: disable=protected-access
 		cursor._defer_warnings = True
+		# pylint: enable=protected-access
 
 		self.logger.info("Checking for and creating tables as necessary")
 

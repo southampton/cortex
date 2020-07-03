@@ -2,13 +2,13 @@ from pyVmomi import vim
 
 
 def run(helper, options):
-	
+
 	# check if workflows are locked
-	if not helper.lib.checkWorkflowLock():
+	if not helper.lib.check_workflow_lock():
 		raise Exception("Workflows are currently locked")
 
 	for name in options['values']['systems']:
-		
+
 		helper.event('vm_locate', 'Finding {}'.format(name))
 		system = helper.lib.get_system_by_name(name, must_have_vmware_uuid=True)
 
@@ -71,7 +71,7 @@ def run(helper, options):
 
 				if not helper.lib.vmware_task_wait(task):
 					raise helper.lib.TaskFatalError(message='Failed to snapshot ({})'.format(vm_link))
-				
+
 				helper.end_event(description='Snapshot Complete')
 
 				if options['values']['snapshot_cold']:
@@ -86,7 +86,7 @@ def run(helper, options):
 							helper.end_event(success=False, warning=True, description='Failed to power on {}'.format(vm_link))
 					else:
 						helper.event('vm_notpoweringon', 'Not powering on {} - was already off before snapshot'.format(vm_link), oneshot=True, success=True)
-					
+
 		else:
 			helper.end_event(success=False, warning=True, description='Failed to find {}'.format(name))
 			continue

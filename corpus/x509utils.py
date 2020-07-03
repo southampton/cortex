@@ -3,10 +3,17 @@ import ipaddress
 
 ################################################################################
 
-def parse_zulu_time(s):
+def parse_zulu_time(zulu_time):
 	"""Parses a zulutime text string (i.e. yyyymmddThhmmssZ) into a datetime object."""
 
-	return datetime.datetime(int(s[0:4]), int(s[4:6]), int(s[6:8]), int(s[8:10]), int(s[10:12]), int(s[12:14]))
+	return datetime.datetime(
+		int(zulu_time[0:4]),
+		int(zulu_time[4:6]),
+		int(zulu_time[6:8]),
+		int(zulu_time[8:10]),
+		int(zulu_time[10:12]),
+		int(zulu_time[12:14])
+	)
 
 ################################################################################
 
@@ -18,13 +25,13 @@ def read_asn1_string(byte_string, offset):
 
 	if length != -1:
 		return byte_string[offset:offset + length].decode('ascii'), offset + length
-	else:
-		# Search for the end of the string
-		end_byte_idx = offset
-		while byte_string[end_byte_offset] != 0b10000000:
-			end_byte_idx = end_byte_idx + 1
 
-		return byte_string[offset:end_byte_index].decode('ascii'), end_byte_index + 1
+	# Search for the end of the string
+	end_byte_idx = offset
+	while byte_string[end_byte_idx] != 0b10000000:
+		end_byte_idx = end_byte_idx + 1
+
+	return byte_string[offset:end_byte_idx].decode('ascii'), end_byte_idx + 1
 
 ################################################################################
 
@@ -61,6 +68,7 @@ def read_asn1_length(byte_string, offset):
 
 ################################################################################
 
+# pylint: disable=no-else-return,no-else-raise,too-many-branches
 def decode_subject_alt_name(byte_string):
 	"""Decodes a subjectAltName value into something usable."""
 
@@ -82,8 +90,8 @@ def decode_subject_alt_name(byte_string):
 		while byte_idx < length + 2:
 			seq_el_type = byte_string[byte_idx]
 			byte_idx = byte_idx + 1
-			
-			if   seq_el_type == 0b10000000:  # otherName [0]
+
+			if seq_el_type == 0b10000000:  # otherName [0]
 				raise ValueError('Unsupported subjectAltName type (0)')
 			elif seq_el_type == 0b10000001:  # rfc822Name [1]
 				(result, byte_idx) = read_asn1_string(byte_string, byte_idx)
@@ -116,8 +124,7 @@ def decode_subject_alt_name(byte_string):
 
 		return results
 
-	else:
-		raise ValueError('subjectAltName does not start with ASN1 sequence')
+	raise ValueError('subjectAltName does not start with ASN1 sequence')
 
 ################################################################################
 
@@ -130,7 +137,7 @@ def get_subject_alt_names(cert):
 		if ext.get_short_name() == b'subjectAltName':
 			alt_names = decode_subject_alt_name(ext.get_data())
 			for name in alt_names:
-				if   name[0] == 1:  # 
+				if   name[0] == 1:  #
 					sans.append('RFC822:' + name[1])
 				elif name[0] == 2:  # DNS name
 					sans.append('DNS:' + name[1])

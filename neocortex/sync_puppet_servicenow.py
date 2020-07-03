@@ -1,7 +1,8 @@
 
 import MySQLdb as mysql
 
-from corpus import PuppetDBConnector, SNPuppetConnector
+from corpus.puppetdb_connector import PuppetDBConnector
+from corpus.sn_puppet_connector import SNPuppetConnector
 
 
 def run(helper, options):
@@ -10,7 +11,7 @@ def run(helper, options):
 	db = helper.db_connect()
 
 	# Create the PuppetDB connector object.
-	puppet_connector = PuppetDBConnector.PuppetDBConnector(
+	puppet_connector = PuppetDBConnector(
 		host = helper.config['PUPPETDB_HOST'],
 		port = helper.config['PUPPETDB_PORT'],
 		ssl_cert = helper.config['PUPPETDB_SSL_CERT'],
@@ -19,14 +20,14 @@ def run(helper, options):
 	)
 
 	# Create the ServiceNow connector object.
-	sn_connector = SNPuppetConnector.SNPuppetConnector(
+	sn_connector = SNPuppetConnector(
 		sn_host = helper.config['SN_HOST'],
 		sn_version = 'v1',
 		sn_user = helper.config['SN_USER'],
 		sn_pass = helper.config['SN_PASS'],
 		puppet_connector = puppet_connector,
 	)
-	
+
 
 	helper.event('puppet_nodes', 'Getting nodes from Puppet')
 	nodes = puppet_connector.get_nodes()

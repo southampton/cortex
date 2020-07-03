@@ -10,6 +10,10 @@ from f5.bigip import ManagementRoot
 
 def run(helper, options):
 
+	# check if workflows are locked
+	if not helper.lib.check_workflow_lock():
+		raise Exception("Workflows are currently locked")
+
 	# Configuration of task
 	config = options['wfconfig']
 	actions = options['actions']
@@ -68,7 +72,7 @@ def action_generate_letsencrypt(action, helper, config, task_globals):
 	ref = helper.lib.infoblox_get_host_refs(config['LETSENCRYPT_HOST_FQDN'], config['LETSENCRYPT_DNS_VIEW'])
 	if ref is None or (type(ref) is list and len(ref) == 0):
 		raise Exception('Failed to get host ref for Let\'s Encrypt ACME endpoint')
-	
+
 	# Add the alias to the host object temporarily for the FQDN
 	helper.lib.infoblox_add_host_record_alias(ref[0], action['fqdn'])
 
@@ -287,7 +291,7 @@ def action_create_http_profile(action, helper, config, task_globals):
 				kwargs['hsts']['includeSubdomains'] = 'enabled'
 			else:
 				kwargs['hsts']['includeSubdomains'] = 'disabled'
-		
+
 		if 'outage_page' in action:
 			kwargs['fallbackHost'] = action['outage_page']
 
@@ -309,7 +313,7 @@ def action_create_virtual_server(action, helper, config, task_globals):
 		ip = action['ip']
 
 	# Create the virtual server
-	try: 
+	try:
 		# We pass in these kwargs slightly differently, just because the
 		# parameters we need vary depending on what we're doing
 		kwargs = {

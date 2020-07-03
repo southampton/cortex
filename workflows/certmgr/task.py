@@ -13,7 +13,7 @@ from f5.bigip import ManagementRoot
 
 def run(helper, options):
 	# check if workflows are locked
-	if not helper.lib.checkWorkflowLock():
+	if not helper.lib.check_workflow_lock():
 		raise Exception("Workflows are currently locked")
 
 	if options['provider']['type'] == 'self':

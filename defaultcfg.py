@@ -7,58 +7,58 @@ DEBUG = False
 SECRET_KEY = ''
 
 ## File logging
-FILE_LOG=True
-LOG_FILE='cortex.log'
-LOG_DIR='/tmp'
-LOG_FILE_MAX_SIZE=1 * 1024 * 1024
-LOG_FILE_MAX_FILES=10
+FILE_LOG = True
+LOG_FILE = 'cortex.log'
+LOG_DIR = '/tmp'
+LOG_FILE_MAX_SIZE = 1 * 1024 * 1024
+LOG_FILE_MAX_FILES = 10
 
-EMAIL_ALERTS=False
-ADMINS=['root']
-SMTP_SERVER='localhost'
-EMAIL_FROM='root'
-EMAIL_SUBJECT='Cortex Runtime Error'
-EMAIL_DOMAIN='localdomain'
+EMAIL_ALERTS = False
+ADMINS = ['root']
+SMTP_SERVER = 'localhost'
+EMAIL_FROM = 'root'
+EMAIL_SUBJECT = 'Cortex Runtime Error'
+EMAIL_DOMAIN = 'localdomain'
 
 ## Redis
-REDIS_HOST='localhost'
-REDIS_PORT=6379
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
 
 #USER auth mode
 #can be 'cas' or 'ldap'
-DEFAULT_USER_AUTH='cas'
+DEFAULT_USER_AUTH = 'cas'
 
 #CAS configuration
-CAS_SERVER_URL='https://domain.invalid/'
-CAS_SERVICE_URL='https://cortex.invalid/cas'
+CAS_SERVER_URL = 'https://domain.invalid/'
+CAS_SERVICE_URL = 'https://cortex.invalid/cas'
 
 ## MySQL
-MYSQL_HOST='localhost'
-MYSQL_USER='cortex'
-MYSQL_PASS=''
-MYSQL_NAME='cortex'
-MYSQL_PORT=3306
+MYSQL_HOST = 'localhost'
+MYSQL_USER = 'cortex'
+MYSQL_PASS = ''
+MYSQL_NAME = 'cortex'
+MYSQL_PORT = 3306
 
 ## CMDB Integration
-CMDB_URL_FORMAT="http://localhost/cmdb/%s"
-PRJTASK_URL_FORMAT="http://localhost/pm_project_task/%s"
+CMDB_URL_FORMAT = "http://localhost/cmdb/%s"
+PRJTASK_URL_FORMAT = "http://localhost/pm_project_task/%s"
 
 ## Cortex internal version number
-VERSION='5.2.2'
+VERSION = '5.2.2'
 
 ## Flask defaults (changed to what we prefer)
-SESSION_COOKIE_SECURE      = False
-SESSION_COOKIE_HTTPONLY    = False
-PREFERRED_URL_SCHEME       = 'http'
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_HTTPONLY = False
+PREFERRED_URL_SCHEME = 'http'
 PERMANENT_SESSION_LIFETIME = timedelta(days=7)
 
 ## LDAP AUTH
-LDAP_URI               = 'ldaps://localhost.localdomain'
+LDAP_URI = 'ldaps://localhost.localdomain'
 LDAP_GROUP_SEARCH_BASE = ''
-LDAP_USER_SEARCH_BASE  = ''
-LDAP_USER_ATTRIBUTE    = 'sAMAccountName'
-LDAP_BIND_USER         = ''
-LDAP_BIND_PW           = ''
+LDAP_USER_SEARCH_BASE = ''
+LDAP_USER_ATTRIBUTE = 'sAMAccountName'
+LDAP_BIND_USER = ''
+LDAP_BIND_PW = ''
 
 # Infoblox server
 INFOBLOX_HOST = ""
@@ -70,48 +70,48 @@ SN_HOST = ''
 SN_USER = ''
 SN_PASS = ''
 CMDB_URL_FORMAT = 'https://myinstance.service-now.com/nav_to.do?uri=cmdb_ci_server.do?sys_id=%s'
-CMDB_CACHED_CLASSES={'cmdb_ci_server': 'Server'}
+CMDB_CACHED_CLASSES = {'cmdb_ci_server': 'Server'}
 
 # VMware configuration
-VMWARE={}
+VMWARE = {}
 VMWARE_CACHE_UPDATE_TIMEOUT = 1800
 
 # Do not raise exceptions if Cortex cannot talk to the vCenter
 HANDLE_UNAVAILABLE_VCENTER_GRACEFULLY = True
 
-# Neocortex is a daemon 
-NEOCORTEX_KEY='changeme'
-NEOCORTEX_SET_GID='nginx'
-NEOCORTEX_SET_UID='nginx'
-WORKFLOWS_DIR='/data/cortex/workflows/'
-NEOCORTEX_TASKS_DIR='/data/cortex/cortex/neocortex'
+# Neocortex is a daemon
+NEOCORTEX_KEY = 'changeme'
+NEOCORTEX_SET_GID = 'nginx'
+NEOCORTEX_SET_UID = 'nginx'
+WORKFLOWS_DIR = '/data/cortex/workflows/'
+NEOCORTEX_TASKS_DIR = '/data/cortex/cortex/neocortex'
 
 # Other
 ENVIRONMENTS = []
 
 ## API pre-shared keys
 # used by puppet master to get ENC data
-ENC_API_AUTH_TOKEN    = 'changeme'
+ENC_API_AUTH_TOKEN = 'changeme'
 # used by all other API calls
 CORTEX_API_AUTH_TOKEN = 'changeme'
 
 # PuppetDB
-PUPPETDB_HOST=''
-PUPPETDB_PORT=8081
-PUPPETDB_SSL_VERIFY=False
-PUPPETDB_SSL_CERT=''
-PUPPETDB_SSL_KEY=''
+PUPPETDB_HOST = ''
+PUPPETDB_PORT = 8081
+PUPPETDB_SSL_VERIFY = False
+PUPPETDB_SSL_CERT = ''
+PUPPETDB_SSL_KEY = ''
 
 # Cortex Puppet Bridge (Puppet autosign server)
-PUPPET_MASTER='puppet.yourdomain.tld'
-PUPPET_AUTOSIGN_URL='https://yourserver.tld/getcert'
-PUPPET_AUTOSIGN_KEY='changeme'
-PUPPET_AUTOSIGN_VERIFY=False
+PUPPET_MASTER = 'puppet.yourdomain.tld'
+PUPPET_AUTOSIGN_URL = 'https://yourserver.tld/getcert'
+PUPPET_AUTOSIGN_KEY = 'changeme'
+PUPPET_AUTOSIGN_VERIFY = False
 
 # Graphite
-GRAPHITE_URL='https://graphite.yourdomain.tld'
-GRAPHITE_USER='user'
-GRAPHITE_PASS='pass'
+GRAPHITE_URL = 'https://graphite.yourdomain.tld'
+GRAPHITE_USER = 'user'
+GRAPHITE_PASS = 'pass'
 
 # Red Hat Satellite Keys
 SATELLITE_KEYS = {
@@ -126,22 +126,22 @@ WINRPC = {
 }
 
 # Cortex domain name (mostly needed by tasks who have no concept of what URL we're on)
-CORTEX_DOMAIN='localdomain'
+CORTEX_DOMAIN = 'localdomain'
 
 # VM Review configuration: the sys_id of the user who opens the task
-REVIEW_TASK_OPENER_SYS_ID=""
+REVIEW_TASK_OPENER_SYS_ID = ""
 
 # VM Review configuration: the name of the team who owns the task
-REVIEW_TASK_TEAM=""
+REVIEW_TASK_TEAM = ""
 
 # VM Review configuration: the sys_id of the project task to create new tasks under
-REVIEW_TASK_PARENT_SYS_ID=""
+REVIEW_TASK_PARENT_SYS_ID = ""
 
 # Notification e-mails for new VM creation
 NOTIFY_EMAILS = []
 
 # Messages to send to primary/secondary owners when VMs are about to expire. This is a dictionary
-# keyed on an arbitrary identifier to a value of a dictionary of the following: 
+# keyed on an arbitrary identifier to a value of a dictionary of the following:
 #  - regex: Required. The regex to match system names on
 #  - description: Required. The description of the expiry report (to use in Task descriptions in Cortex)
 #  - message_start: Optional. The start of the message to send to the user.
@@ -161,13 +161,13 @@ TSM_API_PASS = ''
 TSM_API_VERIFY_SERVER = False
 
 # RHN Satellite management (for decom)
-RHN5_URL  = "https://rhn.yourdomain.tld"
+RHN5_URL = "https://rhn.yourdomain.tld"
 RHN5_USER = "admin"
 RHN5_PASS = "admin"
 RHN5_CERT = "/usr/share/rhn/RHN-ORG-TRUSTED-SSL-CERT"
 
 # Red Hat Satellite 6 configuration
-SATELLITE6_URL  = 'https://rhn6.yourdomain.tld'
+SATELLITE6_URL = 'https://rhn6.yourdomain.tld'
 SATELLITE6_USER = 'admin'
 SATELLITE6_PASS = 'admin'
 # Associations between VMware clusters and Compute Resources in Satellite 6.
@@ -200,13 +200,13 @@ RUBRIK_BACKUP_SCRIPT_CONFIG = {
 		},
 	}
 }
-RUBRIK_NOTIFY_EMAILS=[]
+RUBRIK_NOTIFY_EMAILS = []
 
 # Nessus / Tenable
-NESSUS_URL="https://cloud.tenable.com/"
-NESSUS_ACCESS_KEY=""
-NESSUS_SECRET_KEY=""
-NESSUS_SCANNER_ID=""
+NESSUS_URL = "https://cloud.tenable.com/"
+NESSUS_ACCESS_KEY = ""
+NESSUS_SECRET_KEY = ""
+NESSUS_SCANNER_ID = ""
 
 # Puppet Module Documentation Location
 PUPPET_MODULE_DOCS_URL = None
@@ -219,10 +219,10 @@ ERROR_404_HELP = False
 #BANNER_MESSAGE='This is a development instance'
 
 # Active Directory usernames/password
-AD_DEV_JOIN_USER='Administrator'
-AD_DEV_JOIN_PASS='password'
-AD_PROD_JOIN_USER='Administrator'
-AD_PROD_JOIN_PASS='password'
+AD_DEV_JOIN_USER = 'Administrator'
+AD_DEV_JOIN_PASS = 'password'
+AD_PROD_JOIN_USER = 'Administrator'
+AD_PROD_JOIN_PASS = 'password'
 
 # When calling the /api/register endpoint, given a build ID, what actions to perform
 REGISTER_ACTIONS = {
@@ -306,7 +306,7 @@ SNVM_USER_VM_LIMIT = 5
 # Format string for VM friendly name. Valid fields include {user}, {name}, {task_sys_id}, {task_friendly_id}
 SNVM_VM_FRIENDLY_NAME_FORMAT = 'vm-{user}-{name}'
 
-# Domain name for 
+# Domain name for
 SNVM_VM_FRIENDLY_NAME_DOMAIN = 'yourdomain.tld'
 
 # Format string for VM purpose. Valid fields include {user}, {name}, {task_sys_id}, {task_friendly_id}
@@ -375,15 +375,15 @@ CERT_SCAN_EXPIRE_RESULTS = 90
 #
 # Example: Email root@mydomain on certificates not from Let's Encrypt with thirty days left and raise an incident in ServiceNow for Let's Encrypt certificates with two days left:
 # [{'days_left': 2, 'type': 'incident', 'require_issuer_dn': ".*Let's Encrypt.*", 'team_name': 'Certificate Managers', 'opener_sys_id': 'af1d0283e83dfffa08e0b310ccc21901'}, {'days_left: 30, 'type': 'email' 'ignore_issuer_dn': ".*Let's Encrypt.*", 'to': 'root@mydomain'}]
-CERT_SCAN_NOTIFY=[]
+CERT_SCAN_NOTIFY = []
 
 # When doing a DNS lookup that is given just as a hostname, add on this domain
 # suffix
-DEFAULT_DOMAIN='domain'
+DEFAULT_DOMAIN = 'domain'
 
 # For DNS lookups: Consider hostname.anything_in_this_list to be a local domain,
 # so add on DEFAULT_DOMAIN
-KNOWN_DOMAIN_SUFFIXES=['test', 'dev']
+KNOWN_DOMAIN_SUFFIXES = ['test', 'dev']
 
 # Classes to show favourite lists for
-FAVOURITE_CLASSES=[]
+FAVOURITE_CLASSES = []

@@ -1,20 +1,20 @@
-import math
-
 from flask import request, session
 from flask_restx import Resource
 
 import cortex.lib.systems
 from cortex.api import api_login_required, api_manager
-from cortex.api.exceptions import (InvalidPermissionException,
-                                   NoResultsFoundException)
-from cortex.api.parsers import pagination_arguments
+from cortex.api.exceptions import (
+	InvalidPermissionException, NoResultsFoundException)
+from cortex.api.parsers import (
+	pagination_arguments, process_pagination_arguments, pagination_response)
 from cortex.api.serializers.systems_info_view import (
-    page_systems_info_view_serializer, systems_info_view_serializer)
-from cortex.lib.user import (does_user_have_permission,
-                             does_user_have_system_permission)
+	page_systems_info_view_serializer, systems_info_view_serializer)
+from cortex.lib.user import (
+	does_user_have_permission, does_user_have_system_permission)
 
 systems_info_view_namespace = api_manager.namespace('systems_info_view', description='System\'s Info View API')
 
+# pylint: disable=no-self-use
 @systems_info_view_namespace.route('/')
 class SystemsInfoViewCollection(Resource):
 
@@ -29,12 +29,8 @@ class SystemsInfoViewCollection(Resource):
 		"""
 		Returns a paginated list of rows from the systems_info_view.
 		"""
-		args = pagination_arguments.parse_args(request)
-		page = args.get('page', 1)
-		per_page = args.get('per_page', 10)
 
-		limit_start = (page-1)*per_page
-		limit_length = per_page
+		page, per_page, limit_start, limit_length = process_pagination_arguments(request)
 
 		if not (does_user_have_permission("systems.all.view") or does_user_have_permission("systems.own.view")):
 			raise InvalidPermissionException
@@ -62,16 +58,7 @@ class SystemsInfoViewCollection(Resource):
 		total = cortex.lib.systems.get_system_count(class_name=class_name, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by)
 		results = cortex.lib.systems.get_systems(class_name=class_name, order='id', limit_start=limit_start, limit_length=limit_length, hide_inactive=hide_inactive, only_other=only_other, show_expired=show_expired, show_nocmdb=show_nocmdb, show_allocated_and_perms=show_allocated_and_perms, only_allocated_by=only_allocated_by)
 
-		if not results:
-			raise NoResultsFoundException
-		
-		return {
-			'page': page,
-			'per_page': per_page,
-			'pages': math.ceil(float(total)/float(per_page)),
-			'total': total,
-			'items': results,
-		}
+		return pagination_response(results, page, per_page, total)
 
 @systems_info_view_namespace.route('/<int:system_id>')
 @api_manager.response(404, 'System not found.')
@@ -88,10 +75,10 @@ class SystemsInfoViewItem(Resource):
 		"""
 		Returns a single system from systems_info_view.
 		"""
-		if not does_user_have_system_permission(system_id,"view.detail","systems.all.view"):
+		if not does_user_have_system_permission(system_id, "view.detail", "systems.all.view"):
 			raise InvalidPermissionException
 
-		
+
 		system = cortex.lib.systems.get_system_by_id(system_id)
 
 		if not system:
@@ -102,7 +89,7 @@ class SystemsInfoViewItem(Resource):
 @systems_info_view_namespace.route('/<string:system_name>')
 @api_manager.response(404, 'System not found.')
 @api_manager.doc(params={'system_name': 'System Name.'})
-class SystemsInfoViewItem(Resource):
+class SystemsInfoViewItemByName(Resource):
 
 	"""
 	API Handler for a system in the systems_info_view.
@@ -115,13 +102,13 @@ class SystemsInfoViewItem(Resource):
 		"""
 		Returns a single system from systems_info_view, searching by name.
 		"""
-		
+
 		system = cortex.lib.systems.get_system_by_name(system_name)
 
 		if not system:
 			raise NoResultsFoundException
 
-		if not does_user_have_system_permission(system['id'],"view.detail","systems.all.view"):
+		if not does_user_have_system_permission(system['id'], "view.detail", "systems.all.view"):
 			raise InvalidPermissionException
 
 		return system
