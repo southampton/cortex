@@ -115,6 +115,8 @@ class CortexPermissions:
 		"""Sets up the list of permissions that can be assigned, must be run
 		before workflows are run"""
 
+		# pylint: disable=bad-whitespace
+
 		## The ORDER MATTERS! It determines the order used on the Roles page
 		self.permissions = [
 			{'name': 'cortex.admin',                       'desc': 'Cortex Administrator'},
@@ -206,6 +208,8 @@ class CortexPermissions:
 			{'name': 'delete',   'desc': 'Delete the Puppet environment'},
 		]
 
+		# pylint: enable=bad-whitespace
+
 
 ################################################################################
 
@@ -222,7 +226,7 @@ def get_role(role_id):
 	role = curd.fetchone()
 
 	## Return None if the role was not found
-	if role == None:
+	if role is None:
 		return None
 
 	# Add on the permissions assigned to the role

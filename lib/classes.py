@@ -13,13 +13,13 @@ def get(name):
 
 ################################################################################
 
-def list(hide_disabled = False):
+def get_list(hide_disabled=False):
 	"""Returns the list of system classes in the database"""
 
 	# Build the query
-	query = "SELECT `name`, `digits`, `comment`, `disabled`, `lastid`, `link_vmware`, `cmdb_type` FROM `classes`";
+	query = "SELECT `name`, `digits`, `comment`, `disabled`, `lastid`, `link_vmware`, `cmdb_type` FROM `classes`"
 	if hide_disabled:
-		query = query + " WHERE `disabled` = False";
+		query = query + " WHERE `disabled` = False"
 
 	query = query + " ORDER BY `lastid` DESC"
 

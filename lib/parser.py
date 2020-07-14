@@ -1,10 +1,12 @@
-from pyparsing import (CaselessKeyword, Forward, Literal, Optional,
-                       QuotedString, Word, ZeroOrMore, alphanums, alphas, nums)
+from pyparsing import (
+	CaselessKeyword, Forward, Literal, Optional, QuotedString, Word, ZeroOrMore, alphanums, alphas, nums)
+
+# pylint: disable=invalid-name
 
 ## Helper classes for parsed tokens ############################################
 
-class VariableComparison(object):
-	"""Stores the details about a single query within a larger search 
+class VariableComparison:
+	"""Stores the details about a single query within a larger search
 	expression. Contains the variable name, operator and comparison value."""
 
 	def __init__(self, left, operator, right):
@@ -15,7 +17,7 @@ class VariableComparison(object):
 	def __str__(self):
 		return str((self.left, self.operator, self.right))
 
-class BooleanOperator(object):
+class BooleanOperator:
 	"""Stores the name of a boolean operator."""
 
 	def __init__(self, operator):
@@ -24,13 +26,13 @@ class BooleanOperator(object):
 	def __str__(self):
 		return "BooleanOperator(" + self.operator + ")"
 
-class StartSubExpression(object):
+class StartSubExpression:
 	"""Type for starting a subexpression."""
 
 	def __str__(self):
 		return "("
 
-class EndSubExpression(object):
+class EndSubExpression:
 	"""Type for starting a subexpression."""
 
 	def __str__(self):
@@ -38,49 +40,49 @@ class EndSubExpression(object):
 
 ## Helper functions to return appropriately-typed objects ######################
 
-def do_field_to_value(s, l, t):
+def do_field_to_value(_s, _l, t):
 	"""Constructs a VariableComparison object from a parse action."""
 
 	return VariableComparison(t[0], t[1], t[2])
 
-def do_boolean_operator(s, l, t):
+def do_boolean_operator(_s, _l, t):
 	"""Constructs a BooleanOperator object from a parse action."""
 
 	return BooleanOperator(t[0].upper())
 
-def do_boolean_value(s, l, t):
+def do_boolean_value(s, _l, t):
 	"""Constructs a bool object from a parse action."""
 
 	if t[0].lower() == "true":
 		return True
-	elif t[0].lower() == "false":
+	if t[0].lower() == "false":
 		return False
-	else:
-		raise Exception("Unknown boolean value: " + s)
+	raise Exception("Unknown boolean value: " + s)
 
-def do_integer(s, l, t):
+def do_integer(_s, _l, t):
 	"""Constructs an integer object from a parse action."""
 
 	return int(t[0])
 
-def do_bracket(s, l, t):
+def do_bracket(s, _l, t):
 	"""Constructs a StartSubExpression/EndSubExpression object from a parse action."""
 
 	if t[0] == '(':
 		return StartSubExpression()
-	elif t[0] == ')':
+	if t[0] == ')':
 		return EndSubExpression()
-	else:
-		raise Exception("Unknown bracketing string: " + s)
+	raise Exception("Unknown bracketing string: " + s)
 
 ################################################################################
 
-class SearchQueryParser(object):
+class SearchQueryParser:
 	"""Parses a search query."""
 
-	def __init__(self):
-		pass
+	tokens = None
 
+	# Pylint seems to think some of the statements below are "pointless"
+	# this may be true, but I am not sure how this works... ;)
+	# pylint: disable=pointless-statement
 	def parse(self, query):
 		"""Parses a query string."""
 
@@ -117,23 +119,24 @@ class SearchQueryParser(object):
 	def get_tokens(self):
 		return self.tokens
 
+	# pylint: disable=too-many-branches
 	def generate_sql(self, variable_to_column_map):
 		sql = ""
 		params = []
 		for token in self.tokens:
-			if type(token) is StartSubExpression:
+			if isinstance(token, StartSubExpression):
 				sql = sql + "("
-			elif type(token) is EndSubExpression:
+			elif isinstance(token, EndSubExpression):
 				sql = sql + ")"
-			elif type(token) is VariableComparison:
+			elif isinstance(token, VariableComparison):
 				if token.left not in variable_to_column_map:
 					raise Exception("Unknown variable: " + token.left)
-				else:
-					sql = sql + "`" + variable_to_column_map[token.left] + "` "
-				if type(token.right) is int:
+
+				sql = sql + "`" + variable_to_column_map[token.left] + "` "
+				if isinstance(token.right, int):
 					sql = sql + token.operator + " %s"
 					params.append(token.right)
-				elif type(token.right) is bool:
+				elif isinstance(token.right, bool):
 					if token.operator == "=":
 						sql = sql + "IS "
 					elif token.operator == "!=":
@@ -147,7 +150,7 @@ class SearchQueryParser(object):
 				else:
 					sql = sql + token.operator + " %s"
 					params.append(token.right)
-			elif type(token) is BooleanOperator:
+			elif isinstance(token, BooleanOperator):
 				sql = sql + " " + token.operator + " "
 		return (sql, tuple(params))
 

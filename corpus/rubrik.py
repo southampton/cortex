@@ -77,9 +77,9 @@ class Rubrik:
 		"""Make a GET request to an API endpoint"""
 		return self._request("GET", endpoint, version, params=payload)
 
-	# pylint: disable=dangerous-default-value
-	def patch_request(self, endpoint, version=None, payload={}):
+	def patch_request(self, endpoint, version=None, payload=None):
 		"""Make a PATCH request to an API endpoint"""
+		payload = {} if payload is None else payload
 		return self._request("PATCH", endpoint, version, json=payload)
 
 	def post_request(self, endpoint, version=None, payload=None):

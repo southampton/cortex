@@ -406,7 +406,7 @@ def admin_classes():
 
 	# On a GET request, display the list of classes page
 	if request.method == 'GET':
-		classes = cortex.lib.classes.list(hide_disabled=False)
+		classes = cortex.lib.classes.get_list(hide_disabled=False)
 		return render_template('admin/classes.html', classes=classes, active='admin', cmdb_types=app.config['CMDB_CACHED_CLASSES'], title="Classes")
 
 	elif request.method == 'POST':

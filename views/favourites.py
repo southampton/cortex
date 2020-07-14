@@ -19,7 +19,7 @@ def favourites(display='all'):
 	# Get the list of active classes (used to populate the tab bar)
 	classes = {}
 	if does_user_have_permission("systems.all.view"):
-		classes = cortex.lib.classes.list()
+		classes = cortex.lib.classes.get_list()
 
 	# Validate system type
 	flag = False

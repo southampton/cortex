@@ -12,17 +12,17 @@ def get_kv_setting(key, load_as_json=False):
 
 	# Create a cursor.
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',(key,))
+	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;', (key,))
 	res = curd.fetchone()
 
 	# Do we want to load the value as JSON data.
 	if load_as_json:
 		if res is not None:
 			return json.loads(res['value'])
-		else:
-			return {}
-	else:
-		return res['value']
+
+		return {}
+
+	return res['value']
 
 def set_kv_setting(key, value, on_duplicate_update=True, with_commit=True):
 	"""
