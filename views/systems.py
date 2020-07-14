@@ -34,7 +34,7 @@ def systems():
 	# Get the list of active classes (used to populate the tab bar)
 	classes = {}
 	if does_user_have_permission("systems.all.view"):
-		classes = cortex.lib.classes.list()
+		classes = cortex.lib.classes.get_list()
 
 	# Get the search string, if any
 	q = request.args.get('q', None)
@@ -58,7 +58,7 @@ def systems_expired():
 		abort(403)
 
 	# Get the list of active classes (used to populate the tab bar)
-	classes = cortex.lib.classes.list()
+	classes = cortex.lib.classes.get_list()
 
 	# Render
 	return render_template('systems/list.html', classes=classes, active='systems', title="Expired systems", expired=True, hide_inactive=True)
@@ -75,7 +75,7 @@ def systems_nocmdb():
 		abort(403)
 
 	# Get the list of active classes (used to populate the tab bar)
-	classes = cortex.lib.classes.list()
+	classes = cortex.lib.classes.get_list()
 
 	# Render
 	return render_template('systems/list.html', classes=classes, active='systems', title="Systems missing CMDB record", nocmdb=True, hide_inactive=True)
@@ -92,7 +92,7 @@ def systems_withperms():
 		abort(403)
 
 	# Get the list of active classes (used to populate the tab bar)
-	classes = cortex.lib.classes.list()
+	classes = cortex.lib.classes.get_list()
 
 	# Render
 	return render_template('systems/list.html', classes=classes, active='perms', title="Systems with permissions", perms_only=True)
@@ -168,7 +168,7 @@ def systems_add_existing():
 		abort(403)
 
 	# Get the list of enabled classes
-	classes = cortex.lib.classes.list(hide_disabled=True)
+	classes = cortex.lib.classes.get_list(hide_disabled=True)
 
 	# Get the list of Puppet environments
 	puppet_envs = cortex.lib.puppet.get_puppet_environments()
@@ -308,7 +308,7 @@ def systems_new():
 
 	# On GET requests, just show big buttons for all the classes
 	if request.method == 'GET':
-		classes = cortex.lib.classes.list(hide_disabled=True)
+		classes = cortex.lib.classes.get_list(hide_disabled=True)
 		return render_template('systems/new.html', classes=classes, active='systems', title="Allocate new system names")
 
 	# On POST requests...

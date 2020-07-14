@@ -4,6 +4,7 @@ from flask import g
 
 ################################################################################
 
+# pylint: disable=too-many-branches,too-many-statements
 def get_os_stats():
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -12,33 +13,35 @@ def get_os_stats():
 	curd.execute('SELECT `guestId` FROM `vmware_cache_vm` WHERE `template` = 0')
 	results = curd.fetchall()
 
-	types = {}
-	types['windows'] = 0
-	types['linux']   = 0
-	types['bsd']     = 0
-	types['other']   = 0
+	types = {
+		"windows":
+		0,
+		"linux": 0,
+		"bsd": 0,
+		"other": 0,
 
-	types['windows_desktop'] = 0
-	types['windows_server']  = 0
-	types['ws2003']          = 0
-	types['ws2008']          = 0
-	types['ws2008r2']        = 0
-	types['ws2012']          = 0
-	types['ws2016']          = 0
+		"windows_desktop": 0,
+		"windows_server": 0,
+		"ws2003": 0,
+		"ws2008": 0,
+		"ws2008r2": 0,
+		"ws2012": 0,
+		"ws2016": 0,
 
-	types['wd7']     = 0
-	types['wd8']     = 0
-	types['wd10']    = 0
+		"wd7": 0,
+		"wd8": 0,
+		"wd10": 0,
 
-	types['ubuntu']      = 0
-	types['debian']      = 0
-	types['rhel']        = 0
-	types['rhel3']       = 0
-	types['rhel4']       = 0
-	types['rhel5']       = 0
-	types['rhel6']       = 0
-	types['rhel7']       = 0
-	types['linux_other'] = 0
+		"ubuntu": 0,
+		"debian": 0,
+		"rhel": 0,
+		"rhel3": 0,
+		"rhel4": 0,
+		"rhel5": 0,
+		"rhel6": 0,
+		"rhel7": 0,
+		"linux_other": 0,
+	}
 
 	for result in results:
 		ostr = result['guestId']
@@ -67,7 +70,7 @@ def get_os_stats():
 				elif 'winLonghornGuest' in ostr or 'winLonghorn64Guest' in ostr:
 					types['ws2008'] += 1
 
-				elif 'windows7Server' in ostr:        
+				elif 'windows7Server' in ostr:
 					types['ws2008r2'] += 1
 
 				elif 'windows8Server' in ostr:
@@ -76,23 +79,31 @@ def get_os_stats():
 				elif 'windows9Server' in ostr:
 					types['ws2016'] += 1
 
-		elif "Linux" in ostr or 'linux' in ostr or 'rhel' in ostr or 'sles' in ostr or 'ubuntu' in ostr or 'centos' in ostr or 'debian' in ostr:
+		elif any(k in ostr.lower() for k in ["linux", "rhel", "sles", "ubuntu", "centos", "debian"]):
 			types['linux'] += 1
 
-			if 'ubuntu'   in ostr: types['ubuntu'] += 1
-			elif 'debian' in ostr: types['debian'] += 1
+			if 'ubuntu' in ostr:
+				types['ubuntu'] += 1
+			elif 'debian' in ostr:
+				types['debian'] += 1
 			elif 'rhel' in ostr:
 				types['rhel'] += 1
-				
-				if 'rhel3'   in ostr: types['rhel3'] += 1
-				elif 'rhel4' in ostr: types['rhel4'] += 1
-				elif 'rhel5' in ostr: types['rhel5'] += 1
-				elif 'rhel6' in ostr: types['rhel6'] += 1
-				elif 'rhel7' in ostr: types['rhel7'] += 1
-				elif 'rhel8' in ostr: types['rhel8'] += 1
+
+				if 'rhel3' in ostr:
+					types['rhel3'] += 1
+				elif 'rhel4' in ostr:
+					types['rhel4'] += 1
+				elif 'rhel5' in ostr:
+					types['rhel5'] += 1
+				elif 'rhel6' in ostr:
+					types['rhel6'] += 1
+				elif 'rhel7' in ostr:
+					types['rhel7'] += 1
+				elif 'rhel8' in ostr:
+					types['rhel8'] += 1
 
 			else:
-				types['linux_other'] += 1	
+				types['linux_other'] += 1
 
 		elif "freebsd" in ostr:
 			types['bsd'] += 1

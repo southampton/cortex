@@ -8,7 +8,7 @@ from flask import g, session, url_for
 from pypuppetdb.QueryBuilder import EqualsOperator
 from pypuppetdb.utils import json_to_datetime
 
-import cortex.lib.netgroup
+import cortex.lib.systems
 from cortex import app
 
 ################################################################################

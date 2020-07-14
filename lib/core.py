@@ -25,6 +25,7 @@ def neocortex_connect():
 	# Connect, and perform some set up, including setting up a pre-shared
 	# message signing key
 	proxy = Pyro4.Proxy('PYRO:neocortex@localhost:1888')
+	# pylint: disable=protected-access
 	proxy._pyroHmacKey = app.config['NEOCORTEX_KEY']
 	proxy._pyroTimeout = 5
 
@@ -47,8 +48,8 @@ def vmware_list_clusters(tag):
 		curd = g.db.cursor(mysql.cursors.DictCursor)
 		curd.execute("SELECT * FROM `vmware_cache_clusters` WHERE `vcenter` = %s", (app.config['VMWARE'][tag]['hostname'],))
 		return curd.fetchall()
-	else:
-		raise Exception("Invalid VMware tag")
+
+	raise Exception("Invalid VMware tag")
 
 def vmware_list_folders(tag):
 	"""Return a list of folders from witihin a given vCenter. The tag
@@ -92,8 +93,8 @@ def vmware_list_folders(tag):
 			folders.append(folders_dict[folder_id])
 
 		return folders
-	else:
-		raise Exception("Invalid VMware tag")
+
+	raise Exception("Invalid VMware tag")
 
 ################################################################################
 
@@ -108,7 +109,7 @@ def is_valid_hostname(hostname):
 		hostname = hostname[:-1]
 
 	# Build a regex to match on valid hostname components
-	allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+	allowed = re.compile(r"(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
 
 	# Return true if all the parts of the hostname match the regex
 	return all(allowed.match(x) for x in hostname.split("."))
@@ -122,10 +123,9 @@ def fqdn_strip_domain(fqdn):
 	# n.b split always returns a list with 1 entry even if the seperator isnt found
 	return fqdn.split('.')[0]
 
-
 ################################################################################
 
-def tasks_where_query(*args, **kwargs):
+def tasks_where_query(**kwargs):
 	# Build the query parts
 	query_parts = []
 	query_params = []
@@ -139,12 +139,12 @@ def tasks_where_query(*args, **kwargs):
 
 	if len(query_parts) > 0:
 		return (" WHERE " + " AND ".join(query_parts), tuple(query_params))
-	else:
-		return ("", ())
+
+	return ("", ())
 
 ################################################################################
 
-def tasks_count(*args, **kwargs):
+def tasks_count(**kwargs):
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
@@ -155,7 +155,13 @@ def tasks_count(*args, **kwargs):
 
 ################################################################################
 
-def tasks_get(order = None, limit_start = None, limit_length = None, *args, **kwargs):
+def tasks_get(**kwargs):
+
+	# Set expected defaults
+	order = kwargs.get("order", None)
+	limit_start = kwargs.get("limit_start", None)
+	limit_length = kwargs.get("limit_length", None)
+
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
@@ -175,12 +181,12 @@ def tasks_get(order = None, limit_start = None, limit_length = None, *args, **kw
 
 ################################################################################
 
-def task_get(id):
+def task_get(task_id):
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get the task
-	curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE id = %s", (id,))
+	curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE id = %s", (task_id,))
 	task = curd.fetchone()
 
 	return task
@@ -230,8 +236,8 @@ def log(source, name, desc, username=None, related_id=None, success=True):
 	app.logger.info(str(source) + ',' + str(related_id) + ',' + str(name) + ',' + str(username) + ',' + str(desc))
 
 	try:
-		cur    = g.db.cursor()
-		stmt   = 'INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `ipaddr`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())'
+		cur = g.db.cursor()
+		stmt = 'INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `ipaddr`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())'
 		params = (source, related_id, name, username, desc, status, request.remote_addr)
 		cur.execute(stmt, params)
 		g.db.commit()

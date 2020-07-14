@@ -8,10 +8,8 @@ import MySQLdb as mysql
 from flask import abort, g, render_template
 
 from cortex import app
-from cortex.lib.user import (does_user_have_permission,
-                             does_user_have_system_permission,
-                             does_user_have_workflow_permission,
-                             login_required)
+from cortex.lib.user import (
+	does_user_have_permission, does_user_have_system_permission, does_user_have_workflow_permission, login_required)
 
 ################################################################################
 
@@ -40,11 +38,7 @@ def get_workflows_locked():
 	"""Determines if workflows are currently locked."""
 
 	jsonobj = get_workflows_locked_details()
-
-	if jsonobj is not None and 'status' in jsonobj and jsonobj['status'] == 'Locked':
-		return True
-	else:
-		return False
+	return bool(jsonobj is not None and 'status' in jsonobj and jsonobj['status'] == 'Locked')
 
 def raise_if_workflows_locked():
 	"""Raises an Exception if workflows are currently locked."""
@@ -54,7 +48,8 @@ def raise_if_workflows_locked():
 
 ################################################################################
 
-class CortexWorkflow(object):
+# pylint: disable=no-self-use
+class CortexWorkflow:
 	config = {}
 
 	def __init__(self, name, load_config=True, check_config=None):
@@ -93,21 +88,21 @@ class CortexWorkflow(object):
 		# Validate the config
 		if check_config:
 			try:
-					# If a dict is given for check_config, then use our _default_validate_config
-					# function to validate the configuration items
-					if type(check_config) is dict:
-						if not self._default_validate_config(check_config):
-							raise Exception("Workflows: Invalid configuration in workflow {name}".format(name=self.name))
-					# If a function is given for check_config, call it:
-					elif type(check_config) is types.FunctionType:
-						if not check_config(self):
-							raise Exception("Workflows: Invalid configuration in workflow {name}".format(name=self.name))
+				# If a dict is given for check_config, then use our _default_validate_config
+				# function to validate the configuration items
+				if isinstance(check_config, dict):
+					if not self._default_validate_config(check_config):
+						raise Exception("Workflows: Invalid configuration in workflow {name}".format(name=self.name))
+				# If a function is given for check_config, call it:
+				elif isinstance(check_config, types.FunctionType):
+					if not check_config(self):
+						raise Exception("Workflows: Invalid configuration in workflow {name}".format(name=self.name))
 
 			except Exception as ex:
 				app.logger.error("Workflows: Invalid workflow configuration in {name}: {ex}".format(name=self.name, ex=ex))
 
 				# Re-raise to stop the workflow from loading
-				raise(ex)
+				raise ex
 
 	def _default_validate_config(self, required_config):
 		valid_config = True
@@ -120,7 +115,7 @@ class CortexWorkflow(object):
 			else:
 				# Check the type of the item matches what we expect
 				if required_config[item] is not None:
-					if type(self.config[item]) is not required_config[item]:
+					if not isinstance(self.config[item], required_config[item]):
 						app.logger.error("Workflows: Configuration item '" + str(item) + "' in workflow '" + self.name + "' is of incorrect type '" + type(self.config[item]).__name__ + "' - should be '" + required_config[item].__name__ + "'")
 						valid_config = False
 
@@ -130,12 +125,14 @@ class CortexWorkflow(object):
 		"""Extracts the settings from the given config file."""
 
 		# Start a new module, which will be the context for parsing the config
+		# pylint: disable=invalid-name
 		d = imp.new_module('config')
 		d.__file__ = filename
 
 		# Read the contents of the configuration file and execute it as a
 		# Python script within the context of a new module
 		with open(filename) as config_file:
+			# pylint: disable=exec-used
 			exec(compile(config_file.read(), filename, 'exec'), d.__dict__)
 
 		# Extract the config options, which are those variables whose names are
@@ -162,84 +159,84 @@ class CortexWorkflow(object):
 		# set the 'active' variable to 'workflows' so the nav bar highlights
 		# workflows as the active part of the navigation bar
 		kwargs['active'] = 'workflows'
-		return render_template(self.name + "::" + template_name,**kwargs)
+		return render_template(self.name + "::" + template_name, **kwargs)
 
 	def route(self, rule, title="Untitled", order=999, permission="cortex.admin", menu=True, require_login=True, **options):
 
 		if isinstance(permission, str) and not permission.startswith("workflows."):
 			permission = "workflows." + permission
 
-		def decorator(fn):
+		def decorator(func):
 
 			## Require permissions
 			if permission and callable(permission):
 				permfn = self._require_permission_callable(permission)
-				fn = permfn(fn)
+				func = permfn(func)
 			elif permission:
 				permfn = self._require_permission(permission)
-				fn = permfn(fn)
+				func = permfn(func)
 
 			## Require login, and the right permissions
 			## Note this must come after the decoration by _require_permission
 			## as the decorators are essentially processed backwards
 			if require_login:
-				fn = login_required(fn)
+				func = login_required(func)
 
 			## Raise an exception if the workflows are locked.
-			fn = self._raise_if_workflows_locked(fn)
+			func = self._raise_if_workflows_locked(func)
 
 			## Mark the view function as a workflow view function
-			fn = self._mark_as_workflow(fn)
+			func = self._mark_as_workflow(func)
 
 			# Get the endpoint, if any
 			endpoint = options.pop('endpoint', None)
 
 			# Add a URL rule
-			app.add_url_rule("/workflows/" + self.name + "/" + rule, endpoint, fn, **options)
+			app.add_url_rule("/workflows/" + self.name + "/" + rule, endpoint, func, **options)
 
 			# Store the workflow route details in a hash for the
 			app.wf_functions.append({
 				'title':      title,
-				'name':       fn.__name__,
+				'name':       func.__name__,
 				'workflow':   self.name,
 				'order':      order,
 				'permission': permission,
 				'menu':       menu,
 			})
 
-			app.logger.info("Workflows: Registered a new workflow function '" + fn.__name__ + "' in '" + self.name + "'")
+			app.logger.info("Workflows: Registered a new workflow function '" + func.__name__ + "' in '" + self.name + "'")
 
-			return fn
+			return func
 
 		return decorator
 
 	def action(self, rule, title="Untitled", desc="N/A", order=999, system_permission=None, permission="cortex.admin", menu=True, require_vm=False, **options):
-		def decorator(fn):
+		def decorator(func):
 
 			## Require a permission, if set
 			if system_permission is not None:
-				permfn = self._require_system_permission(system_permission,permission)
-				fn = permfn(fn)
+				permfn = self._require_system_permission(system_permission, permission)
+				func = permfn(func)
 
 			## Require login, and the right permissions
-			fn = login_required(fn)
+			func = login_required(func)
 
 			## Raise an exception if the workflows are locked.
-			fn = self._raise_if_workflows_locked(fn)
+			func = self._raise_if_workflows_locked(func)
 
 			## Mark the view function as a workflow view function
-			fn = self._mark_as_workflow(fn)
+			func = self._mark_as_workflow(func)
 
 			# Get the endpoint, if any
 			endpoint = options.pop('endpoint', None)
 
 			# Add a URL rule
-			app.add_url_rule("/sysactions/" + self.name + "/" + rule + "/<int:id>", endpoint, fn, **options)
+			app.add_url_rule("/sysactions/" + self.name + "/" + rule + "/<int:id>", endpoint, func, **options)
 
 			# Store the workflow route details in a hash
 			app.wf_system_functions.append({
 				'title':             title,
-				'name':              fn.__name__,
+				'name':              func.__name__,
 				'workflow':          self.name,
 				'order':             order,
 				'system_permission': system_permission,
@@ -249,25 +246,25 @@ class CortexWorkflow(object):
 				'require_vm':        require_vm,
 			})
 
-			app.logger.info("Workflows: Registered a new per-system function '" + fn.__name__ + "' in '" + self.name + "'")
+			app.logger.info("Workflows: Registered a new per-system function '" + func.__name__ + "' in '" + self.name + "'")
 
-			return fn
+			return func
 
 		return decorator
 
-	def _require_permission(self,permission):
-		def decorator(fn):
-			@wraps(fn)
+	def _require_permission(self, permission):
+		def decorator(func):
+			@wraps(func)
 			def decorated_function(*args, **kwargs):
 				if not does_user_have_workflow_permission(permission):
 					abort(403)
-				return fn(*args, **kwargs)
+				return func(*args, **kwargs)
 			return decorated_function
 		return decorator
 
-	def _require_permission_callable(self,permission_callable):
-		def decorator(fn):
-			@wraps(fn)
+	def _require_permission_callable(self, permission_callable):
+		def decorator(func):
+			@wraps(func)
 			def decorated_function(*args, **kwargs):
 				if not callable(permission_callable):
 					abort(403)
@@ -275,15 +272,15 @@ class CortexWorkflow(object):
 				if not isinstance(result, bool) or not result:
 					abort(403)
 
-				return fn(*args, **kwargs)
+				return func(*args, **kwargs)
 			return decorated_function
 		return decorator
 
-	def _require_system_permission(self,system_permission,permission=None):
-		def decorator(fn):
-			@wraps(fn)
+	def _require_system_permission(self, system_permission, permission=None):
+		def decorator(func):
+			@wraps(func)
 			def decorated_function(*args, **kwargs):
-				id = kwargs['id']
+				system_id = kwargs['id']
 
 				## Grant permission ONLY if
 				### they have workflows.all
@@ -291,29 +288,29 @@ class CortexWorkflow(object):
 				### they have the global permission set in the workflow action
 
 				if permission is None:
-					if not does_user_have_system_permission(id,system_permission) and not does_user_have_permission("workflows.all"):
+					if not does_user_have_system_permission(system_id, system_permission) and not does_user_have_permission("workflows.all"):
 						abort(403)
 
 				else:
-					if not does_user_have_system_permission(id,system_permission) and not does_user_have_permission("workflows." + permission) and not does_user_have_permission("workflows.all"):
+					if not does_user_have_system_permission(system_id, system_permission) and not does_user_have_permission("workflows." + permission) and not does_user_have_permission("workflows.all"):
 						abort(403)
 
-				return fn(*args, **kwargs)
+				return func(*args, **kwargs)
 			return decorated_function
 		return decorator
 
-	def _raise_if_workflows_locked(self, f):
-		@wraps(f)
+	def _raise_if_workflows_locked(self, func):
+		@wraps(func)
 		def decorated_function(*args, **kwargs):
 			# If the workflows are locked raise an exception.
 			raise_if_workflows_locked()
-			return f(*args, **kwargs)
+			return func(*args, **kwargs)
 		return decorated_function
 
 
-	def _mark_as_workflow(self,f):
-		@wraps(f)
+	def _mark_as_workflow(self, func):
+		@wraps(func)
 		def decorated_function(*args, **kwargs):
 			g.workflow = True
-			return f(*args, **kwargs)
+			return func(*args, **kwargs)
 		return decorated_function

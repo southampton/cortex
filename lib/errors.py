@@ -9,32 +9,32 @@ from cortex import app
 ################################################################################
 
 ## standard error (uses render_template and thus standard page layout)
-def stderr(title,message,code=200,template="error.html"):
+def stderr(title, message, code=200, template="error.html"):
 	"""This function is called by other error functions to show the error to the
 	end user. It takes an error title and an error message.
 	"""
 
-	# Should we show a traceback?	
+	# Should we show a traceback?
 	if app.debug:
 		debug = traceback.format_exc()
 	else:
 		debug = ""
 
-	return render_template(template,title=title,message=message,debug=debug), code
+	return render_template(template, title=title, message=message, debug=debug), code
 
 ################################################################################
 
 ## fatal error (returns HTML from python code - which is more likely to work)
-def fatalerr(title="Totes not an error ;)",message="While processing your request an unexpected error occured which the application could not recover from",debug=None):
+def fatalerr(title="Totes not an error ;)", message="While processing your request an unexpected error occured which the application could not recover from", debug=None):
 
-	# Should we show a traceback?	
+	# Should we show a traceback?
 	if debug is None:
 		if app.debug:
 			debug = traceback.format_exc()
 		else:
 			debug = "Please ask your administrator to consult the error log for more information."
 
-	# Build the response. Not using a template here to prevent any Jinja 
+	# Build the response. Not using a template here to prevent any Jinja
 	# issues from causing this to fail.
 	html = """
 <!doctype html>
@@ -81,7 +81,7 @@ def fatalerr(title="Totes not an error ;)",message="While processing your reques
 </div>
 </body>
 </html>
-""" % (title,message,debug)
+""" % (title, message, debug)
 
 	return make_response(html, 500)
 
@@ -112,14 +112,14 @@ Traceback:
 
 %s
 """ % (
-			request.host,
-			request.path,
-			request.method,
-			request.remote_addr,
-			request.user_agent.string,
-			request.user_agent.platform,
-			request.user_agent.browser,
-			request.user_agent.version,
-			username,
-			traceback.format_exc(),	
-		))
+		request.host,
+		request.path,
+		request.method,
+		request.remote_addr,
+		request.user_agent.string,
+		request.user_agent.platform,
+		request.user_agent.browser,
+		request.user_agent.version,
+		username,
+		traceback.format_exc(),
+	))

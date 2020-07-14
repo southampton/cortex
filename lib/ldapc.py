@@ -11,7 +11,7 @@ from cortex import app
 
 def connect():
 	# Connect to LDAP and turn off referrals
-	server =  ldap3.Server(app.config['LDAP_URI'])
+	server = ldap3.Server(app.config['LDAP_URI'])
 	conn = ldap3.Connection(server, app.config['LDAP_BIND_USER'], app.config['LDAP_BIND_PW'], auto_bind=False, auto_referrals=False)
 
 	# Bind to the server either with a defined user/pass in the config
@@ -26,7 +26,7 @@ def connect():
 
 ################################################################################
 
-def ldap_search(ldap_connection, username, attributes=[]):
+def ldap_search(ldap_connection, username, **kwargs):
 	return ldap_connection.search(
 		search_base=app.config['LDAP_USER_SEARCH_BASE'],
 		search_scope=ldap3.SUBTREE,
@@ -34,42 +34,42 @@ def ldap_search(ldap_connection, username, attributes=[]):
 			user_attr=app.config['LDAP_USER_ATTRIBUTE'],
 			username=ldap3.utils.conv.escape_filter_chars(username)
 		),
-		attributes=attributes,
+		attributes=kwargs.get("attributes", []),
 	)
 
 ################################################################################
 
-def auth(username,password):
+def auth(username, password):
 
 	# Connect to the LDAP server
-	l = connect()
+	ldap_connection = connect()
 
 	# Now search for the user object to bind as
 	try:
-		search = ldap_search(l, username)
+		search = ldap_search(ldap_connection, username)
 	except ldap3.core.exceptions.LDAPException:
 		return False
 
 	# Ensure we got a result
-	if not search or not l.response:
+	if not search or not ldap_connection.response:
 		return False
 
 	# Handle the search results
-	for result in l.response:
-		dn = result.get('dn')
-		if not dn:
+	for result in ldap_connection.response:
+		d_name = result.get('dn')
+		if not d_name:
 			# No dn returned. Return false.
 			return False
+
+		# Found the DN. Yay! Now bind with that DN and the password the user supplied
+		try:
+			assert ldap_connection.rebind(user=d_name, password=password)
+		except (AssertionError, ldap3.core.exceptions.LDAPException):
+			# Password was wrong
+			return False
 		else:
-			# Found the DN. Yay! Now bind with that DN and the password the user supplied
-			try:
-				assert l.rebind(user=dn, password=password)
-			except (AssertionError, ldap3.core.exceptions.LDAPException):
-				# Password was wrong
-				return False
-			else:
-				# Return that LDAP auth succeeded
-				return True
+			# Return that LDAP auth succeeded
+			return True
 
 	return False
 
@@ -77,75 +77,72 @@ def auth(username,password):
 
 def get_users_groups_from_ldap(username):
 	"""Talks to LDAP and gets the list of the given users groups. This
-	information is then stored in Redis so that it can be accessed 
+	information is then stored in Redis so that it can be accessed
 	quickly."""
 
 
 	# Connect to the LDAP server
-	l = connect()
+	ldap_connection = connect()
 
 	# Now search for the user object
 	try:
-		search = ldap_search(l, username, attributes=['memberOf'])
+		search = ldap_search(ldap_connection, username, attributes=['memberOf'])
 	except ldap3.core.exceptions.LDAPException:
 		return None
 
 	# Ensure we got a result
-	if not search or not l.response:
+	if not search or not ldap_connection.response:
 		return False
 
 	# Handle the search results
-	for result in l.response:
-		dn    = result.get('dn')
-		attrs = result['attributes']
+	for result in ldap_connection.response:
+		d_name = result.get('dn')
+		attributes = result['attributes']
 
-		if not dn:
+		if not d_name:
 			return None
-		else:
-			# Found the DN. Yay! Now bind with that DN and the password the user supplied
-			if 'memberOf' in attrs:
-				if len(attrs['memberOf']) > 0:
 
-					app.logger.debug("Found groups for " + username)
+		# Found the DN. Yay! Now bind with that DN and the password the user supplied
+		if 'memberOf' in attributes:
+			if len(attributes['memberOf']) > 0:
 
-					## Delete the existing cache
-					curd = g.db.cursor(mysql.cursors.DictCursor)
-					curd.execute('DELETE FROM `ldap_group_cache` WHERE `username` = %s', (username,))
-					
-					## Create the new cache
-					groups = []
-					for group in attrs['memberOf']:
-						## We only want the group name, not the DN
-						cn_regex = re.compile("^(cn|CN)=([^,;]+),")
-						
-						## Preprocssing into string
-						matched = cn_regex.match(group)
-						if matched:
-							group_cn = matched.group(2)
-						else:
-							## didn't find the cn, so skip this 'group'
-							continue
+				app.logger.debug("Found groups for " + username)
 
-						curd.execute('INSERT INTO `ldap_group_cache` (`username`, `group_dn`, `group`) VALUES (%s, %s, %s)', (username, group.lower(), group_cn.lower()))
-						groups.append(group_cn.lower())
+				## Delete the existing cache
+				curd = g.db.cursor(mysql.cursors.DictCursor)
+				curd.execute('DELETE FROM `ldap_group_cache` WHERE `username` = %s', (username,))
 
-					## Set the cache expiration
-					curd.execute('REPLACE INTO `ldap_group_cache_expire` (`username`, `expiry_date`) VALUES (%s,NOW() + INTERVAL 15 MINUTE)', (username,))
+				## Create the new cache
+				groups = []
+				for group in attributes['memberOf']:
+					## We only want the group name, not the DN
+					cn_regex = re.compile("^(cn|CN)=([^,;]+),")
 
-					## Commit the transaction
-					g.db.commit()
+					## Preprocssing into string
+					matched = cn_regex.match(group)
+					if matched:
+						group_cn = matched.group(2)
+					else:
+						## didn't find the cn, so skip this 'group'
+						continue
 
-					# Return a sorted list so that it matches what we get from MySQL
-					return sorted(groups)
-				else:
-					return None
-			else:
-				return None
+					curd.execute('INSERT INTO `ldap_group_cache` (`username`, `group_dn`, `group`) VALUES (%s, %s, %s)', (username, group.lower(), group_cn.lower()))
+					groups.append(group_cn.lower())
+
+				## Set the cache expiration
+				curd.execute('REPLACE INTO `ldap_group_cache_expire` (`username`, `expiry_date`) VALUES (%s,NOW() + INTERVAL 15 MINUTE)', (username,))
+
+				## Commit the transaction
+				g.db.commit()
+
+				# Return a sorted list so that it matches what we get from MySQL
+				return sorted(groups)
 
 	return None
 
 ##############################################################################
 
+# pylint: disable=too-many-branches
 def get_user_realname_from_ldap(username):
 	"""Talks to LDAP and retrieves the real name of the username passed."""
 
@@ -153,40 +150,40 @@ def get_user_realname_from_ldap(username):
 		return ""
 
 	# Connect to LDAP
-	l = connect()
-	
+	ldap_connection = connect()
+
 	# Now search for the user object
 	try:
-		search = ldap_search(l, username, attributes=['givenName', 'sn'])
+		search = ldap_search(ldap_connection, username, attributes=['givenName', 'sn'])
 	except ldap3.core.exceptions.LDAPException as ex:
 		app.logger.warning('Failed to execute real name LDAP search: ' + str(ex))
 		return username
 
 	# Ensure we got a result
-	if not search or not l.response:
+	if not search or not ldap_connection.response:
 		name = username
 	else:
 		firstname = ""
 		lastname = ""
 
 		# Handle the search results
-		for result in l.response:
-			dn    = result.get('dn')
-			attrs = result.get('attributes')
+		for result in ldap_connection.response:
+			d_name = result.get('dn')
+			attributes = result.get('attributes')
 
-			if dn is None or attrs is None:
+			if d_name is None or attributes is None:
 				return None
 
-			if 'givenName' in attrs:
-				if type(attrs['givenName']) is list and len(attrs['givenName']) > 0:
-					firstname = attrs['givenName'][0]
+			if 'givenName' in attributes:
+				if isinstance(attributes['givenName'], list) and len(attributes['givenName']) > 0:
+					firstname = attributes['givenName'][0]
 				else:
-					firstname = attrs['givenName']
-			if 'sn' in attrs:
-				if type(attrs['sn']) is list and len(attrs['sn']) > 0:
-					lastname = attrs['sn'][0]
+					firstname = attributes['givenName']
+			if 'sn' in attributes:
+				if isinstance(attributes['sn'], list) and len(attributes['sn']) > 0:
+					lastname = attributes['sn'][0]
 				else:
-					lastname = attrs['sn']
+					lastname = attributes['sn']
 
 		try:
 			if len(firstname) > 0 and len(lastname) > 0:
@@ -215,11 +212,11 @@ def get_user_realname_from_ldap(username):
 
 def does_group_exist(groupname):
 	# Connect to the LDAP server
-	l = connect()
+	ldap_connection = connect()
 
 	# Now search for the user object to bind as
 	try:
-		search = l.search(
+		search = ldap_connection.search(
 			search_base=app.config['LDAP_GROUP_SEARCH_BASE'],
 			search_scope=ldap3.SUBTREE,
 			search_filter="(&(objectClass=group)(cn={groupname}))".format(
@@ -227,15 +224,15 @@ def does_group_exist(groupname):
 			),
 			attributes=['member'],
 		)
-	except ldap3.core.exceptions.LDAPException as e:
+	except ldap3.core.exceptions.LDAPException:
 		return False
 
 	# Ensure we got a result
-	if not search or not l.response:
+	if not search or not ldap_connection.response:
 		return False
 
 	# Handle the search results
-	for result in l.response:
+	for result in ldap_connection.response:
 		if not all(k in result for k in ['dn', 'attributes']):
 			return False
 

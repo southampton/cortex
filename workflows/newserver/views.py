@@ -13,7 +13,7 @@ workflow.add_permission('newserver', 'Create System Record')
 def allocateserver():
 
 	# Get the list of enabled classes
-	classes = cortex.lib.classes.list(hide_disabled=True)
+	classes = cortex.lib.classes.get_list(hide_disabled=True)
 
 	# Extract the classes the have servers in (so hide storage and switches, for example)
 	server_classes = [c for c in classes if c['cmdb_type'] == "cmdb_ci_server"]

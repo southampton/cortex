@@ -14,16 +14,16 @@ ROLE_WHO_LDAP_GROUP = 1
 
 ################################################################################
 
-def login_required(f):
+def login_required(func):
 	"""This is a decorator function that when called ensures the user has logged in.
 	Usage is as such: @cortex.lib.user.login_required"""
 
-	@wraps(f)
+	@wraps(func)
 	def decorated_function(*args, **kwargs):
 		if not is_logged_in():
 			session['next'] = request.url
 			return redirect(url_for('root'))
-		return f(*args, **kwargs)
+		return func(*args, **kwargs)
 	return decorated_function
 
 ################################################################################
@@ -63,19 +63,18 @@ def logon_ok(username):
 	# Update the user's realname in the cache table
 	try:
 		get_user_realname(session['username'], from_cache=False)
-	except:
+	except Exception:
 		pass
 
 	# Log a successful login
 	cortex.lib.core.log(__name__, 'cortex.login', '' + session['username'] + ' logged in using ' + request.user_agent.string)
 
 	# Determine if "next" variable is set (the URL to be sent to)
-	next = session.pop('next', None)
+	next_url = session.pop('next', None)
+	if next_url is not None:
+		return redirect(next_url)
 
-	if next == None:
-		return redirect(url_for('dashboard'))
-	else:
-		return redirect(next)
+	return redirect(url_for('dashboard'))
 
 ################################################################################
 # Authentication
@@ -88,7 +87,7 @@ def authenticate(username, password):
 	if len(password) == 0:
 		return False
 
-	return cortex.lib.ldapc.auth(username,password)
+	return cortex.lib.ldapc.auth(username, password)
 
 ################################################################################
 
@@ -118,26 +117,25 @@ def get_users_groups(username=None, from_cache=True):
 	# thousands of queries 'cos the groups are stored in REDIS.
 	# so its in Mysql. So there.
 
-	if from_cache == False:
+	if not from_cache:
 		return cortex.lib.ldapc.get_users_groups_from_ldap(username)
-	else:
-		curd = g.db.cursor(mysql.cursors.DictCursor)
 
-		## Get from the cache (if it hasn't expired)
-		curd.execute('SELECT 1 FROM `ldap_group_cache_expire` WHERE `username` = %s AND `expiry_date` > NOW()', (username,))
-		if curd.fetchone() is not None:
-			## The cache has not expired, return the list
-			curd.execute('SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s ORDER BY `group`', (username,))
-			groupdict = curd.fetchall()
-			groups = []
-			for group in groupdict:
-				groups.append(group['group'])
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-			return groups
+	## Get from the cache (if it hasn't expired)
+	curd.execute('SELECT 1 FROM `ldap_group_cache_expire` WHERE `username` = %s AND `expiry_date` > NOW()', (username,))
+	if curd.fetchone() is not None:
+		## The cache has not expired, return the list
+		curd.execute('SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s ORDER BY `group`', (username,))
+		groupdict = curd.fetchall()
+		groups = []
+		for group in groupdict:
+			groups.append(group['group'])
 
-		else:
-			## The cache has expired, return them from LDAP directly (but also cache)
-			return cortex.lib.ldapc.get_users_groups_from_ldap(username)
+		return groups
+
+	## The cache has expired, return them from LDAP directly (but also cache)
+	return cortex.lib.ldapc.get_users_groups_from_ldap(username)
 
 #############################################################################
 
@@ -156,23 +154,23 @@ def get_user_realname(username, from_cache=True):
 	# making pages load really slowly. We don't use REDIS because we have a
 	# MySQL view which needs to include the real name data.
 
-	if from_cache == False:
+	if not from_cache:
 		return cortex.lib.ldapc.get_user_realname_from_ldap(username)
-	else:
-		# Check the cache to see if it already has entries for the user
-		# we use a key to set whether we /have/ cached the users //
-		try:
-			curd = g.db.cursor(mysql.cursors.DictCursor)
-			curd.execute('SELECT `realname` AS `name` FROM `realname_cache` WHERE `username` = %s', (username,))
-			user = curd.fetchone()
-			curd.close()
-		except Exception as ex:
-			app.logger.warning('Failed to retrieve user from cache: ' + str(ex) + 'Falling back to LDAP lookup')
-			return cortex.lib.ldapc.get_user_realname_from_ldap(username)
 
-		if user is None:
-			return cortex.lib.ldapc.get_user_realname_from_ldap(username)
-		return user['name']
+	# Check the cache to see if it already has entries for the user
+	# we use a key to set whether we /have/ cached the users //
+	try:
+		curd = g.db.cursor(mysql.cursors.DictCursor)
+		curd.execute('SELECT `realname` AS `name` FROM `realname_cache` WHERE `username` = %s', (username,))
+		user = curd.fetchone()
+		curd.close()
+	except Exception as ex:
+		app.logger.warning('Failed to retrieve user from cache: ' + str(ex) + 'Falling back to LDAP lookup')
+		return cortex.lib.ldapc.get_user_realname_from_ldap(username)
+
+	if user is None:
+		return cortex.lib.ldapc.get_user_realname_from_ldap(username)
+	return user['name']
 
 #############################################################################
 
@@ -205,7 +203,7 @@ def does_user_have_permission(perm, user=None):
 
 	# Turn the permission(s) in to a lowercase list of permissions so we
 	# can check a number of permissions at once
-	if type(perm) is list:
+	if isinstance(perm, list):
 		for idx, val in enumerate(perm):
 			perm[idx] = val.lower()
 	else:
@@ -217,9 +215,8 @@ def does_user_have_permission(perm, user=None):
 
 		# Check if any of the permissions in perm are in the users
 		# cached permissions list
-		for p in perm:
-			if p in g.user_perms:
-				return True
+		if any(p in g.user_perms for p in perm):
+			return True
 
 		# Didn't match any permissions, return False
 		app.logger.debug("User " + str(user) + " did not have permission(s) " + str(perm))
@@ -261,9 +258,8 @@ def does_user_have_permission(perm, user=None):
 	g.user_perms = user_perms
 
 	# Check whether the user has any of the permissions
-	for p in perm:
-		if p in g.user_perms:
-			return True
+	if any(p in g.user_perms for p in perm):
+		return True
 
 	# We've not found the permission, return False to indicate that
 	app.logger.debug("User " + str(user) + " did not have permission(s) " + str(perm))
@@ -288,7 +284,7 @@ def does_user_have_workflow_permission(perm, user=None):
 
 #############################################################################
 
-def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
+def does_user_have_system_permission(system_id, sysperm, perm=None, user=None):
 	"""Returns a boolean indicating if a user has the specified permission
 	on the system specified in system_id. If 'perm' is supplied then the function
 	returns true if the user has the global 'perm' instead (e.g. a global
@@ -314,7 +310,7 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 
 	## Global permission override
 	if perm is not None:
-		if does_user_have_permission(perm,user):
+		if does_user_have_permission(perm, user):
 			return True
 
 	# There are situations (such as when pages are displayed during an error
@@ -352,7 +348,7 @@ def does_user_have_system_permission(system_id,sysperm,perm=None,user=None):
 
 #############################################################################
 
-def does_user_have_any_system_permission(sysperm,user=None):
+def does_user_have_any_system_permission(sysperm, user=None):
 	"""Returns a boolean indicating if a user has a per-system permission on
 	any system. This exists because some functions return data that can only
 	be accessed if a user has a permission on at least one system, but it does
@@ -425,7 +421,7 @@ def does_user_have_puppet_permission(environment_id, puppet_perm, perm=None, use
 
 	## Global permission override
 	if perm is not None:
-		if does_user_have_permission(perm,user):
+		if does_user_have_permission(perm, user):
 			return True
 
 	# There are situations (such as when pages are displayed during an error
