@@ -2193,4 +2193,11 @@ class Corpus:
 		curd = self.db.cursor(mysql.cursors.DictCursor)
 		curd.execute('SELECT `value` FROM `kv_settings` WHERE `key` = %s;', ('workflow_lock_status',))
 		current_value = curd.fetchone()
-		return bool(json.loads(current_value['value'])['status'] == 'Unlocked')
+
+		if current_value is None:
+			return True
+
+		try:
+			return bool(json.loads(current_value['value'])['status'] == 'Unlocked')
+		except (TypeError, ValueError):
+			return True # Assume the workflows are unlocked! (As there is no data)
