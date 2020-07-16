@@ -3,7 +3,7 @@
 {% block head %}
 {% include 'puppet/codemirror.html' %}
 <script src="{{ url_for('static', filename='js/vendor/javascript.min.js') }}?version={{ config.VERSION }}"></script>
-{% endblock %}	
+{% endblock %}
 {% block body %}
 
 <script>
@@ -31,7 +31,10 @@ $(document).ready(function() {
 		<form class="form-horizontal" method="POST" role="form">
 		<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 		<div class="card card-default">
-			<div class="card-header">VM Specification JSON</div>
+			<div class="card-header">
+				VM Specification JSON
+				<button class="btn btn-primary btn-sm float-right" type="submit">Save</button>
+			</div>
 			<div class="card-body" style="padding:0px">
 				<textarea id="specs" name="specs">{{ vm_spec_json }}</textarea>
 			</div>
@@ -43,7 +46,10 @@ $(document).ready(function() {
 		<form class="form-horizontal" method="POST" role="form">
 		<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 		<div class="card card-default">
-			<div class="card-header">VM Specification Configuration</div>
+			<div class="card-header">
+				VM Specification Configuration
+				<button class="btn btn-primary btn-sm float-right" type="submit">Save</button>
+			</div>
 			<div class="card-body" style="padding:0px">
 				<textarea id="specsconfig" name="specsconfig">{{ vm_spec_config_json }}</textarea>
 			</div>
