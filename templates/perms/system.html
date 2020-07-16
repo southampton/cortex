@@ -79,9 +79,9 @@
 </div>
 
 {{ node.header(system,active="perms" ) }}
-<div class="row">
+<div class="row equal">
 	<div class="col-md-4">
-		<div class="card card-default" style="min-height: 600px">
+		<div class="card card-default">
 			<div class="card-header">
 				<h4 class="card-title">Users and groups</h4>
 			</div>
@@ -101,11 +101,10 @@
 	</div>
 
 	<div class="col-md-8">
-		<div class="tab-content">
-
+		<div class="tab-content w-100">
 		{% for entry in system_perms %}
 		<div class="tab-pane{% if loop.first %} active{% endif%}" id="tab{{loop.index}}">
-		<div class="card card-default" style="min-height: 600px">
+		<div class="card card-default">
 			<div class="card-header">
 				<h4 class="card-title">Permissions for {%if entry.type == 0 %}user{%elif entry.type == 1%}Active Directory Group{%endif%} '{{entry.who}}' {%- if not entry['is_editable'] and 'role_id' in entry and 'role_name' in entry %} via System Role '<a style="color:#158cba" href="{{ url_for('perms_role', role_id=entry['role_id']) }}">{{ entry['role_name'] }}</a>'{%- endif %}</h4>
 			</div>

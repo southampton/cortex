@@ -333,9 +333,9 @@
 			</div>
 			{#- System Permissions -#}
 			<div class="tab-pane fade{%- if active_tab == 'systems' %} show active{%- endif -%}" id="permissions-systems" role="tabpanel" aria-labelledby="permissions-systems-tab">
-				<div class="row">
+				<div class="row equal">
 					<div class="col-md-4">
-						<div class="card card-default" style="min-height: 300px">
+						<div class="card card-default">
 							<div class="card-header">
 								<h4 class="card-title">Systems</h4>
 							</div>
@@ -354,10 +354,10 @@
 						</div>
 					</div>
 					<div class="col-md-8">
-						<div class="tab-content">
+						<div class="tab-content w-100">
 							{% for system_id in role.system_perms %}
 							<div class="tab-pane{% if loop.first %} active{% endif%}" id="p-system-{{system_id}}">
-								<div class="card card-default" style="min-height: 300px">
+								<div class="card card-default">
 									<div class="card-header">
 										<h4 class="card-title">Permissions for system '{{role.system_perms[system_id]["name"]}}'</h4>
 									</div>
@@ -401,9 +401,9 @@
 			</div>
 			{#- Puppet Permissions -#}
 			<div class="tab-pane fade{%- if active_tab == 'puppet' %} show active{%- endif -%}" id="permissions-puppet" role="tabpanel" aria-labelledby="permissions-puppet-tab">
-				<div class="row">
+				<div class="row equal">
 					<div class="col-md-4">
-						<div class="card card-default" style="min-height: 300px">
+						<div class="card card-default">
 							<div class="card-header">
 								<h4 class="card-title">Environments</h4>
 							</div>
@@ -422,10 +422,10 @@
 						</div>
 					</div>
 					<div class="col-md-8">
-						<div class="tab-content">
+						<div class="tab-content w-100">
 							{% for environment_id in role.puppet_perms %}
 							<div class="tab-pane{% if loop.first %} active{% endif%}" id="p-puppet-{{environment_id}}">
-								<div class="card card-default" style="min-height: 300px">
+								<div class="card card-default">
 									<div class="card-header">
 										<h4 class="card-title">Permissions for environment '{{role.puppet_perms[environment_id]["name"]}}'</h4>
 									</div>
