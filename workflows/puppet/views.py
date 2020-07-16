@@ -13,7 +13,7 @@ workflow.add_permission("puppet.environments.create", "Create Puppet Environment
 
 ENVIRONMENT_NAME_REGEX = re.compile(r"\A[a-z0-9_]+\Z")
 ENVIRONMENT_TYPES = {
-	0: "Infrastrucutre", # Common / Legacy environments (static)
+	0: "Infrastructure", # Common / Legacy environments (static)
 	1: "Service",        # Per-Service Puppet environment
 	2: "Dynamic"         # Dynamic environment for testing
 }
