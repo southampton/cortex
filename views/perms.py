@@ -219,7 +219,7 @@ def perms_role(role_id):
 
 			curd.execute("INSERT INTO `p_role_who` (`role_id`, `who`, `type`) VALUES (%s, %s, %s)", (role_id, name, ptype))
 			g.db.commit()
-			cortex.lib.core.log(__name__, "permissions.role.member.add", hstr + " '" + name + "' added to role '" + role['name'] + "' (" + str(id) + ")")
+			cortex.lib.core.log(__name__, "permissions.role.member.add", hstr + " '" + name + "' added to role '" + role['name'] + "' (" + str(role_id) + ")")
 
 			flash("The " + hstr + " " + name + " was added to the role", "alert-success")
 			return redirect(url_for('perms_role', role_id=role_id))
