@@ -586,9 +586,12 @@ def puppet_environments(environment_id=None):
 		curd = g.db.cursor(mysql.cursors.DictCursor)
 
 		environments = []
+		permissions = []
 		if environment_id and does_user_have_puppet_permission(environment_id, "view", "puppet.environments.all.view"):
 			curd.execute("SELECT * FROM `puppet_environments` WHERE `id`=%s LIMIT 1", (environment_id,))
 			environments = curd.fetchall()
+			curd.execute("SELECT * FROM `p_puppet_perms_view` WHERE `environment_id`=%s ORDER BY `who`", (environment_id,))
+			permissions = curd.fetchall()
 		elif environment_id is None:
 			if does_user_have_permission("puppet.environments.all.view"):
 				environments = cortex.lib.puppet.get_puppet_environments()
@@ -603,4 +606,4 @@ def puppet_environments(environment_id=None):
 		if not environments:
 			abort(404)
 
-		return render_template("puppet/environments.html", active="puppet", title="Puppet Environments", environments=environments)
+		return render_template("puppet/environments.html", active="puppet", title="Puppet Environments", environments=environments, permissions=permissions)

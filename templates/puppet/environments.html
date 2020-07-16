@@ -11,6 +11,66 @@ The environments listed below exist on the Puppet master and can be used from th
 </div>
 </div>
 {%- if environments | length == 1 -%}
+{%- set environment = environments[0] -%}
+<div class="row equal">
+	<div class="col-md-6">
+		<div class="card">
+			<div class="card-header">
+				<h4 class="card-title">Puppet Environment Details</h4>
+			</div>
+			<div class="card-body">
+				<div class="row">
+					<label class="col-sm-5 control-label">Short Name:</label>
+					<div class="col-sm-7"><p class="form-control-plaintext">{{ environment.short_name }}</p></div>
+				</div>
+				<div class="row">
+					<label class="col-sm-5 control-label">Name:</label>
+					<div class="col-sm-7"><p class="form-control-plaintext"><code>{{ environment.environment_name }}</code></p></div>
+				</div>
+				<div class="row">
+					<label class="col-sm-5 control-label">Type:</label>
+					<div class="col-sm-7"><p class="form-control-plaintext">{{ { 0: "Infrastrucutre", 1: "Service", 2: "Dynamic" }.get(environment.type, "Unknown") }}</p></div>
+				</div>
+				<div class="row">
+					<label class="col-sm-5 control-label">Owner:</label>
+					<div class="col-sm-7"><p class="form-control-plaintext">{{ environment.owner | string + ' (Full Access)' if environment.owner else 'None' }}</p></div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-6">
+		<div class="card">
+			<div class="card-header">
+				<h4 class="card-title">Puppet Environment Details</h4>
+			</div>
+			<div class="card-body">
+				<p>Permissions are assigned to Puppet environments via the <a href="{{ url_for('perms_roles') }}">role based permissions system</a>, they cannot be changed here.</p>
+				{%- if permissions -%}
+				<table class="table table-sm table-striped" id="data">
+					<thead>
+						<tr>
+							<th>Who</th>
+							<th>Type</th>
+							<th>Permission</th>
+						</tr>
+					</thead>
+					<tbody>
+						{%- for perm in permissions -%}
+						<tr>
+							<td>{{ perm.who }}</td>
+							<td>{{ { 0: "User", 1: "Group" }.get(perm.who_type, "Unknown") }}</td>
+							<td>{{ perm.perm }}</td>
+						</tr>
+						{%- endfor -%}
+					</tbody>
+				</table>
+				{%- else -%}
+				<p><i>There are no permissions assigned directly to this Puppet environment.</i></p>
+				{%- endif %}
+			</div>
+		</div>
+	</div>
+</div>
 {%- else -%}
 <div class="modal fade" id="delete_environment" role="dialog">
 	<div class="modal-dialog">
@@ -51,7 +111,7 @@ The environments listed below exist on the Puppet master and can be used from th
 			<td>{{ env.short_name }}</td>
 			<td>{%- if env.type == 0 -%}Infrastructure{%- elif env.type == 1 -%}Service{%- elif env.type == 2 -%}Dynamic{%- else -%}Unknown{%- endif -%}</td>
 			<td>
-				<a href="#" data-toggle="modal" data-target="#delete_environment" data-id="{{env.id}}" data-name="{{env.short_name}} ({{ env.environment_name }})" class="btn btn-danger btn-xs float-right p-2 mr-2">Delete</a>
+				<a href="#" data-toggle="modal" data-target="#delete_environment" data-id="{{env.id}}" data-name="{{env.short_name}} ({{ env.environment_name }})" class="btn btn-danger btn-xs float-right p-2 mr-2 {{ 'disabled' if not does_user_have_puppet_permission(env.id, "delete", "puppet.environments.all.delete") }}">Delete</a>
 			</td>
 		</tr>
 {%- endfor %}
