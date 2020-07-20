@@ -11,7 +11,6 @@
 			<th>Report Time</th>
 			<th>Version</th>
 			<th>Run Time</th>
-			<th>Report Client Noop</th>
 			<th>Report Environment</th>
 			<th>Report Status</th>
 			<th></th>
@@ -24,7 +23,6 @@
 			<td>{{ report.received.strftime('%Y/%m/%d %H:%M:%S') }}</td>
 			<td>{{ report.version }}</td>
 			<td>{{ report.run_time }}</td>
-			<td>{{ report.noop}}</td>
 			<td>{{ report.environment }}</td>
 			<td class="status-{{ report.status }}">{{ report.status }}</td>
 			<td><a href="{{ url_for('puppet_report', report_hash=report.hash_) }}" class="btn btn-xs btn-primary"><i class="fa fa-fw fa-file-text-o"></i> View</a></td>
