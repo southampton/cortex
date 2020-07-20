@@ -31,31 +31,35 @@ def update_servicenow_task_state(helper, task_sys_id, new_state):
 	r = requests.put(request_uri, auth=(helper.config['SN_USER'], helper.config['SN_PASS']), headers=json_headers, data=json.dumps({'state': new_state}))
 	r.raise_for_status()
 
-def read_config_file(f):
+def read_config_file(file_path):
 	# Load settings for this workflow
-	if os.path.isfile(f):
-		# Start a new module, which will be the context for parsing the config
-		d = imp.new_module('config')
-		d.__file__ = f
+	if not os.path.isfile(file_path):
+		raise Exception('Couldn\'t find configuration file "' + str(file_path) + '"')
 
-		# Read the contents of the configuration file and execute it as a
-		# Python script within the context of a new module
-		with open(f) as config_file:
-			exec(compile(config_file.read(), f, 'exec'), d.__dict__)
+	# Start a new module, which will be the context for parsing the config
+	# pylint: disable=invalid-name
+	d = imp.new_module('config')
+	d.__file__ = file_path
 
-		# Extract the config options, which are those variables whose names are
-		# entirely in uppercase
-		config = {}
-		for key in dir(d):
-			if key.isupper():
-				config[key] = getattr(d, key)
+	# Read the contents of the configuration file and execute it as a
+	# Python script within the context of a new module
+	with open(file_path) as config_file:
+		# pylint: disable=exec-used
+		exec(compile(config_file.read(), file_path, 'exec'), d.__dict__)
 
-		return config
-	else:
-		raise Exception('Couldn\'t find configuration file "' + str(f) + '"')
+	# Extract the config options, which are those variables whose names are
+	# entirely in uppercase
+	config = {}
+	for key in dir(d):
+		if key.isupper():
+			config[key] = getattr(d, key)
+
+	return config
 
 # The actual task
-def run(helper, options):
+# pylint: disable=too-many-branches,too-many-statements
+# pylint: disable=protected-access
+def run(helper, _options):
 	# Compile VM name regex
 	re_vm_name = re.compile(helper.config['SNVM_VALID_VM_NAME_REGEX'])
 
@@ -79,7 +83,7 @@ def run(helper, options):
 	index = 0
 	num_builds = len(result_rows)
 	helper.end_event(description='Found ' + str(num_builds) + ' VMs waiting to be built')
-	
+
 	for details in result_rows:
 		index = index + 1
 		helper.event('validate_student_vm_task', 'Validating task details (' + str(index) + '/' + str(num_builds) + ')')
@@ -91,7 +95,7 @@ def run(helper, options):
 				helper.end_event(success=False, description='Missing ' + key + ' attribute from ServiceNow task')
 				vm_error = True
 				break
-		
+
 		# Skip to the next VM if we encountered an error
 		if vm_error:
 			continue
@@ -115,11 +119,11 @@ def run(helper, options):
 				helper.end_event(success=False, description='Missing ' + key + ' attribute from description of ServiceNow task ' + sys_id + ' for user ' + user)
 				vm_error = True
 				break
-		
+
 		# Skip to the next VM if we encountered an error
 		if vm_error:
 			continue
-	
+
 		# Extract the VM details
 		osid = str(description[helper.config['SNVM_VM_OS_FIELD']]).strip()
 		name = str(description[helper.config['SNVM_VM_NAME_FIELD']]).strip()
@@ -217,7 +221,7 @@ def build_servicenow_vm(helper, buildvm_config, task_sys_id, task_friendly_id, f
 	options['template'] = helper.config['SNVM_OS_TO_BUILD_MAP'][osid]
 	options['network'] = helper.config['SNVM_NETWORK_MAP'][network]
 	options['cluster'] = helper.config['SNVM_OS_TO_CLUSTER_MAP'][osid]
-	options['env'] =  helper.config['SNVM_OS_TO_ENV_MAP'][osid]
+	options['env'] = helper.config['SNVM_OS_TO_ENV_MAP'][osid]
 	options['purpose'] = helper.config['SNVM_VM_PURPOSE_FORMAT'].format(user=user, name=friendly_name, task_sys_id=task_sys_id, task_friendly_id=task_friendly_id)
 	options['comments'] = ''
 	options['expiry'] = end_date
@@ -235,7 +239,7 @@ def build_servicenow_vm(helper, buildvm_config, task_sys_id, task_friendly_id, f
 
 	# Create an event to wait for the task
 	helper.event('wait_neocortex_task', 'Waiting for NeoCortex task {{task_link id="' + str(nc_task_id) + '"}}' + str(nc_task_id) + '{{/task_link}} to complete')
-	
+
 	# Wait for the NeoCortex task to complete
 	result = helper.lib.neocortex_task_wait(nc_task_id)
 

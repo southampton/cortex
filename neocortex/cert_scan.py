@@ -9,7 +9,10 @@ from multiprocessing import Pool
 import MySQLdb as mysql
 import OpenSSL as openssl
 
+# bin/neocortex modifies sys.path so these are importable.
+# pylint: disable=import-error
 from corpus import x509utils
+# pylint: enable=import-error
 
 ################################################################################
 
@@ -111,6 +114,7 @@ def raise_interrupt(signum, frame):
 
 ################################################################################
 
+# pylint: disable=too-many-branches,too-many-statements
 def scan_ip(host, port, timeout, starttls=None):
 	"""Scans a IP:Port for an SSL certificate."""
 
@@ -177,11 +181,11 @@ def scan_ip(host, port, timeout, starttls=None):
 		peer_cert = sock.get_peer_certificate()
 		peer_cert_name = ""
 		peer_cert_dn = ""
-		if type(peer_cert) is openssl.crypto.X509:
+		if isinstance(peer_cert, openssl.crypto.X509):
 			peer_cert_subject = peer_cert.get_subject()
-		elif type(peer_cert) is opeenssl.crypto.X509Name:
+		elif isinstance(peer_cert, openssl.crypto.X509Name):
 			peer_cert_subject = peer_cert
-		if type(peer_cert_subject) is openssl.crypto.X509Name:
+		if isinstance(peer_cert_subject, openssl.crypto.X509Name):
 			peer_cert_name = peer_cert_subject.CN
 			peer_cert_dn = repr(peer_cert_subject)
 			if peer_cert_dn is not None:
@@ -191,11 +195,11 @@ def scan_ip(host, port, timeout, starttls=None):
 		issuer_cert = peer_cert.get_issuer()
 		issuer_cert_name = ""
 		issuer_cert_dn = ""
-		if type(issuer_cert) is openssl.crypto.X509:
+		if isinstance(issuer_cert, openssl.crypto.X509):
 			issuer_cert_subject = issuer_cert.get_subject()
-		elif type(issuer_cert) is openssl.crypto.X509Name:
+		elif isinstance(issuer_cert, openssl.crypto.X509Name):
 			issuer_cert_subject = issuer_cert
-		if type(issuer_cert_subject) is openssl.crypto.X509Name:
+		if isinstance(issuer_cert_subject, openssl.crypto.X509Name):
 			issuer_cert_name = issuer_cert_subject.CN
 			issuer_cert_dn = repr(issuer_cert_subject)
 			if issuer_cert_dn is not None:
@@ -216,7 +220,7 @@ def scan_ip(host, port, timeout, starttls=None):
 			first_chain_cert = None
 		else:
 			first_chain_cert = peer_cert_chain[1]
-			if type(peer_cert_chain[1].get_subject()) is openssl.crypto.X509Name:
+			if isinstance(peer_cert_chain[1].get_subject(), openssl.crypto.X509Name):
 				first_chain_cert = peer_cert_chain[1].get_subject().CN
 			else:
 				first_chain_cert = ""
@@ -224,22 +228,19 @@ def scan_ip(host, port, timeout, starttls=None):
 		result.update({'discovered': 1, 'protocol': sock.get_protocol_version_name(), 'cipher': sock.get_cipher_name(), 'notAfter': notafter_time, 'notBefore': notbefore_time, 'subject_cn': peer_cert_name, 'subject_dn': peer_cert_dn, 'issuer_cn': issuer_cert_name, 'issuer_dn': issuer_cert_dn, 'serial': peer_cert.get_serial_number(), 'subject_hash': peer_cert.subject_name_hash(), 'digest': peer_cert.digest('SHA1').decode('utf-8').replace(':', '').lower(), 'sans': sans, 'first_chain_cert': first_chain_cert, 'key_size': key_size})
 		return result
 
-	except socket.timeout as e1:
+	except socket.timeout as ex:
 		signal.alarm(0)
-		result.update({'discovered': 0, 'exception': str(type(e1)) + ": " + str(e1)})
-	except socket.error as e2:
+		result.update({'discovered': 0, 'exception': str(type(ex)) + ": " + str(ex)})
+	except socket.error as ex:
 		signal.alarm(0)
-		if e2.args[0] in [111, 113]:
+		if ex.args[0] in [111, 113]:
 			# No route to host / connection refused
-			result.update({'discovered': 0, 'exception': str(type(e2)) + ": " + str(e2.args)})
+			result.update({'discovered': 0, 'exception': str(type(ex)) + ": " + str(ex.args)})
 		else:
-			result.update({'discovered': -1, 'exception': str(type(e2)) + ": " + str(e2.args)})
-	except InterruptException as e3:
+			result.update({'discovered': -1, 'exception': str(type(ex)) + ": " + str(ex.args)})
+	except Exception as ex:
 		signal.alarm(0)
-		result.update({'discovered': -1, 'exception': str(type(e3)) + ": " + str(e3)})
-	except Exception as e4:
-		signal.alarm(0)
-		result.update({'discovered': -1, 'exception': str(type(e4)) + ": " + str(e4)})
+		result.update({'discovered': -1, 'exception': str(type(ex)) + ": " + str(ex)})
 
 	return result
 
@@ -250,7 +251,7 @@ total_searches = 0
 last_percentage = ""
 g_helper = None
 
-def callback_func(arg):
+def callback_func(_arg):
 	"""Callback function when a worker finishes to update statistics."""
 
 	global total_results, total_searches, last_percentage, g_helper
@@ -267,7 +268,8 @@ def callback_func(arg):
 			# Catch all exceptions so we don't break the pool
 			pass
 
-def run(helper, options):
+# pylint: disable=too-many-branches,too-many-statements
+def run(helper, _options):
 	"""Run the certificate scan."""
 
 	global total_results, total_searches, g_helper
@@ -331,37 +333,37 @@ def run(helper, options):
 			if 'exception' in entry:
 				exception_count = exception_count + 1
 				continue
-			else:
-				# Default to valid chain
-				chain_check = 0
-				if entry['first_chain_cert'] is None:
-					if entry['subject_cn'] == entry['issuer_cn']:
-						# Self-signed
-						chain_check = 3
-					else:
-						# No certificate chain
-						chain_check = 1
 
+			# Default to valid chain
+			chain_check = 0
+			if entry['first_chain_cert'] is None:
+				if entry['subject_cn'] == entry['issuer_cn']:
+					# Self-signed
+					chain_check = 3
 				else:
-					if entry['first_chain_cert'] != entry['issuer_cn']:
-						# Bad certificate chain
-						chain_check = 2
+					# No certificate chain
+					chain_check = 1
 
-				# If it's a cert we've not seen yet in this current scan
-				if entry['digest'] not in add_digests:
-					# Note that we've seen it
-					add_digests.add(entry['digest'])
+			else:
+				if entry['first_chain_cert'] != entry['issuer_cn']:
+					# Bad certificate chain
+					chain_check = 2
 
-					# Stick it in the database
-					new_certs = 0
-					cur.execute("INSERT IGNORE INTO `certificate` (`digest`, `subjectHash`, `subjectCN`, `subjectDN`, `notBefore`, `notAfter`, `issuerCN`, `issuerDN`, `notes`, `keySize`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (entry['digest'], entry['subject_hash'], entry['subject_cn'], entry['subject_dn'], entry['notBefore'], entry['notAfter'], entry['issuer_cn'], entry['issuer_dn'], "", entry['key_size']))
+			# If it's a cert we've not seen yet in this current scan
+			if entry['digest'] not in add_digests:
+				# Note that we've seen it
+				add_digests.add(entry['digest'])
 
-					# Stick the SANs in the database
-					for san in entry['sans']:
-						cur.execute("INSERT IGNORE INTO `certificate_sans` (`cert_digest`, `san`) VALUES (%s, %s)", (entry['digest'], san))
+				# Stick it in the database
+				new_certs = 0
+				cur.execute("INSERT IGNORE INTO `certificate` (`digest`, `subjectHash`, `subjectCN`, `subjectDN`, `notBefore`, `notAfter`, `issuerCN`, `issuerDN`, `notes`, `keySize`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (entry['digest'], entry['subject_hash'], entry['subject_cn'], entry['subject_dn'], entry['notBefore'], entry['notAfter'], entry['issuer_cn'], entry['issuer_dn'], "", entry['key_size']))
 
-				cur.execute("INSERT INTO `scan_result` (`host`, `port`, `cert_digest`, `when`, `chain_state`) VALUES (%s, %s, %s, %s, %s)", (entry['host'], entry['port'], entry['digest'], now, chain_check))
-				total_hits = total_hits + 1
+				# Stick the SANs in the database
+				for san in entry['sans']:
+					cur.execute("INSERT IGNORE INTO `certificate_sans` (`cert_digest`, `san`) VALUES (%s, %s)", (entry['digest'], san))
+
+			cur.execute("INSERT INTO `scan_result` (`host`, `port`, `cert_digest`, `when`, `chain_state`) VALUES (%s, %s, %s, %s, %s)", (entry['host'], entry['port'], entry['digest'], now, chain_check))
+			total_hits = total_hits + 1
 
 	db.commit()
 	helper.end_event(description='Database updated: ' + str(total_hits) + ' hit(s), ' + str(new_certs) + ' new certificate(s), and ' + str(exception_count) + ' exception(s)')

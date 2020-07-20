@@ -3,20 +3,25 @@ import re
 from datetime import datetime
 
 import MySQLdb as mysql
+# pylint: disable=no-name-in-module
 from pyVmomi import vim
+# pylint: enable=no-name-in-module
 
 # The days of the week as they can appear in the config
 DAYS_OF_WEEK = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
 
 # Quick helper function to return a default if a given string is None
+# pylint: disable=invalid-name
 def ordefault(s, default=""):
 	return str(s) if s is not None and len(str(s).strip()) > 0 else str(default)
 
+# pylint: disable=invalid-name
 def uniqify(l, k):
 	seen = set()
 	return [d for d in l if d[k] not in seen and not seen.add(d[k])]
 
-def run(helper, options):
+# pylint: disable=too-many-branches,too-many-statements,too-many-nested-blocks
+def run(helper, _options):
 	if 'SYSTEM_EXPIRE_NOTIFY_CONFIG' not in helper.config:
 		helper.event('expire_notify_unconfigured', success=False, description='Missing configuration for VM expiry notification', oneshot=True)
 		return
@@ -54,7 +59,7 @@ def run(helper, options):
 				expiry_days = (system['expiry_date'] - datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)).days
 
 				# Config validation
-				if type(report_config['when_days']) is not list:
+				if not isinstance(report_config['when_days'], list):
 					when_days = [report_config['when_days']]
 				else:
 					when_days = report_config['when_days']
@@ -72,7 +77,7 @@ def run(helper, options):
 				# should be e-mailing on this day of the week. If we shouldn't, we override the
 				# notify flag (as set above) to prevent the e-mail
 				if 'weekly_on' in report_config:
-					if type(report_config['weekly_on']) is not list:
+					if not isinstance(report_config['weekly_on'], list):
 						weekly_on = [report_config['weekly_on']]
 					else:
 						weekly_on = report_config['weekly_on']
@@ -88,7 +93,7 @@ def run(helper, options):
 				# If we've decided that we should notify the user
 				if notify:
 					# Config validation
-					if type(report_config['who']) is not list:
+					if not isinstance(report_config['who'], list):
 						recipients = [report_config['who']]
 					else:
 						recipients = report_config['who']
@@ -118,13 +123,13 @@ def run(helper, options):
 							# Assume an e-mail address
 							email = recipient
 
-						# If we found an e-mail address, keep note of the system 
+						# If we found an e-mail address, keep note of the system
 						if email is not None:
 							if email in email_system_map:
 								email_system_map[email].append(system)
 							else:
 								email_system_map[email] = [system]
-							
+
 		## We've determined what e-mails need to be sent notifications about which systems
 		for email in email_system_map:
 			email_count = email_count + 1
@@ -158,6 +163,6 @@ def run(helper, options):
 
 			# Send the e-mail
 			helper.lib.send_email(email, 'Systems expiration warning: ' + str(len(unique_systems)) + ' system(s) expiring soon', message)
-				
+
 		# End this report task
 		helper.end_event(description='Report ' + report_config['description'] + ' found ' + str(system_count) + ' expiring system(s), generating ' + str(email_count) + ' e-mail(s)')

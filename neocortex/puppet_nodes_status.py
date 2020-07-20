@@ -1,10 +1,13 @@
 
 import MySQLdb as mysql
 
+# bin/neocortex modifies sys.path so these are importable.
+# pylint: disable=import-error
 from corpus.puppetdb_connector import PuppetDBConnector
+# pylint: enable=import-error
 
 
-def run(helper, options):
+def run(helper, _options):
 	"""
 	Queries PuppetDB and updates `puppet_nodes` with last report status
 	I.e. `last_failed`, `last_changed` and `noop_since`.
@@ -13,17 +16,17 @@ def run(helper, options):
 	# Create the PuppetDB object.
 	helper.event("puppetdb_connect", "Connecting to PuppetDB.")
 	puppet = PuppetDBConnector(
-		host = helper.config["PUPPETDB_HOST"],
-		port = helper.config["PUPPETDB_PORT"],
-		ssl_cert = helper.config["PUPPETDB_SSL_CERT"],
-		ssl_key = helper.config["PUPPETDB_SSL_KEY"],
-		ssl_verify = helper.config["PUPPETDB_SSL_VERIFY"],
+		host=helper.config["PUPPETDB_HOST"],
+		port=helper.config["PUPPETDB_PORT"],
+		ssl_cert=helper.config["PUPPETDB_SSL_CERT"],
+		ssl_key=helper.config["PUPPETDB_SSL_KEY"],
+		ssl_verify=helper.config["PUPPETDB_SSL_VERIFY"],
 	)
 	helper.end_event(description="Successfully connected to PuppetDB.")
 
 	# Get the nodes from PuppetDB.
 	helper.event("puppet_nodes", "Getting nodes from PuppetDB.")
-	nodes = puppet.get_nodes(with_status = True)
+	nodes = puppet.get_nodes(with_status=True)
 	helper.end_event(description="Received nodes from PuppetDB.")
 
 	# Create a database cursor

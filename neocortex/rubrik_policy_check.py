@@ -1,9 +1,12 @@
 import MySQLdb as mysql
 
+# bin/neocortex modifies sys.path so these are importable.
+# pylint: disable=import-error
 from corpus import rubrik
+# pylint: enable=import-error
 
-
-def run(helper, options):
+# pylint: disable=too-many-branches,too-many-statements
+def run(helper, _options):
 	## GET ALL THE VMS
 
 	helper.event('_get_current_status', 'Getting the current Cortex-defined backup status of systems')
@@ -22,15 +25,15 @@ def run(helper, options):
 	sla_domains = rubrik_connection.get_sla_domains()
 
 	# Go through the domains and keep the domains
-	local_domains = [ domain['name'] for domain in sla_domains['data'] ]
+	local_domains = [domain['name'] for domain in sla_domains['data']]
 
 	# Create a map of SLA-Domain-Name to SLA-Domain-Id
-	sla_name_id_map = { d['name']: d['id'] for d in sla_domains['data'] }
+	sla_name_id_map = {d['name']: d['id'] for d in sla_domains['data']}
 
 	helper.end_event(description='SLA domains retrieved')
 
 	# Map environment names to SLA domains
-	env_to_sla_map = { e['name']: e['rubrik_sla'] for e in helper.config['ENVIRONMENTS'] }
+	env_to_sla_map = {e['name']: e['rubrik_sla'] for e in helper.config['ENVIRONMENTS']}
 
 	## CREATE AN EMAIL MESSAGE
 	email_report = ""
@@ -134,7 +137,7 @@ def run(helper, options):
 		message += "https://{cortex_domain}/task/status/{task_id}\n\n".format(cortex_domain=helper.config['CORTEX_DOMAIN'], task_id=helper.task_id)
 
 		for email in helper.config["RUBRIK_NOTIFY_EMAILS"]:
-			 helper.lib.send_email(email, subject, message)
+			helper.lib.send_email(email, subject, message)
 
 	# Oneshot this as the original _vm_task event above may have already ended
 	helper.event("_rubrik_end", "VM SLA assignments updated: {} changes made".format(changes), oneshot=True)

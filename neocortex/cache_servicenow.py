@@ -3,7 +3,7 @@ import MySQLdb as mysql
 import requests
 
 
-def run(helper, options):
+def run(helper, _options):
 	# Connect to the database
 	db = helper.db_connect()
 	curd = db.cursor(mysql.cursors.DictCursor)
@@ -14,7 +14,7 @@ def run(helper, options):
 	# Download each of the configured tables
 	for table in helper.config['CMDB_CACHED_CLASSES']:
 		# Start event
-		helper.event('servicenow_download_ci', 'Downloading "' + helper.config['CMDB_CACHED_CLASSES'][table] + '" data from ServiceNow instance ' + helper.config['SN_HOST'])	
+		helper.event('servicenow_download_ci', 'Downloading "' + helper.config['CMDB_CACHED_CLASSES'][table] + '" data from ServiceNow instance ' + helper.config['SN_HOST'])
 
 		# Make the request to download all CI data using the table API, which can
 		# be limited to certain fields, and can resolve both choice value and
@@ -29,7 +29,7 @@ def run(helper, options):
 
 	helper.event('delete_cache', 'Deleting existing cache')
 
-	# Delete all the server CIs from the table (we must do this before we delete 
+	# Delete all the server CIs from the table (we must do this before we delete
 	# from the choices tables as there is a foreign key constraint)
 	curd.execute('DELETE FROM `sncache_cmdb_ci`;')
 
