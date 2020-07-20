@@ -2,52 +2,60 @@
 import logging
 import signal
 import sys
+import traceback
 
 import MySQLdb as mysql
 from setproctitle import setproctitle  # pip install setproctitle
 
+# bin/neocortex modifies sys.path so these are importable.
+# pylint: disable=import-error
 from corpus import Corpus
+# pylint: enable=import-error
 
 
-class TaskHelper(object):
+# pylint: disable=too-many-instance-attributes
+class TaskHelper:
 
 	# Task / Event statuses
 	STATUS_PROGRESS = 0
-	STATUS_SUCCESS  = 1
-	STATUS_FAILED   = 2
-	STATUS_WARNED   = 3
-	STATUS_CHANGED  = 4
+	STATUS_SUCCESS = 1
+	STATUS_FAILED = 2
+	STATUS_WARNED = 3
+	STATUS_CHANGED = 4
 
 	# Flash Message Category Map
 	CATEGORY_MAP = {
-		'message': { 'success': True, 'warning': False },
-		'success': { 'success': True, 'warning': False },
-		'warning': { 'success': True, 'warning': True },
-		'error'  : { 'success': False, 'warning': False },
-		'fatal'  : { 'success': False, 'warning': False },
+		'message': {'success': True, 'warning': False},
+		'success': {'success': True, 'warning': False},
+		'warning': {'success': True, 'warning': True},
+		'error'  : {'success': False, 'warning': False},
+		'fatal'  : {'success': False, 'warning': False},
 	}
-	
+
 	def __init__(self, config, workflow_name, task_id, username):
 		"""Initialises the TaskHelper object"""
 
-		self.config         = config
-		self.workflow_name  = workflow_name
-		self.task_id        = task_id
-		self.username       = username
-		self.event_id       = -1
+		self.config = config
+		self.workflow_name = workflow_name
+		self.task_id = task_id
+		self.username = username
+		self.event_id = -1
 		self.event_problems = 0
-		self.logger         = logging.getLogger('neocortex')
+		self.logger = logging.getLogger('neocortex')
+		self.db = None
+		self.curd = None
+		self.lib = None
 
-	def _signal_handler(self, signal, frame):
+	def _signal_handler(self, _signum, _frame):
 		"""Marks task and event as failed when interrupted by a signal, and then exits"""
 
-		self.logger.info('task id ' + str(self.task_id) + ' caught exit signal')
+		self.logger.info("task id %s caught exit signal", self.task_id)
 
 		self.end_event(success=False)
-		self.event('neocortex.shutdown','The task was terminated because neocortex was asked to shutdown')
+		self.event('neocortex.shutdown', 'The task was terminated because neocortex was asked to shutdown')
 		self._end_task(success=False)
 
-		self.logger.warning('task id ' + str(self.task_id) + ' marked as finished')
+		self.logger.warning("task id %s marked as finished", self.task_id)
 		sys.exit(0)
 
 	def run(self, task_module, options):
@@ -59,9 +67,9 @@ class TaskHelper(object):
 		signal.signal(signal.SIGTERM, self._signal_handler)
 		signal.signal(signal.SIGINT, self._signal_handler)
 
-		self.db   = self.db_connect()
+		self.db = self.db_connect()
 		self.curd = self.db.cursor(mysql.cursors.DictCursor)
-		self.lib  = Corpus(self.db, self.config)
+		self.lib = Corpus(self.db, self.config)
 
 		## Set the process name
 		setproctitle("neocortex task ID " + str(self.task_id) + " " + self.workflow_name)
@@ -89,18 +97,21 @@ class TaskHelper(object):
 
 		exception_type = str(type(ex).__name__)
 		exception_message = str(ex)
-		self.curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())", 
-			('neocortex.task',self.task_id, self.workflow_name + "." + 'exception', self.username, "The task failed because an exception was raised: " + exception_type + " - " + exception_message, self.STATUS_FAILED))
+		self.curd.execute(
+			"INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())",
+			('neocortex.task', self.task_id, self.workflow_name + "." + 'exception', self.username, "The task failed because an exception was raised: " + exception_type + " - " + exception_message, self.STATUS_FAILED)
+		)
 		self.db.commit()
 
-		import traceback
-		self.logger.error('Unhandled exception caused task to end:\n' + traceback.format_exc())
+		self.logger.error('Unhandled exception caused task to end: %s', traceback.format_exc())
 
 	def _log_fatal_error(self, message):
 		"""Logs a fatal error into the events for this task"""
 
-		self.curd.execute("INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())", 
-			('neocortex.task',self.task_id, self.workflow_name + "." + 'exception', self.username, message, self.STATUS_FAILED))
+		self.curd.execute(
+			"INSERT INTO `events` (`source`, `related_id`, `name`, `username`, `desc`, `status`, `start`, `end`) VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW())",
+			('neocortex.task', self.task_id, self.workflow_name + "." + 'exception', self.username, message, self.STATUS_FAILED)
+		)
 		self.db.commit()
 
 	def event(self, name, description, success=True, oneshot=False, warning=False, changed=False):
@@ -138,13 +149,13 @@ class TaskHelper(object):
 		"""Ends the currently running event, updating it's description and status as necessary"""
 
 		# Cast the description to a string
-		if description != None:
+		if description is not None:
 			description = str(description)
 
 		if self.event_id == -1:
 			return False
 
-		if not description == None:
+		if description is not None:
 			self.update_event(description)
 
 		if success:
@@ -190,7 +201,7 @@ class TaskHelper(object):
 		self.db.commit()
 		self.event_problems = 0
 
-		self.logger.info('Task ' + str(self.task_id) + ' ended')
+		self.logger.info("task %s ended", self.task_id)
 
 	def get_problem_count(self):
 		"""Returns the number of events within the task that have failed or finished with warnings."""

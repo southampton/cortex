@@ -5,9 +5,7 @@ import json
 import MySQLdb as mysql
 
 
-def run(helper, options):
-
-	time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+def run(helper, _options):
 
 	# Set up cursor to access the DB
 	curd = helper.db.cursor(mysql.cursors.DictCursor)
@@ -15,7 +13,7 @@ def run(helper, options):
 	# lock the table in read mode
 	helper.event('get_current_status', 'Getting the current status of workflows')
 	curd.execute('LOCK TABLES `kv_settings` READ;')
-	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;',('workflow_lock_status',))
+	curd.execute('SELECT `value` FROM `kv_settings` WHERE `key`=%s;', ('workflow_lock_status',))
 	current_value = curd.fetchone()
 
 	# unlock the table once run
@@ -38,11 +36,15 @@ def run(helper, options):
 
 	key = 'workflow_lock_status'
 
-	newValue = 'Locked' if current_status == 'Unlocked' else 'Unlocked'
-	value = json.dumps({'username': helper.username, 'time': str(time), 'status': newValue})
+	new_lock_state = 'Locked' if current_status == 'Unlocked' else 'Unlocked'
+	value = json.dumps({
+		'username': helper.username,
+		'time': datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+		'status': new_lock_state
+	})
 
 	# setting new status
-	helper.event('set_new_status', 'Setting new status to ' + newValue)
+	helper.event('set_new_status', 'Setting new status to ' + new_lock_state)
 	query = 'INSERT INTO `kv_settings` (`key`, `value`) VALUES (%s, %s)'
 	params = (key, value,)
 	query = query + 'ON DUPLICATE KEY UPDATE `value` = %s'

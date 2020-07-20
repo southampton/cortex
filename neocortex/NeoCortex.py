@@ -7,24 +7,30 @@ import multiprocessing
 import os
 import signal
 import sys
+import grp
+import pwd
 from multiprocessing import Process
 
 import MySQLdb as mysql
 import Pyro4
-from setproctitle import setproctitle  # pip install setproctitle
+from setproctitle import setproctitle
 
+# bin/neocortex modifies sys.path so these are importable.
+# pylint: disable=import-error,no-name-in-module
 from corpus import Corpus
 from neocortex.TaskHelper import TaskHelper
+# pylint: enable=import-error,no-name-in-module
 
 CONFIG_BASE_DIR = '/data/cortex'
 Pyro4.config.SERVERTYPE = "multiplex"
 Pyro4.config.SOCK_REUSE = True
 
-class NeoCortex(object):
+# pylint: disable=no-self-use
+class NeoCortex:
 
-	debug  = False
-	db     = None
-	pyro   = None
+	debug = False
+	db = None
+	pyro = None
 	logger = None
 
 	## PRIVATE METHODS #########################################################
@@ -54,14 +60,14 @@ class NeoCortex(object):
 		## preload a connection to mysql
 		self._get_db()
 
-	def _signal_handler_term(self, signal, frame):
+	def _signal_handler_term(self, _signum, _frame):
 		self._signal_handler('SIGTERM')
 
-	def _signal_handler_int(self, signal, frame):
+	def _signal_handler_int(self, _signum, _frame):
 		self._signal_handler('SIGINT')
 
-	def _signal_handler(self, signal):
-		self.logger.info('caught signal ' + str(signal) + "; exiting")
+	def _signal_handler(self, sig):
+		self.logger.info("caught signal %s; exiting", sig)
 		Pyro4.core.Daemon.shutdown(self.pyro)
 		sys.exit(0)
 
@@ -75,7 +81,7 @@ class NeoCortex(object):
 				try:
 					curd = self.db.cursor(mysql.cursors.DictCursor)
 					curd.execute('SELECT 1')
-					result = curd.fetchone();
+					result = curd.fetchone()
 
 					if result:
 						return self.db
@@ -114,28 +120,29 @@ class NeoCortex(object):
 			for config_file in sorted(os.listdir(config_directory)):
 				if config_file.endswith(".conf"):
 					self.config.update(self._load_config(os.path.join(config_directory, config_file)))
-					self.logger.info("NeoCortex: Loaded config from cortex.conf.d/{f}.".format(f=config_file))
+					self.logger.info("NeoCortex: Loaded config from cortex.conf.d/%s.", config_file)
 
 		## Ensure we have required config options
 		for wkey in ['NEOCORTEX_SET_GID', 'NEOCORTEX_SET_UID', 'NEOCORTEX_KEY', 'WORKFLOWS_DIR', 'NEOCORTEX_TASKS_DIR']:
 			if not wkey in list(self.config.keys()):
-				self.logger.critical("Missing configuation option: " + wkey)
+				self.logger.critical("Missing configuation option: %s", wkey)
 				sys.exit(1)
 
-		if 'DEBUG' in list(self.config.keys()):
-			if self.config['DEBUG'] == True:
-				self.debug = True
+		if 'DEBUG' in list(self.config.keys()) and self.config['DEBUG']:
+			self.debug = True
 
 	def _load_config(self, filename):
 		"""Extracts the settings from the given config file."""
 
 		# Start a new module, which will be the context for parsing the config
+		# pylint: disable=invalid-name
 		d = imp.new_module('config')
 		d.__file__ = filename
 
 		# Read the contents of the configuration file and execute it as a
 		# Python script within the context of a new module
 		with open(filename, "r") as config_file:
+			# pylint: disable=exec-used
 			exec(compile(config_file.read(), filename, 'exec'), d.__dict__)
 
 		# Extract the config options, which are those variables whose names are
@@ -152,13 +159,11 @@ class NeoCortex(object):
 		if str(self.config['NEOCORTEX_SET_GID']).isdigit():
 			os.setgid(self.config['NEOCORTEX_SET_GID'])
 		else:
-			import grp
 			os.setgid(grp.getgrnam(self.config['NEOCORTEX_SET_GID']).gr_gid)
 
 		if str(self.config['NEOCORTEX_SET_UID']).isdigit():
 			os.setuid(self.config['NEOCORTEX_SET_UID'])
 		else:
-			import pwd
 			os.setuid(pwd.getpwnam(self.config['NEOCORTEX_SET_UID']).pw_uid)
 
 	def _record_task(self, module_name, username, description=None):
@@ -198,18 +203,18 @@ class NeoCortex(object):
 		if not os.path.isdir(fqp):
 			raise IOError("The workflow name was not a directory")
 
-		task_file = os.path.join(fqp,"task.py")
+		task_file = os.path.join(fqp, "task.py")
 		try:
 			task_module = imp.load_source(workflow_name, task_file)
 		except Exception as ex:
 			raise ImportError("Could not load workflow from file " + task_file + ": " + str(ex))
 
-		task_id      = self._record_task(workflow_name, username, description)
-		task_helper  = TaskHelper(self.config, workflow_name, task_id, username)
-		task         = Process(target=task_helper.run, args=(task_module, options), name=json.dumps({'id': task_id, 'name': workflow_name, 'type': 'workflow'}))
+		task_id = self._record_task(workflow_name, username, description)
+		task_helper = TaskHelper(self.config, workflow_name, task_id, username)
+		task = Process(target=task_helper.run, args=(task_module, options), name=json.dumps({'id': task_id, 'name': workflow_name, 'type': 'workflow'}))
 		task.start()
 
-		self.logger.info('started task workflow/' + workflow_name + ' with task id ' + str(task_id) + ' and worker pid ' + str(task.pid))
+		self.logger.info("started task workflow/%s with task id %s and worker pid %s", workflow_name, task_id, task.pid)
 
 		return task_id
 
@@ -222,7 +227,7 @@ class NeoCortex(object):
 		for proc in active_processes:
 			proc_data = json.loads(proc.name)
 			if proc_data['name'] == task_name:
-				self.logger.error('Refusing to start a second instance of task: ' + str(task_name))
+				self.logger.error("refusing to start a second instance of task: %s", task_name)
 				raise Exception("That task is already running, refusing to start another instance")
 
 		if not os.path.isdir(self.config['NEOCORTEX_TASKS_DIR']):
@@ -231,21 +236,21 @@ class NeoCortex(object):
 		task_file = os.path.join(self.config['NEOCORTEX_TASKS_DIR'], task_file)
 
 		if not os.path.exists(task_file):
-			self.logger.error('File not found: ' + str(task_file))
+			self.logger.error("file not found: %s", task_file)
 			raise IOError("The neocortex task file specified was not found")
 
 		try:
 			task_module = imp.load_source(task_name, task_file)
 		except Exception as ex:
-			self.logger.error('Failed to load task: ' + str(task_file) + ': ' + str(ex))
+			self.logger.error("failed to load task: %s: %s", task_file, ex)
 			raise ImportError("Could not load internal task from file " + task_file + ": " + str(ex))
 
-		task_id      = self._record_task(task_name, username, description)
-		task_helper  = TaskHelper(self.config, task_name, task_id, username)
-		task         = Process(target=task_helper.run, args=(task_module, options), name=json.dumps({'id': task_id, 'name': task_name, 'type': 'internal'}))
+		task_id = self._record_task(task_name, username, description)
+		task_helper = TaskHelper(self.config, task_name, task_id, username)
+		task = Process(target=task_helper.run, args=(task_module, options), name=json.dumps({'id': task_id, 'name': task_name, 'type': 'internal'}))
 		task.start()
 
-		self.logger.info('started task internal/' + task_name + ' with task id ' + str(task_id) + ' and worker pid ' + str(task.pid))
+		self.logger.info("started task internal/%s with task id %s and worker pid %s", task_name, task_id, task.pid)
 
 		return task_id
 

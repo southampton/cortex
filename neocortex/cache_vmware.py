@@ -2,8 +2,9 @@
 import signal
 
 import MySQLdb as mysql
+# pylint: disable=no-name-in-module
 from pyVmomi import vim
-
+# pylint: enable=no-name-in-module
 
 def sigalrm_handler(signum, frame):
 	"""
@@ -15,12 +16,15 @@ def sigalrm_handler(signum, frame):
 	# Raise an exception, which should interrupt and terminate
 	raise Exception("Timed out when communicating with vCenter")
 
+# pylint: disable=too-many-branches,too-many-statements
 def run(helper, options):
 	"""
 	Clears the necessary database tables and re-imports the data
 	from VMware. Performed as a single transaction, so if any part
 	of the import fails, the old data is retained.
 	"""
+
+	# pylint: disable=invalid-name,protected-access
 
 	## Get a lock so that nobody will attempt to update the database cache
 	## whilst we're running an update. We don't use MySQL locks because WRITE locks
@@ -30,7 +34,7 @@ def run(helper, options):
 	## and then the lock is never ever unlocked - the timeout ensures that eventually it is
 	## and cortex might recover itself. maybe. the sleep is set to 1, up from the insane default of 0.1
 	helper.event("vmware_cache_lock", "Obtaining VMware cache lock")
-	with helper.lib.rdb.lock('lock/update_vmware_cache',timeout=1800,sleep=1):
+	with helper.lib.rdb.lock('lock/update_vmware_cache', timeout=1800, sleep=1):
 		helper.end_event(description="Obtained VMware cache lock")
 
 		## Get cursor to the database as a /seperate/ connection
@@ -59,11 +63,10 @@ def run(helper, options):
 		clusters = {}
 		folders = {}
 
-		skip_vms = False
-		if options is not None and 'skip_vms' in options and options['skip_vms'] == True:
-			skip_vms = True
+		skip_vms = bool(options is not None and 'skip_vms' in options and options['skip_vms'])
 
 		## For each vCenter that appears in the configuration
+		# pylint: disable=too-many-boolean-expressions,too-many-nested-blocks
 		for key in list(helper.config['VMWARE'].keys()):
 			# Get the hostname
 			instance = helper.config['VMWARE'][key]
@@ -83,12 +86,14 @@ def run(helper, options):
 
 				# If the task options don't say to skip VM information
 				if not skip_vms:
-					vm_properties = ["name", "config.uuid", "config.hardware.numCPU",
-							 "config.hardware.memoryMB", "runtime.powerState",
-							 "config.guestFullName", "config.guestId",
-							 "config.version", "guest.hostName", "guest.ipAddress",
-							 "config.annotation", "resourcePool", "guest.toolsRunningStatus",
-							 "guest.toolsVersionStatus2", "config.template"]
+					vm_properties = [
+						"name", "config.uuid", "config.hardware.numCPU",
+						"config.hardware.memoryMB", "runtime.powerState",
+						"config.guestFullName", "config.guestId",
+						"config.version", "guest.hostName", "guest.ipAddress",
+						"config.annotation", "resourcePool", "guest.toolsRunningStatus",
+						"guest.toolsVersionStatus2", "config.template"
+					]
 
 					## List VMs ##########
 					helper.event("vmware_cache_vm", "Downloading virtual machine information from " + instance['hostname'])
@@ -98,10 +103,13 @@ def run(helper, options):
 
 					# Collect a subset of data on all VMs
 					signal.alarm(timeout_alarm)
-					vm_data_proxy = helper.lib.vmware_collect_properties(si, view_ref=view,
-									  obj_type=vim.VirtualMachine,
-									  path_set=vm_properties,
-									  include_mors=True)
+					vm_data_proxy = helper.lib.vmware_collect_properties(
+						si,
+						view_ref=view,
+						obj_type=vim.VirtualMachine,
+						path_set=vm_properties,
+						include_mors=True
+					)
 
 					# Start a vm_data section for this vCenter
 					vm_data[key] = {}
@@ -148,7 +156,7 @@ def run(helper, options):
 
 				for datacenter in dcs[key]:
 					folders[datacenter._moId] = []
-					recurse_folder(datacenter.vmFolder,folders[datacenter._moId])
+					recurse_folder(datacenter.vmFolder, folders[datacenter._moId])
 
 				signal.alarm(0)
 				helper.end_event(description="Downloaded datacenter and folder information for " + instance['hostname'])
@@ -185,9 +193,9 @@ def run(helper, options):
 							break
 
 					# Calculate cluster statistics
-					total_ram   = 0
+					total_ram = 0
 					total_cores = 0
-					total_hz    = 0
+					total_hz = 0
 					total_cpu_usage = 0
 					total_ram_usage = 0
 
@@ -283,7 +291,7 @@ def run(helper, options):
 					curd.execute("INSERT INTO `vmware_cache_datacenters` (`id`, `name`, `vcenter`) VALUES (%s, %s, %s)", (dc._moId, dc.name, instance['hostname']))
 
 					for folder in folders[dc._moId]:
-						curd.execute("INSERT INTO `vmware_cache_folders` (`id`, `name`, `vcenter`, `did`, `parent`) VALUES (%s, %s, %s, %s, %s)",(folder['_moId'], folder['name'], instance['hostname'], dc._moId, folder['parent']))
+						curd.execute("INSERT INTO `vmware_cache_folders` (`id`, `name`, `vcenter`, `did`, `parent`) VALUES (%s, %s, %s, %s, %s)", (folder['_moId'], folder['name'], instance['hostname'], dc._moId, folder['parent']))
 
 				# For each cluster
 				for moId in clusters[key]:
@@ -314,6 +322,7 @@ def recurse_folder(folder, folders):
 
 	for child in children:
 		if isinstance(child, vim.Folder):
+			# pylint: disable=protected-access
 			folders.append({'_moId': child._moId, 'name': child.name, 'parent': folder._moId})
 
 			if len(child.childEntity) > 0:

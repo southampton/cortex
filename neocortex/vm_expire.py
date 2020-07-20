@@ -1,9 +1,11 @@
 
 import MySQLdb as mysql
+# pylint: disable=no-name-in-module
 from pyVmomi import vim
+# pylint: enable=no-name-in-module
 
 
-def run(helper, options):
+def run(helper, _options):
 	# Connect to the database
 	db = helper.db_connect()
 	curd = db.cursor(mysql.cursors.SSDictCursor)
@@ -25,17 +27,16 @@ def run(helper, options):
 				try:
 					helper.lib.vmware_vm_shutdown_guest(vm)
 
-				except vim.fault.ToolsUnavailable as e:
-
+				except vim.fault.ToolsUnavailable:
 					try:
 						helper.lib.vmware_vm_poweroff(vm)
 					except Exception:
 						failed = True
 
 				except Exception:
-					failed = True				
+					failed = True
 
 				if not failed:
-					helper.event('check_expire_poweroff', 'The system ' + row['name'] + " (ID " + str(row['id']) + ") has been turned off",oneshot=True)
+					helper.event('check_expire_poweroff', 'The system ' + row['name'] + " (ID " + str(row['id']) + ") has been turned off", oneshot=True)
 				else:
-					helper.event('check_expire_poweroff', 'The system ' + row['name'] + " (ID " + str(row['id']) + ") failed to turn off",success=False,oneshot=True)
+					helper.event('check_expire_poweroff', 'The system ' + row['name'] + " (ID " + str(row['id']) + ") failed to turn off", success=False, oneshot=True)

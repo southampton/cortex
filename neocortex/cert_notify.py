@@ -4,14 +4,14 @@ import re
 import MySQLdb as mysql
 
 
-class Notifier(object):
+class Notifier:
 	"""Base class for notifiers. Just generates the default message content."""
 
 	def __init__(self, helper):
 		self.helper = helper
 
 	def generate_message_content(self, digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where):
-		contents =            "The following certificate will expire soon. Please see the details below to see if it is required, and renew it if necessary.\n"
+		contents = "The following certificate will expire soon. Please see the details below to see if it is required, and renew it if necessary.\n"
 		contents = contents + "\n"
 		contents = contents + "Subject CN: " + str(subject_cn) + "\n"
 		contents = contents + "Subject DN: " + str(subject_dn) + "\n"
@@ -29,7 +29,8 @@ class Notifier(object):
 
 		return contents
 
-	def generate_short_description(self, digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where):
+	# pylint: disable=no-self-use
+	def generate_short_description(self, _digest, subject_cn, _subject_dn, _issuer_cn, _issuer_dn, _not_before, not_after, _days, _sans, _where):
 		if subject_cn is None:
 			subject_cn = 'Unknown CN'
 		else:
@@ -68,7 +69,8 @@ class TicketNotifier(Notifier):
 		elif self.ticket_type == 'request':
 			self.helper.lib.servicenow_create_request(short_description, description, self.opener_sys_id, self.team_name, self.request_type, self.opener_sys_id)
 
-def run(helper, options):
+# pylint: disable=too-many-branches,too-many-statements
+def run(helper, _options):
 	"""Iterates over the certificates stored in the database and notifies of ones soon to expire."""
 
 	# Ensure we have some configuration
@@ -77,11 +79,11 @@ def run(helper, options):
 		return
 
 	# Get the configuration
-	if type(helper.config['CERT_SCAN_NOTIFY']) is dict:
-		# If we have a single dictionary, convert it to a list containing a single 
+	if isinstance(helper.config['CERT_SCAN_NOTIFY'], dict):
+		# If we have a single dictionary, convert it to a list containing a single
 		# dictionary for easier looping later
 		cert_scan_notify = [helper.config['CERT_SCAN_NOTIFY']]
-	elif type(helper.config['CERT_SCAN_NOTIFY']) is list:
+	elif isinstance(helper.config['CERT_SCAN_NOTIFY'], list):
 		cert_scan_notify = helper.config['CERT_SCAN_NOTIFY']
 	else:
 		raise helper.lib.TaskFatalError('Incorrect configuration for certificate notification')
@@ -140,13 +142,13 @@ def run(helper, options):
 
 		# Get the notification times
 		days_left = notifyee['days_left']
-		if type(days_left) is not list:
+		if not isinstance(days_left, list):
 			days_left = [days_left]
 
 		# For each number in the days_left array for this notifyee
 		for days in days_left:
-			# Get the number of certs expiring on this day. Note that we convert the 
-			# certificate expiry date, which is in UTC into local timezone for calculating 
+			# Get the number of certs expiring on this day. Note that we convert the
+			# certificate expiry date, which is in UTC into local timezone for calculating
 			# the number of days remaining on a certificate.
 			cur.execute('SELECT `digest`, `subjectCN`, `subjectDN`, `issuerCN`, `issuerDN`, `notBefore`, `notAfter`, `notify` FROM `certificate` WHERE DATE(CONVERT_TZ(`notAfter`, "+00:00", @@session.time_zone)) = DATE_ADD(DATE(NOW()), INTERVAL ' + str(days) + ' DAY)')
 			row = cur.fetchone()
@@ -168,7 +170,7 @@ def run(helper, options):
 						where = [cert_where['host'] + ':' + str(cert_where['port']) for cert_where in cert_cur.fetchall()]
 
 						notifier.notify(row['digest'], row['subjectCN'], row['subjectDN'], row['issuerCN'], row['issuerDN'], row['notBefore'], row['notAfter'], days, sans, where)
-				
+
 				row = cur.fetchone()
 
 		helper.end_event(description='Notified on expiry of ' + str(notifyee_cert_count) + ' certificates for notifyee ' + str(notifyee_num) + '/' + str(num_notifyees))
