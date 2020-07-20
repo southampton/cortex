@@ -1,163 +1,10 @@
-
-from datetime import datetime, timedelta
-
 import MySQLdb as mysql
 import pypuppetdb
 import yaml
 from flask import g, session, url_for
-from pypuppetdb.QueryBuilder import EqualsOperator
-from pypuppetdb.utils import json_to_datetime
 
 import cortex.lib.systems
 from cortex import app
-
-################################################################################
-
-# pylint: disable=too-many-branches
-class CortexPuppetBaseAPI(pypuppetdb.BaseAPI):
-	"""
-	Override pypuppetdb.BaseAPI to prvoide better reporting.
-	"""
-
-	def reports(self, **kwargs):
-		reports = self._query('reports', **kwargs)
-		for report in reports:
-			yield CortexPuppetReport(
-				api=self,
-				node=report['certname'],
-				hash_=report['hash'],
-				start=report['start_time'],
-				end=report['end_time'],
-				received=report['receive_time'],
-				version=report['configuration_version'],
-				format_=report['report_format'],
-				agent_version=report['puppet_version'],
-				transaction=report['transaction_uuid'],
-				environment=report['environment'],
-				status=report['status'],
-				noop=report.get('noop'),
-				noop_pending=report.get('noop_pending'),
-				metrics=report['metrics']['data'],
-				logs=report['logs']['data'],
-				code_id=report.get('code_id'),
-				catalog_uuid=report.get('catalog_uuid'),
-				cached_catalog_status=report.get('cached_catalog_status')
-			)
-
-	def nodes(self, unreported=2, with_status=False, **kwargs):
-		nodes = self._query('nodes', **kwargs)
-		now = datetime.utcnow()
-		# If we happen to only get one node back it
-		# won't be inside a list so iterating over it
-		# goes boom. Therefor we wrap a list around it.
-		if isinstance(nodes, dict):
-			nodes = [nodes, ]
-
-		if with_status:
-			latest_events = self.event_counts(
-				query=EqualsOperator("latest_report?", True),
-				summarize_by='certname'
-			)
-
-		for node in nodes:
-			node['status_report'] = None
-			node['events'] = None
-
-			if with_status:
-				status = [s for s in latest_events if s['subject']['title'] == node['certname']]
-
-				try:
-					node['status_report'] = node['latest_report_status']
-
-					if status:
-						node['events'] = status[0]
-				except KeyError:
-					if status:
-						node['events'] = status = status[0]
-						if status['successes'] > 0:
-							node['status_report'] = 'changed'
-						if status['noops'] > 0:
-							node['status_report'] = 'noop'
-						if status['failures'] > 0:
-							node['status_report'] = 'failed'
-					else:
-						node['status_report'] = 'unchanged'
-
-				# node report age
-				if node['report_timestamp'] is not None:
-					try:
-						last_report = json_to_datetime(
-							node['report_timestamp'])
-						last_report = last_report.replace(tzinfo=None)
-						unreported_border = now - timedelta(hours=unreported)
-						if last_report < unreported_border:
-							delta = (now - last_report)
-							node['unreported'] = True
-							node['unreported_time'] = '{0}d {1}h {2}m'.format(
-								delta.days,
-								int(delta.seconds / 3600),
-								int((delta.seconds % 3600) / 60)
-							)
-					except AttributeError:
-						node['unreported'] = True
-
-				if not node['report_timestamp']:
-					node['unreported'] = True
-
-			yield CortexPuppetNode(
-				self,
-				name=node['certname'],
-				deactivated=node['deactivated'],
-				expired=node['expired'],
-				report_timestamp=node['report_timestamp'],
-				catalog_timestamp=node['catalog_timestamp'],
-				facts_timestamp=node['facts_timestamp'],
-				status_report=node['status_report'],
-				noop=node.get('latest_report_noop'),
-				noop_pending=node.get('latest_report_noop_pending'),
-				events=node['events'],
-				unreported=node.get('unreported'),
-				unreported_time=node.get('unreported_time'),
-				report_environment=node['report_environment'],
-				catalog_environment=node['catalog_environment'],
-				facts_environment=node['facts_environment'],
-				latest_report_hash=node.get('latest_report_hash'),
-				cached_catalog_status=node.get('cached_catalog_status')
-			)
-
-class CortexPuppetReport(pypuppetdb.types.Report):
-	"""
-	Override pypuppetdb.types.Report to make the noop status available.
-	"""
-
-	# pylint: disable=dangerous-default-value
-	def __init__(self, api, node, hash_, start, end, received, version, format_, agent_version, transaction, status=None, metrics={}, logs={}, environment=None, noop=False, noop_pending=False, code_id=None, catalog_uuid=None, cached_catalog_status=None, producer=None):
-		# Call super init.
-		super(CortexPuppetReport, self).__init__(api, node, hash_, start, end, received, version, format_, agent_version, transaction, status, metrics, logs, environment, noop, noop_pending, code_id, catalog_uuid, cached_catalog_status, producer)
-		# Set noop
-		self.noop = noop
-
-class CortexPuppetNode(pypuppetdb.types.Node):
-	"""
-	Override pypuppetdb.types.Node to make the noop status available.
-	"""
-
-	def __init__(self, api, name, deactivated=None, expired=None, report_timestamp=None, catalog_timestamp=None, facts_timestamp=None, status_report=None, noop=False, noop_pending=False, events=None, unreported=False, unreported_time=None, report_environment='production', catalog_environment='production', facts_environment='production', latest_report_hash=None, cached_catalog_status=None):
-		# Call super init.
-		super(CortexPuppetNode, self).__init__(api, name, deactivated, expired, report_timestamp, catalog_timestamp, facts_timestamp, status_report, noop, noop_pending, events, unreported, unreported_time, report_environment, catalog_environment, facts_environment, latest_report_hash, cached_catalog_status)
-		# Set noop.
-		self.noop = noop
-
-def cortex_puppet_connect(host='localhost', port=8080, ssl_verify=False, ssl_key=None, ssl_cert=None, timeout=10, protocol=None, url_path='/', username=None, password=None, token=None):
-	"""
-	Cortex custom connect method for connecting to the PuppetDB API.
-	"""
-	return CortexPuppetBaseAPI(
-		host=host, port=port,
-		timeout=timeout, ssl_verify=ssl_verify, ssl_key=ssl_key,
-		ssl_cert=ssl_cert, protocol=protocol, url_path=url_path,
-		username=username, password=password, token=token
-	)
 
 ################################################################################
 
@@ -307,7 +154,7 @@ def puppetdb_connect():
 	application configuration."""
 
 	# Connect to PuppetDB
-	return cortex_puppet_connect(app.config['PUPPETDB_HOST'], port=app.config['PUPPETDB_PORT'], ssl_cert=app.config['PUPPETDB_SSL_CERT'], ssl_key=app.config['PUPPETDB_SSL_KEY'], ssl_verify=app.config['PUPPETDB_SSL_VERIFY'])
+	return pypuppetdb.connect(app.config['PUPPETDB_HOST'], port=app.config['PUPPETDB_PORT'], ssl_cert=app.config['PUPPETDB_SSL_CERT'], ssl_key=app.config['PUPPETDB_SSL_KEY'], ssl_verify=app.config['PUPPETDB_SSL_VERIFY'])
 
 ################################################################################
 
@@ -336,7 +183,7 @@ def puppetdb_get_node_statuses(db=None):
 	for node in nodes:
 		statuses[node.name] = {
 			'status': node.status,
-			'clientnoop': node.noop,
+			'clientnoop': bool(node.fact("clientnoop").value),
 			'latest_report_hash': node.latest_report_hash,
 		}
 
@@ -391,7 +238,7 @@ def puppetdb_get_node_stats(db=None, whitelist=None):
 	# Iterate over nodes, counting statii
 	for node in nodes:
 		try:
-			if node.noop:
+			if bool(node.fact("clientnoop").value):
 				# count all the values for noop
 				stats['noop'][node.report_environment] += 1
 				stats['noop']['count'] += 1
