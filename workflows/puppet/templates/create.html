@@ -32,6 +32,7 @@
 		<div class="col-md-12 form-group">
 			<label for="environment_owner">Environment Owner:</label>
 			<input class="form-control" name="environment_owner" id="environment_owner" placeholder="The environment's short or friendly name" {% if 'environment_owner' in values %}value="{{ values['environment_owner'] }}"{% endif %} maxlength="79" {{ 'disabled="disabled"' if not can_create_all }}/>
+			<small id="environment_owner_help" class="form-text text-muted">This user is granted full privileges over the environment you create.</small>
 		</div>
 		<div class="col-md-12"><h4 style="margin-top:0px">3. Create Environment</h4></div>
 		<div class="row w-100">

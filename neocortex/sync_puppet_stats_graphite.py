@@ -22,7 +22,7 @@ def run(helper, _options):
 
 		# Create the PuppetDB object.
 		helper.event('puppetdb_connect', 'Connecting to PuppetDB.')
-		puppet = PuppetDBConnector.PuppetDBConnector(
+		puppet = PuppetDBConnector(
 			host=helper.config['PUPPETDB_HOST'],
 			port=helper.config['PUPPETDB_PORT'],
 			ssl_cert=helper.config['PUPPETDB_SSL_CERT'],

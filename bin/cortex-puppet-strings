@@ -26,7 +26,7 @@ def validate_config(config, keys):
 	"""Validate JSON Config"""
 	return all(k in config for k in keys)
 
-def puppet_strings(config):
+def puppet_strings(config, code_path):
 	"""Generate JSON using the Puppet strings binary"""
 	# Generate a tempfile to write the data to, this is the most reliable way to capture JSON, as puppet-strings sometimes outputs errors to stdout.
 	tmp_fd, tmp_path = tempfile.mkstemp()
@@ -35,7 +35,7 @@ def puppet_strings(config):
 		# Run puppet-string with the resulting .pp files from find (this prevents us needing to iterate over all the directories)
 		# The command below is equivalent to the following:
 		# /bin/find /puppet/production -type f -name '*.pp' -exec /opt/puppetlabs/bin/puppet strings generate --format json --out /tmp/tempfile {} +
-		cmd = [config["FIND_BINARY"], config["PUPPET_ENVIRONMENTS_BASE"], "-type", "f", "-name", "*.pp", "-exec", config["PUPPET_BINARY"], "strings", "generate", "--format", "json", "--out", tmp_path, "{}", "+"]
+		cmd = [config["FIND_BINARY"], code_path, "-type", "f", "-name", "*.pp", "-exec", config["PUPPET_BINARY"], "strings", "generate", "--format", "json", "--out", tmp_path, "{}", "+"]
 		process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
 		_, stderr = process.communicate()
 
@@ -58,27 +58,31 @@ def puppet_strings(config):
 def generate_puppet_strings_json(config):
 	"""Generate Puppet strings JSON for a given environment"""
 
-	def extract_environment_from_path(path):
-		"""Extract environment from file path"""
-		return re.search(r"^(.+?)(?:\/.+)$", os.path.relpath(path, config["PUPPET_ENVIRONMENTS_BASE"])).group(1)
-
-	puppet_strings_json = puppet_strings(config)
-
-	if not puppet_strings_json or "puppet_classes" not in puppet_strings_json:
-		return {}
-
 	data = {}
-	for obj in puppet_strings_json["puppet_classes"]:
-		# Check the environment level dict exists
-		environment = extract_environment_from_path(obj["file"])
-		if environment not in data:
-			data[environment] = {}
-		# Check the module level dict exists
-		module_name = obj["name"].split("::", 1)[0]
-		if module_name not in data[environment]:
-			data[environment][module_name] = {}
-		# Create this class under the module
-		data[environment][module_name][obj["name"]] = obj["docstring"] if obj.get("docstring") else {}
+
+	# Iterate through the "environments"
+	for environment in os.listdir(config["PUPPET_ENVIRONMENTS_BASE"]):
+		# If the directory starts with "." don't treat it as an environment
+		if environment.startswith("."):
+			continue
+
+		environment_path = os.path.abspath(os.path.join(config["PUPPET_ENVIRONMENTS_BASE"], environment))
+		puppet_strings_json = puppet_strings(config, environment_path)
+
+		# If not data was found for this environment, skip it.
+		if not puppet_strings_json or "puppet_classes" not in puppet_strings_json:
+			continue
+
+		for obj in puppet_strings_json["puppet_classes"]:
+			# Check the environment level dict exists
+			if environment not in data:
+				data[environment] = {}
+			# Check the module level dict exists
+			module_name = obj["name"].split("::", 1)[0]
+			if module_name not in data[environment]:
+				data[environment][module_name] = {}
+			# Create this class under the module
+			data[environment][module_name][obj["name"]] = obj["docstring"] if obj.get("docstring") else {}
 
 	return data
 

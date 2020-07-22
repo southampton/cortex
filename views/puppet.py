@@ -38,10 +38,10 @@ def puppet_enc_edit(node):
 	# Get the environments from the DB where the user has classify permission
 	if does_user_have_permission("puppet.environments.all.classify"):
 		environments = cortex.lib.puppet.get_puppet_environments()
-	elif does_user_have_any_puppet_permission("classify"):
-		environments = cortex.lib.puppet.get_puppet_environments(environment_permission="classify", include_default=True)
 	else:
-		abort(403)
+		# If the user has no 'classify' permission they will only get the 'default' environment.
+		environments = cortex.lib.puppet.get_puppet_environments(environment_permission="classify", include_default=True)
+
 	# Get the environment names as a list
 	environment_names = [e['environment_name'] for e in environments]
 
@@ -216,7 +216,7 @@ def puppet_nodes(status = None):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get Puppet nodes from the database
-	curd.execute('SELECT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`, `systems`.`allocation_comment` AS `allocation_comment` FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` ORDER BY `puppet_nodes`.`certname` ')
+	curd.execute('SELECT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`, `systems`.`allocation_comment` AS `allocation_comment` FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` ORDER BY `puppet_nodes`.`certname`')
 	results = curd.fetchall()
 
 	# Get node statuses
@@ -302,25 +302,23 @@ def puppet_facts(node):
 
 @app.route('/puppet/dashboard')
 @cortex.lib.user.login_required
-def puppet_dashboard():
+def puppet_dashboard(type=None):
 	"""Handles the Puppet dashboard page."""
 
 	# Check user permissions
 	if not does_user_have_permission("puppet.dashboard.view"):
 		abort(403)
 
-	# Select Infrastructure environments only
-	environments = cortex.lib.puppet.get_puppet_environments(enviroment_type=0)
+	environments = cortex.lib.puppet.get_puppet_environments()
 
 	try:
-		# Get stats for all the Infrastructure environments.
 		stats=cortex.lib.puppet.puppetdb_get_node_stats(
-			whitelist = [e["environment_name"] for e in environments]
+			environments=[env["environment_name"] for env in environments],
 		)
 	except Exception as e:
 		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
-	return render_template('puppet/dashboard.html', title="Puppet Dashboard", active="puppet", environments=environments, stats=stats)
+	return render_template('puppet/dashboard.html', title="Puppet Dashboard", active="puppet", stats=stats)
 
 ################################################################################
 
@@ -330,18 +328,11 @@ def puppet_radiator():
 
 	## No permissions check: this is accessible without logging in
 	try:
-		stats=cortex.lib.puppet.puppetdb_get_node_stats()
-
+		stats=cortex.lib.puppet.puppetdb_get_node_stats_totals()
 	except Exception as e:
 		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
-	# create dictionary to hold the values the radiator needs
-	top_level_stats = {}
-	for s in stats:
-		#'count' value in the dictionary is the value we need
-		top_level_stats[s] = stats[s]['count']
-
-	return render_template('puppet/radiator.html', stats=top_level_stats, active='puppet')
+	return render_template('puppet/radiator.html', stats=stats, active='puppet')
 
 ################################################################################
 
@@ -352,14 +343,12 @@ def puppet_radiator_body():
 	iffy page refresh."""
 
 	## No permissions check: this is accessible without logging in
-	stats=cortex.lib.puppet.puppetdb_get_node_stats()
-	# create dictionary to hold the values the radiator needs
-	top_level_stats = {}
-	for s in stats:
-		#'count' value in the dictionary is the value we need
-		top_level_stats[s] = stats[s]['count']
+	try:
+		stats=cortex.lib.puppet.puppetdb_get_node_stats_totals()
+	except Exception as e:
+		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
-	return render_template('puppet/radiator-body.html', stats=top_level_stats, active='puppet')
+	return render_template('puppet/radiator-body.html', stats=stats, active='puppet')
 
 ################################################################################
 
@@ -555,6 +544,7 @@ def puppet_documentation(environment_id=None, module_id=None):
 
 @app.route("/puppet/environments", methods=["GET", "POST"])
 @app.route("/puppet/environments/<int:environment_id>")
+@cortex.lib.user.login_required
 def puppet_environments(environment_id=None):
 	"""Show the Puppet documentation"""
 
@@ -585,8 +575,7 @@ def puppet_environments(environment_id=None):
 		# Get the database cursor
 		curd = g.db.cursor(mysql.cursors.DictCursor)
 
-		environments = []
-		permissions = []
+		environments, permissions, nodes = [], [], []
 		if environment_id and does_user_have_puppet_permission(environment_id, "view", "puppet.environments.all.view"):
 			curd.execute("SELECT * FROM `puppet_environments` WHERE `id`=%s LIMIT 1", (environment_id,))
 			environments = curd.fetchall()
@@ -606,4 +595,13 @@ def puppet_environments(environment_id=None):
 		if not environments:
 			abort(404)
 
-		return render_template("puppet/environments.html", active="puppet", title="Puppet Environments", environments=environments, permissions=permissions)
+		# If
+
+		if environment_id:
+			curd.execute(
+				"SELECT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`, `systems`.`allocation_comment` AS `allocation_comment` FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` WHERE `puppet_nodes`.`env`=%s ORDER BY `puppet_nodes`.`certname`",
+				(environments[0]["environment_name"],)
+			)
+			nodes = curd.fetchall()
+
+		return render_template("puppet/environments.html", active="puppet", title="Puppet Environments", environment_id=environment_id, environments=environments, permissions=permissions, nodes=nodes)

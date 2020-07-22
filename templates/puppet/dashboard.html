@@ -2,132 +2,60 @@
 {% block body %}
 <div class="page-header">
 <h4><i class="fa fa-dashboard fa-fw"></i> Puppet Dashboard</h4>
+<div class="text-muted">Puppet environment statistics are shown below, directly from PuppetDB.</div>
 </div>
-<div class="row">
-	<div class="col-md-12">
-		<a href="{{ url_for('puppet_nodes', status='all') }}">
-			<div class="admin-block admin-block-hover bg-purple">
-				<div class="row">
-					<div class="col-md-2">
-						<h1><i class="fa fa-fw fa-server"></i></h1><h2>Registered nodes</h2>
-					</div>
-					<div class="col-md-2">
-						<h1>{{ stats['count']['count'] }}</h1><h2 style="font-weight:bold">Total<br/></h2>
-					</div>
-{%- for env in environments %}
-					<div class="col-md-2">
-						<h1>{{ stats['count'][env['environment_name']] or 0 }}</h1><h2 style="font-weight:bold">{{ env['short_name'] }}<br/></h2>
-					</div>
-{%- endfor %}
-				</div>
-			</div>
-		</a>
-	</div>
-</div>
-<div class="row">
-	<div class="col-md-12">
-		<a href="{{ url_for('puppet_nodes', status='unchanged') }}">
-		<div class="admin-block admin-block-hover bg-success">
-			<div class="row">
-				<div class="col-md-2">
-					<h1><i class="fa fa-fw fa-check"></i></h1><h2>Normal</h2>
-				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['unchanged']['count'] }}</h1><h2 style="font-weight: bold">Total<br/></h2>
-				</div>
-{%- for env in environments %}
-				<div class="col-md-2">
-					<h1>{{ stats['unchanged'][env['environment_name']] or 0 }}</h1><h2 style="font-weight:bold">{{ env['short_name'] }}<br/></h2>
-				</div>
-{%- endfor %}
-			</div>
-		</div>
-		</a>
-	</div>
-</div>
-<div class="row">
-	<div class="col-md-12">
-		<a href="{{ url_for('puppet_nodes', status='changed') }}">
-		<div class="admin-block admin-block-hover bg-primary">
-			<div class="row">
-				<div class="col-md-2">
-					<h1><i class="fa fa-fw fa-cog"></i></h1><h2>Changed</h2>
-				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['changed']['count'] }}</h1><h2 style="font-weight: bold">Total<br/></h2>
-				</div>
-{%- for env in environments %}
-				<div class="col-md-2">
-					<h1>{{ stats['changed'][env['environment_name']] or 0 }}</h1><h2 style="font-weight:bold">{{ env['short_name'] }}<br/></h2>
-				</div>
-{%- endfor %}
-			</div>
-		</div>
-		</a>
-	</div>
-</div>
-<div class="row">
-	<div class="col-md-12">
-		<a href="{{ url_for('puppet_nodes', status='noop') }}">
-		<div class="admin-block admin-block-hover bg-warning">
-			<div class="row">
-				<div class="col-md-2">
-					<h1><i class="fa fa-fw fa-wrench"></i></h1><h2>Disabled</h2>
-				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['noop']['count'] }}</h1><h2 style="font-weight: bold">Total<br/></h2>
-				</div>
-{%- for env in environments %}
-				<div class="col-md-2">
-					<h1>{{ stats['noop'][env['environment_name']] or 0 }}</h1><h2 style="font-weight:bold">{{ env['short_name'] }}<br/></h2>
-				</div>
-{%- endfor %}
-			</div>
-		</div>
-		</a>
-	</div>
-</div>
-<div class="row">
-	<div class="col-md-12">
-		<a href="{{ url_for('puppet_nodes', status='failed') }}">
-		<div class="admin-block admin-block-hover bg-danger">
-			<div class="row">
-				<div class="col-md-2">
-					<h1><i class="fa fa-fw fa-exclamation-triangle"></i></h1><h2>Failed</h2>
-				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['failed']['count'] }}</h1><h2 style="font-weight: bold">Total<br/></h2>
-				</div>
-{%- for env in environments %}
-				<div class="col-md-2">
-					<h1>{{ stats['failed'][env['environment_name']] or 0 }}</h1><h2 style="font-weight:bold">{{ env['short_name'] }}<br/></h2>
-				</div>
-{%- endfor %}
-			</div>
-		</div>
-		</a>
-	</div>
-</div>
-<div class="row">
-	<div class="col-md-12">
-		<a href="{{ url_for('puppet_nodes', status='unknown') }}">
-		<div class="admin-block admin-block-hover bg-default">
-			<div class="row">
-				<div class="col-md-2">
-					<h1><i class="fa fa-fw fa-question-circle"></i></h1><h2>Unknown</h2>
-				</div>
-				<div class="col-md-2">
-					<h1>{{ stats['unknown']['count'] + stats['unreported']['count'] }}</h1><h2 style="font-weight: bold">Total<br/></h2>
-				</div>
-{%- for env in environments %}
-				<div class="col-md-2">
-					<h1>{{ stats['unknown'][env['environment_name']] or 0 }}</h1><h2 style="font-weight:bold">{{ env['short_name'] }}<br/></h2>
-				</div>
-{%- endfor %}
-			</div>
-
-		</div>
-		</a>
-	</div>
-</div>
+<table class="table table-sm table-striped" id="data">
+	<thead>
+		<tr>
+			<th>Environment Name</th>
+			<th><a href="{{ url_for('puppet_nodes', status='all') }}">Registered Nodes</a></th>
+			<th><a href="{{ url_for('puppet_nodes', status='unchanged') }}">Normal</a></th>
+			<th><a href="{{ url_for('puppet_nodes', status='changed') }}">Changed</a></th>
+			<th><a href="{{ url_for('puppet_nodes', status='noop') }}">Disabled</a></th>
+			<th><a href="{{ url_for('puppet_nodes', status='failed') }}">Failed</a></th>
+			<th><a href="{{ url_for('puppet_nodes', status='unknown') }}">Unknown</a></th>
+		</tr>
+	</thead>
+	<tbody>
+		{%- for environment in stats -%}
+		<tr>
+			<td>{{ environment }}</td>
+			<td>{{ stats[environment]["count"] }}</td>
+			<td>{{ stats[environment]["unchanged"] }}</td>
+			<td>{{ stats[environment]["changed"] }}</td>
+			<td>{{ stats[environment]["noop"] }}</td>
+			<td>{{ stats[environment]["failed"] }}</td>
+			<td>{{ stats[environment]["unreported"] + stats[environment]["unknown"] }}</td>
+		</tr>
+		{%- endfor -%}
+	</tbody>
+	<tfoot>
+		<tr>
+			<th>Totals:</th>
+			<th>{{ stats.values() | sum(attribute="count") }}</th>
+			<th>{{ stats.values() | sum(attribute="unchanged") }}</th>
+			<th>{{ stats.values() | sum(attribute="changed") }}</th>
+			<th>{{ stats.values() | sum(attribute="noop") }}</th>
+			<th>{{ stats.values() | sum(attribute="failed") }}</th>
+			<th>{{ stats.values() | sum(attribute="unreported") + stats.values() | sum(attribute="unknown") }}</th>
+		</tr>
+	</tfoot>
+</table>
+<script type="text/javascript">
+	$(function() {
+		$('#data').DataTable({
+			"lengthMenu": [[10,15,50,100,-1], [10,15,50,100,'All']],
+			"pageLength": 15,
+			"order": [[0, 'asc']],
+	{%- if classic_layout %}
+			"fixedHeader": {
+				"headerOffset": 52
+			},
+	{%- else %}
+			"fixedHeader": true,
+	{%- endif %}
+			"columns": [null, {"width": "12%"}, {"width": "12%"}, {"width": "12%"}, {"width": "12%"}, {"width": "12%"}, {"width": "12%"}]
+		});
+	});
+	</script>
 {% endblock %}

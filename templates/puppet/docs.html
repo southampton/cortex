@@ -34,7 +34,7 @@ There is documentation in Cortex available for the modules listed below
 	<h5>Examples</h5>
 	The following examples are provided with the <code>{{ class }}</code> class.
 	{%- for e in data[class].example -%}
-		<pre style="background-color: #eee;padding:5px;margin-bottom:10px;">{{ e.text }}</pre>
+		<pre class="code-example">{{ e.text }}</pre>
 	{%- endfor -%}
 {%- endif-%}
 {%- if "param" in data[class] and data[class].param -%}

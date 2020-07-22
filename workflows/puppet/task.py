@@ -78,6 +78,13 @@ def environment_delete(values, helper):
 		))
 		return False
 
+	helper.curd.execute("SELECT 1 FROM `puppet_nodes` WHERE `env`=%s", (environment["environment_name"],))
+	if helper.curd.fetchone():
+		helper.end_event(success=False, description="Failed to delete Puppet environment, one or more nodes are currently classified with environment '{name}'".format(
+			name=environment["environment_name"],
+		))
+		return False
+
 	# Build the URL
 	base_url = helper.config["PUPPET_AUTOSIGN_URL"]
 	if not base_url.endswith("/"):

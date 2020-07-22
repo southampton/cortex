@@ -209,7 +209,7 @@ def puppetdb_get_node_status(node_name, db=None):
 
 ################################################################################
 
-def puppetdb_get_node_stats(db=None, whitelist=None):
+def puppetdb_get_node_stats_totals(db=None):
 	"""Calculate statistics on node statuses by talking to PuppetDB"""
 
 	if db is None:
@@ -220,44 +220,71 @@ def puppetdb_get_node_stats(db=None, whitelist=None):
 
 	# Initialise stats
 	stats = {
-		'count': {},
-		'changed': {},
-		'unchanged': {},
-		'failed': {},
-		'unreported': {},
-		'noop': {},
-		'unknown':{}
+		'count': 0,
+		'changed': 0,
+		'unchanged': 0,
+		'failed': 0,
+		'noop': 0,
+		'unreported': 0,
+		'unknown': 0,
 	}
 
-	environments = ['count',] + get_puppetdb_environments(db=db, whitelist=whitelist)
-
-	for k in stats:
-		for e in environments:
-			stats[k][e] = 0
-
-	# Iterate over nodes, counting statii
+	# Iterate over nodes, counting statistics
 	for node in nodes:
 		try:
+			stats['count'] += 1
+			# use clientnoop fact to determine noop state
 			if bool(node.fact("clientnoop").value):
-				# count all the values for noop
-				stats['noop'][node.report_environment] += 1
-				stats['noop']['count'] += 1
-				stats['count'][node.report_environment] += 1
+				stats['noop'] += 1
+			# if we know the reported status, count the values
+			elif node.status in stats:
+				stats[node.status] += 1
+			# otherwise mark it as unknown but still count the values
 			else:
-				# if we know the reported status, count the values
-				if node.status in stats:
-					stats[node.status][node.report_environment] += 1
-					stats[node.status]['count'] += 1
-					stats['count'][node.report_environment] += 1
-				# otherwise mark it as unknown but still count the values
-				else:
-					stats['unknown'][node.report_environment] += 1
-					stats['unknown']['count'] += 1
-					stats['count'][node.report_environment] += 1
+				stats['unknown'] += 1
 		except (AttributeError, KeyError) as ex:
 			app.logger.warning('Failed to generate Puppet node stat: %s' %(ex))
 
-	# get the total count number here
-	stats['count']['count'] = sum(stats['count'].values())
+	return stats
+
+################################################################################
+
+def puppetdb_get_node_stats(db=None, environments=None):
+	"""Calculate statistics on node statuses by talking to PuppetDB"""
+
+	stats_template = {"count": 0, "unchanged": 0, "changed": 0, "noop": 0, "failed": 0, "unreported": 0, "unknown": 0}
+
+	if db is None:
+		db = puppetdb_connect()
+
+	stats = {}
+
+	# If a list of environment names were given, initialise them
+	if environments and isinstance(environments, list):
+		for env in environments:
+			stats[env] = stats_template.copy()
+
+	# Get information about all the nodes, including their status
+	nodes = db.nodes(with_status=True)
+
+	for node in nodes:
+		env = node.report_environment
+		# Ensure the environment is in the stats dict
+		if env not in stats:
+			stats[env] = stats_template.copy()
+
+		try:
+			stats[env]["count"] += 1
+			# use clientnoop fact to determine noop state
+			if bool(node.fact("clientnoop").value):
+				stats[env]["noop"] += 1
+			# if we know the reported status, count the values
+			elif node.status in stats:
+				stats[env][node.status] += 1
+			# otherwise mark it as unknown but still count the values
+			else:
+				stats[env]["unknown"] += 1
+		except (AttributeError, KeyError) as ex:
+			app.logger.warning("Failed to generate Puppet node stat: %s" %(ex))
 
 	return stats
