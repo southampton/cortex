@@ -368,7 +368,7 @@ def systems_new():
 @app.route('/systems/backup/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_backup(id):
-	
+
 	# Check user permissions. User must have either systems.all.view.rubrik or edit.rubrik (there's no separate view at present)
 	if not does_user_have_system_permission(id,"edit.rubrik","systems.all.view.rubrik"):
 		abort(403)
@@ -897,7 +897,6 @@ def system_actions(id):
 
 @app.route('/systems/vmware/json', methods=['POST'])
 @cortex.lib.user.login_required
-@app.disable_csrf_check
 def systems_vmware_json():
 	"""Used by DataTables to extract infromation from the VMware cache. The
 	parameters and return format are dictated by DataTables"""
@@ -986,7 +985,6 @@ def systems_vmware_json():
 
 @app.route('/systems/cmdb/json', methods=['POST'])
 @cortex.lib.user.login_required
-@app.disable_csrf_check
 def systems_cmdb_json():
 	"""Used by DataTables to extract information from the ServiceNow CMDB CI
 	cache. The parameters and return format are as dictated by DataTables"""
@@ -1030,7 +1028,6 @@ def systems_cmdb_json():
 
 @app.route('/systems/json', methods=['POST'])
 @cortex.lib.user.login_required
-@app.disable_csrf_check
 def systems_json():
 	"""Used by DataTables to extract information from the systems table in
 	the database. The parameters and return format are as dictated by

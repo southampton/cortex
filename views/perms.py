@@ -240,7 +240,7 @@ def perms_role(role_id):
 
 			curd.execute("DELETE FROM `p_role_who` WHERE `id` = %s", (wid,))
 			g.db.commit()
-			cortex.lib.core.log(__name__, "permissions.role.member.remove", "The user/group '" + who_row['who'] + "' was removed from role '" + role['name'] + "' (" + str(id) + ")")
+			cortex.lib.core.log(__name__, "permissions.role.member.remove", "The user/group '" + who_row['who'] + "' was removed from role '" + role['name'] + "' (" + str(role_id) + ")")
 
 			flash("The user or group was revoked from the role", "alert-success")
 			return redirect(url_for('perms_role', role_id=role_id))

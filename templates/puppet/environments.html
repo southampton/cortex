@@ -1,16 +1,21 @@
 {% extends "layout.html" %}
 {% block body %}
 <div class="page-header">
-<h4><i class="fa fa-fw fa-envira"></i> {{ title }}{%- if environments | length == 1 -%}&nbsp;-&nbsp;{{ environments[0].short_name }} (<code>{{ environments[0].environment_name }}</code>){%- endif -%}</h4>
+	<h4>
+		<div class="pull-right">
+			<a href="{{ url_for('puppet_environment_create') }}" class="btn btn-md btn-success"><i class="fa fa-fw fa-plus"></i> <span class="hidden-sm hidden-xs">Create Environment</span></a>
+		</div>
+		<i class="fa fa-fw fa-envira"></i> {{ title }}{%- if environment_id -%}&nbsp;-&nbsp;{{ environments[0].short_name }} (<code>{{ environments[0].environment_name }}</code>){%- endif -%}
+	</h4>
 <div class="text-muted">
-{%- if environments | length == 1 -%}
+{%- if environment_id -%}
 The environment below exists on the Puppet master and can be used from the Cortex ENC
 {%- else -%}
 The environments listed below exist on the Puppet master and can be used from the Cortex ENC
 {%- endif -%}
 </div>
 </div>
-{%- if environments | length == 1 -%}
+{%- if environment_id -%}
 {%- set environment = environments[0] -%}
 <div class="row equal">
 	<div class="col-md-6">
@@ -41,12 +46,12 @@ The environments listed below exist on the Puppet master and can be used from th
 	<div class="col-md-6">
 		<div class="card">
 			<div class="card-header">
-				<h4 class="card-title">Puppet Environment Details</h4>
+				<h4 class="card-title">Puppet Environment Permissions</h4>
 			</div>
 			<div class="card-body">
 				<p>Permissions are assigned to Puppet environments via the <a href="{{ url_for('perms_roles') }}">role based permissions system</a>, they cannot be changed here.</p>
 				{%- if permissions -%}
-				<table class="table table-sm table-striped" id="data">
+				<table class="table table-sm table-striped">
 					<thead>
 						<tr>
 							<th>Who</th>
@@ -66,6 +71,41 @@ The environments listed below exist on the Puppet master and can be used from th
 				</table>
 				{%- else -%}
 				<p><i>There are no permissions assigned directly to this Puppet environment.</i></p>
+				{%- endif %}
+			</div>
+		</div>
+	</div>
+</div>
+<div class="row equal">
+	<div class="col-md-12">
+		<div class="card">
+			<div class="card-header">
+				<h4 class="card-title">Puppet Nodes</h4>
+			</div>
+			<div class="card-body">
+				{%- if nodes -%}
+				<table class="table table-sm table-striped" id="data">
+					<thead>
+						<tr>
+							<th>System Name</th>
+							<th>Allocation Comment</th>
+							<th>Puppet Certificate Name</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						{%- for node in nodes -%}
+						<tr>
+							<td><a href="{{url_for('puppet_enc_edit',node=node.certname) }}">{{ node.name }}</a></td>
+							<td>{{ node.allocation_comment }}</td>
+							<td>{{ node.certname }}</td>
+							<td><a href="{{url_for('puppet_enc_edit', node=node.certname) }}" class="btn btn-secondary btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a></td>
+						</tr>
+						{%- endfor -%}
+					</tbody>
+				</table>
+				{%- else -%}
+				<p><i>There are no nodes classified in this Puppet environment.</i></p>
 				{%- endif %}
 			</div>
 		</div>
@@ -117,6 +157,7 @@ The environments listed below exist on the Puppet master and can be used from th
 {%- endfor %}
 	</tbody>
 </table>
+{%- endif -%}
 <script type="text/javascript">
 	// Define variable for nodes table.
 	var nodes;
@@ -143,5 +184,4 @@ The environments listed below exist on the Puppet master and can be used from th
 		$('#delete_environment-id').val(link.data('id'));
 	})
 </script>
-{%- endif -%}
 {% endblock %}

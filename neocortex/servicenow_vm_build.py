@@ -217,6 +217,7 @@ def build_servicenow_vm(helper, buildvm_config, task_sys_id, task_friendly_id, f
 	options['sockets'] = helper.config['SNVM_OS_TO_SOCKETS_MAP'][osid]
 	options['cores'] = helper.config['SNVM_OS_TO_CORES_MAP'][osid]
 	options['ram'] = helper.config['SNVM_OS_TO_RAM_MAP'][osid]
+	options['disk_swap'] = 0
 	options['disk'] = helper.config['SNVM_OS_TO_DISK_MAP'][osid]
 	options['template'] = helper.config['SNVM_OS_TO_BUILD_MAP'][osid]
 	options['network'] = helper.config['SNVM_NETWORK_MAP'][network]

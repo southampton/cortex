@@ -34,7 +34,6 @@ class Puppet(Resource):
 		curd = g.db.cursor(mysql.cursors.DictCursor)
 		# Turn off autocommit cause a lot of insertions are going to be used
 		curd.connection.autocommit(False)
-		curd.execute("TRUNCATE TABLE `puppet_documentation`;")
 
 		# Iterate through the request data and insert
 		for environment_name, modules in request.json.items():
@@ -49,7 +48,13 @@ class Puppet(Resource):
 					curd.execute("INSERT INTO `puppet_classes` (`module_id`, `class_name`, `desc`) VALUES (@puppet_module_id, %s, %s) ON DUPLICATE KEY UPDATE `id`=LAST_INSERT_ID(`id`), `desc`=%s", (class_name, desc, desc))
 					curd.execute("SELECT LAST_INSERT_ID() INTO @puppet_class_id")
 					for tag in tags:
-						curd.execute("INSERT INTO `puppet_documentation` (`class_id`, `tag`, `name`, `text`, `types`) VALUES (@puppet_class_id, %s, %s, %s, %s)", (tag["tag_name"], tag.get("name", ""), tag.get("text"), json.dumps(tag.get("types", []))))
+						curd.execute(
+							"INSERT INTO `puppet_documentation` (`class_id`, `tag`, `name`, `text`, `types`) VALUES (@puppet_class_id, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE `tag`=%s, `name`=%s, `text`=%s, `types`=%s",
+							(tag["tag_name"], tag.get("name", ""), tag.get("text"), json.dumps(tag.get("types", [])), tag["tag_name"], tag.get("name", ""), tag.get("text"), json.dumps(tag.get("types", [])))
+						)
+
+		# Delete records older than 30 days
+		curd.execute("DELETE FROM `puppet_modules` WHERE `last_updated` < DATE_SUB(NOW(), INTERVAL 30 DAY)")
 
 		# Commit the changes
 		curd.connection.commit()

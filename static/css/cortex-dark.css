@@ -61,3 +61,7 @@ div.advanced-search
 }
 
 table.dataTable.fixedHeader-floating, table.dataTable.fixedHeader-locked { background: #222 }
+
+pre.code-example {
+	background-color: #2f2f2f;
+}

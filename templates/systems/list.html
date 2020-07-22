@@ -173,6 +173,7 @@ $(function() {
 			"url": "{{ url_for('systems_json') }}",
 			"type": "POST",
 			"data": function (d) {
+				d._csrf_token = "{{ csrf_token() }}";
 				d.filter_group = $('#class-tabs li a.active').attr('data-class');
 				d.hide_inactive = ($('#hide_inactive').hasClass('btn-success') ? "1" : "0");
 				d.show_expired = {% if expired %}"1"{% else %}"0"{% endif %};

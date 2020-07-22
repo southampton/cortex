@@ -116,12 +116,15 @@
 				</button>
 			</div>
 			<div class="modal-body">
-				<h5>Description</h5>
-				<p id="vulnModal-description"></p>
-				<h5>Solution</h5>
-				<p id="vulnModal-solution"></p>
-				<h5>See Also</h5>
-				<ul id="vulnModal-see-also"></ul>
+				<p id="vulnModal-loading">Loading vulnerability information from Tenable.io</p>
+				<div class="d-none" id="vulnModal-wrapper">
+					<h5>Description</h5>
+					<p id="vulnModal-description"></p>
+					<h5>Solution</h5>
+					<p id="vulnModal-solution"></p>
+					<h5>See Also</h5>
+					<ul id="vulnModal-see-also"></ul>
+				</div>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -298,9 +301,12 @@ $(function() {
 		$("#vulnModal-severity").attr("class", `badge ${severityLookup[plugin_info.severity].class}`);
 		$("#vulnModal-description").html(plugin_info.description || "");
 		$("#vulnModal-solution").html(plugin_info.solution || "");
+		$("#vulnModal-see-also").empty();
 		plugin_info.see_also.forEach(link => {
 			$("#vulnModal-see-also").append(`<li><a href="${link}">${link}</a></li>`);
 		});
+		$("#vulnModal-loading").addClass("d-none");
+		$("#vulnModal-wrapper").removeClass("d-none");
 	}
 
 	function assetVulnModal(assets, selectedAsset, pluginId) {
@@ -333,6 +339,11 @@ $(function() {
 
 	$("#vulnModal").on("shown.bs.modal", function (e) {
 		assetVulnModal(assets, selectedAsset, $(e.relatedTarget).attr("data-plugin-id"));
+	});
+
+	$("#vulnModal").on("hidden.bs.modal", function (e) {
+		$("#vulnModal-wrapper").addClass("d-none");
+		$("#vulnModal-loading").removeClass("d-none");
 	});
 
 	$("a.tenable-nav-link[data-toggle='pill']").on("shown.bs.tab", function (e) {

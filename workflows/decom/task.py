@@ -322,7 +322,7 @@ def action_check_system(action, helper, wfconfig):
 		try:
 			if all(k in helper.lib.config and helper.lib.config[k] for k in ["TENABLE_IO_URL", "TENABLE_IO_ACCESS_KEY", "TENABLE_IO_SECRET_KEY"]):
 				r = requests.get(
-					urljoin(helper.lib.config["TENABLE_IO_URL"], "/scanners/{scanner_id}/agents".format(scanner_id=1)),
+					urljoin("https://{base_url}/".format(base_url=helper.lib.config["TENABLE_IO_URL"]), "/scanners/{scanner_id}/agents".format(scanner_id=1)),
 					headers={"Accept": "application/json", "X-ApiKeys": "accessKey={a}; secretKey={s};".format(a=helper.lib.config["TENABLE_IO_ACCESS_KEY"], s=helper.lib.config["TENABLE_IO_SECRET_KEY"])},
 					params={"f": "name:match:{name}".format(name=system["name"])},
 				)
@@ -642,7 +642,7 @@ def action_nessus_delete(action, helper, wfconfig):
 			raise Exception("Missing configuration key for Nessus")
 
 		r = requests.delete(
-			urljoin(helper.lib.config["TENABLE_IO_URL"], "/scanners/{scanner_id}/agents/{agent_id}".format(scanner_id=1, agent_id=action["data"]["id"])),
+			urljoin("https://{base_url}/".format(base_url=helper.lib.config["TENABLE_IO_URL"]), "/scanners/{scanner_id}/agents/{agent_id}".format(scanner_id=1, agent_id=action["data"]["id"])),
 			headers={"Accept": "application/json", "X-ApiKeys": "accessKey={a}; secretKey={s};".format(a=helper.lib.config["TENABLE_IO_ACCESS_KEY"], s=helper.lib.config["TENABLE_IO_SECRET_KEY"])},
 		)
 		if r.status_code != 200:

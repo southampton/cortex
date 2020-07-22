@@ -96,7 +96,7 @@ def admin_tasks_json(tasktype):
 
 
 	# Define some tasks we will hide if hide_frequent is True
-	frequent_tasks = ['_sync_puppet_stats_graphite']
+	frequent_tasks = ["_sync_puppet_stats_graphite", "_puppet_nodes_status"]
 	frequent_tasks_str = '"' + ('","'.join(frequent_tasks)) + '"'
 	if frequent_tasks and hide_frequent:
 		where_clause = where_clause + " AND (`module` NOT IN (" + frequent_tasks_str + ")) "
