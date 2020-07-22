@@ -248,6 +248,7 @@ def _build_systems_query(class_name=None, search=None, order=None, order_asc=Tru
 
 
 	# Handle the ordering of the rows
+	order_direction = "ASC" if order_asc else "DESC"
 	query = query + " ORDER BY "
 
 	# By default, if order is not specified, we order by name
@@ -261,10 +262,11 @@ def _build_systems_query(class_name=None, search=None, order=None, order_asc=Tru
 		query = query + "`" + order + "`"
 
 	# Determine which direction to order in, and add that on
-	if order_asc:
-		query = query + " ASC"
-	else:
-		query = query + " DESC"
+	query = query + " " + order_direction
+
+	# Add unique field to the order by clause
+	if order != "id":
+		query = query + ", `id` " + order_direction
 
 	# If a limit is specified, we need to add that on
 	if limit_start is not None or limit_length is not None:
@@ -283,6 +285,7 @@ def _build_systems_query(class_name=None, search=None, order=None, order_asc=Tru
 			#
 			# Seriously, this is how MySQL recommends to do this :'(
 			query = query + "18446744073709551610"
+
 	return (query, params)
 
 
