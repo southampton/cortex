@@ -9,12 +9,12 @@
 </div>
 <div class="row" id="task_waiting">
 	<div class="col-md-12">
-		<p style="margin: 1em 0em 1em 2em;font-size: 16px"><i class="fa fa-fw fa-spin fa-refresh"></i>  Waiting for NeoCortex <a href="{{ url_for('task_status', id=task_id) }}" target="_blank">task {{ task_id }}</a> to complete...</p>
+		<p style="margin: 1em 0em 1em 2em;font-size: 16px"><i class="fa fa-fw fa-spin fa-refresh"></i>  Waiting for NeoCortex <a href="{{ url_for('task_status', task_id=task_id) }}" target="_blank">task {{ task_id }}</a> to complete...</p>
 	</div>
 </div>
 <div class="row" style="display:none" id="task_failed">
 	<div class="col-md-12">
-		<p>The task to create the certificate failed. You may wish to review the <a href="{{ url_for('task_status', id=task_id) }}">task details</a> for more information.</p>
+		<p>The task to create the certificate failed. You may wish to review the <a href="{{ url_for('task_status', task_id=task_id) }}">task details</a> for more information.</p>
 	</div>
 </div>
 <div class="row" style="display:none" id="ajax_error">
@@ -49,7 +49,7 @@ var interval = window.setInterval(function() {
 			{
 				window.clearInterval(interval);
 				$('#task_waiting').css('display', 'none');
-				
+
 				$.ajax({
 					url: '{{ url_for('certmgr_ajax_get_raw', task=task_id) }}',
 					success: function(data, textStatus, xhr) {

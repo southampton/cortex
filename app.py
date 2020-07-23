@@ -367,7 +367,7 @@ Username:             %s
 					link_text = str(markupsafe.escape(lowest_re_result.group('link_text')))
 				else:
 					link_text = lowest_re_result.group('link_text')
-				url = url_for('task_status', id=int(lowest_re_result.group('link_id')))
+				url = url_for('task_status', task_id=int(lowest_re_result.group('link_id')))
 				inserted_text = "<a href='" + url + "'>" + link_text + "</a>"
 
 			# Update our string and variables

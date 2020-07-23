@@ -232,7 +232,7 @@ def build(build_type):
 		cortex.lib.core.log(__name__, "workflow.buildvm.{}".format(build_type), "Build standard VM task {} started by {} with ServiceNow task {}".format(task_id, session["username"], task or "None"))
 
 		# Redirect to the status page for the task
-		return redirect(url_for("task_status", id=task_id))
+		return redirect(url_for("task_status", task_id=task_id))
 
 	# Get a list of Users
 	autocomplete_users = get_user_list_from_cache()

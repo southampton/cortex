@@ -125,13 +125,13 @@ def dashboard():
 
 ################################################################################
 
-@app.route('/task/status/<int:id>', methods=['GET'])
+@app.route('/task/status/<int:task_id>', methods=['GET'])
 @cortex.lib.user.login_required
-def task_status(id):
+def task_status(task_id):
 	"""Handles the Task Status page for a individual task."""
 
 	## Get the task details
-	task = cortex.lib.core.task_get(id)
+	task = cortex.lib.core.task_get(task_id)
 
 	# Return a 404 if we've not found the task
 	if not task:
@@ -151,14 +151,14 @@ def task_status(id):
 
 ################################################################################
 
-@app.route('/task/status/<int:id>/log', methods=['GET'])
+@app.route('/task/status/<int:task_id>/log', methods=['GET'])
 @cortex.lib.user.login_required
-def task_status_log(id):
+def task_status_log(task_id):
 	"""Much like task_status, but only returns the event log. This is used by
 	an AJAX routine on the page to refresh the log every 10 seconds."""
 
 	## Get the task details
-	task = cortex.lib.core.task_get(id)
+	task = cortex.lib.core.task_get(task_id)
 
 	# Return a 404 if we've not found the task
 	if not task:

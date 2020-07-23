@@ -781,7 +781,7 @@ def nlbweb_validate():
 		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates the necessary objects on the NLB to run a basic HTTP(S) website / service")
 
 		# Redirect to the status page for the task
-		return redirect(url_for('task_status', id=task_id))
+		return redirect(url_for('task_status', task_id=task_id))
 
 	return abort(400)
 
