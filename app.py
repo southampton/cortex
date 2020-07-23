@@ -360,7 +360,7 @@ Username:             %s
 					link_text = str(markupsafe.escape(lowest_re_result.group('link_text')))
 				else:
 					link_text = lowest_re_result.group('link_text')
-				url = url_for('system', id=int(lowest_re_result.group('link_id')))
+				url = url_for('system_view', system_id=int(lowest_re_result.group('link_id')))
 				inserted_text = "<a href='" + url + "'>" + link_text + "</a>"
 			elif lowest_regex is TASK_LINK_RE:
 				if make_safe:

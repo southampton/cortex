@@ -28,7 +28,7 @@ from cortex.lib.user import (
 
 @app.route('/systems')
 @cortex.lib.user.login_required
-def systems():
+def systems_list():
 	"""Shows the list of known systems to the user."""
 
 	# Check user permissions
@@ -132,10 +132,10 @@ def systems_search():
 	# Check if there was only 1 result.
 	if curd.rowcount == 1 and system is not None:
 		# If we found the system, redirect to the system page
-		return redirect(url_for('system', id=system['id']))
+		return redirect(url_for('system_view', system_id=system['id']))
 
 	# If we didn't find the system, search for it instead
-	return redirect(url_for('systems', q=query))
+	return redirect(url_for('systems_list', q=query))
 
 ################################################################################
 
@@ -289,7 +289,7 @@ def systems_add_existing():
 		cortex.lib.core.log(__name__, "systems.add.existing", "System manually added, id " + str(system_id), related_id=system_id)
 		# Redirect to the system page for the system we just added
 		flash("System added", "alert-success")
-		return redirect(url_for('system', id=system_id))
+		return redirect(url_for('system_view', system_id=system_id))
 
 	# On GET requests, just show the form
 	return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
@@ -352,7 +352,7 @@ def systems_new():
 		# change the comments on all of the systems.
 		if len(new_systems) == 1:
 			flash("System name allocated successfully", "alert-success")
-			return redirect(url_for('system', id=new_systems[0]['id']))
+			return redirect(url_for('system_view', system_id=new_systems[0]['id']))
 
 		return render_template('systems/new-bulk.html', systems=new_systems, comment=system_comment, title="Systems")
 
@@ -362,16 +362,16 @@ def systems_new():
 
 ################################################################################
 
-@app.route('/systems/backup/<int:id>', methods=['GET', 'POST'])
+@app.route('/systems/backup/<int:system_id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
-def system_backup(id):
+def system_backup(system_id):
 
 	# Check user permissions. User must have either systems.all.view.rubrik or edit.rubrik (there's no separate view at present)
-	if not does_user_have_system_permission(id, "edit.rubrik", "systems.all.view.rubrik"):
+	if not does_user_have_system_permission(system_id, "edit.rubrik", "systems.all.view.rubrik"):
 		abort(403)
 
 	# Get the name of the vm
-	system = cortex.lib.systems.get_system_by_id(id)
+	system = cortex.lib.systems.get_system_by_id(system_id)
 	if not system:
 		abort(404)
 
@@ -417,7 +417,7 @@ def system_backup(id):
 		flash('SLA Domain updated', 'alert-success')
 
 		# Reroute back here - in order to keep the UI consistent
-		return redirect(url_for('system_backup', id=id))
+		return redirect(url_for('system_backup', system_id=system_id))
 
 	# Get the list of all SLA Domains
 	sla_domains = rubrik.get_sla_domains()
@@ -487,16 +487,16 @@ def systems_bulk_view(start, finish):
 
 ################################################################################
 
-@app.route('/systems/view/<int:id>')
+@app.route('/systems/view/<int:system_id>')
 @cortex.lib.user.login_required
-def system(id):
+def system_view(system_id):
 	# Check user permissions. User must have either systems.all or specific
 	# access to the system
-	if not does_user_have_system_permission(id, "view.detail", "systems.all.view"):
+	if not does_user_have_system_permission(system_id, "view.detail", "systems.all.view"):
 		abort(403)
 
 	# Get the system
-	system = cortex.lib.systems.get_system_by_id(id)
+	system = cortex.lib.systems.get_system_by_id(system_id)
 
 	# Ensure that the system actually exists, and return a 404 if it doesn't
 	if system is None:
@@ -520,16 +520,16 @@ def system(id):
 
 ################################################################################
 
-@app.route('/systems/overview/<int:id>')
+@app.route('/systems/overview/<int:system_id>')
 @cortex.lib.user.login_required
-def system_overview(id):
+def system_overview(system_id):
 	# Check user permissions. User must have either systems.all or specific
 	# access to the system
-	if not does_user_have_system_permission(id, "view.overview", "systems.all.view"):
+	if not does_user_have_system_permission(system_id, "view.overview", "systems.all.view"):
 		abort(403)
 
 	# Get the system
-	system = cortex.lib.systems.get_system_by_id(id)
+	system = cortex.lib.systems.get_system_by_id(system_id)
 
 	# Ensure that the system actually exists, and return a 404 if it doesn't
 	if system is None:
@@ -547,19 +547,19 @@ def system_overview(id):
 		system["vmware_additional"] = curd.fetchone()
 
 
-	return render_template('systems/overview.html', system=system, active='systems', title=system['name'], power_ctl_perm=does_user_have_system_permission(id, "control.vmware.power", "control.all.vmware.power"))
+	return render_template('systems/overview.html', system=system, active='systems', title=system['name'], power_ctl_perm=does_user_have_system_permission(system_id, "control.vmware.power", "control.all.vmware.power"))
 
 ################################################################################
 
-@app.route('/systems/status/<int:id>')
+@app.route('/systems/status/<int:system_id>')
 @cortex.lib.user.login_required
-def system_status(id):
+def system_status(system_id):
 	# Check user permissions. User must have either systems.all or specific
 	# access to the system
-	if not does_user_have_system_permission(id, "view.overview", "systems.all.view"):
+	if not does_user_have_system_permission(system_id, "view.overview", "systems.all.view"):
 		abort(403)
 
-	system = cortex.lib.systems.get_system_by_id(id)
+	system = cortex.lib.systems.get_system_by_id(system_id)
 
 	# Ensure that the system actually exists, and return a 404 if it doesn't
 	if system is None:
@@ -575,10 +575,9 @@ def system_status(id):
 		},
 	}
 
-
 	# get the VM
 	try:
-		vm = cortex.lib.systems.get_vm_by_system_id(id)
+		vm = cortex.lib.systems.get_vm_by_system_id(system_id)
 	except ValueError:
 		abort(404)
 	except Exception as ex:
@@ -638,16 +637,16 @@ def system_status(id):
 
 ################################################################################
 
-@app.route('/systems/power/<int:id>', methods=['POST'])
+@app.route('/systems/power/<int:system_id>', methods=['POST'])
 @cortex.lib.user.login_required
-def system_power(id):
+def system_power(system_id):
 	# Check user permissions. User must have either systems.all or specific
 	# access to the system
-	if not does_user_have_system_permission(id, "control.vmware.power", "control.all.vmware.power"):
+	if not does_user_have_system_permission(system_id, "control.vmware.power", "control.all.vmware.power"):
 		abort(403)
 
 	# Get the system
-	system = cortex.lib.systems.get_system_by_id(id)
+	system = cortex.lib.systems.get_system_by_id(system_id)
 
 	# Ensure that the system actually exists, and return a 404 if it doesn't
 	if system is None:
@@ -655,30 +654,30 @@ def system_power(id):
 
 	try:
 		if request.form.get('power_action', None) == "on":
-			cortex.lib.systems.power_on(id)
+			cortex.lib.systems.power_on(system_id)
 		elif request.form.get('power_action', None) == "shutdown":
-			cortex.lib.systems.shutdown(id)
+			cortex.lib.systems.shutdown(system_id)
 		elif request.form.get('power_action', None) == "off":
-			cortex.lib.systems.power_off(id)
+			cortex.lib.systems.power_off(system_id)
 		elif request.form.get('power_action', None) == "reset":
-			cortex.lib.systems.reset(id)
+			cortex.lib.systems.reset(system_id)
 		#is it an XHR?
 		if request.headers.get('X-Requested-With', None) == "XMLHttpRequest":
-			return system_status(id)
-		return redirect(url_for('system_overview', id=id))
+			return system_status(system_id)
+		return redirect(url_for('system_overview', system_id=system_id))
 	except vim.fault.VimFault:
 		abort(500)
 
 ################################################################################
 
-@app.route('/systems/edit/<int:id>', methods=['GET', 'POST'])
+@app.route('/systems/edit/<int:system_id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
-def system_edit(id):
-	if not does_user_have_system_permission(id, "view.detail", "systems.all.view"):
+def system_edit(system_id):
+	if not does_user_have_system_permission(system_id, "view.detail", "systems.all.view"):
 		abort(403)
 
 	# Get the system
-	system = cortex.lib.systems.get_system_by_id(id)
+	system = cortex.lib.systems.get_system_by_id(system_id)
 
 	# Ensure that the system actually exists, and return a 404 if it doesn't
 	if system is None:
@@ -690,7 +689,7 @@ def system_edit(id):
 			curd = g.db.cursor(mysql.cursors.DictCursor)
 
 			# Extract the owners from the form.
-			if does_user_have_system_permission(id, "edit.owners", "systems.all.edit.owners"):
+			if does_user_have_system_permission(system_id, "edit.owners", "systems.all.edit.owners"):
 				primary_owner_who = request.form.get('primary_owner_who', None)
 				primary_owner_role = request.form.get('primary_owner_role', None)
 				secondary_owner_who = request.form.get('secondary_owner_who', None)
@@ -702,7 +701,7 @@ def system_edit(id):
 				secondary_owner_role = system['secondary_owner_role']
 
 			# Extract CMDB ID from form
-			if does_user_have_system_permission(id, "edit.cmdb", "systems.all.edit.cmdb"):
+			if does_user_have_system_permission(system_id, "edit.cmdb", "systems.all.edit.cmdb"):
 				cmdb_id = request.form.get('cmdb_id', None)
 				if cmdb_id is not None:
 					cmdb_id = cmdb_id.strip()
@@ -715,7 +714,7 @@ def system_edit(id):
 				cmdb_id = system['cmdb_id']
 
 			# Extract VMware UUID from form
-			if does_user_have_system_permission(id, "edit.vmware", "systems.all.edit.vmware"):
+			if does_user_have_system_permission(system_id, "edit.vmware", "systems.all.edit.vmware"):
 				vmware_uuid = request.form.get('vmware_uuid', None)
 				if vmware_uuid is not None:
 					vmware_uuid = vmware_uuid.strip()
@@ -727,7 +726,7 @@ def system_edit(id):
 			else:
 				vmware_uuid = system['vmware_uuid']
 
-			if does_user_have_system_permission(id, "edit.rubrik", "systems.all.edit.rubrik"):
+			if does_user_have_system_permission(system_id, "edit.rubrik", "systems.all.edit.rubrik"):
 				enable_backup = request.form.get('enable_backup', 2)
 				enable_backup_scripts = request.form.get('enable_backup_scripts', 2)
 			else:
@@ -735,7 +734,7 @@ def system_edit(id):
 				enable_backup_scripts = system['enable_backup_scripts']
 
 			# Process the expiry date
-			if does_user_have_system_permission(id, "edit.expiry", "systems.all.edit.expiry"):
+			if does_user_have_system_permission(system_id, "edit.expiry", "systems.all.edit.expiry"):
 				if 'expiry_date' in request.form and request.form['expiry_date'] is not None and len(request.form['expiry_date'].strip()) > 0:
 					expiry_date = request.form['expiry_date']
 					try:
@@ -748,7 +747,7 @@ def system_edit(id):
 				expiry_date = system['expiry_date']
 
 			# Extract Review Status from form
-			if does_user_have_system_permission(id, "edit.review", "systems.all.edit.review"):
+			if does_user_have_system_permission(system_id, "edit.review", "systems.all.edit.review"):
 				review_status = int(request.form.get('review_status', 0))
 				if review_status not in cortex.lib.systems.REVIEW_STATUS_BY_ID:
 					raise ValueError()
@@ -770,7 +769,7 @@ def system_edit(id):
 					task_data = {}
 					task_data['time_constraint'] = 'asap'
 					task_data['short_description'] = 'Review necessity of virtual machine ' + system['name']
-					task_data['description'] = 'Please review the necessity of the virtual machine ' + system['name'] + ' to determine whether we need to keep it or whether it can be decommissioned. Information about the VM and links to ServiceNow can be found on Cortex at https://' + app.config['CORTEX_DOMAIN'] + url_for('system', id=id) + "\n\nOnce reviewed, please edit the system in Cortex using the link above and set it's 'Review Status' to either 'Required' or 'Not Required' and then close the associated project task."
+					task_data['description'] = 'Please review the necessity of the virtual machine ' + system['name'] + ' to determine whether we need to keep it or whether it can be decommissioned. Information about the VM and links to ServiceNow can be found on Cortex at https://' + app.config['CORTEX_DOMAIN'] + url_for('system_view', system_id=id) + "\n\nOnce reviewed, please edit the system in Cortex using the link above and set it's 'Review Status' to either 'Required' or 'Not Required' and then close the associated project task."
 					#task_data['opened_by'] = app.config['REVIEW_TASK_OPENER_SYS_ID']
 					task_data['opened_by'] = 'example'
 					task_data['assignment_group'] = app.config['REVIEW_TASK_TEAM']
@@ -819,21 +818,21 @@ def system_edit(id):
 					rubrik.update_vm(vm['id'], rubrik_update_vm_data)
 
 			# Update the system
-			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `enable_backup` = %s, `enable_backup_scripts` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, enable_backup, enable_backup_scripts, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, id))
+			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `enable_backup` = %s, `enable_backup_scripts` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, enable_backup, enable_backup_scripts, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, system_id))
 			g.db.commit()
 
-			cortex.lib.core.log(__name__, "systems.edit", "System '" + system['name'] + "' edited, id " + str(id), related_id=id)
+			cortex.lib.core.log(__name__, "systems.edit", "System '" + system['name'] + "' edited, id " + str(system_id), related_id=system_id)
 
 			flash('System updated', "alert-success")
 		except ValueError:
 			flash('Failed to update system: 400 Bad request', 'alert-danger')
-			return redirect(url_for('system_edit', id=id))
+			return redirect(url_for('system_edit', system_id=system_id))
 		except Exception as ex:
 			flash('Failed to update system: 500 Internal server error' + str(ex), 'alert-danger')
-			return redirect(url_for('system_edit', id=id))
+			return redirect(url_for('system_edit', system_id=system_id))
 
 		# Regardless of success or error, redirect to the systems page
-		return redirect(url_for('system_edit', id=id))
+		return redirect(url_for('system_edit', system_id=system_id))
 
 	system_class = cortex.lib.classes.get(system['class'])
 	system['review_status_text'] = cortex.lib.systems.REVIEW_STATUS_BY_ID[system['review_status']]
@@ -846,14 +845,14 @@ def system_edit(id):
 
 ################################################################################
 
-@app.route('/systems/actions/<int:id>', methods=['GET', 'POST'])
+@app.route('/systems/actions/<int:system_id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
-def system_actions(id):
-	if not does_user_have_system_permission(id, "view.detail", "systems.all.view"):
+def system_actions(system_id):
+	if not does_user_have_system_permission(system_id, "view.detail", "systems.all.view"):
 		abort(403)
 
 	# Get the system
-	system = cortex.lib.systems.get_system_by_id(id)
+	system = cortex.lib.systems.get_system_by_id(system_id)
 
 	# Ensure that the system actually exists, and return a 404 if it doesn't
 	if system is None:
@@ -873,7 +872,7 @@ def system_actions(id):
 			if (action['require_vm'] and system['vmware_uuid'] is not None) or not action['require_vm']:
 				if does_user_have_permission("workflows.all"):
 					actions.append(action)
-				elif does_user_have_system_permission(id, action['system_permission']):
+				elif does_user_have_system_permission(system_id, action['system_permission']):
 					app.logger.debug("User " + session['username'] + " does not have workflows.all")
 					actions.append(action)
 				elif action['permission'] is not None:

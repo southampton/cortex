@@ -26,12 +26,12 @@
 								{% elif system.vmware_guest_state == "poweredOff"%} <i title="VM Powered Off" class="fa fa-fw fa-stop icon-state icon-off"></i>
 								{% elif system.vmware_guest_state == "suspended"%} <i title="VM Suspended" class="fa fa-fw fa-pause icon-state icon-pause"></i>
 								{% else %} <i title="Not linked to VMware" class="fa fa-fw fa-dot-circle-o icon-state icon-unknown"></i>
-								{% endif %} <a class="server-link" href="{{ url_for('system_overview',id=system.id) }}">{{ system.name }}</a></td>
+								{% endif %} <a class="server-link" href="{{ url_for('system_overview', system_id=system.id) }}">{{ system.name }}</a></td>
 							<td>{{ system.allocation_comment }}</td>
 							<td>{{ system.cmdb_environment }}</td>
 							<td>{{ system.cmdb_operational_status }}</td>
 							<td>{{ system.allocation_date }}</td>
-							<td><a title="View" class="btn btn-xs btn-secondary" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
+							<td><a title="View" class="btn btn-xs btn-secondary" style="margin-right:0.5em" href="{{ url_for('system_overview', system_id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
 						</tr>
 						{%- endfor %}
 					</tbody>
@@ -106,12 +106,12 @@
 							{% elif system.vmware_guest_state == "poweredOff"%} <i title="VM Powered Off" class="fa fa-fw fa-stop icon-state icon-off"></i>
 							{% elif system.vmware_guest_state == "suspended"%} <i title="VM Suspended" class="fa fa-fw fa-pause icon-state icon-pause"></i>
 							{% else %} <i title="Not linked to VMware" class="fa fa-fw fa-dot-circle-o icon-state icon-unknown"></i>
-							{% endif %} <a class="server-link" href="{{ url_for('system_overview',id=system.id) }}">{{ system.name }}</a></td>
+							{% endif %} <a class="server-link" href="{{ url_for('system_overview', system_id=system.id) }}">{{ system.name }}</a></td>
 						<td>{{ system.allocation_comment }}</td>
 						<td>{{ system.cmdb_environment }}</td>
 						<td>{{ system.cmdb_operational_status }}</td>
 						<td>{{ system.allocation_date }}</td>
-						<td><a title="View" class="btn btn-xs btn-secondary" style="margin-right:0.5em" href="{{ url_for('system_overview',id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
+						<td><a title="View" class="btn btn-xs btn-secondary" style="margin-right:0.5em" href="{{ url_for('system_overview', system_id=system.id) }}"><i class="fa fa-fw fa-info-circle"></i> View</a></td>
 					</tr>
 					{%- endfor %}
 				</tbody>

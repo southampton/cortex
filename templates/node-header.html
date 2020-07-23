@@ -2,15 +2,15 @@
 <div style="margin-bottom: 20px">
 	<ul class="nav nav-tabs" id="node-header" role="tablist">
 		<li style="padding: 0px 15px; font-size: 28px;"><i class="fa fa-fw fa-server"></i> {{ system.name }}</li>
-		<li class="nav-item"><a class="{% if active == "overview" %}active {%endif%}nav-link" href="{{url_for('system_overview',id=system.id)}}">Overview</a></li>
-		<li class="nav-item"><a class="{% if active == "info" %}active {%endif%}nav-link" href="{{url_for('system',id=system.id)}}">Info</a></li>
-		<li class="nav-item"><a class="{% if active == "edit" %}active {%endif%}nav-link" href="{{url_for('system_edit',id=system.id)}}">Settings</a></li>
+		<li class="nav-item"><a class="{% if active == "overview" %}active {%endif%}nav-link" href="{{url_for('system_overview', system_id=system.id)}}">Overview</a></li>
+		<li class="nav-item"><a class="{% if active == "info" %}active {%endif%}nav-link" href="{{url_for('system_view', system_id=system.id)}}">Info</a></li>
+		<li class="nav-item"><a class="{% if active == "edit" %}active {%endif%}nav-link" href="{{url_for('system_edit', system_id=system.id)}}">Settings</a></li>
 		{% if system.vmware_uuid and does_user_have_system_permission(system.id, "edit.rubrik", "systems.all.view.rubrik") -%}
-		<li class="nav-item"><a class="{% if active == "backup" %}active {% endif %}nav-link" href="{{url_for('system_backup',id=system.id)}}">Rubrik</a></li>
+		<li class="nav-item"><a class="{% if active == "backup" %}active {% endif %}nav-link" href="{{url_for('system_backup', system_id=system.id)}}">Rubrik</a></li>
 		{% else -%}
 		<li class="nav-item"><a class="nav-link disabled">Rubrik</a></li>
 		{% endif -%}
-		<li class="nav-item"><a class="{% if active == "actions" %}active {% endif %}nav-link" href="{{url_for('system_actions',id=system.id)}}">Actions</a></li>
+		<li class="nav-item"><a class="{% if active == "actions" %}active {% endif %}nav-link" href="{{url_for('system_actions', system_id=system.id)}}">Actions</a></li>
 		{% if system.puppet_certname -%}
 		{% if does_user_have_system_permission(system.id, "edit.puppet", "systems.all.edit.puppet") or does_user_have_system_permission(system['id'],"view.puppet.classify","systems.all.view.puppet.classify") -%}
 		<li class="nav-item"><a class="{% if active == "puppet" %}active {% endif %}nav-link" href="{{url_for('puppet_enc_edit',node=system.puppet_certname)}}" >Puppet</a></li>

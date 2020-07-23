@@ -160,7 +160,7 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
+				<form method="POST" action="{{url_for('system_power', system_id=system.id)}}" class="power-ctl-form">
 					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 					<input type="hidden" name="power_action" value="on"/>
 					<button class="btn btn-success" type="submit"><i class="fa fa-play"></i> Power on</button>
@@ -186,12 +186,12 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
+				<form method="POST" action="{{url_for('system_power', system_id=system.id)}}" class="power-ctl-form">
 					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 					<input type="hidden" name="power_action" value="shutdown"/>
 					<button class="btn btn-danger" type="submit"><i class="fa fa-power-off"></i> Soft power off</button>
 				</form>
-				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
+				<form method="POST" action="{{url_for('system_power', system_id=system.id)}}" class="power-ctl-form">
 					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 					<input type="hidden" name="power_action" value="off"/>
 					<button class="btn btn-danger" type="submit"><i class="fa fa-plug"></i> Hard power off</button>
@@ -213,7 +213,7 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-				<form method="POST" action="{{url_for('system_power', id=system.id)}}" class="power-ctl-form">
+				<form method="POST" action="{{url_for('system_power', system_id=system.id)}}" class="power-ctl-form">
 					<input name="_csrf_token" type="hidden" value="{{ csrf_token() }}"/>
 					<input type="hidden" name="power_action" value="reset"/>
 					<button class="btn btn-danger" type="submit"><i class="fa fa-refresh"></i> Reset</button>
@@ -305,7 +305,7 @@ var chart_disk = c3.generate({
 
 (function get_stats() {
 	$.ajax({
-		url: '{{ url_for('system_status', id=system.id) }}',
+		url: '{{ url_for('system_status', system_id=system.id) }}',
 		dataType: "json",
 		success: update_data,
 		complete: function() {
