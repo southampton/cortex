@@ -60,7 +60,6 @@ def get_puppetdb_environments(db=None, whitelist=None):
 
 ################################################################################
 
-# pylint: disable=too-many-branches,too-many-statements
 def generate_node_config(certname):
 	"""Generates a YAML document describing the configuration of a particular
 	node given as 'certname'."""

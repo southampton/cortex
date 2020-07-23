@@ -119,7 +119,6 @@ class SearchQueryParser:
 	def get_tokens(self):
 		return self.tokens
 
-	# pylint: disable=too-many-branches
 	def generate_sql(self, variable_to_column_map):
 		sql = ""
 		params = []

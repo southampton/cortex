@@ -231,7 +231,7 @@ class CortexWorkflow:
 			endpoint = options.pop('endpoint', None)
 
 			# Add a URL rule
-			app.add_url_rule("/sysactions/" + self.name + "/" + rule + "/<int:id>", endpoint, func, **options)
+			app.add_url_rule("/sysactions/" + self.name + "/" + rule + "/<int:target_id>", endpoint, func, **options)
 
 			# Store the workflow route details in a hash
 			app.wf_system_functions.append({
@@ -280,7 +280,7 @@ class CortexWorkflow:
 		def decorator(func):
 			@wraps(func)
 			def decorated_function(*args, **kwargs):
-				system_id = kwargs['id']
+				system_id = kwargs['target_id']
 
 				## Grant permission ONLY if
 				### they have workflows.all

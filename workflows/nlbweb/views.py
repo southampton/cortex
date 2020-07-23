@@ -12,6 +12,7 @@ from flask import (abort, flash, g, jsonify, redirect, render_template,
                    request, session, url_for)
 # For securely passing the actions list via the browser
 from itsdangerous import JSONWebSignatureSerializer
+from itsdangerous import BadSignature
 
 import cortex.lib.core
 import cortex.lib.systems
@@ -19,11 +20,6 @@ import cortex.views
 from cortex import app
 from cortex.corpus import Corpus
 from cortex.lib.workflow import CortexWorkflow
-
-# For DNS queries
-
-
-
 
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('nlbweb.create', 'Create NLB Web Service')
@@ -41,19 +37,15 @@ def nlbweb_create():
 	wfconfig = workflow.config
 
 	# Turn envs in to a dict
-	envs_dict = { env['id']: env for env in wfconfig['ENVS'] }
+	envs_dict = {env['id']: env for env in wfconfig['ENVS']}
 
 	# Turn SSL providers in to a dict
-	ssl_providers_dict = { ssl_provider['id']: ssl_provider for ssl_provider in wfconfig['SSL_PROVIDERS'] }
+	ssl_providers_dict = {ssl_provider['id']: ssl_provider for ssl_provider in wfconfig['SSL_PROVIDERS']}
 
 	# Turn SSL client profiles in to a dict
-	ssl_client_profiles_dict = { profile['id']: profile for profile in wfconfig['SSL_CLIENT_PROFILES'] }
+	ssl_client_profiles_dict = {profile['id']: profile for profile in wfconfig['SSL_CLIENT_PROFILES']}
 
-	if request.method == 'GET':
-		## Show form
-		return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'], envs_dict=envs_dict, letsencrypt_provider=wfconfig['LETSENCRYPT_PROVIDER_ID'], ssl_client_profiles=wfconfig['SSL_CLIENT_PROFILES'], default_ssl_client_profile=wfconfig['DEFAULT_SSL_CLIENT_PROFILE'], letsencrypt_enabled=wfconfig['LETSENCRYPT_ENABLED'])
-
-	elif request.method == 'POST':
+	if request.method == 'POST':
 		valid_form = True
 		form_fields = {}
 
@@ -114,7 +106,7 @@ def nlbweb_create():
 					flash('All service aliases must be fully qualified domain names', 'alert-danger')
 					valid_form = False
 					break
-				elif fqdn_re.match(alias) is None:
+				if fqdn_re.match(alias) is None:
 					flash('All service alises must be valid domain names: ' + alias, 'alert-danger')
 					valid_form = False
 					break
@@ -230,17 +222,16 @@ def nlbweb_create():
 					flash('You must specify a valid HTTPS port for every back-end node', 'alert-danger')
 					valid_form = False
 					break
-					
+
 		for i in range(0, len(form_fields['node_ips'])):
 			if len(form_fields['node_ips'][i]) == 0:
 				flash('You must specify an IP address for every back-end node', 'alert-danger')
 				valid_form = False
 				break
-			else:
-				if ipv4_re.match(form_fields['node_ips'][i]) is None:
-					flash('You must specify a valid IPv4 address for every back-end node', 'alert-danger')
-					valid_form = False
-					break
+			if ipv4_re.match(form_fields['node_ips'][i]) is None:
+				flash('You must specify a valid IPv4 address for every back-end node', 'alert-danger')
+				valid_form = False
+				break
 
 		# Connect to the NLB now as we need the NLB to validate the
 		# iRule list, which if they fail is a fatal error
@@ -273,23 +264,23 @@ def nlbweb_create():
 					flash('Host object for ' + form_fields['fqdn'] + ' already exists with multiple IPs.', 'alert-danger')
 					valid_form = False
 					break
-				else:
-					# Single IP, check to see if it's the same as the others
-					if last_ip is not None and last_ip != host_object['ipv4addrs'][0]['ipv4addr']:
-						# If a different IP is found, then bail with an error
-						flash('Host object for ' + form_fields['fqdn'] + ' already exists with multiple IPs.', 'alert-danger')
-						valid_form = False
-						break
 
-					# Store the IP for comparision with the next object
-					last_ip = host_object['ipv4addrs'][0]['ipv4addr']
+				# Single IP, check to see if it's the same as the others
+				if last_ip is not None and last_ip != host_object['ipv4addrs'][0]['ipv4addr']:
+					# If a different IP is found, then bail with an error
+					flash('Host object for ' + form_fields['fqdn'] + ' already exists with multiple IPs.', 'alert-danger')
+					valid_form = False
+					break
+
+				# Store the IP for comparision with the next object
+				last_ip = host_object['ipv4addrs'][0]['ipv4addr']
 
 				# Store the IP for use later
 				existing_host_ip = last_ip
 
 		if not valid_form:
 			# Turn envs in to a dict
-			envs_dict = { env['id']: env for env in wfconfig['ENVS'] }
+			envs_dict = {env['id']: env for env in wfconfig['ENVS']}
 
 			return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'], values=form_fields, envs_dict=envs_dict, letsencrypt_provider=wfconfig['LETSENCRYPT_PROVIDER_ID'], ssl_client_profiles=wfconfig['SSL_CLIENT_PROFILES'], default_ssl_client_profile=wfconfig['DEFAULT_SSL_CLIENT_PROFILE'], letsencrypt_enabled=wfconfig['LETSENCRYPT_ENABLED'])
 
@@ -336,7 +327,7 @@ def nlbweb_create():
 					alt_names = decode_subject_alt_name(ext.get_data())
 					details['ssl_cert_subjectAltName'] = []
 					for name in alt_names:
-						if   name[0] == 1:  # 
+						if   name[0] == 1:  #
 							details['ssl_cert_subjectAltName'].append('RFC822:' + name[1])
 						elif name[0] == 2:  # DNS name
 							details['ssl_cert_subjectAltName'].append('DNS:' + name[1])
@@ -408,7 +399,7 @@ def nlbweb_create():
 			https_port_suffix = '-' + back_end_nodes[0]['https_port']
 		else:
 			https_port_suffix = '-https'
-		
+
 		# Generate the names we think we need: pool name. Suffixed with
 		# either -$http(s)_port if all the port numbers of the nodes are
 		# the same or -http and -https if they differ
@@ -430,7 +421,7 @@ def nlbweb_create():
 					'id': 'retrieve_existing_letsencrypt',
 					'fqdn': form_fields['fqdn']})
 				details['warnings'].append('CONFLICT: Let\'s Encrypt certificate for CN ' + form_fields['fqdn'] + ' already exists - re-using. Check the SANs afterwards to ensure they are correct!')
-				
+
 			else:
 				details['actions'].append({
 					'action_description': 'Generate a Let\'s Encrypt certificate for ' + form_fields['fqdn'],
@@ -459,7 +450,7 @@ def nlbweb_create():
 		# | 1   | 1     | 1    || 0    | 1     | 1 (R) | 1 (S) |
 		# +-----+-------+------++------+-------+-------+-------+
 
-		# Determine if we need pools (and indeed monitors for those pools) for both 
+		# Determine if we need pools (and indeed monitors for those pools) for both
 		# HTTP and HTTPS. We need an HTTP pool (and monitor) in the following situations:
 		#  - SSL is disabled (regardless of anything else)
 		#  - SSL is enabled, and we're not forcing a redirect from HTTP to HTTPS on the NLB
@@ -558,7 +549,7 @@ def nlbweb_create():
 					'partition': form_fields['partition']})
 
 		if create_http_pools:
-			# Check if the HTTP pool already exists. 
+			# Check if the HTTP pool already exists.
 			if bigip.tm.ltm.pools.pool.exists(name=pool_name_http, partition=form_fields['partition']):
 				details['warnings'].append('SKIPPED: Pool ' + pool_name_http + ' already exists. Not creating or updating.')
 			else:
@@ -620,7 +611,7 @@ def nlbweb_create():
 				else:
 					new_action['content'] = form_fields['ssl_cert']
 				details['actions'].append(new_action)
-				
+
 		# Check if the SSL Profile already exists
 		if form_fields['enable_ssl']:
 			if bigip.tm.ltm.profile.client_ssls.client_ssl.exists(name=ssl_profile_name, partition=form_fields['partition']):
@@ -710,12 +701,12 @@ def nlbweb_create():
 				else:
 					if form_fields['use_xforwardedfor']:
 						new_action['http_profile'] = wfconfig['HTTP_PROFILE_XFORWARDEDFOR']
-				
+
 			# Any other iRules come after the HTTPS redirect if the user chose it
 			new_action['irules'].extend(http_irules)
 
 			details['actions'].append(new_action)
-		
+
 		# Check to see if the HTTPS virtual server already exists
 		if form_fields['enable_ssl']:
 			if bigip.tm.ltm.virtuals.virtual.exists(name=virtual_server_https, partition=form_fields['partition']):
@@ -749,7 +740,7 @@ def nlbweb_create():
 
 				details['actions'].append(new_action)
 
-		# If there is only one action which is generating/retrieving a 
+		# If there is only one action which is generating/retrieving a
 		# certificate, then drop the action
 		if len(details['actions']) == 1 and details['actions'][0]['id'] in ['generate_letsencrypt', 'retrieve_existing_letsencrypt']:
 			del details['actions'][0]
@@ -765,21 +756,24 @@ def nlbweb_create():
 		# Show the user the details, warnings, and what we're going to do
 		return render_template(__name__ + "::validate.html", title="Create NLB Web Service", details=details, json_data=json_data)
 
+	## Show form
+	return render_template(__name__ + "::nlbweb.html", title="Create NLB Web Service", envs=wfconfig['ENVS'], ssl_providers=wfconfig['SSL_PROVIDERS'], default_ssl_provider=wfconfig['DEFAULT_SSL_PROVIDER'], envs_dict=envs_dict, letsencrypt_provider=wfconfig['LETSENCRYPT_PROVIDER_ID'], ssl_client_profiles=wfconfig['SSL_CLIENT_PROFILES'], default_ssl_client_profile=wfconfig['DEFAULT_SSL_CLIENT_PROFILE'], letsencrypt_enabled=wfconfig['LETSENCRYPT_ENABLED'])
+
 @workflow.route('validate', title='Create NLB Web Service', permission="nlbweb.create", methods=['POST'], menu=False)
 def nlbweb_validate():
 	# Get the workflow settings
 	wfconfig = workflow.config
-	
+
 	# If we've got the confirmation, start the task:
 	if 'submit' in request.form and 'actions' in request.form:
 		options = {}
 		options['wfconfig'] = wfconfig
 
-		## Decode the actions data 
+		## Decode the actions data
 		signer = JSONWebSignatureSerializer(app.config['SECRET_KEY'])
 		try:
 			options['actions'] = signer.loads(request.form['actions'])
-		except itsdangerous.BadSignature as ex:
+		except BadSignature:
 			abort(400)
 
 		# Connect to NeoCortex and start the task
@@ -788,22 +782,22 @@ def nlbweb_validate():
 
 		# Redirect to the status page for the task
 		return redirect(url_for('task_status', id=task_id))
-	else:
-		return abort(400)
+
+	return abort(400)
 
 @workflow.route('dnslookup', permission="nlbweb.create", menu=False)
 def nlbweb_dns_lookup():
-	
+
 	host = request.args['host']
 
 	# Load the Corpus library (for Infoblox helper functions)
 	corpus = Corpus(g.db, app.config)
-	
+
 	return jsonify(corpus.dns_lookup(host))
 
 # Processes a Zulu time
-def parse_zulu_time(s):
-	return datetime.datetime(int(s[0:4]), int(s[4:6]), int(s[6:8]), int(s[8:10]), int(s[10:12]), int(s[12:14]))
+def parse_zulu_time(zulu_time):
+	return datetime.datetime(int(zulu_time[0:4]), int(zulu_time[4:6]), int(zulu_time[6:8]), int(zulu_time[8:10]), int(zulu_time[10:12]), int(zulu_time[12:14]))
 
 # Reads an ASN1 IA5 String (i.e. a string where all octets are < 128)
 def read_asn1_string(byte_string, offset):
@@ -812,13 +806,13 @@ def read_asn1_string(byte_string, offset):
 
 	if length != -1:
 		return (byte_string[offset:offset + length], offset + length)
-	else:
-		# Search for the end of the string
-		end_byte_idx = offset
-		while byte_string[end_byte_offset] != 0b10000000:
-			end_byte_idx = end_byte_idx + 1
 
-		return (byte_string[offset:end_byte_index], end_byte_index + 1)
+	# Search for the end of the string
+	end_byte_idx = offset
+	while byte_string[end_byte_idx] != 0b10000000:
+		end_byte_idx = end_byte_idx + 1
+
+	return (byte_string[offset:end_byte_idx], end_byte_idx + 1)
 
 # Reads an ASN1 length
 def read_asn1_length(byte_string, offset):
@@ -869,8 +863,9 @@ def decode_subject_alt_name(byte_string):
 		while byte_idx < length + 2:
 			seq_el_type = ord(byte_string[byte_idx])
 			byte_idx = byte_idx + 1
-			
-			if   seq_el_type == 0b10000000:  # otherName [0]
+
+			# pylint: disable=no-else-raise
+			if seq_el_type == 0b10000000:  # otherName [0]
 				raise ValueError('Unsupported subjectAltName type (0)')
 			elif seq_el_type == 0b10000001:  # rfc822Name [1]
 				(result, byte_idx) = read_asn1_string(byte_string, byte_idx)
@@ -896,8 +891,7 @@ def decode_subject_alt_name(byte_string):
 
 		return results
 
-	else:
-		raise ValueError('subjectAltName does not start with ASN1 sequence')
+	raise ValueError('subjectAltName does not start with ASN1 sequence')
 
 def parse_irule_list(irules_text, bigip):
 	# On empty string, return empty list
@@ -912,7 +906,7 @@ def parse_irule_list(irules_text, bigip):
 
 	# Iterate over all the rules in the list
 	for irule in irules_list:
-		# All the names should start with a slash and can be at minimum four 
+		# All the names should start with a slash and can be at minimum four
 		# characters long (e.g. /a/b)
 		if len(irule) < 4 or irule[0] != '/':
 			raise ValueError('Invalid iRule name: ' + irule)
@@ -931,7 +925,7 @@ def parse_irule_list(irules_text, bigip):
 		# Both the partition name and the iRule name should be non-empty
 		if len(irule_name) == 0 or len(irule_partition) == 0:
 			raise ValueError('Invalid iRule name: ' + irule)
-		
+
 		# The name looks to be at least semi-valid. See if it exists
 		if bigip.tm.ltm.rules.rule.exists(name=irule_name, partition=irule_partition):
 			result.append(irule)

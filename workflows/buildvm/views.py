@@ -28,12 +28,12 @@ def validate_data(r, templates, envs):
 
 
 	# Pull data out of request
-	sockets  = r.form["sockets"]
-	cores	 = r.form["cores"]
-	ram	 = r.form["ram"]
-	disk	 = r.form["disk"]
+	sockets = r.form["sockets"]
+	cores = r.form["cores"]
+	ram = r.form["ram"]
+	disk = r.form["disk"]
 	template = r.form["template"]
-	env	 = r.form["environment"]
+	env = r.form["environment"]
 	swap_enabled = bool(r.form["swap-enabled"].lower() == "enable") if "swap-enabled" in r.form else False
 	swap = r.form["swap"] if "swap" in r.form else 0
 
@@ -139,71 +139,20 @@ def build(build_type):
 	# Get the list of environments
 	environments = cortex.lib.core.get_cmdb_environments()
 
-	if request.method == "GET":
-
-		# Get a list of Users
-		autocomplete_users = get_user_list_from_cache()
-
-		# Get the VM Specs from the DB
-		try:
-			vm_spec_json = cortex.lib.admin.get_kv_setting("vm.specs", load_as_json=True)
-		except ValueError:
-			flash("Could not parse JSON from the database.", "alert-danger")
-
-		# Get the VM Specs Config from the DB.
-		try:
-			vm_spec_config_json = cortex.lib.admin.get_kv_setting("vm.specs.config", load_as_json=True)
-		except ValueError:
-			flash("Could not parse JSON from the database.", "alert-danger")
-			vm_spec_config_json = {}
-
-		# Get the VM Specs from the DB
-		try:
-			vm_spec_json = cortex.lib.admin.get_kv_setting("vm.specs", load_as_json=True)
-		except ValueError:
-			flash("Could not parse JSON from the database.", "alert-danger")
-			vm_spec_json = {}
-
-		# Get the VM Specs Config from the DB.
-		try:
-			vm_spec_config_json = cortex.lib.admin.get_kv_setting('vm.specs.config', load_as_json=True)
-		except ValueError:
-			flash("Could not parse JSON from the database.", "alert-danger")
-			vm_spec_config_json = {}
-
-		## Show form
-		return workflow.render_template("build.html",
-			build_type = build_type,
-			title = title,
-			clusters = clusters,
-			default_cluster = get_build_config(build_type, "DEFAULT_CLUSTER", None),
-			environments = environments,
-			default_env = get_build_config(build_type, "DEFAULT_ENV", None),
-			folders = folders,
-			os_names = get_build_config(build_type, "OS_DISP_NAMES"),
-			os_order = get_build_config(build_type, "OS_ORDER"),
-			os_types = get_build_config(build_type, "OS_TYPES"),
-			network_names = get_build_config(build_type, "NETWORK_NAMES"),
-			networks_order = get_build_config(build_type, "NETWORK_ORDER"),
-			autocomplete_users = autocomplete_users,
-			vm_spec_json = vm_spec_json,
-			vm_spec_config_json = vm_spec_config_json,
-		)
-
-	elif request.method == "POST":
+	if request.method == "POST":
 		# Ensure we have all parameters that we require
-		if "sockets" not in request.form or "cores" not in request.form or "ram" not in request.form or "disk" not in request.form or "template" not in request.form or "cluster" not in request.form or "environment" not in request.form or "network" not in request.form:
+		if not all(field in request.form for field in ["sockets", "cores", "ram", "disk", "template", "cluster", "environment", "network"]):
 			flash("You must select options for all questions before creating", "alert-danger")
 			return redirect(url_for(build_type))
 
 		# Form validation
 		try:
 			# Extract all the common parameters
-			cluster  = request.form["cluster"]
-			purpose  = request.form["purpose"]
+			cluster = request.form["cluster"]
+			purpose = request.form["purpose"]
 			comments = request.form["comments"]
 			sendmail = "send_mail" in request.form
-			network  = request.form["network"]
+			network = request.form["network"]
 			primary_owner_who = request.form.get("primary_owner_who", None)
 			primary_owner_role = request.form.get("primary_owner_role", None)
 			secondary_owner_who = request.form.get("secondary_owner_who", None)
@@ -285,10 +234,60 @@ def build(build_type):
 		# Redirect to the status page for the task
 		return redirect(url_for("task_status", id=task_id))
 
+	# Get a list of Users
+	autocomplete_users = get_user_list_from_cache()
+
+	# Get the VM Specs from the DB
+	try:
+		vm_spec_json = cortex.lib.admin.get_kv_setting("vm.specs", load_as_json=True)
+	except ValueError:
+		flash("Could not parse JSON from the database.", "alert-danger")
+
+	# Get the VM Specs Config from the DB.
+	try:
+		vm_spec_config_json = cortex.lib.admin.get_kv_setting("vm.specs.config", load_as_json=True)
+	except ValueError:
+		flash("Could not parse JSON from the database.", "alert-danger")
+		vm_spec_config_json = {}
+
+	# Get the VM Specs from the DB
+	try:
+		vm_spec_json = cortex.lib.admin.get_kv_setting("vm.specs", load_as_json=True)
+	except ValueError:
+		flash("Could not parse JSON from the database.", "alert-danger")
+		vm_spec_json = {}
+
+	# Get the VM Specs Config from the DB.
+	try:
+		vm_spec_config_json = cortex.lib.admin.get_kv_setting('vm.specs.config', load_as_json=True)
+	except ValueError:
+		flash("Could not parse JSON from the database.", "alert-danger")
+		vm_spec_config_json = {}
+
+	## Show form
+	return workflow.render_template(
+		"build.html",
+		build_type=build_type,
+		title=title,
+		clusters=clusters,
+		default_cluster=get_build_config(build_type, "DEFAULT_CLUSTER", None),
+		environments=environments,
+		default_env=get_build_config(build_type, "DEFAULT_ENV", None),
+		folders=folders,
+		os_names=get_build_config(build_type, "OS_DISP_NAMES"),
+		os_order=get_build_config(build_type, "OS_ORDER"),
+		os_types=get_build_config(build_type, "OS_TYPES"),
+		network_names=get_build_config(build_type, "NETWORK_NAMES"),
+		networks_order=get_build_config(build_type, "NETWORK_ORDER"),
+		autocomplete_users=autocomplete_users,
+		vm_spec_json=vm_spec_json,
+		vm_spec_config_json=vm_spec_config_json,
+	)
+
 ################################################################################
 ## Build VM View Routes
 
-@workflow.route("standard",title="Create Standard VM", order=10, permission="buildvm.standard", methods=["GET", "POST"])
+@workflow.route("standard", title="Create Standard VM", order=10, permission="buildvm.standard", methods=["GET", "POST"])
 def standard():
 	return build("standard")
 

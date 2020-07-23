@@ -4,7 +4,6 @@ from flask import g
 
 ################################################################################
 
-# pylint: disable=too-many-branches,too-many-statements
 def get_os_stats():
 	# Get a cursor to the database
 	curd = g.db.cursor(mysql.cursors.DictCursor)

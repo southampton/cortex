@@ -68,7 +68,7 @@ def read_asn1_length(byte_string, offset):
 
 ################################################################################
 
-# pylint: disable=no-else-return,no-else-raise,too-many-branches
+# pylint: disable=no-else-return,no-else-raise
 def decode_subject_alt_name(byte_string):
 	"""Decodes a subjectAltName value into something usable."""
 

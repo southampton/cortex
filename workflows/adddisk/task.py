@@ -1,5 +1,7 @@
-from pyVmomi import vim
 
+# pylint: disable=no-name-in-module
+from pyVmomi import vim
+# pylint: enable=no-name-in-module
 
 def run(helper, options):
 

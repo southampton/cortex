@@ -20,7 +20,6 @@ def uniqify(l, k):
 	seen = set()
 	return [d for d in l if d[k] not in seen and not seen.add(d[k])]
 
-# pylint: disable=too-many-branches,too-many-statements,too-many-nested-blocks
 def run(helper, _options):
 	if 'SYSTEM_EXPIRE_NOTIFY_CONFIG' not in helper.config:
 		helper.event('expire_notify_unconfigured', success=False, description='Missing configuration for VM expiry notification', oneshot=True)

@@ -90,10 +90,10 @@ def run(helper, options):
 	# Update the system with some options.
 	helper.lib.update_system(
 		system_dbid,
-		primary_owner_who = options.get("primary_owner_who", None),
-		primary_owner_role = options.get("primary_owner_role", None),
-		secondary_owner_who = options.get("secondary_owner_who", None),
-		secondary_owner_role = options.get("secondary_owner_role", None),
+		primary_owner_who=options.get("primary_owner_who", None),
+		primary_owner_role=options.get("primary_owner_role", None),
+		secondary_owner_who=options.get("secondary_owner_who", None),
+		secondary_owner_role=options.get("secondary_owner_role", None),
 	)
 
 	# End the event
@@ -111,7 +111,7 @@ def run(helper, options):
 	helper.event("allocate_ipaddress", "Allocating an IP addresses from " + networkdisplay)
 
 	# Allocate an IP address
-	ipaddrs = helper.lib.infoblox_create_host(system_name + "." + domain, ipv4 = True, ipv4_subnet = network, ipv6 = bool(network6), ipv6_subnet = network6, aliases = dns_aliases)
+	ipaddrs = helper.lib.infoblox_create_host(system_name + "." + domain, ipv4=True, ipv4_subnet=network, ipv6=bool(network6), ipv6_subnet=network6, aliases=dns_aliases)
 
 	# Handle errors - this will stop the task
 	if ipaddrs is None:
@@ -137,8 +137,8 @@ def run(helper, options):
 
 	# Pull some information out of the configuration
 	template_name = os_templates[options["template"]]
-	os_name =       os_names[options["template"]]
-	os_disk_size =  os_disks[options["template"]]
+	os_name = os_names[options["template"]]
+	os_disk_size = os_disks[options["template"]]
 
 	# For Linux
 	if options["template"] in os_types["Linux"]:
@@ -209,7 +209,7 @@ def run(helper, options):
 	vm = task.info.result
 
 	# If we don't have a VM, then kill the task
-	if vm == None:
+	if vm is None:
 		raise RuntimeError("VM creation failed: VMware API did not return a VM object reference")
 
 
@@ -335,7 +335,7 @@ def run(helper, options):
 		# Start the event
 		helper.event("entca_create_cert", "Creating certificate on Enterprise CA")
 
-		entca_servers = options['wfconfig'].get("ENTCA_SERVERS") if type(options['wfconfig'].get("ENTCA_SERVERS")) is list else [options['wfconfig'].get("ENTCA_SERVERS"),]
+		entca_servers = options['wfconfig'].get("ENTCA_SERVERS") if isinstance(options['wfconfig'].get("ENTCA_SERVERS"), list) else [options['wfconfig'].get("ENTCA_SERVERS"),]
 		for entca in entca_servers:
 			# Build the request data
 			json_data = {"fqdn": "{system_name}.{domain}".format(system_name=system_name, domain=entca["entdomain"])}
@@ -489,9 +489,9 @@ def run(helper, options):
 			helper.end_event(success=False, description="Timed out waiting for in-guest installation to start")
 
 			# End the task here
-			return
-		else:
-			helper.end_event(success=True, description="In-guest installation started")
+			return None
+
+		helper.end_event(success=True, description="In-guest installation started")
 
 	# Start another event
 	helper.event("guest_installer_done", "Waiting for in-guest installation to finish")
@@ -582,7 +582,7 @@ def run(helper, options):
 	if build_type in ["standard", "sandbox"]:
 		subject = "Cortex has finished building your VM, " + str(system_name)
 
-		message  = "Cortex has finished building your VM. The details of the VM can be found below.\n"
+		message = "Cortex has finished building your VM. The details of the VM can be found below.\n"
 		message += "\n"
 		if build_type == "standard":
 			message += "ServiceNow Task: " + str(options["task"]) + "\n"
@@ -614,7 +614,7 @@ def run(helper, options):
 		subject = "Your VM has been built and is ready to use"
 
 		if options["template"] == "rhel7":
-			message  = "Your Red Hat Enterprise Linux 7 VM is now built and is ready to be logged in to. "
+			message = "Your Red Hat Enterprise Linux 7 VM is now built and is ready to be logged in to. "
 			message += "You can access the VM via SSH, either directly from the terminal of another Linux "
 			message += "machine using the ssh command, or from a Windows machine using an SSH client such "
 			message += "as PuTTY. PuTTY is available from https://software.soton.ac.uk/. You can log in to "
@@ -634,7 +634,7 @@ def run(helper, options):
 			message += "\n"
 			message += "less /home/" + helper.username + "/README.UoS\n"
 		elif options["template"] == "windows_server_2016":
-			message  = "Your Windows Server 2016 VM is now built and is ready to be logged in to. You can "
+			message = "Your Windows Server 2016 VM is now built and is ready to be logged in to. You can "
 			message += "access the VM via Remote Desktop, either using the Microsoft Remote Desktop "
 			message += "client for Windows or Mac, or using a compatible client such as rdesktop, Remmina "
 			message += "or xfreerdp for Linux. You can log in to your VM with the following details:\n"

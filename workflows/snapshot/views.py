@@ -15,9 +15,9 @@ def snapshot_create_permission_callback():
 	return does_user_have_workflow_permission('systems.all.snapshot') or does_user_have_any_system_permission('snapshot')
 
 @workflow.action('system', title='Snapshot', desc='Take a VMware snapshot of this system', system_permission='snapshot', permission='systems.all.snapshot', require_vm=True, methods=['GET', 'POST'])
-def snapshot_system(id):
+def snapshot_system(target_id):
 
-	return redirect(url_for('snapshot_create', systems=id))
+	return redirect(url_for('snapshot_create', systems=target_id))
 
 @workflow.route('create', title='Create VMware Snapshot', order=40, permission=snapshot_create_permission_callback, methods=['GET', 'POST'])
 def snapshot_create():
@@ -30,29 +30,16 @@ def snapshot_create():
 		# Select all VMs where the user has permission to snapshot
 		query_where = (
 			"""WHERE (`cmdb_id` IS NOT NULL AND `cmdb_operational_status` = "In Service") AND `vmware_uuid` IS NOT NULL AND (`id` IN (SELECT `system_id` FROM `system_perms_view` WHERE (`type` = '0' AND `perm` = 'snapshot' AND `who` = %s) OR (`type` = '1' AND `perm` = 'snapshot' AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s)))) ORDER BY `id` DESC""",
-			(session["username"],session["username"]),
+			(session["username"], session["username"]),
 		)
-		systems = get_systems(where_clause = query_where)
+		systems = get_systems(where_clause=query_where)
 	else:
 		abort(403)
 
 	# Create the values dict.
 	values = {}
 
-	if request.method == 'GET':
-		if 'systems' in request.args:
-			values['snapshot_systems'] = []
-			for system in request.args['systems'].strip(',').split(','):
-				try:
-					vm = next(i for i in systems if i['id'] == int(system))
-				except StopIteration:pass # System not in Systems List (Likely not a VM then).
-				except ValueError:pass    # System was not an int.
-				else:
-					values['snapshot_systems'].append(vm)
-
-		return workflow.render_template('create.html', title='Create VMware Snapshot', systems=systems, values=values)
-
-	elif request.method == 'POST':
+	if request.method == 'POST':
 
 		values['snapshot_name'] = request.form.get('snapshot_name', 'Snapshot - {}'.format(session['username']))[:80]
 		values['snapshot_task'] = request.form.get('snapshot_task', '')
@@ -94,3 +81,17 @@ def snapshot_create():
 
 		# Redirect to the status page for the task
 		return redirect(url_for('task_status', id=task_id))
+
+	if 'systems' in request.args:
+		values['snapshot_systems'] = []
+		for system in request.args['systems'].strip(',').split(','):
+			try:
+				vm = next(i for i in systems if i['id'] == int(system))
+			except StopIteration:
+				pass # System not in Systems List (Likely not a VM then).
+			except ValueError:
+				pass    # System was not an int.
+			else:
+				values['snapshot_systems'].append(vm)
+
+	return workflow.render_template('create.html', title='Create VMware Snapshot', systems=systems, values=values)

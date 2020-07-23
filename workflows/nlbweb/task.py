@@ -19,7 +19,7 @@ def run(helper, options):
 	actions = options['actions']
 
 	# Validate we get a list
-	assert type(actions) is list, "actions list is not a Python list object"
+	assert isinstance(actions, list), "actions list is not a Python list object"
 
 	# Dictionary passed to all functions (events) so they can share information
 	task_globals = {}
@@ -70,7 +70,7 @@ def connect_bigip(bigip_host, config):
 def action_generate_letsencrypt(action, helper, config, task_globals):
 	# Get the Infoblox host object reference for in the ACME Endpoint
 	ref = helper.lib.infoblox_get_host_refs(config['LETSENCRYPT_HOST_FQDN'], config['LETSENCRYPT_DNS_VIEW'])
-	if ref is None or (type(ref) is list and len(ref) == 0):
+	if not ref:
 		raise Exception('Failed to get host ref for Let\'s Encrypt ACME endpoint')
 
 	# Add the alias to the host object temporarily for the FQDN
@@ -90,11 +90,11 @@ def action_generate_letsencrypt(action, helper, config, task_globals):
 		raise Exception('Request to ACME Create Certificate Endpoint failed with error code ' + str(r.status_code) + ': ' + r.text)
 
 	# Extract the details
-	js = r.json()
-	cert = js['certificate']
-	private_key = js['privatekey']
-	cert_cn = js['cn'][0]
-	cert_sans = js['sans']
+	r_json = r.json()
+	cert = r_json['certificate']
+	private_key = r_json['privatekey']
+	cert_cn = r_json['cn'][0]
+	cert_sans = r_json['sans']
 
 	# Remove the aliases from the host object
 	helper.lib.infoblox_remove_host_record_alias(ref[0], action['fqdn'])
@@ -110,15 +110,15 @@ def action_generate_letsencrypt(action, helper, config, task_globals):
 
 ################################################################################
 
-def action_retrieve_letsencrypt(action, helper, config, task_globals):
+def action_retrieve_letsencrypt(action, _helper, config, task_globals):
 	# Get the certificate
 	r = requests.get(urljoin(config['ACME_API_URL'], 'get_certificate') + '/' + action['fqdn'], headers={'Content-Type': 'application/json', 'X-Client-Secret': config['ACME_API_SECRET']})
 	if r is None:
 		raise Exception('Request to ACME Create Certificate Endpoint failed')
 	if r.status_code != 200:
 		raise Exception('Request to ACME Create Certificate Endpoint failed with error code ' + str(r.status_code) + ': ' + r.text)
-	js = r.json()
-	task_globals['le_cert'] = js['certificate']
+	r_json = r.json()
+	task_globals['le_cert'] = r_json['certificate']
 
 	# Get the private key
 	r = requests.get(urljoin(config['ACME_API_URL'], 'get_privatekey') + '/' + action['fqdn'], headers={'Content-Type': 'application/json', 'X-Client-Secret': config['ACME_API_SECRET']})
@@ -126,16 +126,16 @@ def action_retrieve_letsencrypt(action, helper, config, task_globals):
 		raise Exception('Request to ACME Create Certificate Endpoint failed')
 	if r.status_code != 200:
 		raise Exception('Request to ACME Create Certificate Endpoint failed with error code ' + str(r.status_code) + ': ' + r.text)
-	js = r.json()
-	task_globals['le_key'] = js['privatekey']
+	r_json = r.json()
+	task_globals['le_key'] = r_json['privatekey']
 
 	return True, task_globals
 
 ################################################################################
 
-def action_allocate_ip(action, helper, config, task_globals):
+def action_allocate_ip(action, helper, _config, task_globals):
 	# Allocate an IP address
-	ipv4addr = helper.lib.infoblox_create_host(action['fqdn'], ipv4 = True, ipv4_subnet = action['network'], aliases = action['aliases'])
+	ipv4addr = helper.lib.infoblox_create_host(action['fqdn'], ipv4=True, ipv4_subnet=action['network'], aliases=action['aliases'])
 
 	# End the event, logging what we allocated
 	helper.end_event(description="Allocated the IP address " + ipv4addr)
@@ -147,15 +147,15 @@ def action_allocate_ip(action, helper, config, task_globals):
 
 ################################################################################
 
-def action_create_host(action, helper, config, task_globals):
+def action_create_host(action, helper, _config, task_globals):
 	# Allocate an IP address
-	ipv4addr = helper.lib.infoblox_create_host(action['fqdn'], ipv4 = True, ipv4_addr = action['ip'], aliases = action['aliases'])
+	helper.lib.infoblox_create_host(action['fqdn'], ipv4=True, ipv4_addr=action['ip'], aliases=action['aliases'])
 
 	return True, task_globals
 
 ################################################################################
 
-def action_create_node(action, helper, config, task_globals):
+def action_create_node(action, _helper, config, task_globals):
 	# Connect
 	bigip = connect_bigip(action['bigip'], config)
 
@@ -169,7 +169,7 @@ def action_create_node(action, helper, config, task_globals):
 
 ################################################################################
 
-def action_create_monitor(action, helper, config, task_globals):
+def action_create_monitor(action, _helper, config, task_globals):
 	# Connect
 	bigip = connect_bigip(action['bigip'], config)
 
@@ -178,7 +178,7 @@ def action_create_monitor(action, helper, config, task_globals):
 		if action['parent'] == 'http':
 			bigip.tm.ltm.monitor.https.http.create(name=action['name'], partition=action['partition'], description=action['description'], send='GET ' + action['url'] + ' HTTP/1.1\\r\\nHost: ' + action['fqdn'] + '\\r\\n\\r\\n', recv=action['response'])
 		elif action['parent'] == 'https':
-			bigip.tm.ltm.monitor.https_s.https.create(name=action['name'], partition=action['partition'], description=action['description'], send = 'GET ' + action['url'] + ' HTTP/1.1\\r\\nHost: ' + action['fqdn'] + '\\r\\n\\r\\n', recv=action['response'])
+			bigip.tm.ltm.monitor.https_s.https.create(name=action['name'], partition=action['partition'], description=action['description'], send='GET ' + action['url'] + ' HTTP/1.1\\r\\nHost: ' + action['fqdn'] + '\\r\\n\\r\\n', recv=action['response'])
 		else:
 			raise Exception('Unknown monitor parent: ' + str(action['parent']))
 	except Exception as e:
@@ -188,7 +188,7 @@ def action_create_monitor(action, helper, config, task_globals):
 
 ################################################################################
 
-def action_create_pool(action, helper, config, task_globals):
+def action_create_pool(action, _helper, config, task_globals):
 	# Connect
 	bigip = connect_bigip(action['bigip'], config)
 
@@ -202,7 +202,7 @@ def action_create_pool(action, helper, config, task_globals):
 
 ################################################################################
 
-def action_upload_key(action, helper, config, task_globals):
+def action_upload_key(action, _helper, config, task_globals):
 	# Connect
 	bigip = connect_bigip(action['bigip'], config)
 
@@ -228,7 +228,7 @@ def action_upload_key(action, helper, config, task_globals):
 
 ################################################################################
 
-def action_upload_cert(action, helper, config, task_globals):
+def action_upload_cert(action, _helper, config, task_globals):
 	# Connect
 	bigip = connect_bigip(action['bigip'], config)
 
@@ -254,7 +254,7 @@ def action_upload_cert(action, helper, config, task_globals):
 
 ################################################################################
 
-def action_create_ssl_client_profile(action, helper, config, task_globals):
+def action_create_ssl_client_profile(action, _helper, config, task_globals):
 	# Connect
 	bigip = connect_bigip(action['bigip'], config)
 
@@ -268,7 +268,7 @@ def action_create_ssl_client_profile(action, helper, config, task_globals):
 
 ################################################################################
 
-def action_create_http_profile(action, helper, config, task_globals):
+def action_create_http_profile(action, _helper, config, task_globals):
 	# Connect
 	bigip = connect_bigip(action['bigip'], config)
 
@@ -303,7 +303,7 @@ def action_create_http_profile(action, helper, config, task_globals):
 
 ################################################################################
 
-def action_create_virtual_server(action, helper, config, task_globals):
+def action_create_virtual_server(action, _helper, config, task_globals):
 	# Connect
 	bigip = connect_bigip(action['bigip'], config)
 

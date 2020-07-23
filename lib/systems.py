@@ -124,7 +124,7 @@ def get_system_by_vmware_uuid(name):
 ################################################################################
 
 # TODO: Rewrite _build_systems_query - Its horrible!!
-# pylint: disable=too-many-statements,too-many-branches,too-many-boolean-expressions
+# pylint: disable=too-many-boolean-expressions
 def _build_systems_query(class_name=None, search=None, order=None, order_asc=True, limit_start=None, limit_length=None, hide_inactive=True, only_other=False, show_expired=False, show_nocmdb=False, show_perms_only=False, show_allocated_and_perms=False, only_allocated_by=None, show_favourites_for=None, virtual_only=False, toggle_queries=False):
 	params = ()
 	query = ""

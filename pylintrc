@@ -147,7 +147,11 @@ disable=print-statement,
 		line-too-long,
 		too-many-locals,
 		too-many-arguments,
-		broad-except
+		broad-except,
+		too-many-statements,
+		too-many-branches,
+		too-many-nested-blocks,
+		too-many-return-statements
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -265,6 +269,8 @@ good-names=i,
 	vm,
 	si,
 	Run,
+	os,
+	ip,
 	_
 
 # Good variable names regexes, separated by a comma. If names match any regex,

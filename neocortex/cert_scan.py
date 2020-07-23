@@ -114,7 +114,6 @@ def raise_interrupt(signum, frame):
 
 ################################################################################
 
-# pylint: disable=too-many-branches,too-many-statements
 def scan_ip(host, port, timeout, starttls=None):
 	"""Scans a IP:Port for an SSL certificate."""
 
@@ -268,7 +267,6 @@ def callback_func(_arg):
 			# Catch all exceptions so we don't break the pool
 			pass
 
-# pylint: disable=too-many-branches,too-many-statements
 def run(helper, _options):
 	"""Run the certificate scan."""
 
