@@ -111,7 +111,7 @@ def decom_step_check_complete(target_id):
 	return stderr("Bad Request", "Task (ID: {}) failed. You cannot complete the decommission at this time.", 404)
 
 @workflow.action("start", title='Decomission', system_permission="decom", permission="systems.all.decom", menu=False, methods=['POST'])
-def decom_step_start(_target_id):
+def decom_step_start(target_id):
 	## Get the actions list
 	actions_data = request.form['actions']
 
@@ -131,7 +131,7 @@ def decom_step_start(_target_id):
 
 	# Connect to NeoCortex and start the task
 	neocortex = cortex.lib.core.neocortex_connect()
-	task_id = neocortex.create_task(__name__, session['username'], options, description="Decommissions a system")
+	task_id = neocortex.create_task(__name__, session['username'], options, description="Decommission system ID = {}".format(target_id))
 
 	# Redirect to the status page for the task
 	return redirect(url_for('task_status', task_id=task_id))

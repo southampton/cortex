@@ -451,7 +451,7 @@ def systems_bulk_save():
 
 	# Find a list of systems from the form. Each of the form input elements
 	# containing a system comment has a name that starts "system_comment_"
-	for key in list(request.form.items()):
+	for key, _ in request.form.items():
 		if key.startswith("system_comment_"):
 			# Yay we found one! blindly update it!
 			updateid = key.replace("system_comment_", "")

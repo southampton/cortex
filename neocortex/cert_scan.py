@@ -4,6 +4,7 @@ import ipaddress
 import select
 import signal
 import socket
+from functools import partial
 from multiprocessing import Pool
 
 import MySQLdb as mysql
@@ -245,24 +246,15 @@ def scan_ip(host, port, timeout, starttls=None):
 
 ################################################################################
 
-total_results = 0
-total_searches = 0
-last_percentage = ""
-g_helper = None
-
-def callback_func(_arg):
+def callback_func(task_globals, _arg):
 	"""Callback function when a worker finishes to update statistics."""
-
-	global total_results, total_searches, last_percentage, g_helper
-	total_results = total_results + 1
-
-	if g_helper is not None:
+	task_globals["total_results"] += 1
+	if task_globals["g_helper"] is not None:
 		try:
-			new_percentage = "{0:.1%}".format(float(total_results) / float(total_searches))
-
-			if new_percentage != last_percentage:
-				last_percentage = new_percentage
-				g_helper.update_event("Scanning network for certificates: scanned {0}/{1} ({2})".format(total_results, total_searches, new_percentage))
+			new_percentage = "{0:.1%}".format(float(task_globals["total_results"]) / float(task_globals["total_searches"]))
+			if new_percentage != task_globals["last_percentage"]:
+				task_globals["last_percentage"] = new_percentage
+				task_globals["g_helper"].update_event("Scanning network for certificates: scanned {0}/{1} ({2})".format(task_globals["total_results"], task_globals["total_searches"], new_percentage))
 		except Exception:
 			# Catch all exceptions so we don't break the pool
 			pass
@@ -270,7 +262,12 @@ def callback_func(_arg):
 def run(helper, _options):
 	"""Run the certificate scan."""
 
-	global total_results, total_searches, g_helper
+	task_globals = {
+		"total_results": 0,
+		"total_searches": 0,
+		"last_percentage": "",
+		"g_helper": None,
+	}
 
 	# Start all the scans
 	helper.event('cert_start_scan', 'Initialising certificate scan')
@@ -291,13 +288,13 @@ def run(helper, _options):
 				starttls = None
 				if port in helper.config['CERT_SCAN_PORTS_STARTTLS']:
 					starttls = helper.config['CERT_SCAN_PORTS_STARTTLS'][port]
-				total_searches = total_searches + 1
-				results.append(ip_pool.apply_async(scan_ip, (host, port, helper.config['CERT_SCAN_THREAD_TIMEOUT'], starttls), callback=callback_func))
-	helper.end_event(description='Initialised scanning of ' + str(total_searches) + ' ports')
+				task_globals["total_searches"] = task_globals["total_searches"] + 1
+				results.append(ip_pool.apply_async(scan_ip, (host, port, helper.config['CERT_SCAN_THREAD_TIMEOUT'], starttls), callback=partial(callback_func, task_globals)))
+	helper.end_event(description='Initialised scanning of ' + str(task_globals["total_searches"]) + ' ports')
 
 	# Wait for the scan to finish
 	helper.event('cert_run_scan', 'Scanning network for certificates')
-	g_helper = helper
+	task_globals["g_helper"] = helper
 	ip_pool.close()
 	ip_pool.join()
 	helper.end_event(description='Scan completed')
@@ -306,7 +303,9 @@ def run(helper, _options):
 	helper.event('cert_save_to_db', 'Writing to database...')
 	db = helper.db_connect()
 	cur = db.cursor(mysql.cursors.DictCursor)
+	# pylint: disable=protected-access
 	cur._defer_warnings = True
+	# pylint: enable=protected-access
 
 	# Get the current timestamp and use this for all the inserts in to the database
 	# so that all the records for this scan appear as the same timestamp as opposed
