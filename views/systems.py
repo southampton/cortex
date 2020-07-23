@@ -1,12 +1,17 @@
 
+# pylint: disable=too-many-lines
+
 import datetime
 import re
 
 import MySQLdb as mysql
 import requests
-from flask import (Response, abort, flash, g, jsonify, redirect,
-                   render_template, request, session, url_for)
+from flask import (
+	Response, abort, flash, g, jsonify, redirect, render_template, request, session, url_for)
+
+# pylint: disable=no-name-in-module
 from pyVmomi import vim
+# pylint: enable=no-name-in-module
 
 import cortex.lib.classes
 import cortex.lib.cmdb
@@ -16,9 +21,8 @@ import cortex.lib.rubrik
 import cortex.lib.systems
 from cortex import app
 from cortex.corpus import Corpus
-from cortex.lib.user import (does_user_have_any_system_permission,
-                             does_user_have_permission,
-                             does_user_have_system_permission)
+from cortex.lib.user import (
+	does_user_have_any_system_permission, does_user_have_permission, does_user_have_system_permission)
 
 ################################################################################
 
@@ -36,15 +40,11 @@ def systems():
 	if does_user_have_permission("systems.all.view"):
 		classes = cortex.lib.classes.get_list()
 
-	# Get the search string, if any
-	q = request.args.get('q', None)
-
-	# Strip any leading and or trailing spaces
-	if q is not None:
-		q = q.strip()
+	# Get the search string, if any and strip
+	query = request.args["q"].strip() if request.args.get('q', None) is not None else None
 
 	# Render
-	return render_template('systems/list.html', classes=classes, active='systems', title="Systems", q=q, hide_inactive=True)
+	return render_template('systems/list.html', classes=classes, active='systems', title="Systems", q=query, hide_inactive=True)
 
 ################################################################################
 
@@ -133,9 +133,9 @@ def systems_search():
 	if curd.rowcount == 1 and system is not None:
 		# If we found the system, redirect to the system page
 		return redirect(url_for('system', id=system['id']))
-	else:
-		# If we didn't find the system, search for it instead
-		return redirect(url_for('systems',q=query))
+
+	# If we didn't find the system, search for it instead
+	return redirect(url_for('systems', q=query))
 
 ################################################################################
 
@@ -173,12 +173,8 @@ def systems_add_existing():
 	# Get the list of Puppet environments
 	puppet_envs = cortex.lib.puppet.get_puppet_environments()
 
-	# On GET requests, just show the form
-	if request.method == 'GET':
-		return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
-
 	# On POST requests...
-	elif request.method == 'POST':
+	if request.method == 'POST':
 		# Pull out information we always need
 		if 'class' not in request.form or 'comment' not in request.form or 'env' not in request.form:
 			flash('You must enter all the required information', category='alert-danger')
@@ -290,11 +286,13 @@ def systems_add_existing():
 				curd.execute("UPDATE `systems` SET `cmdb_id` = %s WHERE `id` = %s", (ci_results[0]['sys_id'], system_id))
 				g.db.commit()
 
-		cortex.lib.core.log(__name__, "systems.add.existing", "System manually added, id " + str(system_id),related_id=system_id)
+		cortex.lib.core.log(__name__, "systems.add.existing", "System manually added, id " + str(system_id), related_id=system_id)
 		# Redirect to the system page for the system we just added
 		flash("System added", "alert-success")
 		return redirect(url_for('system', id=system_id))
 
+	# On GET requests, just show the form
+	return render_template('systems/add-existing.html', classes=classes, puppet_envs=puppet_envs, active='systems', title="Add existing system")
 ################################################################################
 
 @app.route('/systems/new', methods=['GET', 'POST'])
@@ -306,13 +304,8 @@ def systems_new():
 	if not does_user_have_permission("systems.allocate_name"):
 		abort(403)
 
-	# On GET requests, just show big buttons for all the classes
-	if request.method == 'GET':
-		classes = cortex.lib.classes.get_list(hide_disabled=True)
-		return render_template('systems/new.html', classes=classes, active='systems', title="Allocate new system names")
-
 	# On POST requests...
-	elif request.method == 'POST':
+	if request.method == 'POST':
 		# The user has asked for one or more new system names.
 
 		# Grab the prefix chosen and validate it's a valid class name.
@@ -343,7 +336,7 @@ def systems_new():
 
 			# Allocate the name
 			new_systems = []
-			for x in range(system_number):
+			for _ in range(system_number):
 				new_systems.append(neocortex.allocate_name(class_name, system_comment, username=session['username']))
 		except Exception as ex:
 			flash("A fatal error occured when trying to allocate names: " + str(ex), "alert-danger")
@@ -360,8 +353,12 @@ def systems_new():
 		if len(new_systems) == 1:
 			flash("System name allocated successfully", "alert-success")
 			return redirect(url_for('system', id=new_systems[0]['id']))
-		else:
-			return render_template('systems/new-bulk.html', systems=new_systems, comment=system_comment, title="Systems")
+
+		return render_template('systems/new-bulk.html', systems=new_systems, comment=system_comment, title="Systems")
+
+	# On GET requests, just show big buttons for all the classes
+	classes = cortex.lib.classes.get_list(hide_disabled=True)
+	return render_template('systems/new.html', classes=classes, active='systems', title="Allocate new system names")
 
 ################################################################################
 
@@ -370,7 +367,7 @@ def systems_new():
 def system_backup(id):
 
 	# Check user permissions. User must have either systems.all.view.rubrik or edit.rubrik (there's no separate view at present)
-	if not does_user_have_system_permission(id,"edit.rubrik","systems.all.view.rubrik"):
+	if not does_user_have_system_permission(id, "edit.rubrik", "systems.all.view.rubrik"):
 		abort(403)
 
 	# Get the name of the vm
@@ -397,7 +394,7 @@ def system_backup(id):
 	if request.method == 'POST':
 		# An extra permission check, required in case they have systems.all.view.rubrik, but not
 		# systems.all.edit.rubrik (or edit.rubrik).
-		if not does_user_have_system_permission(id,"edit.rubrik","systems.all.edit.rubrik"):
+		if not does_user_have_system_permission(id, "edit.rubrik", "systems.all.edit.rubrik"):
 			abort(403)
 
 		mode = request.form.get('mode')
@@ -454,19 +451,19 @@ def systems_bulk_save():
 
 	# Find a list of systems from the form. Each of the form input elements
 	# containing a system comment has a name that starts "system_comment_"
-	for key, value in list(request.form.items()):
+	for key in list(request.form.items()):
 		if key.startswith("system_comment_"):
 			# Yay we found one! blindly update it!
 			updateid = key.replace("system_comment_", "")
 			found_keys.append(updateid)
 			cur = g.db.cursor()
 			cur.execute("UPDATE `systems` SET `allocation_comment` = %s WHERE `id` = %s", (request.form[key], updateid))
-			cortex.lib.core.log(__name__, "systems.comment.edit", "System comment updated for id " + str(updateid),related_id=updateid)
+			cortex.lib.core.log(__name__, "systems.comment.edit", "System comment updated for id " + str(updateid), related_id=updateid)
 
 	g.db.commit()
 
 	flash("Comments successfully updated", "alert-success")
-	return(redirect(url_for("systems_bulk_view", start=min(found_keys), finish=max(found_keys))))
+	return redirect(url_for("systems_bulk_view", start=min(found_keys), finish=max(found_keys)))
 
 ################################################################################
 
@@ -479,7 +476,7 @@ def systems_bulk_view(start, finish):
 	if not does_user_have_permission("systems.allocate_name"):
 		abort(403)
 
-	start  = int(start)
+	start = int(start)
 	finish = int(finish)
 
 	curd = g.db.cursor(mysql.cursors.DictCursor)
@@ -495,7 +492,7 @@ def systems_bulk_view(start, finish):
 def system(id):
 	# Check user permissions. User must have either systems.all or specific
 	# access to the system
-	if not does_user_have_system_permission(id,"view.detail","systems.all.view"):
+	if not does_user_have_system_permission(id, "view.detail", "systems.all.view"):
 		abort(403)
 
 	# Get the system
@@ -528,7 +525,7 @@ def system(id):
 def system_overview(id):
 	# Check user permissions. User must have either systems.all or specific
 	# access to the system
-	if not does_user_have_system_permission(id,"view.overview","systems.all.view"):
+	if not does_user_have_system_permission(id, "view.overview", "systems.all.view"):
 		abort(403)
 
 	# Get the system
@@ -559,7 +556,7 @@ def system_overview(id):
 def system_status(id):
 	# Check user permissions. User must have either systems.all or specific
 	# access to the system
-	if not does_user_have_system_permission(id,"view.overview","systems.all.view"):
+	if not does_user_have_system_permission(id, "view.overview", "systems.all.view"):
 		abort(403)
 
 	system = cortex.lib.systems.get_system_by_id(id)
@@ -584,15 +581,15 @@ def system_status(id):
 		vm = cortex.lib.systems.get_vm_by_system_id(id)
 	except ValueError:
 		abort(404)
-	except Exception as e:
+	except Exception as ex:
 		# If we want to handle vCenter being unavailable gracefully.
 		if not app.config.get('HANDLE_UNAVAILABLE_VCENTER_GRACEFULLY', False):
-			raise e
-		else:
-			vm = None
-			# Add an error field to the data we return,
-			# so we can display a message on the template.
-			data['error'] = 'Unable to retrieve system information, please check vCenter availability.'
+			raise ex
+
+		vm = None
+		# Add an error field to the data we return,
+		# so we can display a message on the template.
+		data['error'] = 'Unable to retrieve system information, please check vCenter availability.'
 
 	if vm is not None and vm.guest is not None:
 		if vm.guest.ipStack is not None and len(vm.guest.ipStack) > 0:
@@ -622,7 +619,7 @@ def system_status(id):
 				if net_adapter.network is not None and net_adapter.ipAddress is not None and len(net_adapter.ipAddress) > 0:
 					data['net']['networks'].append({
 						'name': net_adapter.network,
-						'ipaddr': [addr for addr in net_adapter.ipAddress]
+						'ipaddr': list(net_adapter.ipAddress)
 					})
 
 		if vm.guest.guestState is not None:
@@ -646,7 +643,7 @@ def system_status(id):
 def system_power(id):
 	# Check user permissions. User must have either systems.all or specific
 	# access to the system
-	if not does_user_have_system_permission(id,"control.vmware.power", "control.all.vmware.power"):
+	if not does_user_have_system_permission(id, "control.vmware.power", "control.all.vmware.power"):
 		abort(403)
 
 	# Get the system
@@ -658,19 +655,18 @@ def system_power(id):
 
 	try:
 		if request.form.get('power_action', None) == "on":
-				cortex.lib.systems.power_on(id)
+			cortex.lib.systems.power_on(id)
 		elif request.form.get('power_action', None) == "shutdown":
-				cortex.lib.systems.shutdown(id)
+			cortex.lib.systems.shutdown(id)
 		elif request.form.get('power_action', None) == "off":
-				cortex.lib.systems.power_off(id)
+			cortex.lib.systems.power_off(id)
 		elif request.form.get('power_action', None) == "reset":
-				cortex.lib.systems.reset(id)
+			cortex.lib.systems.reset(id)
 		#is it an XHR?
 		if request.headers.get('X-Requested-With', None) == "XMLHttpRequest":
 			return system_status(id)
-		else:
-			return redirect(url_for('system_overview', id=id))
-	except vim.fault.VimFault as e:
+		return redirect(url_for('system_overview', id=id))
+	except vim.fault.VimFault:
 		abort(500)
 
 ################################################################################
@@ -678,7 +674,7 @@ def system_power(id):
 @app.route('/systems/edit/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_edit(id):
-	if not does_user_have_system_permission(id,"view.detail","systems.all.view"):
+	if not does_user_have_system_permission(id, "view.detail", "systems.all.view"):
 		abort(403)
 
 	# Get the system
@@ -688,23 +684,13 @@ def system_edit(id):
 	if system is None:
 		abort(404)
 
-	if request.method == 'GET' or request.method == 'HEAD':
-		system_class = cortex.lib.classes.get(system['class'])
-		system['review_status_text'] = cortex.lib.systems.REVIEW_STATUS_BY_ID[system['review_status']]
-		autocomplete_users = cortex.lib.user.get_user_list_from_cache()
-
-		if system['puppet_certname']:
-			system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
-
-		return render_template('systems/edit.html', system=system, system_class=system_class,  autocomplete_users= autocomplete_users, active='systems', title=system['name'])
-
-	elif request.method == 'POST':
+	if request.method == 'POST':
 		try:
 			# Get a cursor to the database
 			curd = g.db.cursor(mysql.cursors.DictCursor)
 
 			# Extract the owners from the form.
-			if does_user_have_system_permission(id,"edit.owners","systems.all.edit.owners"):
+			if does_user_have_system_permission(id, "edit.owners", "systems.all.edit.owners"):
 				primary_owner_who = request.form.get('primary_owner_who', None)
 				primary_owner_role = request.form.get('primary_owner_role', None)
 				secondary_owner_who = request.form.get('secondary_owner_who', None)
@@ -716,8 +702,8 @@ def system_edit(id):
 				secondary_owner_role = system['secondary_owner_role']
 
 			# Extract CMDB ID from form
-			if does_user_have_system_permission(id,"edit.cmdb","systems.all.edit.cmdb"):
-				cmdb_id = request.form.get('cmdb_id',None)
+			if does_user_have_system_permission(id, "edit.cmdb", "systems.all.edit.cmdb"):
+				cmdb_id = request.form.get('cmdb_id', None)
 				if cmdb_id is not None:
 					cmdb_id = cmdb_id.strip()
 					if len(cmdb_id) == 0:
@@ -729,8 +715,8 @@ def system_edit(id):
 				cmdb_id = system['cmdb_id']
 
 			# Extract VMware UUID from form
-			if does_user_have_system_permission(id,"edit.vmware","systems.all.edit.vmware"):
-				vmware_uuid = request.form.get('vmware_uuid',None)
+			if does_user_have_system_permission(id, "edit.vmware", "systems.all.edit.vmware"):
+				vmware_uuid = request.form.get('vmware_uuid', None)
 				if vmware_uuid is not None:
 					vmware_uuid = vmware_uuid.strip()
 					if len(vmware_uuid) == 0:
@@ -741,7 +727,7 @@ def system_edit(id):
 			else:
 				vmware_uuid = system['vmware_uuid']
 
-			if does_user_have_system_permission(id,"edit.rubrik","systems.all.edit.rubrik"):
+			if does_user_have_system_permission(id, "edit.rubrik", "systems.all.edit.rubrik"):
 				enable_backup = request.form.get('enable_backup', 2)
 				enable_backup_scripts = request.form.get('enable_backup_scripts', 2)
 			else:
@@ -749,7 +735,7 @@ def system_edit(id):
 				enable_backup_scripts = system['enable_backup_scripts']
 
 			# Process the expiry date
-			if does_user_have_system_permission(id,"edit.expiry","systems.all.edit.expiry"):
+			if does_user_have_system_permission(id, "edit.expiry", "systems.all.edit.expiry"):
 				if 'expiry_date' in request.form and request.form['expiry_date'] is not None and len(request.form['expiry_date'].strip()) > 0:
 					expiry_date = request.form['expiry_date']
 					try:
@@ -762,9 +748,9 @@ def system_edit(id):
 				expiry_date = system['expiry_date']
 
 			# Extract Review Status from form
-			if does_user_have_system_permission(id,"edit.review","systems.all.edit.review"):
+			if does_user_have_system_permission(id, "edit.review", "systems.all.edit.review"):
 				review_status = int(request.form.get('review_status', 0))
-				if not review_status in cortex.lib.systems.REVIEW_STATUS_BY_ID:
+				if review_status not in cortex.lib.systems.REVIEW_STATUS_BY_ID:
 					raise ValueError()
 
 				# Extract Review Ticket from form
@@ -834,7 +820,7 @@ def system_edit(id):
 
 			# Update the system
 			curd.execute('UPDATE `systems` SET `allocation_comment` = %s, `cmdb_id` = %s, `vmware_uuid` = %s, `enable_backup` = %s, `enable_backup_scripts` = %s, `review_status` = %s, `review_task` = %s, `expiry_date` = %s, `primary_owner_who`=%s, `primary_owner_role`=%s, `secondary_owner_who`=%s, `secondary_owner_role`=%s WHERE `id` = %s', (request.form['allocation_comment'].strip(), cmdb_id, vmware_uuid, enable_backup, enable_backup_scripts, review_status, review_task, expiry_date, primary_owner_who, primary_owner_role, secondary_owner_who, secondary_owner_role, id))
-			g.db.commit();
+			g.db.commit()
 
 			cortex.lib.core.log(__name__, "systems.edit", "System '" + system['name'] + "' edited, id " + str(id), related_id=id)
 
@@ -848,15 +834,22 @@ def system_edit(id):
 
 		# Regardless of success or error, redirect to the systems page
 		return redirect(url_for('system_edit', id=id))
-	else:
-		abort(400)
+
+	system_class = cortex.lib.classes.get(system['class'])
+	system['review_status_text'] = cortex.lib.systems.REVIEW_STATUS_BY_ID[system['review_status']]
+	autocomplete_users = cortex.lib.user.get_user_list_from_cache()
+
+	if system['puppet_certname']:
+		system['puppet_node_status'] = cortex.lib.puppet.puppetdb_get_node_status(system['puppet_certname'])
+
+	return render_template('systems/edit.html', system=system, system_class=system_class, autocomplete_users=autocomplete_users, active='systems', title=system['name'])
 
 ################################################################################
 
 @app.route('/systems/actions/<int:id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def system_actions(id):
-	if not does_user_have_system_permission(id,"view.detail","systems.all.view"):
+	if not does_user_have_system_permission(id, "view.detail", "systems.all.view"):
 		abort(403)
 
 	# Get the system
@@ -880,7 +873,7 @@ def system_actions(id):
 			if (action['require_vm'] and system['vmware_uuid'] is not None) or not action['require_vm']:
 				if does_user_have_permission("workflows.all"):
 					actions.append(action)
-				elif does_user_have_system_permission(id,action['system_permission']):
+				elif does_user_have_system_permission(id, action['system_permission']):
 					app.logger.debug("User " + session['username'] + " does not have workflows.all")
 					actions.append(action)
 				elif action['permission'] is not None:
@@ -941,7 +934,7 @@ def systems_vmware_json():
 	# Get total number of VMs that match query
 	if search is not None:
 		# escape wildcards
-		search = search.replace('%', '\%').replace('_', '\_')
+		search = search.replace('%', '\\%').replace('_', '\\_')
 		curd.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `name` LIKE %s', ("%" + search + "%",))
 		filtered_count = curd.fetchone()['count']
 	else:
@@ -953,7 +946,7 @@ def systems_vmware_json():
 	query_params = ()
 	if search is not None:
 		# escape wildcards
-		search = search.replace('%', '\%').replace('_', '\_')
+		search = search.replace('%', '\\%').replace('_', '\\_')
 		query = query + 'WHERE `name` LIKE %s '
 		query_params = ("%" + search + "%",)
 
@@ -1013,9 +1006,9 @@ def systems_cmdb_json():
 		abort(400)
 
 	# Get results of query
-	total_count    = cortex.lib.cmdb.get_ci_count()
+	total_count = cortex.lib.cmdb.get_ci_count()
 	filtered_count = cortex.lib.cmdb.get_ci_count(search)
-	results        = cortex.lib.cmdb.get_cis(start, length, search, order_column, order_asc)
+	results = cortex.lib.cmdb.get_cis(start, length, search, order_column, order_asc)
 
 	system_data = []
 	for row in results:
@@ -1102,12 +1095,12 @@ def systems_json():
 	favourites = []
 	favourites = cortex.lib.systems.get_system_favourites(session.get('username'))
 
-	show_allocated_and_perms=False
+	show_allocated_and_perms = False
 	if does_user_have_permission("systems.all.view"):
 		only_allocated_by = None
 	else:
 		# Show the systems where the user has permissions AND the ones they allocated.
-		show_allocated_and_perms=True
+		show_allocated_and_perms = True
 		only_allocated_by = session['username']
 
 
@@ -1127,12 +1120,8 @@ def systems_json():
 	system_data = []
 	if results:
 		for row in results:
-
-			if row['id'] in favourites:
-				favourited = True
-			else:
-				favourited = False
-			if row['cmdb_id'] is not None and row['cmdb_id'] is not '':
+			favourited = bool(row['id'] in favourites)
+			if row['cmdb_id']:
 				cmdb_id = app.config['CMDB_URL_FORMAT'] % row['cmdb_id']
 			else:
 				cmdb_id = ''
@@ -1217,11 +1206,7 @@ def _systems_extract_datatables():
 	# Handle the search parameter. This is the textbox on the DataTables
 	# view that the user can search by typing in
 	search = None
-	if 'search[value]' in request.form:
-		if request.form['search[value]'] != '':
-			if type(request.form['search[value]']) is not str and type(request.form['search[value]']) is not str:
-				search = str(request.form['search[value]'])
-			else:
-				search = request.form['search[value]']
+	if 'search[value]' in request.form and request.form['search[value]']:
+		search = str(request.form['search[value]'])
 
 	return (draw, start, length, order_column, order_asc, search)

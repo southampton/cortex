@@ -104,7 +104,7 @@ def admin_tasks_json(tasktype):
 	# Add on search string if we have one
 	if search:
 		# escape wildcards
-		search = search.replace('%', '\%').replace('_', '\_')
+		search = search.replace('%', '\\%').replace('_', '\\_')
 		where_clause = where_clause + " AND (`module` LIKE %s OR `username` LIKE %s) "
 		params = params + ('%' + search + '%', '%' + search + '%')
 
@@ -156,14 +156,14 @@ def admin_tasks_active():
 	# Get the list of tasks from NeoCortex
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	neocortex = cortex.lib.core.neocortex_connect()
-	neotasks  = neocortex.active_tasks()
-	tasks     = []
+	neotasks = neocortex.active_tasks()
+	tasks = []
 
 	# Get additional information out of the database
 	for ntask in neotasks:
 		curd.execute("SELECT `id`, `module`, `username`, `start`, `end`, `status`, `description` FROM `tasks` WHERE `id` = %s", (ntask['id'],))
 		task = curd.fetchone()
-		if not task == None:
+		if task is not None:
 			tasks.append(task)
 
 	# Render the page
@@ -211,7 +211,7 @@ def admin_events_json(event_source):
 	cur = g.db.cursor()
 
 	# Extract stuff from DataTables requests
-	(draw, start, length, order_column, order_asc, search, hide_frequent, filters) = _extract_datatables()
+	(draw, start, length, order_column, order_asc, search, hide_frequent, _) = _extract_datatables()
 
 	# Choose the order column
 	if order_column == 0:
@@ -277,7 +277,7 @@ def admin_events_json(event_source):
 	# Add on search string if we have one
 	if search:
 		# escape wildcards
-		search = search.replace('%', '\%').replace('_', '\_')
+		search = search.replace('%', '\\%').replace('_', '\\_')
 		where_clause = where_clause + " AND (`name` LIKE %s OR `source` LIKE %s OR `desc` LIKE %s OR `username` LIKE %s OR `ipaddr` LIKE %s) "
 		params = params + ('%' + search + '%', '%' + search + '%', '%' + search + '%', '%' + search + '%', '%' + search + '%')
 
@@ -303,9 +303,9 @@ def admin_events_json(event_source):
 	new_data = []
 	for record in data:
 		record = list(record)
-		if type(record[1]) is datetime.datetime:
+		if isinstance(record[1], datetime.datetime):
 			record[1] = record[1].strftime('%Y-%m-%d %H:%M:%S %Z')
-		if type(record[2]) is datetime.datetime:
+		if isinstance(record[2], datetime.datetime):
 			record[2] = record[2].strftime('%Y-%m-%d %H:%M:%S %Z')
 		record[4] = app.parse_cortex_links(record[4])
 
@@ -404,18 +404,13 @@ def admin_classes():
 	if not does_user_have_permission("classes.view"):
 		abort(403)
 
-	# On a GET request, display the list of classes page
-	if request.method == 'GET':
-		classes = cortex.lib.classes.get_list(hide_disabled=False)
-		return render_template('admin/classes.html', classes=classes, active='admin', cmdb_types=app.config['CMDB_CACHED_CLASSES'], title="Classes")
-
-	elif request.method == 'POST':
+	if request.method == 'POST':
 		# Check user permissions
 		if not does_user_have_permission("classes.edit"):
 			abort(403)
 
 		action = request.form['action']
-		curd   = g.db.cursor()
+		curd = g.db.cursor()
 
 		if action in ['add_class', 'edit_class']:
 			# Validate class name/prefix
@@ -479,7 +474,7 @@ def admin_classes():
 				return redirect(url_for('admin_classes'))
 
 
-			elif action == 'edit_class':
+			if action == 'edit_class':
 				if not class_exists:
 					flash('No system class matching that name/prefix could be found', 'alert-danger')
 					return redirect(url_for('admin_classes'))
@@ -530,6 +525,10 @@ def admin_classes():
 		else:
 			abort(400)
 
+	# On a GET request, display the list of classes page
+	classes = cortex.lib.classes.get_list(hide_disabled=False)
+	return render_template('admin/classes.html', classes=classes, active='admin', cmdb_types=app.config['CMDB_CACHED_CLASSES'], title="Classes")
+
 ################################################################################
 
 @app.route('/admin/maintenance', methods=['GET', 'POST'])
@@ -546,8 +545,8 @@ def admin_maint():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Initial setup
-	vmcache_task_id  = None
-	sncache_task_id  = None
+	vmcache_task_id = None
+	sncache_task_id = None
 	vmexpire_task_id = None
 	sync_puppet_servicenow_id = None
 	cert_scan_id = None
@@ -558,43 +557,7 @@ def admin_maint():
 	# get the lock status of the page
 	workflows_lock_status = get_workflows_locked_details()
 
-	if request.method == 'GET':
-		# See which tasks are already running
-		active_tasks = neocortex.active_tasks()
-
-		for task in active_tasks:
-			if task['name'] == '_cache_vmware':
-				vmcache_task_id = task['id']
-			elif task['name'] == '_cache_servicenow':
-				sncache_task_id = task['id']
-			elif task['name'] == '_vm_expire':
-				sncache_task_id = task['id']
-			elif task['name'] == '_sync_puppet_servicenow':
-				sync_puppet_servicenow_id = task['id']
-			elif task['name'] == '_cert_scan':
-				cert_scan_id = task['id']
-			elif task['name'] == '_lock_workflows':
-				lock_workflows = task['id']
-			elif task['name'] == '_rubrik_policy_check':
-				rubrik_policy_check = task['id']
-
-
-		# Render the page
-		return render_template('admin/maint.html',
-			active='admin',
-			title="Maintenance Tasks",
-			sncache_task_id=sncache_task_id,
-			vmcache_task_id=vmcache_task_id,
-			vmexpire_task_id=vmexpire_task_id,
-			sync_puppet_servicenow_id=sync_puppet_servicenow_id,
-			cert_scan_id=cert_scan_id,
-			student_vm_build_id=student_vm_build_id,
-			pause_vm_builds=lock_workflows,
-			lock_status=workflows_lock_status,
-			rubrik_policy_check=rubrik_policy_check,
-		)
-
-	else:
+	if request.method == "POST":
 		# Find out what task to start
 		module = request.form['task_name']
 		# Start the appropriate internal task
@@ -649,6 +612,43 @@ def admin_maint():
 		# Show the user the status of the task
 		return redirect(url_for('task_status', id=task_id))
 
+	# See which tasks are already running
+	active_tasks = neocortex.active_tasks()
+
+	for task in active_tasks:
+		if task['name'] == '_cache_vmware':
+			vmcache_task_id = task['id']
+		elif task['name'] == '_cache_servicenow':
+			sncache_task_id = task['id']
+		elif task['name'] == '_vm_expire':
+			sncache_task_id = task['id']
+		elif task['name'] == '_sync_puppet_servicenow':
+			sync_puppet_servicenow_id = task['id']
+		elif task['name'] == '_cert_scan':
+			cert_scan_id = task['id']
+		elif task['name'] == '_lock_workflows':
+			lock_workflows = task['id']
+		elif task['name'] == '_rubrik_policy_check':
+			rubrik_policy_check = task['id']
+
+
+	# Render the page
+	return render_template(
+		'admin/maint.html',
+		active='admin',
+		title="Maintenance Tasks",
+		sncache_task_id=sncache_task_id,
+		vmcache_task_id=vmcache_task_id,
+		vmexpire_task_id=vmexpire_task_id,
+		sync_puppet_servicenow_id=sync_puppet_servicenow_id,
+		cert_scan_id=cert_scan_id,
+		student_vm_build_id=student_vm_build_id,
+		pause_vm_builds=lock_workflows,
+		lock_status=workflows_lock_status,
+		rubrik_policy_check=rubrik_policy_check,
+	)
+
+
 ################################################################################
 
 def _extract_datatables():
@@ -702,28 +702,20 @@ def _extract_datatables():
 	# Handle the search parameter. This is the textbox on the DataTables
 	# view that the user can search by typing in
 	search = None
-	if 'search[value]' in request.form:
-		if request.form['search[value]'] != '':
-			if type(request.form['search[value]']) is not str and type(request.form['search[value]']) is not str:
-				search = str(request.form['search[value]'])
-			else:
-				search = request.form['search[value]']
+	if 'search[value]' in request.form and request.form['search[value]']:
+		search = str(request.form['search[value]'])
 
 	# Handle the hide_frequent parameter. This is a custom field added
 	# in order to filter out frequent tasks/events from dataTables.
 	hide_frequent = False
-	if 'hide_frequent' in request.form:
-		if request.form['hide_frequent'] == "1":
-			hide_frequent = True
+	if 'hide_frequent' in request.form and request.form['hide_frequent'] == "1":
+		hide_frequent = True
 
 
 	# Handle the filter parameters. These are custom fields added to
 	# filter tasks. This is not used on the events page currently.
 	filters = {}
-	for f in ['filter_succeeded', 'filter_warnings', 'filter_failed']:
-		if f in request.form and request.form[f] == "1":
-			filters[f] = True
-		else:
-			filters[f] = False
+	for filter_s in ['filter_succeeded', 'filter_warnings', 'filter_failed']:
+		filters[filter_s] = bool(filter_s in request.form and request.form[filter_s] == "1")
 
 	return (draw, start, length, order_column, order_asc, search, hide_frequent, filters)

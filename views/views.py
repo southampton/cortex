@@ -1,5 +1,6 @@
 
 import datetime
+import traceback
 
 import MySQLdb as mysql
 from flask import abort, g, render_template, request, session
@@ -38,12 +39,12 @@ def dashboard():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Get number of VMs
-	curd.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `template` = 0');
+	curd.execute('SELECT COUNT(*) AS `count` FROM `vmware_cache_vm` WHERE `template` = 0')
 	row = curd.fetchone()
 	vm_count = row['count']
 
 	# Get number of CIs
-	curd.execute('SELECT COUNT(*) AS `count` FROM `sncache_cmdb_ci`');
+	curd.execute('SELECT COUNT(*) AS `count` FROM `sncache_cmdb_ci`')
 	row = curd.fetchone()
 	ci_count = row['count']
 
@@ -71,7 +72,7 @@ def dashboard():
 	cortex.lib.user.get_users_groups()
 
 	# Get the list of systems the user is specifically allowed to view
-	curd.execute("SELECT * FROM `systems_info_view` WHERE (`id` IN (SELECT `p_system_perms_who`.`system_id` FROM `p_system_perms_who` JOIN `p_system_perms` ON `p_system_perms_who`.`perm_id`=`p_system_perms`.`id` WHERE (`p_system_perms_who`.`type` = '0' AND `p_system_perms_who`.`who` = %s AND (`p_system_perms`.`perm` = 'view' OR `p_system_perms`.`perm` = 'view.overview' OR `p_system_perms`.`perm` = 'view.detail')) OR (`p_system_perms_who`.`type` = '1' AND (`p_system_perms`.`perm` = 'view' OR `p_system_perms`.`perm` = 'view.overview' OR `p_system_perms`.`perm` = 'view.detail') AND `p_system_perms_who`.`who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s))) OR `allocation_who`=%s) AND ((`cmdb_id` IS NOT NULL AND `cmdb_operational_status` = 'In Service') OR `vmware_uuid` IS NOT NULL) ORDER BY `allocation_date` DESC LIMIT 100",(session['username'],session['username'], session['username']))
+	curd.execute("SELECT * FROM `systems_info_view` WHERE (`id` IN (SELECT `p_system_perms_who`.`system_id` FROM `p_system_perms_who` JOIN `p_system_perms` ON `p_system_perms_who`.`perm_id`=`p_system_perms`.`id` WHERE (`p_system_perms_who`.`type` = '0' AND `p_system_perms_who`.`who` = %s AND (`p_system_perms`.`perm` = 'view' OR `p_system_perms`.`perm` = 'view.overview' OR `p_system_perms`.`perm` = 'view.detail')) OR (`p_system_perms_who`.`type` = '1' AND (`p_system_perms`.`perm` = 'view' OR `p_system_perms`.`perm` = 'view.overview' OR `p_system_perms`.`perm` = 'view.detail') AND `p_system_perms_who`.`who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s))) OR `allocation_who`=%s) AND ((`cmdb_id` IS NOT NULL AND `cmdb_operational_status` = 'In Service') OR `vmware_uuid` IS NOT NULL) ORDER BY `allocation_date` DESC LIMIT 100", (session['username'], session['username'], session['username']))
 	systems = curd.fetchall()
 
 	# Recent systems
@@ -99,11 +100,12 @@ def dashboard():
 			'changed': len(cortex.lib.puppet.puppetdb_query('nodes', query='["extract", "certname",["and",["=", "latest_report_status", "changed"],["=", "latest_report_noop", false], [">", "report_timestamp", "{0}"]]]'.format(now_minus_2.isoformat()))),
 		}
 	except Exception:
-		import traceback
 		app.logger.error("Failed to talk to PuppetDB on dashboard:\n" + traceback.format_exc())
-		stats = { 'failed': '???', 'changed': '???' }
+		stats = {'failed': '???', 'changed': '???'}
 
-	return render_template('dashboard.html', active="dashboard",
+	return render_template(
+		'dashboard.html',
+		active="dashboard",
 		vm_count=vm_count,
 		ci_count=ci_count,
 		task_progress_count=task_progress_count,
@@ -118,7 +120,8 @@ def dashboard():
 		total_ram=total_ram,
 		total_ram_usage=total_ram_usage,
 		total_vm_ram=total_vm_ram,
-		stats=stats)
+		stats=stats
+	)
 
 ################################################################################
 

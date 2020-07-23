@@ -76,7 +76,7 @@ def context_processor():
 	if does_user_have_permission("systems.own.view") or does_user_have_permission("systems.all.view"):
 		favourites = [{'link': url_for('favourites'), 'title': 'All Favourites', 'icon': 'fa-star'}]
 		for fav_class in app.config['FAVOURITE_CLASSES']:
-			favourites.append({'link': url_for('favourites_by_type', system_type=fav_class), 'title': 'Favourited ' + fav_class + ' systems', 'icon': 'fa-star'})
+			favourites.append({'link': url_for('favourites', system_type=fav_class), 'title': 'Favourited ' + fav_class + ' systems', 'icon': 'fa-star'})
 
 	# Set up the Systems menu, based on a single permission
 	systems = []

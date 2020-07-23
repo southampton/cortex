@@ -97,22 +97,11 @@ def api_register_system():
 		abort(400)
 
 	# See if the build requires Puppet
-	if 'puppet' in app.config['REGISTER_ACTIONS'][ident] and app.config['REGISTER_ACTIONS'][ident]['puppet'] is True:
-		puppet_required = True
-	else:
-		puppet_required = False
-
+	puppet_required = bool('puppet' in app.config['REGISTER_ACTIONS'][ident] and app.config['REGISTER_ACTIONS'][ident]['puppet'])
 	# See if the build requires Satellite
-	if 'satellite' in app.config['REGISTER_ACTIONS'][ident] and app.config['REGISTER_ACTIONS'][ident]['satellite'] is True:
-		satellite_required = True
-	else:
-		satellite_required = False
-
+	satellite_required = bool('satellite' in app.config['REGISTER_ACTIONS'][ident] and app.config['REGISTER_ACTIONS'][ident]['satellite'])
 	# See if the build requires a random password
-	if 'password' in app.config['REGISTER_ACTIONS'][ident] and app.config['REGISTER_ACTIONS'][ident]['password'] is True:
-		password_required = True
-	else:
-		password_required = False
+	password_required = bool('password' in app.config['REGISTER_ACTIONS'][ident] and app.config['REGISTER_ACTIONS'][ident]['password'])
 
 	if puppet_required:
 		# Contact the cortex-puppet-bridge server to get ssl certificates for this hostname
@@ -148,11 +137,11 @@ def api_register_system():
 	# IP address in order to configure themselves!
 
 	if not interactive:
-		cdata['hostname']  = system['name']
-		cdata['fqdn']      = fqdn
+		cdata['hostname'] = system['name']
+		cdata['fqdn'] = fqdn
 		netaddr = corpus.redis_get_vm_data("ipaddress", uuid=system['vmware_uuid'])
 		netaddrv6 = corpus.redis_get_vm_data("ipv6address", uuid=system['vmware_uuid'])
-		
+
 		if netaddr:
 			cdata['ipaddress'] = netaddr
 		else:
@@ -217,24 +206,24 @@ def api_installer_notify():
 	"""API endpoint to allow the bonemeal installer to notify cortex that the
 	the installation is now complete and is about to reboot."""
 
-	if 'uuid' in request.form:
-		# Create a corpus (task helper) object
-		corpus = Corpus(g.db, app.config)
-
-		# VMware UUID based authentication
-		system = cortex.lib.systems.get_system_by_vmware_uuid(request.form['uuid'].lower())
-
-		if not system:
-			app.logger.warn('Could not match VMware UUID to a system for the installer notify API (UUID given: ' + request.form['uuid'].lower() + ')')
-			abort(404)
-
-		# Mark as done
-		if 'warnings' in request.form and int(request.form['warnings']) > 0:
-			corpus.redis_set_vm_data("notify", "done-with-warnings", uuid=system['vmware_uuid'])
-		else:
-			corpus.redis_set_vm_data("notify", "done", uuid=system['vmware_uuid'])
-
-		return "OK"
-	else:
+	if 'uuid' not in request.form:
 		app.logger.warn('Missing \'uuid\' parameter in installer notify API')
 		abort(401)
+
+	# Create a corpus (task helper) object
+	corpus = Corpus(g.db, app.config)
+
+	# VMware UUID based authentication
+	system = cortex.lib.systems.get_system_by_vmware_uuid(request.form['uuid'].lower())
+
+	if not system:
+		app.logger.warn('Could not match VMware UUID to a system for the installer notify API (UUID given: ' + request.form['uuid'].lower() + ')')
+		abort(404)
+
+	# Mark as done
+	if 'warnings' in request.form and int(request.form['warnings']) > 0:
+		corpus.redis_set_vm_data("notify", "done-with-warnings", uuid=system['vmware_uuid'])
+	else:
+		corpus.redis_set_vm_data("notify", "done", uuid=system['vmware_uuid'])
+
+	return "OK"
