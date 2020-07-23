@@ -20,5 +20,4 @@ jobs:
         python -m pip install -r requirements.txt
         pip install pylint pytest
     - name: Lint with pylint
-      run: |
-        pylint --fail-under=9 --reports=yes cortex
+      run: ./run_pylint.sh
