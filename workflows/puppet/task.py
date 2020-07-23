@@ -1,4 +1,6 @@
 
+from urllib.parse import urljoin
+
 import requests
 
 
@@ -106,6 +108,41 @@ def environment_delete(values, helper):
 	if r.status_code != 200:
 		helper.end_event(success=False, description="Failed to delete environment on Puppet Master, Cortex Puppet Bridge returned error code: {status_code}".format(status_code=r.status_code))
 		return False
+
+	## Check graphite for monitoring entries
+	graphite_delete = False
+	try:
+		if helper.lib.config['GRAPHITE_URL']:
+			r = requests.get(
+				urljoin(helper.lib.config['GRAPHITE_URL'], '/host/' + environment["environment_name"]),
+				auth=(helper.lib.config['GRAPHITE_USER'], helper.lib.config['GRAPHITE_PASS'])
+			)
+			if r.status_code == 200:
+				r_json = r.json()
+				graphite_delete = bool(isinstance(r_json, list) and r_json)
+			else:
+				helper.flash('Warning - CarbonHTTPInterface returned error code ' + str(r.status_code), 'warning')
+		else:
+			helper.flash('No Graphite URL Supplied, Skipping Step', 'success')
+	except Exception as ex:
+		helper.flash('Warning - An error occurred when communicating with ' + str(helper.lib.config['GRAPHITE_URL']) + ': ' + str(ex), 'warning')
+
+	## Delete from graphite
+	if graphite_delete:
+		try:
+			r = requests.delete(
+				urljoin(helper.lib.config['GRAPHITE_URL'], '/host/' + environment["environment_name"]),
+				auth=(helper.lib.config['GRAPHITE_USER'], helper.lib.config['GRAPHITE_PASS'])
+			)
+
+			if r.status_code != 200:
+				helper.end_event(success=False, description="Failed to remove metrics from Graphite. CarbonHTTPInterface returned error code: {rc}".format(rc=r.status_code))
+				return False
+
+		except Exception as ex:
+			helper.end_event(success=False, description="Failed to remove the metrics from Graphite: {ex}".format(ex=ex))
+			return False
+
 
 	# Delete the environment from the database
 	helper.curd.execute("DELETE FROM `puppet_environments` WHERE `id`=%s", (values["environment_id"],))
