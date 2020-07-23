@@ -57,13 +57,14 @@ def certificates():
 	# Get the list of certificates
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute(query)
-	certificates = curd.fetchall()
-	
-	return render_template('certificates/certificates.html', active='certificates', title='Certificates', certificates=certificates, self_signed=self_signed, validity=validity)
+	certs = curd.fetchall()
+
+	return render_template('certificates/certificates.html', active='certificates', title='Certificates', certificates=certs, self_signed=self_signed, validity=validity)
 
 ################################################################################
 
 def add_openssl_certificate(cert):
+	# pylint: disable=invalid-name
 	digest = cert.digest('SHA1').decode('utf-8').replace(':', '').lower()
 	subject = cert.get_subject()
 	subjectHash = cert.subject_name_hash()
@@ -106,10 +107,7 @@ def certificates_add():
 	if not does_user_have_permission("certificates.add"):
 		abort(403)
 
-	if request.method == 'GET':
-		# Just show the form
-		return render_template('certificates/add.html', active='certificates', title='Add Certificate')
-	elif request.method == 'POST':
+	if request.method == 'POST':
 		# Extract the certificate from the request
 		if 'uploaded_cert' in request.files:
 			# Read the contents (maximum 1MB so we don't DoS ourselves with large files)
@@ -118,15 +116,15 @@ def certificates_add():
 			cert_data = request.form['pasted_cert']
 		else:
 			abort(400)
-			
+
 		last_exception = None
 		openssl_cert = None
 
 		# Try loading the certificate as PEM-encoded X509
 		try:
 			openssl_cert = openssl.crypto.load_certificate(openssl.crypto.FILETYPE_PEM, cert_data)
-		except Exception as e:
-			last_exception = e
+		except Exception as ex:
+			last_exception = ex
 
 		# If that failed and a cert was uploaded rather than pasted,
 		# then try PKCS12 instead
@@ -137,9 +135,9 @@ def certificates_add():
 				if openssl_cert is None:
 					openssl_cert = openssl_p12_cert.get_ca_certificates()[0]
 					if openssl_cert is None:
-						raise('No certificates found in PKCS12 file')
-			except Exception as e:
-				last_exception = e
+						raise Exception("No certificates found in PKCS12 file")
+			except Exception as ex:
+				last_exception = ex
 
 		# If we failed to read the certificate, return an error
 		if openssl_cert is None:
@@ -157,9 +155,9 @@ def certificates_add():
 
 		flash('Certificate added', category='alert-success')
 		return redirect(url_for('certificate_edit', digest=cert_digest))
-	else:
-		# Shouldn't get here
-		abort(400)
+
+	# Just show the form
+	return render_template('certificates/add.html', active='certificates', title='Add Certificate')
 
 ################################################################################
 
@@ -221,98 +219,95 @@ def certificate_edit(digest):
 	if not does_user_have_permission("certificates.view"):
 		abort(403)
 
-	if request.method == 'GET':
-		# Get the list of certificates
-		curd = g.db.cursor(mysql.cursors.DictCursor)
-		curd.execute('SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`subjectDN` as `subjectDN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, `certificate`.`issuerCN` AS `issuerCN`, `certificate`.`issuerDN` as `issuerDN`, `certificate`.`notify`, MAX(`scan_result`.`when`) AS `lastSeen`, `certificate`.`notes` AS `notes`, `certificate`.`keySize` AS `keySize` FROM `certificate` LEFT JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest` WHERE `certificate`.`digest` = %s GROUP BY `certificate`.`digest`', (digest,))
-		certificate = curd.fetchone()
-
-		if certificate is None:
-			abort(404)
-
-		curd.execute('SELECT `san` FROM `certificate_sans` WHERE `cert_digest` = %s', (digest,));
-		sans = curd.fetchall()
-
-		curd.execute('SELECT `host`, `port`, `when`, `chain_state` FROM `scan_result` WHERE `cert_digest` = %s', (digest,))
-		scan_results = curd.fetchall()
-
-		return render_template('certificates/certificate.html', active='certificates', title='Certificates', certificate=certificate, sans=sans, scan_results=scan_results)
-	elif request.method == 'POST':
+	if request.method == 'POST':
 		# Check for an action
-		if 'action' in request.form:
-			# Delete Certificate action
-			if request.form['action'] == 'delete':
-				try:
-					# Get the certificate
-					curd = g.db.cursor(mysql.cursors.DictCursor)
-					curd.execute('SELECT `subjectDN` FROM `certificate` WHERE `digest` = %s', (digest,))
-					certificate = curd.fetchone()
-
-					# If the certificate was not found then notify the user
-					if certificate is None:
-						raise Exception('Certificate does not exist')
-
-					# Delete the certificate
-					curd = g.db.cursor(mysql.cursors.DictCursor)
-					curd.execute('DELETE FROM `certificate` WHERE `digest` = %s', (digest,))
-					g.db.commit()
-
-					# Log which certificate was deleted
-					cortex.lib.core.log(__name__, "certificate.delete", "Certificate " + str(digest) + " (" + str(certificate['subjectDN']) + ") deleted")
-
-					# Notify user
-					flash('Certificate deleted', category='alert-success')
-				except Exception as e:
-					flash('Failed to delete certificate: ' + str(e), category='alert-danger')
-
-				return redirect(url_for('certificates'))
-			# Toggle notifications action
-			elif request.form['action'] == 'toggle_notify':
-				try:
-					# Get the certificate
-					curd = g.db.cursor(mysql.cursors.DictCursor)
-					curd.execute('SELECT `subjectDN` FROM `certificate` WHERE `digest` = %s', (digest,))
-					certificate = curd.fetchone()
-
-					# If the certificate was not found then notify the user
-					if certificate is None:
-						raise Exception('Certificate does not exist')
-
-					# Update the certificate notify parameter
-					curd = g.db.cursor(mysql.cursors.DictCursor)
-					curd.execute('UPDATE `certificate` SET `notify` = NOT(`notify`) WHERE `digest` = %s', (digest,))
-					g.db.commit()
-
-					# Log
-					cortex.lib.core.log(__name__, "certificate.notify", "Certificate " + str(digest) + " (" + str(certificate['subjectDN']) + ") notification changed")
-				except Exception as e:
-					flash('Failed to change certificate notification: ' + str(e), category='alert-danger')
-
-				return redirect(url_for('certificate_edit', digest=digest))
-			elif request.form['action'] == 'save_notes':
+		if 'action' not in request.form or request.form.get("action") not in ["delete", "toggle_notify", "save_notes"]:
+			abort(400)
+		# Delete Certificate action
+		if request.form['action'] == 'delete':
+			try:
 				# Get the certificate
 				curd = g.db.cursor(mysql.cursors.DictCursor)
 				curd.execute('SELECT `subjectDN` FROM `certificate` WHERE `digest` = %s', (digest,))
 				certificate = curd.fetchone()
 
-				# If the certificate was not found then return appropriate response
+				# If the certificate was not found then notify the user
 				if certificate is None:
-					abort(404)
+					raise Exception('Certificate does not exist')
+
+				# Delete the certificate
+				curd = g.db.cursor(mysql.cursors.DictCursor)
+				curd.execute('DELETE FROM `certificate` WHERE `digest` = %s', (digest,))
+				g.db.commit()
+
+				# Log which certificate was deleted
+				cortex.lib.core.log(__name__, "certificate.delete", "Certificate " + str(digest) + " (" + str(certificate['subjectDN']) + ") deleted")
+
+				# Notify user
+				flash('Certificate deleted', category='alert-success')
+			except Exception as e:
+				flash('Failed to delete certificate: ' + str(e), category='alert-danger')
+
+			return redirect(url_for('certificates'))
+		# Toggle notifications action
+		if request.form['action'] == 'toggle_notify':
+			try:
+				# Get the certificate
+				curd = g.db.cursor(mysql.cursors.DictCursor)
+				curd.execute('SELECT `subjectDN` FROM `certificate` WHERE `digest` = %s', (digest,))
+				certificate = curd.fetchone()
+
+				# If the certificate was not found then notify the user
+				if certificate is None:
+					raise Exception('Certificate does not exist')
 
 				# Update the certificate notify parameter
 				curd = g.db.cursor(mysql.cursors.DictCursor)
-				curd.execute('UPDATE `certificate` SET `notes` = %s WHERE `digest` = %s', (request.form['notes'], digest,))
+				curd.execute('UPDATE `certificate` SET `notify` = NOT(`notify`) WHERE `digest` = %s', (digest,))
 				g.db.commit()
 
 				# Log
-				cortex.lib.core.log(__name__, "certificate.notes", "Certificate " + str(digest) + " (" + str(certificate['subjectDN']) + ") notes updated")
+				cortex.lib.core.log(__name__, "certificate.notify", "Certificate " + str(digest) + " (" + str(certificate['subjectDN']) + ") notification changed")
+			except Exception as e:
+				flash('Failed to change certificate notification: ' + str(e), category='alert-danger')
 
-				# Return empty 200 response
-				return ""
-			else:
-				return abort(400)
-		else:
-			return abort(400)
+			return redirect(url_for('certificate_edit', digest=digest))
+		if request.form['action'] == 'save_notes':
+			# Get the certificate
+			curd = g.db.cursor(mysql.cursors.DictCursor)
+			curd.execute('SELECT `subjectDN` FROM `certificate` WHERE `digest` = %s', (digest,))
+			certificate = curd.fetchone()
+
+			# If the certificate was not found then return appropriate response
+			if certificate is None:
+				abort(404)
+
+			# Update the certificate notify parameter
+			curd = g.db.cursor(mysql.cursors.DictCursor)
+			curd.execute('UPDATE `certificate` SET `notes` = %s WHERE `digest` = %s', (request.form['notes'], digest,))
+			g.db.commit()
+
+			# Log
+			cortex.lib.core.log(__name__, "certificate.notes", "Certificate " + str(digest) + " (" + str(certificate['subjectDN']) + ") notes updated")
+
+			# Return empty 200 response
+			return ""
+
+	# Get the list of certificates
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute('SELECT `certificate`.`digest` AS `digest`, `certificate`.`subjectCN` AS `subjectCN`, `certificate`.`subjectDN` as `subjectDN`, `certificate`.`notBefore` AS `notBefore`, `certificate`.`notAfter` AS `notAfter`, `certificate`.`issuerCN` AS `issuerCN`, `certificate`.`issuerDN` as `issuerDN`, `certificate`.`notify`, MAX(`scan_result`.`when`) AS `lastSeen`, `certificate`.`notes` AS `notes`, `certificate`.`keySize` AS `keySize` FROM `certificate` LEFT JOIN `scan_result` ON `certificate`.`digest` = `scan_result`.`cert_digest` WHERE `certificate`.`digest` = %s GROUP BY `certificate`.`digest`', (digest,))
+	certificate = curd.fetchone()
+
+	if certificate is None:
+		abort(404)
+
+	curd.execute('SELECT `san` FROM `certificate_sans` WHERE `cert_digest` = %s', (digest,))
+	sans = curd.fetchall()
+
+	curd.execute('SELECT `host`, `port`, `when`, `chain_state` FROM `scan_result` WHERE `cert_digest` = %s', (digest,))
+	scan_results = curd.fetchall()
+
+	return render_template('certificates/certificate.html', active='certificates', title='Certificates', certificate=certificate, sans=sans, scan_results=scan_results)
 
 ################################################################################
 
@@ -339,7 +334,7 @@ def certificate_statistics():
 	total_certs = result['count']
 
 	# Get the top 10 certificate issuers
-	curd.execute('SELECT `issuerCN`, COUNT(*) AS `count` FROM `certificate` GROUP BY `issuerDN` ORDER BY `count` DESC LIMIT 10');
+	curd.execute('SELECT `issuerCN`, COUNT(*) AS `count` FROM `certificate` GROUP BY `issuerDN` ORDER BY `count` DESC LIMIT 10')
 	result = curd.fetchall()
 	cert_provider_stats = {}
 	for row in result:
@@ -366,7 +361,7 @@ def certificate_statistics():
 	return render_template('certificates/statistics.html', active='certificates', title='Certificate Statistics', total_certs=total_certs, cert_provider_stats=cert_provider_stats, cert_expiry_stats=cert_expiry_stats, cert_seen_stats=cert_seen_stats, days=days)
 
 ################################################################################
-	
+
 @app.route('/certificates/ajax/iplookup')
 @cortex.lib.user.login_required
 def certificate_ip_lookup():

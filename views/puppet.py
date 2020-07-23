@@ -3,7 +3,7 @@ import json
 
 import MySQLdb as mysql
 import yaml
-from flask import (Flask, abort, flash, g, jsonify, make_response, redirect,
+from flask import (abort, flash, g, redirect,
                    render_template, request, session, url_for)
 from requests.exceptions import HTTPError
 
@@ -45,7 +45,7 @@ def puppet_enc_edit(node):
 	# Get the environment names as a list
 	environment_names = [e['environment_name'] for e in environments]
 
-	if system == None:
+	if system is None:
 		abort(404)
 
 	# Get the database cursor
@@ -61,27 +61,21 @@ def puppet_enc_edit(node):
 		if row["param"] not in hints[row["module_name"]][row["class_name"]]:
 			hints[row["module_name"]][row["class_name"]][row["param"]] = row["param_desc"]
 
-	# On any GET request, just display the information
-	if request.method == 'GET':
-		# If the user has view or edit permission send them the template - otherwise abort with 403.
-		if does_user_have_system_permission(system['id'], "view.puppet.classify", "systems.all.view.puppet.classify") or \
-			does_user_have_system_permission(system['id'], "edit.puppet"," systems.all.edit.puppet"):
-
-			return render_template('puppet/enc.html', system=system, active='puppet', environments=environments, title=system['name'], nodename=node, pactive="edit", yaml=cortex.lib.puppet.generate_node_config(system['puppet_certname']), hints=hints, environment_names=environment_names)
-		else:
-			abort(403)
+	# If the user has view or edit permission send them the template - otherwise abort with 403.
+	if not does_user_have_system_permission(system['id'], "view.puppet.classify", "systems.all.view.puppet.classify") and not does_user_have_system_permission(system['id'], "edit.puppet", "systems.all.edit.puppet"):
+		abort(403)
 
 	# If the method is POST and the user has edit permission.
 	# Validate the input and then save.
-	elif request.method == 'POST' and does_user_have_system_permission(system['id'],"edit.puppet","systems.all.edit.puppet"):
+	if request.method == 'POST':
+		if not does_user_have_system_permission(system['id'], "edit.puppet", "systems.all.edit.puppet"):
+			abort(403)
+
 		# Extract data from form
 		environment = request.form.get('environment', '')
 		classes = request.form.get('classes', '')
 		variables = request.form.get('variables', '')
-		if 'include_default' in request.form:
-			include_default = True
-		else:
-			include_default = False
+		include_default = bool('include_default' in request.form)
 		error = False
 
 		# Validate environement:
@@ -139,8 +133,9 @@ def puppet_enc_edit(node):
 		flash('Puppet ENC for host ' + system['name'] + ' updated', 'alert-success')
 
 		return redirect(url_for('puppet_enc_edit', node=node))
-	else:
-		abort(403)
+
+	# On any GET request, just display the information
+	return render_template('puppet/enc.html', system=system, active='puppet', environments=environments, title=system['name'], nodename=node, pactive="edit", yaml=cortex.lib.puppet.generate_node_config(system['puppet_certname']), hints=hints, environment_names=environment_names)
 
 ################################################################################
 
@@ -157,17 +152,13 @@ def puppet_enc_default():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute("SELECT `value` FROM `kv_settings` WHERE `key` = 'puppet.enc.default'")
 	result = curd.fetchone()
-	if result == None:
+	if result is None:
 		classes = "# Classes to include on all nodes using the default settings can be entered here\n"
 	else:
 		classes = result['value']
 
-	# On any GET request, just display the information
-	if request.method == 'GET':
-		return render_template('puppet/default.html', classes=classes, active='puppet', title="Default Classes")
-
 	# On any POST request, validate the input and then save
-	elif request.method == 'POST':
+	if request.method == 'POST':
 		# Check user permissions
 		if not does_user_have_permission("puppet.default_classes.edit"):
 			abort(403)
@@ -200,12 +191,15 @@ def puppet_enc_default():
 
 		return redirect(url_for('puppet_enc_default'))
 
+	# On any GET request, just display the information
+	return render_template('puppet/default.html', classes=classes, active='puppet', title="Default Classes")
+
 ################################################################################
 
 @app.route('/puppet/nodes')
 @app.route('/puppet/nodes/status/<string:status>')
 @cortex.lib.user.login_required
-def puppet_nodes(status = None):
+def puppet_nodes(status=None):
 	"""Handles the Puppet nodes list page"""
 
 	# Check user permissions
@@ -223,7 +217,7 @@ def puppet_nodes(status = None):
 	try:
 		statuses = cortex.lib.puppet.puppetdb_get_node_statuses()
 	except Exception as e:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
+		return stderr("Unable to connect to PuppetDB", "Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
 
 
 	data = []
@@ -232,7 +226,7 @@ def puppet_nodes(status = None):
 		row['clientnoop'] = statuses[row['certname']]['clientnoop'] if row['certname'] in statuses else 'unknown'
 		row['latest_report_hash'] = statuses[row['certname']]['latest_report_hash'] if row['certname'] in statuses else 'unknown'
 
-		if status == None or status == 'all':
+		if status in (None, "all"):
 			data.append(row)
 		elif status == 'unchanged' and row['status'] == 'unchanged':
 			data.append(row)
@@ -249,7 +243,7 @@ def puppet_nodes(status = None):
 	title = 'Puppet Nodes'
 	page_title_map = {'unchanged': 'Normal', 'changed': 'Changed', 'noop': 'Disabled', 'failed': 'Failed', 'unknown': 'Unknown/Unreported', 'all': 'Registered'}
 
-	if status != None and status in page_title_map:
+	if status in page_title_map:
 		title = title + ' - {}'.format(page_title_map.get(status))
 
 	# Render
@@ -268,30 +262,30 @@ def puppet_facts(node):
 		abort(404)
 
 	## Check if the user is allowed to view the facts about this node
-	if not does_user_have_system_permission(system['id'],"view.puppet","systems.all.view.puppet"):
+	if not does_user_have_system_permission(system['id'], "view.puppet", "systems.all.view.puppet"):
 		abort(403)
 
 	dbnode = None
 	facts = None
 	try:
 		# Connect to PuppetDB, get the node information and then it's related facts
-		db     = cortex.lib.puppet.puppetdb_connect()
+		db = cortex.lib.puppet.puppetdb_connect()
 		dbnode = db.node(node)
-		facts  = dbnode.facts()
-	except HTTPError as he:
+		facts = dbnode.facts()
+	except HTTPError as ex:
 		# If we get a 404 from the PuppetDB API
-		if he.response.status_code == 404:
+		if ex.response.status_code == 404:
 			# We will continue to render the page, just with no facts and display a nice error
 			facts = None
 		else:
-			raise(he)
-	except Exception as e:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
+			raise ex
+	except Exception as ex:
+		return stderr("Unable to connect to PuppetDB", "Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
 
 	# Turn the facts generator in to a dictionary
 	facts_dict = {}
 
-	if facts != None:
+	if facts is not None:
 		for fact in facts:
 			facts_dict[fact.name] = fact.value
 
@@ -302,7 +296,7 @@ def puppet_facts(node):
 
 @app.route('/puppet/dashboard')
 @cortex.lib.user.login_required
-def puppet_dashboard(type=None):
+def puppet_dashboard():
 	"""Handles the Puppet dashboard page."""
 
 	# Check user permissions
@@ -312,11 +306,11 @@ def puppet_dashboard(type=None):
 	environments = cortex.lib.puppet.get_puppet_environments()
 
 	try:
-		stats=cortex.lib.puppet.puppetdb_get_node_stats(
+		stats = cortex.lib.puppet.puppetdb_get_node_stats(
 			environments=[env["environment_name"] for env in environments],
 		)
-	except Exception as e:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
+	except Exception as ex:
+		return stderr("Unable to connect to PuppetDB", "Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
 
 	return render_template('puppet/dashboard.html', title="Puppet Dashboard", active="puppet", stats=stats)
 
@@ -328,9 +322,9 @@ def puppet_radiator():
 
 	## No permissions check: this is accessible without logging in
 	try:
-		stats=cortex.lib.puppet.puppetdb_get_node_stats_totals()
-	except Exception as e:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
+		stats = cortex.lib.puppet.puppetdb_get_node_stats_totals()
+	except Exception as ex:
+		return stderr("Unable to connect to PuppetDB", "Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
 
 	return render_template('puppet/radiator.html', stats=stats, active='puppet')
 
@@ -344,9 +338,9 @@ def puppet_radiator_body():
 
 	## No permissions check: this is accessible without logging in
 	try:
-		stats=cortex.lib.puppet.puppetdb_get_node_stats_totals()
-	except Exception as e:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
+		stats = cortex.lib.puppet.puppetdb_get_node_stats_totals()
+	except Exception as ex:
+		return stderr("Unable to connect to PuppetDB", "Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
 
 	return render_template('puppet/radiator-body.html', stats=stats, active='puppet')
 
@@ -363,7 +357,7 @@ def puppet_reports(node):
 		abort(404)
 
 	## Check if the user is allowed to view the reports of this node
-	if not does_user_have_system_permission(system['id'],"view.puppet","systems.all.view.puppet"):
+	if not does_user_have_system_permission(system['id'], "view.puppet", "systems.all.view.puppet"):
 		abort(403)
 
 	try:
@@ -371,15 +365,15 @@ def puppet_reports(node):
 		db = cortex.lib.puppet.puppetdb_connect()
 		reports = db.node(node).reports()
 
-	except HTTPError as he:
+	except HTTPError as ex:
 		# If we get a 404 response from PuppetDB
-		if he.response.status_code == 404:
+		if ex.response.status_code == 404:
 			# Still display the page but with a nice error
 			reports = None
 		else:
-			raise(he)
-	except Exception as e:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
+			raise ex
+	except Exception as ex:
+		return stderr("Unable to connect to PuppetDB", "Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
 
 	return render_template('puppet/reports.html', reports=reports, active='puppet', title=node + " - Puppet Reports", nodename=node, pactive="reports", system=system)
 
@@ -393,8 +387,8 @@ def puppet_report(report_hash):
 	# Connect to Puppet DB and query for a report with the given hash
 	try:
 		db = cortex.lib.puppet.puppetdb_connect()
-	except Exception as e:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
+	except Exception as ex:
+		return stderr("Unable to connect to PuppetDB", "Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
 
 	reports = db.reports(query='["=", "hash", "' + report_hash + '"]')
 
@@ -413,7 +407,7 @@ def puppet_report(report_hash):
 		return abort(404)
 
 	## Check if the user is allowed to view the report
-	if not does_user_have_system_permission(system['id'],"view.puppet","systems.all.view.puppet"):
+	if not does_user_have_system_permission(system['id'], "view.puppet", "systems.all.view.puppet"):
 		abort(403)
 
 	# Build metrics into a more useful dictionary
@@ -439,18 +433,17 @@ def puppet_search():
 	if not does_user_have_permission("puppet.nodes.view"):
 		abort(403)
 
-	q = request.args.get('q')
-	if q is None:
+	query = request.args.get('q')
+	if query is None:
 		app.logger.warn('Missing \'query\' parameter in puppet search request')
 		return abort(400)
 
-	q.strip();
-	# escape wildcards
-	q = q.replace('%', '\%').replace('_', '\_')
+	# Strip and escape wildcards
+	query = "%" + query.strip().replace('%', '\\%').replace('_', '\\_') + "%"
 
-	#Search for the text
+	# Search for the text
 	curd = g.db.cursor(mysql.cursors.DictCursor)
-	curd.execute('''SELECT DISTINCT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`  FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` WHERE `puppet_nodes`.`classes` LIKE %s OR `puppet_nodes`.`variables` LIKE %s ORDER BY `puppet_nodes`.`certname`''', ('%' + q + '%', '%' + q + '%'))
+	curd.execute('''SELECT DISTINCT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`  FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` WHERE `puppet_nodes`.`classes` LIKE %s OR `puppet_nodes`.`variables` LIKE %s ORDER BY `puppet_nodes`.`certname`''', (query, query))
 	results = curd.fetchall()
 
 	return render_template('puppet/search.html', active='puppet', data=results, title="Puppet search")
@@ -465,11 +458,11 @@ def puppet_catalog(node):
 	# Get the system
 	system = cortex.lib.systems.get_system_by_puppet_certname(node)
 
-	if system == None:
+	if system is None:
 		abort(404)
 
 	## Check if the user is allowed to edit the Puppet configuration
-	if not does_user_have_system_permission(system['id'],"view.puppet.catalog","systems.all.view.puppet.catalog"):
+	if not does_user_have_system_permission(system['id'], "view.puppet.catalog", "systems.all.view.puppet.catalog"):
 		abort(403)
 
 	dbnode = None
@@ -479,18 +472,18 @@ def puppet_catalog(node):
 		db = cortex.lib.puppet.puppetdb_connect()
 		dbnode = db.node(node)
 		catalog = db.catalog(node)
-	except HTTPError as he:
+	except HTTPError as ex:
 		# If we get a 404 from the PuppetDB API
-		if he.response.status_code == 404:
+		if ex.response.status_code == 404:
 			catalog = None
 		else:
-			raise(he)
-	except Exception as e:
-		return stderr("Unable to connect to PuppetDB","Unable to connect to the Puppet database. The error was: " + type(e).__name__ + " - " + str(e))
+			raise ex
+	except Exception as ex:
+		return stderr("Unable to connect to PuppetDB", "Unable to connect to the Puppet database. The error was: " + type(ex).__name__ + " - " + str(ex))
 
 	catalog_dict = {}
 
-	if catalog != None:
+	if catalog is not None:
 		for res in catalog.get_resources():
 			catalog_dict[str(res)] = res.parameters
 
@@ -521,7 +514,7 @@ def puppet_documentation(environment_id=None, module_id=None):
 		curd.execute("SELECT * FROM `puppet_classes` LEFT JOIN `puppet_documentation` ON `puppet_classes`.`id`=`puppet_documentation`.`class_id` WHERE `puppet_classes`.`module_id`=%s;", (module["id"],))
 		for row in curd.fetchall():
 			if row["class_name"] not in data:
-				data[row["class_name"]] = { "desc": row["desc"] }
+				data[row["class_name"]] = {"desc": row["desc"]}
 
 			if row["tag"] not in data[row["class_name"]]:
 				data[row["class_name"]][row["tag"]] = []
@@ -536,7 +529,7 @@ def puppet_documentation(environment_id=None, module_id=None):
 		curd.execute("SELECT `puppet_modules`.`id` AS `module_id`, `puppet_modules`.`module_name` AS `module_name`, `puppet_environments`.`id` AS `environment_id`, `puppet_environments`.`environment_name` AS `environment_name`, `puppet_environments`.`short_name` AS `short_name` FROM `puppet_modules` LEFT JOIN `puppet_environments` ON `puppet_modules`.`environment_id`=`puppet_environments`.`id`")
 		for row in curd.fetchall():
 			if row["environment_id"] not in data:
-				data[row["environment_id"]] = {"name": row["environment_name"], "short_name": row["short_name"], "modules": {} }
+				data[row["environment_id"]] = {"name": row["environment_name"], "short_name": row["short_name"], "modules": {}}
 			data[row["environment_id"]]["modules"][row["module_id"]] = row["module_name"]
 
 	return render_template('puppet/docs.html', active='puppet', title="Puppet Documentation", module=module, data=data, q=request.args.get("q", None))
@@ -571,37 +564,36 @@ def puppet_environments(environment_id=None):
 			abort(400)
 
 	# Handle GET request
-	else:
-		# Get the database cursor
-		curd = g.db.cursor(mysql.cursors.DictCursor)
+	# Get the database cursor
+	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-		environments, permissions, nodes = [], [], []
-		if environment_id and does_user_have_puppet_permission(environment_id, "view", "puppet.environments.all.view"):
-			curd.execute("SELECT * FROM `puppet_environments` WHERE `id`=%s LIMIT 1", (environment_id,))
-			environments = curd.fetchall()
-			curd.execute("SELECT * FROM `p_puppet_perms_view` WHERE `environment_id`=%s ORDER BY `who`", (environment_id,))
-			permissions = curd.fetchall()
-		elif environment_id is None:
-			if does_user_have_permission("puppet.environments.all.view"):
-				environments = cortex.lib.puppet.get_puppet_environments()
-			elif does_user_have_any_puppet_permission("view"):
-				environments = cortex.lib.puppet.get_puppet_environments(environment_permission="view")
-			else:
-				abort(403)
+	environments, permissions, nodes = [], [], []
+	if environment_id and does_user_have_puppet_permission(environment_id, "view", "puppet.environments.all.view"):
+		curd.execute("SELECT * FROM `puppet_environments` WHERE `id`=%s LIMIT 1", (environment_id,))
+		environments = curd.fetchall()
+		curd.execute("SELECT * FROM `p_puppet_perms_view` WHERE `environment_id`=%s ORDER BY `who`", (environment_id,))
+		permissions = curd.fetchall()
+	elif environment_id is None:
+		if does_user_have_permission("puppet.environments.all.view"):
+			environments = cortex.lib.puppet.get_puppet_environments()
+		elif does_user_have_any_puppet_permission("view"):
+			environments = cortex.lib.puppet.get_puppet_environments(environment_permission="view")
 		else:
 			abort(403)
+	else:
+		abort(403)
 
-		# If no results could be found
-		if not environments:
-			abort(404)
+	# If no results could be found
+	if not environments:
+		abort(404)
 
-		# If
+	# If
 
-		if environment_id:
-			curd.execute(
-				"SELECT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`, `systems`.`allocation_comment` AS `allocation_comment` FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` WHERE `puppet_nodes`.`env`=%s ORDER BY `puppet_nodes`.`certname`",
-				(environments[0]["environment_name"],)
-			)
-			nodes = curd.fetchall()
+	if environment_id:
+		curd.execute(
+			"SELECT `puppet_nodes`.`certname` AS `certname`, `puppet_nodes`.`env` AS `env`, `systems`.`id` AS `id`, `systems`.`name` AS `name`, `systems`.`allocation_comment` AS `allocation_comment` FROM `puppet_nodes` LEFT JOIN `systems` ON `puppet_nodes`.`id` = `systems`.`id` WHERE `puppet_nodes`.`env`=%s ORDER BY `puppet_nodes`.`certname`",
+			(environments[0]["environment_name"],)
+		)
+		nodes = curd.fetchall()
 
-		return render_template("puppet/environments.html", active="puppet", title="Puppet Environments", environment_id=environment_id, environments=environments, permissions=permissions, nodes=nodes)
+	return render_template("puppet/environments.html", active="puppet", title="Puppet Environments", environment_id=environment_id, environments=environments, permissions=permissions, nodes=nodes)

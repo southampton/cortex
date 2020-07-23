@@ -8,9 +8,10 @@ from cortex.lib.user import does_user_have_permission
 
 ################################################################################
 
-@app.route('/favourites', methods=['GET'])
+@app.route('/favourites')
+@app.route('/favourites/<string:system_type>')
 @cortex.lib.user.login_required
-def favourites(display='all'):
+def favourites(system_type='all'):
 
 	# Check user permissions
 	if not (does_user_have_permission("systems.all.view") or does_user_have_permission("systems.own.view")):
@@ -21,36 +22,17 @@ def favourites(display='all'):
 	if does_user_have_permission("systems.all.view"):
 		classes = cortex.lib.classes.get_list()
 
-	# Validate system type
-	flag = False
-	if classes and display != 'all':
-		for c in classes:
-			if display == c["name"]:
-				flag = True
-				break
-	else:
-		flag = True
+	print("="*10)
+	print(classes)
 
-	if not flag:
-		flash('System type %s does not exist.'%(display), category='alert-info')
-		display = 'all'
+	if system_type != "all" and system_type not in [class_obj["name"] for class_obj in classes]:
+		flash("system type {} does not exist.".format(system_type), category="alert-info")
 
-	# Get the search string, if any
-	q = request.args.get('q', None)
-
-	# Strip any leading and or trailing spaces
-	if q is not None:
-		q = q.strip()
+	# Get the search string, if any and strip
+	query = request.args["q"].strip() if request.args.get("q", None) is not None else None
 
 	# Render
-	return render_template('systems/list.html', classes=classes, active='favourites', title="Favourites", favourites=1, q=q, hide_inactive=False, display=display)
-
-################################################################################
-
-@app.route('/favourites/<string:system_type>', methods=['GET'])
-@cortex.lib.user.login_required
-def favourites_by_type(system_type):
-	return favourites(system_type)
+	return render_template('systems/list.html', classes=classes, active='favourites', title="Favourites", favourites=1, q=query, hide_inactive=False, display=system_type)
 
 ################################################################################
 
@@ -60,24 +42,22 @@ def favourites_json():
 	"""
 	Add / Remove a system from your favourites.
 	"""
-	if all(field in request.form for field in ['system_id', 'status']):
-
-		try:
-			system_id = int(request.form["system_id"])
-		except ValueError:
-			abort(400)
-		else:
-
-			# Get a cursor to the database
-			curd = g.db.cursor(mysql.cursors.DictCursor)
-
-			if request.form["status"] == "1":
-				curd.execute("INSERT INTO `system_user_favourites` (`username`, `system_id`) VALUES (%s, %s) ON DUPLICATE KEY UPDATE `system_id`=`system_id`", (session.get('username'), system_id))
-			else:
-				curd.execute("DELETE FROM `system_user_favourites` WHERE `username` = %s AND `system_id` = %s", (session.get('username'), system_id))
-			
-			g.db.commit()
-
-			return jsonify({"success":True})
-	else:
+	if not all(field in request.form for field in ['system_id', 'status']):
 		abort(400)
+
+	try:
+		system_id = int(request.form["system_id"])
+	except ValueError:
+		abort(400)
+	else:
+		# Get a cursor to the database
+		curd = g.db.cursor(mysql.cursors.DictCursor)
+
+		if request.form["status"] == "1":
+			curd.execute("INSERT INTO `system_user_favourites` (`username`, `system_id`) VALUES (%s, %s) ON DUPLICATE KEY UPDATE `system_id`=`system_id`", (session.get('username'), system_id))
+		else:
+			curd.execute("DELETE FROM `system_user_favourites` WHERE `username` = %s AND `system_id` = %s", (session.get('username'), system_id))
+
+		g.db.commit()
+
+		return jsonify({"success":True})

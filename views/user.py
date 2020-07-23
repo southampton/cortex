@@ -15,16 +15,23 @@ def root():
 	# If the user is already logged in, just redirect them to their dashboard
 	if cortex.lib.user.is_logged_in():
 		return redirect(url_for('dashboard'))
-	else:
-		if app.config['DEFAULT_USER_AUTH'] == 'cas':
-			return cas()
-		else:
-			return login()
+
+	# if not logged in redirect to auth provider
+	if app.config['DEFAULT_USER_AUTH'] == 'cas':
+		return cas()
+
+	# fallback to ldap
+	return login()
 
 ###############################################################################
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+
+	# stop bypassing mfa
+	if app.config['DEFAULT_USER_AUTH'] == 'cas':
+		return cas()
+
 	if request.method == 'POST':
 		if all(field in request.form for field in ['username', 'password']):
 			result = cortex.lib.user.authenticate(request.form['username'], request.form['password'])
@@ -65,8 +72,8 @@ def cas():
 		if message.get('session_index', None) == session.get('cas_ticket'):
 			cortex.lib.user.clear_session()
 			return ('', 200)
-		else:
-			abort(400)
+
+		abort(400)
 
 
 	# If the user is already logged in, just redirect them to their dashboard
@@ -77,7 +84,7 @@ def cas():
 	if ticket is not None:
 		try:
 			cas_response = cas_client.perform_service_validate(ticket=ticket)
-		except:
+		except Exception:
 			return root()
 		if cas_response and cas_response.success:
 			try:
@@ -108,8 +115,8 @@ def logout():
 	if cas_ticket is not None:
 		# Tell cas about the logout
 		return redirect(cas_client.get_logout_url())
-	else:
-		return redirect(url_for('login'))
+
+	return redirect(url_for('login'))
 
 ################################################################################
 
@@ -126,39 +133,27 @@ def user_groups():
 
 ################################################################################
 
-@app.route('/preferences',methods=['POST'])
+@app.route('/preferences', methods=['POST'])
 @cortex.lib.user.login_required
 def preferences():
 	"""Saves changed to a users preferences"""
 
-	# the only preference right now is interface layout mode
-	classic = False
-
-	if 'uihorizontal' in request.form:
-		if request.form['uihorizontal'] == "yes":
-			classic = True
-
-	if classic:
-		g.redis.set("user:" + session['username'] + ":preferences:interface:layout","classic")
+	if request.form.get("uihorizontal", "no") == "yes":
+		g.redis.set("user:" + session['username'] + ":preferences:interface:layout", "classic")
 	else:
 		# if they dont want the classic layout then don't store a preference at all
 		g.redis.delete("user:" + session['username'] + ":preferences:interface:layout")
 
-	theme = 'default'
-	if 'theme' in request.form:
-		if request.form['theme'] == "dark":
-			theme = "dark"
-			
-	if theme == 'dark':
-		g.redis.set("user:" + session['username'] + ":preferences:interface:theme","dark")
+	if request.form.get("theme", "default") == 'dark':
+		g.redis.set("user:" + session['username'] + ":preferences:interface:theme", "dark")
 	else:
 		# if they dont want a different theme then don't store a preference at all
 		g.redis.delete("user:" + session['username'] + ":preferences:interface:theme")
 
-	if 'sidebar_expand' in request.form and request.form['sidebar_expand'] == 'yes':
+	if request.form.get("sidebar_expand", "no") == "yes":
 		g.redis.set('user:' + session['username'] + ':preferences:interface:sidebar', 'expand')
 	else:
 		g.redis.delete('user:' + session['username'] + ':preferences:interface:sidebar')
-	
-	flash("Your preferences have been saved","alert-success")
+
+	flash("Your preferences have been saved", "alert-success")
 	return redirect(url_for('dashboard'))

@@ -65,7 +65,7 @@ def vmware_hwtools():
 	stats_version = curd.fetchall()
 
 	# Render
-	return render_template('vmware/hwtools.html', active='vmware', stats_hw=stats_hw, stats_power=stats_power,stats_status=stats_status, stats_version=stats_version, title="Statistics")
+	return render_template('vmware/hwtools.html', active='vmware', stats_hw=stats_hw, stats_power=stats_power, stats_status=stats_status, stats_version=stats_version, title="Statistics")
 
 ################################################################################
 
@@ -226,29 +226,29 @@ def vmware_history():
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
 	# Figure out how many days to show
-	if 'd' in request.args:
-		d = int(request.args['d'])
-	else:
-		d = 14
+	try:
+		days = int(request.form.get("d", 14))
+	except ValueError:
+		days = 14
 
 	# Get VM count history
-	curd.execute('SELECT `timestamp`, `value` FROM `stats_vm_count` WHERE `timestamp` > DATE_SUB(NOW(), INTERVAL ' + str(d) + ' DAY) ORDER BY `timestamp` DESC')
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_vm_count` WHERE `timestamp` > DATE_SUB(NOW(), INTERVAL ' + str(days) + ' DAY) ORDER BY `timestamp` DESC')
 	stats_vms = curd.fetchall()
 
 	# Get Linux VM count history
-	curd.execute('SELECT `timestamp`, `value` FROM `stats_linux_vm_count` WHERE `timestamp` > DATE_SUB(NOW(), INTERVAL ' + str(d) + ' DAY) ORDER BY `timestamp` DESC')
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_linux_vm_count` WHERE `timestamp` > DATE_SUB(NOW(), INTERVAL ' + str(days) + ' DAY) ORDER BY `timestamp` DESC')
 	stats_linux_vms = curd.fetchall()
 
 	# Get Windows VM count history
-	curd.execute('SELECT `timestamp`, `value` FROM `stats_windows_vm_count` WHERE `timestamp` > DATE_SUB(NOW(), INTERVAL ' + str(d) + ' DAY) ORDER BY `timestamp` DESC')
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_windows_vm_count` WHERE `timestamp` > DATE_SUB(NOW(), INTERVAL ' + str(days) + ' DAY) ORDER BY `timestamp` DESC')
 	stats_windows_vms = curd.fetchall()
 
 	# Get Desktop VM count history
-	curd.execute('SELECT `timestamp`, `value` FROM `stats_desktop_vm_count` WHERE `timestamp` > DATE_SUB(NOW(), INTERVAL ' + str(d) + ' DAY) ORDER BY `timestamp` DESC')
+	curd.execute('SELECT `timestamp`, `value` FROM `stats_desktop_vm_count` WHERE `timestamp` > DATE_SUB(NOW(), INTERVAL ' + str(days) + ' DAY) ORDER BY `timestamp` DESC')
 	stats_desktop_vms = curd.fetchall()
 
 	# Render
-	return render_template('vmware/history.html', active='vmware', stats_vms=stats_vms, stats_linux_vms=stats_linux_vms, stats_windows_vms=stats_windows_vms, stats_desktop_vms=stats_desktop_vms, title='VMware History', d=d)
+	return render_template('vmware/history.html', active='vmware', stats_vms=stats_vms, stats_linux_vms=stats_linux_vms, stats_windows_vms=stats_windows_vms, stats_desktop_vms=stats_desktop_vms, title='VMware History', d=days)
 
 ################################################################################
 
@@ -306,7 +306,7 @@ def vmware_download_csv():
 @cortex.lib.user.login_required
 def vmware_data_unlinked():
 	"""Displays page containing a giant table of information of everything
-	we know about VMs which are not linked to Cortex system records. It is 
+	we know about VMs which are not linked to Cortex system records. It is
 	currently hard coded to exclude virtual machines on the ECS cluster."""
 
 	# Check user permissions

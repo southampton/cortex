@@ -14,7 +14,7 @@ from cortex.lib.user import does_user_have_permission
 
 ################################################################################
 
-@app.route('/permissions/roles',methods=['GET','POST'])
+@app.route('/permissions/roles', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def perms_roles():
 	"""View function to let administrators view and manage the list of roles"""
@@ -26,16 +26,8 @@ def perms_roles():
 	# Cursor for the DB
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-	## View list
-	if request.method == 'GET':
-		# Get the list of roles from the database
-		roles = cortex.lib.perms.get_roles()
-
-		# Render the page
-		return render_template('perms/roles.html', active='perms', title="Roles", roles=roles, manage_role_route='perms_role')
-
 	## Create new role
-	elif request.method == 'POST':
+	if request.method == 'POST':
 
 		# Validate class name/prefix
 		name = request.form['name']
@@ -63,10 +55,17 @@ def perms_roles():
 		flash("Role created", "alert-success")
 		return redirect(url_for('perms_roles'))
 
+	## View list
+	# Get the list of roles from the database
+	roles = cortex.lib.perms.get_roles()
+
+	# Render the page
+	return render_template('perms/roles.html', active='perms', title="Roles", roles=roles, manage_role_route='perms_role')
+
 
 ################################################################################
 
-@app.route('/permissions/role/<int:role_id>',methods=['GET','POST'])
+@app.route('/permissions/role/<int:role_id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def perms_role(role_id):
 	"""View function to let administrators view and manage a role"""
@@ -82,19 +81,14 @@ def perms_role(role_id):
 	role = cortex.lib.perms.get_role(role_id)
 
 	# Catch when no role exists
-	if role == None:
+	if role is None:
 		abort(404)
 
 	# Tab to show
 	active_tab = request.args.get("t", "global") if request.args.get("t", "global") in ["global", "systems", "puppet"] else "global"
 
-	## View list
-	if request.method == 'GET':
-		# Render the page
-		return render_template('perms/role.html', active='perms', title="Role", active_tab=active_tab, role=role, permissions=app.permissions.get_all(), systems=cortex.lib.systems.get_systems(order='id', order_asc=False), environments=cortex.lib.puppet.get_puppet_environments())
-
 	## Edit role, delete role
-	elif request.method == 'POST':
+	if request.method == 'POST':
 		action = request.form['action']
 
 		# delete_role        - delete the role
@@ -109,7 +103,7 @@ def perms_role(role_id):
 		# remove_environment - Remove an environment from this role
 		# edit_environment   - Edit an environment's permissions
 
-		# Delete the role
+		## Delete the role
 		if action == 'delete_role':
 			curd.execute("DELETE FROM `p_roles` WHERE `id` = %s", (role_id,))
 			g.db.commit()
@@ -118,8 +112,8 @@ def perms_role(role_id):
 			flash("The role `" + role['name'] + "` has been deleted", "alert-success")
 			return redirect(url_for('perms_roles'))
 
-		# Change the name and/or description of the role
-		elif action == 'edit_role':
+		## Change the name and/or description of the role
+		if action == 'edit_role':
 			# Validate class name/prefix
 			name = request.form['name']
 			if len(name) < 3 or len(name) > 64:
@@ -139,7 +133,8 @@ def perms_role(role_id):
 			flash("Role updated", "alert-success")
 			return redirect(url_for('perms_role', role_id=role_id))
 
-		elif action == 'update_perms':
+		## Update role permissions
+		if action == 'update_perms':
 			# Loop over all the permissions available, check if it is in the form
 			# if it isn't, make sure to delete from the table
 			# if it is, make sure it is in the table
@@ -180,18 +175,18 @@ def perms_role(role_id):
 			return redirect(url_for('perms_role', role_id=role_id))
 
 		## Add a user or group to the role
-		elif action == 'add_user':
+		if action == 'add_user':
 			name = request.form['name']
 			if not re.match(r'^[a-zA-Z0-9\-\_]{3,255}$', name):
 				flash("The user or group name you sent was invalid", "alert-danger")
 				return redirect(url_for('perms_role', role_id=role_id))
 
 			ptype = request.form['type']
-			if not re.match(r'^[0-9]+$',ptype):
+			if not re.match(r'^[0-9]+$', ptype):
 				flash("The type you sent was invalid", "alert-danger")
 				return redirect(url_for('perms_role', role_id=role_id))
-			else:
-				ptype = int(ptype)
+
+			ptype = int(ptype)
 
 			if ptype not in [0, 1]:
 				flash("The type you sent was invalid", "alert-danger")
@@ -212,7 +207,7 @@ def perms_role(role_id):
 					return redirect(url_for('perms_role', role_id=role_id))
 
 			# Ensure the user/group combo was not already added
-			curd.execute("SELECT 1 FROM `p_role_who` WHERE `role_id` = %s AND `who` = %s AND `type` = %s", (role_id,name,ptype))
+			curd.execute("SELECT 1 FROM `p_role_who` WHERE `role_id` = %s AND `who` = %s AND `type` = %s", (role_id, name, ptype))
 			if curd.fetchone() is not None:
 				flash('That user/group is already added to the role', 'alert-warning')
 				return redirect(url_for('perms_role', role_id=role_id))
@@ -225,9 +220,9 @@ def perms_role(role_id):
 			return redirect(url_for('perms_role', role_id=role_id))
 
 		## Remove a user or group from the role
-		elif action == 'remove_user':
+		if action == 'remove_user':
 			wid = request.form['wid']
-			if not re.match(r'^[0-9]+$',wid):
+			if not re.match(r'^[0-9]+$', wid):
 				flash("The user/group ID you sent was invalid", "alert-danger")
 				return redirect(url_for('perms_role', role_id=role_id))
 
@@ -246,13 +241,13 @@ def perms_role(role_id):
 			return redirect(url_for('perms_role', role_id=role_id))
 
 		## Add a system to the role
-		elif action == "add_system":
+		if action == "add_system":
 			system_id = request.form["system_id"]
-			if not re.match(r'^[0-9]+$',system_id):
+			if not re.match(r'^[0-9]+$', system_id):
 				flash("The system you sent was invalid", "alert-danger")
 				return redirect(url_for("perms_role", role_id=role_id, t="systems"))
-			else:
-				system_id = int(system_id)
+
+			system_id = int(system_id)
 
 			# Check the system is not already assigned to this role
 			curd.execute("SELECT 1 FROM `p_role_system_perms` WHERE `role_id`=%s AND `system_id`=%s", (role_id, system_id))
@@ -278,13 +273,13 @@ def perms_role(role_id):
 			return redirect(url_for("perms_role", role_id=role_id, t="systems"))
 
 		## Delete a system from the role
-		elif action == "remove_system":
+		if action == "remove_system":
 			system_id = request.form["system_id"]
-			if not re.match(r'^[0-9]+$',system_id):
+			if not re.match(r'^[0-9]+$', system_id):
 				flash("The system you sent was invalid", "alert-danger")
 				return redirect(url_for("perms_role", role_id=role_id, t="systems"))
-			else:
-				system_id = int(system_id)
+
+			system_id = int(system_id)
 
 			curd.execute("DELETE FROM `p_role_system_perms` WHERE `role_id`=%s AND `system_id`=%s", (role_id, system_id))
 			g.db.commit()
@@ -295,13 +290,13 @@ def perms_role(role_id):
 			return redirect(url_for("perms_role", role_id=role_id, t="systems"))
 
 		## Edit a systems permissions
-		elif action == "edit_system":
+		if action == "edit_system":
 			system_id = request.form["system_id"]
-			if not re.match(r'^[0-9]+$',system_id):
+			if not re.match(r'^[0-9]+$', system_id):
 				flash("The system you sent was invalid", "alert-danger")
 				return redirect(url_for("perms_role", role_id=role_id, t="systems"))
-			else:
-				system_id = int(system_id)
+
+			system_id = int(system_id)
 
 			changes = 0
 
@@ -332,13 +327,13 @@ def perms_role(role_id):
 			return redirect(url_for("perms_role", role_id=role_id, t="systems"))
 
 		## Add a environment to the role
-		elif action == "add_environment":
+		if action == "add_environment":
 			environment_id = request.form["environment_id"]
-			if not re.match(r'^[0-9]+$',environment_id):
+			if not re.match(r'^[0-9]+$', environment_id):
 				flash("The environment you sent was invalid", "alert-danger")
 				return redirect(url_for("perms_role", role_id=role_id, t="puppet"))
-			else:
-				environment_id = int(environment_id)
+
+			environment_id = int(environment_id)
 
 			# Check the environment is not already assigned to this role
 			curd.execute("SELECT 1 FROM `p_role_puppet_perms` WHERE `role_id`=%s AND `environment_id`=%s", (role_id, environment_id))
@@ -364,13 +359,13 @@ def perms_role(role_id):
 			return redirect(url_for("perms_role", role_id=role_id, t="puppet"))
 
 		## Delete a environment from the role
-		elif action == "remove_environment":
+		if action == "remove_environment":
 			environment_id = request.form["environment_id"]
-			if not re.match(r'^[0-9]+$',environment_id):
+			if not re.match(r'^[0-9]+$', environment_id):
 				flash("The environment you sent was invalid", "alert-danger")
 				return redirect(url_for("perms_role", role_id=role_id, t="puppet"))
-			else:
-				environment_id = int(environment_id)
+
+			environment_id = int(environment_id)
 
 			curd.execute("DELETE FROM `p_role_puppet_perms` WHERE `role_id`=%s AND `environment_id`=%s", (role_id, environment_id))
 			g.db.commit()
@@ -381,13 +376,13 @@ def perms_role(role_id):
 			return redirect(url_for("perms_role", role_id=role_id, t="puppet"))
 
 		## Edit a environment's permissions
-		elif action == "edit_environment":
+		if action == "edit_environment":
 			environment_id = request.form["environment_id"]
-			if not re.match(r'^[0-9]+$',environment_id):
+			if not re.match(r'^[0-9]+$', environment_id):
 				flash("The environment you sent was invalid", "alert-danger")
 				return redirect(url_for("perms_role", role_id=role_id, t="puppet"))
-			else:
-				environment_id = int(environment_id)
+
+			environment_id = int(environment_id)
 
 			changes = 0
 
@@ -417,12 +412,15 @@ def perms_role(role_id):
 				flash("Permissions for the environment were successfully updated", "alert-success")
 			return redirect(url_for("perms_role", role_id=role_id, t="puppet"))
 
-		else:
-			abort(400)
+		# If we get here the action was invalid!
+		abort(400)
 
+	## View list
+	# Render the page
+	return render_template('perms/role.html', active='perms', title="Role", active_tab=active_tab, role=role, permissions=app.permissions.get_all(), systems=cortex.lib.systems.get_systems(order='id', order_asc=False), environments=cortex.lib.puppet.get_puppet_environments())
 ################################################################################
 
-@app.route('/permissions/system/<int:system_id>',methods=['GET','POST'])
+@app.route('/permissions/system/<int:system_id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
 def perms_system(system_id):
 	"""View function to let administrators view and manage a role"""
@@ -441,63 +439,13 @@ def perms_system(system_id):
 	# Cursor for the DB
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 
-	if request.method == 'GET':
-
-		system_perms = []
-
-		# Get the list of distinct users/groups/etc added to this system explicitly
-		curd.execute("SELECT DISTINCT `type`, `who` FROM `p_system_perms_who` WHERE `system_id` = %s", (system_id,))
-		results = curd.fetchall()
-
-		for entry in results:
-			# Get perms for this system/user/type combo
-			curd.execute("SELECT `p_system_perms`.`perm` AS `perm` FROM `p_system_perms_who` JOIN `p_system_perms` ON `p_system_perms_who`.`perm_id`=`p_system_perms`.`id` WHERE `p_system_perms`.`active`=1 AND `p_system_perms_who`.`who`=%s AND `p_system_perms_who`.`type`=%s AND `p_system_perms_who`.`system_id`=%s", (entry["who"], entry["type"], system_id))
-			perms = curd.fetchall()
-
-			# Create a object to add to the system_perms list.
-			obj = {
-				'who': entry['who'],
-				'type': entry['type'],
-				'is_editable': True,
-				'perms': [p['perm'] for p in perms]
-			}
-
-			# Add the constructed object to the system_perms list.
-			system_perms.append(obj)
-
-		# Get the list of distinct users/groups/etc added to this system via a role.
-		curd.execute("SELECT DISTINCT `p_roles`.`id` AS `role_id`, `p_roles`.`name` AS `role_name`, `p_role_who`.`who` AS `who`, `p_role_who`.`type` AS `who_type` FROM `p_role_who` JOIN `p_role_system_perms` ON `p_role_who`.`role_id`=`p_role_system_perms`.`role_id` JOIN `p_roles` ON `p_role_who`.`role_id`=`p_roles`.`id` WHERE `p_role_system_perms`.`system_id`=%s", (system_id,))
-		results = curd.fetchall()
-
-		for entry in results:
-			# Get perms for this system/user/type combo
-			curd.execute("SELECT DISTINCT `p_system_perms`.`perm` AS `perm` FROM `p_role_who` JOIN `p_role_system_perms` ON `p_role_who`.`role_id`=`p_role_system_perms`.`role_id` JOIN `p_system_perms` ON `p_role_system_perms`.`perm_id`=`p_system_perms`.`id` WHERE `p_system_perms`.`active`=1 AND `p_role_system_perms`.`system_id`=%s AND `p_role_who`.`who`=%s AND `p_role_who`.`type`=%s AND `p_role_who`.`role_id`=%s", (system_id, entry["who"], entry["who_type"], entry["role_id"]))
-
-			perms = curd.fetchall()
-
-			# Create a object to add to the system_perms list.
-			obj = {
-				'who': entry['who'],
-				'type': entry['who_type'],
-				'is_editable': False, # Role Perms cannot be edited here!!
-				'role_id': entry['role_id'],
-				'role_name': entry['role_name'],
-				'perms': [p['perm'] for p in perms]
-			}
-
-			# Add the constructed object to the system_perms list.
-			system_perms.append(obj)
-
-		return render_template('perms/system.html', active='systems', title="Server permissions", system=system, system_perms=system_perms, sysperms=app.permissions.system_permissions)
-
-	else:
+	if request.method == "POST":
 		action = request.form['action']
 
 		## Make changes to an existing user/group
 		if action == 'edit':
-
 			## Get the 'who' and the 'type'
-			who   = request.form['who']
+			who = request.form['who']
 			wtype = request.form['type']
 
 			# Loop over all the per-system permissions available. Check if the
@@ -541,18 +489,18 @@ def perms_system(system_id):
 				flash("Permissions for the system were successfully updated", "alert-success")
 			return redirect(url_for('perms_system', system_id=system_id))
 
-		elif action == 'add':
+		if action == 'add':
 			name = request.form['name']
 			if not re.match(r'^[a-zA-Z0-9\-\_&]{3,255}$', name):
 				flash("The user or group name you sent was invalid", "alert-danger")
 				return redirect(url_for('perms_system', system_id=system_id))
 
 			wtype = request.form['type']
-			if not re.match(r'^[0-9]+$',wtype):
+			if not re.match(r'^[0-9]+$', wtype):
 				flash("The type you sent was invalid", "alert-danger")
 				return redirect(url_for('perms_system', system_id=system_id))
-			else:
-				wtype = int(wtype)
+
+			wtype = int(wtype)
 
 			if wtype not in [0, 1]:
 				flash("The type you sent was invalid", "alert-danger")
@@ -600,18 +548,18 @@ def perms_system(system_id):
 				flash("The " + hstr + " " + name + " was added to the system", "alert-success")
 			return redirect(url_for('perms_system', system_id=system_id))
 
-		elif action == 'remove':
+		if action == 'remove':
 			name = request.form['name']
 			if not re.match(r'^[a-zA-Z0-9\-\_&]{3,255}$', name):
 				flash("The user or group name you sent was invalid", "alert-danger")
 				return redirect(url_for('perms_system', system_id=system_id))
 
 			wtype = request.form['type']
-			if not re.match(r'^[0-9]+$',wtype):
+			if not re.match(r'^[0-9]+$', wtype):
 				flash("The type you sent was invalid", "alert-danger")
 				return redirect(url_for('perms_system', system_id=system_id))
-			else:
-				wtype = int(wtype)
+
+			wtype = int(wtype)
 
 			if wtype not in [0, 1]:
 				flash("The type you sent was invalid", "alert-danger")
@@ -629,5 +577,52 @@ def perms_system(system_id):
 			flash("The " + hstr + " " + name + " was removed from the system", "alert-success")
 			return redirect(url_for('perms_system', system_id=system_id))
 
-		else:
-			abort(400)
+		# If we get here the action was invalid!
+		abort(400)
+
+	## Handle GET
+	system_perms = []
+	# Get the list of distinct users/groups/etc added to this system explicitly
+	curd.execute("SELECT DISTINCT `type`, `who` FROM `p_system_perms_who` WHERE `system_id` = %s", (system_id,))
+	results = curd.fetchall()
+
+	for entry in results:
+		# Get perms for this system/user/type combo
+		curd.execute("SELECT `p_system_perms`.`perm` AS `perm` FROM `p_system_perms_who` JOIN `p_system_perms` ON `p_system_perms_who`.`perm_id`=`p_system_perms`.`id` WHERE `p_system_perms`.`active`=1 AND `p_system_perms_who`.`who`=%s AND `p_system_perms_who`.`type`=%s AND `p_system_perms_who`.`system_id`=%s", (entry["who"], entry["type"], system_id))
+		perms = curd.fetchall()
+
+		# Create a object to add to the system_perms list.
+		obj = {
+			'who': entry['who'],
+			'type': entry['type'],
+			'is_editable': True,
+			'perms': [p['perm'] for p in perms]
+		}
+
+		# Add the constructed object to the system_perms list.
+		system_perms.append(obj)
+
+	# Get the list of distinct users/groups/etc added to this system via a role.
+	curd.execute("SELECT DISTINCT `p_roles`.`id` AS `role_id`, `p_roles`.`name` AS `role_name`, `p_role_who`.`who` AS `who`, `p_role_who`.`type` AS `who_type` FROM `p_role_who` JOIN `p_role_system_perms` ON `p_role_who`.`role_id`=`p_role_system_perms`.`role_id` JOIN `p_roles` ON `p_role_who`.`role_id`=`p_roles`.`id` WHERE `p_role_system_perms`.`system_id`=%s", (system_id,))
+	results = curd.fetchall()
+
+	for entry in results:
+		# Get perms for this system/user/type combo
+		curd.execute("SELECT DISTINCT `p_system_perms`.`perm` AS `perm` FROM `p_role_who` JOIN `p_role_system_perms` ON `p_role_who`.`role_id`=`p_role_system_perms`.`role_id` JOIN `p_system_perms` ON `p_role_system_perms`.`perm_id`=`p_system_perms`.`id` WHERE `p_system_perms`.`active`=1 AND `p_role_system_perms`.`system_id`=%s AND `p_role_who`.`who`=%s AND `p_role_who`.`type`=%s AND `p_role_who`.`role_id`=%s", (system_id, entry["who"], entry["who_type"], entry["role_id"]))
+
+		perms = curd.fetchall()
+
+		# Create a object to add to the system_perms list.
+		obj = {
+			'who': entry['who'],
+			'type': entry['who_type'],
+			'is_editable': False, # Role Perms cannot be edited here!!
+			'role_id': entry['role_id'],
+			'role_name': entry['role_name'],
+			'perms': [p['perm'] for p in perms]
+		}
+
+		# Add the constructed object to the system_perms list.
+		system_perms.append(obj)
+
+	return render_template('perms/system.html', active='systems', title="Server permissions", system=system, system_perms=system_perms, sysperms=app.permissions.system_permissions)
