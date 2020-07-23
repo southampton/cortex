@@ -80,7 +80,7 @@ def snapshot_create():
 		task_id = neocortex.create_task(__name__, session['username'], options, description='Create a VMware Snapshot')
 
 		# Redirect to the status page for the task
-		return redirect(url_for('task_status', id=task_id))
+		return redirect(url_for('task_status', task_id=task_id))
 
 	if 'systems' in request.args:
 		values['snapshot_systems'] = []

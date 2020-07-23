@@ -610,7 +610,7 @@ def admin_maint():
 			abort(400)
 
 		# Show the user the status of the task
-		return redirect(url_for('task_status', id=task_id))
+		return redirect(url_for('task_status', task_id=task_id))
 
 	# See which tasks are already running
 	active_tasks = neocortex.active_tasks()

@@ -103,7 +103,7 @@ def allocateserver():
 		task_id = neocortex.create_task(__name__, session['username'], options, description="Allocate a hostname, IP address and create a CI entry")
 
 		## Redirect to the status page for the task
-		return redirect(url_for('task_status', id=task_id))
+		return redirect(url_for('task_status', task_id=task_id))
 
 	## Show form
 	return workflow.render_template("create.html", title="Create System Record", classes=server_classes, default_class=workflow.config['DEFAULT_CLASS'], environments=environments, networks=networks, default_network=workflow.config['DEFAULT_NETWORK_ID'], oses=oses, domains=domains, default_domain=workflow.config['DEFAULT_DOMAIN'])

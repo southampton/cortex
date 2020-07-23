@@ -73,7 +73,7 @@
 							<td>{{ task.start or '' }}</td>
 							<td>{{ task.end or '' }}</td>
 							<td>{% if task.status == 0 %}<span style="color:#22c">In Progress</span>{% elif task.status == 1 %}<span style="color:#2c2">Finished</span>{% elif task.status == 2 %}<span style="color:#c22">Failed</span>{% elif task.status == 3 %}<span style="color:#c82">Warnings</span>{% else %}Unknown{% endif %}</td>
-							<td><a class="btn btn-xs btn-secondary" href="{{ url_for('task_status', id=task.id) }}"><i class="fa fa-fw fa-search"></i></a></td>
+							<td><a class="btn btn-xs btn-secondary" href="{{ url_for('task_status', task_id=task.id) }}"><i class="fa fa-fw fa-search"></i></a></td>
 						</tr>
 						{%- endfor %}
 					</tbody>

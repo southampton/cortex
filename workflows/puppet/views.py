@@ -82,6 +82,6 @@ def puppet_environment_create():
 			task_id = neocortex.create_task(__name__, session["username"], options, description="Create Puppet Environment")
 
 			# Redirect to the status page for the task
-			return redirect(url_for("task_status", id=task_id))
+			return redirect(url_for("task_status", task_id=task_id))
 
 	return workflow.render_template("create.html", environment_types=environment_types, values=values, can_create_all=can_create_all)

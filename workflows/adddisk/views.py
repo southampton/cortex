@@ -89,6 +89,6 @@ def adddisk_add():
 			cortex.lib.core.log(__name__, "workflow.adddisk.add", "Add disk task {} started by {} with ServiceNow task {}".format(task_id, session["username"], values["adddisk_task"]))
 
 			# Redirect to the status page for the task
-			return redirect(url_for("task_status", id=task_id))
+			return redirect(url_for("task_status", task_id=task_id))
 
 	return workflow.render_template("add.html", title="Add VMware Disk", selected_system=selected_system, systems=systems)

@@ -559,7 +559,7 @@ def puppet_environments(environment_id=None):
 				neocortex = cortex.lib.core.neocortex_connect()
 				task_id = neocortex.create_task("puppet", session["username"], options, description="Delete Puppet Environment")
 				# Redirect to the status page for the task
-				return redirect(url_for("task_status", id=task_id))
+				return redirect(url_for("task_status", task_id=task_id))
 		else:
 			abort(400)
 

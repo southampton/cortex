@@ -6,7 +6,7 @@
 {%- if task.status == 3 %} <strong id="taskStatus" data-taskstatus="3" style="color:#ca2">finished with warnings</strong>{% endif -%}
 . The event log for the task is shown below:
 {% if hide_success -%}
-(<a href={{ url_for("task_status", id=id) }}>View full event log</a>)
+(<a href="{{ url_for('task_status', task_id=id) }}">View full event log</a>)
 {%- endif -%}
 </p>
 
