@@ -10,7 +10,7 @@
 			<div class="card card-header mtask">
 				<h4><i class="fa fa-fa fa-paper-plane"></i> {{ action.title }}</h4>
 				<p>{{ action.desc }}</p>
-				<a href="{{url_for(action.name,id=system.id)}}" class="btn btn-success" style="width:100%"><i class="fa fa-fw fa-play"></i> Start</a>
+				<a href="{{url_for(action.name, target_id=system.id)}}" class="btn btn-success" style="width:100%"><i class="fa fa-fw fa-play"></i> Start</a>
 			</div>
 		</div>
 	{%- else %}

@@ -225,7 +225,6 @@ class Corpus:
 
 	################################################################################
 
-	# pylint: disable=too-many-branches
 	def infoblox_create_host(self, name, ipv4=True, ipv4_addr=None, ipv4_subnet=None, ipv6=False, ipv6_addr=None, ipv6_subnet=None, aliases=None):
 		"""Create an Infoblox host object"""
 
@@ -283,7 +282,6 @@ class Corpus:
 
 	################################################################################
 
-	# pylint: disable=too-many-branches
 	def infoblox_add_host_record_alias(self, ref, new_aliases):
 		"""Adds an alias (or aliases) to a host record in Infoblox."""
 
@@ -569,7 +567,6 @@ class Corpus:
 
 	################################################################################
 
-	# pylint: disable=too-many-statements
 	def vmware_vm_custspec(self, dhcp=True, gateway=None, netmask=None, ipaddr=None, dns_servers="8.8.8.8", dns_domain="localdomain", os_type=None, os_domain="localdomain", timezone=None, hwClockUTC=True, domain_join_user=None, domain_join_pass=None, fullname=None, orgname=None, productid="", ipv6addr=None, gateway6=None, netmask6=None):
 		"""This function generates a vmware VM customisation spec for use in cloning a VM.
 
@@ -697,7 +694,6 @@ class Corpus:
 
 	################################################################################
 
-	# pylint: disable=too-many-branches,too-many-statements
 	def vmware_clone_vm(self, service_instance, vm_template, vm_name, vm_datacenter=None, vm_datastore=None, vm_folder=None, vm_cluster=None, vm_rpool=None, vm_network=None, vm_poweron=False, custspec=None, vm_datastore_cluster=None, folder_is_moid=False):
 		"""This function connects to vcenter and clones a virtual machine. Only vm_template and
 		   vm_name are required parameters although this is unlikely what you'd want - please
@@ -1362,7 +1358,6 @@ class Corpus:
 
 	################################################################################
 
-	# pylint: disable=too-many-branches
 	def servicenow_create_ci(self, ci_name, os_type, os_name, sockets='', cores_per_socket='', ram_mb='', disk_gb='', ipaddr='', virtual=True, environment=None, short_description='', comments='', location=None):
 		"""Creates a new CI within ServiceNow.
 		 - ci_name: The name of the CI, e.g. srv01234

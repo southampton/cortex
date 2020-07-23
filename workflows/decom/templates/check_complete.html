@@ -6,7 +6,7 @@
 </div>
 <p>The following steps will be taken to decomission this system:</p>
 
-<form role="form" action="{{ url_for('decom_step_start',id=system['id']) }}" method="POST">
+<form role="form" action="{{ url_for('decom_step_start', target_id=system['id']) }}" method="POST">
 	<ul class="list-group">
 	{% for action in actions %}
 	<li class="list-group-item">

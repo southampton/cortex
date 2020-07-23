@@ -57,7 +57,6 @@ def read_config_file(file_path):
 	return config
 
 # The actual task
-# pylint: disable=too-many-branches,too-many-statements
 # pylint: disable=protected-access
 def run(helper, _options):
 	# Compile VM name regex

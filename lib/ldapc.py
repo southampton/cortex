@@ -142,7 +142,6 @@ def get_users_groups_from_ldap(username):
 
 ##############################################################################
 
-# pylint: disable=too-many-branches
 def get_user_realname_from_ldap(username):
 	"""Talks to LDAP and retrieves the real name of the username passed."""
 

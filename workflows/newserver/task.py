@@ -31,7 +31,7 @@ def run(helper, options):
 		helper.event("allocate_ipaddress", "Allocating an IP address from " + options['network'])
 
 		# Allocate an IP address
-		ipv4addr = helper.lib.infoblox_create_host(system_name + "." + options['domain'], ipv4 = True, ipv4_subnet = options['network'])
+		ipv4addr = helper.lib.infoblox_create_host(system_name + "." + options['domain'], ipv4=True, ipv4_subnet=options['network'])
 
 		# Handle errors - this will stop the task
 		if ipv4addr is None:
@@ -47,7 +47,6 @@ def run(helper, options):
 	# Start the event
 	helper.event("sn_create_ci", "Creating ServiceNow CMDB CI")
 	sys_id = None
-	cmdb_id = None
 
 	if options['os_type'] == helper.lib.OS_TYPE_BY_NAME['Linux']:
 		os_name = 'Other Linux'
@@ -61,7 +60,7 @@ def run(helper, options):
 	# Failure does not kill the task
 	try:
 		# Create the entry in ServiceNow
-		(sys_id, cmdb_id) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=options['os_type'], os_name=os_name, virtual=options['is_virtual'], environment=options['env'], short_description=options['purpose'], comments=options['comments'], ipaddr=ipv4addr)
+		(sys_id, _) = helper.lib.servicenow_create_ci(ci_name=system_name, os_type=options['os_type'], os_name=os_name, virtual=options['is_virtual'], environment=options['env'], short_description=options['purpose'], comments=options['comments'], ipaddr=ipv4addr)
 
 		# Update Cortex systems table row with the sys_id
 		helper.lib.set_link_ids(system_dbid, cmdb_id=sys_id, vmware_uuid=None)
@@ -93,7 +92,7 @@ def run(helper, options):
 		# Start the event
 		helper.event("entca_create_cert", "Creating certificate on Enterprise CA")
 
-		entca_servers = options['wfconfig'].get("ENTCA_SERVERS") if type(options['wfconfig'].get("ENTCA_SERVERS")) is list else [options['wfconfig'].get("ENTCA_SERVERS"),]
+		entca_servers = options['wfconfig'].get("ENTCA_SERVERS") if isinstance(options['wfconfig'].get("ENTCA_SERVERS"), list) else [options['wfconfig'].get("ENTCA_SERVERS"),]
 		for entca in entca_servers:
 			try:
 				r = requests.post(

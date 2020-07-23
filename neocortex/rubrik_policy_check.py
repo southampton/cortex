@@ -5,7 +5,6 @@ import MySQLdb as mysql
 from corpus import rubrik
 # pylint: enable=import-error
 
-# pylint: disable=too-many-branches,too-many-statements
 def run(helper, _options):
 	## GET ALL THE VMS
 

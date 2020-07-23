@@ -1,5 +1,6 @@
 #### Create SSL Certificate Workflow Task
 
+import ipaddress
 import time
 
 # For DNS resolution
@@ -9,7 +10,6 @@ import OpenSSL as openssl
 import requests
 # For NLB API
 from f5.bigip import ManagementRoot
-
 
 def run(helper, options):
 	# check if workflows are locked
@@ -99,7 +99,7 @@ def create_acme_cert(helper, options):
 	# Get the Infoblox host object reference for in the ACME Endpoint
 	helper.event('add_acme_dns', 'Adding aliases to ACME host object in Infoblox')
 	ref = helper.lib.infoblox_get_host_refs(options['acme']['acme_target_hostname'], config['ACME_DNS_VIEW'])
-	if ref is None or (type(ref) is list and len(ref) == 0):
+	if not ref:
 		raise Exception('Failed to get host ref for ACME endpoint')
 
 	# Add the alias to the host object temporarily for the FQDN
@@ -149,8 +149,6 @@ def create_acme_cert(helper, options):
 
 # For Enterprise certificates
 def create_entca_cert(helper, options):
-	# Get the configuration
-	options['wfconfig']
 
 	# Call the Enterprise CA API to request the cert
 	helper.event('generate_entca_cert', 'Requesting certificate for ' + options['fqdn'] + ' from Enterprise CA API')
@@ -190,7 +188,7 @@ def create_self_signed_cert(helper, options):
 	helper.event('generate_cert', 'Generate self-signed certificate for ' + str(options['fqdn']))
 	try:
 		# Build the SAN X509v3 extension
-		san_aliases_string = ','.join(['DNS:' + alias for alias in (options['aliases'] + [options['fqdn']])])
+		san_aliases_string = ','.join(['DNS:' + alias for alias in options['aliases'] + [options['fqdn']]])
 		san_extension = openssl.crypto.X509Extension(b'subjectAltName', False, san_aliases_string.encode('utf-8'))
 
 		# Build the certificate
@@ -236,6 +234,8 @@ def create_self_signed_cert(helper, options):
 			upload_cert_key_to_nlb(helper, options, pem_cert, pem_key)
 
 		create_ssl_profile(helper, options)
+
+	return True
 
 ################################################################################
 

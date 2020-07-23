@@ -13,11 +13,6 @@ import cortex.lib.systems
 import cortex.views
 from cortex.lib.workflow import CortexWorkflow
 
-# For NLB API
-
-
-# For securely passing the actions list via the browser
-
 workflow = CortexWorkflow(__name__, check_config={'PROVIDERS': list, 'DEFAULT_PROVIDER': str, 'ENVS': list, 'DEFAULT_ENV': str, 'KEY_SIZES': list, 'DEFAULT_KEY_SIZE': int, 'LENGTHS': list, 'DEFAULT_LENGTH': int, 'NLBS': list, 'ACME_SERVERS': list, 'ENTCA_SERVERS': list, 'NLB_INTERMEDIATE_CN_FILES': dict, 'NLB_INTERMEDIATE_CN_OCSP_STAPLING_PARAMS': dict, 'CLIENT_SSL_PROFILE_PREFIX': str, 'CLIENT_SSL_PROFILE_SUFFIX': str, 'CERT_SELF_SIGNED_C': str, 'CERT_SELF_SIGNED_ST': str, 'CERT_SELF_SIGNED_L': str, 'CERT_SELF_SIGNED_O': str, 'CERT_SELF_SIGNED_OU': str, 'ACME_DNS_VIEW': str, 'DNS_WAIT_TIME': int, 'CERT_CACHE_TIME': int, 'EXTERNAL_DNS_SERVER_IP': str})
 workflow.add_permission('certmgr.create', 'Create SSL Certificate')
 
@@ -96,7 +91,7 @@ def certmgr_download_pkcs12():
 	if pem_cert is None:
 		abort(404)
 
-	# Load the OpenSSL objects 
+	# Load the OpenSSL objects
 	pkey = openssl.crypto.load_privatekey(openssl.crypto.FILETYPE_PEM, pem_key)
 	cert = openssl.crypto.load_certificate(openssl.crypto.FILETYPE_PEM, pem_cert)
 	if pem_chain is not None:
@@ -110,7 +105,7 @@ def certmgr_download_pkcs12():
 		pkcs12.set_ca_certificates([chain])
 
 	return Response(pkcs12.export(), mimetype='application/x-pkcs12', headers={'Content-Disposition': 'attachment; filename="' + str(task['id']) + '.pfx"'})
-	
+
 @workflow.route('ajax_get_raw', title='Create SSL Certificate', permission="certmgr.create", methods=['GET'], menu=False)
 def certmgr_ajax_get_raw():
 	# Check that the task exists
@@ -120,8 +115,8 @@ def certmgr_ajax_get_raw():
 	(pem_cert, pem_key, pem_chain) = get_certificate_from_redis(task)
 	if pem_cert is None:
 		return jsonify(error="Certificate is no longer in Cortex's cache. Regenerate the certificate or obtain it from the original source.")
-	else:
-		return jsonify(certificate=pem_cert, key=pem_key, chain=pem_chain)
+
+	return jsonify(certificate=pem_cert, key=pem_key, chain=pem_chain)
 
 @workflow.route('create', title='Create SSL Certificate', order=40, permission="certmgr.create", methods=['GET', 'POST'])
 def certmgr_create():
@@ -130,25 +125,21 @@ def certmgr_create():
 	wfconfig = workflow.config
 
 	# Turn envs in to a dict
-	envs_dict = { env['id']: env for env in wfconfig['ENVS'] }
+	envs_dict = {env['id']: env for env in wfconfig['ENVS']}
 
 	# Turn providers in to a dict
-	providers_dict = { provider['id']: provider for provider in wfconfig['PROVIDERS'] }
+	providers_dict = {provider['id']: provider for provider in wfconfig['PROVIDERS']}
 
 	# Turn NLBs in to a dict
-	nlbs_dict = { nlb['id']: nlb for nlb in wfconfig['NLBS'] }
+	nlbs_dict = {nlb['id']: nlb for nlb in wfconfig['NLBS']}
 
 	# Turn ACME servers in to a dict
-	acme_dict = { acme['id']: acme for acme in wfconfig['ACME_SERVERS'] }
+	acme_dict = {acme['id']: acme for acme in wfconfig['ACME_SERVERS']}
 
 	# Turn ENTCA servers in to a dict
-	entca_dict = { entca['id']: entca for entca in wfconfig['ENTCA_SERVERS'] }
+	entca_dict = {entca['id']: entca for entca in wfconfig['ENTCA_SERVERS']}
 
-	if request.method == 'GET':
-		## Show form
-		return render_template(__name__ + "::create.html", title="Create SSL Certificate", envs=wfconfig['ENVS'], envs_dict=envs_dict, default_env=wfconfig['DEFAULT_ENV'], providers=wfconfig['PROVIDERS'], providers_dict=providers_dict, default_provider=wfconfig['DEFAULT_PROVIDER'], key_sizes=wfconfig['KEY_SIZES'], default_key_size=wfconfig['DEFAULT_KEY_SIZE'], cert_lengths=wfconfig['LENGTHS'], default_cert_length=wfconfig['DEFAULT_LENGTH'], nlbs=wfconfig['NLBS'], nlbs_dict=nlbs_dict, acme_servers=wfconfig['ACME_SERVERS'], acme_dict=acme_dict, entca_servers=wfconfig['ENTCA_SERVERS'], entca_dict=entca_dict)
-
-	elif request.method == 'POST':
+	if request.method == 'POST':
 		valid_form = True
 		form_fields = {}
 
@@ -201,7 +192,7 @@ def certmgr_create():
 					flash('All SANs must be fully qualified domain names', 'alert-danger')
 					valid_form = False
 					break
-				elif fqdn_re.match(alias) is None:
+				if fqdn_re.match(alias) is None:
 					flash('All service alises must be valid domain names: ' + alias, 'alert-danger')
 					valid_form = False
 					break
@@ -232,3 +223,6 @@ def certmgr_create():
 
 		# Redirect to the download page
 		return redirect(url_for('certmgr_download', task=task_id))
+
+	## Show form
+	return render_template(__name__ + "::create.html", title="Create SSL Certificate", envs=wfconfig['ENVS'], envs_dict=envs_dict, default_env=wfconfig['DEFAULT_ENV'], providers=wfconfig['PROVIDERS'], providers_dict=providers_dict, default_provider=wfconfig['DEFAULT_PROVIDER'], key_sizes=wfconfig['KEY_SIZES'], default_key_size=wfconfig['DEFAULT_KEY_SIZE'], cert_lengths=wfconfig['LENGTHS'], default_cert_length=wfconfig['DEFAULT_LENGTH'], nlbs=wfconfig['NLBS'], nlbs_dict=nlbs_dict, acme_servers=wfconfig['ACME_SERVERS'], acme_dict=acme_dict, entca_servers=wfconfig['ENTCA_SERVERS'], entca_dict=entca_dict)

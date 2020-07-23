@@ -19,9 +19,9 @@ def adddisk_create_permission_callback():
 	return does_user_have_workflow_permission("systems.all.adddisk") or does_user_have_any_system_permission("adddisk")
 
 @workflow.action("system", title="Add VMware Disk", desc="Add a virtual disk in VMware to this system", system_permission="adddisk", permission="systems.all.adddisk", require_vm=True, methods=["GET", "POST"])
-def adddisk_system(id):
+def adddisk_system(target_id):
 
-	return redirect(url_for("adddisk_add", system=id))
+	return redirect(url_for("adddisk_add", system=target_id))
 
 
 @workflow.route("add", title="Add VMware Disk", order=50, permission=adddisk_create_permission_callback, methods=["GET", "POST"])
@@ -32,7 +32,8 @@ def adddisk_add():
 	if request.method == "GET" and "system" in request.args and request.args["system"].strip():
 		try:
 			selected_system = get_system_by_id(int(request.args["system"].strip()))
-		except ValueError: pass # System was not an int.
+		except ValueError:
+			pass # System was not an int.
 		else:
 			# Ensure the system is actually a VM
 			selected_system = selected_system if selected_system["vmware_uuid"] else None
@@ -51,22 +52,23 @@ def adddisk_add():
 			# Select all VMs where the user has permission to add disks
 			query_where = (
 				"""WHERE (`cmdb_id` IS NOT NULL AND `cmdb_operational_status` = "In Service") AND `vmware_uuid` IS NOT NULL AND (`id` IN (SELECT `system_id` FROM `system_perms_view` WHERE (`type` = '0' AND `perm` = 'adddisk' AND `who` = %s) OR (`type` = '1' AND `perm` = 'adddisk' AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s)))) ORDER BY `id` DESC""",
-				(session["username"],session["username"]),
+				(session["username"], session["username"]),
 			)
-			systems = get_systems(where_clause = query_where)
+			systems = get_systems(where_clause=query_where)
 		else:
 			abort(403)
 
 	if request.method == "POST":
 		# Get the values
-		values = { k: request.form.get(k) if k in request.form else abort(400) for k in ["adddisk_task", "adddisk_size", "adddisk_system_id"] }
+		values = {k: request.form.get(k) if k in request.form else abort(400) for k in ["adddisk_task", "adddisk_size", "adddisk_system_id"]}
 		values["adddisk_task"] = values["adddisk_task"] if values["adddisk_task"] else "unknown"
 
 		try:
 			values["adddisk_size"] = int(values["adddisk_size"])
-		except ValueError: abort(400)
+		except ValueError:
+			abort(400)
 
-		if not (MIN_DISK_SIZE <= values["adddisk_size"] <= MAX_DISK_SIZE):
+		if not MIN_DISK_SIZE <= values["adddisk_size"] <= MAX_DISK_SIZE:
 			flash("Invalid disk size! Please choose a size between {} and {} GiB".format(MIN_DISK_SIZE, MAX_DISK_SIZE))
 		else:
 
@@ -89,4 +91,4 @@ def adddisk_add():
 			# Redirect to the status page for the task
 			return redirect(url_for("task_status", id=task_id))
 
-	return workflow.render_template("add.html", title="Add VMware Disk", selected_system = selected_system, systems = systems)
+	return workflow.render_template("add.html", title="Add VMware Disk", selected_system=selected_system, systems=systems)

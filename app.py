@@ -316,7 +316,7 @@ Username:             %s
 
 	################################################################################
 
-	# pylint: disable=invalid-name,no-self-use,too-many-branches
+	# pylint: disable=invalid-name,no-self-use
 	def parse_cortex_links(self, s, make_safe=True):
 		"""Primarily aimed at being a Jinja filter, this allows for the following
 		to be put in to text that will resolve it to a hyperlink in HTML:
@@ -390,7 +390,7 @@ Username:             %s
 
 	################################################################################
 
-	# pylint: disable=invalid-name,too-many-branches,too-many-statements
+	# pylint: disable=invalid-name
 	def init_database(self):
 		"""Ensures cortex can talk to the database (rather than waiting for a HTTP
 		connection to trigger before_request) and the tables are there. Only runs

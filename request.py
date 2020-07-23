@@ -50,7 +50,6 @@ def before_request():
 
 ################################################################################
 
-# pylint: disable=too-many-branches,too-many-statements
 @app.context_processor
 def context_processor():
 	"""This function is called on every page load. It injects a 'workflows'

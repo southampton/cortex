@@ -69,7 +69,6 @@ class TicketNotifier(Notifier):
 		elif self.ticket_type == 'request':
 			self.helper.lib.servicenow_create_request(short_description, description, self.opener_sys_id, self.team_name, self.request_type, self.opener_sys_id)
 
-# pylint: disable=too-many-branches,too-many-statements
 def run(helper, _options):
 	"""Iterates over the certificates stored in the database and notifies of ones soon to expire."""
 

@@ -16,7 +16,6 @@ def sigalrm_handler(signum, frame):
 	# Raise an exception, which should interrupt and terminate
 	raise Exception("Timed out when communicating with vCenter")
 
-# pylint: disable=too-many-branches,too-many-statements
 def run(helper, options):
 	"""
 	Clears the necessary database tables and re-imports the data
@@ -66,7 +65,7 @@ def run(helper, options):
 		skip_vms = bool(options is not None and 'skip_vms' in options and options['skip_vms'])
 
 		## For each vCenter that appears in the configuration
-		# pylint: disable=too-many-boolean-expressions,too-many-nested-blocks
+		# pylint: disable=too-many-boolean-expressions
 		for key in list(helper.config['VMWARE'].keys()):
 			# Get the hostname
 			instance = helper.config['VMWARE'][key]

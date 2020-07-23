@@ -9,7 +9,7 @@ from cortex.lib.workflow import CortexWorkflow
 workflow = CortexWorkflow(__name__)
 workflow.add_permission('newserver', 'Create System Record')
 
-@workflow.route("create",title='Create System Record', order=30, permission="newserver", methods=['GET', 'POST'])
+@workflow.route("create", title='Create System Record', order=30, permission="newserver", methods=['GET', 'POST'])
 def allocateserver():
 
 	# Get the list of enabled classes
@@ -30,27 +30,23 @@ def allocateserver():
 	# Get the list of domains
 	domains = workflow.config['DOMAINS']
 
-	if request.method == 'GET':
-		## Show form
-		return workflow.render_template("create.html", title="Create System Record", classes=server_classes, default_class=workflow.config['DEFAULT_CLASS'], environments=environments, networks=networks, default_network=workflow.config['DEFAULT_NETWORK_ID'], oses=oses, domains=domains, default_domain=workflow.config['DEFAULT_DOMAIN'])
-
-	elif request.method == 'POST':
-		if 'purpose' not in request.form or 'comments' not in request.form or 'class' not in request.form or 'os' not in request.form or 'environment' not in request.form or 'network' not in request.form or 'domain' not in request.form:
+	if request.method == 'POST':
+		if not all(field in request.form for field in ['purpose', 'comments', 'class', 'os', 'environment', 'network', 'domain']):
 			flash('You must select options for all questions before allocating', 'alert-danger')
 			return redirect(url_for('allocateserver'))
 
 		# Extract all the parameters
-		classname  = request.form['class']
-		os         = request.form['os']
-		env        = request.form['environment']
-		network    = request.form['network']
-		purpose    = request.form['purpose']
-		comments   = request.form['comments']
-		domain     = request.form['domain']
-		alloc_ip   = 'alloc_ip' in request.form
+		classname = request.form['class']
+		os = request.form['os']
+		env = request.form['environment']
+		network = request.form['network']
+		purpose = request.form['purpose']
+		comments = request.form['comments']
+		domain = request.form['domain']
+		alloc_ip = 'alloc_ip' in request.form
 		is_virtual = 'is_virtual' in request.form
 		set_backup = 1 if 'set_backup' in request.form else 0
-		task       = None
+		task = None
 
 		# Extract task if we've got it
 		if 'task' in request.form and len(request.form['task'].strip()) > 0:
@@ -108,3 +104,6 @@ def allocateserver():
 
 		## Redirect to the status page for the task
 		return redirect(url_for('task_status', id=task_id))
+
+	## Show form
+	return workflow.render_template("create.html", title="Create System Record", classes=server_classes, default_class=workflow.config['DEFAULT_CLASS'], environments=environments, networks=networks, default_network=workflow.config['DEFAULT_NETWORK_ID'], oses=oses, domains=domains, default_domain=workflow.config['DEFAULT_DOMAIN'])

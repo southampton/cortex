@@ -9,7 +9,6 @@ import requests
 from corpus.puppetdb_connector import PuppetDBConnector
 # pylint: enable=import-error
 
-# pylint: disable=too-many-branches,too-many-statements
 def run(helper, _options):
 	"""
 	Sends Puppet Nodes stats to Graphite.

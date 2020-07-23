@@ -28,7 +28,7 @@ def puppet_environment_create():
 		environment_types.pop(0, None)
 
 	# Create the values dict, and set default environment type to Dynamic
-	values = { "environment_type": 2, "environment_owner": session["username"]}
+	values = {"environment_type": 2, "environment_owner": session["username"]}
 	if request.method == "POST":
 		values["environment_type"] = request.form.get("environment_type", 2)
 		values["environment_short_name"] = request.form.get("environment_short_name", "")
@@ -46,7 +46,7 @@ def puppet_environment_create():
 
 		# Enforce a naming scheme for Service and Dynamic environments
 		if values["environment_type"] == 1:
-			values["environment_name"]  = "svc_" + values["environment_name"].lower()
+			values["environment_name"] = "svc_" + values["environment_name"].lower()
 		elif values["environment_type"] == 2:
 			values["environment_name"] = "dyn_" + app.pwgen(alphabet=string.ascii_lowercase + string.digits, length=16)
 
