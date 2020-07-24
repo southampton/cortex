@@ -15,7 +15,7 @@ from cortex.lib.user import (
 
 @app.after_request
 def after_request(response):
-	"""In order to fix some database locking issues with system name 
+	"""In order to fix some database locking issues with system name
 	allocation, seemingly caused by database transaction lingering around,
 	force the database to close at the end of the request."""
 
