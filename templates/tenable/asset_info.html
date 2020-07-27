@@ -50,6 +50,7 @@
 							<div class="row"><label class="col-sm-3 control-label" for="asset-info-os">Operating System:</label><div class="col-sm-9"><p class="form-control-plaintext" id="asset-info-os"></p></div></div>
 							<div class="row"><label class="col-sm-3 control-label" for="asset-info-ipv4">IPv4 Addresses:</label><div class="col-sm-9"><p class="form-control-plaintext" id="asset-info-ipv4"></p></div></div>
 							<div class="row"><label class="col-sm-3 control-label" for="asset-info-ipv6">IPv6 Addresses:</label><div class="col-sm-9"><p class="form-control-plaintext" id="asset-info-ipv6"></p></div></div>
+							<div class="row"><label class="col-sm-3 control-label" for="asset-info-view">View on Tenable.io:</label><div class="col-sm-9"><a class="form-control-plaintext" href="#" target="_blank" id="asset-info-view">View on Tenable.io</a></div></div>
 						</div>
 					</div>
 				</div>
@@ -195,6 +196,7 @@ $(function() {
 		$("#asset-info-os").html(asset.asset_info.operating_system[0] || "Unknown");
 		$("#asset-info-ipv4").html(asset.asset_info.ipv4.join(",") || "None");
 		$("#asset-info-ipv6").html(asset.asset_info.ipv6.join(",") || "None");
+		$("#asset-info-view").attr("href", `https://cloud.tenable.com/app.html#/dashboards/workbench/assets/${selectedAsset}/overview`);
 		$("#scan-first-seen").html(asset.asset_info.first_seen || "Never");
 		$("#scan-last-seen").html(asset.asset_info.last_seen || "Never");
 		$("#scan-last-auth").html(asset.asset_info.last_authenticated_scan_date || "Never");
