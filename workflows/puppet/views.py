@@ -48,7 +48,7 @@ def puppet_environment_create():
 		if values["environment_type"] == 1:
 			values["environment_name"] = "svc_" + values["environment_name"].lower()
 		elif values["environment_type"] == 2:
-			values["environment_name"] = "dyn_" + app.pwgen(alphabet=string.ascii_lowercase + string.digits, length=16)
+			values["environment_name"] = "dyn_" + app.pwgen(alphabet=string.ascii_lowercase + string.digits, length=8)
 
 		if (values["environment_type"] not in ENVIRONMENT_TYPES) or (not can_create_all and values["environment_type"] == 0):
 			error = True

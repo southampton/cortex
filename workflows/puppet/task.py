@@ -43,7 +43,7 @@ def environment_create(values, helper):
 		r = requests.post(
 			base_url + "environment/create",
 			headers={"X-Auth-Token": helper.config["PUPPET_AUTOSIGN_KEY"], "Accept": "application/json", "Content-Type": "application/json",},
-			json={"environment_name": values["environment_name"], "username": helper.username},
+			json={"environment_name": values["environment_name"], "environment_short_name": values["environment_short_name"], "username": helper.username},
 			verify=helper.config["PUPPET_AUTOSIGN_VERIFY"],
 		)
 	except Exception as ex:
