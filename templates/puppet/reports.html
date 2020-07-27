@@ -18,7 +18,7 @@
 	</thead>
 	<tbody>
 {%- if reports %}
-{%-     for report in reports %}
+{%- for report in reports %}
 		<tr>
 			<td>{{ report.received.strftime('%Y/%m/%d %H:%M:%S') }}</td>
 			<td>{{ report.version }}</td>
@@ -41,7 +41,7 @@ $('#data').DataTable({
 			var date = new Date(new Date(data + ' UTC').toString());
 			return date.getFullYear() + '-' + ('0' + (date.getMonth()+1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2) + ' ' + ('0' + date.getHours()).slice(-2) + ':' + ('0' + date.getMinutes()).slice(-2) + ':' + ('0' + date.getSeconds()).slice(-2);
 		}
-	}, null, null, null, null, null, { "orderable": false, "targets": 0 }]
+	}, null, null, null, null, { "orderable": false, "targets": 0 }]
 });
 </script>
 {% endblock %}
