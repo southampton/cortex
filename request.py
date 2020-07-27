@@ -13,14 +13,13 @@ from cortex.lib.user import (
 
 ################################################################################
 
-@app.after_request
-def after_request(response):
+@app.teardown_request
+def teardown_request(_ex=None):
 	"""In order to fix some database locking issues with system name
 	allocation, seemingly caused by database transaction lingering around,
 	force the database to close at the end of the request."""
 
 	g.db.close()
-	return response
 
 ################################################################################
 
