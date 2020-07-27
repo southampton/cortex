@@ -1437,7 +1437,7 @@ class Corpus:
 		curd = self.db.cursor(mysql.cursors.DictCursor)
 
 		# Update the cache row
-		curd.execute("REPLACE INTO `sncache_cmdb_ci` (`sys_id`, `sys_class_name`, `name`, `operational_status`, `u_number`, `short_description`, `u_environment`, `virtual`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (retval[0], response_json['result']['sys_class_name'], vm_data['name'], 'In Service', retval[1], short_description, response_json['result']['u_environment'], 1))
+		curd.execute("REPLACE INTO `sncache_cmdb_ci` (`sys_id`, `sys_class_name`, `name`, `operational_status`, `u_number`, `short_description`, `u_environment`, `virtual`, `os`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", (retval[0], response_json['result']['sys_class_name'], vm_data['name'], 'In Service', retval[1], short_description, response_json['result']['u_environment'], 1, vm_data['os']))
 		self.db.commit()
 
 		return retval
