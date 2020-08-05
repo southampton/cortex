@@ -75,7 +75,7 @@
 					</div>
 					<div class="row">
 						<label class="col-sm-5 control-label" for="cmdb_u_number">ID:</label>
-						<div class="col-sm-7"><p class="form-control-plaintext"><a href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}">{{ system.cmdb_u_number or 'Unknown' }}</a></p></div>
+						<div class="col-sm-7"><p class="form-control-plaintext"><a href="{{ config['CMDB_URL_FORMAT'] % system.cmdb_id }}" target="_blank">{{ system.cmdb_u_number or 'Unknown' }}</a></p></div>
 					</div>
 					<div class="row">
 						<label class="col-sm-5 control-label" for="cmdb_operational_status">Status:</label>
