@@ -248,7 +248,10 @@ $(document).ready(function()
 			"searchDelay": 500,
 			"ajax": {
 				"url": "/systems/cmdb/json",
-				"type": "POST"
+				"type": "POST",
+				"data": function (d) {
+					d._csrf_token = "{{ csrf_token() }}";
+				}
 			},
 			"searching": "true",
 			"rowCallback": function(row, data, index) {
@@ -280,7 +283,10 @@ $(document).ready(function()
 			"searchDelay": 500,
 			"ajax": {
 				"url": "/systems/vmware/json",
-				"type": "POST"
+				"type": "POST",
+				"data": function (d) {
+					d._csrf_token = "{{ csrf_token() }}";
+				}
 			},
 			"searching": "true",
 			"rowCallback": function(row, data, index) {
