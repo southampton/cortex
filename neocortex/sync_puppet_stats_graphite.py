@@ -1,8 +1,8 @@
 
 import time
-import MySQLdb as mysql
 from urllib.parse import urljoin
 
+import MySQLdb as mysql
 import requests
 
 # bin/neocortex modifies sys.path so these are importable.
