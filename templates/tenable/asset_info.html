@@ -383,7 +383,7 @@ $(function() {
 		success: function(data) {
 			assets = processAssets(data);
 			if (Object.keys(assets).length === 0) {
-				$("#asset-error-alert").html("No Tenable.io assets exist for this system name or asset ID. If this is unexpected please check the Tenable.io dashboard or try searching in the asset list by selecting Tenable.io > Tenable.io Assets from the left menu.");
+				$("#asset-error-alert").html("No Tenable.io assets exist for this system name or asset ID. (If this is a new system, this could be because a scan has not yet been performed on the system!) If this is unexpected please check the Tenable.io dashboard or try searching in the asset list by selecting Tenable.io > Tenable.io Assets from the left menu.");
 				$("#asset-error-alert").removeClass("alert-danger");
 				$("#asset-error-alert").addClass("alert-info");
 				$("#asset-error-alert").removeClass("d-none");
