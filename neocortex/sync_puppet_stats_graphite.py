@@ -1,5 +1,6 @@
 
 import time
+import MySQLdb as mysql
 from urllib.parse import urljoin
 
 import requests
@@ -14,6 +15,10 @@ def run(helper, _options):
 	Sends Puppet Nodes stats to Graphite.
 	I.e. the number of changed / failed unchanged nodes etc.
 	"""
+
+	# Template for stats
+	stats_template = {"count": 0, "unchanged": 0, "changed": 0, "noop": 0, "failed": 0, "unreported": 0, "unknown": 0}
+
 	# Check config for Graphite stuff.
 	helper.event('sync_puppet_stats_graphite_config_check', 'Checking we have the required configuration.')
 	if all(key in helper.config for key in ['GRAPHITE_URL', 'GRAPHITE_USER', 'GRAPHITE_PASS']):
@@ -30,24 +35,18 @@ def run(helper, _options):
 		)
 		helper.end_event(description='Successfully connected to PuppetDB.')
 
-		# get the environments from PuppetDB.
+		# Initialise stats
+		stats = {}
+
+		# get the environments from the Cortex DB (Only select infra and service environments).
 		helper.event('puppet_environments', 'Getting environments from PuppetDB.')
-		environments = puppet.get_environments()
+		curd = helper.db.cursor(mysql.cursors.DictCursor)
+		curd.execute("SELECT `environment_name` FROM `puppet_environments` WHERE `type` < 2")
+		environments = [row["environment_name"] for row in curd.fetchall()]
 		helper.end_event(description='Received environments from PuppetDB.')
 
-		# Initialise stats.
-		stats = {}
-		unknown = 0
 		for env in environments:
-			stats[env] = {
-				'count': 0,
-				'changed': 0,
-				'unchanged': 0,
-				'failed': 0,
-				'unreported': 0,
-				'noop': 0,
-				'unknown': 0,
-			}
+			stats[env] = stats_template.copy()
 
 		# Get the nodes from PuppetDB.
 		helper.event('puppet_nodes', 'Getting nodes from PuppetDB.')
@@ -56,22 +55,24 @@ def run(helper, _options):
 
 		# Iterate over nodes.
 		for node in nodes:
-
 			env = node.report_environment
+			if env not in stats:
+				stats[env] = stats_template.copy()
 
-			if env in stats:
+			try:
 				# Count number of nodes (we can't do len(nodes) as it's a generator)
 				stats[env]['count'] += 1
-
-				if node.fact('clientnoop').value:
+				# use clientnoop fact to determine noop state
+				if bool(node.fact('clientnoop').value):
 					stats[env]['noop'] += 1
+				# if we know the reported status, count the values
+				elif node.status in stats[env]:
+					stats[env][node.status] += 1
+				# otherwise mark it as unknown but still count the values
 				else:
-					if node.status in stats[env]:
-						stats[env][node.status] += 1
-					else:
-						stats[env]['unknown'] += 1
-			else:
-				unknown += 1
+					stats[env]['unknown'] += 1
+			except (AttributeError, KeyError) as ex:
+				helper.flash("Failed to generate Puppet node stat: %s" %(ex))
 
 		# Graphite URL and prefix.
 		url = urljoin(helper.config['GRAPHITE_URL'], '/post-graphite')
@@ -83,8 +84,6 @@ def run(helper, _options):
 		for env in stats:
 			for status in stats[env]:
 				post_data += prefix + env + '.' + status + ' ' + str(stats[env][status]) + ' ' + stime + '\n'
-
-		post_data += prefix + 'global.unknown ' + str(unknown) + ' ' + stime + '\n'
 
 		helper.event('post_graphite', 'Posting PuppetDB Stats to Graphite')
 		try:
