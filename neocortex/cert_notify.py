@@ -1,8 +1,5 @@
-
 import re
-
 import MySQLdb as mysql
-
 
 class Notifier:
 	"""Base class for notifiers. Just generates the default message content."""
@@ -10,7 +7,7 @@ class Notifier:
 	def __init__(self, helper):
 		self.helper = helper
 
-	def generate_message_content(self, digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where):
+	def generate_message_content(self, digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where, notes):
 		contents = "The following certificate will expire soon. Please see the details below to see if it is required, and renew it if necessary.\n"
 		contents = contents + "\n"
 		contents = contents + "Subject CN: " + str(subject_cn) + "\n"
@@ -21,6 +18,7 @@ class Notifier:
 		contents = contents + "Issuer CN: " + str(issuer_cn) + "\n"
 		contents = contents + "Issuer DN: " + str(issuer_dn) + "\n"
 		contents = contents + "Digest: " + str(digest) + "\n"
+		contents = contents + "Notes: " + str(notes) + "\n"
 		contents = contents + "\n"
 		contents = contents + "The certificate was discovered in the following locations:\n"
 		contents = contents + '\n'.join(where) + "\n"
@@ -30,7 +28,7 @@ class Notifier:
 		return contents
 
 	# pylint: disable=no-self-use
-	def generate_short_description(self, _digest, subject_cn, _subject_dn, _issuer_cn, _issuer_dn, _not_before, not_after, _days, _sans, _where):
+	def generate_short_description(self, _digest, subject_cn, _subject_dn, _issuer_cn, _issuer_dn, _not_before, not_after, _days, _sans, _where, _notes):
 		if subject_cn is None:
 			subject_cn = 'Unknown CN'
 		else:
@@ -46,9 +44,9 @@ class EmailNotifier(Notifier):
 		super(EmailNotifier, self).__init__(helper)
 		self.to_address = to_address
 
-	def notify(self, digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where):
-		subject = self.generate_short_description(digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where)
-		contents = self.generate_message_content(digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where)
+	def notify(self, digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where, notes):
+		subject = self.generate_short_description(digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where, notes)
+		contents = self.generate_message_content(digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where, notes)
 		self.helper.lib.send_email(self.to_address, subject, contents)
 
 class TicketNotifier(Notifier):
@@ -61,9 +59,9 @@ class TicketNotifier(Notifier):
 		self.opener_sys_id = opener_sys_id
 		self.request_type = request_type
 
-	def notify(self, digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where):
-		short_description = self.generate_short_description(digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where)
-		description = self.generate_message_content(digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where)
+	def notify(self, digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where, notes):
+		short_description = self.generate_short_description(digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where, notes)
+		description = self.generate_message_content(digest, subject_cn, subject_dn, issuer_cn, issuer_dn, not_before, not_after, days, sans, where, notes)
 		if self.ticket_type == 'incident':
 			self.helper.lib.servicenow_create_ticket(short_description, description, self.opener_sys_id, self.team_name)
 		elif self.ticket_type == 'request':
@@ -149,7 +147,7 @@ def run(helper, _options):
 			# Get the number of certs expiring on this day. Note that we convert the
 			# certificate expiry date, which is in UTC into local timezone for calculating
 			# the number of days remaining on a certificate.
-			cur.execute('SELECT `digest`, `subjectCN`, `subjectDN`, `issuerCN`, `issuerDN`, `notBefore`, `notAfter`, `notify` FROM `certificate` WHERE DATE(CONVERT_TZ(`notAfter`, "+00:00", @@session.time_zone)) = DATE_ADD(DATE(NOW()), INTERVAL ' + str(days) + ' DAY)')
+			cur.execute('SELECT `digest`, `subjectCN`, `subjectDN`, `issuerCN`, `issuerDN`, `notBefore`, `notAfter`, `notify`, `notes` FROM `certificate` WHERE DATE(CONVERT_TZ(`notAfter`, "+00:00", @@session.time_zone)) = DATE_ADD(DATE(NOW()), INTERVAL ' + str(days) + ' DAY)')
 			row = cur.fetchone()
 			while row is not None:
 				# If we're supposed to be notifying on this certificate
@@ -168,7 +166,7 @@ def run(helper, _options):
 						cert_cur.execute('SELECT `host`, `port` FROM `scan_result` WHERE `cert_digest`= %s AND `when` = (SELECT MAX(`when`) FROM `scan_result` WHERE `cert_digest` = %s)', (row['digest'], row['digest']))
 						where = [cert_where['host'] + ':' + str(cert_where['port']) for cert_where in cert_cur.fetchall()]
 
-						notifier.notify(row['digest'], row['subjectCN'], row['subjectDN'], row['issuerCN'], row['issuerDN'], row['notBefore'], row['notAfter'], days, sans, where)
+						notifier.notify(row['digest'], row['subjectCN'], row['subjectDN'], row['issuerCN'], row['issuerDN'], row['notBefore'], row['notAfter'], days, sans, where, row['notes'])
 
 				row = cur.fetchone()
 
