@@ -131,6 +131,10 @@ $('#add_system').click(function() {
 	var name = $('#new_system_name').val().trim();
 	var text = $('#new_system_name option:selected').text().trim();
 
+	// Clear selected system from selectpicker
+	$('#new_system_name').prop('selectedIndex', -1);
+	$('#new_system_name').selectpicker('refresh');
+
 	if (name === "") {
 		alert("You must select a system from the select dialog!");
 	} else {
