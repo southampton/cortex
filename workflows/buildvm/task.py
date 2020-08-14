@@ -70,8 +70,9 @@ def run(helper, options):
 	entca_default_san_domain = wfconfig("DEFAULT_SAN_DOMAIN", None)
 	entca_servers = wfconfig("ENTCA_SERVERS", None)
 
-	# For student VMs override primary owner to match allocated_by
+	# For student VMs override primary owner to match allocated_by and VMware folder.
 	if build_type == "student":
+		vm_folder_moid = wfconfig("VM_FOLDER")
 		options["primary_owner_who"] = helper.username
 		options["primary_owner_role"] = "Student"
 
