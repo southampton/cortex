@@ -228,6 +228,7 @@ def build_servicenow_vm(helper, buildvm_config, task_sys_id, task_friendly_id, f
 	options['expiry'] = end_date
 	options['sendmail'] = True
 	options['dns_aliases'] = [friendly_name + '.' + helper.config['SNVM_VM_FRIENDLY_NAME_DOMAIN']]
+	options['notify_emails'] = []
 	options['wfconfig'] = buildvm_config
 
 	# Start the NeoCortex task (as the user)
