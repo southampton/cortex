@@ -55,7 +55,7 @@ def run(helper, _options):
 
 		# If Rubrik doesn't have any data on it, there's nothing we can do. This should NOT happen though - it's possibly pointing to user error
 		if rubrik_vm_data is None:
-			helper.event("_rubrik_unknown", "{vm_link} does not exist in Rubrik", oneshot=True, warning=True)
+			helper.event("_rubrik_unknown", "{vm_link} does not exist in Rubrik".format(vm_link=vm_link), oneshot=True, warning=True)
 		else:
 			# Create an empty dictionary for updating the VM
 			updated_vm = {}
