@@ -211,6 +211,7 @@ def build_servicenow_vm(helper, buildvm_config, task_sys_id, task_friendly_id, f
 
 	# Build buildvm VM workflow options
 	options = {}
+	options['build_type'] = 'student'
 	options['task'] = task_friendly_id
 	options['workflow'] = helper.config['SNVM_OS_TO_BUILDVM_WORKFLOW_MAP'][osid]
 	options['sockets'] = helper.config['SNVM_OS_TO_SOCKETS_MAP'][osid]
