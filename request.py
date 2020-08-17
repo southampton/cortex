@@ -19,7 +19,8 @@ def teardown_request(_ex=None):
 	allocation, seemingly caused by database transaction lingering around,
 	force the database to close at the end of the request."""
 
-	g.db.close()
+	if hasattr(g, "db"):
+		g.db.close()
 
 ################################################################################
 
