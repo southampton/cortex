@@ -35,18 +35,25 @@ def puppet_enc_edit(node):
 
 	# Get the system out of the database
 	system = cortex.lib.systems.get_system_by_puppet_certname(node)
-	# Get the environments from the DB where the user has classify permission
+	if system is None:
+		abort(404)
+
+	# Get the environments from the DB where:
+	#  - the user has classify permission or,
+	#  - the environment is the 'default' environment or,
+	#  - the environment is an 'infrastructure' environment.
+
 	if does_user_have_permission("puppet.environments.all.classify"):
 		environments = cortex.lib.puppet.get_puppet_environments()
 	else:
-		# If the user has no 'classify' permission they will only get the 'default' environment.
-		environments = cortex.lib.puppet.get_puppet_environments(environment_permission="classify", include_default=True)
+		environments = cortex.lib.puppet.get_puppet_environments(
+			environment_permission="classify",
+			include_default=True,
+			include_infrastructure_envs=True,
+		)
 
 	# Get the environment names as a list
 	environment_names = [e['environment_name'] for e in environments]
-
-	if system is None:
-		abort(404)
 
 	# Get the database cursor
 	curd = g.db.cursor(mysql.cursors.DictCursor)

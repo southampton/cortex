@@ -8,7 +8,7 @@ from cortex import app
 
 ################################################################################
 
-def get_puppet_environments(enviroment_type=None, environment_permission=None, user=None, include_default=False, order_by="id"):
+def get_puppet_environments(enviroment_type=None, environment_permission=None, user=None, include_default=False, include_infrastructure_envs=False, order_by="id"):
 	"""Return a list of the Puppet environments defined in `puppet_environments`"""
 	query = "SELECT * FROM `puppet_environments`"
 	params = ()
@@ -18,9 +18,9 @@ def get_puppet_environments(enviroment_type=None, environment_permission=None, u
 		params += (enviroment_type,)
 	if environment_permission is not None:
 		if enviroment_type is not None:
-			query += " AND "
+			query += " AND"
 		else:
-			query += " WHERE "
+			query += " WHERE"
 
 		# Get the username or use the one present in the session.
 		username = user or session.get("username")
@@ -28,14 +28,15 @@ def get_puppet_environments(enviroment_type=None, environment_permission=None, u
 			return []
 
 		if include_default:
-			query += "( `environment_name`=%s OR ("
+			query += " `environment_name`=%s OR"
 			params += (app.config["PUPPET_DEFAULT_ENVIRONMENT"],)
 
-		query += "`id` IN (SELECT `environment_id` FROM `p_puppet_perms_view` WHERE `perm`=%s AND ((`who_type`=0 AND `who`=%s) OR (`who_type`=1 AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username`=%s))))"
-		params += (environment_permission, username, username)
+		if include_infrastructure_envs:
+			query += " `type`=%s OR"
+			params += (0,)
 
-		if include_default:
-			query += "))"
+		query += " (`id` IN (SELECT `environment_id` FROM `p_puppet_perms_view` WHERE `perm`=%s AND ((`who_type`=0 AND `who`=%s) OR (`who_type`=1 AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username`=%s)))))"
+		params += (environment_permission, username, username)
 
 	if order_by:
 		query += " ORDER BY `{field}` ASC".format(field=order_by)

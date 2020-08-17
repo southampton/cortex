@@ -22,9 +22,6 @@ def favourites(system_type='all'):
 	if does_user_have_permission("systems.all.view"):
 		classes = cortex.lib.classes.get_list()
 
-	print("="*10)
-	print(classes)
-
 	if system_type != "all" and system_type not in [class_obj["name"] for class_obj in classes]:
 		flash("system type {} does not exist.".format(system_type), category="alert-info")
 
