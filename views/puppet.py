@@ -229,21 +229,21 @@ def puppet_nodes(status=None):
 	# Create node status data
 	data = []
 	for row in results:
-		row['status'] = statuses[row['certname']]['status'] if row['certname'] in statuses else 'unknown'
-		row['clientnoop'] = statuses[row['certname']]['clientnoop'] if row['certname'] in statuses else 'unknown'
+		row['latest_report_status'] = statuses[row['certname']]['latest_report_status'] if row['certname'] in statuses else 'unknown'
+		row['latest_report_noop'] = statuses[row['certname']]['latest_report_noop'] if row['certname'] in statuses else 'unknown'
 		row['latest_report_hash'] = statuses[row['certname']]['latest_report_hash'] if row['certname'] in statuses else 'unknown'
 
 		if status in (None, "all"):
 			data.append(row)
-		elif status == 'unchanged' and row['status'] == 'unchanged':
+		elif status == 'unchanged' and row['latest_report_status'] == 'unchanged':
 			data.append(row)
-		elif status == 'changed' and row['status'] == 'changed':
+		elif status == 'changed' and row['latest_report_status'] == 'changed':
 			data.append(row)
-		elif status == 'noop' and row['status'] == 'noop':
+		elif status == 'noop' and row['latest_report_status'] == 'noop':
 			data.append(row)
-		elif status == 'failed' and row['status'] == 'failed':
+		elif status == 'failed' and row['latest_report_status'] == 'failed':
 			data.append(row)
-		elif status == 'unknown' and row['status'] not in ['unchanged', 'changed', 'noop', 'failed']:
+		elif status == 'unknown' and row['latest_report_status'] not in ['unchanged', 'changed', 'noop', 'failed']:
 			data.append(row)
 
 	# Page Title Map
@@ -461,8 +461,8 @@ def puppet_search():
 
 	# Create node status data
 	for row in results:
-		row['status'] = statuses[row['certname']]['status'] if row['certname'] in statuses else 'unknown'
-		row['clientnoop'] = statuses[row['certname']]['clientnoop'] if row['certname'] in statuses else 'unknown'
+		row['latest_report_status'] = statuses[row['certname']]['latest_report_status'] if row['certname'] in statuses else 'unknown'
+		row['latest_report_noop'] = statuses[row['certname']]['latest_report_noop'] if row['certname'] in statuses else 'unknown'
 		row['latest_report_hash'] = statuses[row['certname']]['latest_report_hash'] if row['certname'] in statuses else 'unknown'
 
 	return render_template('puppet/search.html', active='puppet', data=results, title="Puppet search")

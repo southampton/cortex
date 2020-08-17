@@ -10,8 +10,8 @@
 			<th>System Name</th>
 			<th>Puppet Certificate Name</th>
 			<th>Puppet Environment</th>
-			<th>Puppet Client Noop</th>
-			<th>Node Last Report Status</th>
+			<th>Latest Report Noop</th>
+			<th>Latest Report Status</th>
 			<th></th>
 		</tr>
 	</thead>
@@ -21,8 +21,8 @@
 			<td><a href="{{url_for('puppet_enc_edit',node=node.certname) }}">{{ node.name }}</a></td>
 			<td>{{ node.certname }}</td>
 			<td>{{ node.env }}</td>
-			<td>{{ node.clientnoop }}</td>
-			<td class="status-{{ node.status }}"><a href="{{ url_for('puppet_nodes', status=node.status) }}">{{ node.status }}</a></td>
+			<td>{{ node.latest_report_noop }}</td>
+			<td class="status-{{ node.latest_report_status }}"><a href="{{ url_for('puppet_nodes', status=node.latest_report_status) }}">{{ node.latest_report_status }}</a></td>
 			<td>
 				<a href="{{ url_for('puppet_report', report_hash=node.latest_report_hash) }}" class="btn btn-secondary btn-xs {{ 'disabled' if node.latest_report_hash == 'unknown' }}"><i class="fa fa-fw fa-file-text-o"></i> Latest Report</a>
 				<a href="{{url_for('puppet_enc_edit', node=node.certname) }}" class="btn btn-secondary btn-xs"><i class="fa fa-fw fa-wrench"></i> Manage</a>

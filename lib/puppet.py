@@ -175,19 +175,9 @@ def puppetdb_get_node_statuses(db=None):
 	if db is None:
 		db = puppetdb_connect()
 
-	# Get information about all the nodes, including their status
-	nodes = db.nodes(with_status=True)
-
-	# Iterate over nodes, counting statuses
-	statuses = {}
-	for node in nodes:
-		statuses[node.name] = {
-			'status': node.status,
-			'clientnoop': bool(node.fact("clientnoop").value),
-			'latest_report_hash': node.latest_report_hash,
-		}
-
-	return statuses
+	# Query PuppetDB to get all node statuses
+	node_statuses = cortex.lib.puppet.puppetdb_query('nodes', query='["extract", ["certname", "latest_report_status", "latest_report_noop", "latest_report_hash"]]')
+	return {node["certname"]: node for node in node_statuses}
 
 ################################################################################
 
@@ -215,8 +205,8 @@ def puppetdb_get_node_stats_totals(db=None):
 	if db is None:
 		db = puppetdb_connect()
 
-	# Get information about all the nodes, including their status
-	nodes = db.nodes(with_status=True)
+	# Query PuppetDB to get all node statuses
+	node_statuses = cortex.lib.puppet.puppetdb_query('nodes', query='["extract", ["certname", "latest_report_status", "latest_report_noop", "latest_report_hash"]]')
 
 	# Initialise stats
 	stats = {
@@ -230,15 +220,15 @@ def puppetdb_get_node_stats_totals(db=None):
 	}
 
 	# Iterate over nodes, counting statistics
-	for node in nodes:
+	for node in node_statuses:
 		try:
 			stats['count'] += 1
 			# use clientnoop fact to determine noop state
-			if bool(node.fact("clientnoop").value):
+			if node["latest_report_noop"]:
 				stats['noop'] += 1
 			# if we know the reported status, count the values
-			elif node.status in stats:
-				stats[node.status] += 1
+			elif node["latest_report_status"] in stats:
+				stats[node["latest_report_status"]] += 1
 			# otherwise mark it as unknown but still count the values
 			else:
 				stats['unknown'] += 1
@@ -264,11 +254,12 @@ def puppetdb_get_node_stats(db=None, environments=None):
 		for env in environments:
 			stats[env] = stats_template.copy()
 
-	# Get information about all the nodes, including their status
-	nodes = db.nodes(with_status=True)
+	# Query PuppetDB to get all node statuses
+	node_statuses = cortex.lib.puppet.puppetdb_query('nodes', query='["extract", ["certname", "report_environment", "latest_report_status", "latest_report_noop", "latest_report_hash"]]')
 
-	for node in nodes:
-		env = node.report_environment
+	# Iterate over nodes, counting per-environment statistics
+	for node in node_statuses:
+		env = node["report_environment"]
 		# Ensure the environment is in the stats dict
 		if env not in stats:
 			stats[env] = stats_template.copy()
@@ -276,11 +267,11 @@ def puppetdb_get_node_stats(db=None, environments=None):
 		try:
 			stats[env]["count"] += 1
 			# use clientnoop fact to determine noop state
-			if bool(node.fact("clientnoop").value):
+			if node["latest_report_noop"]:
 				stats[env]["noop"] += 1
 			# if we know the reported status, count the values
-			elif node.status in stats[env]:
-				stats[env][node.status] += 1
+			elif node["latest_report_status"] in stats[env]:
+				stats[env][node["latest_report_status"]] += 1
 			# otherwise mark it as unknown but still count the values
 			else:
 				stats[env]["unknown"] += 1
