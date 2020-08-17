@@ -279,7 +279,7 @@ def puppetdb_get_node_stats(db=None, environments=None):
 			if bool(node.fact("clientnoop").value):
 				stats[env]["noop"] += 1
 			# if we know the reported status, count the values
-			elif node.status in stats:
+			elif node.status in stats[env]:
 				stats[env][node.status] += 1
 			# otherwise mark it as unknown but still count the values
 			else:
