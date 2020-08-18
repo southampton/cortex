@@ -44,7 +44,7 @@ CMDB_URL_FORMAT = "http://localhost/cmdb/%s"
 PRJTASK_URL_FORMAT = "http://localhost/pm_project_task/%s"
 
 ## Cortex internal version number
-VERSION = '6.0.3'
+VERSION = '6.0.4'
 
 ## Flask defaults (changed to what we prefer)
 SESSION_COOKIE_SECURE = False
