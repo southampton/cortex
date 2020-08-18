@@ -29,7 +29,7 @@ def snapshot_create():
 	elif does_user_have_any_system_permission('snapshot'):
 		# Select all VMs where the user has permission to snapshot
 		query_where = (
-			"""WHERE (`cmdb_id` IS NOT NULL AND `cmdb_operational_status` = "In Service") AND `vmware_uuid` IS NOT NULL AND (`id` IN (SELECT `system_id` FROM `system_perms_view` WHERE (`type` = '0' AND `perm` = 'snapshot' AND `who` = %s) OR (`type` = '1' AND `perm` = 'snapshot' AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s)))) ORDER BY `id` DESC""",
+			"""WHERE (`cmdb_id` IS NOT NULL AND `cmdb_operational_status` = "In Service") AND `vmware_uuid` IS NOT NULL AND (`id` IN (SELECT `system_id` FROM `p_system_perms_view` WHERE (`type` = '0' AND `perm` = 'snapshot' AND `who` = %s) OR (`type` = '1' AND `perm` = 'snapshot' AND `who` IN (SELECT `group` FROM `ldap_group_cache` WHERE `username` = %s)))) ORDER BY `id` DESC""",
 			(session["username"], session["username"]),
 		)
 		systems = get_systems(where_clause=query_where)
