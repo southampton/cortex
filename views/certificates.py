@@ -92,7 +92,7 @@ def add_openssl_certificate(cert):
 	curd = g.db.cursor(mysql.cursors.DictCursor)
 	curd.execute('INSERT INTO `certificate` (`digest`, `subjectHash`, `subjectCN`, `subjectDN`, `notBefore`, `notAfter`, `issuerCN`, `issuerDN`, `notify`, `notes`, `keySize`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "%s")', (digest, subjectHash, subjectCN, subjectDN, notBefore, notAfter, issuerCN, issuerDN, 1, "", keySize))
 	for san in sans:
-		curd.execute('INSERT INTO `certificate_sans` (`digest`, `san`) VALUES (%s, %s)', (digest, san))
+		curd.execute('INSERT INTO `certificate_sans` (`cert_digest`, `san`) VALUES (%s, %s)', (digest, san))
 	g.db.commit()
 
 	return digest
