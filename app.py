@@ -488,13 +488,12 @@ Username:             %s
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
 		cursor.execute("""CREATE TABLE IF NOT EXISTS `puppet_documentation` (
-		  `id` mediumint(11) NOT NULL AUTO_INCREMENT,
 		  `class_id` mediumint(11) NOT NULL,
-		  `tag` varchar(255) NOT NULL,
-		  `name` varchar(255),
+		  `tag` varchar(16) NOT NULL,
+		  `name` varchar(255) NOT NULL,
 		  `text` text,
 		  `types` text,
-		  PRIMARY KEY (`id`),
+		  PRIMARY KEY (`class_id`, `tag`, `name`),
 		  CONSTRAINT `puppet_documentation_ibfk_1` FOREIGN KEY (`class_id`) REFERENCES `puppet_classes` (`id`) ON DELETE CASCADE
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;""")
 
