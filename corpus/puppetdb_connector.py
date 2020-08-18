@@ -17,6 +17,10 @@ class PuppetDBConnector:
 	def connect(self):
 		self.db = pypuppetdb.connect(self.host, port=self.port, ssl_cert=self.ssl_cert, ssl_key=self.ssl_key, ssl_verify=self.ssl_verify)
 
+	def query(self, endpoint, **kwargs):
+		# pylint: disable=protected-access
+		return self.db._query(endpoint, **kwargs)
+
 	def get_nodes(self, with_status=False):
 		return self.db.nodes(with_status=with_status)
 

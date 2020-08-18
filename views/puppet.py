@@ -235,15 +235,15 @@ def puppet_nodes(status=None):
 
 		if status in (None, "all"):
 			data.append(row)
-		elif status == 'unchanged' and row['latest_report_status'] == 'unchanged':
+		elif status == 'unchanged' and row['latest_report_status'] == 'unchanged' and not row['latest_report_noop']:
 			data.append(row)
-		elif status == 'changed' and row['latest_report_status'] == 'changed':
+		elif status == 'changed' and row['latest_report_status'] == 'changed' and not row['latest_report_noop']:
 			data.append(row)
-		elif status == 'noop' and row['latest_report_status'] == 'noop':
+		elif status == 'noop' and row['latest_report_noop']:
 			data.append(row)
-		elif status == 'failed' and row['latest_report_status'] == 'failed':
+		elif status == 'failed' and row['latest_report_status'] == 'failed' and not row['latest_report_noop']:
 			data.append(row)
-		elif status == 'unknown' and row['latest_report_status'] not in ['unchanged', 'changed', 'noop', 'failed']:
+		elif status == 'unknown' and row['latest_report_status'] not in ['unchanged', 'changed', 'noop', 'failed'] and not row['latest_report_noop']:
 			data.append(row)
 
 	# Page Title Map

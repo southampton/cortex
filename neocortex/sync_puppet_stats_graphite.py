@@ -48,29 +48,29 @@ def run(helper, _options):
 		for env in environments:
 			stats[env] = stats_template.copy()
 
-		# Get the nodes from PuppetDB.
+		# Query PuppetDB to get all node statuses
 		helper.event('puppet_nodes', 'Getting nodes from PuppetDB.')
-		nodes = puppet.get_nodes(with_status=True)
+		node_statuses = puppet.query('nodes', query='["extract", ["certname", "report_environment", "latest_report_status", "latest_report_noop", "latest_report_hash"]]')
 		helper.end_event(description='Received nodes from PuppetDB.')
 
-		# Iterate over nodes.
-		for node in nodes:
-			env = node.report_environment
+		# Iterate over nodes, counting per-environment statistics
+		for node in node_statuses:
+			env = node["report_environment"]
+			# Ensure the environment is in the stats dict
 			if env not in stats:
 				stats[env] = stats_template.copy()
 
 			try:
-				# Count number of nodes (we can't do len(nodes) as it's a generator)
-				stats[env]['count'] += 1
+				stats[env]["count"] += 1
 				# use clientnoop fact to determine noop state
-				if bool(node.fact('clientnoop').value):
-					stats[env]['noop'] += 1
+				if node["latest_report_noop"]:
+					stats[env]["noop"] += 1
 				# if we know the reported status, count the values
-				elif node.status in stats[env]:
-					stats[env][node.status] += 1
+				elif node["latest_report_status"] in stats[env]:
+					stats[env][node["latest_report_status"]] += 1
 				# otherwise mark it as unknown but still count the values
 				else:
-					stats[env]['unknown'] += 1
+					stats[env]["unknown"] += 1
 			except (AttributeError, KeyError) as ex:
 				helper.flash("Failed to generate Puppet node stat: %s" %(ex))
 
