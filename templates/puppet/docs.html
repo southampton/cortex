@@ -43,7 +43,8 @@ There is documentation in Cortex available for the modules listed below
 	<p>
 	{%- for p in data[class].param -%}
 		<strong><code>{{ p.name }}</code></strong><br/>
-		Data Type:&nbsp;{%- for t in p.types -%}<code>{{ t }}</code>,{%- endfor -%}</br>
+		Data Type:&nbsp;{%- for t in p.types -%}<code>{{ t }}</code>{{ "," if not loop.last }}{%- endfor -%}</br>
+		Description:&nbsp;{%- if p.text -%}{{ p.text }}{%- else -%}None{%- endif -%}<br/>
 	{%- endfor -%}
 	</p>
 {%- endif-%}
