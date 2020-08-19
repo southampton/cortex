@@ -1,5 +1,4 @@
 
-import datetime
 import traceback
 
 import MySQLdb as mysql
