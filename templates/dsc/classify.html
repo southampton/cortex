@@ -144,8 +144,12 @@ function function_{{role}}(){
 			  </div>
 			  
 			  <div class="flex-child" style="width: 40%;">
-			    	{% for role in set_roles %}
+			    	{% for role in page_cont['tickvalues'] %}
+			    	<h2>{{role}}</h2>
 						<!-- <button onclick="function_{{role}}(); return false;" class="btn btn-primary btn-sm">{{ role }}</button> -->
+			    	}
+			    	}
+			    	}
 					{% endfor %}
 			  </div>
 			  
