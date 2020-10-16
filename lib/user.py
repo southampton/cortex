@@ -528,3 +528,17 @@ def is_system_enrolled(id):
 		return True
 	else:
 		return False
+
+################################################################################
+
+def is_system_enrolled(id):
+	curd = g.db.cursor(mysql.cursors.DictCursor)
+	curd.execute("SELECT system_id FROM `dsc_config`;")
+	dsc_enrolled = curd.fetchall()
+	# convert to a list
+	dsc_enrolled = [m['system_id'] for m in dsc_enrolled]
+
+	if id in dsc_enrolled:
+		return True
+	else:
+		return False

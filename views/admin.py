@@ -593,6 +593,7 @@ def admin_maint():
 		)
 
 	else:
+		
 		# Find out what task to start
 		module = request.form['task_name']
 		# Start the appropriate internal task
@@ -640,6 +641,9 @@ def admin_maint():
 			if not does_user_have_permission("maintenance.rubrik_policy_check"):
 				abort(403)
 			task_id = neocortex.start_internal_task(session['username'], 'rubrik_policy_check.py', '_rubrik_policy_check', description="Checks the backup systems of policies against the ones in Rubrik")
+		elif module == 'rubrik_crcheck':
+			if not does_user_have_permission("maintenance.expired_vm"):
+				task_id = neocortex.start_internal_task(session['username'], 'rubrik_crcheck.py', '_rubrik_policy_check', description="Checks the backup systems of policies against the ones in Rubrik")
 		elif module == 'enrol_machine_into_dsc':
 			if does_user_have_permission("dsc.enrol"):
 				task_id = neocortex.start_internal_task(session['username'], 'dsc_enrol.py', '_enrol_dsc', description="Enrols the selected machine in the dsc configurator", options={'machine' : request.form['systems'], 'dsc_config' : app.config['WINRPC']})

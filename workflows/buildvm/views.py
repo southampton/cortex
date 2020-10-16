@@ -97,6 +97,11 @@ def validate_data(r, templates, envs):
 		else:
 			options['dsc_config'] = app.config['WINRPC']
 
+		if 'WINRPC' in app.config:
+			options['dsc_config'] = app.config['WINRPC']
+		else:
+			options['dsc_config'] = app.config['WINRPC']
+
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.lib.core.neocortex_connect()
 		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and sets up a virtual machine (sandbox VMware environment)")
@@ -229,8 +234,39 @@ def build(build_type):
 		# Additional task options for the standard build
 		if build_type == "standard" and "NOTIFY_EMAILS" in app.config:
 			options["notify_emails"] = app.config["NOTIFY_EMAILS"]
+			options['workflow'] = 'standard'
+			options['sockets'] = sockets
+			options['cores'] = cores
+			options['ram'] = ram
+			options['disk'] = disk
+			options['template'] = template
+			options['cluster'] = cluster
+			options['env'] = env
+			options['task'] = task
+			options['purpose'] = purpose
+			options['comments'] = comments
+			options['sendmail'] = sendmail
+			options['wfconfig'] = workflow.config
+			options['expiry'] = expiry
+			options['network'] = network
+			options['primary_owner_who'] = primary_owner_who
+			options['primary_owner_role'] = primary_owner_role
+			options['secondary_owner_who'] = secondary_owner_who
+			options['secondary_owner_role'] = secondary_owner_role
+			options['dns_aliases'] = dns_aliases
+			options['vm_folder_moid'] = vm_folder_moid
+
+
+		if 'NOTIFY_EMAILS' in app.config:
+			options['notify_emails'] = app.config['NOTIFY_EMAILS']
 		else:
 			options["notify_emails"] = []
+
+		if 'WINRPC' in app.config:
+			options['dsc_config'] = app.config['WINRPC']
+		else:
+			options['dsc_config'] = app.config['WINRPC']
+
 
 		if 'WINRPC' in app.config:
 			options['dsc_config'] = app.config['WINRPC']
