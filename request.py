@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-=======
-from cortex import app
-from cortex.lib.errors import logerr, fatalerr
-from cortex.lib.user import does_user_have_permission, does_user_have_workflow_permission, does_user_have_system_permission, is_system_enrolled
->>>>>>> bcb08b2ae7e0281efe6eab519fed71aeeea98cdf
 from flask import Flask, request, session, g, abort, render_template, url_for
 import redis
 import time
