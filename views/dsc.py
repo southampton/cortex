@@ -101,23 +101,28 @@ def dsc_classify_machine(id):
 	else:
 		exist_config = yamlload(exist_config)
 
-
+  # convert the ticked items from yaml -> dict -> list (no direct method sadly but input always a list)
 	page_cont['tickvalues'] = list(yamlload(exist_role))
+  # set the roles to tick as well, for the selectpicker
 	page_cont['roles'] = jobs
 	print(type(exist_config))
+  # config which gets passed to the dsc authoring machine
 	page_cont['yaml_config'] = yaml.dump(exist_config)
 
 	if request.method == "POST":
-
+    # selectpicker methods are awful, this is *a* way of getting a list of items selected
 		selected_vals = request.form['selected_values'].split(",")
+    # for some reason, selecting nothing would break the selectpicker's response, this fixes
 		if selected_vals == ['']:
 			selected_vals = []
 
-
+    # find the keys and values to remove from the yaml if they are unselected
 		to_add = list(set(selected_vals) - set(page_cont['tickvalues']))
 		to_del = list(set(page_cont['tickvalues']) - set(selected_vals))
 
-		print(to_add, to_del)
+   # attempt to read the config
+   # if unreadable, do not store as this may be pushed to the authoring machine
+   # which will rbeak it
 		configs = ""
 		try:
 			configs = yamlload(request.form['configurations'])
@@ -130,12 +135,14 @@ def dsc_classify_machine(id):
 		config_roles = selected_vals
 		config_roles = config_roles + ['Generic']
 
+    # ensure that the config has the most up to date values for the details of the box
 		configs['AllNodes'][1]['Role']= [x.full_name for x in role_obj if x.trimmed_prefix in config_roles]
 
 		print(configs)
+    # write the updated config and roles to database
 		curd.execute('UPDATE `dsc_config` SET config = %s, roles = %s WHERE system_id = %s;', (yaml.dump(configs), yaml.dump(selected_vals), id))
 		g.db.commit()
-		# return jsonify([configs, selected_vals])
+		
 
 	elif request.method == "GET":
 		pass
