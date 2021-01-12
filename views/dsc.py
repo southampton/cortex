@@ -72,6 +72,7 @@ def dsc_classify_machine(id):
 		n = role
 		role_obj.append(Role(role, n.split("_")[1], n.split("_")[0], roles_info[role]))
 
+	page_cont['role_sidebar_info'] = roles_info
 
 	default_roles = [role for role in roles_info.keys()]
 	# generates set of jobs
@@ -146,11 +147,10 @@ def dsc_classify_machine(id):
 
 	elif request.method == "GET":
 		pass
-	#return jsonify(page_cont['roles'])
-	#return jsonify(page_cont)
+	# return jsonify(page_cont['role_sidebar_info'])
+	# return jsonify(roles_info)
 	return render_template('dsc/classify.html', title="DSC", page_cont=page_cont, system=system)
-	return render_template('dsc/classify.html', title="DSC", system=system, active='dsc', roles=jobs, yaml=exist_config, set_roles=exist_role, role_info=roles_info, yaml_role_info=yaml_roles_info, selectpicker_tick=list(values_to_tick))	
-
+	
 
 
 

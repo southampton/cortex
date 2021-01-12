@@ -44,17 +44,35 @@
 } 
 
 /*.textarea{
-  width:50%;
+  width:100% !important;
   background-color:#eee;
   overflow:hidden;
-  height:250px;
+  height:250px !important;
   max-height:250px;
   border:1px solid #ccc;
   overflow-y: auto;
 }*/
+
+.CodeMirror {
+  border: 1px solid #eee;
+  /*height: auto;*/
+  padding-right: 10px;
+}
 </style>
 
 <script>
+	function getWidth() {
+  return Math.max(
+    document.body.scrollWidth,
+    document.documentElement.scrollWidth,
+    document.body.offsetWidth,
+    document.documentElement.offsetWidth,
+    document.documentElement.clientWidth
+  );
+}
+
+console.log('Width:  ' +  getWidth() );
+
 var classes_editor;
 $(document).ready(function() 
 {
@@ -74,7 +92,22 @@ $(document).ready(function()
 			cm.replaceSelection(spaces);
 		}
 	});
+	classes_editor.setSize(getWidth() * 0.4 ,450);
+	$("#sidebar_content").width(getWidth()*0.45)
 
+	//hides dropdown content
+	$(".size_chart").hide();
+
+	//unhides first option content
+	$("#option1").show();
+
+	//listen to dropdown for change
+	$("#size_select").change(function(){
+		//rehide content on change
+		$('.size_chart').hide();
+		//unhides current item
+		$('#'+$(this).val()).show();
+	});
 });
 
 function removeElement(elementId) {
@@ -102,9 +135,11 @@ function function_{{role}}(){
 <form class="form-horizontal" method="POST" role="form" id="dsc_form">
 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 
+<div class="panel-heading">
+	DSC Roles
+</div>
 
-
-<div class="panel panel-default">
+<!-- <div class="panel panel-default">
 	<div class="panel-heading">DSC Roles
 		<div class="pull-right">
 			<button class="btn btn-danger btn-xs" type="submit" id="return_to_default" title="Remove all roles, and return to default state." value="return_to_default" name="button">Reset</button>
@@ -128,25 +163,73 @@ function function_{{role}}(){
 		<input type="hidden" id="selected_values" name="selected_values">
 	</div>
 </div>
+ -->
 
-
-<div class="row">
+<!-- <div class="row">
   <div class="column">
-      <div class="flex-child" style="width: 100%;">
+      <div class="flex-child" style="width: 100%; float: left;">
 			    <textarea style="height: 30px;  resize: none;" class="textarea" cols="1" id="configurations" name="configurations" placeholder="Configurations to include can be entered here">{{ page_cont['yaml_config'] }}</textarea>
       </div>
   </div>
   <div class="column">
-    <div class="">
-			    	{% for role in page_cont['tickvalues'] %}
-			    	<h2>{{role}}</h2>
-					  <!-- <button onclick="function_{{role}}(); return false;" class="btn btn-primary btn-sm">{{ role }}</button> -->
-				    {% endfor %}
+    <div class="flex-child" style="width: 100%; float: right;">
+				 <button type="button" style="height: 100%; width: 100%">Click Me!</button> 
     </div>
   </div>
+</div> -->
+<div class="container-fluid">
+	<div class="row">
+	  	<div class="column">
+	    	<textarea style="resize: none;" class="textarea" cols="3" id="configurations" name="configurations" placeholder="Configurations to include can be entered here">{{ page_cont['yaml_config'] }}</textarea>
+	    	
+	  	</div>
+		<div class="column" id="sidebar_content" style="padding-left: 5px; text-align: center;">
+			<h2><i class="fa fa-file-archive-o" aria-hidden="true"></i> DSC Packages</h2>
+			<select id="size_select">
+			{% for role in page_cont['role_sidebar_info'] %}
+			 <option value="{{ role }}">{{ role }}</option>
+			{% endfor %}
+			</select>
+			{% for role in page_cont['role_sidebar_info'] %}
+			<div id="{{ role }}" class="size_chart" style="text-align: left;">
+				<h3 style="text-align: center;">{{ role }}</h3>
+				{% for sub_role in page_cont['role_sidebar_info'][role] %}
+					<a data-toggle="modal" data-target="#{{role}}_{{sub_role['Name']}}"> {{ sub_role['Name'] }} </a>
+					<hr>
+				{% endfor %}
+			</div>
+			{% endfor %}
+		</div>
+	</div>
 </div>
 
-<div class="row" style="text-align: center;">
+
+{% for role in page_cont['role_sidebar_info'] %}
+	{% for sub_role in page_cont['role_sidebar_info'][role] %}
+		<!-- Modal -->
+		<div id="{{role}}_{{sub_role['Name']}}" class="modal fade" role="dialog">
+		  <div class="modal-dialog">
+
+		    <!-- Modal content-->
+		    <div class="modal-content">
+		      <div class="modal-header">
+		        <button type="button" class="close" data-dismiss="modal" style="text-align: center;" >&times;</button>
+		        <h4 class="modal-title">{{sub_role['Name']}}</h4>
+		      </div>
+		      <div class="modal-body">
+		        <p>{{sub_role}}</p>
+		      </div>
+		      <div class="modal-footer">
+		        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		      </div>
+		    </div>
+
+		  </div>
+		</div>
+	{% endfor %}
+{% endfor %}
+
+<!-- <div class="row" style="text-align: center;">
   <div class="column" style="padding-right: 15px">
     <button class="btn btn-primary btn-lg" type="submit" id="save_changes" value="save_changes" name="button" title="Save the selected roles and edited config." style="padding-right: 15px">Save and Generate</button>
   </div>
@@ -154,9 +237,9 @@ function function_{{role}}(){
     <button class="btn btn-success btn-lg" type="submit" id="push_to_dsc" value="push_to_dsc" title="Send machine details to DSC." name="button">Push to Box</button>
   </div>
 </div>
+ -->
 
-
-<input type="hidden" name="checked_values" id="checked_values" value="">
+<!-- <input type="hidden" name="checked_values" id="checked_values" value=""> -->
 </form>
 
 <script type="text/javascript">
