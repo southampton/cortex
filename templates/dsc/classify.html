@@ -93,7 +93,7 @@ $(document).ready(function()
 		}
 	});
 	classes_editor.setSize(getWidth() * 0.4 ,450);
-	$("#sidebar_content").width(getWidth()*0.45)
+	$("#sidebar_content").width(getWidth()*0.40)
 
 	//hides dropdown content
 	$(".size_chart").hide();
@@ -135,9 +135,9 @@ function function_{{role}}(){
 <form class="form-horizontal" method="POST" role="form" id="dsc_form">
 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 
-<div class="panel-heading">
+<!-- <div class="panel-heading">
 	DSC Roles
-</div>
+</div> -->
 
 <!-- <div class="panel panel-default">
 	<div class="panel-heading">DSC Roles
@@ -180,7 +180,12 @@ function function_{{role}}(){
 <div class="container-fluid">
 	<div class="row">
 	  	<div class="column">
+	  		<div style="text-align: center;">
+	  			<h2><i class="fa fa-cog" aria-hidden="true"></i> Machine Configuration</h2>
+	  		</div>
+	  		
 	    	<textarea style="resize: none;" class="textarea" cols="3" id="configurations" name="configurations" placeholder="Configurations to include can be entered here">{{ page_cont['yaml_config'] }}</textarea>
+	    	<button type="button" class="btn btn-success" data-dismiss="modal">Push to Authoring Machine</button>
 	    	
 	  	</div>
 		<div class="column" id="sidebar_content" style="padding-left: 5px; text-align: center;">
@@ -201,6 +206,7 @@ function function_{{role}}(){
 			{% endfor %}
 		</div>
 	</div>
+
 </div>
 
 
@@ -217,7 +223,10 @@ function function_{{role}}(){
 		        <h4 class="modal-title">{{sub_role['Name']}}</h4>
 		      </div>
 		      <div class="modal-body">
-		        <p>{{sub_role}}</p>
+		      	<h5>Description:</h5>
+		      	<p>[No conetent yet]<p>
+		        <textarea style="resize: none;" class="textarea" cols="55" rows="20" id="{{role}}_{{sub_role['Name']}}_config" name="{{role}}_{{sub_role['Name']}}_config" placeholder="Role_info">{{ page_cont['role_sidebar_yaml'][role][sub_role['Name']] }}</textarea>
+		        <button type="button" class="btn btn-success">Copy to Clipboard</button>
 		      </div>
 		      <div class="modal-footer">
 		        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -244,12 +253,7 @@ function function_{{role}}(){
 
 <script type="text/javascript">
 
-window.onload = function() {
-	var exist_roles = Object.keys({{ page_cont['tickvalues']|tojson }});
-	
-	$('.selectpicker').selectpicker('val', {{ page_cont['tickvalues']|tojson }} );
 
-};
 
 
 $("#save_changes").click(function(e){

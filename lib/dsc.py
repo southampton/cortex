@@ -44,9 +44,15 @@ def dsc_generate_files(proxy, name, details):
 def get_roles(proxy):
 	return proxy.get_roles()
 
-#####################################################
+######################################################
 
 def send_config(proxy, name,  data):
 	proxy.send_json(name, data)
 	proxy.send_yaml(name, data)
 	
+
+######################################################
+
+# To be implemented on authoring machine
+def get_machine_config(proxy, name):
+	return proxy.get_mconfig(name)

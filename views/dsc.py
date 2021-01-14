@@ -9,12 +9,16 @@ import json
 import yaml
 import os
 
+def yamlload(s):
+	return yaml.load(s, Loader=yaml.FullLoader)
+
 class Role:
 	"""docstring for Role"""
 	def __init__(self, full_name, short_name, prefix, contents):
 		self.full_name = full_name
 		self.short_name = short_name
 		self.contents = contents
+		self.yaml = yaml.dump(contents)
 		self.prefix = prefix
 		self.trimmed_prefix = self.prefix.replace("UOS", "")
 
@@ -24,7 +28,8 @@ class Role:
 			'short_name': self.short_name,
 			'contents': self.contents,
 			'prefix': self.prefix,
-			'trimmed_prefix': self.trimmed_prefix
+			'trimmed_prefix': self.trimmed_prefix,
+			'yaml': self.yaml
 		}
 
 	def __repr__(self):
@@ -35,8 +40,7 @@ class Role:
 			'trimmed_prefix': self.trimmed_prefix
 		})
 
-def yamlload(s):
-	return yaml.load(s, Loader=yaml.FullLoader)
+
 
 @app.route('/dsc/classify/<id>', methods=['GET', 'POST'])
 @cortex.lib.user.login_required
@@ -66,13 +70,40 @@ def dsc_classify_machine(id):
 			# print(fdata)
 			roles_info = json.loads(fdata)
 
-	role_obj = []
+	# Attempt to get the current config information of the machine
+	use_default_dsc = False
+	try:
+		raise Exception("TODO Fix timeout problem")
+		# TODO: this needs to be fixed, machine will 504 timeout if can't connect. 
+		dsc_proxy = cortex.lib.dsc.dsc_connect()
+		machine_mconfig = cortex.lib.dsc.get_machine_config()
+	except Exception as e:
+		use_default_dsc = True
+		flash('Unable to retrieve machine config from DSC Authoring machine. The machine information is out of date:\n' + str(e), 'alert-danger')
+		
+
+
+	# return jsonify((yaml.dump(roles_info)))
+
+	role_yaml = {}
 	for role in roles_info:
-		if role == "AllNodes": continue
-		n = role
-		role_obj.append(Role(role, n.split("_")[1], n.split("_")[0], roles_info[role]))
+	# 	if role == "AllNodes": continue
+		role_content = {}
+		for r in roles_info[role]:
+			try:
+				role_content[r["Name"]] = yaml.dump({role : r})
+			except KeyError as e:
+				print("no name, skipping")
+
+		# print(roles_info[role])
+		# role_yaml[role] = yaml.dump({role:roles_info[role]})
+		role_yaml[role] = role_content
 
 	page_cont['role_sidebar_info'] = roles_info
+	page_cont['role_sidebar_yaml'] = role_yaml
+
+
+	# return jsonify(role_yaml)
 
 	default_roles = [role for role in roles_info.keys()]
 	# generates set of jobs
@@ -87,23 +118,21 @@ def dsc_classify_machine(id):
 	page_cont['system'] = system = cortex.lib.systems.get_system_by_id(id)
 
 		# retrieve all the systems
-	curd.execute("SELECT `roles`, `config` FROM `dsc_config` WHERE `system_id` = %s", (id, ))
-	existing_data = curd.fetchone()
+	# curd.execute("SELECT `roles`, `config` FROM `dsc_config` WHERE `system_id` = %s", (id, ))
+	# existing_data = curd.fetchone()
 
-	exist_role = existing_data['roles']
-	exist_config = existing_data['config']
+	# exist_role = existing_data['roles']
+	# exist_config = existing_data['config']
 
-	# get existing info
-	print(repr(exist_config))
-	if exist_config == "\"\"" or exist_config == 'null\n...\n':
-		print('truew')
+	# # get existing info
+	
+	if use_default_dsc:
 		base_role = {'AllNodes': roles_info['AllNodes']}
 		exist_config = base_role
 	else:
 		exist_config = yamlload(exist_config)
 
-  # convert the ticked items from yaml -> dict -> list (no direct method sadly but input always a list)
-	page_cont['tickvalues'] = list(yamlload(exist_role))
+  
   # set the roles to tick as well, for the selectpicker
 	page_cont['roles'] = jobs
 	print(type(exist_config))
@@ -117,13 +146,9 @@ def dsc_classify_machine(id):
 		if selected_vals == ['']:
 			selected_vals = []
 
-    # find the keys and values to remove from the yaml if they are unselected
-		to_add = list(set(selected_vals) - set(page_cont['tickvalues']))
-		to_del = list(set(page_cont['tickvalues']) - set(selected_vals))
-
    # attempt to read the config
    # if unreadable, do not store as this may be pushed to the authoring machine
-   # which will rbeak it
+   # which will break it
 		configs = ""
 		try:
 			configs = yamlload(request.form['configurations'])
@@ -137,18 +162,15 @@ def dsc_classify_machine(id):
 		config_roles = config_roles + ['Generic']
 
     # ensure that the config has the most up to date values for the details of the box
-		configs['AllNodes'][1]['Role']= [x.full_name for x in role_obj if x.trimmed_prefix in config_roles]
+		# configs['AllNodes'][1]['Role']= [x.full_name for x in role_obj if x.trimmed_prefix in config_roles]
 
-		print(configs)
-    # write the updated config and roles to database
-		curd.execute('UPDATE `dsc_config` SET config = %s, roles = %s WHERE system_id = %s;', (yaml.dump(configs), yaml.dump(selected_vals), id))
-		g.db.commit()
 		
+	
 
 	elif request.method == "GET":
 		pass
 	# return jsonify(page_cont['role_sidebar_info'])
-	# return jsonify(roles_info)
+	# return jsonify(page_cont['role_sidebar_yaml'])
 	return render_template('dsc/classify.html', title="DSC", page_cont=page_cont, system=system)
 	
 
