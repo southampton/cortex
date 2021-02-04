@@ -18,7 +18,7 @@ ENVIRONMENT_TYPES = {
 	2: "Dynamic"         # Dynamic environment for testing
 }
 
-@workflow.route("environment/create", title="Create Puppet Environment", order=50, permission="puppet.environment.create", methods=["GET", "POST"])
+@workflow.route("environment/create", title="Create Puppet Environment", order=50, permission="puppet.environments.create", methods=["GET", "POST"])
 def puppet_environment_create():
 	"""Create a new Puppet environment"""
 
