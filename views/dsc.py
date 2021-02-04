@@ -9,6 +9,13 @@ import json
 import yaml
 import os
 
+"""
+TODO: Fix the copy to clipboard button using hashes to remove unneeded characters
+
+
+"""
+
+
 def yamlload(s):
 	return yaml.load(s, Loader=yaml.FullLoader)
 
@@ -86,22 +93,28 @@ def dsc_classify_machine(id):
 	# return jsonify((yaml.dump(roles_info)))
 
 	role_yaml = {}
+	autocomplete_dictionary = {}
 	for role in roles_info:
 	# 	if role == "AllNodes": continue
 		role_content = {}
+		autocomplete_dictionary[role] = set()
 		for r in roles_info[role]:
+			autocomplete_dictionary[role].update(r.keys())
 			try:
 				role_content[r["Name"]] = yaml.dump({role : r})
 			except KeyError as e:
 				print("no name, skipping")
-
+		
 		# print(roles_info[role])
 		# role_yaml[role] = yaml.dump({role:roles_info[role]})
 		role_yaml[role] = role_content
+		autocomplete_dictionary[role] = list(autocomplete_dictionary[role]) # cannot convert sets to JSON so change the type to list
 
-	page_cont['role_sidebar_info'] = roles_info
+
+
+	page_cont['role_sidebar_info'] = {i:roles_info[i] for i in roles_info if i!='AllNodes'}
 	page_cont['role_sidebar_yaml'] = role_yaml
-
+	print(autocomplete_dictionary)
 
 	# return jsonify(role_yaml)
 
@@ -117,14 +130,7 @@ def dsc_classify_machine(id):
 	
 	page_cont['system'] = system = cortex.lib.systems.get_system_by_id(id)
 
-		# retrieve all the systems
-	# curd.execute("SELECT `roles`, `config` FROM `dsc_config` WHERE `system_id` = %s", (id, ))
-	# existing_data = curd.fetchone()
 
-	# exist_role = existing_data['roles']
-	# exist_config = existing_data['config']
-
-	# # get existing info
 	
 	if use_default_dsc:
 		base_role = {'AllNodes': roles_info['AllNodes']}
@@ -136,6 +142,7 @@ def dsc_classify_machine(id):
   # set the roles to tick as well, for the selectpicker
 	page_cont['roles'] = jobs
 	print(type(exist_config))
+
   # config which gets passed to the dsc authoring machine
 	page_cont['yaml_config'] = yaml.dump(exist_config)
 
@@ -171,7 +178,7 @@ def dsc_classify_machine(id):
 		pass
 	# return jsonify(page_cont['role_sidebar_info'])
 	# return jsonify(page_cont['role_sidebar_yaml'])
-	return render_template('dsc/classify.html', title="DSC", page_cont=page_cont, system=system)
+	return render_template('dsc/classify.html', title="DSC", page_cont=page_cont, system=system, autocomplete_dictionary=autocomplete_dictionary)
 	
 
 
