@@ -8,12 +8,16 @@ import MySQLdb as mysql
 import json
 import yaml
 import os
-
+import time
 """
 TODO: Fix the copy to clipboard button using hashes to remove unneeded characters
 
 
 """
+def is_file_older_hours(f, hours=1):
+	file_time = os.path.getmtime(f) 
+	# Check against 24 hours 
+	return ((time.time() - file_time) / 3600 > hours)
 
 
 def yamlload(s):
@@ -64,9 +68,9 @@ def dsc_classify_machine(id):
 
 	
 	# Setting up cache
-	# If loading for remote work, set this to true once and then false
+	# Check if it has been updated in the past hour, if not, update. 
 	roles_info = {}
-	if False:
+	if is_file_older_hours("/srv/cortex/dsc_cache.txt"):
 		dsc_proxy = cortex.lib.dsc.dsc_connect()
 		roles_info = cortex.lib.dsc.get_roles(dsc_proxy)
 		with open('/srv/cortex/dsc_cache.txt', 'w+') as f:
@@ -80,17 +84,15 @@ def dsc_classify_machine(id):
 	# Attempt to get the current config information of the machine
 	use_default_dsc = False
 	try:
-		raise Exception("TODO Fix timeout problem")
 		# TODO: this needs to be fixed, machine will 504 timeout if can't connect. 
 		dsc_proxy = cortex.lib.dsc.dsc_connect()
-		machine_mconfig = cortex.lib.dsc.get_machine_config()
+		machine_mconfig = cortex.lib.dsc.get_machine_config(dsc_proxy, system['name']) #TODO: this needs to be fixed.
 	except Exception as e:
 		use_default_dsc = True
 		flash('Unable to retrieve machine config from DSC Authoring machine. The machine information is out of date:\n' + str(e), 'alert-danger')
 		
 
 
-	# return jsonify((yaml.dump(roles_info)))
 
 	role_yaml = {}
 	autocomplete_dictionary = {}
@@ -136,9 +138,9 @@ def dsc_classify_machine(id):
 		base_role = {'AllNodes': roles_info['AllNodes']}
 		exist_config = base_role
 	else:
-		exist_config = yamlload(exist_config)
+		exist_config = machine_mconfig
 
-  
+
   # set the roles to tick as well, for the selectpicker
 	page_cont['roles'] = jobs
 	print(type(exist_config))
@@ -147,11 +149,7 @@ def dsc_classify_machine(id):
 	page_cont['yaml_config'] = yaml.dump(exist_config)
 
 	if request.method == "POST":
-    # selectpicker methods are awful, this is *a* way of getting a list of items selected
-		selected_vals = request.form['selected_values'].split(",")
-    # for some reason, selecting nothing would break the selectpicker's response, this fixes
-		if selected_vals == ['']:
-			selected_vals = []
+		
 
    # attempt to read the config
    # if unreadable, do not store as this may be pushed to the authoring machine
@@ -159,14 +157,17 @@ def dsc_classify_machine(id):
 		configs = ""
 		try:
 			configs = yamlload(request.form['configurations'])
+			configs["AllNodes"][1]["NodeName"] = system["name"]
 		except Exception as e:
 			print(e)
 			flash('Error in Configuration', 'alert-danger')
 			configs = exist_config
 
 		# Add the roles into the config
-		config_roles = selected_vals
-		config_roles = config_roles + ['Generic']
+		# config_roles = selected_vals
+		# config_roles = config_roles + ['Generic']
+		dsc_proxy = cortex.lib.dsc.dsc_connect()
+		cortex.lib.dsc.send_config(dsc_proxy, system["name"], (configs))
 
     # ensure that the config has the most up to date values for the details of the box
 		# configs['AllNodes'][1]['Role']= [x.full_name for x in role_obj if x.trimmed_prefix in config_roles]
@@ -174,10 +175,7 @@ def dsc_classify_machine(id):
 		
 	
 
-	elif request.method == "GET":
-		pass
-	# return jsonify(page_cont['role_sidebar_info'])
-	# return jsonify(page_cont['role_sidebar_yaml'])
+	
 	return render_template('dsc/classify.html', title="DSC", page_cont=page_cont, system=system, autocomplete_dictionary=autocomplete_dictionary)
 	
 

@@ -3,7 +3,6 @@ import time
 import MySQLdb as mysql
 import Pyro4
 import json
-<<<<<<< HEAD
 
 import requests
 import requests.exceptions
@@ -14,8 +13,7 @@ BUILD_TYPE_WFCONFIG_PREFIX = {
 	"sandbox": "SB_",
 	"student": "STU_",
 }
-=======
->>>>>>> bcb08b2ae7e0281efe6eab519fed71aeeea98cdf
+
 
 def run(helper, options):
 

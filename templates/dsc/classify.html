@@ -223,88 +223,48 @@ function function_{{role}}(){
 <form class="form-horizontal" method="POST" role="form" id="dsc_form">
 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
 
-<!-- <div class="panel-heading">
-	DSC Roles
-</div> -->
 
-<!-- <div class="panel panel-default">
-	<div class="panel-heading">DSC Roles
-		<div class="pull-right">
-			<button class="btn btn-danger btn-xs" type="submit" id="return_to_default" title="Remove all roles, and return to default state." value="return_to_default" name="button">Reset</button>
-		</div>
-	</div>
-	<div class="panel-body" style="padding-bottom:0em">
-		<div class="form-group">
-			<label title="The roles that this box fulfils" class="col-xs-1 control-label">Roles:</label>
-			<div class="col-lg-15">
-				<select multiple data-style="bg-white rounded-pill px-40 py-3 shadow-sm" class="selectpicker w-100" id="roles" name="roles" data-width="85%"> 
-					{% for role in page_cont['roles'] %}
-						{% if role != 'AllNodes' %}
-							<option value="{{ role }}" {% if role == "Generic" %} selected="selected" {% endif %}>{{ role }}</option>
-						{% endif %}
-					{% endfor %}
+<form method="POST">
+	<div class="container-fluid">
+		<div class="row">
+		  	<div class="column">
+		  		<div style="text-align: center;">
+		  			<h2><i class="fa fa-cog" aria-hidden="true"></i> Machine Configuration</h2>
+		  		</div>
+		  		
+		    	<textarea style="resize: none;" class="textarea" cols="3" id="configurations" name="configurations" placeholder="Configurations to include can be entered here">{{ page_cont['yaml_config'] }}</textarea>
+		    	<button type="submit" class="btn btn-success" data-dismiss="modal">Push to Authoring Machine</button>
+		    	
+		  	</div>
+			<div class="column" id="sidebar_content" style="padding-left: 5px; text-align: center;">
+				<h2><i class="fa fa-file-archive-o" aria-hidden="true"></i> DSC Packages</h2>
+				<select id="size_select">
+				{% for role in page_cont['role_sidebar_info'] %}
+				 <option value="{{ role }}">{{ role }}</option>
+				{% endfor %}
 				</select>
-				<button class="btn btn-success btn-sm btn-default hidden"  style="padding-left: 10px">Add</button>
-				<button class="btn btn-danger btn-sm btn-default hidden" style="padding-left: 10px">Remove</button>
-			</div>
-		</div>
-		<input type="hidden" id="selected_values" name="selected_values">
-	</div>
-</div>
- -->
-
-<!-- <div class="row">
-  <div class="column">
-      <div class="flex-child" style="width: 100%; float: left;">
-			    <textarea style="height: 30px;  resize: none;" class="textarea" cols="1" id="configurations" name="configurations" placeholder="Configurations to include can be entered here">{{ page_cont['yaml_config'] }}</textarea>
-      </div>
-  </div>
-  <div class="column">
-    <div class="flex-child" style="width: 100%; float: right;">
-				 <button type="button" style="height: 100%; width: 100%">Click Me!</button> 
-    </div>
-  </div>
-</div> -->
-<div class="container-fluid">
-	<div class="row">
-	  	<div class="column">
-	  		<div style="text-align: center;">
-	  			<h2><i class="fa fa-cog" aria-hidden="true"></i> Machine Configuration</h2>
-	  		</div>
-	  		
-	    	<textarea style="resize: none;" class="textarea" cols="3" id="configurations" name="configurations" placeholder="Configurations to include can be entered here">{{ page_cont['yaml_config'] }}</textarea>
-	    	<button type="button" class="btn btn-success" data-dismiss="modal">Push to Authoring Machine</button>
-	    	
-	  	</div>
-		<div class="column" id="sidebar_content" style="padding-left: 5px; text-align: center;">
-			<h2><i class="fa fa-file-archive-o" aria-hidden="true"></i> DSC Packages</h2>
-			<select id="size_select">
-			{% for role in page_cont['role_sidebar_info'] %}
-			 <option value="{{ role }}">{{ role }}</option>
-			{% endfor %}
-			</select>
-			{% for role in page_cont['role_sidebar_info'] %}
-			<div id="{{ role }}" class="size_chart" style="text-align: left;">
-				<h3 style="text-align: center;">{{ role }}</h3>
-				{% for sub_role in page_cont['role_sidebar_info'][role] %}
-					
-					{{ sub_role['Name'] }}
-					<div class="pull-right">
-						<button style="float: right;" type="button" class="btn btn-light" data-toggle="modal" data-target="#{{role}}_{{sub_role['Name']}}"> Info </button>
-						<button style="float: right;" onclick="clipboard_{{role}}_{{sub_role['Name']}}()" type="button" class="btn btn-light" > <i class="fa fa-clipboard"></i> </button>
-					</div>
-					
-					
-					<br>
-					<hr>
+				{% for role in page_cont['role_sidebar_info'] %}
+				<div id="{{ role }}" class="size_chart" style="text-align: left;">
+					<h3 style="text-align: center;">{{ role }}</h3>
+					{% for sub_role in page_cont['role_sidebar_info'][role] %}
+						
+						{{ sub_role['Name'] }}
+						<div class="pull-right">
+							<button style="float: right;" type="button" class="btn btn-light" data-toggle="modal" data-target="#{{role}}_{{sub_role['Name']}}"> Info </button>
+							<button style="float: right;" onclick="clipboard_{{role}}_{{sub_role['Name']}}()" type="button" class="btn btn-light" > <i class="fa fa-clipboard"></i> </button>
+						</div>
+						
+						
+						<br>
+						<hr>
+					{% endfor %}
+				</div>
 				{% endfor %}
 			</div>
-			{% endfor %}
 		</div>
+
 	</div>
-
-</div>
-
+</form>
 
 {% for role in page_cont['role_sidebar_info'] %}
 	{% for sub_role in page_cont['role_sidebar_info'][role] %}
@@ -362,55 +322,7 @@ function function_{{role}}(){
 <!-- <input type="hidden" name="checked_values" id="checked_values" value=""> -->
 </form>
 
-<script type="text/javascript">
 
-
-
-
-$("#save_changes").click(function(e){
-	$("#selected_values").val($('.selectpicker').selectpicker('val'));
-	var json = {}
-	$(".role-parent").each(function(){
-			var role = $(this).attr('data-role');
-			var checked = $(this).closest(".panel").find(".chkboxes:checkbox:checked").map(function(i,elem){return $(this).val()});
-			json[role] = checked;
-	});
-	$("#checked_values").val(JSON.stringify(json));
-
-
-	$("#dsc_form").submit();
-});
-
-$('#reset').click(function(argument) {
-	$("#selected_values").val($('.selectpicker').selectpicker('val'));
-	var json = {}
-	$(".role-parent").each(function(){
-			var role = $(this).attr('data-role');
-			var checked = $(this).closest(".panel").find(".chkboxes:checkbox:checked").map(function(i,elem){return $(this).val()});
-			json[role] = checked;
-	});
-	$("#checked_values").val(JSON.stringify(json));
-
-
-	$("#dsc_form").submit();
-});
-
-$("#reset").click(function(){
-	$("#selected_values").val($('.selectpicker').selectpicker('val'));
-	$("#dsc_form").submit();
-});
-$(document).ready(function() {
-	// $("#yaml_display").hide();
-	
-	$("#hide_yaml").click(function(){
-		$("#yaml_display").hide();
-	});
-	$("#show_yaml").click(function(){
-		$("#yaml_display").show();
-	});
-});
-
-</script>
 
 
 

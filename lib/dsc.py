@@ -10,7 +10,7 @@ import json
 
 
 # config = { 'WINRPC': { 'devdomain': { 'host': 'srv02391.devdomain.soton.ac.uk', 'port': 1888, 'key': 'chang3me' } } }
-env = 'devdomain'
+env = app.config["DSC_ENV"]
 
 def dsc_test_connect():
 	with Pyro4.Proxy('PYRO:CortexWindowsRPC@' + str(app.config['DSC'][env]['host']) + ':' + str(app.config['DSC'][env]['port'])) as proxy:
@@ -55,4 +55,5 @@ def send_config(proxy, name,  data):
 
 # To be implemented on authoring machine
 def get_machine_config(proxy, name):
-	return proxy.get_mconfig(name)
+	return proxy.get_machine_config(name)
+
