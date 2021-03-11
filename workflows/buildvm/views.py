@@ -6,6 +6,8 @@ from flask import abort, flash, redirect, request, session, url_for
 
 import cortex.lib.admin
 import cortex.lib.core
+import cortex.lib.dsc
+
 from cortex import app
 from cortex.lib.user import get_user_list_from_cache
 from cortex.lib.workflow import CortexWorkflow
@@ -187,6 +189,12 @@ def build(build_type):
 			if vm_folder_moid is not None and len(vm_folder_moid) <= 0:
 				vm_folder_moid = None
 
+			if dsc_role is not None:
+				try:
+					proxy = cortex.lib.dsc.dsc_connect()
+					cortex.lib.dsc.enroll_new(__name__, dsc_role)
+				except Exception as e:
+					flash("Unable to enroll machine in DSC:" + str(e), "alert-danger")
 			# Validate the data (common between standard / sandbox)
 			(sockets, cores, ram, disk, swap, template, env, expiry) = validate_data(request, get_build_config(build_type, "OS_ORDER"), [e["id"] for e in environments])
 
@@ -314,6 +322,16 @@ def build(build_type):
 		flash("Could not parse JSON from the database.", "alert-danger")
 		vm_spec_config_json = {}
 
+	try:
+		proxy = cortex.lib.dsc.dsc_connect()
+		vm_spec_dsc_roles = cortex.lib.dsc.get_roles(proxy)
+		vm_spec_dsc_roles = list(set([key.split("_")[0].replace("UOS", "") for key in vm_spec_dsc_roles if key != "AllNodes"]))
+	except Exception as e:
+		flash("DSC Error:" + str(e), "alert-danger")
+		vm_spec_dsc_roles = []
+
+
+
 	## Show form
 	return workflow.render_template(
 		"build.html",
@@ -332,6 +350,7 @@ def build(build_type):
 		autocomplete_users=autocomplete_users,
 		vm_spec_json=vm_spec_json,
 		vm_spec_config_json=vm_spec_config_json,
+		dsc_roles = vm_spec_dsc_roles,
 	)
 
 ################################################################################

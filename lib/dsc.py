@@ -57,3 +57,7 @@ def send_config(proxy, name,  data):
 def get_machine_config(proxy, name):
 	return proxy.get_machine_config(name)
 
+######################################################
+
+def enroll_new(proxy, name, role):
+	return proxy.enroll_new(name, role)
