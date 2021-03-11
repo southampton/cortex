@@ -3,19 +3,16 @@ from urllib.parse import urljoin
 import ldap3
 import requests
 import requests.exceptions
-<<<<<<< HEAD
+
 
 # pylint: disable=no-name-in-module
 from pyVmomi import vim
 # pylint: enable=no-name-in-module
-=======
+
 from urllib.parse import urljoin
 import ldap
 import MySQLdb as mysql
-<<<<<<< HEAD
->>>>>>> decommissioning a machine now checks for dsc and disenrolls it if its acceptable
-=======
->>>>>>> bcb08b2ae7e0281efe6eab519fed71aeeea98cdf
+
 
 def run(helper, options):
 
@@ -55,35 +52,19 @@ def run(helper, options):
 			r = action_tsm_decom(action, helper)
 		elif action["id"] == "rhn5.delete":
 			r = action_rhn5_delete(action, helper)
-<<<<<<< HEAD
-		elif action["id"] == "satellite6.delete":
-			r = action_satellite6_delete(action, helper)
-		elif action["id"] == "sudoldap.update":
-			r = action_sudoldap_update(action, helper, options["wfconfig"])
-		elif action["id"] == "sudoldap.delete":
-			r = action_sudoldap_delete(action, helper, options["wfconfig"])
-		elif action["id"] == "graphite.delete":
-			r = action_graphite_delete(action, helper, options["wfconfig"])
-		elif action["id"] == "nessus.delete":
-			r = action_nessus_delete(action, helper, options["wfconfig"])
-		elif action["id"] == "system.update_decom_date":
-			r = action_update_decom_date(action, helper)
-
-=======
 		elif action['id'] == "satellite6.delete":
 			r = action_satellite6_delete(action, helper) 
 		elif action['id'] == "sudoldap.update":
 			r = action_sudoldap_update(action, helper, options['wfconfig'])
-		elif action['id'] == "sudoldap.delete":
-			r = action_sudoldap_delete(action, helper, options['wfconfig'])
 		elif action['id'] == "graphite.delete":
 			r = action_graphite_delete(action, helper, options['wfconfig'])
 		elif action['id'] == "system.update_decom_date":
 			r = action_update_decom_date(action, helper)
+		elif action["id"] == "nessus.delete":
+			r = action_nessus_delete(action, helper, options["wfconfig"])
 		elif action['id'] == "dsc.disenroll":
 			r = action_disenroll_from_dsc(action, helper) 
 			
->>>>>>> decommissioning a machine now checks for dsc and disenrolls it if its acceptable
 		# End the event (don't change the description) if the action
 		# succeeded. The action_* functions either raise Exceptions or
 		# end the events with a failure message on errors.
