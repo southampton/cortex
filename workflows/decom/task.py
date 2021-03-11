@@ -56,6 +56,8 @@ def run(helper, options):
 			r = action_satellite6_delete(action, helper) 
 		elif action['id'] == "sudoldap.update":
 			r = action_sudoldap_update(action, helper, options['wfconfig'])
+		elif action["id"] == "sudoldap.delete":
+			r = action_sudoldap_delete(action, helper, options["wfconfig"])
 		elif action['id'] == "graphite.delete":
 			r = action_graphite_delete(action, helper, options['wfconfig'])
 		elif action['id'] == "system.update_decom_date":
