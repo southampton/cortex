@@ -6,6 +6,8 @@ from flask import abort, flash, redirect, request, session, url_for
 
 import cortex.lib.admin
 import cortex.lib.core
+import cortex.lib.dsc
+
 from cortex import app
 from cortex.lib.user import get_user_list_from_cache
 from cortex.lib.workflow import CortexWorkflow
@@ -91,8 +93,21 @@ def validate_data(r, templates, envs):
 		expiry = None
 
 	return (sockets, cores, ram, disk, swap, template, env, expiry)
+"""
+		if 'WINRPC' in app.config:
+			options['dsc_config'] = app.config['WINRPC']
+		else:
+			options['dsc_config'] = app.config['WINRPC']
 
+		if 'WINRPC' in app.config:
+			options['dsc_config'] = app.config['WINRPC']
+		else:
+			options['dsc_config'] = app.config['WINRPC']
 
+		# Connect to NeoCortex and start the task
+		neocortex = cortex.lib.core.neocortex_connect()
+		task_id = neocortex.create_task(__name__, session['username'], options, description="Creates and sets up a virtual machine (sandbox VMware environment)")
+"""
 def get_build_config(build_type, config_key, *args):
 	"""Helper function to return per-build_type config values"""
 	prefix = {
@@ -174,6 +189,12 @@ def build(build_type):
 			if vm_folder_moid is not None and len(vm_folder_moid) <= 0:
 				vm_folder_moid = None
 
+			if dsc_role is not None:
+				try:
+					proxy = cortex.lib.dsc.dsc_connect()
+					cortex.lib.dsc.enroll_new(__name__, dsc_role)
+				except Exception as e:
+					flash("Unable to enroll machine in DSC:" + str(e), "alert-danger")
 			# Validate the data (common between standard / sandbox)
 			(sockets, cores, ram, disk, swap, template, env, expiry) = validate_data(request, get_build_config(build_type, "OS_ORDER"), [e["id"] for e in environments])
 
@@ -221,8 +242,45 @@ def build(build_type):
 		# Additional task options for the standard build
 		if build_type == "standard" and "NOTIFY_EMAILS" in app.config:
 			options["notify_emails"] = app.config["NOTIFY_EMAILS"]
+			options['workflow'] = 'standard'
+			options['sockets'] = sockets
+			options['cores'] = cores
+			options['ram'] = ram
+			options['disk'] = disk
+			options['template'] = template
+			options['cluster'] = cluster
+			options['env'] = env
+			options['task'] = task
+			options['purpose'] = purpose
+			options['comments'] = comments
+			options['sendmail'] = sendmail
+			options['wfconfig'] = workflow.config
+			options['expiry'] = expiry
+			options['network'] = network
+			options['primary_owner_who'] = primary_owner_who
+			options['primary_owner_role'] = primary_owner_role
+			options['secondary_owner_who'] = secondary_owner_who
+			options['secondary_owner_role'] = secondary_owner_role
+			options['dns_aliases'] = dns_aliases
+			options['vm_folder_moid'] = vm_folder_moid
+
+
+		if 'NOTIFY_EMAILS' in app.config:
+			options['notify_emails'] = app.config['NOTIFY_EMAILS']
 		else:
 			options["notify_emails"] = []
+
+		if 'WINRPC' in app.config:
+			options['dsc_config'] = app.config['WINRPC']
+		else:
+			options['dsc_config'] = app.config['WINRPC']
+
+
+		if 'WINRPC' in app.config:
+			options['dsc_config'] = app.config['WINRPC']
+		else:
+			options['dsc_config'] = app.config['WINRPC']
+
 
 		# Connect to NeoCortex and start the task
 		neocortex = cortex.lib.core.neocortex_connect()
@@ -264,6 +322,16 @@ def build(build_type):
 		flash("Could not parse JSON from the database.", "alert-danger")
 		vm_spec_config_json = {}
 
+	try:
+		proxy = cortex.lib.dsc.dsc_connect()
+		vm_spec_dsc_roles = cortex.lib.dsc.get_roles(proxy)
+		vm_spec_dsc_roles = list(set([key.split("_")[0].replace("UOS", "") for key in vm_spec_dsc_roles if key != "AllNodes"]))
+	except Exception as e:
+		flash("DSC Error:" + str(e), "alert-danger")
+		vm_spec_dsc_roles = []
+
+
+
 	## Show form
 	return workflow.render_template(
 		"build.html",
@@ -282,6 +350,7 @@ def build(build_type):
 		autocomplete_users=autocomplete_users,
 		vm_spec_json=vm_spec_json,
 		vm_spec_config_json=vm_spec_config_json,
+		dsc_roles = vm_spec_dsc_roles,
 	)
 
 ################################################################################

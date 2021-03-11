@@ -1,0 +1,330 @@
+{% extends "layout.html" %}
+{% block head %}
+	
+	{% include 'dsc/codemirror.html' %}
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/vendor/bootstrap-select.min.css') }}">
+	<link href="{{ url_for('static', filename='css/vendor/show-hint.css') }}?version={{ config.VERSION }}" rel="stylesheet">
+	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/bootstrap-select.min.js') }}"></script>
+	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/anyword-hint.js') }}"></script>
+	<script type="text/javascript" src="{{ url_for('static', filename='js/vendor/show-hint.js') }}"></script>
+
+{% endblock %}
+
+{% block body %}
+{% import 'node-header.html' as node %}
+{% import 'puppet/header.html' as puppeth %}
+{{ node.header(system,active="dsc" ) }}
+
+<style type="text/css">
+
+.bootstrap-select .bs-ok-default::after {
+	width: 10em;
+	height: 10em;
+	border-width: 0 0.1em 0.1em 0;
+	transform: rotate(45deg) translateY(0.5rem);
+}
+
+.btn.dropdown-toggle:focus {
+	outline: none !important;
+}
+
+
+.btn dropdown-toggle {
+	min-width: 100em !important;
+}
+
+.flex-container {
+    display: flex;
+}
+
+.flex-child {
+    flex: 1;
+    /*border: 2px solid yellow;*/
+}  
+
+.flex-child:first-child {
+    margin-right: 20px;
+} 
+
+/*.textarea{
+  width:100% !important;
+  background-color:#eee;
+  overflow:hidden;
+  height:250px !important;
+  max-height:250px;
+  border:1px solid #ccc;
+  overflow-y: auto;
+}*/
+
+.CodeMirror {
+  border: 1px solid #eee;
+  /*height: auto;*/
+  padding-right: 10px;
+}
+</style>
+
+<script>
+	function getWidth() {
+  return Math.max(
+    document.body.scrollWidth,
+    document.documentElement.scrollWidth,
+    document.body.offsetWidth,
+    document.documentElement.offsetWidth,
+    document.documentElement.clientWidth
+  );
+}
+
+var classes_editor;
+$(document).ready(function() 
+{
+	var hints ={{ autocomplete_dictionary | tojson | safe }}; // holds the hints that are going to be used in the autocompleteion engine
+	var modules = Object.keys(hints); // will hold all the names of the DSC modules	
+
+	///////////////// AUTOCOMPLETE CODE STARTS
+	
+	function getLastClassName(editor, modules) {
+		for (var i = editor.getCursor().line - 1; i >= 0; i--) { // for each line, starting from last
+			for (var j = 0; j < modules.length; j++) { // for each module
+				var regex = new RegExp('(?<!(\\s+))(' + modules[j] + ')(?=:)');
+				if (regex.test(editor.getLine(i))) {
+					// eliminates the ":" at the end of the name
+					return editor.getLine(i).substring(0, editor.getLine(i).length-1);
+				}
+			}
+		}
+		return "";
+	}
+
+	// Codemirror hint helper which returns the list of elements which match the current string on the line
+	CodeMirror.registerHelper('hint', 'dictionaryHint', function(editor) {
+		var cur = editor.getCursor();
+		var curLine = editor.getLine(cur.line);
+		var start = cur.ch;
+		var end = start;
+		while (end < curLine.length && /[\w$:]/.test(curLine.charAt(end))) ++end;
+		while (start && /[\w$:]/.test(curLine.charAt(start - 1))) --start;
+		var curWord = curLine.replace(/((-)?\s*)/, "");
+		
+		console.log("Current word:" + curWord);
+		
+		try
+		{
+			var regex = new RegExp('^' + curWord, 'i');
+		}
+		catch (err)
+		{
+			// 0 length negative lookahead regex... this will not match anything, not even the empty String
+			// Should only happen when an invalid regex syntax will appear on the line... which might be quite often
+			// It's completely ok though
+			var regex = /(?!)/
+		}
+		
+
+		// Test if typing a classes parameters and return a list of the parameters for the class if found
+		var last_class_name = getLastClassName(editor, modules).split(":", 1)[0]; // gets the name of the last DSC module, removes the column at the end of the line
+		//var last_module_name = last_class_name.split(":", 1)[0]; // you don't need classes/modules so no need to separate these?
+		if (curLine && curLine.match(/(-)?^\s+\w*/) && last_class_name !== "" && hints[last_class_name] !== undefined)
+		{
+			return {
+				list: (!curWord ? (hints[last_class_name]) : (hints[last_class_name].filter(function(item){
+					return (item.match(regex));
+				}))).sort(),
+				from: CodeMirror.Pos(cur.line, start),
+				to: CodeMirror.Pos(cur.line, end)
+			}
+		}
+		// The modules object does not contain the module on the current line, return a list of module hints.
+		return {
+			list: (!curWord ? modules : modules.filter(function(item) {
+				return item.match(regex);
+			})).sort(),
+			from: CodeMirror.Pos(cur.line, start),
+			to: CodeMirror.Pos(cur.line, end)
+		}
+	});
+	
+	classes_editor = CodeMirror.fromTextArea(document.getElementById('configurations'),
+        {
+                mode: 'yaml',
+                gutters: ["CodeMirror-lint-markers"],
+                lint: true,
+                indentUnit: 2,
+                viewportMargin: Infinity,
+        });
+
+	CodeMirror.commands.autocomplete = function(cm) {
+		CodeMirror.showHint(cm, CodeMirror.hint.dictionaryHint, {completeSingle: false});
+	};
+
+	classes_editor.on("keyup", function(cm, event) {
+		//Enables keyboard navigation in autocomplete list only when a letter key is pressed or when `:` is pressed
+		if (!cm.state.completionActive && (event.keyCode > 47 && event.keyCode < 91) || event.keyCode == 186)
+		{
+			CodeMirror.commands.autocomplete(cm, CodeMirror.hint.dictionaryHint, {});
+		}
+	});
+	
+
+	 classes_editor.setOption("extraKeys",
+        {
+                Tab: function(cm) {
+                        var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
+                        cm.replaceSelection(spaces);
+                },
+                "Ctrl-Space": function(cm) {
+                        if (!cm.state.completionActive) {
+                                CodeMirror.commands.autocomplete(cm, CodeMirror.hint.dictionaryHint, {});
+                        }
+                },
+        });
+	
+	///////////////// Autocomplete code ends
+
+	classes_editor.setSize(getWidth() * 0.4 ,450);
+	$("#sidebar_content").width(getWidth()*0.40)
+
+	//hides dropdown content
+	$(".size_chart").hide();
+
+	//unhides first option content
+	$("#option1").show();
+
+	//listen to dropdown for change
+	$("#size_select").change(function(){
+		//rehide content on change
+		$('.size_chart').hide();
+		//unhides current item
+		$('#'+$(this).val()).show();
+	});
+});
+
+function removeElement(elementId) {
+    // Removes an element from the document
+    var element = document.getElementById(elementId);
+    element.parentNode.removeChild(element);
+}
+
+{% for role in set_roles %}
+
+function function_{{role}}(){
+	
+	var exist_text = document.getElementById("configurations").value;
+	console.log(('{{ role_info[role] }}') );
+	exist_text = exist_text.concat('{{role_info[role]}}','\n');
+	console.log(exist_text);
+	$('#configurations').val(exist_text);
+	classes_editor.setValue(exist_text);
+
+}
+
+{% endfor %}
+
+</script>
+<form class="form-horizontal" method="POST" role="form" id="dsc_form">
+<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}" />
+
+
+<form method="POST">
+	<div class="container-fluid">
+		<div class="row">
+		  	<div class="column">
+		  		<div style="text-align: center;">
+		  			<h2><i class="fa fa-cog" aria-hidden="true"></i> Machine Configuration</h2>
+		  		</div>
+		  		
+		    	<textarea style="resize: none;" class="textarea" cols="3" id="configurations" name="configurations" placeholder="Configurations to include can be entered here">{{ page_cont['yaml_config'] }}</textarea>
+		    	<button type="submit" class="btn btn-success" data-dismiss="modal">Push to Authoring Machine</button>
+		    	
+		  	</div>
+			<div class="column" id="sidebar_content" style="padding-left: 5px; text-align: center;">
+				<h2><i class="fa fa-file-archive-o" aria-hidden="true"></i> DSC Packages</h2>
+				<select id="size_select">
+				{% for role in page_cont['role_sidebar_info'] %}
+				 <option value="{{ role }}">{{ role }}</option>
+				{% endfor %}
+				</select>
+				{% for role in page_cont['role_sidebar_info'] %}
+				<div id="{{ role }}" class="size_chart" style="text-align: left;">
+					<h3 style="text-align: center;">{{ role }}</h3>
+					{% for sub_role in page_cont['role_sidebar_info'][role] %}
+						
+						{{ sub_role['Name'] }}
+						<div class="pull-right">
+							<button style="float: right;" type="button" class="btn btn-light" data-toggle="modal" data-target="#{{role}}_{{sub_role['Name']}}"> Info </button>
+							<button style="float: right;" onclick="clipboard_{{role}}_{{sub_role['Name']}}()" type="button" class="btn btn-light" > <i class="fa fa-clipboard"></i> </button>
+						</div>
+						
+						
+						<br>
+						<hr>
+					{% endfor %}
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+
+	</div>
+</form>
+
+{% for role in page_cont['role_sidebar_info'] %}
+	{% for sub_role in page_cont['role_sidebar_info'][role] %}
+		<!-- Modal -->
+		<div id="{{role}}_{{sub_role['Name']}}" class="modal fade" role="dialog">
+		  <div class="modal-dialog">
+
+		    <!-- Modal content-->
+		    <div class="modal-content">
+		      <div class="modal-header">
+		        <button type="button" class="close" data-dismiss="modal" style="text-align: center;" >&times;</button>
+		        <h4 class="modal-title">{{sub_role['Name']}}</h4>
+		      </div>
+		      <div class="modal-body">
+		      	<h5>Description:</h5>
+		      	<p>[No conetent yet]<p>
+		        <textarea style="resize: none;" class="textarea" cols="55" rows="20" id="{{role}}_{{sub_role['Name']}}_config" name="{{role}}_{{sub_role['Name']}}_config" placeholder="Role_info">{{ page_cont['role_sidebar_yaml'][role][sub_role['Name']] }}</textarea>
+		        <button type="button" class="btn btn-success">Copy to Clipboard</button>
+		      </div>
+		      <div class="modal-footer">
+		        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		      </div>
+		    </div>
+
+		  </div>
+		</div>
+
+
+		<script type="text/javascript">
+			function clipboard_{{role}}_{{sub_role['Name']}}() {
+				alert("clicked {{role}}_{{sub_role['Name']}}")
+				var copy_text_{{role}}_{{sub_role['Name']}} = document.getElementById("{{role}}_{{sub_role['Name']}}");
+				copy_text_{{role}}_{{sub_role['Name']}}.select();
+				copy_text_{{role}}_{{sub_role['Name']}}.setSelectionRange(0,99999);
+				document.execCommand("copy");
+				alert("COPED {{role}}_{{sub_role['Name']}}")
+			}
+
+		</script>
+
+
+	{% endfor %}
+{% endfor %}
+
+<!-- <div class="row" style="text-align: center;">
+  <div class="column" style="padding-right: 15px">
+    <button class="btn btn-primary btn-lg" type="submit" id="save_changes" value="save_changes" name="button" title="Save the selected roles and edited config." style="padding-right: 15px">Save and Generate</button>
+  </div>
+  <div class="column">
+    <button class="btn btn-success btn-lg" type="submit" id="push_to_dsc" value="push_to_dsc" title="Send machine details to DSC." name="button">Push to Box</button>
+  </div>
+</div>
+ -->
+
+<!-- <input type="hidden" name="checked_values" id="checked_values" value=""> -->
+</form>
+
+
+
+
+
+
+{% endblock %}

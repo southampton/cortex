@@ -1,5 +1,8 @@
 #### Combined standard/sandbox VM Workflow Task
 import time
+import MySQLdb as mysql
+import Pyro4
+import json
 
 import requests
 import requests.exceptions
@@ -10,6 +13,7 @@ BUILD_TYPE_WFCONFIG_PREFIX = {
 	"sandbox": "SB_",
 	"student": "STU_",
 }
+
 
 def run(helper, options):
 
@@ -75,6 +79,8 @@ def run(helper, options):
 		vm_folder_moid = wfconfig("VM_FOLDER")
 		options["primary_owner_who"] = helper.username
 		options["primary_owner_role"] = "Student"
+
+
 
 	## Allocate a hostname #################################################
 
@@ -383,8 +389,54 @@ def run(helper, options):
 		helper.end_event(success=False, description="VM not powered on after 30 seconds. Check vCenter for more information")
 
 	# End the event
-	helper.end_event(description="VM powered up")
+	helper.end_event(description="VM powered up")	
 
+
+
+	## Register Linux VMs with the built in Puppet ENC #####################
+
+	# Only for Linux VMs...
+	if workflow != 'student' and os_type == helper.lib.OS_TYPE_BY_NAME['Linux'] and options['template'] != 'rhel6c':
+		# Start the event
+		helper.event("puppet_enc_register", "Registering with Puppet ENC")
+
+		# Register with the Puppet ENC
+		helper.lib.puppet_enc_register(system_dbid, system_name + "." + puppet_cert_domain, options['env'])
+
+		# End the event
+		helper.end_event("Registered with Puppet ENC")
+
+	## Register Windows VMs with DSC
+	# Only for Windows VMs
+	try:
+		dsc_config = options['dsc_config']
+		if workflow != 'student' and os_type == helper.lib.OS_TYPE_BY_NAME['Windows']:
+			# start the event
+			env = 'devdomain'
+			helper.event("dsc_register", "Registering with DSC")
+			curd = helper.db.cursor(mysql.cursors.DictCursor)
+			config_for_machine = {}
+			dsc_proxy = Pyro4.Proxy('PYRO:CortexWindowsRPC@' + str(dsc_config[env]['host']) + ':' + str(dsc_config[env]['port']))
+			dsc_proxy._pyroHmacKey = str(dsc_config[env]['key'])
+
+			roles = dsc_proxy.get_roles()	
+
+			config_for_machine['AllNodes'] = roles['AllNodes']
+			generic_roles = [role for role in roles if 'UOSGeneric' in role]
+			roles_for_machine = {a : {'length':0} for a in generic_roles}
+
+			# roles_for_machine = {name : {'length':0} for role in generic_roles}
+			for x, nested_dictionary in enumerate(config_for_machine['AllNodes']):
+				if 'NodeName' in nested_dictionary.keys():
+					config_for_machine['AllNodes'][x]['NodeName'] = system_name
+				if 'Role' in nested_dictionary.keys():
+					config_for_machine['AllNodes'][x]['Role'] = list(roles_for_machine.keys())
+
+
+			curd.execute('INSERT INTO `dsc_config` (system_id, config, roles) VALUES (%s, %s, %s);', (system_dbid, json.dumps(config_for_machine), json.dumps(roles_for_machine)))
+			helper.db.commit()
+	except Exception as e:
+		helper.flash(str(e))
 
 	## Create the ServiceNow CMDB CI #######################################
 

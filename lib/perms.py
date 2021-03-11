@@ -181,6 +181,7 @@ class CortexPermissions:
 			{'name': 'certificates.add',                   'desc': 'Adds a certificate to the list of tracked certificates'},
 
 			{'name': 'tenable.view',                       'desc': 'View information from Tenable.io'},
+			{'name': 'dsc.view', 			       'desc': 'View DSC information about system'},
 		]
 
 		self.workflow_permissions = []
@@ -200,6 +201,7 @@ class CortexPermissions:
 			{'name': 'edit.puppet',          'desc': 'Change Puppet settings'},
 			{'name': 'edit.rubrik',          'desc': 'Change Rubrik backup settings'},
 			{'name': 'control.vmware.power', 'desc': 'Control the VMware power state'},
+			{'name': 'view.dsc', 		 'desc': 'View the DSC settings'}
 		]
 
 		self.puppet_permissions = [

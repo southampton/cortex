@@ -537,12 +537,17 @@ def admin_maint():
 	"""Allows the user to kick off scheduled jobs on demand"""
 
 	# Check user permissions
-	if not does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow", "maintenance.cert_scan", "maintenance.student_vm", "maintenance.lock_workflows", "maintenance.rubrik_policy_check"]):
+	if not does_user_have_permission(["maintenance.vmware", "maintenance.cmdb", "maintenance.expire_vm", "maintenance.sync_puppet_servicenow", "maintenance.cert_scan", "maintenance.student_vm", "maintenance.lock_workflows", "maintenance.rubrik_policy_check", "dsc.enrol"]):
 		abort(403)
 
 	# Connect to NeoCortex and the database
 	neocortex = cortex.lib.core.neocortex_connect()
 	curd = g.db.cursor(mysql.cursors.DictCursor)
+
+	#get the systems
+	curd.execute("SELECT name FROM systems_info_view WHERE decom_date IS NULL AND dsc_roles IS NULL and dsc_config IS NULL;")
+	systems = curd.fetchall()
+
 
 	# Initial setup
 	vmcache_task_id = None
@@ -558,6 +563,37 @@ def admin_maint():
 	workflows_lock_status = get_workflows_locked_details()
 
 	if request.method == "POST":
+		# See which tasks are already running
+		active_tasks = neocortex.active_tasks()
+
+		for task in active_tasks:
+			if task['name'] == '_cache_vmware':
+				vmcache_task_id = task['id']
+			elif task['name'] == '_cache_servicenow':
+				sncache_task_id = task['id']
+			elif task['name'] == '_vm_expire':
+				sncache_task_id = task['id']
+			elif task['name'] == '_sync_puppet_servicenow':
+				sync_puppet_servicenow_id = task['id']
+			elif task['name'] == '_cert_scan':
+				cert_scan_id = task['id']
+			elif task['name'] == '_lock_workflows':
+				lock_workflows = task['id']
+			elif task['name'] == '_rubrik_policy_check':
+				rubrik_crcheck = task['id']
+			elif task['name'] == '_enrol_dsc':
+				enrol_machine = task['id']
+
+
+		# Render the page
+		return render_template('admin/maint.html', active='admin',
+			sncache_task_id=sncache_task_id, vmcache_task_id=vmcache_task_id,
+			vmexpire_task_id=vmexpire_task_id, sync_puppet_servicenow_id=sync_puppet_servicenow_id,
+			cert_scan_id=cert_scan_id, student_vm_build_id=student_vm_build_id, pause_vm_builds=lock_workflows , title="Maintenance Tasks", lock_status=workflows_lock_status, systems=systems
+		)
+
+	else:
+		
 		# Find out what task to start
 		module = request.form['task_name']
 		# Start the appropriate internal task
@@ -605,6 +641,12 @@ def admin_maint():
 			if not does_user_have_permission("maintenance.rubrik_policy_check"):
 				abort(403)
 			task_id = neocortex.start_internal_task(session['username'], 'rubrik_policy_check.py', '_rubrik_policy_check', description="Checks the backup systems of policies against the ones in Rubrik")
+		elif module == 'rubrik_crcheck':
+			if not does_user_have_permission("maintenance.expired_vm"):
+				task_id = neocortex.start_internal_task(session['username'], 'rubrik_crcheck.py', '_rubrik_policy_check', description="Checks the backup systems of policies against the ones in Rubrik")
+		elif module == 'enrol_machine_into_dsc':
+			if does_user_have_permission("dsc.enrol"):
+				task_id = neocortex.start_internal_task(session['username'], 'dsc_enrol.py', '_enrol_dsc', description="Enrols the selected machine in the dsc configurator", options={'machine' : request.form['systems'], 'dsc_config' : app.config['WINRPC']})
 		else:
 			app.logger.warn('Unknown module name specified when starting task')
 			abort(400)

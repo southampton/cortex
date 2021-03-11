@@ -1,6 +1,9 @@
+from flask import Flask, request, session, g, abort, render_template, url_for
+import redis
+import time
+import traceback
 import MySQLdb as mysql
 import redis
-from flask import g, render_template, request, session, url_for
 
 from cortex import app
 from cortex.lib.errors import fatalerr, logerr
@@ -9,7 +12,8 @@ from cortex.lib.user import (
 	does_user_have_permission,
 	does_user_have_puppet_permission,
 	does_user_have_system_permission,
-	does_user_have_workflow_permission)
+	does_user_have_workflow_permission,
+	is_system_enrolled)
 
 ################################################################################
 
@@ -54,11 +58,10 @@ def before_request():
 	# cortex.lib.user which it can't import due to a cyclic dependency
 	app.jinja_env.globals['does_user_have_permission'] = does_user_have_permission
 	app.jinja_env.globals['does_user_have_system_permission'] = does_user_have_system_permission
-	app.jinja_env.globals['does_user_have_puppet_permission'] = does_user_have_puppet_permission
-
+	app.jinja_env.globals['is_system_enrolled'] = is_system_enrolled
 	# Continue processing the request
+	app.jinja_env.globals['is_system_enrolled'] = is_system_enrolled
 	return None
-
 ################################################################################
 
 @app.context_processor
