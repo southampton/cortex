@@ -36,7 +36,7 @@ Pyro4==4.80
 pyrsistent==0.15.3
 pytz==2019.1
 pyvmomi==7.0
-PyYAML==5.3.1
+PyYAML==5.4
 redis==3.5.3
 requests==2.24.0
 serpent==1.28
